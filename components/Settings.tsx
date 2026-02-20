@@ -42,6 +42,7 @@ const MODULES_LIST = [
 ];
 
 const ROLES_LIST = [
+   { id: 'GESTAO', label: 'Gestão' },
    { id: 'PROFESSOR', label: 'Professor' },
    { id: 'TAE', label: 'Técnico (TAE)' },
    { id: 'AAE', label: 'Apoio (AAE)' },
@@ -57,6 +58,7 @@ const Settings: React.FC = () => {
    const [permissions, setPermissions] = useState<Record<string, string[]>>(() => {
       const saved = localStorage.getItem('portal_module_permissions_v1');
       return saved ? JSON.parse(saved) : {
+         'GESTAO': MODULES_LIST.map(m => m.id),
          'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado'],
          'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
          'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
@@ -239,8 +241,8 @@ const Settings: React.FC = () => {
                                           <button
                                              onClick={() => togglePermission(role.id, mod.id)}
                                              className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto transition-all ${isAllowed
-                                                   ? 'bg-emerald-50 text-emerald-600 shadow-inner'
-                                                   : 'bg-gray-100 text-gray-300'
+                                                ? 'bg-emerald-50 text-emerald-600 shadow-inner'
+                                                : 'bg-gray-100 text-gray-300'
                                                 }`}
                                           >
                                              {isAllowed ? <Check size={20} strokeWidth={4} /> : <X size={18} />}
