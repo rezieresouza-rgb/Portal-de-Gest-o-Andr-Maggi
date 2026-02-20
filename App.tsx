@@ -26,16 +26,24 @@ const App: React.FC = () => {
   const [isPending, startTransition] = useTransition();
   const [user, setUser] = useState<User | null>(() => {
     try {
+      // SANEAMENTO DE LEGADO: Limpar chaves antigas que podem causar crash
+      const legacyKeys = ['active_session', 'access_logs', 'school_announcements', 'portal_module_permissions'];
+      legacyKeys.forEach(key => {
+        if (localStorage.getItem(key)) localStorage.removeItem(key);
+      });
+
       const saved = localStorage.getItem('active_session_v1');
       if (!saved) return null;
       const parsed = JSON.parse(saved);
-      // Validação básica de integridade da sessão
-      if (parsed && typeof parsed === 'object' && (parsed.id || parsed.role)) {
+      // Validação rigorosa de integridade da sessão
+      if (parsed && typeof parsed === 'object' && parsed.id && parsed.role) {
         return parsed;
       }
+      localStorage.removeItem('active_session_v1'); // Limpar se estiver inválido
       return null;
     } catch (e) {
       console.error("Error parsing session:", e);
+      localStorage.removeItem('active_session_v1');
       return null;
     }
   });
@@ -43,7 +51,15 @@ const App: React.FC = () => {
   const [activeModule, setActiveModule] = useState<ModuleTypeExtended>(() => {
     try {
       const saved = localStorage.getItem('active_portal_module');
-      return (saved as ModuleTypeExtended) || 'hub';
+      const validModules: ModuleTypeExtended[] = [
+        'hub', 'merenda', 'finance', 'library', 'scheduling', 'teacher',
+        'pedagogical', 'almoxarifado', 'patrimonio', 'limpeza',
+        'busca_ativa', 'psychosocial', 'secretariat', 'special_education', 'settings'
+      ];
+      if (validModules.includes(saved as ModuleTypeExtended)) {
+        return saved as ModuleTypeExtended;
+      }
+      return 'hub';
     } catch (e) {
       return 'hub';
     }

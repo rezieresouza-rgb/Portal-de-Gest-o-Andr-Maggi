@@ -50,11 +50,15 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
       setIsLocked(localStorage.getItem('system_shield_lock') === 'true');
     };
     const checkNotifs = () => {
-      const saved = localStorage.getItem('secretariat_notifications_v1');
-      if (saved) {
-        const parsed: SecretariatNotification[] = JSON.parse(saved);
-        setNotifications(parsed.filter(n => !n.isRead));
-        if (parsed.some(n => !n.isRead)) setShowNotifBar(true);
+      try {
+        const saved = localStorage.getItem('secretariat_notifications_v1');
+        if (saved) {
+          const parsed: SecretariatNotification[] = JSON.parse(saved);
+          setNotifications(parsed.filter(n => !n.isRead));
+          if (parsed.some(n => !n.isRead)) setShowNotifBar(true);
+        }
+      } catch (e) {
+        console.error("Error parsing TeacherModule notifications:", e);
       }
     };
     checkLock();
