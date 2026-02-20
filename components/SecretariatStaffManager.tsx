@@ -1079,46 +1079,41 @@ const SecretariatStaffManager: React.FC = () => {
                               <ShieldCheck size={16} /> Acesso ao Sistema
                            </h4>
 
-                           {form.email ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Senha de Acesso (Login: {form.email})</label>
-                                    <div className="relative">
-                                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-300" size={16} />
-                                       <input
-                                          type="text"
-                                          value={form.password || ''}
-                                          onChange={e => setForm({ ...form, password: e.target.value })}
-                                          placeholder="Defina uma senha"
-                                          className="w-full pl-12 pr-4 py-4 bg-white border border-indigo-200 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
-                                       />
-                                    </div>
-                                 </div>
-                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Nível de Acesso (Perfil)</label>
-                                    <select
-                                       value={form.userRole || ''}
-                                       onChange={e => setForm({ ...form, userRole: e.target.value as UserRole })}
-                                       className="w-full p-4 bg-white border border-indigo-200 rounded-2xl font-black text-xs uppercase outline-none focus:ring-4 focus:ring-indigo-500/5"
-                                    >
-                                       <option value="">Automático (Pelo Cargo)</option>
-                                       <option value="GESTAO">Gestão (Administrador)</option>
-                                       <option value="SECRETARIA">Secretaria</option>
-                                       <option value="PROFESSOR">Professor</option>
-                                       <option value="TAE">Técnico (TAE)</option>
-                                       <option value="AAE">Apoio (AAE)</option>
-                                       <option value="PSICOSSOCIAL">Mediador (Psicossocial)</option>
-                                       <option value="ADMINISTRADOR">Admin Full (TI)</option>
-                                    </select>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-1.5">
+                                 <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Senha de Acesso (Login: {form.email || 'CPF'})</label>
+                                 <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-300" size={16} />
+                                    <input
+                                       type="text"
+                                       value={form.password || ''}
+                                       onChange={e => setForm({ ...form, password: e.target.value })}
+                                       placeholder="Defina uma senha (Padrão: Mudar123!)"
+                                       className="w-full pl-12 pr-4 py-4 bg-white border border-indigo-200 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                                    />
                                  </div>
                               </div>
-                           ) : (
-                              <div className="p-4 bg-white/50 rounded-xl border border-dashed border-indigo-200 text-center">
-                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                    Informe um e-mail acima para habilitar o acesso ao sistema
-                                 </p>
+                              <div className="space-y-1.5">
+                                 <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Nível de Acesso (Sobrescrita de Perfil)</label>
+                                 <select
+                                    value={form.userRole || ''}
+                                    onChange={e => setForm({ ...form, userRole: e.target.value as UserRole })}
+                                    className="w-full p-4 bg-white border border-indigo-200 rounded-2xl font-black text-xs uppercase outline-none focus:ring-4 focus:ring-indigo-500/5"
+                                 >
+                                    <option value="">Automático (Pelo Cargo)</option>
+                                    <option value="GESTAO">Gestão (Administrador)</option>
+                                    <option value="SECRETARIA">Secretaria</option>
+                                    <option value="PROFESSOR">Professor (Diário de Classe)</option>
+                                    <option value="TAE">Técnico (TAE)</option>
+                                    <option value="AAE">Apoio (AAE)</option>
+                                    <option value="PSICOSSOCIAL">Mediação & Psicossocial</option>
+                                    <option value="AEE_NUTRICAO">Nutrição / Merenda</option>
+                                    <option value="AAE_LIMPEZA">Limpeza / Zeladoria</option>
+                                    <option value="ADMINISTRADOR">Admin Full (TI)</option>
+                                 </select>
+                                 <p className="text-[8px] text-indigo-400 font-bold uppercase mt-2 ml-1">O login será realizado via CPF ou E-mail.</p>
                               </div>
-                           )}
+                           </div>
                         </div>
 
                         <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3">
