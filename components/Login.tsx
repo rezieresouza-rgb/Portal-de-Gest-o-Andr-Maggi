@@ -192,7 +192,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   disabled={isLoading || isLocked}
                   value={login}
                   onChange={e => setLogin(e.target.value)}
-                  placeholder="Seu usuário de acesso"
+                  placeholder="CPF (somente números)"
                   className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm text-white placeholder-white/20 outline-none focus:bg-white/10 focus:border-white/30 focus:ring-4 focus:ring-white/5 transition-all"
                 />
               </div>
