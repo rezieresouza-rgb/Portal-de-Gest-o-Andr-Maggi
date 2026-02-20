@@ -1,22 +1,24 @@
-const CACHE_NAME = 'maggi-portal-v1';
-const ASSETS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/manifest.webmanifest'
-];
+const CACHE_NAME = 'maggi-portal-v2';
 
 self.addEventListener('install', (event) => {
+    // Pula a espera para ativar imediatamente
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    // Deleta TODOS os caches antigos
+                    return caches.delete(cacheName);
+                })
+            );
+        }).then(() => self.clients.claim())
     );
 });
 
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
-    );
+    // Estratégia: Apenas Rede (Desativando Cache)
+    event.respondWith(fetch(event.request));
 });

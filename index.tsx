@@ -15,13 +15,19 @@ root.render(
   </React.StrictMode>
 );
 
-// Registro do Service Worker para PWA
+// --- KILL SWITCH: Removendo Service Workers legados que causam Tela Branca ---
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registrado com sucesso:', registration.scope);
-    }, err => {
-      console.log('Falha ao registrar SW:', err);
-    });
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    for (const registration of registrations) {
+      registration.unregister();
+      console.log('SW Desregistrado para correção de cache');
+    }
+  });
+}
+
+// Limpar caches de SW programaticamente
+if ('caches' in window) {
+  caches.keys().then(names => {
+    for (const name of names) caches.delete(name);
   });
 }
