@@ -56,8 +56,16 @@ const Settings: React.FC = () => {
    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
    const [permissions, setPermissions] = useState<Record<string, string[]>>(() => {
-      const saved = localStorage.getItem('portal_module_permissions_v1');
-      return saved ? JSON.parse(saved) : {
+      try {
+         const saved = localStorage.getItem('portal_module_permissions_v1');
+         const parsed = saved ? JSON.parse(saved) : null;
+         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            return parsed;
+         }
+      } catch (e) {
+         console.error("Error parsing permissions:", e);
+      }
+      return {
          'GESTAO': MODULES_LIST.map(m => m.id),
          'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado'],
          'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],

@@ -35,22 +35,29 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
   useEffect(() => {
     const loadPermissions = () => {
-      const saved = localStorage.getItem('portal_module_permissions_v1');
-      if (saved) {
-        setDynamicPermissions(JSON.parse(saved));
-      } else {
-        // Permissões Padrão Iniciais
-        const defaults = {
-          'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado'],
-          'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
-          'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
-          'MANUTENCAO': ['limpeza'],
-          'AAE': ['limpeza'],
-          'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education']
-        };
-        localStorage.setItem('portal_module_permissions_v1', JSON.stringify(defaults));
-        setDynamicPermissions(defaults);
+      try {
+        const saved = localStorage.getItem('portal_module_permissions_v1');
+        const parsed = saved ? JSON.parse(saved) : null;
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          setDynamicPermissions(parsed);
+          return;
+        }
+      } catch (e) {
+        console.error("Error loading permissions:", e);
       }
+
+      // Permissões Padrão Iniciais
+      const defaults = {
+        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'patrimonio', 'special_education'],
+        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado'],
+        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
+        'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
+        'MANUTENCAO': ['limpeza'],
+        'AAE': ['limpeza'],
+        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education']
+      };
+      localStorage.setItem('portal_module_permissions_v1', JSON.stringify(defaults));
+      setDynamicPermissions(defaults);
     };
 
     loadPermissions();

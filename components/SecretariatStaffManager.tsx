@@ -429,7 +429,8 @@ const SecretariatStaffManager: React.FC = () => {
          targetRole = 'PROFESSOR';
       } else if (type === 'Técnico') {
          // Especial: Se for Direção/Gestão, mapeia para GESTAO (Admin)
-         if (form.jobFunction?.toUpperCase().includes('DIREÇÃO') || form.jobFunction?.toUpperCase().includes('DIRETOR')) {
+         const functionUpper = (form.jobFunction || '').toUpperCase();
+         if (functionUpper.includes('DIREÇÃO') || functionUpper.includes('DIRETOR')) {
             targetRole = 'GESTAO';
          } else {
             targetRole = 'TAE';
