@@ -428,15 +428,21 @@ const SecretariatStaffManager: React.FC = () => {
       if (type === 'Professor') {
          targetRole = 'PROFESSOR';
       } else if (type === 'Técnico') {
-         // Especial: Se for Direção/Gestão, mapeia para GESTAO (Admin)
-         const functionUpper = (form.jobFunction || '').toUpperCase();
-         if (functionUpper.includes('DIREÇÃO') || functionUpper.includes('DIRETOR')) {
+         if (job.includes('DIREÇÃO') || job.includes('DIRETOR') || job.includes('COORDENADORA') || job.includes('GESTOR')) {
             targetRole = 'GESTAO';
+         } else if (job.includes('SECRETÁRIO') || job.includes('SECRETARIA')) {
+            targetRole = 'SECRETARIA';
          } else {
             targetRole = 'TAE';
          }
       } else { // Apoio
-         targetRole = 'AAE';
+         if (job.includes('NUTRIÇÃO')) {
+            targetRole = 'AEE_NUTRICAO';
+         } else if (job.includes('LIMPEZA')) {
+            targetRole = 'AAE_LIMPEZA';
+         } else {
+            targetRole = 'AAE';
+         }
       }
 
       const serverData = {
