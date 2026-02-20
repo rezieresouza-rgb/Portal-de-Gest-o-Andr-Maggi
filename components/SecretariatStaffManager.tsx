@@ -495,7 +495,7 @@ const SecretariatStaffManager: React.FC = () => {
             const passwordToSet = form.password || 'Mudar123!';
             const userData = {
                name: serverData.name,
-               login: existingUser?.login || serverData.email || cleanCpf,
+               login: cleanCpf || existingUser?.login || serverData.email,
                email: serverData.email || null,
                cpf: cleanCpf || null,
                role: (form.userRole as UserRole) || targetRole,
