@@ -98,7 +98,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
             id: p.id,
             bimestre: p.bimestre,
             subject: p.subject,
-            teacher: content.teacher || 'PROF. CRISTIANO',
+            teacher: content.teacher || user.name,
             year: content.year || new Date().getFullYear().toString(),
             className: content.className || '',
             weeklyClasses: content.weeklyClasses || '0',
@@ -136,19 +136,34 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
   }, []);
 
   const addRow = () => {
-    setForm({ ...form, rows: [...form.rows, { weekOrDate: '', content: '', activities: '', methodology: '', evaluation: '' }] });
+    setForm(prev => {
+      const nextWeekNum = prev.rows.length + 1;
+      return {
+        ...prev,
+        rows: [...prev.rows, {
+          weekOrDate: `${nextWeekNum}ª semana`,
+          content: '',
+          activities: '',
+          methodology: '',
+          evaluation: ''
+        }]
+      };
+    });
   };
 
   const removeRow = (index: number) => {
-    const newRows = [...form.rows];
-    newRows.splice(index, 1);
-    setForm({ ...form, rows: newRows });
+    setForm(prev => ({
+      ...prev,
+      rows: prev.rows.filter((_, i) => i !== index)
+    }));
   };
 
   const updateRow = (index: number, field: keyof LessonPlanRow, value: string) => {
-    const newRows = [...form.rows];
-    newRows[index] = { ...newRows[index], [field]: value };
-    setForm({ ...form, rows: newRows });
+    setForm(prev => {
+      const newRows = [...prev.rows];
+      newRows[index] = { ...newRows[index], [field]: value };
+      return { ...prev, rows: newRows };
+    });
   };
 
   const handleAISkills = async () => {
@@ -256,7 +271,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       setForm({
         bimestre: '1º BIMESTRE',
         subject: '',
-        teacher: 'PROF. CRISTIANO',
+        teacher: user.name,
         year: new Date().getFullYear().toString(),
         className: '',
         weeklyClasses: '6',
@@ -288,7 +303,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     setForm({
       bimestre: '1º BIMESTRE',
       subject: '',
-      teacher: 'PROF. CRISTIANO',
+      teacher: user.name,
       year: new Date().getFullYear().toString(),
       className: '',
       weeklyClasses: '6',
@@ -573,7 +588,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center px-2">
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Descrição das Aulas (Diário de Bordo)</h4>
-            <button onClick={addRow} className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all"><Plus size={18} /></button>
+            <button type="button" onClick={addRow} className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all"><Plus size={18} /></button>
           </div>
           <div className="border border-gray-100 rounded-[2.5rem] overflow-hidden shadow-inner overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
@@ -595,7 +610,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                     <td className="px-4 py-3"><textarea value={row.activities} onChange={e => updateRow(idx, 'activities', e.target.value)} className="w-full p-2 bg-transparent text-xs resize-none outline-none h-16" /></td>
                     <td className="px-4 py-3"><textarea value={row.methodology} onChange={e => updateRow(idx, 'methodology', e.target.value)} className="w-full p-2 bg-transparent text-xs resize-none outline-none h-16" /></td>
                     <td className="px-4 py-3"><textarea value={row.evaluation} onChange={e => updateRow(idx, 'evaluation', e.target.value)} className="w-full p-2 bg-transparent text-xs resize-none outline-none h-16" /></td>
-                    <td className="px-2 py-3"><button onClick={() => removeRow(idx)} className="p-2 text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><X size={14} /></button></td>
+                    <td className="px-2 py-3"><button type="button" onClick={() => removeRow(idx)} className="p-2 text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><X size={14} /></button></td>
                   </tr>
                 ))}
               </tbody>
