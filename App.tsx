@@ -24,13 +24,22 @@ export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'sc
 const App: React.FC = () => {
   const [isPending, startTransition] = useTransition();
   const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('active_session_v1');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('active_session_v1');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error("Error parsing session:", e);
+      return null;
+    }
   });
 
   const [activeModule, setActiveModule] = useState<ModuleTypeExtended>(() => {
-    const saved = localStorage.getItem('active_portal_module');
-    return (saved as ModuleTypeExtended) || 'hub';
+    try {
+      const saved = localStorage.getItem('active_portal_module');
+      return (saved as ModuleTypeExtended) || 'hub';
+    } catch (e) {
+      return 'hub';
+    }
   });
 
   const INACTIVITY_LIMIT = 15 * 60 * 1000;
