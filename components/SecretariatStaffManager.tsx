@@ -52,6 +52,25 @@ import { StaffMember, UserRole, StaffMovement, MovementType, Shift } from '../ty
 import { supabase } from '../supabaseClient';
 import { extractStaffInfo } from '../geminiService';
 
+const STAFF_FUNCTIONS = [
+   "DIRETOR",
+   "COORDENADOR PEDAGÓGICO",
+   "SECRETÁRIO",
+   "REGÊNCIA",
+   "BUSCA ATIVA",
+   "MEDIADOR",
+   "PSICOSSOCIAL",
+   "BIBLIOTECA",
+   "LIMPEZA",
+   "NUTRIÇÃO",
+   "AUXILIAR DE PÁTIO",
+   "AUXILIAR DE COORDENAÇÃO PEDAGÓGICA",
+   "ASSISTENTE DE EDUCAÇÃO ESPECIAL",
+   "APA",
+   "SALA DE RECURSOS",
+   "OUTROS"
+];
+
 const SecretariatStaffManager: React.FC = () => {
    const [staff, setStaff] = useState<StaffMember[]>([]);
    const [movementsData, setMovementsData] = useState<StaffMovement[]>([]);
@@ -426,11 +445,11 @@ const SecretariatStaffManager: React.FC = () => {
       const type = form.serverType || 'Apoio';
 
       // 1. Prioridade: Funções de Gestão e Administração independente do tipo de servidor
-      if (job.includes('DIREÇÃO') || job.includes('DIRETOR') || job.includes('COORDENA') || job.includes('GESTOR')) {
+      if (job.includes('DIREÇÃO') || job.includes('DIRETOR') || job.includes('COORDENADOR') || job.includes('GESTOR')) {
          targetRole = 'GESTAO';
       } else if (job.includes('SECRETÁRIO') || job.includes('SECRETARIA') || job.includes('ADM')) {
          targetRole = 'SECRETARIA';
-      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG')) {
+      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG') || job.includes('BUSCA ATIVA')) {
          targetRole = 'PSICOSSOCIAL';
       }
       // 2. Prioridade: Tags específicas para pessoal de Apoio
@@ -958,7 +977,15 @@ const SecretariatStaffManager: React.FC = () => {
                            </div>
                            <div className="space-y-1.5">
                               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Função Atual</label>
-                              <input required value={form.jobFunction} onChange={e => setForm({ ...form, jobFunction: e.target.value.toUpperCase() })} placeholder="EX: DIREÇÃO, APOIO ADMINISTRATIVO..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase" />
+                              <select
+                                 required
+                                 value={form.jobFunction || ""}
+                                 onChange={e => setForm({ ...form, jobFunction: e.target.value })}
+                                 className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white"
+                              >
+                                 <option value="">Selecione...</option>
+                                 {STAFF_FUNCTIONS.map(fn => <option key={fn} value={fn}>{fn}</option>)}
+                              </select>
                            </div>
                         </div>
 
