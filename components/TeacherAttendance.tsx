@@ -233,8 +233,8 @@ const TeacherAttendance: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
 
-      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-6">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
+      <div className="bg-white p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-6">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turma</label>
             <select
@@ -280,7 +280,7 @@ const TeacherAttendance: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={isSaving || students.length === 0}
-          className="px-8 py-4 bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-600/20 hover:bg-amber-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+          className="w-full lg:w-auto px-8 py-4 bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-600/20 hover:bg-amber-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
         >
           {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
           Salvar Diário
@@ -288,17 +288,17 @@ const TeacherAttendance: React.FC = () => {
       </div>
 
       {students.length > 0 ? (
-        <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-8 border-b border-gray-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl shadow-sm">
+        <div className="bg-white rounded-3xl md:rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 md:p-8 border-b border-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50/50">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="p-2 md:p-3 bg-amber-50 text-amber-600 rounded-xl shadow-sm">
                 <Users size={20} />
               </div>
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">{selectedClass} — <span className="text-amber-600">{students.length} Estudantes</span></h3>
+              <h3 className="text-sm md:text-lg font-black text-gray-900 uppercase tracking-tight">{selectedClass} — <span className="text-amber-600">{students.length} Estudantes</span></h3>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => markAll(true)} className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-100 transition-all">Presente Todos</button>
-              <button onClick={() => markAll(false)} className="px-4 py-2 bg-red-50 text-red-700 rounded-xl text-[9px] font-black uppercase hover:bg-red-100 transition-all">Falta Todos</button>
+            <div className="flex gap-2 w-full md:w-auto">
+              <button onClick={() => markAll(true)} className="flex-1 md:flex-none px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-100 transition-all">Presente Todos</button>
+              <button onClick={() => markAll(false)} className="flex-1 md:flex-none px-4 py-2 bg-red-50 text-red-700 rounded-xl text-[9px] font-black uppercase hover:bg-red-100 transition-all">Falta Todos</button>
             </div>
           </div>
 
