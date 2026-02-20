@@ -425,21 +425,26 @@ const SecretariatStaffManager: React.FC = () => {
       const job = (form.jobFunction || "").toUpperCase();
       const type = form.serverType || 'Apoio';
 
-      if (type === 'Professor') {
-         targetRole = 'PROFESSOR';
-      } else if (type === 'Técnico') {
-         if (job.includes('DIREÇÃO') || job.includes('DIRETOR') || job.includes('COORDENADORA') || job.includes('GESTOR')) {
-            targetRole = 'GESTAO';
-         } else if (job.includes('SECRETÁRIO') || job.includes('SECRETARIA')) {
-            targetRole = 'SECRETARIA';
-         } else {
+      // 1. Prioridade: Funções de Gestão e Administração independente do tipo de servidor
+      if (job.includes('DIREÇÃO') || job.includes('DIRETOR') || job.includes('COORDENA') || job.includes('GESTOR')) {
+         targetRole = 'GESTAO';
+      } else if (job.includes('SECRETÁRIO') || job.includes('SECRETARIA') || job.includes('ADM')) {
+         targetRole = 'SECRETARIA';
+      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG')) {
+         targetRole = 'PSICOSSOCIAL';
+      }
+      // 2. Prioridade: Tags específicas para pessoal de Apoio
+      else if (job.includes('NUTRIÇÃO') || job.includes('COZINHA') || job.includes('MERENDA')) {
+         targetRole = 'AEE_NUTRICAO';
+      } else if (job.includes('LIMPEZA') || job.includes('ZELADORIA')) {
+         targetRole = 'AAE_LIMPEZA';
+      }
+      // 3. Fallback: Baseado no Tipo de Servidor
+      else {
+         if (type === 'Professor') {
+            targetRole = 'PROFESSOR';
+         } else if (type === 'Técnico') {
             targetRole = 'TAE';
-         }
-      } else { // Apoio
-         if (job.includes('NUTRIÇÃO')) {
-            targetRole = 'AEE_NUTRICAO';
-         } else if (job.includes('LIMPEZA')) {
-            targetRole = 'AAE_LIMPEZA';
          } else {
             targetRole = 'AAE';
          }
