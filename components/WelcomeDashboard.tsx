@@ -23,7 +23,8 @@ import {
    ShieldAlert,
    CalendarDays,
    LayoutDashboard,
-   Landmark
+   Landmark,
+   LogOut
 } from 'lucide-react';
 import { BirthdayPerson, SchoolAnnouncement, SchoolEvent, User } from '../types';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
@@ -39,11 +40,12 @@ interface ModuleConfig {
 
 interface WelcomeDashboardProps {
    user: User;
+   onLogout: () => void;
    onModuleSelect: (module: string) => void;
    modules: ModuleConfig[];
 }
 
-const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onModuleSelect, modules }) => {
+const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onModuleSelect, modules }) => {
    const [announcements, setAnnouncements] = useState<SchoolAnnouncement[]>(() => {
       const saved = localStorage.getItem('school_announcements_v1');
       return saved ? JSON.parse(saved) : [
@@ -105,37 +107,46 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onModuleSelec
    };
 
    return (
-      <div className="space-y-10 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
+      <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-10 md:pb-20 max-w-7xl mx-auto">
 
          {/* HEADER DE BOAS-VINDAS */}
-         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/10 pb-8">
-            <div className="flex items-center gap-6">
-               <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/10 shadow-lg">
-                  <img src="/logo-escola.png" alt="Logo" className="w-10 h-10 object-contain" />
+         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 border-b border-white/10 pb-6 md:pb-8">
+            <div className="flex items-center gap-4 md:gap-6 w-full">
+               <div className="w-12 h-12 md:w-16 md:h-16 bg-white/10 rounded-xl md:rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/10 shadow-lg shrink-0">
+                  <img src="/logo-escola.png" alt="Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
                </div>
-               <div className="space-y-1">
-                  <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter leading-none">
+               <div className="space-y-0.5 md:space-y-1 flex-1">
+                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-tight">
                      Olá, <span className="text-indigo-400">{user.name.split(' ')[0]}</span>.
                   </h1>
-                  <p className="text-white/80 font-bold uppercase text-xs tracking-[0.2em] mt-1">Bem-vindo(a) ao seu Painel de Gestão Escolar</p>
+                  <p className="text-white/60 font-bold uppercase text-[9px] md:text-xs tracking-[0.15em]">Portal de Gestão André Maggi</p>
+               </div>
+
+               <div className="md:hidden no-print">
+                  <button
+                     onClick={onLogout}
+                     className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl"
+                  >
+                     <LogOut size={20} />
+                  </button>
                </div>
             </div>
 
-            <div className="flex items-center gap-3 no-print">
-               <div className="bg-white/5 backdrop-blur-md p-3 rounded-2xl border border-white/10 shadow-sm flex items-center gap-4 px-5 h-16">
-                  <Calendar className="text-indigo-400" size={24} />
+            <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto no-print">
+               <div className="flex-1 md:flex-none bg-white/5 backdrop-blur-md p-2.5 md:p-3 rounded-xl md:rounded-2xl border border-white/10 shadow-sm flex items-center gap-3 md:gap-4 px-4 md:px-5 h-14 md:h-16">
+                  <Calendar className="text-indigo-400" size={20} />
                   <div className="text-left">
-                     <p className="text-xs font-black text-white/50 uppercase leading-none">Data de Hoje</p>
-                     <p className="text-sm font-black text-white mt-1 uppercase">
-                        {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                     <p className="text-[8px] font-black text-white/40 uppercase leading-none">Hoje</p>
+                     <p className="text-[10px] md:text-sm font-black text-white mt-1 uppercase">
+                        {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
                      </p>
                   </div>
                </div>
                <button
                   onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                  className="p-5 bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 rounded-2xl shadow-sm transition-all"
+                  className="p-4 md:p-5 bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 rounded-xl md:rounded-2xl shadow-sm transition-all"
                >
-                  <Settings2 size={28} />
+                  <Settings2 size={24} className="md:w-7 md:h-7" />
                </button>
             </div>
          </header>
@@ -170,22 +181,22 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onModuleSelec
                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Módulos</h3>
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 md:grid-cols-3 lg:gap-3">
                      {modules.map((module) => (
                         <button
                            key={module.id}
                            onClick={() => onModuleSelect(module.id)}
-                           className="w-full bg-white/5 p-4 rounded-2xl border border-white/5 shadow-lg hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] transition-all flex items-center gap-4 group backdrop-blur-sm"
+                           className="w-full bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 shadow-lg hover:bg-white/10 hover:border-white/20 transition-all flex flex-col lg:flex-row items-center lg:items-center lg:gap-4 group backdrop-blur-sm text-center lg:text-left"
                         >
-                           <div className={`p-3 rounded-xl bg-${module.statusColor}-500/20 text-${module.statusColor}-400 group-hover:bg-${module.statusColor}-500 group-hover:text-white transition-all`}>
+                           <div className={`p-2.5 md:p-3 rounded-xl bg-${module.statusColor}-500/20 text-${module.statusColor}-400 group-hover:bg-${module.statusColor}-500 group-hover:text-white transition-all mb-2 lg:mb-0`}>
                               {module.icon}
                            </div>
 
-                           <div className="flex-1 text-left">
-                              <h3 className="text-sm font-black text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
+                           <div className="flex-1">
+                              <h3 className="text-[10px] md:text-sm font-black text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
                                  {module.title}
                               </h3>
-                              <p className="text-[10px] text-white/60 font-bold uppercase mt-1">
+                              <p className="hidden md:block text-[9px] text-white/60 font-bold uppercase mt-1">
                                  {module.status}
                               </p>
                            </div>

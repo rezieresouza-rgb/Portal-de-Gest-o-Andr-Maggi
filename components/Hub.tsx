@@ -123,8 +123,8 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect }) => {
       </div>
 
       <div className="relative z-10 flex min-h-screen">
-        {/* SIDEBAR NAVEGAÇÃO HUB (Glass) */}
-        <aside className="fixed left-0 top-0 bottom-0 w-24 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col items-center py-10 gap-8 no-print z-50">
+        {/* SIDEBAR NAVEGAÇÃO HUB (Glass) - Escondido em mobile, visível em lg */}
+        <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-24 bg-white/5 backdrop-blur-xl border-r border-white/10 flex-col items-center py-10 gap-8 no-print z-50">
           <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-black border border-white/20">AM</div>
 
           <nav className="flex-1 flex flex-col gap-4">
@@ -151,10 +151,11 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect }) => {
           </div>
         </aside>
 
-        <main className="pl-24 flex-1 min-h-screen p-8 lg:p-12 overflow-x-hidden">
+        <main className="lg:pl-24 flex-1 min-h-screen p-4 md:p-8 lg:p-12 overflow-x-hidden">
           <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             <WelcomeDashboard
               user={user}
+              onLogout={onLogout}
               onModuleSelect={(moduleId) => {
                 const module = allowedModules.find(m => m.id === moduleId);
                 if (module) handleModuleClick(module);
