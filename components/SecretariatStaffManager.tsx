@@ -477,22 +477,27 @@ const SecretariatStaffManager: React.FC = () => {
          }
 
          // --- INTEGRATION: Create/Update System User ---
-         if (serverData.email) {
-            const { data: existingUser } = await supabase
-               .from('users')
-               .select('id, login')
-               .eq('email', serverData.email)
-               .maybeSingle();
+         const cleanCpf = (serverData.cpf || "").replace(/\D/g, "");
+         if (cleanCpf || serverData.email) {
+            // Find existing user by email or CPF
+            let query = supabase.from('users').select('id, login, email, cpf');
 
-            const firstName = serverData.name.split(' ')[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const lastName = serverData.name.split(' ').pop()?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || 'user';
-            const generatedLogin = serverData.email; // Use email as login for consistency or generated pattern
+            if (serverData.email && cleanCpf) {
+               query = query.or(`email.eq."${serverData.email}",cpf.eq."${cleanCpf}"`);
+            } else if (serverData.email) {
+               query = query.eq('email', serverData.email);
+            } else {
+               query = query.eq('cpf', cleanCpf);
+            }
+
+            const { data: existingUser } = await query.maybeSingle();
+
             const passwordToSet = form.password || 'Mudar123!';
-
             const userData = {
                name: serverData.name,
-               login: existingUser?.login || serverData.email, // Keep existing login or use email
-               email: serverData.email,
+               login: existingUser?.login || serverData.email || cleanCpf,
+               email: serverData.email || null,
+               cpf: cleanCpf || null,
                role: (form.userRole as UserRole) || targetRole,
                password_hash: passwordToSet,
                status: 'ATIVO'

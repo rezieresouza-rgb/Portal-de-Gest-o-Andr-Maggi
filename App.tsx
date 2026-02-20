@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, useTransition, useCallback } from 'react';
+import ErrorBoundary from './components/ErrorBoundary';
 import MerendaModule from './modules/MerendaModule';
 import FinanceModule from './modules/FinanceModule';
 import LibraryModule from './modules/LibraryModule';
@@ -26,7 +27,13 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('active_session_v1');
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      // Validação básica de integridade da sessão
+      if (parsed && typeof parsed === 'object' && (parsed.id || parsed.role)) {
+        return parsed;
+      }
+      return null;
     } catch (e) {
       console.error("Error parsing session:", e);
       return null;
@@ -45,8 +52,8 @@ const App: React.FC = () => {
   const INACTIVITY_LIMIT = 15 * 60 * 1000;
   const logout = useCallback(() => {
     localStorage.removeItem('active_session_v1');
-    setUser(null);
     setActiveModule('hub');
+    setUser(null);
   }, []);
 
   useEffect(() => {
@@ -91,9 +98,11 @@ const App: React.FC = () => {
 
   if (!user) {
     return (
-      <ToastProvider>
-        <Login onLogin={handleLogin} />
-      </ToastProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <Login onLogin={handleLogin} />
+        </ToastProvider>
+      </ErrorBoundary>
     );
   }
 
@@ -135,20 +144,22 @@ const App: React.FC = () => {
   };
 
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Iniciando Portal...</p>
+    <ErrorBoundary>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Iniciando Portal...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <ToastProvider>
-        <div className="min-h-screen bg-gray-50">
-          {renderActiveModule()}
-        </div>
-      </ToastProvider>
-    </Suspense>
+      }>
+        <ToastProvider>
+          <div className="min-h-screen bg-gray-50">
+            {renderActiveModule()}
+          </div>
+        </ToastProvider>
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 

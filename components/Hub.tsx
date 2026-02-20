@@ -93,22 +93,30 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   });
 
   const recordAccessLog = (moduleId: string, moduleTitle: string) => {
-    const logs: AccessLog[] = JSON.parse(localStorage.getItem('access_logs_v1') || '[]');
-    logs.unshift({
-      id: `log-${Date.now()}`,
-      userId: user.id,
-      userName: user.name,
-      role: user.role,
-      module: moduleTitle,
-      timestamp: Date.now(),
-      action: 'ACCESS_MODULE'
-    });
-    localStorage.setItem('access_logs_v1', JSON.stringify(logs.slice(0, 100)));
+    try {
+      const logs: AccessLog[] = JSON.parse(localStorage.getItem('access_logs_v1') || '[]');
+      logs.unshift({
+        id: `log-${Date.now()}`,
+        userId: user.id,
+        userName: user.name || 'Usuário',
+        role: user.role,
+        module: moduleTitle,
+        timestamp: Date.now(),
+        action: 'ACCESS_MODULE'
+      });
+      localStorage.setItem('access_logs_v1', JSON.stringify(logs.slice(0, 100)));
+    } catch (e) {
+      console.error("Error recording access log:", e);
+    }
   };
 
   const handleModuleClick = (module: typeof allModules[0]) => {
-    recordAccessLog(module.id, module.title);
-    onModuleSelect(module.id as ModuleTypeExtended);
+    try {
+      recordAccessLog(module.id, module.title);
+      onModuleSelect(module.id as ModuleTypeExtended);
+    } catch (e) {
+      console.error("Error handling module click:", e);
+    }
   };
 
   const toggleFullScreen = () => {

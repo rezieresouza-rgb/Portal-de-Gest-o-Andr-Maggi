@@ -48,8 +48,13 @@ interface WelcomeDashboardProps {
 
 const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onModuleSelect, modules, onProfileOpen }) => {
    const [announcements, setAnnouncements] = useState<SchoolAnnouncement[]>(() => {
-      const saved = localStorage.getItem('school_announcements_v1');
-      return saved ? JSON.parse(saved) : [
+      try {
+         const saved = localStorage.getItem('school_announcements_v1');
+         if (saved) return JSON.parse(saved);
+      } catch (e) {
+         console.error("Error parsing announcements:", e);
+      }
+      return [
          { id: '1', title: 'Entrega de Diários', message: 'Lembramos a todos os docentes que o prazo para fechamento do 1º bimestre encerra na próxima sexta-feira.', date: '2026-03-10', author: 'DIREÇÃO', priority: 'ALTA' },
          { id: '2', title: 'Reunião Pedagógica', message: 'Convocamos a equipe técnica para alinhamento sobre o projeto "Escola da Família".', date: '2026-03-12', author: 'COORDENAÇÃO', priority: 'NORMAL' }
       ];
@@ -118,7 +123,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                </div>
                <div className="space-y-0.5 md:space-y-1 flex-1">
                   <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-tight">
-                     Olá, <button onClick={onProfileOpen} className="text-indigo-400 hover:underline">{user.name.split(' ')[0]}</button>.
+                     Olá, <button onClick={onProfileOpen} className="text-indigo-400 hover:underline">{(user.name || 'Usuário').split(' ')[0]}</button>.
                   </h1>
                   <p className="text-white/60 font-bold uppercase text-[9px] md:text-xs tracking-[0.15em]">Portal de Gestão André Maggi</p>
                </div>

@@ -44,20 +44,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError(null);
 
     try {
-      // 1. Buscar usuário no Supabase
+      // 1. Limpar e preparar login (se for CPF, deixar só números)
+      let cleanLogin = login.trim().toLowerCase();
+      const isCpfMatch = cleanLogin.replace(/\D/g, '');
+      if (isCpfMatch.length === 11) {
+        cleanLogin = isCpfMatch;
+      }
+
+      // 2. Buscar usuário no Supabase
       const { data: user, error: dbError } = await supabase
         .from('users')
         .select('*')
-        .or(`login.eq.${login.toLowerCase()},email.eq.${login.toLowerCase()}`)
+        .or(`login.eq.${cleanLogin},email.eq.${cleanLogin},cpf.eq.${cleanLogin}`)
         .single();
 
       if (dbError && dbError.code !== 'PGRST116') {
         throw dbError;
       }
 
-      // 2. Validar Senha (Simples por enquanto, conforme schema atual)
-      // Em produção, usaríamos bcrypt ou Supabase Auth
-      if (user && user.password_hash === password) {
+      // 3. Validar Senha
+      const cleanPassword = password.trim();
+      if (user && user.password_hash === cleanPassword) {
         // 3. Validar Status do Usuário
         if (user.status === 'PENDENTE') {
           setError("Seu acesso está em análise. Aguarde a aprovação da administração.");
