@@ -32,6 +32,7 @@ import {
 import { supabase } from '../supabaseClient';
 import { ContractStatus, Contract, ContractItem } from '../types';
 import { INITIAL_CONTRACTS, INITIAL_SUPPLIERS } from '../constants/initialData';
+import { extractContractInfo } from '../geminiService';
 
 interface ExecutionEvent {
   id: string;
@@ -206,6 +207,111 @@ const Contracts: React.FC = () => {
     endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     type: 'Pregão Presencial'
   });
+
+  // AI Extraction State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const [extractedData, setExtractedData] = useState<any>(null);
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessingPdf(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        const result = await extractContractInfo(base64, file.type);
+        if (result && result.contractNumber) {
+          setExtractedData(result);
+        } else {
+          alert("A IA não conseguiu identificar dados válidos neste arquivo.");
+        }
+        setIsProcessingPdf(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Erro ao processar PDF:", error);
+      alert("Erro na leitura do arquivo.");
+      setIsProcessingPdf(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!extractedData) return;
+
+    try {
+      setIsLoading(true);
+      // 1. Resolve Supplier
+      let supplierId = "";
+      const { data: existingSuppliers } = await supabase
+        .from('suppliers')
+        .select('id, name')
+        .or(`name.ilike.%${extractedData.supplierName}%,cnpj.eq.${extractedData.supplierCnpj || 'NONE'}`);
+
+      if (existingSuppliers && existingSuppliers.length > 0) {
+        supplierId = existingSuppliers[0].id;
+      } else {
+        // Create new supplier
+        const { data: newSupplier, error: sError } = await supabase
+          .from('suppliers')
+          .insert({
+            name: extractedData.supplierName,
+            cnpj: extractedData.supplierCnpj || '',
+            category: 'ALIMENTOS'
+          })
+          .select()
+          .single();
+        if (sError) throw sError;
+        supplierId = newSupplier.id;
+      }
+
+      // 2. Create Contract
+      const { data: newContract, error: cError } = await supabase
+        .from('contracts')
+        .insert({
+          number: extractedData.contractNumber,
+          supplier_id: supplierId,
+          start_date: extractedData.startDate || new Date().toISOString().split('T')[0],
+          end_date: extractedData.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          type: extractedData.type || 'Pregão Presencial',
+          status: 'ATIVO'
+        })
+        .select(`*, supplier:suppliers(name)`)
+        .single();
+
+      if (cError) throw cError;
+
+      // 3. Create Items
+      if (extractedData.items && extractedData.items.length > 0) {
+        const itemsToInsert = extractedData.items.map((i: any) => ({
+          contract_id: newContract.id,
+          description: i.description,
+          contracted_quantity: i.quantity,
+          acquired_quantity: 0,
+          unit: i.unit,
+          unit_price: i.unitPrice,
+          brand: i.brand || ''
+        }));
+        await supabase.from('contract_items').insert(itemsToInsert);
+      }
+
+      await addExecutionEvent(newContract.id, 'AMENDMENT', `Contrato Importado via IA: ${newContract.number}`);
+
+      // Update local state and finish
+      setExtractedData(null);
+      setIsImportModalOpen(false);
+      await fetchData(); // Full refresh
+      alert("Contrato importado e vinculado com sucesso!");
+
+    } catch (error: any) {
+      console.error(error);
+      alert("Erro ao importar: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
 
@@ -645,6 +751,10 @@ const Contracts: React.FC = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
             <input type="text" placeholder="Nº Contrato ou Fornecedor..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] font-black text-sm uppercase shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
           </div>
+          <button onClick={() => setIsImportModalOpen(true)} className="p-4 bg-emerald-100 text-emerald-700 rounded-[1.5rem] hover:bg-emerald-200 transition-all shadow-lg flex items-center gap-3 group border border-emerald-200">
+            <Zap size={24} className="group-hover:scale-110 transition-transform fill-emerald-500" />
+            <span className="hidden md:block text-xs font-black uppercase tracking-widest">Importar PDF</span>
+          </button>
           <button onClick={() => setIsNewContractModalOpen(true)} className="p-4 bg-gray-900 text-white rounded-[1.5rem] hover:bg-black transition-all shadow-xl flex items-center gap-3 group">
             <FilePlus size={24} className="group-hover:scale-110 transition-transform" />
             <span className="hidden md:block text-xs font-black uppercase tracking-widest">Novo Contrato</span>
@@ -726,6 +836,131 @@ const Contracts: React.FC = () => {
               </div>
               <button type="submit" className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl hover:bg-emerald-700 transition-all">Iniciar Monitoramento Contratual</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL IMPORTAÇÃO IA */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-8 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg relative overflow-hidden">
+                  <Zap size={24} className="relative z-10" />
+                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter">Importar Contrato via IA</h3>
+                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Extração automática de PDF de Licitação ou Ata</p>
+                </div>
+              </div>
+              <button onClick={() => { setIsImportModalOpen(false); setExtractedData(null); }}><X size={24} className="text-gray-300 hover:text-red-500 transition-colors" /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+              {!extractedData ? (
+                <div className="h-full flex flex-col items-center justify-center py-20 text-center border-4 border-dashed border-emerald-100 rounded-[3rem] bg-emerald-50/30">
+                  {isProcessingPdf ? (
+                    <div className="space-y-6">
+                      <div className="w-20 h-20 border-8 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                      <p className="text-sm font-black text-emerald-800 uppercase animate-pulse">A Inteligência Artificial está lendo o documento...</p>
+                      <p className="text-[10px] text-emerald-600 font-bold uppercase">Aguarde extração de itens e vigências</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 max-w-sm">
+                      <div className="p-8 bg-white rounded-full shadow-lg mx-auto w-32 h-32 flex items-center justify-center">
+                        <FileSearch size={48} className="text-emerald-300" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-black text-emerald-900 uppercase">Selecione o PDF do Contrato</h4>
+                        <p className="text-xs text-emerald-600 font-medium mt-2 leading-relaxed">Nossa IA irá identificar o número, fornecedor, datas e todos os itens registrados.</p>
+                      </div>
+                      <label className="block">
+                        <span className="sr-only">Choose file</span>
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={handlePdfUpload}
+                          className="block w-full text-sm text-emerald-500 file:mr-4 file:py-3 file:px-8 file:rounded-2xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 transition-all cursor-pointer"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contrato Extraído</label>
+                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900">{extractedData.contractNumber}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fornecedor Identificado</label>
+                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-emerald-700">{extractedData.supplierName}</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-white rounded-xl shadow-sm text-emerald-600"><Calendar size={20} /></div>
+                      <div>
+                        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Vigência Encontrada</p>
+                        <p className="text-sm font-black text-emerald-600 mt-1 uppercase">
+                          {new Date(extractedData.startDate).toLocaleDateString()} ATÉ {new Date(extractedData.endDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Total de Itens</p>
+                      <p className="text-2xl font-black text-emerald-900 leading-none mt-1">{extractedData.items?.length || 0}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><ShoppingBag size={14} /> Prévia da Planilha de Itens</h4>
+                    <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                      <table className="w-full text-left border-collapse">
+                        <thead className="bg-gray-50 text-[8px] font-black text-gray-400 uppercase">
+                          <tr>
+                            <th className="px-5 py-3">Item / Marca</th>
+                            <th className="px-5 py-3 text-center">Quant.</th>
+                            <th className="px-5 py-3 text-right">Preço Un.</th>
+                            <th className="px-5 py-3 text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {extractedData.items?.slice(0, 10).map((item: any, idx: number) => (
+                            <tr key={idx} className="bg-white">
+                              <td className="px-5 py-3">
+                                <p className="text-[10px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
+                                <p className="text-[8px] font-black text-emerald-500 uppercase">{item.brand || 'Marca não ident.'}</p>
+                              </td>
+                              <td className="px-5 py-3 text-center text-xs font-bold text-gray-900">{item.quantity} {item.unit}</td>
+                              <td className="px-5 py-3 text-right text-xs font-bold text-gray-900">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="px-5 py-3 text-right text-xs font-black text-emerald-700">R$ {(item.quantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {extractedData.items?.length > 10 && (
+                        <div className="p-3 bg-gray-50 text-center text-[8px] font-black text-gray-400 uppercase tracking-widest border-t border-gray-100">
+                          + {extractedData.items.length - 10} itens ocultos na prévia
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleConfirmImport}
+                    className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
+                  >
+                    <Save size={24} /> Confirmar Importação de {(extractedData.items?.length || 0)} Itens
+                  </button>
+                  <p className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest px-10">Ao confirmar, o sistema irá cadastrar o fornecedor (se necessário), o contrato e todos os itens vinculados automaticamente.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

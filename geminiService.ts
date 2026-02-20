@@ -701,3 +701,62 @@ export const extractStaffInfo = async (base64Data: string, mimeType: string) => 
     return { staffList: [] };
   }
 };
+
+/**
+ * Extrai dados de um contrato de merenda escolar (PDF)
+ */
+export const extractContractInfo = async (base64Data: string, mimeType: string) => {
+  const ai = getAIClient();
+  try {
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType
+            }
+          },
+          {
+            text: "Você é um especialista em licitações e contratos públicos. Extraia os dados deste contrato ou ata de registro de preços. Retorne apenas o JSON. Se não encontrar o CNPJ, tente extrair o nome do fornecedor."
+          }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            contractNumber: { type: Type.STRING, description: "Número do contrato ou processo" },
+            supplierName: { type: Type.STRING, description: "Razão social ou nome fantasia do fornecedor" },
+            supplierCnpj: { type: Type.STRING, description: "CNPJ do fornecedor" },
+            startDate: { type: Type.STRING, description: "Data de início/assinatura no formato YYYY-MM-DD" },
+            endDate: { type: Type.STRING, description: "Data de término no formato YYYY-MM-DD" },
+            type: { type: Type.STRING, description: "Ex: Pregão Presencial, Chamada Pública, Dispensa" },
+            items: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  description: { type: Type.STRING, description: "Descrição detalhada do item" },
+                  quantity: { type: Type.NUMBER, description: "Quantidade contratada" },
+                  unit: { type: Type.STRING, description: "Unidade de medida (KG, UN, LT, etc)" },
+                  unitPrice: { type: Type.NUMBER, description: "Preço unitário registrado" },
+                  brand: { type: Type.STRING, description: "Marca se disponível" }
+                },
+                required: ["description", "quantity", "unit", "unitPrice"]
+              }
+            }
+          },
+          required: ["contractNumber", "supplierName", "items"]
+        },
+        temperature: 0.1
+      }
+    }));
+    return JSON.parse(response.text || '{"items": []}');
+  } catch (e) {
+    console.error("Error extracting contract", e);
+    return { items: [] };
+  }
+};
