@@ -45,7 +45,8 @@ import {
    CloudSun,
    Scale,
    CalendarDays,
-   Users
+   Users,
+   Lock
 } from 'lucide-react';
 import { StaffMember, UserRole, StaffMovement, MovementType, Shift } from '../types';
 import { supabase } from '../supabaseClient';
@@ -194,6 +195,27 @@ const SecretariatStaffManager: React.FC = () => {
    useEffect(() => {
       fetchData();
    }, []);
+
+   // Fetch linked user password when editing
+   useEffect(() => {
+      const fetchLinkedUser = async () => {
+         if (editingId && form.email) {
+            const { data, error } = await supabase
+               .from('users')
+               .select('password_hash')
+               .eq('email', form.email)
+               .maybeSingle();
+
+            if (data && !error) {
+               setForm(prev => ({ ...prev, password: data.password_hash }));
+            }
+         }
+      };
+
+      if (isModalOpen && editingId) {
+         fetchLinkedUser();
+      }
+   }, [isModalOpen, editingId, form.email]);
 
    // --- Logic ---
 
@@ -402,10 +424,9 @@ const SecretariatStaffManager: React.FC = () => {
       if (type === 'Professor') {
          targetRole = 'PROFESSOR';
       } else if (type === 'Técnico') {
-         targetRole = 'PSICOSSOCIAL';
+         targetRole = 'TAE';
       } else { // Apoio
-         // REGRA: Todo servidor de apoio vai para MANUTENCAO (para ter acesso ao módulo)
-         targetRole = 'MANUTENCAO';
+         targetRole = 'AAE';
       }
 
       const serverData = {
@@ -432,46 +453,55 @@ const SecretariatStaffManager: React.FC = () => {
       };
 
       try {
+         let currentStaffId = editingId || String(Date.now());
+
          if (editingId) {
             const { error } = await supabase.from('staff').update(serverData).eq('id', editingId);
             if (error) throw error;
          } else {
             const { error } = await supabase.from('staff').insert([{
-               id: String(Date.now()), // Generate ID
+               id: currentStaffId,
                ...serverData
             }]);
             if (error) throw error;
          }
 
-         // --- INTEGRATION: Auto-Create System User ---
-         if (serverData.email && !editingId) { // Only on creation or explicit sync demand
+         // --- INTEGRATION: Create/Update System User ---
+         if (serverData.email) {
             const { data: existingUser } = await supabase
                .from('users')
-               .select('id')
+               .select('id, login')
                .eq('email', serverData.email)
                .maybeSingle();
 
-            if (!existingUser) {
-               const firstName = serverData.name.split(' ')[0].toLowerCase();
-               const lastName = serverData.name.split(' ').pop()?.toLowerCase() || 'user';
-               const generatedLogin = `${firstName}.${lastName}`;
-               const defaultPassword = 'Mudar123!';
+            const firstName = serverData.name.split(' ')[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const lastName = serverData.name.split(' ').pop()?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || 'user';
+            const generatedLogin = serverData.email; // Use email as login for consistency or generated pattern
+            const passwordToSet = form.password || 'Mudar123!';
 
-               const { error: userError } = await supabase.from('users').insert([{
-                  name: serverData.name,
-                  login: generatedLogin,
-                  email: serverData.email,
-                  role: targetRole,
-                  password_hash: defaultPassword,
-                  status: 'ATIVO'
-               }]);
+            const userData = {
+               name: serverData.name,
+               login: existingUser?.login || serverData.email, // Keep existing login or use email
+               email: serverData.email,
+               role: targetRole,
+               password_hash: passwordToSet,
+               status: 'ATIVO'
+            };
 
-               if (!userError) {
-                  alert(`✅ Servidor salvo e Usuário de Sistema criado!\n\nLOGIN: ${generatedLogin}\nSENHA: ${defaultPassword}`);
-               } else {
-                  console.error("Erro ao criar usuário de sistema:", userError);
-                  alert("Servidor salvo, mas houve erro ao criar o usuário de sistema automaticamente.");
-               }
+            if (existingUser) {
+               const { error: userUpdateError } = await supabase
+                  .from('users')
+                  .update(userData)
+                  .eq('id', existingUser.id);
+
+               if (userUpdateError) console.error("Erro ao atualizar usuário:", userUpdateError);
+            } else {
+               const { error: userCreateError } = await supabase
+                  .from('users')
+                  .insert([userData]);
+
+               if (userCreateError) console.error("Erro ao criar usuário:", userCreateError);
+               else alert(`✅ Servidor salvo e Usuário de Sistema criado!\n\nLOGIN: ${userData.login}\nSENHA: ${passwordToSet}`);
             }
          }
          // ---------------------------------------------
@@ -489,7 +519,7 @@ const SecretariatStaffManager: React.FC = () => {
       setForm({
          code: '', name: '', registration: '', cpf: '', birthDate: '',
          entryProfile: '', qualification: '', serverType: 'Professor', jobFunction: '', role: 'PROFESSOR',
-         email: '', assignedSubjects: [], workload: 0, contractTerm: { start: '', end: '' },
+         email: '', password: '', assignedSubjects: [], workload: 0, contractTerm: { start: '', end: '' },
          additionalClasses: [], status: 'EM_ATIVIDADE', shift: 'MATUTINO'
       });
       setEditingId(null);
@@ -906,9 +936,15 @@ const SecretariatStaffManager: React.FC = () => {
                            </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Foto URL (Opcional)</label>
-                           <input value={form.photoUrl || ''} onChange={e => setForm({ ...form, photoUrl: e.target.value })} placeholder="https://..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">E-mail Institucional / Contato</label>
+                              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value.toLowerCase() })} placeholder="exemplo@edu.br" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" />
+                           </div>
+                           <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Foto URL (Opcional)</label>
+                              <input value={form.photoUrl || ''} onChange={e => setForm({ ...form, photoUrl: e.target.value })} placeholder="https://..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" />
+                           </div>
                         </div>
 
                         {/* CONDIÇÕES ESPECIFICADAS NO JSON */}
@@ -1015,6 +1051,42 @@ const SecretariatStaffManager: React.FC = () => {
                               </div>
                            </div>
                         )}
+
+                        {/* SEÇÃO ACESSO AO SISTEMA - INTEGRADA */}
+                        <div className="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 space-y-6 animate-in slide-in-from-top-2">
+                           <h4 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center gap-2">
+                              <ShieldCheck size={16} /> Acesso ao Sistema
+                           </h4>
+
+                           {form.email ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Senha de Acesso (Login: {form.email})</label>
+                                    <div className="relative">
+                                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-300" size={16} />
+                                       <input
+                                          type="text"
+                                          value={form.password || ''}
+                                          onChange={e => setForm({ ...form, password: e.target.value })}
+                                          placeholder="Defina uma senha"
+                                          className="w-full pl-12 pr-4 py-4 bg-white border border-indigo-200 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                                       />
+                                    </div>
+                                 </div>
+                                 <div className="flex items-center pt-6">
+                                    <p className="text-[9px] text-gray-500 font-medium leading-tight">
+                                       O login será o e-mail cadastrado acima. Ao salvar, o acesso será criado ou atualizado automaticamente.
+                                    </p>
+                                 </div>
+                              </div>
+                           ) : (
+                              <div className="p-4 bg-white/50 rounded-xl border border-dashed border-indigo-200 text-center">
+                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    Informe um e-mail acima para habilitar o acesso ao sistema
+                                 </p>
+                              </div>
+                           )}
+                        </div>
 
                         <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3">
                            <Save size={24} /> Efetivar Registro de RH

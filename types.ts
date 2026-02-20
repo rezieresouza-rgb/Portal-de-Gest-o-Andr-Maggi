@@ -93,6 +93,7 @@ export interface StaffMember {
   movementHistory?: StaffMovement[];
   notifyAlerts?: boolean;
   photoUrl?: string;
+  password?: string; // transient for user management integration
 }
 
 export interface SchoolAnnouncement { id: string; title: string; message: string; date: string; author: string; priority: 'ALTA' | 'NORMAL'; }
