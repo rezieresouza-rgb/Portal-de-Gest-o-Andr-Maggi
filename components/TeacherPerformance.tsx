@@ -22,16 +22,22 @@ import {
    Calendar,
    Sparkles,
    TrendingDown,
+   MessageSquare,
    Loader2
 } from 'lucide-react';
-import { AttendanceRecord, ClassroomOccurrence } from '../types';
+import { AttendanceRecord, ClassroomOccurrence, User as UserType } from '../types';
 import { supabase } from '../supabaseClient';
+
+interface TeacherPerformanceProps {
+   user: UserType;
+}
 
 const COLORS = ['#d97706', '#10b981', '#ef4444', '#3b82f6', '#8b5cf6'];
 
-const TeacherPerformance: React.FC = () => {
+const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
    const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
    const [occurrences, setOccurrences] = useState<ClassroomOccurrence[]>([]);
+   const [feedbacks, setFeedbacks] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
 
    useEffect(() => {
@@ -45,7 +51,7 @@ const TeacherPerformance: React.FC = () => {
             *,
             presences:class_attendance_students(*)
           `)
-               .eq('teacher_name', 'PROF. CRISTIANO') // Mock user filter
+               .eq('teacher_name', user.name)
                .order('date', { ascending: false });
 
             if (attendanceError) throw attendanceError;
@@ -70,7 +76,7 @@ const TeacherPerformance: React.FC = () => {
             const { data: occurrencesData, error: occurrencesError } = await supabase
                .from('occurrences')
                .select('*')
-               .eq('responsible_name', 'PROF. CRISTIANO'); // Mock user filter
+               .or(`responsible_name.eq."${user.name}",teacher_id.eq."${user.id}"`);
 
             if (occurrencesError) throw occurrencesError;
 
@@ -314,36 +320,66 @@ const TeacherPerformance: React.FC = () => {
                </div>
             </div>
 
-            {/* INSIGHTS IA */}
-            <div className="bg-amber-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden flex flex-col shadow-xl">
-               <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
-                  <Sparkles size={140} />
-               </div>
-               <div className="relative z-10 flex-1">
+            {/* INSIGHTS & FEEDBACKS */}
+            <div className="space-y-8">
+               {/* FEEDBACKS DA COORDENAÇÃO */}
+               <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-3 mb-6">
-                     <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-sm">
-                        <Sparkles size={20} className="text-amber-400" />
+                     <div className="p-2.5 bg-violet-50 rounded-xl">
+                        <MessageSquare size={20} className="text-violet-600" />
                      </div>
-                     <h3 className="text-lg font-black uppercase tracking-widest">Insight do Dia</h3>
+                     <h3 className="text-lg font-black uppercase tracking-tight text-gray-900">Feedbacks Recentes</h3>
                   </div>
-                  <div className="space-y-6">
-                     <p className="text-amber-100/80 text-sm font-medium leading-relaxed italic">
-                        "Identificamos um aumento de 15% nos elogios na turma 6º ANO A. Recomenda-se aplicar a mesma metodologia de incentivo na turma 7º ANO B para melhorar o clima escolar."
-                     </p>
-                     <div className="pt-6 border-t border-white/10 space-y-4">
-                        <div className="flex justify-between items-center text-[10px] font-black uppercase text-amber-400">
-                           <span>Meta de Engajamento</span>
-                           <span>85%</span>
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                     {feedbacks.map((f, idx) => (
+                        <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-violet-100 transition-all">
+                           <div className="flex justify-between items-start mb-2">
+                              <span className="text-[8px] font-black bg-violet-100 text-violet-600 px-2 py-0.5 rounded uppercase">{f.type}</span>
+                              <span className="text-[8px] font-bold text-gray-400">{f.date}</span>
+                           </div>
+                           <h4 className="text-[10px] font-black text-gray-800 uppercase mb-1">{f.title}</h4>
+                           <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-3 italic">"{f.content}"</p>
                         </div>
-                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                           <div className="h-full bg-amber-500" style={{ width: '72%' }}></div>
-                        </div>
-                     </div>
+                     ))}
+                     {feedbacks.length === 0 && (
+                        <p className="text-center py-10 text-gray-300 font-black uppercase text-[10px]">Nenhum feedback registrado</p>
+                     )}
                   </div>
                </div>
-               <button className="relative z-10 mt-8 w-full py-4 bg-white text-amber-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-50 active:scale-95 transition-all">
-                  Plano de Intervenção IA
-               </button>
+
+               {/* INSIGHTS IA */}
+               <div className="bg-amber-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden flex flex-col shadow-xl">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+                     <Sparkles size={140} />
+                  </div>
+                  <div className="relative z-10 flex-1">
+                     <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-sm">
+                           <Sparkles size={20} className="text-amber-400" />
+                        </div>
+                        <h3 className="text-lg font-black uppercase tracking-widest">Insight do Dia</h3>
+                     </div>
+                     <div className="space-y-6">
+                        <p className="text-amber-100/80 text-sm font-medium leading-relaxed italic">
+                           {stats.globalPresencePercent >= 90
+                              ? '"Sua média de presença está excelente! Continue aplicando metodologias ativas para manter o engajamento elevado."'
+                              : '"Identificamos uma queda na frequência. Considere diversificar os recursos didáticos para reconectar os alunos ausentes."'}
+                        </p>
+                        <div className="pt-6 border-t border-white/10 space-y-4">
+                           <div className="flex justify-between items-center text-[10px] font-black uppercase text-amber-400">
+                              <span>Meta de Engajamento</span>
+                              <span>85%</span>
+                           </div>
+                           <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                              <div className="h-full bg-amber-500" style={{ width: `${stats.globalPresencePercent}%` }}></div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <button className="relative z-10 mt-8 w-full py-4 bg-white text-amber-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-50 active:scale-95 transition-all">
+                     Plano de Intervenção IA
+                  </button>
+               </div>
             </div>
          </div>
       </div>

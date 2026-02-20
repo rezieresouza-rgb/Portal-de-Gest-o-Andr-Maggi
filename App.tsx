@@ -69,6 +69,11 @@ const App: React.FC = () => {
     setUser(loggedUser);
   };
 
+  const handleUserUpdate = (updatedUser: User) => {
+    localStorage.setItem('active_session_v1', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const handleModuleChange = (module: ModuleTypeExtended) => {
     startTransition(() => {
       setActiveModule(module);
@@ -85,20 +90,20 @@ const App: React.FC = () => {
 
   const renderActiveModule = () => {
     switch (activeModule) {
-      case 'hub': return <Hub user={user} onLogout={logout} onModuleSelect={handleModuleChange} />;
-      case 'merenda': return <MerendaModule onExit={() => handleModuleChange('hub')} />;
-      case 'finance': return <FinanceModule onExit={() => handleModuleChange('hub')} />;
-      case 'library': return <LibraryModule onExit={() => handleModuleChange('hub')} />;
-      case 'scheduling': return <SchedulingModule onExit={() => handleModuleChange('hub')} />;
+      case 'hub': return <Hub user={user} onLogout={logout} onModuleSelect={handleModuleChange} onUserUpdate={handleUserUpdate} />;
+      case 'merenda': return <MerendaModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'finance': return <FinanceModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'library': return <LibraryModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'scheduling': return <SchedulingModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'teacher': return <TeacherModule user={user} onExit={() => handleModuleChange('hub')} />;
-      case 'pedagogical': return <PedagogicalModule onExit={() => handleModuleChange('hub')} />;
-      case 'almoxarifado': return <AlmoxarifeModule onExit={() => handleModuleChange('hub')} />;
-      case 'patrimonio': return <AssetInventoryModule onExit={() => handleModuleChange('hub')} />;
-      case 'limpeza': return <CleaningMaintenanceModule onExit={() => handleModuleChange('hub')} />;
-      case 'busca_ativa': return <BuscaAtivaModule onExit={() => handleModuleChange('hub')} />;
-      case 'psychosocial': return <PsychosocialModule onExit={() => handleModuleChange('hub')} />;
+      case 'pedagogical': return <PedagogicalModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'almoxarifado': return <AlmoxarifeModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'patrimonio': return <AssetInventoryModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'limpeza': return <CleaningMaintenanceModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'busca_ativa': return <BuscaAtivaModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'psychosocial': return <PsychosocialModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'secretariat': return <SecretariatModule user={user} onExit={() => handleModuleChange('hub')} />;
-      case 'special_education': return <SpecialEducationModule onExit={() => handleModuleChange('hub')} />;
+      case 'special_education': return <SpecialEducationModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'settings': return (
         <div className="min-h-screen bg-gray-50 p-8 lg:p-12">
           <div className="max-w-7xl mx-auto space-y-8">

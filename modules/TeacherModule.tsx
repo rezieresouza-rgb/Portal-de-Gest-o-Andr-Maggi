@@ -95,21 +95,21 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
   const renderContent = () => {
     switch (activeSubTab) {
       case 'attendance':
-        return <TeacherAttendance />;
+        return <TeacherAttendance user={user} />;
       case 'calendar':
-        return <UnifiedSchoolCalendar />;
+        return <UnifiedSchoolCalendar user={user} />;
       case 'grades':
-        return <TeacherGrades />;
+        return <TeacherGrades user={user} />;
       case 'referrals':
-        return <PsychosocialReferralList role="PROFESSOR" />;
+        return <PsychosocialReferralList role="PROFESSOR" user={user} />;
       case 'material_requests':
-        return <TeacherPedagogicalRequests />;
+        return <TeacherPedagogicalRequests user={user} />;
       case 'occurrences':
-        return <TeacherOccurrences />;
+        return <TeacherOccurrences user={user} />;
       case 'lesson_plan':
-        return <TeacherLessonPlan />;
+        return <TeacherLessonPlan user={user} />;
       case 'dashboard':
-        return <TeacherPerformance />;
+        return <TeacherPerformance user={user} />;
       case 'history':
         return (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">

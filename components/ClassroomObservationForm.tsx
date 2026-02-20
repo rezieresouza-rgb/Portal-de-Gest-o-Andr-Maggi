@@ -95,9 +95,15 @@ const INITIAL_STATE: Omit<ObservationData, 'id' | 'timestamp'> = {
   }
 };
 
-const ClassroomObservationForm: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'list' | 'form' | 'teacher_history'>('list'); // Renamed view to viewMode for consistency
-  const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
+import { User as UserType } from '../types';
+
+interface ClassroomObservationFormProps {
+  user?: UserType;
+}
+
+const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ user }) => {
+  const [viewMode, setViewMode] = useState<'list' | 'form' | 'teacher_history'>('list');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [observations, setObservations] = useState<ObservationData[]>([]);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -107,7 +113,11 @@ const ClassroomObservationForm: React.FC = () => {
   const setView = setViewMode;
 
   const fetchObservations = async () => {
-    const { data } = await supabase.from('classroom_observations').select('*');
+    let query = supabase.from('classroom_observations').select('*');
+    if (user?.role === 'PROFESSOR') {
+      query = query.eq('teacher_id', user.id);
+    }
+    const { data } = await query;
     if (data) {
       setObservations(data.map(o => ({
         ...o,
@@ -173,6 +183,7 @@ const ClassroomObservationForm: React.FC = () => {
             pedagogical_criteria: form.pedagogico,
             evidences: form.evidencias,
             general_rating: form.avaliacaoGeral,
+            teacher_id: selectedTeacherId,
             feedback: {
               ...form.feedback,
               enviadoEm: enviar ? Date.now() : form.feedback?.enviadoEm
@@ -196,6 +207,7 @@ const ClassroomObservationForm: React.FC = () => {
             pedagogical_criteria: form.pedagogico,
             evidences: form.evidencias,
             general_rating: form.avaliacaoGeral,
+            teacher_id: selectedTeacherId,
             feedback: {
               ...form.feedback,
               enviadoEm: enviar ? Date.now() : undefined
@@ -269,7 +281,7 @@ const ClassroomObservationForm: React.FC = () => {
     }
   };
 
-  const LikertSelector = ({ value, onChange, label }: { value: number, onChange: (v: number) => void, label: string }) => (
+  const LikertSelector: React.FC<{ value: number, onChange: (v: number) => void, label: string }> = ({ value, onChange, label }) => (
     <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:border-violet-500/30 transition-all">
       <span className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none">{label}</span>
       <div className="flex justify-between gap-1">
@@ -371,7 +383,15 @@ const ClassroomObservationForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Professor</label>
-                <select value={form.teacher} onChange={e => setForm({ ...form, teacher: e.target.value })} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/10 uppercase text-white [&>option]:bg-gray-900">
+                <select
+                  value={form.teacher}
+                  onChange={e => {
+                    const teacher = staffList.find(s => s.name === e.target.value);
+                    setForm({ ...form, teacher: e.target.value });
+                    setSelectedTeacherId(teacher?.id || null);
+                  }}
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/10 uppercase text-white [&>option]:bg-gray-900"
+                >
                   <option value="">Selecione o professor...</option>
                   {staffList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>
@@ -402,29 +422,34 @@ const ClassroomObservationForm: React.FC = () => {
                   Aspectos Organizacionais
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {ORGANIZATIONAL_CRITERIA.map(criterion => (
+                  {Object.entries(form.organizational || {}).map(([key, value]) => (
                     <LikertSelector
-                      key={criterion}
-                      label={criterion.replace(/([A-Z])/g, ' $1').trim()}
-                      value={(form.organizational as any)[criterion] || 0}
-                      onChange={v => handleScoreChange(criterion, v)}
+                      key={key}
+                      label={key}
+                      value={value as number}
+                      onChange={v => setForm({
+                        ...form,
+                        organizational: { ...form.organizational, [key]: v }
+                      })}
                     />
                   ))}
                 </div>
               </div>
 
               <div className="space-y-6">
-                <h4 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center text-white text-sm">2</span>
-                  Aspectos Pedagógicos
+                <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <BookOpen size={14} className="text-violet-500" /> Critérios Pedagógicos
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {PEDAGOGICAL_CRITERIA.map(criterion => (
+                  {Object.entries(form.pedagogico || {}).map(([key, value]) => (
                     <LikertSelector
-                      key={criterion}
-                      label={criterion.replace(/([A-Z])/g, ' $1').trim()}
-                      value={(form.pedagogico as any)[criterion] || 0}
-                      onChange={v => handleScoreChange(criterion, v)}
+                      key={key}
+                      label={key}
+                      value={value as number}
+                      onChange={v => setForm({
+                        ...form,
+                        pedagogico: { ...form.pedagogico, [key]: v }
+                      })}
                     />
                   ))}
                 </div>

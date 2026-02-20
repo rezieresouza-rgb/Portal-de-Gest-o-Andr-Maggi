@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useToast } from '../components/Toast';
+import { User } from '../types';
 
 interface BudgetRow {
     id: string;
@@ -37,7 +38,7 @@ interface BudgetRow {
     resource: 'RU' | 'PDDE';
 }
 
-const BudgetModule: React.FC = () => {
+const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
     const { addToast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [rows, setRows] = useState<BudgetRow[]>([]);
@@ -286,7 +287,7 @@ const BudgetModule: React.FC = () => {
                                 {(Object.keys(schoolInfo) as Array<keyof typeof schoolInfo>).map(key => (
                                     <div key={key} className="space-y-2">
                                         <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                                            {key === 'name' ? 'Unidade Escolar' : key === 'city' ? 'Município' : key.toUpperCase()}
+                                            {key === 'name' ? 'Unidade Escolar' : key === 'city' ? 'Município' : (key as string).toUpperCase()}
                                         </label>
                                         <input
                                             value={schoolInfo[key]}

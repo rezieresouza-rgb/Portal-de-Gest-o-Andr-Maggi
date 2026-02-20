@@ -23,6 +23,7 @@ import SecretariatStaffManager from '../components/SecretariatStaffManager';
 import SecretariatBulletinPrinter from '../components/SecretariatBulletinPrinter';
 import SecretariatNotificationCenter from '../components/SecretariatNotificationCenter';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
+import SecretariatUserManager from '../components/SecretariatUserManager';
 
 interface SecretariatModuleProps {
   user?: any;
@@ -30,7 +31,7 @@ interface SecretariatModuleProps {
 }
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'students' | 'classes' | 'staff' | 'bulletins'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'students' | 'classes' | 'staff' | 'bulletins' | 'users'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
@@ -38,6 +39,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
     { id: 'students', label: 'Cadastro de Alunos', icon: GraduationCap },
     { id: 'classes', label: 'Gestão de Turmas', icon: Users },
     { id: 'staff', label: 'Servidores / RH', icon: Briefcase },
+    { id: 'users', label: 'Gestão de Usuários', icon: ShieldCheck },
     { id: 'bulletins', label: 'Emissão de Boletins', icon: FileText },
   ];
 
@@ -63,8 +65,8 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
               key={item.id}
               onClick={() => setActiveTab(item.id as any)}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
-                  ? 'bg-indigo-800 text-white shadow-lg'
-                  : 'text-indigo-100 hover:bg-indigo-800/50'
+                ? 'bg-indigo-800 text-white shadow-lg'
+                : 'text-indigo-100 hover:bg-indigo-800/50'
                 }`}
             >
               <item.icon size={18} />
@@ -128,6 +130,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           {activeTab === 'students' && <SecretariatStudentRegistry />}
           {activeTab === 'classes' && <SecretariatClassroomManager />}
           {activeTab === 'staff' && <SecretariatStaffManager />}
+          {activeTab === 'users' && <SecretariatUserManager />}
           {activeTab === 'bulletins' && <SecretariatBulletinPrinter />}
         </div>
 

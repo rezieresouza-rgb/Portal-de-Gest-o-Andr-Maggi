@@ -462,7 +462,8 @@ const SecretariatStaffManager: React.FC = () => {
                   login: generatedLogin,
                   email: serverData.email,
                   role: targetRole,
-                  password_hash: defaultPassword
+                  password_hash: defaultPassword,
+                  status: 'ATIVO'
                }]);
 
                if (!userError) {

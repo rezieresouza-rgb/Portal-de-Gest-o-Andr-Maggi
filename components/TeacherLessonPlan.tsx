@@ -39,7 +39,13 @@ const GRADE_LEVELS = [
   "9º ANO A", "9º ANO B"
 ];
 
-const TeacherLessonPlan: React.FC = () => {
+import { User as UserType } from '../types';
+
+interface TeacherLessonPlanProps {
+  user: UserType;
+}
+
+const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
   const [viewMode, setViewMode] = useState<'form' | 'list'>('list');
   const [plans, setPlans] = useState<LessonPlan[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +56,7 @@ const TeacherLessonPlan: React.FC = () => {
   const [form, setForm] = useState<Omit<LessonPlan, 'id' | 'timestamp'>>({
     bimestre: '1º BIMESTRE',
     subject: '',
-    teacher: 'PROF. CRISTIANO',
+    teacher: user.name,
     year: new Date().getFullYear().toString(),
     className: '',
     weeklyClasses: '6',
@@ -80,6 +86,7 @@ const TeacherLessonPlan: React.FC = () => {
       const { data, error } = await supabase
         .from('lesson_plans')
         .select('*')
+        .or(`teacher_id.eq.${user.id},content_json->>teacher.eq.${user.name}`)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -222,7 +229,8 @@ const TeacherLessonPlan: React.FC = () => {
             bimestre: form.bimestre,
             themes: form.themes,
             content_json: contentJson,
-            status: status
+            status: status,
+            teacher_id: user.id
           })
           .eq('id', activeId);
 
@@ -236,7 +244,8 @@ const TeacherLessonPlan: React.FC = () => {
             bimestre: form.bimestre,
             themes: form.themes,
             content_json: contentJson,
-            status: status
+            status: status,
+            teacher_id: user.id
           }]);
 
         if (error) throw error;

@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Package, 
-  BrainCircuit, 
-  Bell, 
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Package,
+  BrainCircuit,
+  Bell,
   ShoppingCart,
   ShieldCheck,
   ClipboardList,
@@ -19,6 +19,7 @@ import {
   Scale,
   MessageCircle
 } from 'lucide-react';
+import { User } from '../types';
 import Dashboard from '../components/Dashboard';
 import Contracts from '../components/Contracts';
 import Suppliers from '../components/Suppliers';
@@ -34,9 +35,10 @@ import SupplierNotifications from '../components/SupplierNotifications';
 
 interface MerendaModuleProps {
   onExit: () => void;
+  user: User;
 }
 
-const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit }) => {
+const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contracts' | 'suppliers' | 'inventory' | 'ai' | 'orders' | 'menuChecklist' | 'kitchenRequests' | 'shoppingList' | 'menuAudit' | 'supplierNotifications' | 'settings'>('dashboard');
   const [isLocked, setIsLocked] = useState(false);
 
@@ -104,17 +106,16 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit }) => {
             Portal Merenda
           </h1>
         </div>
-        
+
         <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
-                activeTab === item.id 
-                  ? 'bg-emerald-800 text-white shadow-lg' 
-                  : 'text-emerald-100 hover:bg-emerald-800/50'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
+                ? 'bg-emerald-800 text-white shadow-lg'
+                : 'text-emerald-100 hover:bg-emerald-800/50'
+                }`}
             >
               <item.icon size={18} />
               {item.label}
@@ -123,13 +124,13 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit }) => {
         </nav>
 
         <div className="p-6 border-t border-emerald-800 space-y-3">
-          <button 
+          <button
             onClick={onExit}
             className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
           >
             <ArrowLeft size={16} /> Voltar ao Hub
           </button>
-          
+
           <div className="bg-emerald-800/50 p-4 rounded-2xl border border-emerald-700/50">
             <p className="text-[10px] text-emerald-300 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
               <ShieldCheck size={10} /> Status Módulo
@@ -143,21 +144,21 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit }) => {
       <main className="flex-1 flex flex-col overflow-hidden">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0 no-print">
           <div className="flex items-center gap-4">
-             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-               <LayoutDashboard size={20} />
-             </div>
-             <div className="flex flex-col">
-                <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-none">Módulo: Alimentação Escolar</h2>
-                {isLocked && (
-                  <span className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
-                    <Lock size={8} strokeWidth={3} /> Blindagem de Dados Ativa
-                  </span>
-                )}
-             </div>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+              <LayoutDashboard size={20} />
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-none">Módulo: Alimentação Escolar</h2>
+              {isLocked && (
+                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
+                  <Lock size={8} strokeWidth={3} /> Blindagem de Dados Ativa
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-6">
-            <button 
+            <button
               onClick={toggleFullScreen}
               className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group flex items-center gap-2"
               title="Alternar Tela Cheia"
@@ -166,8 +167,8 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit }) => {
               <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Expandir</span>
             </button>
             <div className="hidden lg:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
-               <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Base de Dados Merenda</span>
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Base de Dados Merenda</span>
             </div>
             <button className="relative p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors">
               <Bell size={20} />
@@ -175,10 +176,12 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit }) => {
             </button>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <p className="text-xs font-black text-gray-900">Gestor André</p>
-                <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest">Admin Merenda</p>
+                <p className="text-xs font-black text-gray-900">{user.name}</p>
+                <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest">{user.role}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-sm">AM</div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-sm">
+                {user.name.substring(0, 2)}
+              </div>
             </div>
           </div>
         </header>

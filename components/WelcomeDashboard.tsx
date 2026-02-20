@@ -42,10 +42,11 @@ interface WelcomeDashboardProps {
    user: User;
    onLogout: () => void;
    onModuleSelect: (module: string) => void;
+   onProfileOpen: () => void;
    modules: ModuleConfig[];
 }
 
-const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onModuleSelect, modules }) => {
+const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onModuleSelect, modules, onProfileOpen }) => {
    const [announcements, setAnnouncements] = useState<SchoolAnnouncement[]>(() => {
       const saved = localStorage.getItem('school_announcements_v1');
       return saved ? JSON.parse(saved) : [
@@ -117,7 +118,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                </div>
                <div className="space-y-0.5 md:space-y-1 flex-1">
                   <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-tight">
-                     Olá, <span className="text-indigo-400">{user.name.split(' ')[0]}</span>.
+                     Olá, <button onClick={onProfileOpen} className="text-indigo-400 hover:underline">{user.name.split(' ')[0]}</button>.
                   </h1>
                   <p className="text-white/60 font-bold uppercase text-[9px] md:text-xs tracking-[0.15em]">Portal de Gestão André Maggi</p>
                </div>

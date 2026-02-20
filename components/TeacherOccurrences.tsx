@@ -26,7 +26,13 @@ import { useStudents } from '../hooks/useStudents';
 const OCCURRENCE_TYPES = ['DISCIPLINAR', 'PEDAGÓGICO', 'MÉDICO', 'ELOGIO', 'OUTRO'];
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
-const TeacherOccurrences: React.FC = () => {
+import { User as UserType } from '../types';
+
+interface TeacherOccurrencesProps {
+   user: UserType;
+}
+
+const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [isModalOpen, setIsModalOpen] = useState(false);
    const [searchTerm, setSearchTerm] = useState('');
    const [showDropdown, setShowDropdown] = useState(false);
@@ -36,7 +42,7 @@ const TeacherOccurrences: React.FC = () => {
 
    const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean }>({
       date: new Date().toISOString().split('T')[0],
-      teacherName: 'PROF. CRISTIANO',
+      teacherName: user.name,
       className: '',
       studentName: '',
       type: 'DISCIPLINAR' as any,
@@ -53,7 +59,7 @@ const TeacherOccurrences: React.FC = () => {
       const { data, error } = await supabase
          .from('occurrences')
          .select('*')
-         .eq('responsible_name', 'PROF. CRISTIANO')
+         .eq('responsible_name', user.name)
          .order('date', { ascending: false });
 
       if (error) {
@@ -88,7 +94,7 @@ const TeacherOccurrences: React.FC = () => {
    const resetForm = () => {
       setForm({
          date: new Date().toISOString().split('T')[0],
-         teacherName: 'PROF. CRISTIANO',
+         teacherName: user.name,
          className: '',
          studentName: '',
          type: 'DISCIPLINAR' as any,

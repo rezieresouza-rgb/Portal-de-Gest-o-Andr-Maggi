@@ -32,6 +32,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLocked, setIsLocked] = useState(false);
 
 
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
   /* 
    * AUTENTICAÇÃO VIA SUPABASE
    * Migrado de Mock Local para Database Produção
@@ -58,6 +60,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       // 2. Validar Senha (Simples por enquanto, conforme schema atual)
       // Em produção, usaríamos bcrypt ou Supabase Auth
       if (user && user.password_hash === password) {
+        // 3. Validar Status do Usuário
+        if (user.status === 'PENDENTE') {
+          setError("Seu acesso está em análise. Aguarde a aprovação da administração.");
+          setIsLoading(false);
+          return;
+        }
+
+        if (user.status === 'BLOQUEADO') {
+          setError("Seu acesso foi bloqueado. Entre em contato com o suporte.");
+          setIsLoading(false);
+          return;
+        }
 
         // Registrar login no banco (opcional/futuro) ou localStorage
         const sessionUser = {
@@ -111,7 +125,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   if (isRegistering) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6 relative overflow-hidden font-sans">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497864149936-d7e61461c3e1?q=80&w=2540&auto=format&fit=crop')] bg-cover bg-center opacity-20 animate-pulse-slow"></div>
+        <img
+          src="/frente_escola.jpeg"
+          alt="Escola André Maggi"
+          className="absolute inset-0 w-full h-full object-cover opacity-20 animate-pulse-slow"
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-purple-900/80 to-black/90 backdrop-blur-sm"></div>
         <div className="w-full max-w-md relative z-10">
           <Register onBack={() => setIsRegistering(false)} onSuccess={() => setIsRegistering(false)} />
@@ -125,7 +143,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       {/* Background Animado Premium */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-30 scale-105 animate-[pulse_8s_ease-in-out_infinite]"></div>
+        <img
+          src="/frente_escola.jpeg"
+          alt="Escola André Maggi"
+          className="absolute inset-0 w-full h-full object-cover opacity-30 scale-105 animate-[pulse_10s_ease-in-out_infinite]"
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-indigo-900/80 to-purple-900/60 mix-blend-multiply"></div>
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/30 rounded-full blur-[100px] animate-[bounce_10s_infinite]"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-500/30 rounded-full blur-[100px] animate-[bounce_12s_infinite_reverse]"></div>
@@ -230,13 +252,48 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </button>
 
               <div className="flex justify-center mt-2">
-                <button type="button" className="text-[10px] font-bold text-white/40 uppercase tracking-widest hover:text-white hover:underline flex items-center justify-center gap-1 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-[10px] font-bold text-white/40 uppercase tracking-widest hover:text-white hover:underline flex items-center justify-center gap-1 transition-colors"
+                >
                   <HelpCircle size={12} /> Esqueci minha senha
                 </button>
               </div>
             </div>
           </form>
         </div>
+
+        {/* Modal Esqueci Senha */}
+        {showForgotModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-amber-600">
+                  <Lock size={32} />
+                </div>
+                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Esqueceu sua senha?</h3>
+                <div className="mt-4 space-y-4">
+                  <p className="text-xs text-gray-500 font-bold leading-relaxed">
+                    Por motivos de segurança acadêmica, a redefinição de senha deve ser solicitada pessoalmente.
+                  </p>
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Instruções</p>
+                    <p className="text-[11px] font-bold text-gray-700 leading-tight">
+                      Dirija-se à <span className="text-indigo-600">Secretaria da Escola André Maggi</span> ou entre em contato com o administrador do sistema.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowForgotModal(false)}
+                  className="w-full mt-8 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-black transition-all active:scale-95"
+                >
+                  Entendi, Voltar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 text-center space-y-2">
           <p className="text-[9px] text-white/30 font-black uppercase tracking-[0.3em]">Ambiente Seguro & Criptografado</p>

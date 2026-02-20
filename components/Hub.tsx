@@ -20,15 +20,18 @@ import {
 import { ModuleTypeExtended } from '../App';
 import { User, AccessLog } from '../types';
 import WelcomeDashboard from './WelcomeDashboard';
+import ProfileModal from './ProfileModal';
 
 interface HubProps {
   user: User;
   onLogout: () => void;
   onModuleSelect: (module: ModuleTypeExtended) => void;
+  onUserUpdate: (updatedUser: User) => void;
 }
 
-const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect }) => {
+const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate }) => {
   const [dynamicPermissions, setDynamicPermissions] = useState<Record<string, string[]>>({});
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     const loadPermissions = () => {
@@ -132,6 +135,13 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect }) => {
           </nav>
 
           <div className="flex flex-col gap-4">
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="p-4 rounded-2xl text-white/50 hover:text-indigo-400 hover:bg-white/10 transition-all"
+              title="Meu Perfil"
+            >
+              <UserIcon size={24} />
+            </button>
             {isAdmin && (
               <button
                 onClick={() => onModuleSelect('settings')}
@@ -161,10 +171,18 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect }) => {
                 if (module) handleModuleClick(module);
               }}
               modules={allowedModules}
+              onProfileOpen={() => setIsProfileOpen(true)}
             />
           </div>
         </main>
       </div>
+
+      <ProfileModal
+        user={user}
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onUpdate={onUserUpdate}
+      />
     </div>
   );
 };

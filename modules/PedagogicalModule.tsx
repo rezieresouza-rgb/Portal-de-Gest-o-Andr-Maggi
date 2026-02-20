@@ -50,11 +50,14 @@ import PsychosocialReferralList from '../components/PsychosocialReferralList';
 import ClassScheduleManager from '../components/ClassScheduleManager';
 import SchoolProjectManager from '../components/SchoolProjectManager';
 
+import { User as UserType } from '../types';
+
 interface PedagogicalModuleProps {
   onExit: () => void;
+  user: UserType;
 }
 
-const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit }) => {
+const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) => {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules'>('dashboard');
 
@@ -228,7 +231,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit }) => {
     });
 
     // 2. Analyze Attendance
-    Object.values(attendanceMap).forEach(stat => {
+    Object.values(attendanceMap).forEach((stat: any) => {
       const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
       if (percent < 85) { // < 85% is critical
         totalHighAbsence++;
@@ -444,7 +447,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit }) => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
-                    {Object.values(attendanceMap).filter(s => (s.present / s.total) < 0.85).map((student, idx) => (
+                    {Object.values(attendanceMap).filter((s: any) => (s.present / s.total) < 0.85).map((student: any, idx) => (
                       <div key={idx} className="p-4 bg-orange-500/5 rounded-2xl border border-orange-500/10 flex justify-between items-center hover:bg-orange-500/10 transition-all">
                         <div>
                           <p className="text-xs font-black text-white uppercase">{student.name}</p>
@@ -592,7 +595,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit }) => {
           </div>
         );
       case 'observations':
-        return <ClassroomObservationForm />;
+        return <ClassroomObservationForm user={user} />;
       case 'occurrences':
         return <PedagogicalOccurrenceBook />;
       case 'projects':

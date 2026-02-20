@@ -89,6 +89,7 @@ const TeacherPedagogicalRequests: React.FC = () => {
       const { data } = await supabase
          .from('pedagogical_requests')
          .select('*')
+         .or(`teacher_name.eq."${user.name}",teacher_id.eq."${user.id}"`)
          .order('created_at', { ascending: false });
 
       if (data) {
@@ -109,7 +110,8 @@ const TeacherPedagogicalRequests: React.FC = () => {
       const { data } = await supabase
          .from('bookings')
          .select('*')
-         .eq('resource_type', 'EQUIPMENT');
+         .eq('resource_type', 'EQUIPMENT')
+         .or(`user_name.eq."${user.name}",user_id.eq."${user.id}"`);
 
       if (data) {
          const mapped: EquipmentBooking[] = data.map(b => ({
@@ -166,7 +168,8 @@ const TeacherPedagogicalRequests: React.FC = () => {
 
       try {
          const { error } = await supabase.from('pedagogical_requests').insert([{
-            teacher_name: 'PROF. CRISTIANO',
+            teacher_name: user.name,
+            teacher_id: user.id,
             items_json: cart,
             reason: reason,
             status: 'PENDENTE'
@@ -206,7 +209,8 @@ const TeacherPedagogicalRequests: React.FC = () => {
             resource_type: 'EQUIPMENT',
             date: bookingDate,
             shift: activeSlot.shift,
-            user_name: 'PROF. CRISTIANO',
+            user_name: user.name,
+            user_id: user.id,
             purpose: targetClass.toUpperCase(), // Using purpose for class name
             description: studentList, // Already a JSON string from the grid
             status: 'SOLICITADO'
@@ -509,7 +513,7 @@ const TeacherPedagogicalRequests: React.FC = () => {
                      <Monitor size={20} className="text-blue-600" /> Reservas de Equipamentos
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {equipmentBookings.filter(b => b.teacherName === 'PROF. CRISTIANO').map(b => (
+                     {equipmentBookings.filter(b => b.teacherName === user.name).map(b => (
                         <div key={b.id} className="p-5 bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-between group hover:bg-white hover:border-blue-200 transition-all">
                            <div>
                               <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{b.equipmentName}</p>
@@ -525,7 +529,7 @@ const TeacherPedagogicalRequests: React.FC = () => {
                            </div>
                         </div>
                      ))}
-                     {equipmentBookings.filter(b => b.teacherName === 'PROF. CRISTIANO').length === 0 && (
+                     {equipmentBookings.filter(b => b.teacherName === user.name).length === 0 && (
                         <div className="col-span-full py-12 text-center text-gray-300">
                            <p className="text-[10px] font-black uppercase">Nenhum agendamento realizado</p>
                         </div>

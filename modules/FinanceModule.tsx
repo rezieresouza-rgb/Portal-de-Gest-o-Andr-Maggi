@@ -43,6 +43,7 @@ import {
 import { extractInvoiceInfo } from '../geminiService';
 import { supabase } from '../supabaseClient';
 import { useToast } from '../components/Toast';
+import { User } from '../types';
 import BudgetModule from './BudgetModule';
 
 const DEFAULT_FUNDS = [
@@ -69,6 +70,7 @@ interface Transaction {
   fundingSource?: 'ESTADUAL' | 'FEDERAL';
   isFamilyAgriculture?: boolean;
   isIndividualProducer?: boolean;
+  receiptUrl?: string;
 }
 
 interface FundData {
@@ -82,7 +84,7 @@ interface FundData {
   icon: any;
 }
 
-const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
+const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, user }) => {
   const { addToast } = useToast();
   /*
    * MÓDULO FINANCEIRO - MIGRAÇÃO SUPABASE
@@ -93,6 +95,7 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [funds, setFunds] = useState<Record<string, FundData>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [tempFile, setTempFile] = useState<File | null>(null);
 
   const [newTx, setNewTx] = useState({
     description: '',
@@ -165,7 +168,8 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           integratedAction: t.integrated_action,
           fundingSource: t.funding_source,
           isFamilyAgriculture: t.is_family_agriculture,
-          isIndividualProducer: t.is_individual_producer
+          isIndividualProducer: t.is_individual_producer,
+          receiptUrl: t.receipt_url
         })) || [];
 
         // Calcular alocado? Por enquanto fixo ou vindo de algum lugar?
@@ -302,13 +306,33 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       return;
     }
     const rawValue = parseFloat(newTx.value);
-    // Aplicação da Lei 15.226/25: 1.5% apenas para produtor individual da agricultura familiar
     const taxValue = (newTx.type === 'EXPENSE' && newTx.isFamilyAgriculture && newTx.isIndividualProducer) ? rawValue * 0.015 : 0;
     const netValue = rawValue - taxValue;
+
+    let receiptUrl = null;
 
     try {
       const currentFund = funds[activeTab];
       if (!currentFund || !currentFund.dbId) throw new Error("Fundo não identificado.");
+
+      // 1. Upload do Arquivo (PDF/Imagem) para o Supabase Storage se houver
+      if (tempFile) {
+        const fileExt = tempFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `receipts/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('finance-documents')
+          .upload(filePath, tempFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('finance-documents')
+          .getPublicUrl(filePath);
+
+        receiptUrl = publicUrl;
+      }
 
       const { error } = await supabase.from('transactions').insert([{
         fund_id: currentFund.dbId,
@@ -324,13 +348,15 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         integrated_action: activeTab === 'pdde_qualidade' ? newTx.integratedAction : null,
         funding_source: activeTab === 'merenda' ? newTx.fundingSource : null,
         is_family_agriculture: activeTab === 'merenda' ? newTx.isFamilyAgriculture : false,
-        is_individual_producer: activeTab === 'merenda' ? newTx.isIndividualProducer : false
+        is_individual_producer: activeTab === 'merenda' ? newTx.isIndividualProducer : false,
+        receipt_url: receiptUrl
       }]);
 
       if (error) throw error;
 
       addToast("Lançamento realizado com sucesso!", "success");
       setIsModalOpen(false);
+      setTempFile(null);
       setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: new Date().toISOString().split('T')[0] });
       fetchFinancialData();
     } catch (error: any) {
@@ -349,6 +375,7 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       try {
         const data = await extractInvoiceInfo(base64, file.type);
         if (data) {
+          setTempFile(file);
           setNewTx(prev => ({ ...prev, description: data.description || prev.description, invoiceNumber: data.invoiceNumber || prev.invoiceNumber, value: data.totalValue?.toString() || prev.value, date: data.invoiceDate || prev.date }));
         }
       } catch (err) { addToast("Erro ao ler nota fiscal com IA.", "error"); } finally { setIsScanning(false); }
@@ -437,7 +464,7 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-10 shrink-0 backdrop-blur-sm">
             <div className="flex items-center gap-4">
               <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10"><Wallet size={20} /></div>
-              <h2 className="text-sm font-black text-white/80 uppercase tracking-widest">Gestão André Maggi</h2>
+              <h2 className="text-sm font-black text-white/80 uppercase tracking-widest">{user.name}</h2>
             </div>
             <div className="flex items-center gap-6">
               <button
@@ -492,7 +519,7 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               ) : (
                 <>
 
-                  {activeTab === 'budget' && <BudgetModule />}
+                  {activeTab === 'budget' && <BudgetModule user={user} />}
 
                   {activeTab !== 'dashboard' && activeTab !== 'reports' && activeTab !== 'budget' && funds[activeTab] && (
                     <div className="space-y-6 animate-in fade-in duration-500">
@@ -519,6 +546,27 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                                 <X size={24} />
                               </button>
                             </div>
+
+                            {tempFile && (
+                              <div className="px-10 mb-4">
+                                <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                                  <div className="flex items-center gap-3">
+                                    <FileCheck size={20} className="text-blue-400" />
+                                    <div>
+                                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">Arquivo em Anexo</p>
+                                      <p className="text-xs font-bold text-white mt-1 truncate max-w-[200px]">{tempFile.name}</p>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTempFile(null)}
+                                    className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-colors"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
 
                             <div className="flex-1 overflow-y-auto px-10 pb-10 custom-scrollbar">
                               <form onSubmit={handleAddTransaction} className="space-y-8">
@@ -801,7 +849,7 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
                         {activeTab === 'pdde_qualidade' ? (
                           <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
-                            {['Educação Conectada', 'Escola e Comunidade', 'Escola das Adolescências'].map(action => {
+                            {['Escola das Adolescências', 'Educação Conectada', 'Escola e Comunidade'].map(action => {
                               const actionTx = funds['pdde_qualidade'].transactions.filter(t => t.integratedAction === action);
                               const actionBalance = actionTx.reduce((acc, t) => acc + (t.type === 'ENTRY' ? t.value : -t.value), 0);
                               return (
@@ -826,7 +874,7 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-[11px] border-collapse">
-                            <thead><tr className="text-white/40 border-b border-white/5"><th className="px-6 py-4 font-black uppercase tracking-widest">Data</th><th className="px-6 py-4 font-black uppercase tracking-widest">Descrição / NF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Grupo / AF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-right">Valor</th></tr></thead>
+                            <thead><tr className="text-white/40 border-b border-white/5"><th className="px-6 py-4 font-black uppercase tracking-widest">Data</th><th className="px-6 py-4 font-black uppercase tracking-widest">Descrição / NF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Grupo / AF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-right">Valor</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Docs</th></tr></thead>
                             <tbody className="divide-y divide-white/5">
                               {funds[activeTab].transactions.map((t) => (
                                 <tr key={t.id} className="hover:bg-white/5 transition-colors">
@@ -843,6 +891,15 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                                     {t.isFamilyAgriculture && <span className={`px-2 py-0.5 rounded font-black text-[7px] uppercase border ml-1 ${t.isIndividualProducer ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'}`}>{t.isIndividualProducer ? '[AF-IND]' : '[AF-COOP]'}</span>}
                                   </td>
                                   <td className="px-6 py-4 text-right font-black"><span className={t.type === 'ENTRY' ? 'text-emerald-400' : 'text-red-400'}>R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></td>
+                                  <td className="px-6 py-4 text-center">
+                                    {t.receiptUrl ? (
+                                      <a href={t.receiptUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all inline-block" title="Visualizar Nota Fiscal">
+                                        <FileText size={14} />
+                                      </a>
+                                    ) : (
+                                      <span className="text-white/10"><FileText size={14} /></span>
+                                    )}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -987,6 +1044,7 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                                 <th className="px-8 py-5 font-black uppercase tracking-widest">Descrição do Material</th>
                                 <th className="px-8 py-5 font-black uppercase tracking-widest">Fonte / Recurso</th>
                                 <th className="px-8 py-5 font-black uppercase tracking-widest text-right">Valor Bruto</th>
+                                <th className="px-8 py-5 font-black uppercase tracking-widest text-center">Ações</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -1025,6 +1083,20 @@ const FinanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                                   </td>
                                   <td className="px-8 py-6 text-right">
                                     <span className="font-black text-white text-sm">R$ {inv.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  </td>
+                                  <td className="px-8 py-6 text-center">
+                                    {inv.receiptUrl ? (
+                                      <a
+                                        href={inv.receiptUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-blue-500/20"
+                                      >
+                                        <Download size={12} /> Ver PDF
+                                      </a>
+                                    ) : (
+                                      <span className="text-white/10 text-[9px] font-black uppercase">Sem Anexo</span>
+                                    )}
                                   </td>
                                 </tr>
                               )) : (

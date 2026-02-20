@@ -25,7 +25,13 @@ const SUBJECTS = [
    "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA", "ENSINO RELIGIOSO"
 ];
 
-const TeacherGrades: React.FC = () => {
+import { User as UserType } from '../types';
+
+interface TeacherGradesProps {
+   user: UserType;
+}
+
+const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
    const [selectedClass, setSelectedClass] = useState('');
    const [selectedBimestre, setSelectedBimestre] = useState(BIMESTRES[0]);
    const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
@@ -184,8 +190,7 @@ const TeacherGrades: React.FC = () => {
                date: new Date().toISOString(),
                type: 'AVALIACAO_BIMESTRAL', // Default type
                max_score: 10,
-               teacher_id: null // Unknown teacher ID for now
-               // teacher_name: 'PROF. CRISTIANO' // Ideally we add this column or rely on user metadata
+               teacher_id: user.id
             }]).select('id').single();
 
             if (assErr) throw assErr;

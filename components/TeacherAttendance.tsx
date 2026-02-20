@@ -10,7 +10,7 @@ import {
   Loader2,
   AlertTriangle
 } from 'lucide-react';
-import { AttendanceRecord, Shift } from '../types';
+import { AttendanceRecord, Shift, User as UserType } from '../types';
 
 import { supabase } from '../supabaseClient';
 
@@ -26,7 +26,7 @@ const SUBJECTS = [
   "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA", "ENSINO RELIGIOSO"
 ];
 
-const TeacherAttendance: React.FC = () => {
+const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
   const [selectedShift, setSelectedShift] = useState<Shift>('MATUTINO');
@@ -194,7 +194,7 @@ const TeacherAttendance: React.FC = () => {
         .insert([
           {
             classroom_name: selectedClass,
-            teacher_name: 'PROF. CRISTIANO',
+            teacher_name: user.name,
             date: date,
             shift: selectedShift,
             subject: selectedSubject

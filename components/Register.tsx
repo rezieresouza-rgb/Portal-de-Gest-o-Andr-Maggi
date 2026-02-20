@@ -80,7 +80,7 @@ const Register: React.FC<RegisterProps> = ({ onBack, onSuccess }) => {
 
       if (insertError) throw insertError;
 
-      alert("Usuário cadastrado com sucesso!");
+      alert("Solicitação enviada com sucesso! Seu acesso passará por auditoria acadêmica e será liberado em breve.");
       onSuccess();
     } catch (err) {
       console.error("Erro ao registrar:", err);
@@ -187,6 +187,7 @@ const Register: React.FC<RegisterProps> = ({ onBack, onSuccess }) => {
           <div className="grid grid-cols-2 gap-2">
             {[
               { id: 'PROFESSOR', label: 'Professor' },
+              { id: 'GESTÃO', label: 'Gestão' },
               { id: 'AAE', label: 'AAE' },
               { id: 'TAE', label: 'TAE' },
               { id: 'PSICOSSOCIAL', label: 'Mediação' }
@@ -194,8 +195,8 @@ const Register: React.FC<RegisterProps> = ({ onBack, onSuccess }) => {
               <button
                 key={role.id}
                 type="button"
-                onClick={() => setFormData({ ...formData, role: role.id as UserRole })}
-                className={`py-2 px-1 rounded-xl text-[9px] font-black uppercase transition-all border-2 ${formData.role === role.id
+                onClick={() => setFormData({ ...formData, role: (role.id === 'GESTÃO' ? 'GESTAO' : role.id) as UserRole })}
+                className={`py-2 px-1 rounded-xl text-[9px] font-black uppercase transition-all border-2 ${formData.role === (role.id === 'GESTÃO' ? 'GESTAO' : role.id)
                   ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
                   : 'border-gray-50 bg-gray-50 text-gray-400'
                   }`}
