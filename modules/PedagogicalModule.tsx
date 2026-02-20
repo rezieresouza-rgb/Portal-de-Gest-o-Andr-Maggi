@@ -117,22 +117,25 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         .select('*, users(name), classrooms(name)');
 
       if (plansData) {
-        setLessonPlans(plansData.map(p => ({
-          id: p.id,
-          bimestre: p.bimestre,
-          subject: p.subject,
-          teacher: p.users?.name || 'Professor',
-          year: p.classrooms?.name?.split(' ')[0] || 'N/A',
-          className: p.classrooms?.name || 'N/A',
-          weeklyClasses: '4', // Default
-          skills: [], // Not stored in simple migration? Or in content_json? Assuming content_json has it if complex structure
-          recompositionSkills: [],
-          themes: p.themes,
-          rows: p.content_json || [],
-          status: p.status as LessonPlan['status'],
-          coordinationFeedback: p.coordination_feedback,
-          timestamp: new Date(p.created_at).getTime()
-        })));
+        setLessonPlans(plansData.map(p => {
+          const content = p.content_json || {};
+          return {
+            id: p.id,
+            bimestre: p.bimestre,
+            subject: p.subject,
+            teacher: content.teacher || p.users?.name || 'Professor',
+            year: content.year || 'N/A',
+            className: content.className || p.classrooms?.name || 'N/A',
+            weeklyClasses: content.weeklyClasses || '4',
+            skills: content.skills || [],
+            recompositionSkills: content.recompositionSkills || [],
+            themes: p.themes || content.themes || '',
+            rows: content.rows || [],
+            status: p.status as LessonPlan['status'],
+            coordinationFeedback: p.coordination_feedback,
+            timestamp: new Date(p.created_at).getTime()
+          };
+        }));
       }
 
       // 3. Fetch Observations
@@ -294,7 +297,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     } : p));
     setSelectedPlan(null);
     setFeedbackText('');
-    addToast(status === 'VALIDADO' ? "Roteiro Validado!" : "Feedback enviado ao professor!", "success");
+    addToast(status === 'VALIDADO' ? "Roteiro Validado!" : status === 'CORRECAO_SOLICITADA' ? "Correção solicitada ao professor!" : "Feedback enviado!", "success");
   };
 
   const generateIAInsights = async () => {
@@ -524,39 +527,106 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2"><LayoutList size={14} className="text-violet-500" /> Matriz de Habilidades</h4>
-                      <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                        {selectedPlan.skills.map(s => (
-                          <div key={s.code} className="p-3 bg-white/5 rounded-xl border border-white/10">
-                            <p className="text-[10px] font-black text-violet-400">{s.code}</p>
-                            <p className="text-[10px] text-white/70 leading-relaxed">{s.description}</p>
+                <div className="space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-6">
+                      <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5">
+                        <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <LayoutList size={14} className="text-violet-500" /> Detalhes do Roteiro
+                        </h4>
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Unidades Temáticas</p>
+                            <p className="text-sm text-white/80 font-medium mt-1">{selectedPlan.themes || 'Não informado'}</p>
                           </div>
-                        ))}
+                          <div>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Aulas Semanais</p>
+                            <p className="text-sm text-white/80 font-black mt-1">{selectedPlan.weeklyClasses} aulas</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2"><Sparkles size={14} className="text-amber-500" /> Habilidades BNCC/MT</h4>
+                        <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                          {selectedPlan.skills.map(s => (
+                            <div key={s.code} className="p-3 bg-white/5 rounded-xl border border-white/10">
+                              <p className="text-[10px] font-black text-violet-400">{s.code}</p>
+                              <p className="text-[10px] text-white/70 leading-relaxed">{s.description}</p>
+                            </div>
+                          ))}
+                          {selectedPlan.recompositionSkills.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-white/5">
+                              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Recomposição</p>
+                              {selectedPlan.recompositionSkills.map(s => (
+                                <div key={s.code} className="p-3 bg-white/5 rounded-xl border border-white/10 mb-2">
+                                  <p className="text-[10px] font-black text-indigo-400">{s.code}</p>
+                                  <p className="text-[10px] text-white/70 leading-relaxed">{s.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-violet-900/20 p-8 rounded-[2.5rem] border border-violet-500/20 flex flex-col gap-6">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-violet-600 text-white rounded-lg shadow-md"><MessageSquare size={18} /></div>
+                        <h4 className="text-xs font-black text-violet-300 uppercase tracking-widest">Feedback da Coordenação</h4>
+                      </div>
+                      <textarea
+                        value={feedbackText}
+                        onChange={e => setFeedbackText(e.target.value)}
+                        placeholder="Escreva elogios ou aponte os ajustes necessários aqui..."
+                        className="flex-1 w-full min-h-[150px] p-6 bg-white/5 border border-white/10 rounded-3xl text-sm font-medium outline-none focus:ring-4 focus:ring-violet-600/20 transition-all resize-none text-white placeholder-white/20"
+                      />
+                      <div className="flex flex-col gap-3">
+                        <button
+                          onClick={() => handleUpdatePlanStatus(selectedPlan.id, 'VALIDADO')}
+                          className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                        >
+                          <ThumbsUp size={16} /> Validar Roteiro
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!feedbackText.trim()) return alert("Por favor, forneça um feedback para solicitar correção.");
+                            handleUpdatePlanStatus(selectedPlan.id, 'CORRECAO_SOLICITADA');
+                          }}
+                          className="w-full py-4 bg-red-600/20 text-red-400 border border-red-500/30 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-600/30 transition-all flex items-center justify-center gap-2"
+                        >
+                          <AlertCircle size={16} /> Solicitar Ajustes
+                        </button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-violet-900/20 p-8 rounded-[2.5rem] border border-violet-500/20 flex flex-col gap-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-violet-600 text-white rounded-lg shadow-md"><MessageSquare size={18} /></div>
-                      <h4 className="text-xs font-black text-violet-300 uppercase tracking-widest">Espaço de Feedback</h4>
-                    </div>
-                    <textarea
-                      value={feedbackText}
-                      onChange={e => setFeedbackText(e.target.value)}
-                      placeholder="Escreva elogios ou aponte os ajustes necessários aqui..."
-                      className="flex-1 w-full p-6 bg-white/5 border border-white/10 rounded-3xl text-sm font-medium outline-none focus:ring-4 focus:ring-violet-600/20 transition-all resize-none text-white placeholder-white/20"
-                    />
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => handleUpdatePlanStatus(selectedPlan.id, 'VALIDADO')}
-                        className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
-                      >
-                        <ThumbsUp size={16} /> Validar Roteiro
-                      </button>
+                  {/* TABELA DE CONTEÚDO SEMANAL */}
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2"><LayoutList size={14} /> Cronograma das Aulas</h4>
+                    <div className="border border-white/10 rounded-[2rem] overflow-hidden bg-white/5 overflow-x-auto">
+                      <table className="w-full text-left border-collapse min-w-[800px]">
+                        <thead>
+                          <tr className="bg-white/5 text-[9px] font-black text-white/40 uppercase tracking-widest border-b border-white/10">
+                            <th className="px-6 py-4 w-40">Semana/Data</th>
+                            <th className="px-6 py-4">Conteúdo</th>
+                            <th className="px-6 py-4">Atividades</th>
+                            <th className="px-6 py-4">Metodologia</th>
+                            <th className="px-6 py-4">Avaliação</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {selectedPlan.rows.map((row, idx) => (
+                            <tr key={idx} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4 text-xs font-black text-violet-400">{row.weekOrDate}</td>
+                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.content}</td>
+                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.activities}</td>
+                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.methodology}</td>
+                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.evaluation}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
