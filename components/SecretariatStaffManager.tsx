@@ -202,12 +202,16 @@ const SecretariatStaffManager: React.FC = () => {
          if (editingId && form.email) {
             const { data, error } = await supabase
                .from('users')
-               .select('password_hash')
+               .select('password_hash, role')
                .eq('email', form.email)
                .maybeSingle();
 
             if (data && !error) {
-               setForm(prev => ({ ...prev, password: data.password_hash }));
+               setForm(prev => ({
+                  ...prev,
+                  password: data.password_hash,
+                  userRole: data.role as any
+               }));
             }
          }
       };
@@ -424,7 +428,12 @@ const SecretariatStaffManager: React.FC = () => {
       if (type === 'Professor') {
          targetRole = 'PROFESSOR';
       } else if (type === 'Técnico') {
-         targetRole = 'TAE';
+         // Especial: Se for Direção/Gestão, mapeia para GESTAO (Admin)
+         if (form.jobFunction?.toUpperCase().includes('DIREÇÃO') || form.jobFunction?.toUpperCase().includes('DIRETOR')) {
+            targetRole = 'GESTAO';
+         } else {
+            targetRole = 'TAE';
+         }
       } else { // Apoio
          targetRole = 'AAE';
       }
@@ -433,7 +442,7 @@ const SecretariatStaffManager: React.FC = () => {
          code: form.code,
          registration: form.registration,
          name: form.name?.toUpperCase(),
-         role: targetRole,
+         role: form.userRole || targetRole, // Use explicit userRole if selected
          cpf: form.cpf,
          birth_date: form.birthDate,
          entry_profile: form.entryProfile?.toUpperCase(),
@@ -483,7 +492,7 @@ const SecretariatStaffManager: React.FC = () => {
                name: serverData.name,
                login: existingUser?.login || serverData.email, // Keep existing login or use email
                email: serverData.email,
-               role: targetRole,
+               role: (form.userRole as UserRole) || targetRole,
                password_hash: passwordToSet,
                status: 'ATIVO'
             };
@@ -519,7 +528,7 @@ const SecretariatStaffManager: React.FC = () => {
       setForm({
          code: '', name: '', registration: '', cpf: '', birthDate: '',
          entryProfile: '', qualification: '', serverType: 'Professor', jobFunction: '', role: 'PROFESSOR',
-         email: '', password: '', assignedSubjects: [], workload: 0, contractTerm: { start: '', end: '' },
+         email: '', password: '', userRole: '' as any, assignedSubjects: [], workload: 0, contractTerm: { start: '', end: '' },
          additionalClasses: [], status: 'EM_ATIVIDADE', shift: 'MATUTINO'
       });
       setEditingId(null);
@@ -1073,10 +1082,22 @@ const SecretariatStaffManager: React.FC = () => {
                                        />
                                     </div>
                                  </div>
-                                 <div className="flex items-center pt-6">
-                                    <p className="text-[9px] text-gray-500 font-medium leading-tight">
-                                       O login será o e-mail cadastrado acima. Ao salvar, o acesso será criado ou atualizado automaticamente.
-                                    </p>
+                                 <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Nível de Acesso (Perfil)</label>
+                                    <select
+                                       value={form.userRole || ''}
+                                       onChange={e => setForm({ ...form, userRole: e.target.value as UserRole })}
+                                       className="w-full p-4 bg-white border border-indigo-200 rounded-2xl font-black text-xs uppercase outline-none focus:ring-4 focus:ring-indigo-500/5"
+                                    >
+                                       <option value="">Automático (Pelo Cargo)</option>
+                                       <option value="GESTAO">Gestão (Administrador)</option>
+                                       <option value="SECRETARIA">Secretaria</option>
+                                       <option value="PROFESSOR">Professor</option>
+                                       <option value="TAE">Técnico (TAE)</option>
+                                       <option value="AAE">Apoio (AAE)</option>
+                                       <option value="PSICOSSOCIAL">Mediador (Psicossocial)</option>
+                                       <option value="ADMINISTRADOR">Admin Full (TI)</option>
+                                    </select>
                                  </div>
                               </div>
                            ) : (

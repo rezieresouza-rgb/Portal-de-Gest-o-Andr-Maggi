@@ -94,6 +94,7 @@ export interface StaffMember {
   notifyAlerts?: boolean;
   photoUrl?: string;
   password?: string; // transient for user management integration
+  userRole?: UserRole; // explicit role override
 }
 
 export interface SchoolAnnouncement { id: string; title: string; message: string; date: string; author: string; priority: 'ALTA' | 'NORMAL'; }
