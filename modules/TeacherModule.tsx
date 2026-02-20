@@ -16,9 +16,10 @@ import {
   Package,
   Bell,
   MessageSquare,
-  X,
   CalendarCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Menu,
+  X
 } from 'lucide-react';
 import TeacherAttendance from '../components/TeacherAttendance';
 import TeacherOccurrences from '../components/TeacherOccurrences';
@@ -42,6 +43,7 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
   const [isLocked, setIsLocked] = useState(false);
   const [notifications, setNotifications] = useState<SecretariatNotification[]>([]);
   const [showNotifBar, setShowNotifBar] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const checkLock = () => {
@@ -128,21 +130,27 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-      {/* Sidebar do Professor */}
-      <aside className="w-64 bg-amber-950 text-white flex flex-col no-print">
-        <div className="p-6">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans relative">
+      {/* Sidebar do Professor - Responsiva */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-amber-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="p-6 flex items-center justify-between">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-amber-500 p-1.5 rounded-lg shadow-lg">🍎</span>
             Área Docente
           </h1>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-white/50 hover:text-white">
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSubTab(item.id as SubTab)}
+              onClick={() => {
+                setActiveSubTab(item.id as SubTab);
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeSubTab === item.id
                 ? 'bg-amber-900 text-white shadow-lg'
                 : 'text-amber-100/50 hover:bg-amber-900/30'
@@ -173,6 +181,14 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
         </div>
       </aside>
 
+      {/* Backdrop para mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Barra de Notificação da Secretaria */}
@@ -192,16 +208,24 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
           </div>
         )}
 
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0">
+          <div className="flex items-center gap-3 lg:gap-4">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-amber-50 text-amber-600 rounded-xl"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg hidden sm:block">
               <GraduationCap size={20} />
             </div>
             <div>
-              <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-none">Módulo do Professor: {menuItems.find(i => i.id === activeSubTab)?.label}</h2>
+              <h2 className="text-xs lg:text-sm font-black text-gray-900 uppercase tracking-tight leading-none">
+                {menuItems.find(i => i.id === activeSubTab)?.label}
+              </h2>
               {isLocked && (
                 <span className="text-[8px] font-black text-amber-600 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
-                  <Lock size={8} strokeWidth={3} /> Blindagem de Dados Ativa
+                  <Lock size={8} strokeWidth={3} /> Blindagem Ativa
                 </span>
               )}
             </div>
@@ -228,7 +252,7 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           {renderContent()}
         </div>
       </main>
