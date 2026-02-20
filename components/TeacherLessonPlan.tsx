@@ -107,7 +107,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
             themes: p.themes || '',
             rows: content.rows || [],
             status: p.status,
-            coordinationFeedback: p.coordination_feedback,
+            coordinationFeedback: p.teacher_id === user.id ? p.coordination_feedback : '',
             timestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now()
           };
         });
