@@ -14,7 +14,6 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { User as AuthUser, AccessLog } from '../types';
-import Register from './Register';
 import { supabase } from '../supabaseClient';
 
 interface LoginProps {
@@ -22,7 +21,6 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const [isRegistering, setIsRegistering] = useState(false);
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -122,21 +120,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   };
 
-  if (isRegistering) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6 relative overflow-hidden font-sans">
-        <img
-          src="/frente_escola.jpeg"
-          alt="Escola André Maggi"
-          className="absolute inset-0 w-full h-full object-cover opacity-20 animate-pulse-slow"
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-purple-900/80 to-black/90 backdrop-blur-sm"></div>
-        <div className="w-full max-w-md relative z-10">
-          <Register onBack={() => setIsRegistering(false)} onSuccess={() => setIsRegistering(false)} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden font-sans">
@@ -243,14 +226,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </button>
 
             <div className="pt-6 border-t border-white/10 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => setIsRegistering(true)}
-                className="w-full py-3 bg-white/5 text-white/80 rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10 transition-all flex items-center justify-center gap-2"
-              >
-                <UserPlus size={14} /> Solicitacao de novo acesso
-              </button>
-
               <div className="flex justify-center mt-2">
                 <button
                   type="button"

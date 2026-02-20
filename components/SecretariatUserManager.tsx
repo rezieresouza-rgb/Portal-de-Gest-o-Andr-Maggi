@@ -16,7 +16,9 @@ import {
     Lock,
     Unlock,
     MoreVertical,
-    ArrowRightLeft
+    ArrowRightLeft,
+    UserPlus,
+    Save
 } from 'lucide-react';
 import { User as AuthUser, UserRole } from '../types';
 import { supabase } from '../supabaseClient';
@@ -24,9 +26,18 @@ import { supabase } from '../supabaseClient';
 const SecretariatUserManager: React.FC = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'TODOS' | 'PENDENTE' | 'ATIVO' | 'BLOQUEADO'>('TODOS');
     const [roleFilter, setRoleFilter] = useState<string>('TODOS');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [newUserForm, setNewUserForm] = useState({
+        name: '',
+        login: '',
+        email: '',
+        password: '',
+        role: 'USUARIO_COMUM' as UserRole
+    });
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -84,6 +95,70 @@ const SecretariatUserManager: React.FC = () => {
             console.error("Erro ao atualizar cargo:", error);
             alert("Erro ao atualizar nível de acesso.");
         }
+    };
+
+    const handleCreateUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            // Verificar duplicidade
+            const { data: existingUser } = await supabase
+                .from('users')
+                .select('id')
+                .or(`login.eq.${newUserForm.login.toLowerCase()},email.eq.${newUserForm.email.toLowerCase()}`)
+                .maybeSingle();
+
+            if (existingUser) {
+                return alert("Este login ou email já está em uso.");
+            }
+
+            const newUser = {
+                name: newUserForm.name.toUpperCase(),
+                login: newUserForm.login.toLowerCase(),
+                email: newUserForm.email.toLowerCase(),
+                role: newUserForm.role,
+                password_hash: newUserForm.password,
+                status: 'ATIVO'
+            };
+
+            const { data, error } = await supabase
+                .from('users')
+                .insert([newUser])
+                .select();
+
+            if (error) throw error;
+
+            setUsers(prev => [data[0], ...prev]);
+            alert("Usuário criado com sucesso!");
+            setIsCreateModalOpen(false);
+            setNewUserForm({ name: '', login: '', email: '', password: '', role: 'USUARIO_COMUM' });
+        } catch (error: any) {
+            console.error("Erro ao criar usuário:", error);
+            alert("Erro ao criar usuário: " + error.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const generateLogin = () => {
+        const nameParts = newUserForm.name.trim().split(' ');
+        if (nameParts.length >= 2) {
+            const first = nameParts[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const last = nameParts[nameParts.length - 1].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            setNewUserForm(prev => ({ ...prev, login: `${first}.${last}` }));
+        } else if (nameParts.length === 1 && nameParts[0] !== '') {
+            const first = nameParts[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            setNewUserForm(prev => ({ ...prev, login: first }));
+        }
+    };
+
+    const generatePassword = () => {
+        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
+        let pass = "";
+        for (let i = 0; i < 10; i++) {
+            pass += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        setNewUserForm(prev => ({ ...prev, password: pass }));
     };
 
     const filteredUsers = useMemo(() => {
@@ -164,6 +239,12 @@ const SecretariatUserManager: React.FC = () => {
                 </div>
 
                 <div className="flex gap-3">
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="px-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center gap-2"
+                    >
+                        <UserPlus size={16} /> Novo Usuário
+                    </button>
                     <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl">
                         <Filter size={14} className="text-gray-400" />
                         <select
@@ -311,6 +392,130 @@ const SecretariatUserManager: React.FC = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Modal Novo Usuário */}
+            {isCreateModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsCreateModalOpen(false)}></div>
+                    <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="bg-indigo-600 p-8 text-white relative">
+                            <button onClick={() => setIsCreateModalOpen(false)} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-all">
+                                <XCircle size={20} />
+                            </button>
+                            <div className="flex items-center gap-5">
+                                <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/20">
+                                    <UserPlus size={32} />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Novo Usuário</h2>
+                                    <p className="text-indigo-200 text-[10px] font-bold uppercase tracking-widest mt-2">Cadastro Manual Administrativo</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleCreateUser} className="p-8 space-y-4">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Nome Completo</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newUserForm.name}
+                                        onChange={e => setNewUserForm({ ...newUserForm, name: e.target.value })}
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                                        placeholder="Ex: JOÃO DA SILVA"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 block">Login</label>
+                                            <button
+                                                type="button"
+                                                onClick={generateLogin}
+                                                className="text-[8px] font-black text-indigo-600 uppercase hover:underline"
+                                            >
+                                                Gerar Sugestão
+                                            </button>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newUserForm.login}
+                                            onChange={e => setNewUserForm({ ...newUserForm, login: e.target.value })}
+                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                                            placeholder="nome.login"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">E-mail (Opcional)</label>
+                                        <input
+                                            type="email"
+                                            value={newUserForm.email}
+                                            onChange={e => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                                            placeholder="exemplo@edu.br"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 block">Senha Provisória</label>
+                                        <button
+                                            type="button"
+                                            onClick={generatePassword}
+                                            className="text-[8px] font-black text-indigo-600 uppercase hover:underline"
+                                        >
+                                            Gerar Senha Aleatória
+                                        </button>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newUserForm.password}
+                                        onChange={e => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                                        placeholder="Defina a senha do usuário"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Nível de Acesso</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {['PROFESSOR', 'GESTAO', 'SECRETARIA', 'AAE', 'TAE', 'PSICOSSOCIAL'].map(r => (
+                                            <button
+                                                key={r}
+                                                type="button"
+                                                onClick={() => setNewUserForm({ ...newUserForm, role: r as UserRole })}
+                                                className={`py-2.5 rounded-xl text-[8px] font-black uppercase transition-all border-2 ${newUserForm.role === r ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-50 bg-gray-50 text-gray-400'}`}
+                                            >
+                                                {r === 'GESTAO' ? 'Gestão' : r === 'PSICOSSOCIAL' ? 'Mediação' : r}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCreateModalOpen(false)}
+                                    className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="flex-2 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                    Criar Usuário
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
