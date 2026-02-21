@@ -174,23 +174,17 @@ const SecretariatBulletinPrinter: React.FC = () => {
 
       return (
          <div className="bulletin-card p-6 border-2 border-black bg-white space-y-4">
-            <div className="flex justify-between items-center border-b border-black pb-4">
-               <div className="flex items-center gap-4 flex-1">
-                  <img src="/logo-escola.png" alt="Escola Logo" className="w-16 h-16 object-contain" />
-                  <div>
-                     <h1 className="text-xs font-black uppercase tracking-tight leading-none">E.E. André Antônio Maggi</h1>
-                     <p className="text-[7px] font-bold uppercase text-gray-500 mt-1">Colíder - Mato Grosso | CDCE: 11.906.357/0001-50</p>
-                     <p className="text-[7px] font-bold uppercase text-indigo-700 mt-0.5">{selectedBimestre} / 2024</p>
-                  </div>
+            <div className="flex justify-between items-center border-b border-black pb-4 gap-4">
+               <div className="flex items-center justify-start flex-1">
+                  <img src="/logo-escola.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
                </div>
 
-               <div className="flex-1 flex justify-center px-4">
-                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-16 object-contain" />
+               <div className="flex-[2] flex justify-center px-4">
+                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-24 w-full object-contain" />
                </div>
 
-               <div className="flex flex-col items-end gap-2 flex-1">
-                  <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-10 object-contain" />
-                  <p className="text-[7px] font-bold uppercase text-gray-400">Boletim Escolar Oficial</p>
+               <div className="flex items-center justify-end flex-1">
+                  <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-14 w-auto object-contain" />
                </div>
             </div>
 
