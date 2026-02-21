@@ -72,12 +72,17 @@ const SecretariatBulletinPrinter: React.FC = () => {
 
          const studentCodes = enrollments.map((e: any) => e.students.registration_number);
 
-         // 2. Buscar Notas (Grades) para o bimestre
+         // 2. Definir Bimestres para busca (Acumulado)
+         const BIMESTRES = ['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'];
+         const targetIdx = BIMESTRES.indexOf(selectedBimestre);
+         const activeBimestres = BIMESTRES.slice(0, targetIdx + 1);
+
+         // 3. Buscar Notas (Grades) para os bimestres selecionados
          const { data: assessments } = await supabase
             .from('assessments')
-            .select('id, subject')
+            .select('id, subject, bimestre')
             .eq('classroom_id', classData.id)
-            .eq('bimestre', selectedBimestre);
+            .in('bimestre', activeBimestres);
 
          let allGrades: any[] = [];
          if (assessments && assessments.length > 0) {
@@ -90,7 +95,9 @@ const SecretariatBulletinPrinter: React.FC = () => {
             allGrades = gradeRecords || [];
          }
 
-         // 3. Buscar Frequência (Attendance)
+         // 4. Buscar Frequência (Attendance)
+         // Nota: Poderia ser filtrado por data do bimestre se tivéssemos essa info clara, 
+         // mas vamos usar a frequência total do aluno até o momento como padrão.
          const { data: attendanceData } = await supabase
             .from('class_attendance_students')
             .select(`
@@ -99,17 +106,29 @@ const SecretariatBulletinPrinter: React.FC = () => {
         `)
             .in('student_id', studentCodes);
 
-         // Mapear dados para o formato do BulletinCard
+         // Mapear dados para o formato do BulletinCard (CUMULATIVO)
+         const subjects = Array.from(new Set(assessments?.map(a => a.subject) || []));
+
          const mappedStudents = enrollments.map((e: any) => {
             const student = e.students;
-            const studentGrades: Record<string, number> = {};
 
-            assessments?.forEach(ass => {
-               const g = allGrades.find(gr => gr.assessment_id === ass.id && gr.student_code === student.registration_number);
-               studentGrades[ass.subject] = g ? g.score : 0;
+            // Estrutura: { 'Matemática': { '1º BIMESTRE': 8.5, '2º BIMESTRE': 7.0 }, ... }
+            const studentGrades: Record<string, Record<string, number>> = {};
+
+            subjects.forEach(subj => {
+               studentGrades[subj] = {};
+               activeBimestres.forEach(bim => {
+                  const ass = assessments?.find(a => a.subject === subj && a.bimestre === bim);
+                  if (ass) {
+                     const g = allGrades.find(gr => gr.assessment_id === ass.id && gr.student_code === student.registration_number);
+                     studentGrades[subj][bim] = g ? g.score : 0;
+                  } else {
+                     studentGrades[subj][bim] = 0;
+                  }
+               });
             });
 
-            // Cálculo de frequência simples
+            // Cálculo de frequência
             const studentAtt = attendanceData?.filter((a: any) => a.student_id === student.registration_number) || [];
             const totalClasses = studentAtt.length || 1;
             const presences = studentAtt.filter((a: any) => a.is_present).length;
@@ -148,70 +167,93 @@ const SecretariatBulletinPrinter: React.FC = () => {
       }, 800);
    };
 
-   const BulletinCard = ({ student }: { student: any }) => (
-      <div className="bulletin-card p-6 border-2 border-black bg-white space-y-4">
-         <div className="flex justify-between items-start border-b border-black pb-4">
-            <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-black rounded">AM</div>
-               <div>
-                  <h1 className="text-xs font-black uppercase tracking-tight leading-none">E.E. André Antônio Maggi</h1>
-                  <p className="text-[7px] font-bold uppercase text-gray-500 mt-1">Colíder - Mato Grosso | CDCE: 11.906.357/0001-50</p>
+   const BulletinCard = ({ student }: { student: any }) => {
+      const BIMESTRES = ['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'];
+      const targetIdx = BIMESTRES.indexOf(selectedBimestre);
+      const activeBimestres = BIMESTRES.slice(0, targetIdx + 1);
+
+      return (
+         <div className="bulletin-card p-6 border-2 border-black bg-white space-y-4">
+            <div className="flex justify-between items-start border-b border-black pb-4">
+               <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-black rounded">AM</div>
+                  <div>
+                     <h1 className="text-xs font-black uppercase tracking-tight leading-none">E.E. André Antônio Maggi</h1>
+                     <p className="text-[7px] font-bold uppercase text-gray-500 mt-1">Colíder - Mato Grosso | CDCE: 11.906.357/0001-50</p>
+                  </div>
+               </div>
+               <div className="text-right">
+                  <p className="text-[9px] font-black uppercase text-indigo-700">{selectedBimestre} / 2024</p>
+                  <p className="text-[7px] font-bold uppercase text-gray-400">Boletim Escolar Oficial</p>
                </div>
             </div>
-            <div className="text-right">
-               <p className="text-[9px] font-black uppercase text-indigo-700">{selectedBimestre} / 2024</p>
-               <p className="text-[7px] font-bold uppercase text-gray-400">Boletim Escolar Oficial</p>
-            </div>
-         </div>
 
-         <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase">
-            <div className="p-2 bg-gray-50 border border-gray-200 rounded">
-               <p className="text-gray-400 text-[6px] mb-0.5">Aluno(a):</p>
-               <p className="truncate">{student.name}</p>
+            <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase">
+               <div className="p-2 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-gray-400 text-[6px] mb-0.5">Aluno(a):</p>
+                  <p className="truncate">{student.name}</p>
+               </div>
+               <div className="p-2 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-gray-400 text-[6px] mb-0.5">Turma:</p>
+                  <p>{selectedClass}</p>
+               </div>
             </div>
-            <div className="p-2 bg-gray-50 border border-gray-200 rounded">
-               <p className="text-gray-400 text-[6px] mb-0.5">Turma:</p>
-               <p>{selectedClass}</p>
-            </div>
-         </div>
 
-         <table className="w-full text-left border-collapse text-[8px]">
-            <thead>
-               <tr className="bg-gray-100 border border-black">
-                  <th className="p-2 uppercase font-black">Componente Curricular</th>
-                  <th className="p-2 text-center uppercase font-black w-16">Média Bim.</th>
-                  <th className="p-2 text-center uppercase font-black w-16">Freq. (%)</th>
-                  <th className="p-2 text-center uppercase font-black w-16">Situação</th>
-               </tr>
-            </thead>
-            <tbody className="border border-black">
-               {Object.entries(student.grades).map(([subj, grade]: [any, any]) => (
-                  <tr key={subj} className="border-b border-gray-200">
-                     <td className="p-2 font-bold uppercase">{subj}</td>
-                     <td className="p-2 text-center font-black">{grade.toFixed(1)}</td>
-                     <td className="p-2 text-center font-bold">{student.frequency}%</td>
-                     <td className="p-2 text-center">
-                        <span className={`font-black ${grade >= 6 ? 'text-emerald-700' : 'text-red-700'}`}>
-                           {grade >= 6 ? 'Apto' : 'Recuperação'}
-                        </span>
-                     </td>
+            <table className="w-full text-left border-collapse text-[8px]">
+               <thead>
+                  <tr className="bg-gray-100 border border-black">
+                     <th className="p-2 uppercase font-black">Componente Curricular</th>
+                     {activeBimestres.map(bim => (
+                        <th key={bim} className="p-1 text-center uppercase font-black w-10 border-l border-black">{bim.split(' ')[0]}</th>
+                     ))}
+                     <th className="p-1 text-center uppercase font-black w-12 border-l border-black bg-indigo-50/50">Média</th>
+                     <th className="p-2 text-center uppercase font-black w-16 border-l border-black">Freq. (%)</th>
+                     <th className="p-2 text-center uppercase font-black w-16 border-l border-black">Situação</th>
                   </tr>
-               ))}
-            </tbody>
-         </table>
+               </thead>
+               <tbody className="border border-black">
+                  {Object.entries(student.grades).map(([subj, bims]: [any, any]) => {
+                     const gradesArray = Object.values(bims) as number[];
+                     const average = gradesArray.length > 0
+                        ? gradesArray.reduce((a, b) => a + b, 0) / gradesArray.length
+                        : 0;
 
-         <div className="pt-8 grid grid-cols-2 gap-10 text-center">
-            <div className="border-t border-black pt-1">
-               <p className="text-[6px] font-black uppercase">Direção / Secretaria</p>
-               <p className="text-[5px] text-gray-400">Assinatura Digital Auditada</p>
-            </div>
-            <div className="border-t border-black pt-1">
-               <p className="text-[6px] font-black uppercase">Responsável (Ciente)</p>
-               <p className="text-[5px] text-gray-400">____/____/2024</p>
+                     return (
+                        <tr key={subj} className="border-b border-gray-200">
+                           <td className="p-2 font-bold uppercase">{subj}</td>
+                           {activeBimestres.map(bim => (
+                              <td key={bim} className="p-1 text-center font-black border-l border-black/10">
+                                 {bims[bim] ? bims[bim].toFixed(1) : '-'}
+                              </td>
+                           ))}
+                           <td className="p-1 text-center font-black border-l border-black bg-indigo-50/50">
+                              {average.toFixed(1)}
+                           </td>
+                           <td className="p-2 text-center font-bold border-l border-black">{student.frequency}%</td>
+                           <td className="p-2 text-center border-l border-black">
+                              <span className={`font-black ${average >= 6 ? 'text-emerald-700' : 'text-red-700'}`}>
+                                 {average >= 6 ? 'Apto' : 'Recuperação'}
+                              </span>
+                           </td>
+                        </tr>
+                     );
+                  })}
+               </tbody>
+            </table>
+
+            <div className="pt-8 grid grid-cols-2 gap-10 text-center">
+               <div className="border-t border-black pt-1">
+                  <p className="text-[6px] font-black uppercase">Direção / Secretaria</p>
+                  <p className="text-[5px] text-gray-400">Assinatura Digital Auditada</p>
+               </div>
+               <div className="border-t border-black pt-1">
+                  <p className="text-[6px] font-black uppercase">Responsável (Ciente)</p>
+                  <p className="text-[5px] text-gray-400">____/____/2024</p>
+               </div>
             </div>
          </div>
-      </div>
-   );
+      );
+   };
 
    return (
       <div className="space-y-8 animate-in fade-in duration-500 pb-20">
