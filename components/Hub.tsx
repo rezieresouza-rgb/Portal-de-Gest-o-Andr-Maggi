@@ -83,12 +83,15 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   ];
 
   // Regra de Ouro: GESTAO e ADMINISTRADOR sempre veem tudo.
-  // Outros cargos seguem o mapeamento dinâmico.
+  // Outros cargos seguem o mapeamento dinâmico baseado na Função Atual.
   const isAdmin = user.role === 'GESTAO' || user.role === 'ADMINISTRADOR';
   const allowedModules = allModules.filter(mod => {
     if (mod.adminOnly && !isAdmin) return false;
     if (isAdmin) return true;
-    const rolePermissions = dynamicPermissions[user.role] || [];
+
+    // Prioriza a Função para permissões dinâmicas, fallback para Role
+    const permissionKey = user.jobFunction || user.role;
+    const rolePermissions = dynamicPermissions[permissionKey] || [];
     return rolePermissions.includes(mod.id);
   });
 

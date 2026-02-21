@@ -529,6 +529,7 @@ const SecretariatStaffManager: React.FC = () => {
                email: serverData.email || null,
                cpf: cleanCpf || null,
                role: (form.userRole as UserRole) || targetRole,
+               job_function: serverData.job_function,
                password_hash: passwordToSet,
                status: 'ATIVO'
             };

@@ -9,6 +9,7 @@ export interface User {
   login: string;
   email?: string;
   role: UserRole;
+  jobFunction?: string;
   token?: string;
   lastLogin?: string;
   password?: string;

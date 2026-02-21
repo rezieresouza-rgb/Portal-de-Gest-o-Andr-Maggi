@@ -84,6 +84,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           name: user.name,
           login: user.login,
           role: user.role,
+          jobFunction: user.job_function,
           email: user.email,
           token: `sb_${user.id}_${Date.now()}`,
           lastLogin: new Date().toISOString()

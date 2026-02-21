@@ -41,13 +41,22 @@ const MODULES_LIST = [
    { id: 'patrimonio', label: 'Patrimônio' },
 ];
 
-const ROLES_LIST = [
-   { id: 'GESTAO', label: 'Gestão' },
-   { id: 'PROFESSOR', label: 'Professor' },
-   { id: 'TAE', label: 'Técnico (TAE)' },
-   { id: 'AAE', label: 'Apoio (AAE)' },
-   { id: 'PSICOSSOCIAL', label: 'Mediador (Psicossocial)' },
-   { id: 'SECRETARIA', label: 'Secretaria' },
+const FUNCTIONS_LIST = [
+   { id: "DIRETOR", label: "Diretor" },
+   { id: "COORDENADOR PEDAGÓGICO", label: "Coordenador Pedagógico" },
+   { id: "SECRETÁRIO", label: "Secretário" },
+   { id: "REGÊNCIA", label: "Regência" },
+   { id: "BUSCA ATIVA", label: "Busca Ativa" },
+   { id: "MEDIADOR", label: "Mediador" },
+   { id: "PSICOSSOCIAL", label: "Psicossocial" },
+   { id: "BIBLIOTECA", label: "Biblioteca" },
+   { id: "LIMPEZA", label: "Limpeza" },
+   { id: "NUTRIÇÃO", label: "Nutrição" },
+   { id: "AUXILIAR DE PÁTIO", label: "Auxiliar de Pátio" },
+   { id: "AUXILIAR DE COORDENAÇÃO PEDAGÓGICA", label: "Aux. de Coord. Pedagógica" },
+   { id: "ASSISTENTE DE EDUCAÇÃO ESPECIAL", label: "Assis. Educação Especial" },
+   { id: "APA", label: "APA" },
+   { id: "SALA DE RECURSOS", label: "Sala de Recursos" },
 ];
 
 const Settings: React.FC = () => {
@@ -66,12 +75,15 @@ const Settings: React.FC = () => {
          console.error("Error parsing permissions:", e);
       }
       return {
-         'GESTAO': MODULES_LIST.map(m => m.id),
-         'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado'],
-         'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
+         'DIRETOR': MODULES_LIST.map(m => m.id),
+         'COORDENADOR PEDAGÓGICO': MODULES_LIST.map(m => m.id),
+         'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado'],
+         'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
          'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
-         'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
-         'AAE': ['limpeza']
+         'MEDIADOR': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
+         'BUSCA ATIVA': ['busca_ativa', 'secretariat'],
+         'LIMPEZA': ['limpeza'],
+         'NUTRIÇÃO': ['merenda']
       };
    });
 
@@ -229,25 +241,25 @@ const Settings: React.FC = () => {
                      <table className="w-full text-left border-collapse">
                         <thead>
                            <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100">
-                              <th className="px-10 py-6 sticky left-0 bg-gray-50 z-10">Perfil / Módulo</th>
+                              <th className="px-10 py-6 sticky left-0 bg-gray-50 z-10">Função / Módulo</th>
                               {MODULES_LIST.map(mod => (
                                  <th key={mod.id} className="px-6 py-6 text-center whitespace-nowrap">{mod.label}</th>
                               ))}
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                           {ROLES_LIST.map(role => (
-                              <tr key={role.id} className="hover:bg-gray-50/50 transition-colors group">
+                           {FUNCTIONS_LIST.map(fn => (
+                              <tr key={fn.id} className="hover:bg-gray-50/50 transition-colors group">
                                  <td className="px-10 py-6 sticky left-0 bg-white group-hover:bg-gray-50 z-10 border-r border-gray-50">
-                                    <p className="text-sm font-black text-gray-900 uppercase">{role.label}</p>
-                                    <p className="text-[8px] font-bold text-indigo-600 uppercase tracking-widest mt-1">Cargo: {role.id}</p>
+                                    <p className="text-sm font-black text-gray-900 uppercase">{fn.label}</p>
+                                    <p className="text-[8px] font-bold text-indigo-600 uppercase tracking-widest mt-1">Cargo: {fn.id}</p>
                                  </td>
                                  {MODULES_LIST.map(mod => {
-                                    const isAllowed = (permissions[role.id] || []).includes(mod.id);
+                                    const isAllowed = (permissions[fn.id] || []).includes(mod.id);
                                     return (
                                        <td key={mod.id} className="px-6 py-6 text-center">
                                           <button
-                                             onClick={() => togglePermission(role.id, mod.id)}
+                                             onClick={() => togglePermission(fn.id, mod.id)}
                                              className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto transition-all ${isAllowed
                                                 ? 'bg-emerald-50 text-emerald-600 shadow-inner'
                                                 : 'bg-gray-100 text-gray-300'
