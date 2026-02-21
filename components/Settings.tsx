@@ -39,6 +39,7 @@ const MODULES_LIST = [
    { id: 'almoxarifado', label: 'Almoxarifado' },
    { id: 'limpeza', label: 'Manutenção' },
    { id: 'patrimonio', label: 'Patrimônio' },
+   { id: 'special_education', label: 'Sala de Recursos e APA' },
 ];
 
 const FUNCTIONS_LIST = [
