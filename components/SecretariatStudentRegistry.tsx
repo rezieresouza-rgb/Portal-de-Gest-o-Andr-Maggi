@@ -194,6 +194,29 @@ const SecretariatStudentRegistry: React.FC = () => {
 
       if (error) throw error;
 
+      // --- NEW: AUTOMATIC NOTIFICATION TO TEACHERS ---
+      const notifType = newMovement.type === 'ATESTADO' ? 'ATESTADO MÉDICO' :
+        newMovement.type === 'TRANSFERENCIA' ? 'TRANSFERÊNCIA' : 'MOVIMENTAÇÃO';
+
+      const newNotification = {
+        id: `notif-${Date.now()}`,
+        title: `${notifType}: ${selectedStudentForMovement.Nome}`,
+        message: `${newMovement.type}: ${newMovement.description || 'Registrado pela Secretaria'}.`,
+        date: new Date().toISOString(),
+        priority: newMovement.type === 'TRANSFERENCIA' ? 'ALTA' : 'NORMAL',
+        isRead: false
+      };
+
+      try {
+        const saved = localStorage.getItem('secretariat_notifications_v1');
+        const current = saved ? JSON.parse(saved) : [];
+        localStorage.setItem('secretariat_notifications_v1', JSON.stringify([newNotification, ...current]));
+        window.dispatchEvent(new Event('storage'));
+      } catch (e) {
+        console.error("Erro ao disparar notificação automática:", e);
+      }
+      // ----------------------------------------------
+
       alert("Movimentação registrada com sucesso!");
       fetchMovements(selectedStudentForMovement.id); // Refresh list
       setNewMovement({ ...newMovement, description: '' }); // Clear description

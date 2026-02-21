@@ -266,6 +266,7 @@ export interface StudentMovement {
   student_id: string;
   movement_type: 'TRANSFERENCIA' | 'ATESTADO' | 'ABANDONO' | 'OBITO' | 'OUTROS';
   description: string;
+  movement_date: string;
   created_at?: string;
 }
 

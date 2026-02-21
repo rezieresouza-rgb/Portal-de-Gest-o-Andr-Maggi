@@ -38,6 +38,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
   const [otherAttendance, setOtherAttendance] = useState<Record<string, { subject: string, isPresent: boolean, teacher: string }[]>>({});
   const [riskStats, setRiskStats] = useState<Record<string, { total: number, absences: number, percentage: number }>>({});
+  const [studentMovements, setStudentMovements] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     if (selectedClass) {
@@ -101,6 +102,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
         // Fetch cross attendance after loading students
         fetchCrossAttendance(className, date);
+        fetchStudentsMovements(mappedStudents.map(s => s.id));
       }
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -132,6 +134,26 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
         }
       });
       setRiskStats(risks);
+    }
+  };
+
+  const fetchStudentsMovements = async (studentIds: string[]) => {
+    try {
+      const { data, error } = await supabase
+        .from('student_movements')
+        .select('*')
+        .in('student_id', studentIds);
+
+      if (error) throw error;
+
+      const movementMap: Record<string, any[]> = {};
+      data?.forEach(mov => {
+        if (!movementMap[mov.student_id]) movementMap[mov.student_id] = [];
+        movementMap[mov.student_id].push(mov);
+      });
+      setStudentMovements(movementMap);
+    } catch (error) {
+      console.error('Error fetching movements:', error);
     }
   };
 
@@ -303,51 +325,76 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gray-100">
-            {students.map((student, idx) => (
-              <div key={student.CodigoAluno} className="bg-white p-6 flex items-center justify-between hover:bg-gray-50 transition-all group">
-                <div className="flex items-center gap-6">
-                  <span className="text-[10px] font-black text-gray-200 group-hover:text-amber-600 transition-colors">#{idx + 1}</span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-black text-gray-900 uppercase leading-none">{student.Nome}</p>
-                      {riskStats[student.CodigoAluno] && (
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[7px] font-black uppercase tracking-wider animate-pulse border border-red-200">
-                          <AlertTriangle size={8} /> Risco Evasão
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-1.5">Matrícula: {student.CodigoAluno}</p>
+            {students.map((student, idx) => {
+              const movements = studentMovements[student.id] || [];
+              const isTransferred = movements.some(m => m.movement_type === 'TRANSFERENCIA');
+              const hasMedicalCertificate = movements.some(m =>
+                m.movement_type === 'ATESTADO' && m.movement_date === date
+              );
 
-                    {/* Cross-Attendance Badges */}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {otherAttendance[student.CodigoAluno]?.map((rec, i) => (
-                        <div key={i} className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[7px] font-black uppercase tracking-wider ${rec.isPresent ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'
-                          }`}>
-                          <span>{rec.subject.substring(0, 3)}</span>
-                          {rec.isPresent ? <Check size={8} strokeWidth={3} /> : <X size={8} strokeWidth={3} />}
-                        </div>
-                      ))}
+              return (
+                <div key={student.CodigoAluno} className={`bg-white p-6 flex items-center justify-between hover:bg-gray-50 transition-all group ${isTransferred ? 'opacity-50 grayscale select-none' : ''}`}>
+                  <div className="flex items-center gap-6">
+                    <span className="text-[10px] font-black text-gray-200 group-hover:text-amber-600 transition-colors">#{idx + 1}</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-black uppercase leading-none ${isTransferred ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{student.Nome}</p>
+
+                        {isTransferred && (
+                          <div className="px-1.5 py-0.5 bg-red-600 text-white rounded text-[7px] font-black uppercase tracking-wider border border-red-700">
+                            Transferido
+                          </div>
+                        )}
+
+                        {hasMedicalCertificate && (
+                          <div className="px-1.5 py-0.5 bg-indigo-600 text-white rounded text-[7px] font-black uppercase tracking-wider border border-indigo-700">
+                            Atestado Médico
+                          </div>
+                        )}
+
+                        {riskStats[student.CodigoAluno] && !isTransferred && (
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[7px] font-black uppercase tracking-wider animate-pulse border border-red-200">
+                            <AlertTriangle size={8} /> Risco Evasão
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase mt-1.5">Matrícula: {student.CodigoAluno}</p>
+
+                      {/* Cross-Attendance Badges */}
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {otherAttendance[student.CodigoAluno]?.map((rec, i) => (
+                          <div key={i} className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[7px] font-black uppercase tracking-wider ${rec.isPresent ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'
+                            }`}>
+                            <span>{rec.subject.substring(0, 3)}</span>
+                            {rec.isPresent ? <Check size={8} strokeWidth={3} /> : <X size={8} strokeWidth={3} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => !isTransferred && toggleAttendance(student.CodigoAluno)}
+                      disabled={isTransferred}
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isTransferred ? 'bg-gray-100 text-gray-300 cursor-not-allowed' :
+                        (attendance[student.CodigoAluno]
+                          ? 'bg-emerald-50 text-emerald-600 shadow-inner'
+                          : 'bg-red-50 text-red-600 shadow-inner')
+                        }`}
+                    >
+                      {isTransferred ? <X size={24} strokeWidth={2} /> : (attendance[student.CodigoAluno] ? <Check size={24} strokeWidth={3} /> : <X size={24} strokeWidth={3} />)}
+                    </button>
+                    <div className="text-right w-16">
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${isTransferred ? 'text-gray-300' :
+                        (attendance[student.CodigoAluno] ? 'text-emerald-500' : 'text-red-500')
+                        }`}>
+                        {isTransferred ? 'Inativo' : (attendance[student.CodigoAluno] ? 'Presente' : 'Ausente')}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => toggleAttendance(student.CodigoAluno)}
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${attendance[student.CodigoAluno]
-                      ? 'bg-emerald-50 text-emerald-600 shadow-inner'
-                      : 'bg-red-50 text-red-600 shadow-inner'
-                      }`}
-                  >
-                    {attendance[student.CodigoAluno] ? <Check size={24} strokeWidth={3} /> : <X size={24} strokeWidth={3} />}
-                  </button>
-                  <div className="text-right w-16">
-                    <span className={`text-[8px] font-black uppercase tracking-widest ${attendance[student.CodigoAluno] ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {attendance[student.CodigoAluno] ? 'Presente' : 'Ausente'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : (
