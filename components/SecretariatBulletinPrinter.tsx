@@ -175,7 +175,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
       return (
          <div className="bulletin-card p-6 border-2 border-black bg-white space-y-4">
             <div className="flex justify-between items-center border-b border-black pb-4">
-               <div className="flex items-center gap-4">
+               <div className="flex items-center gap-4 flex-1">
                   <img src="/logo-escola.png" alt="Escola Logo" className="w-16 h-16 object-contain" />
                   <div>
                      <h1 className="text-xs font-black uppercase tracking-tight leading-none">E.E. André Antônio Maggi</h1>
@@ -183,7 +183,12 @@ const SecretariatBulletinPrinter: React.FC = () => {
                      <p className="text-[7px] font-bold uppercase text-indigo-700 mt-0.5">{selectedBimestre} / 2024</p>
                   </div>
                </div>
-               <div className="flex flex-col items-end gap-2">
+
+               <div className="flex-1 flex justify-center px-4">
+                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-16 object-contain" />
+               </div>
+
+               <div className="flex flex-col items-end gap-2 flex-1">
                   <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-10 object-contain" />
                   <p className="text-[7px] font-bold uppercase text-gray-400">Boletim Escolar Oficial</p>
                </div>
