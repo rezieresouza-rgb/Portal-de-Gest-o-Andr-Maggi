@@ -1,176 +1,306 @@
 
-import React, { useState } from 'react';
-import { 
-  Printer, 
-  Download, 
-  Search, 
-  Filter, 
-  Users, 
-  GraduationCap, 
-  ShieldCheck, 
-  CheckCircle2,
-  FileDown,
-  X,
-  Loader2
+import React, { useState, useEffect } from 'react';
+import {
+   Printer,
+   Download,
+   Search,
+   Filter,
+   Users,
+   GraduationCap,
+   ShieldCheck,
+   CheckCircle2,
+   FileDown,
+   X,
+   Loader2,
+   AlertCircle
 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 const SecretariatBulletinPrinter: React.FC = () => {
-  const [selectedClass, setSelectedClass] = useState('9º ANO A');
-  const [selectedBimestre, setSelectedBimestre] = useState('1º BIMESTRE');
-  const [isGenerating, setIsGenerating] = useState(false);
+   const [selectedClass, setSelectedClass] = useState('');
+   const [selectedBimestre, setSelectedBimestre] = useState('1º BIMESTRE');
+   const [isGenerating, setIsGenerating] = useState(false);
+   const [isLoading, setIsLoading] = useState(false);
+   const [availableClassrooms, setAvailableClassrooms] = useState<any[]>([]);
+   const [students, setStudents] = useState<any[]>([]);
 
-  // Mock de dados para demonstração. Em produção, buscaria de assessmets e students.
-  const demoStudents = [
-    { id: '1', name: 'ADRIANO OLIVEIRA SANTOS', grades: { 'Matemática': 8.5, 'Português': 7.0, 'História': 9.0, 'Geografia': 6.5, 'Ciências': 8.0 }, frequency: 95 },
-    { id: '2', name: 'ANA CLARA MENDES', grades: { 'Matemática': 9.5, 'Português': 8.5, 'História': 10.0, 'Geografia': 9.0, 'Ciências': 9.5 }, frequency: 100 },
-    { id: '3', name: 'BRUNO HENRIQUE SILVA', grades: { 'Matemática': 6.0, 'Português': 5.5, 'História': 7.0, 'Geografia': 5.0, 'Ciências': 6.5 }, frequency: 75 },
-    { id: '4', name: 'CARLA BEATRIZ SOUZA', grades: { 'Matemática': 7.5, 'Português': 7.5, 'História': 8.0, 'Geografia': 8.5, 'Ciências': 7.0 }, frequency: 92 },
-  ];
+   // Carregar turmas do Supabase
+   const fetchClassrooms = async () => {
+      try {
+         const { data, error } = await supabase
+            .from('classrooms')
+            .select('id, name')
+            .order('name');
+         if (error) throw error;
+         setAvailableClassrooms(data || []);
+         if (data && data.length > 0 && !selectedClass) {
+            setSelectedClass(data[0].name);
+         }
+      } catch (error) {
+         console.error("Erro ao buscar turmas:", error);
+      }
+   };
 
-  const handlePrint = async () => {
-    setIsGenerating(true);
-    // Simula tempo de processamento para renderizar o layout de impressão
-    setTimeout(() => {
-      window.print();
-      setIsGenerating(false);
-    }, 800);
-  };
+   const fetchBulletinData = async () => {
+      if (!selectedClass) return;
+      setIsLoading(true);
+      try {
+         // 1. Buscar Alunos da Turma
+         const { data: classData } = await supabase
+            .from('classrooms')
+            .select('id')
+            .eq('name', selectedClass)
+            .single();
 
-  const BulletinCard = ({ student }: { student: any }) => (
-    <div className="bulletin-card p-6 border-2 border-black bg-white space-y-4">
-      <div className="flex justify-between items-start border-b border-black pb-4">
-         <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-black rounded">AM</div>
-            <div>
-               <h1 className="text-xs font-black uppercase tracking-tight leading-none">E.E. André Antônio Maggi</h1>
-               <p className="text-[7px] font-bold uppercase text-gray-500 mt-1">Colíder - Mato Grosso | CDCE: 11.906.357/0001-50</p>
+         if (!classData) throw new Error("Turma não encontrada");
+
+         const { data: enrollments } = await supabase
+            .from('enrollments')
+            .select(`
+          students (
+            id,
+            name,
+            registration_number
+          )
+        `)
+            .eq('classroom_id', classData.id);
+
+         if (!enrollments) {
+            setStudents([]);
+            return;
+         }
+
+         const studentCodes = enrollments.map((e: any) => e.students.registration_number);
+
+         // 2. Buscar Notas (Grades) para o bimestre
+         const { data: assessments } = await supabase
+            .from('assessments')
+            .select('id, subject')
+            .eq('classroom_id', classData.id)
+            .eq('bimestre', selectedBimestre);
+
+         let allGrades: any[] = [];
+         if (assessments && assessments.length > 0) {
+            const assessmentIds = assessments.map(a => a.id);
+            const { data: gradeRecords } = await supabase
+               .from('grades')
+               .select('*')
+               .in('assessment_id', assessmentIds)
+               .in('student_code', studentCodes);
+            allGrades = gradeRecords || [];
+         }
+
+         // 3. Buscar Frequência (Attendance)
+         const { data: attendanceData } = await supabase
+            .from('class_attendance_students')
+            .select(`
+          is_present,
+          student_id
+        `)
+            .in('student_id', studentCodes);
+
+         // Mapear dados para o formato do BulletinCard
+         const mappedStudents = enrollments.map((e: any) => {
+            const student = e.students;
+            const studentGrades: Record<string, number> = {};
+
+            assessments?.forEach(ass => {
+               const g = allGrades.find(gr => gr.assessment_id === ass.id && gr.student_code === student.registration_number);
+               studentGrades[ass.subject] = g ? g.score : 0;
+            });
+
+            // Cálculo de frequência simples
+            const studentAtt = attendanceData?.filter((a: any) => a.student_id === student.registration_number) || [];
+            const totalClasses = studentAtt.length || 1;
+            const presences = studentAtt.filter((a: any) => a.is_present).length;
+            const frequency = Math.round((presences / totalClasses) * 100);
+
+            return {
+               id: student.id,
+               name: student.name,
+               grades: studentGrades,
+               frequency: frequency
+            };
+         });
+
+         setStudents(mappedStudents);
+      } catch (error) {
+         console.error("Erro ao carregar dados dos boletins:", error);
+      } finally {
+         setIsLoading(false);
+      }
+   };
+
+   useEffect(() => {
+      fetchClassrooms();
+   }, []);
+
+   useEffect(() => {
+      fetchBulletinData();
+   }, [selectedClass, selectedBimestre]);
+
+   const handlePrint = async () => {
+      setIsGenerating(true);
+      // Simula tempo de processamento para renderizar o layout de impressão
+      setTimeout(() => {
+         window.print();
+         setIsGenerating(false);
+      }, 800);
+   };
+
+   const BulletinCard = ({ student }: { student: any }) => (
+      <div className="bulletin-card p-6 border-2 border-black bg-white space-y-4">
+         <div className="flex justify-between items-start border-b border-black pb-4">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-black rounded">AM</div>
+               <div>
+                  <h1 className="text-xs font-black uppercase tracking-tight leading-none">E.E. André Antônio Maggi</h1>
+                  <p className="text-[7px] font-bold uppercase text-gray-500 mt-1">Colíder - Mato Grosso | CDCE: 11.906.357/0001-50</p>
+               </div>
+            </div>
+            <div className="text-right">
+               <p className="text-[9px] font-black uppercase text-indigo-700">{selectedBimestre} / 2024</p>
+               <p className="text-[7px] font-bold uppercase text-gray-400">Boletim Escolar Oficial</p>
             </div>
          </div>
-         <div className="text-right">
-            <p className="text-[9px] font-black uppercase text-indigo-700">{selectedBimestre} / 2024</p>
-            <p className="text-[7px] font-bold uppercase text-gray-400">Boletim Escolar Oficial</p>
-         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase">
-         <div className="p-2 bg-gray-50 border border-gray-200 rounded">
-            <p className="text-gray-400 text-[6px] mb-0.5">Aluno(a):</p>
-            <p className="truncate">{student.name}</p>
+         <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase">
+            <div className="p-2 bg-gray-50 border border-gray-200 rounded">
+               <p className="text-gray-400 text-[6px] mb-0.5">Aluno(a):</p>
+               <p className="truncate">{student.name}</p>
+            </div>
+            <div className="p-2 bg-gray-50 border border-gray-200 rounded">
+               <p className="text-gray-400 text-[6px] mb-0.5">Turma:</p>
+               <p>{selectedClass}</p>
+            </div>
          </div>
-         <div className="p-2 bg-gray-50 border border-gray-200 rounded">
-            <p className="text-gray-400 text-[6px] mb-0.5">Turma:</p>
-            <p>{selectedClass}</p>
-         </div>
-      </div>
 
-      <table className="w-full text-left border-collapse text-[8px]">
-         <thead>
-            <tr className="bg-gray-100 border border-black">
-               <th className="p-2 uppercase font-black">Componente Curricular</th>
-               <th className="p-2 text-center uppercase font-black w-16">Média Bim.</th>
-               <th className="p-2 text-center uppercase font-black w-16">Freq. (%)</th>
-               <th className="p-2 text-center uppercase font-black w-16">Situação</th>
-            </tr>
-         </thead>
-         <tbody className="border border-black">
-            {Object.entries(student.grades).map(([subj, grade]: [any, any]) => (
-               <tr key={subj} className="border-b border-gray-200">
-                  <td className="p-2 font-bold uppercase">{subj}</td>
-                  <td className="p-2 text-center font-black">{grade.toFixed(1)}</td>
-                  <td className="p-2 text-center font-bold">{student.frequency}%</td>
-                  <td className="p-2 text-center">
-                     <span className={`font-black ${grade >= 6 ? 'text-emerald-700' : 'text-red-700'}`}>
-                        {grade >= 6 ? 'Apto' : 'Recuperação'}
-                     </span>
-                  </td>
+         <table className="w-full text-left border-collapse text-[8px]">
+            <thead>
+               <tr className="bg-gray-100 border border-black">
+                  <th className="p-2 uppercase font-black">Componente Curricular</th>
+                  <th className="p-2 text-center uppercase font-black w-16">Média Bim.</th>
+                  <th className="p-2 text-center uppercase font-black w-16">Freq. (%)</th>
+                  <th className="p-2 text-center uppercase font-black w-16">Situação</th>
                </tr>
-            ))}
-         </tbody>
-      </table>
+            </thead>
+            <tbody className="border border-black">
+               {Object.entries(student.grades).map(([subj, grade]: [any, any]) => (
+                  <tr key={subj} className="border-b border-gray-200">
+                     <td className="p-2 font-bold uppercase">{subj}</td>
+                     <td className="p-2 text-center font-black">{grade.toFixed(1)}</td>
+                     <td className="p-2 text-center font-bold">{student.frequency}%</td>
+                     <td className="p-2 text-center">
+                        <span className={`font-black ${grade >= 6 ? 'text-emerald-700' : 'text-red-700'}`}>
+                           {grade >= 6 ? 'Apto' : 'Recuperação'}
+                        </span>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+         </table>
 
-      <div className="pt-8 grid grid-cols-2 gap-10 text-center">
-         <div className="border-t border-black pt-1">
-            <p className="text-[6px] font-black uppercase">Direção / Secretaria</p>
-            <p className="text-[5px] text-gray-400">Assinatura Digital Auditada</p>
-         </div>
-         <div className="border-t border-black pt-1">
-            <p className="text-[6px] font-black uppercase">Responsável (Ciente)</p>
-            <p className="text-[5px] text-gray-400">____/____/2024</p>
-         </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      
-      {/* Opções de Impressão */}
-      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 no-print">
-         <div className="flex items-center gap-6">
-            <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl">
-               <Printer size={32} />
+         <div className="pt-8 grid grid-cols-2 gap-10 text-center">
+            <div className="border-t border-black pt-1">
+               <p className="text-[6px] font-black uppercase">Direção / Secretaria</p>
+               <p className="text-[5px] text-gray-400">Assinatura Digital Auditada</p>
             </div>
-            <div>
-               <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight leading-none">Emissão de Boletins</h3>
-               <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-2">Configurado para 2 unidades por folha (A4)</p>
+            <div className="border-t border-black pt-1">
+               <p className="text-[6px] font-black uppercase">Responsável (Ciente)</p>
+               <p className="text-[5px] text-gray-400">____/____/2024</p>
             </div>
          </div>
-         <div className="flex flex-wrap gap-4 w-full md:w-auto">
-            <select 
-              value={selectedClass} 
-              onChange={e => setSelectedClass(e.target.value)}
-              className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
-            >
-               <option>6º ANO A</option>
-               <option>7º ANO A</option>
-               <option>8º ANO A</option>
-               <option>9º ANO A</option>
-            </select>
-            <select 
-              value={selectedBimestre} 
-              onChange={e => setSelectedBimestre(e.target.value)}
-              className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
-            >
-               <option>1º BIMESTRE</option>
-               <option>2º BIMESTRE</option>
-               <option>3º BIMESTRE</option>
-               <option>4º BIMESTRE</option>
-            </select>
-            <button 
-              onClick={handlePrint}
-              disabled={isGenerating}
-              className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-2"
-            >
-               {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
-               Gerar Lote de Impressão
-            </button>
+      </div>
+   );
+
+   return (
+      <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+
+         {/* Opções de Impressão */}
+         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 no-print">
+            <div className="flex items-center gap-6">
+               <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl">
+                  <Printer size={32} />
+               </div>
+               <div>
+                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight leading-none">Emissão de Boletins</h3>
+                  <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-2">Configurado para 2 unidades por folha (A4)</p>
+               </div>
+            </div>
+            <div className="flex flex-wrap gap-4 w-full md:w-auto">
+               <select
+                  value={selectedClass}
+                  onChange={e => setSelectedClass(e.target.value)}
+                  className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+               >
+                  <option value="">Selecionar Turma...</option>
+                  {availableClassrooms.map(c => (
+                     <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+               </select>
+               <select
+                  value={selectedBimestre}
+                  onChange={e => setSelectedBimestre(e.target.value)}
+                  className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all"
+               >
+                  <option>1º BIMESTRE</option>
+                  <option>2º BIMESTRE</option>
+                  <option>3º BIMESTRE</option>
+                  <option>4º BIMESTRE</option>
+               </select>
+               <button
+                  onClick={handlePrint}
+                  disabled={isGenerating}
+                  className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-2"
+               >
+                  {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
+                  Gerar Lote de Impressão
+               </button>
+            </div>
          </div>
-      </div>
 
-      {/* Visualização de Pré-impressão */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 no-print">
-         {demoStudents.map(student => (
-           <div key={student.id} className="opacity-80 hover:opacity-100 transition-opacity">
-              <BulletinCard student={student} />
-           </div>
-         ))}
-      </div>
+         {/* Visualização de Pré-impressão */}
+         <div className="relative min-h-[400px]">
+            {isLoading && (
+               <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center rounded-[3rem]">
+                  <Loader2 size={48} className="text-indigo-600 animate-spin mb-4" />
+                  <p className="text-xs font-black uppercase text-indigo-950 tracking-widest">Processando Notas e Médias...</p>
+               </div>
+            )}
 
-      {/* ÁREA DE IMPRESSÃO (ESTILIZADA PARA 2 POR PÁGINA) */}
-      <div className="print-area hidden">
-         <div className="bulletin-print-layout">
-            {Array.from({ length: Math.ceil(demoStudents.length / 2) }).map((_, pageIdx) => (
-              <div key={pageIdx} className="print-page h-[297mm] flex flex-col p-[10mm] space-y-[10mm]">
-                 <BulletinCard student={demoStudents[pageIdx * 2]} />
-                 {demoStudents[pageIdx * 2 + 1] && (
-                   <BulletinCard student={demoStudents[pageIdx * 2 + 1]} />
-                 )}
-              </div>
-            ))}
+            {students.length > 0 ? (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 no-print">
+                  {students.map(student => (
+                     <div key={student.id} className="opacity-80 hover:opacity-100 transition-opacity">
+                        <BulletinCard student={student} />
+                     </div>
+                  ))}
+               </div>
+            ) : (
+               !isLoading && (
+                  <div className="flex flex-col items-center justify-center py-20 text-gray-300 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 no-print">
+                     <GraduationCap size={64} className="mb-4 opacity-20" />
+                     <p className="font-black uppercase text-xs tracking-widest">Nenhum dado encontrado para esta turma/bimestre</p>
+                  </div>
+               )
+            )}
          </div>
-      </div>
 
-      <style>{`
+         {/* ÁREA DE IMPRESSÃO (ESTILIZADA PARA 2 POR PÁGINA) */}
+         <div className="print-area hidden">
+            <div className="bulletin-print-layout">
+               {Array.from({ length: Math.ceil(students.length / 2) }).map((_, pageIdx) => (
+                  <div key={pageIdx} className="print-page h-[297mm] flex flex-col p-[10mm] space-y-[10mm]">
+                     <BulletinCard student={students[pageIdx * 2]} />
+                     {students[pageIdx * 2 + 1] && (
+                        <BulletinCard student={students[pageIdx * 2 + 1]} />
+                     )}
+                  </div>
+               ))}
+            </div>
+         </div>
+
+         <style>{`
         @media print {
           @page { size: A4; margin: 0; }
           .no-print { display: none !important; }
@@ -192,8 +322,8 @@ const SecretariatBulletinPrinter: React.FC = () => {
         }
       `}</style>
 
-    </div>
-  );
+      </div>
+   );
 };
 
 export default SecretariatBulletinPrinter;
