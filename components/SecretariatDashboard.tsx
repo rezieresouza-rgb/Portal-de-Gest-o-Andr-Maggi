@@ -16,6 +16,39 @@ import { supabase } from '../supabaseClient';
 const SecretariatDashboard: React.FC = () => {
    const [studentCount, setStudentCount] = useState(0);
    const [classCount, setClassCount] = useState(0);
+   const [isSendingAlerts, setIsSendingAlerts] = useState(false);
+   const [alertsSent, setAlertsSent] = useState(false);
+
+   const handleSendAlerts = () => {
+      setIsSendingAlerts(true);
+
+      // Simular delay de processamento/sincronização
+      setTimeout(() => {
+         setIsSendingAlerts(false);
+         setAlertsSent(true);
+
+         // Adicionar log de sistema (opcional) ou apenas feedback visual
+         const newNotification = {
+            id: `notif-${Date.now()}`,
+            title: 'SINCRONIZAÇÃO DE DIÁRIOS CONCLUÍDA',
+            message: 'Todos os avisos de enturmação foram disparados para a Área do Professor com sucesso.',
+            date: new Date().toISOString(),
+            priority: 'NORMAL',
+            isRead: false
+         };
+
+         try {
+            const saved = localStorage.getItem('secretariat_notifications_v1');
+            const current = saved ? JSON.parse(saved) : [];
+            localStorage.setItem('secretariat_notifications_v1', JSON.stringify([newNotification, ...current]));
+            window.dispatchEvent(new Event('storage')); // Notificar outros componentes
+         } catch (e) {
+            console.error("Erro ao salvar notificação:", e);
+         }
+
+         alert("Sucesso! 4 alertas foram disparados para os professores.");
+      }, 1500);
+   };
 
    useEffect(() => {
       const fetchStats = async () => {
@@ -141,20 +174,31 @@ const SecretariatDashboard: React.FC = () => {
                         <h3 className="text-lg font-black uppercase tracking-widest">Push Área do Professor</h3>
                      </div>
                      <p className="text-indigo-100/80 text-sm leading-relaxed font-medium">
-                        Existem <strong>4 novos avisos</strong> de enturmação pendentes de envio automático para os professores.
+                        {alertsSent
+                           ? <strong>Tudo atualizado! Nenhum aviso pendente.</strong>
+                           : <>Existem <strong>4 novos avisos</strong> de enturmação pendentes de envio automático para os professores.</>
+                        }
                      </p>
                      <div className="space-y-2">
                         <div className="flex justify-between items-center text-[10px] font-black uppercase text-indigo-300">
-                           <span>Sincronização</span>
-                           <span>95%</span>
+                           <span>{isSendingAlerts ? 'Disparando...' : 'Sincronização'}</span>
+                           <span>{alertsSent ? '100%' : (isSendingAlerts ? '60%' : '95%')}</span>
                         </div>
                         <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                           <div className="h-full bg-emerald-500" style={{ width: '95%' }}></div>
+                           <div className={`h-full transition-all duration-1000 ${alertsSent ? 'bg-emerald-500 w-full' : (isSendingAlerts ? 'bg-amber-500 w-[60%]' : 'bg-indigo-400 w-[95%]')}`}></div>
                         </div>
                      </div>
                   </div>
-                  <button className="relative z-10 mt-8 w-full py-4 bg-white text-indigo-950 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-50 transition-all shadow-lg flex items-center justify-center gap-2">
-                     Disparar Alertas <TrendingUp size={14} />
+                  <button
+                     onClick={handleSendAlerts}
+                     disabled={isSendingAlerts || alertsSent}
+                     className={`relative z-10 mt-8 w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${alertsSent
+                           ? 'bg-emerald-500 text-white cursor-default'
+                           : (isSendingAlerts ? 'bg-indigo-100 text-indigo-400' : 'bg-white text-indigo-950 hover:bg-indigo-50')
+                        }`}
+                  >
+                     {isSendingAlerts ? 'Processando...' : (alertsSent ? 'Alertas Enviados' : 'Disparar Alertas')}
+                     {!isSendingAlerts && !alertsSent && <TrendingUp size={14} />}
                   </button>
                </div>
             </div>
