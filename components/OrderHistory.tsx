@@ -12,23 +12,59 @@ import {
   Filter,
   PackageCheck,
   FileDown,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import { Order } from '../types';
 
 const OrderHistory: React.FC = () => {
-  const [history, setHistory] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('merenda_order_history');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [history, setHistory] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isSystemLocked, setIsSystemLocked] = useState(localStorage.getItem('system_shield_lock') === 'true');
 
+  const fetchHistory = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*), contract:contracts(number, supplier:suppliers(name))')
+        .order('issue_date', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const formatted: Order[] = data.map((o: any) => ({
+          id: o.id,
+          orderNumber: o.order_number,
+          contractNumber: o.contract?.number || "---",
+          supplierName: o.contract?.supplier?.name || "Desconhecido",
+          issueDate: o.issue_date,
+          deliveryDate: o.issue_date, // Reusing issue_date as placeholder if delivery_date absent
+          totalValue: o.total_value,
+          observations: o.observations || "",
+          items: o.order_items.map((i: any) => ({
+            description: i.description,
+            quantity: i.quantity,
+            unit: i.unit || "UNID",
+            unitPrice: i.unit_price,
+            brand: "" // Brand not in order_items schema but required by type
+          }))
+        }));
+        setHistory(formatted);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('merenda_order_history', JSON.stringify(history));
-  }, [history]);
+    fetchHistory();
+  }, []);
 
   const filteredHistory = useMemo(() => {
     return history.filter(order =>
@@ -55,12 +91,24 @@ const OrderHistory: React.FC = () => {
     const confirmacao = window.confirm("Deseja realmente excluir este pedido do histórico? Esta ação é permanente.");
 
     if (confirmacao) {
-      setHistory(prev => {
-        const newHistory = prev.filter(o => o.id !== id);
-        localStorage.setItem('merenda_order_history', JSON.stringify(newHistory));
-        return newHistory;
-      });
-      if (selectedOrderId === id) setSelectedOrderId(null);
+      const deleteData = async () => {
+        try {
+          // Os itens são deletados via cascade se o banco estiver configurado, 
+          // senão precisamos deletar manualmente primeiro.
+          const { error: itemsError } = await supabase.from('order_items').delete().eq('order_id', id);
+          if (itemsError) throw itemsError;
+
+          const { error } = await supabase.from('orders').delete().eq('id', id);
+          if (error) throw error;
+
+          setHistory(prev => prev.filter(o => o.id !== id));
+          if (selectedOrderId === id) setSelectedOrderId(null);
+        } catch (error) {
+          console.error("Erro ao excluir pedido:", error);
+          alert("Erro ao excluir pedido.");
+        }
+      };
+      deleteData();
     }
   };
 

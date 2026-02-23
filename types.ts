@@ -202,7 +202,19 @@ export type AssetCondition = 'EXCELENTE' | 'BOM' | 'REGULAR' | 'PÉSSIMO';
 export interface Asset { id: string; description: string; location: string; heritageNumber: string; condition: AssetCondition; photo?: string; isUnserviceable: boolean; unserviceableData?: { date: string; reason: string; responsible: string; }; history: AssetHistory[]; timestamp: number; }
 export interface TechnicalSheetIngredient { description: string; perCapitaLiquido: number; }
 export interface TechnicalSheet { preparationName: string; ingredients: TechnicalSheetIngredient[]; }
-export interface ShoppingListItem { description: string; quantity: number; unit: string; week: number; supplierName: string; contractNumber: string; isPerishable: boolean; unit_price: number; }
+export interface ShoppingListItem {
+  description: string;
+  quantity: number;
+  unit: string;
+  week: number;
+  supplierName: string;
+  contractNumber: string;
+  isPerishable: boolean;
+  unit_price: number;
+  selected?: boolean;
+  contractId?: string;
+  contractItemId?: string;
+}
 
 export type SchoolEnvironmentCategory =
   | 'SALA_AULA'
