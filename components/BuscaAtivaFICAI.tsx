@@ -126,16 +126,14 @@ const BuscaAtivaFICAI: React.FC = () => {
 
          {selectedStudentId && student && (
             <div id="ficai-document" className="bg-white p-12 border border-gray-200 shadow-2xl max-w-4xl mx-auto space-y-10 font-sans text-gray-900">
-               <div className="text-center border-b-2 border-black pb-8 space-y-2">
-                  <h1 className="text-2xl font-black uppercase">FICAI - Ficha de Comunicação de Aluno Infrequente</h1>
-                  <p className="text-sm font-bold uppercase">Estado de Mato Grosso - Secretaria de Estado de Educação</p>
+               <div className="text-center border-b-2 border-orange-950 pb-8 mb-10">
+                  <h1 className="text-2xl font-black uppercase text-orange-950">Formulário de Busca Ativa (FICAI)</h1>
                   <p className="text-[10px] font-bold">Base Legal: Estatuto da Criança e do Adolescente (ECA) - Art. 56, inciso II</p>
                </div>
 
                <div className="grid grid-cols-1 gap-6">
                   <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
                      <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-700">1. Identificação da Unidade Escolar</h4>
-                     <p className="text-xs">Escola Estadual André Antônio Maggi | CDCE: 11.906.357/0001-50</p>
                      <p className="text-xs">Endereço: Avenida Borba Gato, nº 80, Colíder-MT</p>
                   </div>
 

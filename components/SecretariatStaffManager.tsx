@@ -449,21 +449,21 @@ const SecretariatStaffManager: React.FC = () => {
          targetRole = 'GESTAO';
       } else if (job.includes('SECRETÁRIO') || job.includes('SECRETARIA') || job.includes('ADM')) {
          targetRole = 'SECRETARIA';
-      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG') || job.includes('BUSCA ATIVA')) {
+      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG') || job.includes('BUSCA ATIVA') || job.includes('RECURSOS') || job.includes('APA') || job.includes('ESPECIAL')) {
          targetRole = 'PSICOSSOCIAL';
       }
-      // 2. Prioridade: Tags específicas para pessoal de Apoio
+      // 2. Prioridade: Tags específicas para pessoal de Apoio e Nutrição
       else if (job.includes('NUTRIÇÃO') || job.includes('COZINHA') || job.includes('MERENDA')) {
          targetRole = 'AEE_NUTRICAO';
       } else if (job.includes('LIMPEZA') || job.includes('ZELADORIA')) {
          targetRole = 'AAE_LIMPEZA';
       }
-      // 3. Fallback: Baseado no Tipo de Servidor
+      // 3. Fallback: Baseado no Tipo de Servidor e Função Genérica
       else {
-         if (type === 'Professor') {
-            targetRole = 'PROFESSOR';
-         } else if (type === 'Técnico') {
+         if (job.includes('BIBLIOTECA') || type === 'Técnico') {
             targetRole = 'TAE';
+         } else if (job.includes('REGÊNCIA') || type === 'Professor') {
+            targetRole = 'PROFESSOR';
          } else {
             targetRole = 'AAE';
          }
@@ -513,7 +513,7 @@ const SecretariatStaffManager: React.FC = () => {
             let query = supabase.from('users').select('id, login, email, cpf');
 
             if (serverData.email && cleanCpf) {
-               query = query.or(`email.eq."${serverData.email}",cpf.eq."${cleanCpf}"`);
+               query = query.or(`email.eq.${serverData.email},cpf.eq.${cleanCpf}`);
             } else if (serverData.email) {
                query = query.eq('email', serverData.email);
             } else {
@@ -523,12 +523,17 @@ const SecretariatStaffManager: React.FC = () => {
             const { data: existingUser } = await query.maybeSingle();
 
             const passwordToSet = form.password || 'Mudar123!';
+
+            // Decisão: O Role do sistema segue a função mapeada (targetRole), 
+            // a menos que o usuário tenha escolhido manualmente um nível de acesso diferente (form.userRole).
+            const finalRole = (form.userRole as UserRole) || targetRole;
+
             const userData = {
                name: serverData.name,
                login: cleanCpf || existingUser?.login || serverData.email,
                email: serverData.email || null,
                cpf: cleanCpf || null,
-               role: (form.userRole as UserRole) || targetRole,
+               role: finalRole,
                job_function: serverData.job_function,
                password_hash: passwordToSet,
                status: 'ATIVO'

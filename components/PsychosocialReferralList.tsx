@@ -45,7 +45,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
     observations: '',
     // Additional fields to match type if needed, but for now specific form fields
     student_age: '',
-    school_unit: 'E.E. André Antônio Maggi',
+    school_unit: 'Unidade Escolar',
     teacher_name: 'COORDENAÇÃO', // Default or logged user
     previous_strategies: '',
     attendance_frequency: '',
@@ -160,7 +160,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
       status: 'AGUARDANDO',
       observations: '',
       student_age: '',
-      school_unit: 'E.E. André Antônio Maggi',
+      school_unit: 'Unidade Escolar',
       teacher_name: 'COORDENAÇÃO',
       previous_strategies: '',
       attendance_frequency: '',
@@ -191,8 +191,8 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight">Caminhos do Cuidado</h2>
-          <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Encaminhamentos Psicossociais</p>
+          <h1 className="text-2xl font-black uppercase text-blue-950">Guia de Encaminhamento Psicossocial</h1>
+          <p className="text-[10px] font-bold uppercase text-blue-900/60 tracking-widest">Rede de Proteção à Criança e ao Adolescente</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -240,7 +240,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
                       status: ref.status,
                       observations: typeof ref.observations === 'string' ? ref.observations : '',
                       student_age: ref.studentAge || '',
-                      school_unit: ref.schoolUnit || 'E.E. André Antônio Maggi',
+                      school_unit: ref.schoolUnit || 'Unidade Escolar',
                       teacher_name: ref.teacherName || '',
                       previous_strategies: ref.previousStrategies || '',
                       attendance_frequency: ref.attendanceFrequency || '',
@@ -271,7 +271,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${ref.status === 'CONCLUÍDO' ? 'bg-emerald-500' :
-                    ref.status === 'EM_ANDAMENTO' || ref.status === 'EM_ACOMPANHAMENTO' ? 'bg-blue-500' : 'bg-amber-500'
+                  ref.status === 'EM_ANDAMENTO' || ref.status === 'EM_ACOMPANHAMENTO' ? 'bg-blue-500' : 'bg-amber-500'
                   }`} />
                 <span className="text-[10px] font-black text-white/60 uppercase">{ref.status.replace('_', ' ')}</span>
               </div>

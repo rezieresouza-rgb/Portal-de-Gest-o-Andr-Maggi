@@ -64,7 +64,7 @@ const PEDAGOGICAL_CRITERIA = [
 ];
 
 const INITIAL_STATE: Omit<ObservationData, 'id' | 'timestamp'> = {
-  escola: 'E.E. André Antônio Maggi',
+  escola: 'Unidade Escolar',
   teacher: '',
   subject: 'MATEMÁTICA',
   className: '',
@@ -370,10 +370,8 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
                 <button onClick={() => setViewMode('list')} className="p-3 bg-white/5 text-white/40 hover:text-violet-400 rounded-2xl transition-all border border-white/10">
                   <ArrowLeft size={24} />
                 </button>
-                <div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight">Ficha de Observação - Rotinas Pedagógicas</h3>
-                  <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mt-1">Conforme orientações da SEDUC/MT</p>
-                </div>
+                <h1 className="text-2xl font-black uppercase text-emerald-950">Registro de Observação em Sala de Aula</h1>
+                <p className="text-[10px] font-bold uppercase text-emerald-900/60 tracking-widest">Acompanhamento e Suporte à Prática Pedagógica Conforme orientações da SEDUC/MT</p>
               </div>
               <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl shadow-sm border border-violet-500/20">
                 <Eye size={24} />

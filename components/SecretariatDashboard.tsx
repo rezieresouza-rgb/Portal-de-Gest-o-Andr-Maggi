@@ -193,8 +193,8 @@ const SecretariatDashboard: React.FC = () => {
                      onClick={handleSendAlerts}
                      disabled={isSendingAlerts || alertsSent}
                      className={`relative z-10 mt-8 w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${alertsSent
-                           ? 'bg-emerald-500 text-white cursor-default'
-                           : (isSendingAlerts ? 'bg-indigo-100 text-indigo-400' : 'bg-white text-indigo-950 hover:bg-indigo-50')
+                        ? 'bg-emerald-500 text-white cursor-default'
+                        : (isSendingAlerts ? 'bg-indigo-100 text-indigo-400' : 'bg-white text-indigo-950 hover:bg-indigo-50')
                         }`}
                   >
                      {isSendingAlerts ? 'Processando...' : (alertsSent ? 'Alertas Enviados' : 'Disparar Alertas')}

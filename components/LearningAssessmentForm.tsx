@@ -224,7 +224,6 @@ const LearningAssessmentForm: React.FC<LearningAssessmentFormProps> = ({ onClose
                 <div id="assessment-pdf-content" className="hidden print:block fixed -left-[9999px] top-0 w-[210mm] bg-white p-12 text-gray-900 font-sans">
                     <div className="text-center border-b-2 border-emerald-900 pb-8 mb-10">
                         <h1 className="text-2xl font-black uppercase text-emerald-900">Sondagem de Alfabetização & Aprendizagem</h1>
-                        <p className="text-sm font-bold uppercase text-emerald-700">André Antônio Maggi | CDCE: 11.906.357/0001-50</p>
                     </div>
 
                     <div className="space-y-8">

@@ -173,42 +173,44 @@ const SecretariatBulletinPrinter: React.FC = () => {
       const activeBimestres = BIMESTRES.slice(0, targetIdx + 1);
 
       return (
-         <div className="bulletin-card p-6 border-2 border-black bg-white space-y-4">
-            <div className="flex justify-between items-center border-b border-black pb-4 gap-4">
+         <div className="bulletin-card p-3 border border-black bg-white space-y-1">
+            <div className="flex justify-between items-center border-b border-black pb-1 gap-4">
                <div className="flex items-center justify-start flex-1">
-                  <img src="/logo-escola.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
+                  <img src="/logo-escola.png" alt="Escola Logo" className="h-12 w-auto object-contain" />
                </div>
 
                <div className="flex-[2] flex justify-center px-4">
-                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-24 w-full object-contain" />
+                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-14 w-full object-contain" />
                </div>
 
                <div className="flex items-center justify-end flex-1">
-                  <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-14 w-auto object-contain" />
+                  <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-10 w-auto object-contain" />
                </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase">
-               <div className="p-2 bg-gray-50 border border-gray-200 rounded">
-                  <p className="text-gray-400 text-[6px] mb-0.5">Aluno(a):</p>
+            <div className="text-center text-[5px] text-gray-300 font-black uppercase tracking-widest no-print">
+               Bulletin V3.0 - Stabilization Active
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[7px] font-black uppercase">
+               <div className="p-1 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-gray-400 text-[5px] mb-0.5">Aluno(a):</p>
                   <p className="truncate">{student.name}</p>
                </div>
-               <div className="p-2 bg-gray-50 border border-gray-200 rounded">
-                  <p className="text-gray-400 text-[6px] mb-0.5">Turma:</p>
+               <div className="p-1 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-gray-400 text-[5px] mb-0.5">Turma:</p>
                   <p>{selectedClass}</p>
                </div>
             </div>
 
-            <table className="w-full text-left border-collapse text-[8px]">
+            <table className="w-full text-left border-collapse text-[7px]">
                <thead>
                   <tr className="bg-gray-100 border border-black">
-                     <th className="p-2 uppercase font-black">Componente Curricular</th>
+                     <th className="p-1 uppercase font-black">Componente Curricular</th>
                      {activeBimestres.map(bim => (
                         <th key={bim} className="p-1 text-center uppercase font-black w-10 border-l border-black">{bim.split(' ')[0]}</th>
                      ))}
                      <th className="p-1 text-center uppercase font-black w-12 border-l border-black bg-indigo-50/50">Média</th>
-                     <th className="p-2 text-center uppercase font-black w-16 border-l border-black">Freq. (%)</th>
-                     <th className="p-2 text-center uppercase font-black w-16 border-l border-black">Situação</th>
+                     <th className="p-1 text-center uppercase font-black w-16 border-l border-black">Freq. (%)</th>
+                     <th className="p-1 text-center uppercase font-black w-16 border-l border-black">Situação</th>
                   </tr>
                </thead>
                <tbody className="border border-black">
@@ -220,7 +222,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
 
                      return (
                         <tr key={subj} className="border-b border-gray-200">
-                           <td className="p-2 font-bold uppercase">{subj}</td>
+                           <td className="p-1 font-bold uppercase">{subj}</td>
                            {activeBimestres.map(bim => (
                               <td key={bim} className="p-1 text-center font-black border-l border-black/10">
                                  {bims[bim] ? bims[bim].toFixed(1) : '-'}
@@ -229,8 +231,8 @@ const SecretariatBulletinPrinter: React.FC = () => {
                            <td className="p-1 text-center font-black border-l border-black bg-indigo-50/50">
                               {average.toFixed(1)}
                            </td>
-                           <td className="p-2 text-center font-bold border-l border-black">{student.frequency}%</td>
-                           <td className="p-2 text-center border-l border-black">
+                           <td className="p-1 text-center font-bold border-l border-black">{student.frequency}%</td>
+                           <td className="p-1 text-center border-l border-black">
                               <span className={`font-black ${average >= 6 ? 'text-emerald-700' : 'text-red-700'}`}>
                                  {average >= 6 ? 'Apto' : 'Recuperação'}
                               </span>
@@ -241,7 +243,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
                </tbody>
             </table>
 
-            <div className="pt-8 grid grid-cols-2 gap-10 text-center">
+            <div className="pt-2 grid grid-cols-2 gap-4 text-center">
                <div className="border-t border-black pt-1">
                   <p className="text-[6px] font-black uppercase">Direção / Secretaria</p>
                   <p className="text-[5px] text-gray-400">Assinatura Digital Auditada</p>
@@ -296,7 +298,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
                   className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-2"
                >
                   {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
-                  Gerar Lote de Impressão
+                  Gerar Lote (V3)
                </button>
             </div>
          </div>
@@ -332,7 +334,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
          <div className="print-area hidden">
             <div className="bulletin-print-layout">
                {Array.from({ length: Math.ceil(students.length / 2) }).map((_, pageIdx) => (
-                  <div key={pageIdx} className="print-page h-[297mm] flex flex-col p-[10mm] space-y-[10mm]">
+                  <div key={pageIdx} className="print-page h-[290mm] flex flex-col p-[10mm] space-y-[8mm] justify-start bg-white">
                      <BulletinCard student={students[pageIdx * 2]} />
                      {students[pageIdx * 2 + 1] && (
                         <BulletinCard student={students[pageIdx * 2 + 1]} />
@@ -347,19 +349,24 @@ const SecretariatBulletinPrinter: React.FC = () => {
           @page { size: A4; margin: 0; }
           .no-print { display: none !important; }
           .print-area { display: block !important; }
-          .print-page { 
-            page-break-after: always; 
-            box-sizing: border-box;
-            width: 210mm;
-            height: 297mm;
-            background: white !important;
-          }
-          .bulletin-card {
-            height: calc(50% - 15mm); 
-            border: 1px solid black !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-          }
+           .print-page { 
+             page-break-after: always; 
+             box-sizing: border-box;
+             width: 210mm;
+             height: 290mm;
+             margin: 0 auto;
+             background: white !important;
+             overflow: hidden !important;
+           }
+           .bulletin-card {
+             height: calc(50% - 15mm) !important; 
+             border: 1px solid black !important;
+             margin: 0 !important;
+             box-shadow: none !important;
+             overflow: hidden !important;
+             display: flex;
+             flex-direction: column;
+           }
           body { background: white !important; }
         }
       `}</style>

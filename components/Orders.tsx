@@ -32,14 +32,7 @@ import { Contract, Order, ContractStatus } from '../types';
 import { ContractItem } from '../types'; // Ensure imported if needed 
 // Removed INITIAL data imports as we fetch from DB
 
-const SCHOOL_DATA = {
-  name: "ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI",
-  cdce: "CDCE DA ESC. EST. DE ENS. FUN. ANDRÉ A. MAGGI",
-  cnpj: "11.906.357/0001-50",
-  address: "Avenida Borba Gato, nº 80, Colíder-MT - CEP 78500-000",
-  email: "escola.153830@edu.mt.gov.br",
-  phone: "66 99664-8410"
-};
+// Dados da escola removidos a pedido do usuário
 
 interface LocalOrderItem {
   contractItemId: string;
@@ -705,149 +698,146 @@ const Orders: React.FC = () => {
             </div>
           </div>
 
-          <div id="printable-area" className="bg-white p-12 rounded-[2.5rem] border border-gray-200 shadow-2xl max-w-5xl mx-auto printable-guide relative">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-black pb-4 mb-6 gap-4">
-              <div className="space-y-1">
-                <h1 className="text-xl font-black uppercase leading-none">{SCHOOL_DATA.name}</h1>
-                <p className="text-[10px] font-bold uppercase text-gray-600">{SCHOOL_DATA.address}</p>
-                <p className="text-[10px] font-bold uppercase text-gray-600">E-mail: {SCHOOL_DATA.email}</p>
-              </div>
-              <div className="text-right text-[10px] font-black uppercase bg-gray-50 p-2 border border-black rounded shadow-sm">
-                <p>CNPJ: {SCHOOL_DATA.cnpj}</p>
-                <p className="mt-1">CDCE: 153830</p>
+          <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-6 gap-4">
+            <div className="flex items-center justify-start flex-1">
+              <img src="/logo-escola.png" alt="Escola Logo" className="h-24 w-auto object-contain" />
+            </div>
+            <div className="flex-[2] flex justify-center px-4">
+              <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-28 w-full object-contain" />
+            </div>
+            <div className="flex items-center justify-end flex-1">
+              <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-16 w-auto object-contain" />
+            </div>
+          </div>
+
+          <div className="bg-black text-white p-3 rounded-lg text-center mb-8">
+            <h2 className="text-sm font-black uppercase tracking-[0.2em]">Guia de Pedido de Gêneros Alimentícios</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div className="border-2 border-black p-4 rounded-xl space-y-2 relative">
+              <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Fornecedor Contratado</div>
+              <p className="text-sm font-black uppercase">{selectedContract?.supplierName || "---"}</p>
+              <div className="grid grid-cols-1 gap-1 text-[10px] font-bold uppercase text-gray-600">
+                <p>CNPJ: {selectedSupplier?.cnpj || "---"}</p>
+                <p>Contato: {selectedSupplier?.phone || "---"}</p>
               </div>
             </div>
 
-            <div className="bg-black text-white p-3 rounded-lg text-center mb-8">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em]">Guia de Pedido de Gêneros Alimentícios</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="border-2 border-black p-4 rounded-xl space-y-2 relative">
-                <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Fornecedor Contratado</div>
-                <p className="text-sm font-black uppercase">{selectedContract?.supplierName || "---"}</p>
-                <div className="grid grid-cols-1 gap-1 text-[10px] font-bold uppercase text-gray-600">
-                  <p>CNPJ: {selectedSupplier?.cnpj || "---"}</p>
-                  <p>Contato: {selectedSupplier?.phone || "---"}</p>
+            <div className="border-2 border-black p-4 rounded-xl space-y-2 relative bg-gray-50/50">
+              <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Dados do Pedido</div>
+              <div className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase">
+                <div>
+                  <p className="text-gray-400 font-black">Nº Controle:</p>
+                  <p className="text-sm font-black">#{new Date().getFullYear()}0001</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 font-black">Nº Contrato:</p>
+                  <p className="text-sm font-black">{selectedContract?.number || "---"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 font-black">Emissão:</p>
+                  <p className="text-sm font-black">{formatDateDisplay(orderDate)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 font-black text-emerald-700">Prev. Entrega:</p>
+                  <p className="text-sm font-black text-emerald-800 underline decoration-2">{formatDateDisplay(deliveryDate)}</p>
                 </div>
               </div>
-
-              <div className="border-2 border-black p-4 rounded-xl space-y-2 relative bg-gray-50/50">
-                <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Dados do Pedido</div>
-                <div className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase">
-                  <div>
-                    <p className="text-gray-400 font-black">Nº Controle:</p>
-                    <p className="text-sm font-black">#{new Date().getFullYear()}0001</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 font-black">Nº Contrato:</p>
-                    <p className="text-sm font-black">{selectedContract?.number || "---"}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 font-black">Emissão:</p>
-                    <p className="text-sm font-black">{formatDateDisplay(orderDate)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 font-black text-emerald-700">Prev. Entrega:</p>
-                    <p className="text-sm font-black text-emerald-800 underline decoration-2">{formatDateDisplay(deliveryDate)}</p>
-                  </div>
-                </div>
-              </div>
             </div>
+          </div>
 
-            {selectedContractId ? (
-              <table className="w-full text-left text-[11px] border-collapse mb-8">
-                <thead>
-                  <tr className="bg-gray-100 border-2 border-black text-black">
-                    <th className="p-3 uppercase no-print w-16 text-center">Sel./Rem.</th>
-                    <th className="p-3 uppercase">Descrição do Gênero / Detalhes</th>
-                    <th className="p-3 text-center uppercase w-20">Saldo Ativo</th>
-                    <th className="p-3 text-center uppercase w-28 bg-emerald-50">Qtd. Pedido</th>
-                    <th className="p-3 text-right uppercase w-32">Total Item</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y-2 divide-black border-2 border-black">
-                  {filteredLocalItems.length > 0 ? filteredLocalItems.map(item => {
-                    const contractItem = selectedContract?.items.find(ci => ci.id === item.contractItemId);
-                    const remaining = contractItem ? (contractItem.contractedQuantity - contractItem.acquiredQuantity) : 0;
+          {selectedContractId ? (
+            <table className="w-full text-left text-[11px] border-collapse mb-8">
+              <thead>
+                <tr className="bg-gray-100 border-2 border-black text-black">
+                  <th className="p-3 uppercase no-print w-16 text-center">Sel./Rem.</th>
+                  <th className="p-3 uppercase">Descrição do Gênero / Detalhes</th>
+                  <th className="p-3 text-center uppercase w-20">Saldo Ativo</th>
+                  <th className="p-3 text-center uppercase w-28 bg-emerald-50">Qtd. Pedido</th>
+                  <th className="p-3 text-right uppercase w-32">Total Item</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y-2 divide-black border-2 border-black">
+                {filteredLocalItems.length > 0 ? filteredLocalItems.map(item => {
+                  const contractItem = selectedContract?.items.find(ci => ci.id === item.contractItemId);
+                  const remaining = contractItem ? (contractItem.contractedQuantity - contractItem.acquiredQuantity) : 0;
 
-                    return (
-                      <tr key={item.contractItemId} className={`group transition-colors ${item.selected ? 'bg-emerald-50/20' : 'hover:bg-gray-50'}`}>
-                        <td className="p-3 text-center no-print">
-                          <div className="flex items-center justify-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={item.selected}
-                              onChange={() => toggleItemSelection(item.contractItemId)}
-                              className="w-4 h-4 rounded border-gray-300 text-emerald-600"
-                            />
-                            <button
-                              onClick={(e) => removeItemFromOrder(item.contractItemId, e)}
-                              className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
-                              title="Remover produto da lista"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <p className="font-black uppercase text-gray-900">{item.description}</p>
-                          <div className="flex gap-2 mt-1">
-                            <span className="text-[8px] font-black bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 uppercase border border-gray-200">UNID: {item.unit}</span>
-                            {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
-                          </div>
-                        </td>
-                        <td className="p-3 text-center font-black uppercase text-blue-600">{remaining.toFixed(1)}</td>
-                        <td className="p-3 text-center bg-emerald-50/30">
-                          <div className="flex flex-col items-center gap-1">
-                            <input
-                              type="number"
-                              value={item.requestedQuantity || ""}
-                              onChange={(e) => updateLocalItem(item.contractItemId, 'requestedQuantity', e.target.value)}
-                              className="w-20 border border-gray-300 p-2 text-center font-black rounded-lg no-print outline-none focus:border-emerald-500"
-                              placeholder="0"
-                            />
-                            <span className="hidden pdf-show font-black text-sm">{item.requestedQuantity || '0'}</span>
-                          </div>
-                        </td>
-                        <td className="p-3 text-right font-black text-gray-900">
-                          R$ {(item.requestedQuantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    );
-                  }) : (
-                    <tr><td colSpan={5} className="p-12 text-center text-gray-400 font-bold uppercase text-xs">Aguardando seleção de contrato...</td></tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-black text-white border-2 border-black">
-                    <td colSpan={4} className="p-4 text-right font-black uppercase text-xs tracking-widest">Valor Total do Pedido:</td>
-                    <td className="p-4 text-right font-black text-lg">
-                      R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            ) : (
-              <div className="py-24 text-center border-2 border-dashed border-gray-200 rounded-3xl">
-                <p className="text-gray-400 font-black uppercase text-sm tracking-widest">Inicie a seleção do contrato no painel superior</p>
-              </div>
-            )}
-
-            <div className="border-2 border-black p-4 rounded-xl mb-12 relative bg-gray-50/50">
-              <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Notas de Entrega</div>
-              <p className="text-[10px] font-bold uppercase leading-relaxed italic">{observations || "Sem observações declaradas."}</p>
+                  return (
+                    <tr key={item.contractItemId} className={`group transition-colors ${item.selected ? 'bg-emerald-50/20' : 'hover:bg-gray-50'}`}>
+                      <td className="p-3 text-center no-print">
+                        <div className="flex items-center justify-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={item.selected}
+                            onChange={() => toggleItemSelection(item.contractItemId)}
+                            className="w-4 h-4 rounded border-gray-300 text-emerald-600"
+                          />
+                          <button
+                            onClick={(e) => removeItemFromOrder(item.contractItemId, e)}
+                            className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                            title="Remover produto da lista"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <p className="font-black uppercase text-gray-900">{item.description}</p>
+                        <div className="flex gap-2 mt-1">
+                          <span className="text-[8px] font-black bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 uppercase border border-gray-200">UNID: {item.unit}</span>
+                          {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
+                        </div>
+                      </td>
+                      <td className="p-3 text-center font-black uppercase text-blue-600">{remaining.toFixed(1)}</td>
+                      <td className="p-3 text-center bg-emerald-50/30">
+                        <div className="flex flex-col items-center gap-1">
+                          <input
+                            type="number"
+                            value={item.requestedQuantity || ""}
+                            onChange={(e) => updateLocalItem(item.contractItemId, 'requestedQuantity', e.target.value)}
+                            className="w-20 border border-gray-300 p-2 text-center font-black rounded-lg no-print outline-none focus:border-emerald-500"
+                            placeholder="0"
+                          />
+                          <span className="hidden pdf-show font-black text-sm">{item.requestedQuantity || '0'}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-right font-black text-gray-900">
+                        R$ {(item.requestedQuantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  );
+                }) : (
+                  <tr><td colSpan={5} className="p-12 text-center text-gray-400 font-bold uppercase text-xs">Aguardando seleção de contrato...</td></tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="bg-black text-white border-2 border-black">
+                  <td colSpan={4} className="p-4 text-right font-black uppercase text-xs tracking-widest">Valor Total do Pedido:</td>
+                  <td className="p-4 text-right font-black text-lg">
+                    R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : (
+            <div className="py-24 text-center border-2 border-dashed border-gray-200 rounded-3xl">
+              <p className="text-gray-400 font-black uppercase text-sm tracking-widest">Inicie a seleção do contrato no painel superior</p>
             </div>
+          )}
 
-            <div className="mt-20 grid grid-cols-2 gap-20 text-center">
-              <div className="border-t-2 border-black pt-2">
-                <p className="font-black uppercase text-[10px] leading-tight">Gestão da Merenda / CDCE</p>
-                <p className="text-[8px] font-bold text-gray-500 uppercase mt-1">E.E. André Antônio Maggi</p>
-              </div>
-              <div className="border-t-2 border-black pt-2">
-                <p className="font-black uppercase text-[10px] leading-tight">Entregue em ____/____/____</p>
-                <p className="text-[8px] font-bold text-gray-500 uppercase mt-1">Visto do Fornecedor</p>
-              </div>
+          <div className="border-2 border-black p-4 rounded-xl mb-12 relative bg-gray-50/50">
+            <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Notas de Entrega</div>
+            <p className="text-[10px] font-bold uppercase leading-relaxed italic">{observations || "Sem observações declaradas."}</p>
+          </div>
+
+          <div className="mt-20 grid grid-cols-2 gap-20 text-center">
+            <div className="border-t-2 border-black pt-2">
+              <p className="font-black uppercase text-[10px] leading-tight">Gestão da Merenda / CDCE</p>
+            </div>
+            <div className="border-t-2 border-black pt-2">
+              <p className="font-black uppercase text-[10px] leading-tight">Entregue em ____/____/____</p>
+              <p className="text-[8px] font-bold text-gray-500 uppercase mt-1">Visto do Fornecedor</p>
             </div>
           </div>
         </div>
@@ -912,7 +902,8 @@ const Orders: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
       <style>{`
         .pdf-show { display: none; }
@@ -925,117 +916,118 @@ const Orders: React.FC = () => {
       `}</style>
 
       {/* HIDDEN PRINTABLE AREA FOR HISTORY PDFS */}
-      {pdfData && (
-        <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
-          <div id="hidden-printable-area" className="bg-white p-12 rounded-[2.5rem] border border-gray-200 shadow-2xl max-w-5xl mx-auto printable-guide relative">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-black pb-4 mb-6 gap-4">
-              <div className="space-y-1">
-                <h1 className="text-xl font-black uppercase leading-none">{SCHOOL_DATA.name}</h1>
-                <p className="text-[10px] font-bold uppercase text-gray-600">{SCHOOL_DATA.address}</p>
-                <p className="text-[10px] font-bold uppercase text-gray-600">E-mail: {SCHOOL_DATA.email}</p>
-              </div>
-              <div className="text-right text-[10px] font-black uppercase bg-gray-50 p-2 border border-black rounded shadow-sm">
-                <p>CNPJ: {SCHOOL_DATA.cnpj}</p>
-                <p className="mt-1">CDCE: 153830</p>
-              </div>
-            </div>
-
-            <div className="bg-black text-white p-3 rounded-lg text-center mb-8">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em]">Guia de Pedido de Gêneros Alimentícios (2ª Via)</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="border-2 border-black p-4 rounded-xl space-y-2 relative">
-                <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Fornecedor Contratado</div>
-                <p className="text-sm font-black uppercase">{pdfData.contract.supplierName || "---"}</p>
-                <div className="grid grid-cols-1 gap-1 text-[10px] font-bold uppercase text-gray-600">
-                  <p>CNPJ: {(pdfData.contract as any).supplier?.cnpj || "---"}</p>
-                  <p>Contato: {(pdfData.contract as any).supplier?.phone || "---"}</p>
+      {
+        pdfData && (
+          <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
+            <div id="hidden-printable-area" className="bg-white p-12 rounded-[2.5rem] border border-gray-200 shadow-2xl max-w-5xl mx-auto printable-guide relative">
+              <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-6 gap-4">
+                <div className="flex items-center justify-start flex-1">
+                  <img src="/logo-escola.png" alt="Escola Logo" className="h-24 w-auto object-contain" />
+                </div>
+                <div className="flex-[2] flex justify-center px-4">
+                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-28 w-full object-contain" />
+                </div>
+                <div className="flex items-center justify-end flex-1">
+                  <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-16 w-auto object-contain" />
                 </div>
               </div>
 
-              <div className="border-2 border-black p-4 rounded-xl space-y-2 relative bg-gray-50/50">
-                <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Dados do Pedido</div>
-                <div className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase">
-                  <div>
-                    <p className="text-gray-400 font-black">Nº Controle:</p>
-                    <p className="text-sm font-black">#{pdfData.order.orderNumber}</p>
+              <div className="bg-black text-white p-3 rounded-lg text-center mb-8">
+                <h2 className="text-sm font-black uppercase tracking-[0.2em]">Guia de Pedido de Gêneros Alimentícios (2ª Via)</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="border-2 border-black p-4 rounded-xl space-y-2 relative">
+                  <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Fornecedor Contratado</div>
+                  <p className="text-sm font-black uppercase">{pdfData.contract.supplierName || "---"}</p>
+                  <div className="grid grid-cols-1 gap-1 text-[10px] font-bold uppercase text-gray-600">
+                    <p>CNPJ: {(pdfData.contract as any).supplier?.cnpj || "---"}</p>
+                    <p>Contato: {(pdfData.contract as any).supplier?.phone || "---"}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-400 font-black">Nº Contrato:</p>
-                    <p className="text-sm font-black">{pdfData.contract.number || "---"}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 font-black">Emissão:</p>
-                    <p className="text-sm font-black">{formatDateDisplay(pdfData.order.issueDate)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 font-black text-emerald-700">Prev. Entrega:</p>
-                    <p className="text-sm font-black text-emerald-800 underline decoration-2">{formatDateDisplay(pdfData.order.deliveryDate || '')}</p>
+                </div>
+
+                <div className="border-2 border-black p-4 rounded-xl space-y-2 relative bg-gray-50/50">
+                  <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Dados do Pedido</div>
+                  <div className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase">
+                    <div>
+                      <p className="text-gray-400 font-black">Nº Controle:</p>
+                      <p className="text-sm font-black">#{pdfData.order.orderNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 font-black">Nº Contrato:</p>
+                      <p className="text-sm font-black">{pdfData.contract.number || "---"}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 font-black">Emissão:</p>
+                      <p className="text-sm font-black">{formatDateDisplay(pdfData.order.issueDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 font-black text-emerald-700">Prev. Entrega:</p>
+                      <p className="text-sm font-black text-emerald-800 underline decoration-2">{formatDateDisplay(pdfData.order.deliveryDate || '')}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <table className="w-full text-left text-[11px] border-collapse mb-8">
-              <thead>
-                <tr className="bg-gray-100 border-2 border-black text-black">
-                  <th className="p-3 uppercase">Descrição do Gênero / Detalhes</th>
-                  <th className="p-3 text-center uppercase w-20">Saldo Atual</th>
-                  <th className="p-3 text-center uppercase w-28 bg-emerald-50">Qtd. Pedido</th>
-                  <th className="p-3 text-right uppercase w-32">Total Item</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y-2 divide-black border-2 border-black">
-                {pdfData.items.map((item: any) => (
-                  <tr key={item.id || item.description}>
-                    <td className="p-3">
-                      <p className="font-black uppercase text-gray-900">{item.description}</p>
-                      <div className="flex gap-2 mt-1">
-                        <span className="text-[8px] font-black bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 uppercase border border-gray-200">UNID: {item.unit}</span>
-                        {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
-                      </div>
-                    </td>
-                    <td className="p-3 text-center font-black uppercase text-blue-600">{item.currentBalance?.toFixed(1) || '---'}</td>
-                    <td className="p-3 text-center bg-emerald-50/30 font-black">
-                      {item.quantity}
-                    </td>
-                    <td className="p-3 text-right font-black text-gray-900">
-                      R$ {(item.quantity * item.unit_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <table className="w-full text-left text-[11px] border-collapse mb-8">
+                <thead>
+                  <tr className="bg-gray-100 border-2 border-black text-black">
+                    <th className="p-3 uppercase">Descrição do Gênero / Detalhes</th>
+                    <th className="p-3 text-center uppercase w-20">Saldo Atual</th>
+                    <th className="p-3 text-center uppercase w-28 bg-emerald-50">Qtd. Pedido</th>
+                    <th className="p-3 text-right uppercase w-32">Total Item</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y-2 divide-black border-2 border-black">
+                  {pdfData.items.map((item: any) => (
+                    <tr key={item.id || item.description}>
+                      <td className="p-3">
+                        <p className="font-black uppercase text-gray-900">{item.description}</p>
+                        <div className="flex gap-2 mt-1">
+                          <span className="text-[8px] font-black bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 uppercase border border-gray-200">UNID: {item.unit}</span>
+                          {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
+                        </div>
+                      </td>
+                      <td className="p-3 text-center font-black uppercase text-blue-600">{item.currentBalance?.toFixed(1) || '---'}</td>
+                      <td className="p-3 text-center bg-emerald-50/30 font-black">
+                        {item.quantity}
+                      </td>
+                      <td className="p-3 text-right font-black text-gray-900">
+                        R$ {(item.quantity * item.unit_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-black text-white border-2 border-black">
+                    <td colSpan={3} className="p-4 text-right font-black uppercase text-xs tracking-widest">Valor Total do Pedido:</td>
+                    <td className="p-4 text-right font-black text-lg">
+                      R$ {pdfData.order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-black text-white border-2 border-black">
-                  <td colSpan={3} className="p-4 text-right font-black uppercase text-xs tracking-widest">Valor Total do Pedido:</td>
-                  <td className="p-4 text-right font-black text-lg">
-                    R$ {pdfData.order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+                </tfoot>
+              </table>
 
-            <div className="border-2 border-black p-4 rounded-xl mb-12 relative bg-gray-50/50">
-              <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Notas de Entrega</div>
-              <p className="text-[10px] font-bold uppercase leading-relaxed italic">{pdfData.order.observations || "Sem observações declaradas."}</p>
-            </div>
-
-            <div className="mt-20 grid grid-cols-2 gap-20 text-center">
-              <div className="border-t-2 border-black pt-2">
-                <p className="font-black uppercase text-[10px] leading-tight">Gestão da Merenda / CDCE</p>
-                <p className="text-[8px] font-bold text-gray-500 uppercase mt-1">E.E. André Antônio Maggi</p>
+              <div className="border-2 border-black p-4 rounded-xl mb-12 relative bg-gray-50/50">
+                <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black uppercase tracking-widest">Notas de Entrega</div>
+                <p className="text-[10px] font-bold uppercase leading-relaxed italic">{pdfData.order.observations || "Sem observações declaradas."}</p>
               </div>
-              <div className="border-t-2 border-black pt-2">
-                <p className="font-black uppercase text-[10px] leading-tight">Entregue em ____/____/____</p>
-                <p className="text-[8px] font-bold text-gray-500 uppercase mt-1">Visto do Fornecedor</p>
+
+              <div className="mt-20 grid grid-cols-2 gap-20 text-center">
+                <div className="border-t-2 border-black pt-2">
+                  <p className="font-black uppercase text-[10px] leading-tight">Gestão da Merenda / CDCE</p>
+                </div>
+                <div className="border-t-2 border-black pt-2">
+                  <p className="font-black uppercase text-[10px] leading-tight">Entregue em ____/____/____</p>
+                  <p className="text-[8px] font-bold text-gray-500 uppercase mt-1">Visto do Fornecedor</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-    </div>
+    </div >
   );
 };
 

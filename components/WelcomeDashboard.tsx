@@ -119,7 +119,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 border-b border-white/10 pb-6 md:pb-8">
             <div className="flex items-center gap-4 md:gap-6 w-full">
                <div className="w-12 h-12 md:w-16 md:h-16 bg-white/10 rounded-xl md:rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/10 shadow-lg shrink-0">
-                  <img src="/logo-escola.png" alt="Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
+                  <img src="/logo-escola.png" alt="Logo" className="w-10 h-10 md:w-12 md:h-12 object-contain" />
                </div>
                <div className="space-y-0.5 md:space-y-1 flex-1">
                   <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-tight">
