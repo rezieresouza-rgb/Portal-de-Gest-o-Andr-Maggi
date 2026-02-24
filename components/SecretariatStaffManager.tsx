@@ -68,8 +68,24 @@ const STAFF_FUNCTIONS = [
    "ASSISTENTE DE EDUCAÇÃO ESPECIAL",
    "APA",
    "SALA DE RECURSOS",
+   "ADMINISTRADOR",
+   "TI / SUPORTE",
    "OUTROS"
 ];
+
+// Helper para converter texto da função em Role do sistema
+export const mapFunctionToRole = (job: string): UserRole => {
+   const j = (job || "").toUpperCase();
+   if (j.includes('ADMINISTRADOR') || j.includes('TI / SUPORTE')) return 'ADMINISTRADOR';
+   if (j.includes('DIREÇÃO') || j.includes('DIRETOR') || j.includes('COORDENADOR') || j.includes('GESTOR')) return 'GESTAO';
+   if (j.includes('SECRETÁRIO') || j.includes('SECRETARIA') || j.includes('ADM')) return 'SECRETARIA';
+   if (j.includes('PSICOSSOCIAL') || j.includes('MEDIAÇÃO') || j.includes('MEDIADOR') || j.includes('PSICÓLOG') || j.includes('BUSCA ATIVA') || j.includes('RECURSOS') || j.includes('APA') || j.includes('ESPECIAL') || j.includes('SALA DE RECURSOS')) return 'PSICOSSOCIAL';
+   if (j.includes('NUTRIÇÃO') || j.includes('COZINHA') || j.includes('MERENDA')) return 'AEE_NUTRICAO';
+   if (j.includes('LIMPEZA') || j.includes('ZELADORIA')) return 'AAE_LIMPEZA';
+   if (j.includes('REGÊNCIA') || j.includes('PROFESSOR') || j.includes('DOCENTE')) return 'PROFESSOR';
+   if (j.includes('BIBLIOTECA') || j.includes('TECNOLOG') || j.includes('LABORAT')) return 'TAE';
+   return 'AAE';
+};
 
 const SecretariatStaffManager: React.FC = () => {
    const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -441,31 +457,10 @@ const SecretariatStaffManager: React.FC = () => {
       e.preventDefault();
 
       let targetRole: UserRole = 'USUARIO_COMUM';
-      const job = (form.jobFunction || "").toUpperCase();
-      const type = form.serverType || 'Apoio';
-
-      // 1. Prioridade: Funções de Gestão e Administração
-      if (job.includes('DIREÇÃO') || job.includes('DIRETOR') || job.includes('COORDENADOR') || job.includes('GESTOR')) {
-         targetRole = 'GESTAO';
-      } else if (job.includes('SECRETÁRIO') || job.includes('SECRETARIA') || job.includes('ADM')) {
-         targetRole = 'SECRETARIA';
-      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG') || job.includes('BUSCA ATIVA') || job.includes('RECURSOS') || job.includes('APA') || job.includes('ESPECIAL') || job.includes('SALA DE RECURSOS')) {
-         targetRole = 'PSICOSSOCIAL';
-      }
-      // 2. Prioridade: Apoio, Nutrição e Conservação
-      else if (job.includes('NUTRIÇÃO') || job.includes('COZINHA') || job.includes('MERENDA')) {
-         targetRole = 'AEE_NUTRICAO';
-      } else if (job.includes('LIMPEZA') || job.includes('ZELADORIA')) {
-         targetRole = 'AAE_LIMPEZA';
-      }
-      // 3. Fallback: Funções Pedagógicas e Operacionais
-      else if (job.includes('REGÊNCIA') || job.includes('PROFESSOR') || job.includes('DOCENTE')) {
-         targetRole = 'PROFESSOR';
-      } else if (job.includes('BIBLIOTECA') || job.includes('TECNOLOG') || job.includes('LABORAT')) {
-         targetRole = 'TAE';
-      } else {
-         targetRole = 'AAE';
-      }
+      // Cálculo do Role baseado na função
+      const targetRole = mapFunctionToRole(form.jobFunction || "");
+      // Se houver sobrescrita manual (também baseada na lista de funções), mapeia ela
+      const finalRole = form.userRole ? mapFunctionToRole(form.userRole) : targetRole;
 
       const serverData = {
          code: form.code,
@@ -1133,19 +1128,13 @@ const SecretariatStaffManager: React.FC = () => {
                                  <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Nível de Acesso (Sobrescrita de Perfil)</label>
                                  <select
                                     value={form.userRole || ''}
-                                    onChange={e => setForm({ ...form, userRole: e.target.value as UserRole })}
+                                    onChange={e => setForm({ ...form, userRole: e.target.value as any })}
                                     className="w-full p-4 bg-white border border-indigo-200 rounded-2xl font-black text-xs uppercase outline-none focus:ring-4 focus:ring-indigo-500/5"
                                  >
-                                    <option value="">Automático (Pelo Cargo)</option>
-                                    <option value="GESTAO">Gestão (Administrador)</option>
-                                    <option value="SECRETARIA">Secretaria</option>
-                                    <option value="PROFESSOR">Professor (Diário de Classe)</option>
-                                    <option value="TAE">Técnico (TAE)</option>
-                                    <option value="AAE">Apoio (AAE)</option>
-                                    <option value="PSICOSSOCIAL">Mediação & Psicossocial</option>
-                                    <option value="AEE_NUTRICAO">Nutrição / Merenda</option>
-                                    <option value="AAE_LIMPEZA">Limpeza / Zeladoria</option>
-                                    <option value="ADMINISTRADOR">Admin Full (TI)</option>
+                                    <option value="">Automático (Pela Função)</option>
+                                    {STAFF_FUNCTIONS.map(fn => (
+                                       <option key={fn} value={fn}>{fn}</option>
+                                    ))}
                                  </select>
                                  <p className="text-[8px] text-indigo-400 font-bold uppercase mt-2 ml-1">O login será realizado via CPF ou E-mail.</p>
                               </div>
