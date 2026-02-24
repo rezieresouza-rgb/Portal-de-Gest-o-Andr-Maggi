@@ -1,5 +1,6 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
+import { supabase } from './supabaseClient';
+import { PedagogicalSkill } from './types';
 
 const getAIClient = () => {
   // Safe access to environment variables in Vite/Next.js/Node
@@ -758,5 +759,94 @@ export const extractContractInfo = async (base64Data: string, mimeType: string) 
   } catch (e) {
     console.error("Error extracting contract", e);
     return { items: [] };
+  }
+};
+
+/**
+ * Extrai habilidades da BNCC ou DRC-MT a partir de um PDF enviado pelo professor.
+ */
+export const extractSkillsFromPDF = async (base64Data: string, mimeType: string, subject?: string) => {
+  const ai = getAIClient();
+  try {
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType
+            }
+          },
+          {
+            text: `Você é um coordenador pedagógico especialista em BNCC e DRC-MT.
+            Analise este documento PDF e extraia TODOS os códigos e descrições de habilidades pedagógicas encontradas.
+            
+            ${subject ? `O foco principal é o componente curricular: ${subject}.` : ''}
+            
+            REGRAS DE EXTRAÇÃO:
+            1. Identifique o código da habilidade (ex: EF01LP01, EM13MAT101, DRC-MT-EF01LP01).
+            2. Extraia a descrição completa da habilidade.
+            3. Ignore textos introdutórios ou comentários que não sejam a habilidade em si.
+            
+            Retorne estritamente um JSON seguindo o esquema.`
+          }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            skills: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  code: { type: Type.STRING, description: "Código da habilidade" },
+                  description: { type: Type.STRING, description: "Descrição detalhada" }
+                },
+                required: ["code", "description"]
+              }
+            }
+          },
+          required: ["skills"]
+        },
+        temperature: 0.1
+      }
+    }));
+    return JSON.parse(response.text || '{"skills": []}');
+  } catch (e) {
+    console.error("Error extracting skills from PDF", e);
+    return { skills: [] };
+  }
+};
+
+/**
+ * Busca habilidades da BNCC diretamente do banco de dados para acelerar o processo.
+ */
+export const fetchBNCCSkillsFromDB = async (subject: string, className: string): Promise<PedagogicalSkill[] | null> => {
+  // Map class name to BNCC year range
+  let yearRange = '';
+  if (className.includes('6º ANO')) yearRange = 'EF06';
+  else if (className.includes('7º ANO')) yearRange = 'EF07';
+  else if (className.includes('8º ANO')) yearRange = 'EF08';
+  else if (className.includes('9º ANO')) yearRange = 'EF09';
+
+  if (!yearRange) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('bncc_skills')
+      .select('code, description')
+      .eq('subject', subject.toUpperCase())
+      .or(`year_range.eq.${yearRange},year_range.eq.EF06EF09`)
+      .order('code');
+
+    if (error) throw error;
+    return (data || []) as PedagogicalSkill[];
+  } catch (e) {
+    console.error("Erro ao buscar BNCC do banco:", e);
+    return null;
   }
 };

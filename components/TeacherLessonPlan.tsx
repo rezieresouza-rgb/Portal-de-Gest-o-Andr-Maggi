@@ -24,7 +24,7 @@ import {
   X // Added missing import
 } from 'lucide-react';
 import { LessonPlan, LessonPlanRow, PedagogicalSkill } from '../types';
-import { fetchPedagogicalSkills } from '../geminiService';
+import { fetchPedagogicalSkills, fetchBNCCSkillsFromDB } from '../geminiService';
 import { supabase } from '../supabaseClient';
 
 const CURRICULAR_COMPONENTS = [
@@ -174,21 +174,35 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     setAiSuggestions(null);
     setSkillSearch('');
     try {
-      const data = await fetchPedagogicalSkills(form.subject, form.className);
-      if (data) {
+      // 1. Buscar habilidades exclusivamente no Banco de Dados (como solicitado)
+      const dbSkills = await fetchBNCCSkillsFromDB(form.subject, form.className);
+
+      // 2. Chamar a IA apenas para Temas e Recomposição (que variam por contexto e não estão no Excel)
+      const aiData = await fetchPedagogicalSkills(form.subject, form.className);
+
+      if (dbSkills && dbSkills.length > 0) {
         setAiSuggestions({
-          skills: data.skills || [],
-          recomposition: data.recomposition || []
+          skills: dbSkills,
+          recomposition: aiData?.recomposition || []
         });
-        setForm(prev => ({ ...prev, themes: data.themes || prev.themes }));
+        if (aiData?.themes) setForm(prev => ({ ...prev, themes: aiData.themes }));
+      } else {
+        // Se não houver dados no banco, avisar o usuário
+        setAiSuggestions({
+          skills: [],
+          recomposition: aiData?.recomposition || []
+        });
+        alert(`Nenhuma habilidade encontrada no banco de dados para ${form.subject} em ${form.className}. Verifique se a base BNCC foi populada.`);
       }
     } catch (e: any) {
-      console.error("Erro na IA:", e);
-      alert(`Erro ao consultar a IA pedagógica: ${e.message || e}`);
+      console.error("Erro na busca de habilidades:", e);
+      alert(`Erro ao consultar as habilidades: ${e.message || e}`);
     } finally {
       setAiLoading(false);
     }
   };
+
+
 
   const toggleSkill = (skill: PedagogicalSkill, type: 'skills' | 'recompositionSkills') => {
     setForm(prev => {
@@ -403,7 +417,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
           <div>
             <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Editor de Roteiro Curricular</h3>
             <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1 flex items-center gap-1.5">
-              <ShieldCheck size={12} /> Padrão SEDUC-MT / Referencial de Mato Grosso
+              <ShieldCheck size={12} /> Padrão SEDUC-MT / Referencial de Mato Grosso <span className="text-emerald-500 font-black ml-2">[v2-DB-INTEGRATED]</span>
             </p>
           </div>
         </div>
@@ -470,13 +484,13 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* BOTÃO IA EM DESTAQUE */}
+        {/* BOTÃO DE BUSCA BNCC */}
         {(form.subject && form.className) && (
           <div className="p-1 bg-gradient-to-r from-amber-500 to-indigo-600 rounded-[2.5rem] animate-in zoom-in-95 duration-500">
             <button
               onClick={handleAISkills}
               disabled={aiLoading}
-              className="w-full py-6 bg-white hover:bg-gray-50 transition-all rounded-[2.3rem] flex items-center justify-center gap-4 group"
+              className="w-full h-full py-6 bg-white hover:bg-gray-50 transition-all rounded-[2.3rem] flex items-center justify-center gap-4 group"
             >
               {aiLoading ? (
                 <Loader2 size={24} className="animate-spin text-indigo-600" />
@@ -486,8 +500,10 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                 </div>
               )}
               <div className="text-left">
-                <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Puxar Matriz Curricular MT (IA)</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">A IA buscará a matriz completa da BNCC e DRC-MT</p>
+                <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Buscar Habilidades BNCC</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                  {aiLoading ? 'Buscando no banco de dados...' : 'Base de dados BNCC / DRC-MT integrada'}
+                </p>
               </div>
               {!aiLoading && <Zap size={18} className="text-amber-500 fill-amber-500" />}
             </button>
