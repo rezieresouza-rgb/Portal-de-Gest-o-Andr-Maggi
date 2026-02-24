@@ -826,24 +826,36 @@ export const extractSkillsFromPDF = async (base64Data: string, mimeType: string,
  * Busca habilidades da BNCC diretamente do banco de dados para acelerar o processo.
  */
 export const fetchBNCCSkillsFromDB = async (subject: string, className: string): Promise<PedagogicalSkill[] | null> => {
-  // Map class name to BNCC year range
-  let yearRange = '';
-  if (className.includes('6º ANO')) yearRange = 'EF06';
-  else if (className.includes('7º ANO')) yearRange = 'EF07';
-  else if (className.includes('8º ANO')) yearRange = 'EF08';
-  else if (className.includes('9º ANO')) yearRange = 'EF09';
+  // Map class name to BNCC year range components
+  // EF II: 6th-9th grade
+  const ranges: string[] = [];
 
-  if (!yearRange) return null;
+  if (className.includes('6º ANO')) {
+    ranges.push('EF06', 'EF67', 'EF69');
+  } else if (className.includes('7º ANO')) {
+    ranges.push('EF07', 'EF67', 'EF69');
+  } else if (className.includes('8º ANO')) {
+    ranges.push('EF08', 'EF89', 'EF69');
+  } else if (className.includes('9º ANO')) {
+    ranges.push('EF09', 'EF89', 'EF69');
+  }
+
+  if (ranges.length === 0) return null;
 
   try {
+    // Usamos .ilike para ignorar case e tratamos as variações de nomes de disciplinas
     const { data, error } = await supabase
       .from('bncc_skills')
       .select('code, description')
-      .eq('subject', subject.toUpperCase())
-      .or(`year_range.eq.${yearRange},year_range.eq.EF06EF09`)
+      .ilike('subject', subject)
+      .in('year_range', ranges)
       .order('code');
 
     if (error) throw error;
+
+    // Log para debug
+    console.log(`[v2-DB-INTEGRATED] Encontradas ${data?.length || 0} habilidades para ${subject} em ${className}`);
+
     return (data || []) as PedagogicalSkill[];
   } catch (e) {
     console.error("Erro ao buscar BNCC do banco:", e);
