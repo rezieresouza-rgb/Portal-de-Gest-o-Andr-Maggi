@@ -10,16 +10,11 @@ import {
    ShieldCheck,
    FileEdit
 } from 'lucide-react';
-import { INITIAL_STUDENTS } from '../constants/initialData';
+import { INITIAL_STUDENTS, SCHOOL_CLASSES } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 
 const BIMESTRES = ['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'];
-const CLASSES = [
-   "6º ANO A", "6º ANO B", "6º ANO D", "6º ANO E",
-   "7º ANO A", "7º ANO B", "7º ANO D", "7º ANO E",
-   "8º ANO A", "8º ANO B", "8º ANO D",
-   "9º ANO A", "9º ANO B", "9º ANO C"
-];
+const CLASSES = SCHOOL_CLASSES;
 const SUBJECTS = [
    "MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA",
    "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA", "ENSINO RELIGIOSO"

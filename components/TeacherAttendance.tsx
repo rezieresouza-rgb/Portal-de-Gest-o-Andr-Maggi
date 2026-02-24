@@ -13,13 +13,9 @@ import {
 import { AttendanceRecord, Shift, User as UserType } from '../types';
 
 import { supabase } from '../supabaseClient';
+import { SCHOOL_CLASSES } from '../constants/initialData';
 
-const CLASSES = [
-  "6º ANO A", "6º ANO B", "6º ANO D", "6º ANO E",
-  "7º ANO A", "7º ANO B", "7º ANO D", "7º ANO E",
-  "8º ANO A", "8º ANO B", "8º ANO D",
-  "9º ANO A", "9º ANO B", "9º ANO C"
-];
+const CLASSES = SCHOOL_CLASSES;
 
 const SUBJECTS = [
   "MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA",

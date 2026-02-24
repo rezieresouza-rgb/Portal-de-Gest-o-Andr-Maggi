@@ -148,7 +148,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       <div className="relative z-10 flex min-h-screen">
         {/* SIDEBAR NAVEGAÇÃO HUB (Glass) - Escondido em mobile, visível em lg */}
         <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-24 bg-white/5 backdrop-blur-xl border-r border-white/10 flex-col items-center py-10 gap-8 no-print z-50">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-black border border-white/20">AM</div>
+          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-black border border-white/20">AM-v2</div>
 
           <nav className="flex-1 flex flex-col gap-4">
             {/* Navegação removida pois agora é tudo em uma tela só */}

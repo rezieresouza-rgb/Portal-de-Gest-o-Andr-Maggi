@@ -1,0 +1,23 @@
+{
+    "name": "Portal de Gestão André Maggi",
+    "short_name": "Portal Maggi",
+    "description": "Sistema de Gestão Escolar - Escola André Maggi",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#4f46e5",
+    "icons": [
+        {
+            "src": "/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

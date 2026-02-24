@@ -26,6 +26,7 @@ import {
 import { LessonPlan, LessonPlanRow, PedagogicalSkill } from '../types';
 import { fetchPedagogicalSkills, fetchBNCCSkillsFromDB } from '../geminiService';
 import { supabase } from '../supabaseClient';
+import { SCHOOL_CLASSES } from '../constants/initialData';
 
 const CURRICULAR_COMPONENTS = [
   "LÍNGUA PORTUGUESA", "MATEMÁTICA", "HISTÓRIA", "GEOGRAFIA", "CIÊNCIAS",
@@ -33,11 +34,7 @@ const CURRICULAR_COMPONENTS = [
   "PROJETO DE VIDA", "PRÁTICAS EXPERIMENTAIS"
 ];
 
-const GRADE_LEVELS = [
-  "6º ANO A", "6º ANO B", "6º ANO D", "6º ANO E",
-  "7º ANO A", "7º ANO B", "8º ANO A", "8º ANO B",
-  "9º ANO A", "9º ANO B"
-];
+const GRADE_LEVELS = SCHOOL_CLASSES;
 
 import { User as UserType } from '../types';
 
