@@ -444,29 +444,27 @@ const SecretariatStaffManager: React.FC = () => {
       const job = (form.jobFunction || "").toUpperCase();
       const type = form.serverType || 'Apoio';
 
-      // 1. Prioridade: Funções de Gestão e Administração independente do tipo de servidor
+      // 1. Prioridade: Funções de Gestão e Administração
       if (job.includes('DIREÇÃO') || job.includes('DIRETOR') || job.includes('COORDENADOR') || job.includes('GESTOR')) {
          targetRole = 'GESTAO';
       } else if (job.includes('SECRETÁRIO') || job.includes('SECRETARIA') || job.includes('ADM')) {
          targetRole = 'SECRETARIA';
-      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG') || job.includes('BUSCA ATIVA') || job.includes('RECURSOS') || job.includes('APA') || job.includes('ESPECIAL')) {
+      } else if (job.includes('PSICOSSOCIAL') || job.includes('MEDIAÇÃO') || job.includes('MEDIADOR') || job.includes('PSICÓLOG') || job.includes('BUSCA ATIVA') || job.includes('RECURSOS') || job.includes('APA') || job.includes('ESPECIAL') || job.includes('SALA DE RECURSOS')) {
          targetRole = 'PSICOSSOCIAL';
       }
-      // 2. Prioridade: Tags específicas para pessoal de Apoio e Nutrição
+      // 2. Prioridade: Apoio, Nutrição e Conservação
       else if (job.includes('NUTRIÇÃO') || job.includes('COZINHA') || job.includes('MERENDA')) {
          targetRole = 'AEE_NUTRICAO';
       } else if (job.includes('LIMPEZA') || job.includes('ZELADORIA')) {
          targetRole = 'AAE_LIMPEZA';
       }
-      // 3. Fallback: Baseado no Tipo de Servidor e Função Genérica
-      else {
-         if (job.includes('BIBLIOTECA') || type === 'Técnico') {
-            targetRole = 'TAE';
-         } else if (job.includes('REGÊNCIA') || type === 'Professor') {
-            targetRole = 'PROFESSOR';
-         } else {
-            targetRole = 'AAE';
-         }
+      // 3. Fallback: Funções Pedagógicas e Operacionais
+      else if (job.includes('REGÊNCIA') || job.includes('PROFESSOR') || job.includes('DOCENTE')) {
+         targetRole = 'PROFESSOR';
+      } else if (job.includes('BIBLIOTECA') || job.includes('TECNOLOG') || job.includes('LABORAT')) {
+         targetRole = 'TAE';
+      } else {
+         targetRole = 'AAE';
       }
 
       const serverData = {
