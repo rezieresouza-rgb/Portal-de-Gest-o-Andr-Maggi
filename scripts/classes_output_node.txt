@@ -1,0 +1,20 @@
+
+--- Class: 8º ANO E ---
+Total Enrollments: 29
+Enrollments with NULL/missing students: 0
+
+--- Class: 9º ANO D ---
+Total Enrollments: 30
+Enrollments with NULL/missing students: 0
+
+--- Class: 9º ANO E ---
+Total Enrollments: 29
+Enrollments with NULL/missing students: 0
+
+--- Class: 8º ANO D ---
+Total Enrollments: 30
+Enrollments with NULL/missing students: 0
+
+--- Class: 6º ANO A ---
+Total Enrollments: 30
+Enrollments with NULL/missing students: 0

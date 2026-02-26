@@ -1,0 +1,16 @@
+
+--- Class: 8º ANO E ---
+Success! Total Enrollments: 29
+Mapped Successfully: 29 students
+
+--- Class: 9º ANO D ---
+Success! Total Enrollments: 30
+Mapped Successfully: 30 students
+
+--- Class: 9º ANO E ---
+Success! Total Enrollments: 29
+Mapped Successfully: 29 students
+
+--- Class: 6º ANO A ---
+Success! Total Enrollments: 30
+Mapped Successfully: 30 students

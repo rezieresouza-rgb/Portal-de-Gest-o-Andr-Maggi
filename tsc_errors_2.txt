@@ -1,0 +1,4 @@
+﻿components/ErrorBoundary.tsx(17,14): error TS2339: Property 'state' does not exist on type 'ErrorBoundary'.
+components/ErrorBoundary.tsx(38,42): error TS2339: Property 'state' does not exist on type 'ErrorBoundary'.
+components/ErrorBoundary.tsx(39,35): error TS2339: Property 'props' does not exist on type 'ErrorBoundary'.
+debug_items.ts(3,20): error TS2307: Cannot find module 'dotenv' or its corresponding type declarations.

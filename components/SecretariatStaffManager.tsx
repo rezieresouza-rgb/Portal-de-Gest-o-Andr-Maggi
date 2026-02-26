@@ -456,7 +456,6 @@ const SecretariatStaffManager: React.FC = () => {
    const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
 
-      let targetRole: UserRole = 'USUARIO_COMUM';
       // Cálculo do Role baseado na função
       const targetRole = mapFunctionToRole(form.jobFunction || "");
       // Se houver sobrescrita manual (também baseada na lista de funções), mapeia ela

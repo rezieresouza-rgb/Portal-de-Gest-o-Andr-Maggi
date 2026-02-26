@@ -19,7 +19,7 @@ import {
    AlertCircle,
    FileText
 } from 'lucide-react';
-import { PedagogicalMaterialRequest, EquipmentBooking, Shift } from '../types';
+import { PedagogicalMaterialRequest, EquipmentBooking, Shift, User as UserType } from '../types';
 import { supabase } from '../supabaseClient';
 
 const HEADPHONE_KITS = [
@@ -41,7 +41,11 @@ const DEFAULT_PED_MATERIALS = [
 
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 
-const TeacherPedagogicalRequests: React.FC = () => {
+interface TeacherPedagogicalRequestsProps {
+   user: UserType;
+}
+
+const TeacherPedagogicalRequests: React.FC<TeacherPedagogicalRequestsProps> = ({ user }) => {
    const [activeMode, setActiveMode] = useState<'consumables' | 'equipment' | 'history'>('consumables');
    const [searchTerm, setSearchTerm] = useState('');
    const [activeCategory, setActiveCategory] = useState<string>('TODOS');

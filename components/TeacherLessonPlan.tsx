@@ -21,9 +21,9 @@ import {
   AlertCircle,
   MessageCircle,
   Clock,
-  X // Added missing import
+  X
 } from 'lucide-react';
-import { LessonPlan, LessonPlanRow, PedagogicalSkill } from '../types';
+import { LessonPlan, LessonPlanRow, PedagogicalSkill, User as UserType } from '../types';
 import { fetchPedagogicalSkills, fetchBNCCSkillsFromDB } from '../geminiService';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
@@ -35,8 +35,6 @@ const CURRICULAR_COMPONENTS = [
 ];
 
 const GRADE_LEVELS = SCHOOL_CLASSES;
-
-import { User as UserType } from '../types';
 
 interface TeacherLessonPlanProps {
   user: UserType;

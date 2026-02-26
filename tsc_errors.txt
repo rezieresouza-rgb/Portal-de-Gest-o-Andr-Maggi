@@ -1,0 +1,25 @@
+﻿components/BuscaAtivaActionsModal.tsx(162,77): error TS2339: Property 'status' does not exist on type 'unknown'.
+components/BuscaAtivaFICAI.tsx(46,31): error TS2339: Property 'id' does not exist on type '{ Sequencia: string; CodigoAluno: string; Nome: string; Turma: string; Turno: string; DataMatricula: string; DataNascimento: string; PAED: string; TransporteEscolar: string; }'.
+components/BuscaAtivaFICAI.tsx(51,22): error TS2339: Property 'id' does not exist on type '{ Sequencia: string; CodigoAluno: string; Nome: string; Turma: string; Turno: string; DataMatricula: string; DataNascimento: string; PAED: string; TransporteEscolar: string; }'.
+components/BuscaAtivaFICAI.tsx(52,24): error TS2339: Property 'name' does not exist on type '{ Sequencia: string; CodigoAluno: string; Nome: string; Turma: string; Turno: string; DataMatricula: string; DataNascimento: string; PAED: string; TransporteEscolar: string; }'.
+components/BuscaAtivaFICAI.tsx(53,25): error TS2339: Property 'class' does not exist on type '{ Sequencia: string; CodigoAluno: string; Nome: string; Turma: string; Turno: string; DataMatricula: string; DataNascimento: string; PAED: string; TransporteEscolar: string; }'.
+components/BuscaAtivaFICAI.tsx(55,28): error TS2339: Property 'guardian' does not exist on type '{ Sequencia: string; CodigoAluno: string; Nome: string; Turma: string; Turno: string; DataMatricula: string; DataNascimento: string; PAED: string; TransporteEscolar: string; }'.
+components/BuscaAtivaFICAI.tsx(56,25): error TS2339: Property 'phone' does not exist on type '{ Sequencia: string; CodigoAluno: string; Nome: string; Turma: string; Turno: string; DataMatricula: string; DataNascimento: string; PAED: string; TransporteEscolar: string; }'.
+components/ErrorBoundary.tsx(17,14): error TS2339: Property 'state' does not exist on type 'ErrorBoundary'.
+components/ErrorBoundary.tsx(38,42): error TS2339: Property 'state' does not exist on type 'ErrorBoundary'.
+components/ErrorBoundary.tsx(39,35): error TS2339: Property 'props' does not exist on type 'ErrorBoundary'.
+components/SecretariatStaffManager.tsx(459,11): error TS2451: Cannot redeclare block-scoped variable 'targetRole'.
+components/SecretariatStaffManager.tsx(461,13): error TS2451: Cannot redeclare block-scoped variable 'targetRole'.
+components/TeacherPedagogicalRequests.tsx(92,34): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(92,63): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(114,31): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(114,57): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(171,27): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(172,25): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(212,24): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(213,22): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(516,71): error TS2304: Cannot find name 'user'.
+components/TeacherPedagogicalRequests.tsx(532,71): error TS2304: Cannot find name 'user'.
+debug_items.ts(3,20): error TS2307: Cannot find module 'dotenv' or its corresponding type declarations.
+supabaseClient.ts(4,33): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+supabaseClient.ts(5,33): error TS2339: Property 'env' does not exist on type 'ImportMeta'.

@@ -1,17 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-   GraduationCap,
-   Award,
-   Search,
-   CheckCircle2,
-   AlertTriangle,
-   Loader2,
-   ShieldCheck,
-   FileEdit
-} from 'lucide-react';
+import { GraduationCap, Award, Search, CheckCircle2, AlertTriangle, Loader2, ShieldCheck, FileEdit } from 'lucide-react';
 import { INITIAL_STUDENTS, SCHOOL_CLASSES } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
+import { User as UserType } from '../types';
 
 const BIMESTRES = ['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'];
 const CLASSES = SCHOOL_CLASSES;
@@ -19,8 +11,6 @@ const SUBJECTS = [
    "MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA",
    "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA", "ENSINO RELIGIOSO"
 ];
-
-import { User as UserType } from '../types';
 
 interface TeacherGradesProps {
    user: UserType;

@@ -159,7 +159,8 @@ export default function BuscaAtivaActionsModal({ student, onClose }: BuscaAtivaA
         }
     };
 
-    const progress = Math.round((Object.values(actionsStatus).filter(a => a.status === 'CONCLUIDO').length / ACTION_ITEMS.length) * 100);
+    const actionsArray = Object.values(actionsStatus) as { status: string, notes: string, completed_at: string | null }[];
+    const progress = Math.round((actionsArray.filter(a => a.status === 'CONCLUIDO').length / ACTION_ITEMS.length) * 100) || 0;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300">

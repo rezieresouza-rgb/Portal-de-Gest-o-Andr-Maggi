@@ -43,17 +43,18 @@ const BuscaAtivaFICAI: React.FC = () => {
 
       const atRisk: any[] = [];
       INITIAL_STUDENTS.forEach(s => {
-         const stat = stats[s.id] || { total: 0, present: 0 };
+         const studentId = s.CodigoAluno;
+         const stat = stats[studentId] || { total: 0, present: 0 };
          const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
 
          if (percent < 90) { // Limit for FICAI usually < 85% or 5 consecutive, let's show all Warning/Critical
             atRisk.push({
-               id: s.id,
-               name: s.name,
-               class: s.class,
+               id: studentId,
+               name: s.Nome,
+               class: s.Turma,
                absences: stat.total - stat.present,
-               guardian: s.guardian || 'NÃO INFORMADO',
-               phone: s.phone || 'NÃO INFORMADO'
+               guardian: 'NÃO INFORMADO',
+               phone: 'NÃO INFORMADO'
             });
          }
       });
