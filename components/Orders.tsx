@@ -44,6 +44,16 @@ interface LocalOrderItem {
   selected: boolean;
 }
 
+const parseNumeric = (val: any): number => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  // Sanitização robusta: Remove pontos (milhar) e troca vírgula por ponto (decimal)
+  // Se houver múltiplos pontos (como "5.83.300"), remove todos eles.
+  const cleaned = String(val).replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+};
+
 const Orders: React.FC = () => {
   const [viewMode, setViewMode] = useState<'form' | 'history'>('form');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -345,20 +355,20 @@ const Orders: React.FC = () => {
     setLocalItems(prev => prev.map(item => {
       if (item.contractItemId === id) {
         if (field === 'requestedQuantity') {
+          const numericValue = parseNumeric(value);
           const contractItem = selectedContract?.items.find(i => i.id === id);
           if (contractItem) {
-            // ADJUSTED BALANCE LOGIC
-            // Available = (ContractLimit - Acquired) + (OriginalOrderQty if any)
             const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === id);
             const originalQty = originalItem ? originalItem.quantity : 0;
             const available = (contractItem.contractedQuantity - contractItem.acquiredQuantity) + originalQty;
 
-            if (Number(value) > available) {
+            if (numericValue > available) {
               return { ...item, [field]: available, selected: true };
             }
           }
+          return { ...item, [field]: numericValue, selected: numericValue > 0 };
         }
-        return { ...item, [field]: value, selected: field === 'requestedQuantity' ? Number(value) > 0 : item.selected };
+        return { ...item, [field]: value };
       }
       return item;
     }));
@@ -431,8 +441,8 @@ const Orders: React.FC = () => {
           order_id: editingOrder.id,
           contract_item_id: item.contractItemId,
           description: item.description,
-          quantity: item.requestedQuantity,
-          unit_price: item.unitPrice
+          quantity: parseNumeric(item.requestedQuantity),
+          unit_price: parseNumeric(item.unitPrice)
         }]);
         if (itemError) throw itemError;
 
@@ -500,8 +510,8 @@ const Orders: React.FC = () => {
           order_id: orderData.id,
           contract_item_id: item.contractItemId,
           description: item.description,
-          quantity: item.requestedQuantity,
-          unit_price: item.unitPrice
+          quantity: parseNumeric(item.requestedQuantity),
+          unit_price: parseNumeric(item.unitPrice)
         }]);
         if (itemError) throw itemError;
 

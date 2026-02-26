@@ -44,6 +44,14 @@ interface ExecutionEvent {
   responsible: string;
 }
 
+const parseNumeric = (val: any): number => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+};
+
 const Contracts: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [events, setEvents] = useState<ExecutionEvent[]>([]);
@@ -288,10 +296,10 @@ const Contracts: React.FC = () => {
         const itemsToInsert = extractedData.items.map((i: any) => ({
           contract_id: newContract.id,
           description: i.description,
-          contracted_quantity: i.quantity,
+          contracted_quantity: parseNumeric(i.quantity),
           acquired_quantity: 0,
           unit: i.unit,
-          unit_price: i.unitPrice,
+          unit_price: parseNumeric(i.unitPrice),
           brand: i.brand || ''
         }));
         await supabase.from('contract_items').insert(itemsToInsert);
@@ -439,8 +447,11 @@ const Contracts: React.FC = () => {
       const item = contract?.items.find(i => i.id === aditivoModal.itemId);
       if (!contract || !item) return;
 
-      const newQty = item.contractedQuantity + Number(aditivoQty);
-      const impact = Number(aditivoQty) * item.unitPrice;
+      const numericAditivo = parseNumeric(aditivoQty);
+      if (numericAditivo <= 0) return alert("Informe uma quantidade válida.");
+
+      const newQty = item.contractedQuantity + numericAditivo;
+      const impact = numericAditivo * item.unitPrice;
 
       const { error } = await supabase
         .from('contract_items')
@@ -480,13 +491,16 @@ const Contracts: React.FC = () => {
       const item = contract?.items.find(i => i.id === deliveryModal.itemId);
       if (!contract || !item) return;
 
-      const newAcquired = item.acquiredQuantity + Number(deliveryQty);
+      const numericDelivery = parseNumeric(deliveryQty);
+      if (numericDelivery <= 0) return alert("Informe uma quantidade válida.");
+
+      const newAcquired = item.acquiredQuantity + numericDelivery;
       if (newAcquired > item.contractedQuantity) {
         alert("Quantidade excede o saldo do contrato!");
         return;
       }
 
-      const impact = Number(deliveryQty) * item.unitPrice;
+      const impact = numericDelivery * item.unitPrice;
 
       const { error } = await supabase
         .from('contract_items')

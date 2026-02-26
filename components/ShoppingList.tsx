@@ -24,6 +24,14 @@ import { TECHNICAL_SHEETS, PERISHABLES } from '../constants/technicalSheets';
 import { ShoppingListItem, Contract, Order } from '../types';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 
+const parseNumeric = (val: any): number => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+};
+
 const ShoppingList: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [generatedList, setGeneratedList] = useState<ShoppingListItem[]>([]);
@@ -166,7 +174,7 @@ const ShoppingList: React.FC = () => {
 
   const updateItem = (index: number, field: keyof ShoppingListItem, value: any) => {
     setGeneratedList(prev => prev.map((item, i) =>
-      i === index ? { ...item, [field]: value } : item
+      i === index ? { ...item, [field]: field === 'quantity' ? parseNumeric(value) : value } : item
     ));
   };
 
@@ -238,7 +246,7 @@ const ShoppingList: React.FC = () => {
           contract_id: contractId,
           order_number: orderNumber,
           issue_date: new Date().toISOString().split('T')[0],
-          total_value: totalValue,
+          total_value: parseNumeric(totalValue),
           status: 'EM_PROCESSAMENTO',
           observations: `Gerado via Lista de Compras - Semana ${selectedWeek}`
         }]).select().single();
@@ -251,15 +259,17 @@ const ShoppingList: React.FC = () => {
             order_id: orderData.id,
             contract_item_id: item.contractItemId,
             description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price
+            quantity: parseNumeric(item.quantity),
+            unit_price: parseNumeric(item.unit_price)
           }]);
 
           const contract = contracts.find(c => c.id === contractId);
           const cItem = contract?.items.find(i => i.id === item.contractItemId);
           if (cItem) {
+            const currentAcquired = parseNumeric(cItem.acquiredQuantity);
+            const itemQty = parseNumeric(item.quantity);
             await supabase.from('contract_items')
-              .update({ acquired_quantity: (cItem.acquiredQuantity || 0) + item.quantity })
+              .update({ acquired_quantity: currentAcquired + itemQty })
               .eq('id', item.contractItemId);
           }
         }
@@ -407,8 +417,8 @@ const ShoppingList: React.FC = () => {
                           <input
                             type="number"
                             value={item.quantity}
-                            onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))}
-                            className="w-20 p-2 bg-white border border-gray-200 rounded-xl text-center font-black text-orange-600 text-sm outline-none focus:ring-2 focus:ring-orange-500/20"
+                            onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
+                            className="w-20 p-2 bg-white border border-gray-200 rounded-2xl text-center font-black text-orange-600 text-sm outline-none focus:ring-2 focus:ring-orange-500/20"
                           />
                           <span className="text-[10px] font-black text-gray-400 uppercase">{item.unit}</span>
                         </div>
