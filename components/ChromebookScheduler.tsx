@@ -18,9 +18,10 @@ import {
   Save
 } from 'lucide-react';
 import { ChromebookBooking, Shift, StaffMember } from '../types';
-import { SCHOOL_CLASSES, SCHOOL_SUBJECTS } from '../constants/initialData';
-import { supabase } from '../supabaseClient';
 import { useStaff } from '../hooks/useStaff';
+import { useClassrooms } from '../hooks/useClassrooms';
+import { useSubjects } from '../hooks/useSubjects';
+import { supabase } from '../supabaseClient';
 
 const STATIONS = ["Estação 01", "Estação 02", "Estação 03", "Estação 04"];
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
@@ -31,6 +32,8 @@ const ChromebookScheduler: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookings, setBookings] = useState<ChromebookBooking[]>([]);
   const { staff } = useStaff();
+  const { classrooms } = useClassrooms();
+  const { subjects } = useSubjects();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBooking, setNewBooking] = useState({
@@ -397,7 +400,7 @@ const ChromebookScheduler: React.FC = () => {
                       className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
                     >
                       <option value="">Selecione...</option>
-                      {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                      {classrooms.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
@@ -409,7 +412,7 @@ const ChromebookScheduler: React.FC = () => {
                       className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
                     >
                       <option value="">Selecione...</option>
-                      {SCHOOL_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                      {subjects.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>

@@ -17,9 +17,10 @@ import {
    Theater
 } from 'lucide-react';
 import { AuditoriumBooking, Shift, StaffMember } from '../types';
-import { SCHOOL_CLASSES } from '../constants/initialData';
-import { supabase } from '../supabaseClient';
 import { useStaff } from '../hooks/useStaff';
+import { useClassrooms } from '../hooks/useClassrooms';
+import { useSubjects } from '../hooks/useSubjects';
+import { supabase } from '../supabaseClient';
 
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
@@ -30,12 +31,15 @@ const AuditoriumScheduler: React.FC = () => {
    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
    const [bookings, setBookings] = useState<AuditoriumBooking[]>([]);
    const { staff } = useStaff();
+   const { classrooms } = useClassrooms();
+   const { subjects } = useSubjects();
    const [isModalOpen, setIsModalOpen] = useState(false);
    const [newBooking, setNewBooking] = useState({
       shift: 'MATUTINO' as Shift,
       classes: [] as string[],
       teacherName: '',
       className: '',
+      subject: '',
       eventName: '',
       eventType: 'Palestra' as any,
       needsSound: false,
@@ -122,7 +126,7 @@ const AuditoriumScheduler: React.FC = () => {
             classes: newBooking.classes,
             teacher_name: newBooking.teacherName,
             class_name: newBooking.className,
-            title: newBooking.eventName,
+            title: `[${newBooking.subject}] ${newBooking.eventName}`,
             type: newBooking.eventType,
             description: newBooking.observations,
             needs_sound: newBooking.needsSound,
@@ -133,7 +137,7 @@ const AuditoriumScheduler: React.FC = () => {
          if (error) throw error;
 
          setIsModalOpen(false);
-         setNewBooking({ ...newBooking, classes: [], teacherName: '', className: '', eventName: '', eventType: 'Palestra', needsSound: false, needsProjector: false, needsAc: true, observations: '' });
+         setNewBooking({ ...newBooking, classes: [], teacherName: '', className: '', subject: '', eventName: '', eventType: 'Palestra', needsSound: false, needsProjector: false, needsAc: true, observations: '' });
          alert("Agendamento realizado com sucesso!");
       } catch (error) {
          console.error("Erro ao agendar:", error);
@@ -415,7 +419,19 @@ const AuditoriumScheduler: React.FC = () => {
                                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
                               >
                                  <option value="">Selecione a turma...</option>
-                                 {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                                 {classrooms.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                              </select>
+                           </div>
+                           <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Disciplina</label>
+                              <select
+                                 required
+                                 value={newBooking.subject}
+                                 onChange={e => setNewBooking({ ...newBooking, subject: e.target.value })}
+                                 className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
+                              >
+                                 <option value="">Selecione...</option>
+                                 {subjects.map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                            </div>
                            <div className="space-y-1.5">
