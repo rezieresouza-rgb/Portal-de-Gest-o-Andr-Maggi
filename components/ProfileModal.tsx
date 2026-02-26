@@ -43,9 +43,16 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, isOpen, onClose, onUp
 
         setLoading(true);
         try {
+            // Limpar e preparar login (se for CPF, deixar só números)
+            let cleanLogin = formData.login.trim().toLowerCase();
+            const isCpfMatch = cleanLogin.replace(/\D/g, '');
+            if (isCpfMatch.length === 11) {
+                cleanLogin = isCpfMatch;
+            }
+
             const updates: any = {
                 name: formData.name,
-                login: formData.login
+                login: cleanLogin
             };
 
             if (formData.password) {
@@ -59,7 +66,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ user, isOpen, onClose, onUp
 
             if (error) throw error;
 
-            const updatedUser = { ...user, name: formData.name, login: formData.login };
+            const updatedUser = { ...user, name: formData.name, login: cleanLogin };
             onUpdate(updatedUser);
             alert("Perfil atualizado com sucesso!");
             onClose();
