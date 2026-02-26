@@ -17,6 +17,7 @@ import {
 import { MakerLabBooking, Shift, StaffMember } from '../types';
 import { SCHOOL_CLASSES } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
+import { useStaff } from '../hooks/useStaff';
 
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
@@ -26,8 +27,7 @@ const MakerLabScheduler: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookings, setBookings] = useState<MakerLabBooking[]>([]);
-
-  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const { staff } = useStaff();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBooking, setNewBooking] = useState({
     shift: 'MATUTINO' as Shift,
@@ -69,19 +69,6 @@ const MakerLabScheduler: React.FC = () => {
   };
 
   useEffect(() => {
-    const loadStaff = () => {
-      const savedStaff = localStorage.getItem('secretariat_staff_v4');
-      if (savedStaff) {
-        const parsed = JSON.parse(savedStaff);
-        setStaff(parsed.filter((s: StaffMember) => s.status === 'EM_ATIVIDADE'));
-      } else {
-        setStaff([
-          { id: 'f1', name: 'PROF. CRISTIANO', role: 'PROFESSOR' } as any,
-          { id: 'f2', name: 'PROF. ANDRÉ', role: 'PROFESSOR' } as any
-        ]);
-      }
-    };
-    loadStaff();
     fetchBookings();
 
     const channel = supabase.channel('maker_lab_bookings')
@@ -374,8 +361,8 @@ const MakerLabScheduler: React.FC = () => {
                         type="button"
                         onClick={() => toggleClass(cls)}
                         className={`flex-1 py-3 rounded-xl text-xs font-black transition-all border-2 ${newBooking.classes.includes(cls)
-                            ? 'bg-sky-600 border-sky-700 text-white shadow-lg'
-                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-sky-200'
+                          ? 'bg-sky-600 border-sky-700 text-white shadow-lg'
+                          : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-sky-200'
                           }`}
                       >
                         {cls}
@@ -432,8 +419,8 @@ const MakerLabScheduler: React.FC = () => {
                         type="button"
                         onClick={() => toggleEquipment(eq)}
                         className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 ${newBooking.equipmentUsed.includes(eq)
-                            ? 'bg-sky-50 border-sky-600 text-sky-700'
-                            : 'bg-gray-50 border-gray-100 text-gray-400'
+                          ? 'bg-sky-50 border-sky-600 text-sky-700'
+                          : 'bg-gray-50 border-gray-100 text-gray-400'
                           }`}
                       >
                         {eq}

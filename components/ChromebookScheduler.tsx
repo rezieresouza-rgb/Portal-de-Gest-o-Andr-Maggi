@@ -20,6 +20,7 @@ import {
 import { ChromebookBooking, Shift, StaffMember } from '../types';
 import { SCHOOL_CLASSES, SCHOOL_SUBJECTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
+import { useStaff } from '../hooks/useStaff';
 
 const STATIONS = ["Estação 01", "Estação 02", "Estação 03", "Estação 04"];
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
@@ -29,8 +30,8 @@ const ChromebookScheduler: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookings, setBookings] = useState<ChromebookBooking[]>([]);
+  const { staff } = useStaff();
 
-  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBooking, setNewBooking] = useState({
     stationId: STATIONS[0],
@@ -72,21 +73,6 @@ const ChromebookScheduler: React.FC = () => {
   };
 
   useEffect(() => {
-    const loadStaff = () => {
-      const savedStaff = localStorage.getItem('secretariat_staff_v4');
-      if (savedStaff) {
-        const parsed = JSON.parse(savedStaff);
-        setStaff(parsed.filter((s: StaffMember) => s.status === 'EM_ATIVIDADE'));
-      } else {
-        // Fallback
-        setStaff([
-          { id: 'f1', name: 'PROF. CRISTIANO', role: 'PROFESSOR' } as any,
-          { id: 'f2', name: 'PROF. ANDRÉ', role: 'PROFESSOR' } as any,
-          { id: 'f3', name: 'PROFª. MARIA', role: 'PROFESSOR' } as any
-        ]);
-      }
-    };
-    loadStaff();
     fetchBookings();
 
     const channel = supabase.channel('chromebook_bookings')
@@ -94,7 +80,7 @@ const ChromebookScheduler: React.FC = () => {
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      if (channel) channel.unsubscribe();
     };
   }, []);
 
@@ -378,8 +364,8 @@ const ChromebookScheduler: React.FC = () => {
                         type="button"
                         onClick={() => toggleClass(cls)}
                         className={`flex-1 py-3 rounded-xl text-xs font-black transition-all border-2 ${newBooking.classes.includes(cls)
-                            ? 'bg-fuchsia-600 border-fuchsia-700 text-white shadow-lg'
-                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-fuchsia-200'
+                          ? 'bg-fuchsia-600 border-fuchsia-700 text-white shadow-lg'
+                          : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-fuchsia-200'
                           }`}
                       >
                         {cls}

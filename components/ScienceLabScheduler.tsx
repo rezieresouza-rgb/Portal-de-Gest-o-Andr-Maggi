@@ -18,6 +18,7 @@ import {
 import { ScienceLabBooking, Shift, StaffMember } from '../types';
 import { SCHOOL_CLASSES } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
+import { useStaff } from '../hooks/useStaff';
 
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
@@ -26,8 +27,7 @@ const ScienceLabScheduler: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookings, setBookings] = useState<ScienceLabBooking[]>([]);
-
-  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const { staff } = useStaff();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBooking, setNewBooking] = useState({
     shift: 'MATUTINO' as Shift,
@@ -69,19 +69,6 @@ const ScienceLabScheduler: React.FC = () => {
   };
 
   useEffect(() => {
-    const loadStaff = () => {
-      const savedStaff = localStorage.getItem('secretariat_staff_v4');
-      if (savedStaff) {
-        const parsed = JSON.parse(savedStaff);
-        setStaff(parsed.filter((s: StaffMember) => s.status === 'EM_ATIVIDADE'));
-      } else {
-        setStaff([
-          { id: 'f1', name: 'PROF. CRISTIANO', role: 'PROFESSOR' } as any,
-          { id: 'f2', name: 'PROF. ANDRÉ', role: 'PROFESSOR' } as any
-        ]);
-      }
-    };
-    loadStaff();
     fetchBookings();
 
     const channel = supabase.channel('science_lab_bookings')
@@ -361,8 +348,8 @@ const ScienceLabScheduler: React.FC = () => {
                         type="button"
                         onClick={() => toggleClass(cls)}
                         className={`flex-1 py-3 rounded-xl text-xs font-black transition-all border-2 ${newBooking.classes.includes(cls)
-                            ? 'bg-emerald-600 border-emerald-700 text-white shadow-lg'
-                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-emerald-200'
+                          ? 'bg-emerald-600 border-emerald-700 text-white shadow-lg'
+                          : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-emerald-200'
                           }`}
                       >
                         {cls}
