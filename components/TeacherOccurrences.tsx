@@ -130,12 +130,25 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    }, []);
 
    const filteredStudents = useMemo(() => {
-      if (!searchTerm || searchTerm.length < 2) return [];
       const searchClass = form.className;
-      return masterStudents.filter(s =>
-         s.Nome && s.Nome.toLowerCase().includes(searchTerm.toLowerCase()) &&
-         (!searchClass || s.Turma === searchClass)
-      ).slice(0, 6);
+
+      // If no class is selected and search term is too short, return empty
+      if (!searchClass && (!searchTerm || searchTerm.length < 2)) return [];
+
+      let filtered = masterStudents;
+
+      // First, filter by class if selected
+      if (searchClass) {
+         filtered = filtered.filter(s => s.Turma === searchClass);
+      }
+
+      // Then, filter by name if there's a search term
+      if (searchTerm) {
+         filtered = filtered.filter(s => s.Nome && s.Nome.toLowerCase().includes(searchTerm.toLowerCase()));
+      }
+
+      // Limit results to avoid massive dropdowns, but allow more if we're viewing a whole class
+      return filtered.slice(0, searchClass && !searchTerm ? 50 : 6);
    }, [searchTerm, masterStudents, form.className]);
 
    const handleSelectStudent = (student: any) => {
@@ -329,7 +342,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                  <select
                                     required
                                     value={form.className}
-                                    onChange={e => setForm({ ...form, className: e.target.value })}
+                                    onChange={e => {
+                                       setForm({ ...form, className: e.target.value });
+                                       if (e.target.value) setShowDropdown(true);
+                                    }}
                                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
                                  >
                                     <option value="">Selecione a turma...</option>
@@ -348,7 +364,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                           setSearchTerm(e.target.value);
                                           setShowDropdown(true);
                                        }}
-                                       placeholder="Nome (mín. 2 letras)..."
+                                       placeholder={form.className ? `Selecione na lista ou digite...` : `Selecione a turma primeiro...`}
                                        className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-red-500/5 focus:bg-white transition-all uppercase"
                                     />
                                  </div>
