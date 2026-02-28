@@ -16,10 +16,7 @@ export const SCHOOL_SUBJECTS = [
   "GEOGRAFIA",
   "ARTE",
   "EDUCAÇÃO FÍSICA",
-  "LÍNGUA INGLESA",
-  "ENSINO RELIGIOSO",
-  "PROJETO DE VIDA",
-  "PRÁTICAS EXPERIMENTAIS"
+  "LÍNGUA INGLESA"
 ];
 
 export const INITIAL_SUPPLIERS: Supplier[] = [

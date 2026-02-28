@@ -550,7 +550,7 @@ export const generateClassSchedule = async (classInfo: any, teachers: any[], val
       Lista de Professores Disponíveis:
       ${JSON.stringify(teachers)}
       
-      Disciplinas Obrigatórias (USE A GRAFIA EXATA): PORTUGUÊS, MATEMÁTICA, HISTÓRIA, GEOGRAFIA, CIÊNCIAS, ARTE, ED. FÍSICA, INGLÊS, ENSINO RELIGIOSO, PROJETO DE VIDA.
+      Disciplinas Obrigatórias (USE A GRAFIA EXATA): PORTUGUÊS, MATEMÁTICA, HISTÓRIA, GEOGRAFIA, CIÊNCIAS, ARTE, ED. FÍSICA, INGLÊS.
       
       Retorne um JSON com a lista de aulas sugeridas.`,
       config: {
