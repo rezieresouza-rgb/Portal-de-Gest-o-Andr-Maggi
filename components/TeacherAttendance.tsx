@@ -29,12 +29,31 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [selectedPeriods, setSelectedPeriods] = useState<number[]>([1]); // Default 1st period
+
   const [students, setStudents] = useState<any[]>([]);
-  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+  // Record<studentId, Record<period, isPresent>>
+  const [attendance, setAttendance] = useState<Record<string, Record<number, boolean>>>({});
 
   const [otherAttendance, setOtherAttendance] = useState<Record<string, { subject: string, isPresent: boolean, teacher: string }[]>>({});
   const [riskStats, setRiskStats] = useState<Record<string, { total: number, absences: number, percentage: number }>>({});
   const [studentMovements, setStudentMovements] = useState<Record<string, any[]>>({});
+
+  // Reset attendance when periods change
+  useEffect(() => {
+    if (students.length > 0) {
+      const initialAttendance: Record<string, Record<number, boolean>> = {};
+      students.forEach(s => {
+        initialAttendance[s.CodigoAluno] = { ...(attendance[s.CodigoAluno] || {}) };
+        selectedPeriods.forEach(p => {
+          if (initialAttendance[s.CodigoAluno][p] === undefined) {
+            initialAttendance[s.CodigoAluno][p] = true; // Default present for newly selected periods
+          }
+        });
+      });
+      setAttendance(initialAttendance);
+    }
+  }, [selectedPeriods, students]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -89,10 +108,12 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
         setStudents(mappedStudents);
 
-        // Initialize attendance state for new students
-        const initialAttendance: Record<string, boolean> = {};
+        const initialAttendance: Record<string, Record<number, boolean>> = {};
         mappedStudents.forEach((s: any) => {
-          initialAttendance[s.CodigoAluno] = true;
+          initialAttendance[s.CodigoAluno] = {};
+          selectedPeriods.forEach(p => {
+            initialAttendance[s.CodigoAluno][p] = true;
+          });
         });
         setAttendance(initialAttendance);
 
@@ -189,56 +210,80 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
     }
   };
 
-  const toggleAttendance = (id: string) => {
-    setAttendance(prev => ({ ...prev, [id]: !prev[id] }));
+  const togglePeriodSelection = (period: number) => {
+    setSelectedPeriods(prev =>
+      prev.includes(period) ? prev.filter(p => p !== period) : [...prev, period].sort()
+    );
+  };
+
+  const toggleAttendance = (id: string, period: number) => {
+    if (!selectedPeriods.includes(period)) return; // Prevents toggling inactive periods
+    setAttendance(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [period]: !prev[id]?.[period]
+      }
+    }));
   };
 
   const markAll = (status: boolean) => {
     const updated = { ...attendance };
     students.forEach(s => {
-      updated[s.CodigoAluno] = status;
+      selectedPeriods.forEach(p => {
+        if (!updated[s.CodigoAluno]) updated[s.CodigoAluno] = {};
+        updated[s.CodigoAluno][p] = status;
+      });
     });
     setAttendance(updated);
   };
 
   const handleSave = async () => {
     if (!selectedClass) return alert("Selecione uma turma.");
+    if (selectedPeriods.length === 0) return alert("Selecione pelo menos uma aula que você ministrou.");
     setIsSaving(true);
 
     try {
-      // 1. Insert Record
-      const { data: recordData, error: recordError } = await supabase
-        .from('class_attendance_records')
-        .insert([
-          {
-            classroom_name: selectedClass,
-            teacher_name: user.name,
-            date: date,
-            shift: selectedShift,
-            subject: selectedSubject
-          }
-        ])
-        .select()
-        .single();
+      for (const period of selectedPeriods) {
+        // We append the period to the subject string to distinguish it in the records table
+        // For example: "MATEMÁTICA (1ª Aula)"
+        const periodSubject = `${selectedSubject} - ${period}ª Aula`;
 
-      if (recordError) throw recordError;
+        // 1. Insert Record for this period
+        const { data: recordData, error: recordError } = await supabase
+          .from('class_attendance_records')
+          .insert([
+            {
+              classroom_name: selectedClass,
+              teacher_name: user.name,
+              date: date,
+              shift: selectedShift,
+              subject: periodSubject
+            }
+          ])
+          .select()
+          .single();
 
-      // 2. Insert Students
-      const studentRecords = students.map(s => ({
-        attendance_record_id: recordData.id,
-        student_id: s.CodigoAluno,
-        student_name: s.Nome,
-        is_present: attendance[s.CodigoAluno]
-      }));
+        if (recordError) throw recordError;
 
-      const { error: studentsError } = await supabase
-        .from('class_attendance_students')
-        .insert(studentRecords);
+        // 2. Insert Students for this period record
+        const studentRecords = students.map(s => ({
+          attendance_record_id: recordData.id,
+          student_id: s.CodigoAluno,
+          student_name: s.Nome,
+          is_present: attendance[s.CodigoAluno]?.[period] ?? false
+        }));
 
-      if (studentsError) throw studentsError;
+        const { error: studentsError } = await supabase
+          .from('class_attendance_students')
+          .insert(studentRecords);
 
-      alert("Chamada realizada e salva com sucesso!");
+        if (studentsError) throw studentsError;
+      }
+
+      alert("Chamada realizada e salva com sucesso para todas as aulas selecionadas!");
       setSelectedClass('');
+      setSelectedPeriods([1]); // Reset periods
 
     } catch (error) {
       console.error('Erro ao salvar chamada:', error);
@@ -251,8 +296,8 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
 
-      <div className="bg-white p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-6">
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full">
+      <div className="bg-white p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turma</label>
             <select
@@ -295,14 +340,37 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
             </select>
           </div>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={isSaving || students.length === 0}
-          className="w-full lg:w-auto px-8 py-4 bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-600/20 hover:bg-amber-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
-        >
-          {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-          Salvar Diário
-        </button>
+
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-t border-gray-50 pt-6">
+          <div className="space-y-2 w-full md:w-auto">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+              Quais aulas você ministrou hoje? <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[8px]">Obrigatório</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4, 5].map(period => (
+                <button
+                  key={period}
+                  onClick={() => togglePeriodSelection(period)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${selectedPeriods.includes(period)
+                      ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-sm'
+                      : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'
+                    }`}
+                >
+                  {period}ª Aula
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={isSaving || students.length === 0}
+            className="w-full md:w-auto px-8 py-4 bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-600/20 hover:bg-amber-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+          >
+            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            Salvar Diário
+          </button>
+        </div>
       </div>
 
       {students.length > 0 ? (
@@ -368,24 +436,32 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => !isTransferred && toggleAttendance(student.CodigoAluno)}
-                      disabled={isTransferred}
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isTransferred ? 'bg-gray-100 text-gray-300 cursor-not-allowed' :
-                        (attendance[student.CodigoAluno]
-                          ? 'bg-emerald-50 text-emerald-600 shadow-inner'
-                          : 'bg-red-50 text-red-600 shadow-inner')
-                        }`}
-                    >
-                      {isTransferred ? <X size={24} strokeWidth={2} /> : (attendance[student.CodigoAluno] ? <Check size={24} strokeWidth={3} /> : <X size={24} strokeWidth={3} />)}
-                    </button>
-                    <div className="text-right w-16">
-                      <span className={`text-[8px] font-black uppercase tracking-widest ${isTransferred ? 'text-gray-300' :
-                        (attendance[student.CodigoAluno] ? 'text-emerald-500' : 'text-red-500')
-                        }`}>
-                        {isTransferred ? 'Inativo' : (attendance[student.CodigoAluno] ? 'Presente' : 'Ausente')}
-                      </span>
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 mt-4 sm:mt-0">
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map(period => {
+                        const isSelected = selectedPeriods.includes(period);
+                        const isPresent = attendance[student.CodigoAluno]?.[period] ?? false;
+
+                        return (
+                          <div key={period} className="flex flex-col items-center gap-1">
+                            <span className="text-[8px] font-black text-gray-400 uppercase">{period}ª</span>
+                            <button
+                              onClick={() => !isTransferred && toggleAttendance(student.CodigoAluno, period)}
+                              disabled={isTransferred || !isSelected}
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${!isSelected
+                                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed border outline-dashed outline-1 outline-gray-200 outline-offset-1'
+                                  : isTransferred
+                                    ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                    : (isPresent
+                                      ? 'bg-emerald-50 text-emerald-600 shadow-inner border border-emerald-100'
+                                      : 'bg-red-50 text-red-600 shadow-inner border border-red-100')
+                                }`}
+                            >
+                              {!isSelected || isTransferred ? <X size={20} className="opacity-50" strokeWidth={2} /> : (isPresent ? <Check size={20} strokeWidth={3} /> : <X size={20} strokeWidth={3} />)}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
