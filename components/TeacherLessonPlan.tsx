@@ -58,8 +58,9 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     skills: [],
     recompositionSkills: [],
     themes: '',
+    observations: '',
     rows: [
-      { weekOrDate: '1ª semana', content: '', activities: '', methodology: '', evaluation: '' }
+      { weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '' }
     ],
     status: 'RASCUNHO',
     coordinationFeedback: ''
@@ -100,7 +101,18 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
             skills: content.skills || [],
             recompositionSkills: content.recompositionSkills || [],
             themes: p.themes || '',
-            rows: content.rows || [],
+            observations: content.observations || '',
+            rows: (content.rows || []).map((r: any) => ({
+              weekOrDate: r.weekOrDate || '',
+              theme: r.theme || '',
+              materialPage: r.materialPage || '',
+              skillsText: r.skillsText || '',
+              content: r.content || '',
+              activities: r.activities || '',
+              methodology: r.methodology || '',
+              duration: r.duration || '',
+              evaluation: r.evaluation || ''
+            })),
             status: p.status,
             coordinationFeedback: p.teacher_id === user.id ? p.coordination_feedback : '',
             timestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now()
@@ -136,10 +148,14 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       return {
         ...prev,
         rows: [...prev.rows, {
-          weekOrDate: `${nextWeekNum}ª semana`,
+          weekOrDate: `De __ a __ de __ de __`,
+          theme: '',
+          materialPage: '',
+          skillsText: '',
           content: '',
           activities: '',
           methodology: '',
+          duration: '',
           evaluation: ''
         }]
       };
@@ -240,6 +256,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       weeklyClasses: form.weeklyClasses,
       skills: form.skills,
       recompositionSkills: form.recompositionSkills,
+      observations: form.observations,
       rows: form.rows
     };
 
@@ -287,7 +304,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         skills: [],
         recompositionSkills: [],
         themes: '',
-        rows: [{ weekOrDate: '1ª semana', content: '', activities: '', methodology: '', evaluation: '' }],
+        observations: '',
+        rows: [{ weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '' }],
         status: 'RASCUNHO',
         coordinationFeedback: ''
       });
@@ -319,7 +337,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       skills: [],
       recompositionSkills: [],
       themes: '',
-      rows: [{ weekOrDate: '1ª semana', content: '', activities: '', methodology: '', evaluation: '' }],
+      observations: '',
+      rows: [{ weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '' }],
       status: 'RASCUNHO'
     });
     setAiSuggestions(null);
@@ -598,36 +617,73 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
 
         <div className="space-y-4">
           <div className="flex justify-between items-center px-2">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Descrição das Aulas (Diário de Bordo)</h4>
-            <button type="button" onClick={addRow} className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all"><Plus size={18} /></button>
+            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Semanas (Roteiro de Aprendizagem)</h4>
+            <button type="button" onClick={addRow} className="px-4 py-2 bg-amber-50 text-amber-600 font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-amber-600 hover:text-white transition-all flex items-center gap-2"><Plus size={14} /> Adicionar Semana</button>
           </div>
-          <div className="border border-gray-100 rounded-[2.5rem] overflow-hidden shadow-inner overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-gray-50 text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                  <th className="px-6 py-4 w-40">Data/Duração</th>
-                  <th className="px-6 py-4">Conteúdo</th>
-                  <th className="px-6 py-4">Atividades</th>
-                  <th className="px-6 py-4">Metodologia</th>
-                  <th className="px-6 py-4">Avaliação</th>
-                  <th className="px-4 py-4 w-12"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {form.rows.map((row, idx) => (
-                  <tr key={idx} className="group hover:bg-gray-50/50">
-                    <td className="px-4 py-3"><input value={row.weekOrDate} onChange={e => updateRow(idx, 'weekOrDate', e.target.value)} className="w-full p-2 bg-transparent font-bold text-xs outline-none" /></td>
-                    <td className="px-4 py-3"><textarea value={row.content} onChange={e => updateRow(idx, 'content', e.target.value)} className="w-full p-2 bg-transparent text-xs resize-none outline-none h-16" /></td>
-                    <td className="px-4 py-3"><textarea value={row.activities} onChange={e => updateRow(idx, 'activities', e.target.value)} className="w-full p-2 bg-transparent text-xs resize-none outline-none h-16" /></td>
-                    <td className="px-4 py-3"><textarea value={row.methodology} onChange={e => updateRow(idx, 'methodology', e.target.value)} className="w-full p-2 bg-transparent text-xs resize-none outline-none h-16" /></td>
-                    <td className="px-4 py-3"><textarea value={row.evaluation} onChange={e => updateRow(idx, 'evaluation', e.target.value)} className="w-full p-2 bg-transparent text-xs resize-none outline-none h-16" /></td>
-                    <td className="px-2 py-3"><button type="button" onClick={() => removeRow(idx)} className="p-2 text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><X size={14} /></button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-6">
+            {form.rows.map((row, idx) => (
+              <div key={idx} className="bg-gray-50 border border-gray-100 p-6 rounded-[2rem] relative group">
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all">
+                  <button type="button" onClick={() => removeRow(idx)} className="p-2 text-gray-300 hover:text-red-500 bg-white rounded-full shadow-sm"><X size={14} /></button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">Semana {idx + 1} (Ex: De 01/03 a 05/03 de 2026)</label>
+                    <input value={row.weekOrDate} onChange={e => updateRow(idx, 'weekOrDate', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl font-black text-xs outline-none" placeholder="De __ a __ de __ de __" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tema</label>
+                    <input value={row.theme} onChange={e => updateRow(idx, 'theme', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold outline-none" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Página do material</label>
+                    <input value={row.materialPage} onChange={e => updateRow(idx, 'materialPage', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold outline-none" />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Habilidades a serem trabalhadas</label>
+                    <textarea value={row.skillsText} onChange={e => updateRow(idx, 'skillsText', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold resize-none outline-none h-20" />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-200 mt-4">
+                  <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Passo a passo: Rotina para organizar a semana</h5>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Conteúdos / Objetos de Conhecimento</label>
+                      <textarea value={row.content} onChange={e => updateRow(idx, 'content', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs resize-none outline-none min-h-[60px]" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Atividades propostas</label>
+                      <textarea value={row.activities} onChange={e => updateRow(idx, 'activities', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs resize-none outline-none min-h-[60px]" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Como fazer e onde pesquisar</label>
+                      <textarea value={row.methodology} onChange={e => updateRow(idx, 'methodology', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs resize-none outline-none min-h-[60px]" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Duração</label>
+                        <input value={row.duration} onChange={e => updateRow(idx, 'duration', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs outline-none" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Avaliação</label>
+                        <input value={row.evaluation} onChange={e => updateRow(idx, 'evaluation', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+
+        <div className="space-y-6">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observações e links sugeridos</label>
+            <textarea value={form.observations} onChange={e => setForm({ ...form, observations: e.target.value })} className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-24 resize-none outline-none focus:bg-white transition-all" placeholder="Adicione observações adicionais relativas a este roteiro..." />
+          </div>
+        </div>
+
       </div>
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
