@@ -458,14 +458,16 @@ const SecretariatStaffManager: React.FC = () => {
 
       // Cálculo do Role baseado na função
       const targetRole = mapFunctionToRole(form.jobFunction || "");
-      // Se houver sobrescrita manual (também baseada na lista de funções), mapeia ela
-      const finalRole = form.userRole ? mapFunctionToRole(form.userRole) : targetRole;
+
+      // Override finalRole logic. If form.userRole is empty or just generic 'PROFESSOR' but targetRole means something else, trust targetRole.
+      // Se houver sobrescrita manual (também baseada na lista de funções e diferente do genérico), mapeia ela
+      const finalRole = form.userRole && form.userRole !== 'PROFESSOR' ? form.userRole : targetRole;
 
       const serverData = {
          code: form.code,
          registration: form.registration,
          name: form.name?.toUpperCase(),
-         role: form.userRole || targetRole, // Use explicit userRole if selected
+         role: finalRole, // Use the proper mapped role
          cpf: form.cpf,
          birth_date: form.birthDate,
          entry_profile: form.entryProfile?.toUpperCase(),
@@ -515,10 +517,6 @@ const SecretariatStaffManager: React.FC = () => {
             const { data: existingUser } = await query.maybeSingle();
 
             const passwordToSet = form.password || 'Mudar123!';
-
-            // Decisão: O Role do sistema segue a função mapeada (targetRole), 
-            // a menos que o usuário tenha escolhido manualmente um nível de acesso diferente (form.userRole).
-            const finalRole = (form.userRole as UserRole) || targetRole;
 
             const userData = {
                name: serverData.name,
