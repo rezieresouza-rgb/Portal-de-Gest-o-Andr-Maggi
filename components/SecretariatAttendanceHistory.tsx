@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Search, Printer, Calendar, Users, BookOpen, AlertTriangle } from 'lucide-react';
-import { SCHOOL_CLASSES } from '../constants/initialData';
+import { SCHOOL_CLASSES, SCHOOL_SUBJECTS } from '../constants/initialData';
 
 interface AttendanceRecord {
     id: string;
@@ -20,6 +20,7 @@ interface AttendanceRecord {
 const SecretariatAttendanceHistory: React.FC = () => {
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uniqueTeachers, setUniqueTeachers] = useState<string[]>([]);
 
     // Filters
     const [startDate, setStartDate] = useState(() => {
@@ -76,6 +77,13 @@ const SecretariatAttendanceHistory: React.FC = () => {
                     students: r.class_attendance_students.sort((a: any, b: any) => a.student_name.localeCompare(b.student_name))
                 }));
                 setRecords(mapped);
+
+                // Extract unique teachers from the fetched records for the dropdown
+                const teachers = Array.from(new Set(mapped.map(r => r.teacher_name))).filter(Boolean).sort();
+                setUniqueTeachers(prev => {
+                    // Merge existing list with fetched ones to maintain list even if filtered out
+                    return Array.from(new Set([...prev, ...teachers])).sort();
+                });
             }
         } catch (error) {
             console.error('Erro ao buscar histórico de chamadas:', error);
@@ -156,28 +164,31 @@ const SecretariatAttendanceHistory: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Professor</label>
-                    <input
-                        type="text"
-                        placeholder="Nome do Professor"
+                    <select
                         value={filterTeacher}
                         onChange={e => setFilterTeacher(e.target.value)}
-                        onBlur={fetchRecords}
-                        onKeyDown={e => e.key === 'Enter' && fetchRecords()}
                         className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none"
-                    />
+                    >
+                        <option value="">Todos os Professores</option>
+                        {uniqueTeachers.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
                 </div>
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Disciplina / Aula</label>
                     <div className="flex gap-2">
-                        <input
-                            type="text"
-                            placeholder="Ex: Geografia"
+                        <select
                             value={filterSubject}
                             onChange={e => setFilterSubject(e.target.value)}
-                            onBlur={fetchRecords}
-                            onKeyDown={e => e.key === 'Enter' && fetchRecords()}
                             className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none"
-                        />
+                        >
+                            <option value="">Todas</option>
+                            {SCHOOL_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                            <option value="1ª Aula">Filtrar por: 1ª Aula</option>
+                            <option value="2ª Aula">Filtrar por: 2ª Aula</option>
+                            <option value="3ª Aula">Filtrar por: 3ª Aula</option>
+                            <option value="4ª Aula">Filtrar por: 4ª Aula</option>
+                            <option value="5ª Aula">Filtrar por: 5ª Aula</option>
+                        </select>
                         <button
                             onClick={fetchRecords}
                             className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
