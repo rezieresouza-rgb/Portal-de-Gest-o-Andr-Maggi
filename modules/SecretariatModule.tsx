@@ -14,7 +14,8 @@ import {
   Plus,
   ChevronRight,
   Maximize2,
-  CalendarDays
+  CalendarDays,
+  ClipboardList
 } from 'lucide-react';
 import SecretariatDashboard from '../components/SecretariatDashboard';
 import SecretariatStudentRegistry from '../components/SecretariatStudentRegistry';
@@ -23,6 +24,7 @@ import SecretariatStaffManager from '../components/SecretariatStaffManager';
 import SecretariatBulletinPrinter from '../components/SecretariatBulletinPrinter';
 import SecretariatNotificationCenter from '../components/SecretariatNotificationCenter';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
+import SecretariatAttendanceHistory from '../components/SecretariatAttendanceHistory';
 
 interface SecretariatModuleProps {
   user?: any;
@@ -30,11 +32,12 @@ interface SecretariatModuleProps {
 }
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'students' | 'classes' | 'staff' | 'bulletins'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'students' | 'classes' | 'staff' | 'bulletins' | 'attendance_history'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
+    { id: 'attendance_history', label: 'Histórico de Chamadas', icon: ClipboardList },
     { id: 'students', label: 'Cadastro de Alunos', icon: GraduationCap },
     { id: 'classes', label: 'Gestão de Turmas', icon: Users },
     { id: 'staff', label: 'Servidores / RH', icon: Briefcase },
@@ -125,6 +128,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {activeTab === 'dashboard' && <SecretariatDashboard />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
+          {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
           {activeTab === 'students' && <SecretariatStudentRegistry />}
           {activeTab === 'classes' && <SecretariatClassroomManager />}
           {activeTab === 'staff' && <SecretariatStaffManager />}
