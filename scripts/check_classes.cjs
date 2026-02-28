@@ -1,32 +1,27 @@
-const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
 
-const envPath = path.join('c:', 'Users', 'rezie', 'Downloads', 'portal-de-gestão-andré-maggi', '.env.local');
+const portalPath = path.join('c:', 'Users', 'rezie', 'Downloads', 'portal-de-gestão-andré-maggi');
+const envPath = path.join(portalPath, '.env.local');
 const envContent = fs.readFileSync(envPath, 'utf8');
-
 const getEnvVar = (name) => {
-    const match = envContent.match(new RegExp(`${name}=(.*)`));
-    return match ? match[1].trim() : null;
+    const line = envContent.split('\n').find(l => l.startsWith(name + '='));
+    return line ? line.split('=')[1].trim() : null;
 };
+const url = getEnvVar('VITE_SUPABASE_URL');
+const key = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+async function checkClasses() {
+    try {
+        console.log("--- Checking students table ---");
+        const res = await fetch(`${url}/rest/v1/students?select=*&limit=1`, {
+            headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+        });
+        const data = await res.json();
+        console.log("Single student:", data);
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function listAllClassrooms() {
-    const { data: classrooms, error } = await supabase
-        .from('classrooms')
-        .select('name')
-        .order('name');
-
-    if (error) {
-        console.error(error);
-        return;
+    } catch (e) {
+        console.error('Error:', e);
     }
-
-    fs.writeFileSync('scripts/db_classrooms.txt', classrooms.map(c => c.name).join('\n'), 'utf8');
 }
-
-listAllClassrooms();
+checkClasses();

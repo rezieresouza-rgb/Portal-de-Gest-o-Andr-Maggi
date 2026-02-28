@@ -139,12 +139,12 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
       // First, filter by class if selected
       if (searchClass) {
-         filtered = filtered.filter(s => s.Turma === searchClass);
+         filtered = filtered.filter(s => s.class === searchClass);
       }
 
       // Then, filter by name if there's a search term
       if (searchTerm) {
-         filtered = filtered.filter(s => s.Nome && s.Nome.toLowerCase().includes(searchTerm.toLowerCase()));
+         filtered = filtered.filter(s => s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase()));
       }
 
       // Limit results to avoid massive dropdowns, but allow more if we're viewing a whole class
@@ -154,10 +154,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const handleSelectStudent = (student: any) => {
       setForm(prev => ({
          ...prev,
-         studentName: student.Nome,
-         className: student.Turma
+         studentName: student.name,
+         className: student.class
       }));
-      setSearchTerm(student.Nome);
+      setSearchTerm(student.name);
       setShowDropdown(false);
    };
 
@@ -369,17 +369,18 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                     />
                                  </div>
 
+                                 {/* Only check showDropdown, don't hide if form.className exists to debug */}
                                  {showDropdown && filteredStudents.length > 0 && (
-                                    <div className="absolute z-50 left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden divide-y divide-gray-50 animate-in slide-in-from-top-2">
+                                    <div className="absolute z-[100] left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto max-h-60 divide-y divide-gray-50 animate-in slide-in-from-top-2">
                                        {filteredStudents.map(s => (
                                           <button
-                                             key={s.CodigoAluno}
+                                             key={s.id || s.registration_number || Math.random()}
                                              type="button"
                                              onClick={() => handleSelectStudent(s)}
                                              className="w-full text-left p-4 hover:bg-red-50 transition-colors flex justify-between items-center"
                                           >
-                                             <span className="text-xs font-black uppercase text-gray-800">{s.Nome}</span>
-                                             <span className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma}</span>
+                                             <span className="text-xs font-black uppercase text-gray-800">{s.name}</span>
+                                             <span className="text-[9px] font-bold text-gray-400 uppercase">{s.class}</span>
                                           </button>
                                        ))}
                                     </div>
