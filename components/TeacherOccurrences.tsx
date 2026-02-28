@@ -16,7 +16,9 @@ import {
    Trash2,
    AlertTriangle,
    History,
-   Loader2
+   Loader2,
+   Edit3,
+   Printer
 } from 'lucide-react';
 import { ClassroomOccurrence, CaseSeverity } from '../types';
 import { INITIAL_STUDENTS, SCHOOL_CLASSES } from '../constants/initialData';
@@ -39,6 +41,8 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [masterStudents, setMasterStudents] = useState<any[]>([]);
    const [loading, setLoading] = useState(false);
    const [isSaving, setIsSaving] = useState(false);
+   const [editingOccurrenceId, setEditingOccurrenceId] = useState<string | null>(null);
+   const [printingOccurrence, setPrintingOccurrence] = useState<ClassroomOccurrence | null>(null);
 
    const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean }>({
       date: new Date().toISOString().split('T')[0],
@@ -104,6 +108,31 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          forwardToPsychosocial: false
       });
       setSearchTerm('');
+      setEditingOccurrenceId(null);
+   };
+
+   const handleEdit = (occ: ClassroomOccurrence) => {
+      setForm({
+         date: occ.date,
+         teacherName: occ.teacherName,
+         className: occ.className,
+         studentName: occ.studentName,
+         type: occ.type,
+         severity: occ.severity,
+         description: occ.description,
+         notifiedParents: occ.notifiedParents || false,
+         forwardToPsychosocial: false // Do not resend on edit
+      });
+      setSearchTerm(occ.studentName);
+      setEditingOccurrenceId(occ.id);
+      setIsModalOpen(true);
+   };
+
+   const handlePrint = (occ: ClassroomOccurrence) => {
+      setPrintingOccurrence(occ);
+      setTimeout(() => {
+         window.print();
+      }, 500);
    };
 
    // Realtime subscription
@@ -169,55 +198,64 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
       setIsSaving(true);
 
+      const payload = {
+         date: form.date,
+         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+         responsible_name: form.teacherName,
+         classroom_name: form.className,
+         student_name: form.studentName,
+         category: form.type,
+         severity: form.severity,
+         description: form.description
+         // status and location skipped for updates unless needed
+      };
+
       try {
-         const { error } = await supabase.from('occurrences').insert([{
-            date: form.date,
-            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-            responsible_name: form.teacherName,
-            classroom_name: form.className,
-            student_name: form.studentName,
-            category: form.type,
-            severity: form.severity,
-            description: form.description,
-            status: 'REGISTRADO',
-            location: 'SALA DE AULA'
-         }]);
-
-         if (error) throw error;
-
-         // Forward to Psychosocial if requested
-         if (form.forwardToPsychosocial) {
-            const { error: referralError } = await supabase.from('psychosocial_referrals').insert([{
-               student_name: form.studentName,
-               class_name: form.className,
-               teacher_name: form.teacherName,
-               school_unit: 'ESCOLA ANDRÉ MAGGI', // Default or fetch from context
-               date: form.date,
-               report: `[VIA OCORRÊNCIA] ${form.description}`,
-               status: 'AGUARDANDO_TRIAGEM',
-               student_age: 'Não informado', // Default
-               attendance_frequency: '0', // Default
-               previous_strategies: 'Encaminhamento direto via Oocorrência',
-               adopted_procedures: ['ENCAMINHAMENTO_DIRETO'],
-               observations: { learning: [], behavioral: [], emotional: [] }
+         if (editingOccurrenceId) {
+            const { error } = await supabase.from('occurrences').update(payload).eq('id', editingOccurrenceId);
+            if (error) throw error;
+         } else {
+            const { error } = await supabase.from('occurrences').insert([{
+               ...payload,
+               status: 'REGISTRADO',
+               location: 'SALA DE AULA'
             }]);
+            if (error) throw error;
 
-            if (referralError) {
-               console.error("Erro ao encaminhar para psicossocial:", referralError);
-               alert("Ocorrência salva, mas erro ao encaminhar para Equipe Multi.");
-            } else {
-               // Notify
-               await supabase.from('psychosocial_notifications').insert([{
-                  title: 'Encaminhamento via Ocorrência',
-                  message: `O professor(a) ${form.teacherName} encaminhou o aluno ${form.studentName} através de um registro de ocorrência.`,
-                  is_read: false
+            // Forward to Psychosocial if requested (Only on creation)
+            if (form.forwardToPsychosocial) {
+               const { error: referralError } = await supabase.from('psychosocial_referrals').insert([{
+                  student_name: form.studentName,
+                  class_name: form.className,
+                  teacher_name: form.teacherName,
+                  school_unit: 'ESCOLA ANDRÉ MAGGI', // Default or fetch from context
+                  date: form.date,
+                  report: `[VIA OCORRÊNCIA] ${form.description}`,
+                  status: 'AGUARDANDO_TRIAGEM',
+                  student_age: 'Não informado', // Default
+                  attendance_frequency: '0', // Default
+                  previous_strategies: 'Encaminhamento direto via Ocorrência',
+                  adopted_procedures: ['ENCAMINHAMENTO_DIRETO'],
+                  observations: { learning: [], behavioral: [], emotional: [] }
                }]);
+
+               if (referralError) {
+                  console.error("Erro ao encaminhar para psicossocial:", referralError);
+                  alert("Ocorrência salva, mas erro ao encaminhar para Equipe Multi.");
+               } else {
+                  // Notify
+                  await supabase.from('psychosocial_notifications').insert([{
+                     title: 'Encaminhamento via Ocorrência',
+                     message: `O professor(a) ${form.teacherName} encaminhou o aluno ${form.studentName} através de um registro de ocorrência.`,
+                     is_read: false
+                  }]);
+               }
             }
          }
 
          setIsModalOpen(false);
          resetForm();
-         alert("Ocorrência registrada e enviada para coordenação!");
+         alert(editingOccurrenceId ? "Ocorrência atualizada com sucesso!" : "Ocorrência registrada e enviada para coordenação!");
       } catch (err) {
          console.error(err);
          alert("Erro ao salvar ocorrência.");
@@ -297,11 +335,17 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            </div>
                         </div>
                      </div>
-                     <div className="flex items-center gap-3">
-                        <button onClick={() => deleteOccurrence(occ.id)} className="p-3 bg-gray-50 text-gray-300 hover:text-red-500 rounded-xl transition-all">
+                     <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <button onClick={() => handlePrint(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Imprimir Ata Oficial">
+                           <Printer size={20} />
+                        </button>
+                        <button onClick={() => handleEdit(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all" title="Editar Registro">
+                           <Edit3 size={20} />
+                        </button>
+                        <button onClick={() => deleteOccurrence(occ.id)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Excluir Registro">
                            <Trash2 size={20} />
                         </button>
-                        <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm">
+                        <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block">
                            <ChevronRight size={24} />
                         </div>
                      </div>
@@ -448,7 +492,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          )}
 
          {/* NOTA DE CONFORMIDADE */}
-         <div className="bg-gray-900 p-8 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
+         <div className="bg-gray-900 p-8 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden no-print">
             <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><ShieldCheck size={140} /></div>
             <div className="flex items-center gap-6 relative z-10">
                <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-md">
@@ -461,6 +505,116 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                </div>
             </div>
          </div>
+
+         {/* ÁREA DE IMPRESSÃO - ATA OFICIAL (OCULTA NA TELA, VISÍVEL NO PDF) */}
+         <div className="print-area hidden">
+            {printingOccurrence && (
+               <div className="print-page bg-white text-black p-[20mm]">
+                  {/* CABEÇALHO COM LOGOS (BASEADO NOS BOLETINS DA SECRETARIA) */}
+                  <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-8">
+                     <div className="flex items-center justify-start w-1/4">
+                        <img src="/logo-escola.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
+                     </div>
+                     <div className="w-2/4 flex justify-center items-center">
+                        <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-24 w-auto object-contain max-w-full" />
+                     </div>
+                     <div className="flex items-center justify-end w-1/4">
+                        <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-16 w-auto object-contain" />
+                     </div>
+                  </div>
+
+                  {/* TÍTULO OFICIAL */}
+                  <div className="text-center mb-10 space-y-2">
+                     <h1 className="text-2xl font-black uppercase tracking-tight text-gray-900 border-2 border-black py-3 rounded-xl bg-gray-50">
+                        Ata Contínua de Registro Escolar
+                     </h1>
+                     <p className="text-xs font-bold uppercase tracking-widest text-gray-600">
+                        Escrituração Oficial e Sincronizada Pelo Discente
+                     </p>
+                  </div>
+
+                  {/* DADOS DA OCORRÊNCIA EM TABELA */}
+                  <div className="border border-black rounded-lg overflow-hidden mb-8">
+                     <table className="w-full text-sm font-medium">
+                        <tbody>
+                           <tr className="border-b border-black">
+                              <td className="p-3 bg-gray-100 font-black uppercase w-1/4 border-r border-black">Estudante</td>
+                              <td className="p-3 uppercase font-black text-base">{printingOccurrence.studentName}</td>
+                           </tr>
+                           <tr className="border-b border-black">
+                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Turma Base</td>
+                              <td className="p-3 uppercase font-black">{printingOccurrence.className}</td>
+                           </tr>
+                           <tr className="border-b border-black grid-cols-2">
+                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Data/Hora</td>
+                              <td className="p-3">{new Date(printingOccurrence.date).toLocaleDateString('pt-BR')} às {printingOccurrence.time}</td>
+                           </tr>
+                           <tr className="border-b border-black">
+                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Natureza Fato</td>
+                              <td className="p-3 uppercase">{printingOccurrence.type || printingOccurrence.category}</td>
+                           </tr>
+                           <tr>
+                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Severidade</td>
+                              <td className="p-3 uppercase font-bold">{printingOccurrence.severity}</td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+
+                  {/* RELATO NARRATIVO */}
+                  <div className="mb-16">
+                     <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit mb-4">
+                        Relato Narrativo
+                     </h4>
+                     <p className="text-base leading-relaxed text-justify p-6 border border-black rounded-lg min-h-[150px]">
+                        "{printingOccurrence.description}"
+                     </p>
+                  </div>
+
+                  {/* ESPAÇO PARA ASSINATURAS */}
+                  <div className="grid grid-cols-2 gap-16 mt-20 text-center">
+                     <div className="border-t border-black pt-4">
+                        <p className="text-xs font-black uppercase">{printingOccurrence.teacherName || printingOccurrence.responsibleName}</p>
+                        <p className="text-[10px] uppercase text-gray-600 font-medium">Docente Relator</p>
+                     </div>
+                     <div className="border-t border-black pt-4">
+                        <p className="text-xs font-black uppercase">Direção / Coordenação</p>
+                        <p className="text-[10px] uppercase text-gray-600 font-medium">Ciente Organizacional em ___/___/___</p>
+                     </div>
+                  </div>
+
+                  {/* RODAPÉ DO DOCUMENTO */}
+                  <div className="absolute bottom-10 left-0 w-full text-center opacity-40 flex items-center justify-center gap-2">
+                     <ShieldCheck size={14} />
+                     <span className="text-[8px] font-black uppercase tracking-widest">
+                        Documento Oficializado via Portal de Gestão André Maggi
+                     </span>
+                  </div>
+               </div>
+            )}
+         </div>
+
+         <style>{`
+            @media print {
+               @page { size: A4 portrait; margin: 0; }
+               body, html { margin: 0; padding: 0; background: white; }
+               .no-print { display: none !important; }
+               .print-area { display: block !important; }
+               .animate-in { animation: none !important; transition: none !important; }
+               /* Hide the main wrapper div or un-hide print area absolutely */
+               .print-page {
+                  width: 210mm;
+                  min-height: 297mm;
+                  margin: 0 auto;
+                  padding-top: 15mm !important;
+                  background: white;
+                  box-sizing: border-box;
+                  position: absolute;
+                  top: 0; left: 0; right: 0;
+                  z-index: 9999;
+               }
+            }
+         `}</style>
       </div>
    );
 };
