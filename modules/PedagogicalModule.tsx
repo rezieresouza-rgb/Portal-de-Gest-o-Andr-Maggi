@@ -726,7 +726,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           <div className="p-6">
             <h1 className="text-xl font-bold flex items-center gap-2">
               <span className="bg-gradient-to-br from-violet-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-violet-500/20">🎓</span>
-              Gestão Ped.
+              Coordenação
             </h1>
           </div>
           <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">

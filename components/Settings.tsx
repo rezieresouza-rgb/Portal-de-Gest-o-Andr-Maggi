@@ -32,7 +32,7 @@ const MODULES_LIST = [
    { id: 'finance', label: 'Financeiro' },
    { id: 'busca_ativa', label: 'Busca Ativa' },
    { id: 'psychosocial', label: 'Mediação & Apoio' },
-   { id: 'pedagogical', label: 'Pedagógico' },
+   { id: 'pedagogical', label: 'Coordenação Pedagógica' },
    { id: 'teacher', label: 'Área do Professor' },
    { id: 'scheduling', label: 'Agendas' },
    { id: 'library', label: 'Biblioteca' },
