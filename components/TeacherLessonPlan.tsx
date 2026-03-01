@@ -24,7 +24,7 @@ import {
   X
 } from 'lucide-react';
 import { LessonPlan, LessonPlanRow, PedagogicalSkill, User as UserType } from '../types';
-import { fetchPedagogicalSkills, fetchBNCCSkillsFromDB } from '../geminiService';
+import { fetchBNCCSkillsFromDB } from '../geminiService';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
 
@@ -66,15 +66,9 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     coordinationFeedback: ''
   });
 
-  // Sugestões da IA para seleção
-  const [aiSuggestions, setAiSuggestions] = useState<{
-    skills: PedagogicalSkill[],
-    recomposition: PedagogicalSkill[]
-  } | null>(null);
-
-  const [aiLoading, setAiLoading] = useState(false);
-  const [skillSearch, setSkillSearch] = useState('');
-  const pdfRef = useRef<HTMLDivElement>(null);
+  const [dbSkills, setDbSkills] = useState<PedagogicalSkill[]>([]);
+  const [rowSkillSearch, setRowSkillSearch] = useState<{ [key: number]: string }>({});
+  const [focusedRowIdx, setFocusedRowIdx] = useState<number | null>(null);
 
   const fetchPlans = async () => {
     setLoading(true);
@@ -142,6 +136,16 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (form.subject && form.className) {
+      fetchBNCCSkillsFromDB(form.subject, form.className).then(skills => {
+        setDbSkills(skills || []);
+      });
+    } else {
+      setDbSkills([]);
+    }
+  }, [form.subject, form.className]);
+
   const addRow = () => {
     setForm(prev => {
       const nextWeekNum = prev.rows.length + 1;
@@ -177,71 +181,20 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     });
   };
 
-  const handleAISkills = async () => {
-    if (!form.subject || !form.className) {
-      return alert("Selecione o Componente e a Turma primeiro.");
-    }
-    setAiLoading(true);
-    setAiSuggestions(null);
-    setSkillSearch('');
-    try {
-      // 1. Buscar habilidades exclusivamente no Banco de Dados (como solicitado)
-      const dbSkills = await fetchBNCCSkillsFromDB(form.subject, form.className);
-
-      // 2. Chamar a IA apenas para Temas e Recomposição (que variam por contexto e não estão no Excel)
-      const aiData = await fetchPedagogicalSkills(form.subject, form.className);
-
-      if (dbSkills && dbSkills.length > 0) {
-        setAiSuggestions({
-          skills: dbSkills,
-          recomposition: aiData?.recomposition || []
-        });
-        if (aiData?.themes) setForm(prev => ({ ...prev, themes: aiData.themes }));
-      } else {
-        // Se não houver dados no banco, avisar o usuário
-        setAiSuggestions({
-          skills: [],
-          recomposition: aiData?.recomposition || []
-        });
-        alert(`Nenhuma habilidade encontrada no banco de dados para ${form.subject} em ${form.className}. Verifique se a base BNCC foi populada.`);
-      }
-    } catch (e: any) {
-      console.error("Erro na busca de habilidades:", e);
-      alert(`Erro ao consultar as habilidades: ${e.message || e}`);
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-
-
-  const toggleSkill = (skill: PedagogicalSkill, type: 'skills' | 'recompositionSkills') => {
+  const appendSkillToRow = (idx: number, skill: PedagogicalSkill) => {
     setForm(prev => {
-      const current = prev[type] as PedagogicalSkill[];
-      const exists = current.find(s => s.code === skill.code);
-      if (exists) {
-        return { ...prev, [type]: current.filter(s => s.code !== skill.code) };
-      }
-      return { ...prev, [type]: [...current, skill] };
+      const newRows = [...prev.rows];
+      const currentText = newRows[idx].skillsText;
+      const textToAppend = `(${skill.code}) ${skill.description}`;
+      newRows[idx] = {
+        ...newRows[idx],
+        skillsText: currentText ? `${currentText}\n${textToAppend}` : textToAppend
+      };
+      return { ...prev, rows: newRows };
     });
+    setRowSkillSearch(prev => ({ ...prev, [idx]: '' }));
+    setFocusedRowIdx(null);
   };
-
-  const bulkSelect = (type: 'skills' | 'recompositionSkills', select: boolean) => {
-    if (!aiSuggestions) return;
-    const targetList = type === 'skills' ? aiSuggestions.skills : aiSuggestions.recomposition;
-    setForm(prev => ({
-      ...prev,
-      [type]: select ? targetList : []
-    }));
-  };
-
-  const filteredAISkills = useMemo(() => {
-    if (!aiSuggestions) return [];
-    return aiSuggestions.skills.filter(s =>
-      s.code.toLowerCase().includes(skillSearch.toLowerCase()) ||
-      s.description.toLowerCase().includes(skillSearch.toLowerCase())
-    );
-  }, [aiSuggestions, skillSearch]);
 
   const handleSave = async (statusOverride?: LessonPlan['status']) => {
     if (!form.subject) return alert("Selecione a disciplina");
@@ -341,7 +294,6 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       rows: [{ weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '' }],
       status: 'RASCUNHO'
     });
-    setAiSuggestions(null);
     setViewMode('form');
   };
 
@@ -498,114 +450,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* BOTÃO DE BUSCA BNCC */}
-        {(form.subject && form.className) && (
-          <div className="p-1 bg-gradient-to-r from-amber-500 to-indigo-600 rounded-[2.5rem] animate-in zoom-in-95 duration-500">
-            <button
-              onClick={handleAISkills}
-              disabled={aiLoading}
-              className="w-full h-full py-6 bg-white hover:bg-gray-50 transition-all rounded-[2.3rem] flex items-center justify-center gap-4 group"
-            >
-              {aiLoading ? (
-                <Loader2 size={24} className="animate-spin text-indigo-600" />
-              ) : (
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:scale-110 transition-transform">
-                  <Sparkles size={24} />
-                </div>
-              )}
-              <div className="text-left">
-                <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Buscar Habilidades BNCC</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                  {aiLoading ? 'Buscando no banco de dados...' : 'Base de dados BNCC / DRC-MT integrada'}
-                </p>
-              </div>
-              {!aiLoading && <Zap size={18} className="text-amber-500 fill-amber-500" />}
-            </button>
-          </div>
-        )}
 
-        {/* SELETOR DE HABILIDADES IA */}
-        {aiSuggestions && (
-          <div className="space-y-12 animate-in slide-in-from-top-4 duration-500">
-            <div className="space-y-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
-                <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                  <LayoutList size={18} className="text-amber-600" /> Matriz de Habilidades Encontradas
-                </h4>
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                  <div className="relative flex-1 md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
-                    <input
-                      type="text"
-                      placeholder="Filtrar por código ou texto..."
-                      value={skillSearch}
-                      onChange={(e) => setSkillSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => bulkSelect('skills', true)} className="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 border border-emerald-100 hover:bg-emerald-100 transition-all"><CheckSquare size={12} /> Tudo</button>
-                    <button onClick={() => bulkSelect('skills', false)} className="px-3 py-2 bg-gray-50 text-gray-400 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 border border-gray-100 hover:bg-gray-100 transition-all"><Square size={12} /> Limpar</button>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar p-1">
-                {filteredAISkills.map(s => {
-                  const isSelected = form.skills.find(sk => sk.code === s.code);
-                  return (
-                    <div
-                      key={s.code}
-                      onClick={() => toggleSkill(s, 'skills')}
-                      className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex items-start gap-4 ${isSelected ? 'bg-amber-50 border-amber-500 shadow-md scale-[0.98]' : 'bg-gray-50 border-gray-100 hover:border-amber-200'
-                        }`}
-                    >
-                      <div className="mt-1 shrink-0">
-                        {isSelected ? <CheckCircle2 className="text-amber-600" size={24} /> : <Circle className="text-gray-300" size={24} />}
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-amber-700 uppercase mb-1">{s.code}</p>
-                        <p className="text-[11px] font-medium text-gray-600 leading-relaxed">{s.description}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex justify-between items-center px-2">
-                <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                  <Sparkles size={18} className="text-indigo-600" /> Sugestões para Recomposição
-                </h4>
-                <div className="flex gap-2">
-                  <button onClick={() => bulkSelect('recompositionSkills', true)} className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 border border-indigo-100 hover:bg-indigo-100 transition-all"><CheckSquare size={12} /> Tudo</button>
-                  <button onClick={() => bulkSelect('recompositionSkills', false)} className="px-3 py-2 bg-gray-50 text-gray-400 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 border border-gray-100 hover:bg-gray-100 transition-all"><Square size={12} /> Limpar</button>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar p-1">
-                {aiSuggestions.recomposition.map(s => {
-                  const isSelected = form.recompositionSkills.find(sk => sk.code === s.code);
-                  return (
-                    <div
-                      key={s.code}
-                      onClick={() => toggleSkill(s, 'recompositionSkills')}
-                      className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex items-start gap-4 ${isSelected ? 'bg-indigo-50 border-indigo-500 shadow-md scale-[0.98]' : 'bg-gray-50 border-gray-100 hover:border-indigo-200'
-                        }`}
-                    >
-                      <div className="mt-1 shrink-0">
-                        {isSelected ? <CheckCircle2 className="text-indigo-600" size={24} /> : <Circle className="text-gray-300" size={24} />}
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-indigo-700 uppercase mb-1">{s.code}</p>
-                        <p className="text-[11px] font-medium text-gray-600 leading-relaxed">{s.description}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* VISUALIZAÇÃO SELECIONADA */}
         <div className="space-y-6">
@@ -639,9 +484,41 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Página do material</label>
                     <input value={row.materialPage} onChange={e => updateRow(idx, 'materialPage', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold outline-none" />
                   </div>
-                  <div className="space-y-1.5 md:col-span-2">
+                  <div className="space-y-1.5 md:col-span-2 relative">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Habilidades a serem trabalhadas</label>
-                    <textarea value={row.skillsText} onChange={e => updateRow(idx, 'skillsText', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold resize-none outline-none h-20" />
+                    <div className="relative mb-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
+                      <input
+                        type="text"
+                        placeholder={dbSkills.length > 0 ? "Buscar habilidade para inserir..." : "Selecione disciplina/turma primeiro..."}
+                        value={rowSkillSearch[idx] || ''}
+                        onChange={e => setRowSkillSearch(prev => ({ ...prev, [idx]: e.target.value }))}
+                        onFocus={() => setFocusedRowIdx(idx)}
+                        onBlur={() => setTimeout(() => setFocusedRowIdx(null), 200)}
+                        disabled={dbSkills.length === 0}
+                        className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-[10px] font-bold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+                      />
+                      {focusedRowIdx === idx && (rowSkillSearch[idx] || '').trim().length > 0 && (
+                        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-xl rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
+                          {dbSkills
+                            .filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()))
+                            .map(s => (
+                              <div
+                                key={s.code}
+                                onClick={() => appendSkillToRow(idx, s)}
+                                className="p-3 hover:bg-amber-50 cursor-pointer border-b border-gray-50 last:border-0"
+                              >
+                                <p className="text-xs font-black text-amber-600 uppercase mb-0.5">{s.code}</p>
+                                <p className="text-[10px] text-gray-600 line-clamp-2">{s.description}</p>
+                              </div>
+                            ))}
+                          {dbSkills.filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase())).length === 0 && (
+                            <div className="p-4 text-center text-xs text-gray-400">Nenhuma habilidade encontrada.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <textarea value={row.skillsText} onChange={e => updateRow(idx, 'skillsText', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold resize-none outline-none h-24" placeholder="Habilidades selecionadas aparecerão aqui. Você pode digitar livremente também." />
                   </div>
                 </div>
 
