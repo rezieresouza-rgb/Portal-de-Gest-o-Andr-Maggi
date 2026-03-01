@@ -856,7 +856,19 @@ export const fetchBNCCSkillsFromDB = async (subject: string, className: string):
     // Log para debug
     console.log(`[v2-DB-INTEGRATED] Encontradas ${data?.length || 0} habilidades para ${subject} em ${className}`);
 
-    return (data || []) as PedagogicalSkill[];
+    const formattedData = (data || []).map(skill => {
+      const koMatch = skill.description.match(/^\[Objeto de Conhecimento:\s*([\s\S]*?)\]\s*([\s\S]*)$/i);
+      if (koMatch) {
+        return {
+          code: skill.code,
+          knowledgeObject: koMatch[1].trim(),
+          description: koMatch[2].trim()
+        };
+      }
+      return skill;
+    });
+
+    return formattedData as PedagogicalSkill[];
   } catch (e) {
     console.error("Erro ao buscar BNCC do banco:", e);
     return null;

@@ -182,16 +182,50 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
   };
 
   const appendSkillToRow = (idx: number, skill: PedagogicalSkill) => {
-    setForm(prev => {
-      const newRows = [...prev.rows];
-      const currentText = newRows[idx].skillsText;
-      const textToAppend = `(${skill.code}) ${skill.description}`;
-      newRows[idx] = {
-        ...newRows[idx],
-        skillsText: currentText ? `${currentText}\n${textToAppend}` : textToAppend
+    setForm(prevForm => {
+      const row = prevForm.rows[idx];
+
+      const knowledgeObject = skill.knowledgeObject;
+      const pureDescription = skill.description;
+
+      let newSkillsText = row.skillsText;
+      let newContent = row.content || "";
+
+      if (knowledgeObject) {
+        // Append the clean skill (Code - Description) to skillsText
+        if (newSkillsText) {
+          newSkillsText += `\n(${skill.code}) ${pureDescription}`;
+        } else {
+          newSkillsText = `(${skill.code}) ${pureDescription}`;
+        }
+
+        // Append the Knowledge Object to the Content (Objetos de Conhecimento) field avoiding duplicates
+        if (!newContent.includes(knowledgeObject)) {
+          if (newContent) {
+            newContent += `\n${knowledgeObject}`;
+          } else {
+            newContent = knowledgeObject;
+          }
+        }
+      } else {
+        // Regular skill without mapped knowledge object
+        if (newSkillsText) {
+          newSkillsText += `\n(${skill.code}) ${skill.description}`;
+        } else {
+          newSkillsText = `(${skill.code}) ${skill.description}`;
+        }
+      }
+
+      const updatedRows = [...prevForm.rows];
+      updatedRows[idx] = {
+        ...row,
+        skillsText: newSkillsText,
+        content: newContent
       };
-      return { ...prev, rows: newRows };
+      return { ...prevForm, rows: updatedRows };
     });
+
+    // Clear the search input for this row and hide the dropdown
     setRowSkillSearch(prev => ({ ...prev, [idx]: '' }));
     setFocusedRowIdx(null);
   };
@@ -502,16 +536,30 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-xl rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
                           {dbSkills
                             .filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()))
-                            .map(s => (
-                              <div
-                                key={s.code}
-                                onClick={() => appendSkillToRow(idx, s)}
-                                className="p-3 hover:bg-amber-50 cursor-pointer border-b border-gray-50 last:border-0"
-                              >
-                                <p className="text-xs font-black text-amber-600 uppercase mb-0.5">{s.code}</p>
-                                <p className="text-[10px] text-gray-600 line-clamp-2">{s.description}</p>
-                              </div>
-                            ))}
+                            .map(s => {
+                              const pureDesc = s.description;
+                              const ko = s.knowledgeObject || null;
+
+                              return (
+                                <div
+                                  key={s.code}
+                                  onClick={() => appendSkillToRow(idx, s)}
+                                  className="p-3 hover:bg-amber-50 cursor-pointer border-b border-gray-50 last:border-0"
+                                >
+                                  <div className="flex flex-col gap-1 mb-1">
+                                    <div className="flex justify-between items-start gap-2">
+                                      <p className="text-xs font-black text-amber-600 uppercase shrink-0">{s.code}</p>
+                                      {ko && (
+                                        <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 line-clamp-1 text-right" title={ko}>
+                                          {ko.length > 50 ? `${ko.substring(0, 50)}...` : ko}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <p className="text-[10px] text-gray-600 line-clamp-3 leading-relaxed mt-1" title={pureDesc}>{pureDesc}</p>
+                                </div>
+                              );
+                            })}
                           {dbSkills.filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase())).length === 0 && (
                             <div className="p-4 text-center text-xs text-gray-400">Nenhuma habilidade encontrada.</div>
                           )}
