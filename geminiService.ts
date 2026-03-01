@@ -830,31 +830,36 @@ export const fetchBNCCSkillsFromDB = async (subject: string, className: string):
   // EF II: 6th-9th grade
   const ranges: string[] = [];
 
+  const isArte = subject.toUpperCase().includes('ARTE');
+
   if (className.includes('6º ANO')) {
-    ranges.push('EF06', 'EF67', 'EF69');
+    ranges.push(isArte ? 'EF69' : 'EF06', 'EF67', 'EF69');
   } else if (className.includes('7º ANO')) {
-    ranges.push('EF07', 'EF67', 'EF69');
+    ranges.push(isArte ? 'EF69' : 'EF07', 'EF67', 'EF69');
   } else if (className.includes('8º ANO')) {
-    ranges.push('EF08', 'EF89', 'EF69');
+    ranges.push(isArte ? 'EF69' : 'EF08', 'EF89', 'EF69');
   } else if (className.includes('9º ANO')) {
-    ranges.push('EF09', 'EF89', 'EF69');
+    ranges.push(isArte ? 'EF69' : 'EF09', 'EF89', 'EF69');
   }
 
   if (ranges.length === 0) return null;
 
+  // Deduplicate ranges to avoid fetching same skills multiple times
+  const uniqueRanges = [...new Set(ranges)];
+
   try {
-    // Usamos .ilike para ignorar case e tratamos as variações de nomes de disciplinas
+    // Usamos .ilike para ignorar case e tratamos as variações de nomes de disciplinas adicionando curingas
     const { data, error } = await supabase
       .from('bncc_skills')
       .select('code, description')
-      .ilike('subject', subject)
-      .in('year_range', ranges)
+      .ilike('subject', `%${subject}%`)
+      .in('year_range', uniqueRanges)
       .order('code');
 
     if (error) throw error;
 
     // Log para debug
-    console.log(`[v2-DB-INTEGRATED] Encontradas ${data?.length || 0} habilidades para ${subject} em ${className}`);
+    console.log(`[v2-DB-INTEGRATED] Encontradas ${data?.length || 0} habilidades para ${subject} em ${className} (ranges: ${uniqueRanges.join(', ')})`);
 
     const formattedData = (data || []).map(skill => {
       const koMatch = skill.description.match(/^\[Objeto de Conhecimento:\s*([\s\S]*?)\]\s*([\s\S]*)$/i);
