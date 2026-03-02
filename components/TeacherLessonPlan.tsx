@@ -505,9 +505,61 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                   <button type="button" onClick={() => removeRow(idx)} className="p-2 text-gray-300 hover:text-red-500 bg-white rounded-full shadow-sm"><X size={14} /></button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">Semana {idx + 1} (Ex: De 01/03 a 05/03 de 2026)</label>
-                    <input value={row.weekOrDate} onChange={e => updateRow(idx, 'weekOrDate', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl font-black text-xs outline-none" placeholder="De __ a __ de __ de __" />
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">
+                      Semana {idx + 1}
+                    </label>
+                    {/* Two date pickers that auto-format the weekOrDate string */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap">De</span>
+                        <input
+                          type="date"
+                          className="flex-1 p-3 bg-white border border-gray-200 rounded-2xl font-bold text-xs outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+                          value={(() => {
+                            const match = row.weekOrDate.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                            if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+                            return '';
+                          })()}
+                          onChange={e => {
+                            const start = e.target.value;
+                            if (!start) { updateRow(idx, 'weekOrDate', ''); return; }
+                            const [y, m, d] = start.split('-');
+                            const startStr = `${d}/${m}/${y}`;
+                            const existingEnd = row.weekOrDate.match(/a (\d{2}\/\d{2}\/\d{4})/);
+                            const endStr = existingEnd ? existingEnd[1] : `${d}/${m}/${y}`;
+                            updateRow(idx, 'weekOrDate', `De ${startStr} a ${endStr}`);
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-[10px] font-black text-gray-400 uppercase whitespace-nowrap">a</span>
+                        <input
+                          type="date"
+                          className="flex-1 p-3 bg-white border border-gray-200 rounded-2xl font-bold text-xs outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+                          value={(() => {
+                            const match = row.weekOrDate.match(/a (\d{2})\/(\d{2})\/(\d{4})/);
+                            if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+                            return '';
+                          })()}
+                          onChange={e => {
+                            const end = e.target.value;
+                            if (!end) return;
+                            const [y, m, d] = end.split('-');
+                            const endStr = `${d}/${m}/${y}`;
+                            const existingStart = row.weekOrDate.match(/De (\d{2}\/\d{2}\/\d{4})/);
+                            const startStr = existingStart ? existingStart[1] : endStr;
+                            updateRow(idx, 'weekOrDate', `De ${startStr} a ${endStr}`);
+                          }}
+                        />
+                      </div>
+                      {/* Formatted preview + manual override */}
+                      {row.weekOrDate && (
+                        <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-black text-amber-700 whitespace-nowrap shrink-0">
+                          {row.weekOrDate}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tema</label>
