@@ -43,6 +43,8 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [isSaving, setIsSaving] = useState(false);
    const [editingOccurrenceId, setEditingOccurrenceId] = useState<string | null>(null);
    const [printingOccurrence, setPrintingOccurrence] = useState<ClassroomOccurrence | null>(null);
+   // Multi-student selection
+   const [selectedStudents, setSelectedStudents] = useState<{ name: string; class: string }[]>([]);
 
    const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean }>({
       date: new Date().toISOString().split('T')[0],
@@ -108,6 +110,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          forwardToPsychosocial: false
       });
       setSearchTerm('');
+      setSelectedStudents([]);
       setEditingOccurrenceId(null);
    };
 
@@ -123,7 +126,8 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          notifiedParents: occ.notifiedParents || false,
          forwardToPsychosocial: false // Do not resend on edit
       });
-      setSearchTerm(occ.studentName);
+      setSelectedStudents([{ name: occ.studentName, class: occ.className }]);
+      setSearchTerm('');
       setEditingOccurrenceId(occ.id);
       setIsModalOpen(true);
    };
@@ -181,84 +185,107 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    }, [searchTerm, masterStudents, form.className]);
 
    const handleSelectStudent = (student: any) => {
-      setForm(prev => ({
-         ...prev,
-         studentName: student.name,
-         className: student.class
-      }));
-      setSearchTerm(student.name);
+      // Avoid duplicates
+      if (selectedStudents.some(s => s.name === student.name)) {
+         setShowDropdown(false);
+         setSearchTerm('');
+         return;
+      }
+      setSelectedStudents(prev => [...prev, { name: student.name, class: student.class }]);
+      // Set className from first selected student
+      if (selectedStudents.length === 0) {
+         setForm(prev => ({ ...prev, className: student.class }));
+      }
+      setSearchTerm('');
       setShowDropdown(false);
+   };
+
+   const handleRemoveStudent = (name: string) => {
+      setSelectedStudents(prev => prev.filter(s => s.name !== name));
    };
 
    const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
 
-      if (!form.studentName) return alert("Selecione um aluno da lista de busca.");
+      if (selectedStudents.length === 0) return alert("Selecione ao menos um aluno.");
       if (!form.description.trim()) return alert("Descreva o que ocorreu.");
 
       setIsSaving(true);
-
-      const payload = {
-         date: form.date,
-         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-         responsible_name: form.teacherName,
-         classroom_name: form.className,
-         student_name: form.studentName,
-         category: form.type,
-         severity: form.severity,
-         description: form.description
-         // status and location skipped for updates unless needed
-      };
+      const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
       try {
          if (editingOccurrenceId) {
+            // Editing: update single record
+            const student = selectedStudents[0];
+            const payload = {
+               date: form.date,
+               time,
+               responsible_name: form.teacherName,
+               classroom_name: student.class,
+               student_name: student.name,
+               category: form.type,
+               severity: form.severity,
+               description: form.description
+            };
             const { error } = await supabase.from('occurrences').update(payload).eq('id', editingOccurrenceId);
             if (error) throw error;
          } else {
-            const { error } = await supabase.from('occurrences').insert([{
-               ...payload,
-               status: 'REGISTRADO',
-               location: 'SALA DE AULA'
-            }]);
-            if (error) throw error;
-
-            // Forward to Psychosocial if requested (Only on creation)
-            if (form.forwardToPsychosocial) {
-               const { error: referralError } = await supabase.from('psychosocial_referrals').insert([{
-                  student_name: form.studentName,
-                  class_name: form.className,
-                  teacher_name: form.teacherName,
-                  school_unit: 'ESCOLA ANDRÉ MAGGI', // Default or fetch from context
+            // Creating: one occurrence per selected student
+            for (const student of selectedStudents) {
+               const payload = {
                   date: form.date,
-                  report: `[VIA OCORRÊNCIA] ${form.description}`,
-                  status: 'AGUARDANDO_TRIAGEM',
-                  student_age: 'Não informado', // Default
-                  attendance_frequency: '0', // Default
-                  previous_strategies: 'Encaminhamento direto via Ocorrência',
-                  adopted_procedures: ['ENCAMINHAMENTO_DIRETO'],
-                  observations: { learning: [], behavioral: [], emotional: [] }
-               }]);
+                  time,
+                  responsible_name: form.teacherName,
+                  classroom_name: student.class,
+                  student_name: student.name,
+                  category: form.type,
+                  severity: form.severity,
+                  description: form.description,
+                  status: 'REGISTRADO',
+                  location: 'SALA DE AULA'
+               };
+               const { error } = await supabase.from('occurrences').insert([payload]);
+               if (error) throw error;
 
-               if (referralError) {
-                  console.error("Erro ao encaminhar para psicossocial:", referralError);
-                  alert("Ocorrência salva, mas erro ao encaminhar para Equipe Multi.");
-               } else {
-                  // Notify
-                  await supabase.from('psychosocial_notifications').insert([{
-                     title: 'Encaminhamento via Ocorrência',
-                     message: `O professor(a) ${form.teacherName} encaminhou o aluno ${form.studentName} através de um registro de ocorrência.`,
-                     is_read: false
+               // Forward to Psychosocial if requested
+               if (form.forwardToPsychosocial) {
+                  const { error: referralError } = await supabase.from('psychosocial_referrals').insert([{
+                     student_name: student.name,
+                     class_name: student.class,
+                     teacher_name: form.teacherName,
+                     school_unit: 'ESCOLA ANDRÉ MAGGI',
+                     date: form.date,
+                     report: `[VIA OCORRÊNCIA] ${form.description}`,
+                     status: 'AGUARDANDO_TRIAGEM',
+                     student_age: 'Não informado',
+                     attendance_frequency: '0',
+                     previous_strategies: 'Encaminhamento direto via Ocorrência',
+                     adopted_procedures: ['ENCAMINHAMENTO_DIRETO'],
+                     observations: { learning: [], behavioral: [], emotional: [] }
                   }]);
+
+                  if (!referralError) {
+                     await supabase.from('psychosocial_notifications').insert([{
+                        title: 'Encaminhamento via Ocorrência',
+                        message: `O professor(a) ${form.teacherName} encaminhou o aluno ${student.name} através de um registro de ocorrência.`,
+                        is_read: false
+                     }]);
+                  }
                }
             }
          }
 
          setIsModalOpen(false);
          resetForm();
-         alert(editingOccurrenceId ? "Ocorrência atualizada com sucesso!" : "Ocorrência registrada e enviada para coordenação!");
+         const count = selectedStudents.length;
+         alert(editingOccurrenceId
+            ? 'Ocorrência atualizada com sucesso!'
+            : count > 1
+               ? `${count} ocorrências registradas com sucesso!`
+               : 'Ocorrência registrada e enviada para coordenação!');
       } catch (err) {
          console.error(err);
-         alert("Erro ao salvar ocorrência.");
+         alert('Erro ao salvar ocorrência.');
       } finally {
          setIsSaving(false);
       }
@@ -380,14 +407,15 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
                      <form onSubmit={handleSave} className="space-y-8">
                         <div className="space-y-6">
+                           {/* Turma + Busca de aluno */}
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="space-y-1.5">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turma do Aluno</label>
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turma</label>
                                  <select
-                                    required
                                     value={form.className}
                                     onChange={e => {
                                        setForm({ ...form, className: e.target.value });
+                                       setSelectedStudents([]);
                                        if (e.target.value) setShowDropdown(true);
                                     }}
                                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
@@ -397,7 +425,9 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                  </select>
                               </div>
                               <div className="space-y-1.5 relative">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Identificar Estudante</label>
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                                    Estudantes <span className="text-red-500">({selectedStudents.length} selecionado{selectedStudents.length !== 1 ? 's' : ''})</span>
+                                 </label>
                                  <div className="relative">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                                     <input
@@ -408,29 +438,64 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                           setSearchTerm(e.target.value);
                                           setShowDropdown(true);
                                        }}
-                                       placeholder={form.className ? `Selecione na lista ou digite...` : `Selecione a turma primeiro...`}
+                                       placeholder={form.className ? 'Buscar e adicionar alunos...' : 'Selecione a turma primeiro...'}
                                        className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-red-500/5 focus:bg-white transition-all uppercase"
                                     />
                                  </div>
 
-                                 {/* Only check showDropdown, don't hide if form.className exists to debug */}
                                  {showDropdown && filteredStudents.length > 0 && (
                                     <div className="absolute z-[100] left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto max-h-60 divide-y divide-gray-50 animate-in slide-in-from-top-2">
-                                       {filteredStudents.map(s => (
-                                          <button
-                                             key={s.id || s.registration_number || Math.random()}
-                                             type="button"
-                                             onClick={() => handleSelectStudent(s)}
-                                             className="w-full text-left p-4 hover:bg-red-50 transition-colors flex justify-between items-center"
-                                          >
-                                             <span className="text-xs font-black uppercase text-gray-800">{s.name}</span>
-                                             <span className="text-[9px] font-bold text-gray-400 uppercase">{s.class}</span>
-                                          </button>
-                                       ))}
+                                       {filteredStudents.map(s => {
+                                          const alreadySelected = selectedStudents.some(sel => sel.name === s.name);
+                                          return (
+                                             <button
+                                                key={s.id || s.registration_number || s.name}
+                                                type="button"
+                                                onClick={() => handleSelectStudent(s)}
+                                                disabled={alreadySelected}
+                                                className={`w-full text-left p-4 transition-colors flex justify-between items-center ${alreadySelected ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'hover:bg-red-50'
+                                                   }`}
+                                             >
+                                                <span className="text-xs font-black uppercase text-gray-800">{s.name}</span>
+                                                <span className="text-[9px] font-bold text-gray-400 uppercase">{alreadySelected ? '✓ Adicionado' : s.class}</span>
+                                             </button>
+                                          );
+                                       })}
                                     </div>
                                  )}
                               </div>
                            </div>
+
+                           {/* Chips dos alunos selecionados */}
+                           {selectedStudents.length > 0 && (
+                              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl">
+                                 <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-3">Alunos envolvidos neste registro:</p>
+                                 <div className="flex flex-wrap gap-2">
+                                    {selectedStudents.map(s => (
+                                       <div
+                                          key={s.name}
+                                          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-red-200 rounded-xl shadow-sm text-xs font-black uppercase text-gray-800"
+                                       >
+                                          <span>{s.name}</span>
+                                          <span className="text-[8px] text-red-400 font-bold">{s.class}</span>
+                                          <button
+                                             type="button"
+                                             onClick={() => handleRemoveStudent(s.name)}
+                                             className="ml-1 p-0.5 text-red-400 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"
+                                          >
+                                             <X size={12} strokeWidth={3} />
+                                          </button>
+                                       </div>
+                                    ))}
+                                 </div>
+                              </div>
+                           )}
+                           { /* Empty state hint */}
+                           {selectedStudents.length === 0 && (
+                              <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl text-center">
+                                 <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Nenhum aluno selecionado — use a busca acima para adicionar</p>
+                              </div>
+                           )}
 
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                               <div className="space-y-1.5">
