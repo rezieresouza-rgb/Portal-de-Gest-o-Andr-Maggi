@@ -19,7 +19,7 @@ const CLASSES = SCHOOL_CLASSES;
 
 const SUBJECTS = [
   "MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA",
-  "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA", "ENSINO RELIGIOSO"
+  "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA"
 ];
 
 const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
@@ -352,8 +352,8 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                   key={period}
                   onClick={() => togglePeriodSelection(period)}
                   className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${selectedPeriods.includes(period)
-                      ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-sm'
-                      : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'
+                    ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-sm'
+                    : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'
                     }`}
                 >
                   {period}ª Aula
@@ -449,12 +449,12 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                               onClick={() => !isTransferred && toggleAttendance(student.CodigoAluno, period)}
                               disabled={isTransferred || !isSelected}
                               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${!isSelected
-                                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed border outline-dashed outline-1 outline-gray-200 outline-offset-1'
-                                  : isTransferred
-                                    ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                                    : (isPresent
-                                      ? 'bg-emerald-50 text-emerald-600 shadow-inner border border-emerald-100'
-                                      : 'bg-red-50 text-red-600 shadow-inner border border-red-100')
+                                ? 'bg-gray-100 text-gray-300 cursor-not-allowed border outline-dashed outline-1 outline-gray-200 outline-offset-1'
+                                : isTransferred
+                                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                  : (isPresent
+                                    ? 'bg-emerald-50 text-emerald-600 shadow-inner border border-emerald-100'
+                                    : 'bg-red-50 text-red-600 shadow-inner border border-red-100')
                                 }`}
                             >
                               {!isSelected || isTransferred ? <X size={20} className="opacity-50" strokeWidth={2} /> : (isPresent ? <Check size={20} strokeWidth={3} /> : <X size={20} strokeWidth={3} />)}

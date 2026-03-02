@@ -305,7 +305,6 @@ const SpecialEducationForm: React.FC<SpecialEducationFormProps> = ({ onClose, on
                                                     <option value="Matemática">Matemática</option>
                                                     <option value="Ciências Humanas">Ciências Humanas</option>
                                                     <option value="Ciências da Natureza">Ciências da Natureza</option>
-                                                    <option value="Ensino Religioso">Ensino Religioso</option>
                                                     <option value="Parte Diversificada">Parte Diversificada</option>
                                                 </select>
                                             </div>
