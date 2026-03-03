@@ -44,6 +44,14 @@ const formatQuantity = (val: number) => {
   return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 };
 
+const normalize = (str: string) => {
+  return str
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+};
+
 const ShoppingList: React.FC = () => {
   const [activeView, setActiveView] = useState<'new' | 'history'>('new');
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
@@ -164,25 +172,26 @@ const ShoppingList: React.FC = () => {
       let unit = "KG";
       let price = 0;
 
-      const searchDesc = description.toUpperCase().trim();
+      const normSearch = normalize(description);
 
       // Busca por correspondência exata ou parcial inteligente
       for (const c of contracts) {
         const contractItem = c.items.find(i => {
-          const itemDesc = i.description.toUpperCase().trim();
+          const normItem = normalize(i.description);
 
-          // Caso 1: Correspondência direta
-          if (itemDesc === searchDesc) return true;
+          // Caso 1: Correspondência direta após normalização
+          if (normItem === normSearch) return true;
 
-          // Caso 2: O item do contrato contém a descrição da ficha técnica (ex: "POLPA DE ACEROLA" contém "POLPA DE")
-          if (itemDesc.includes(searchDesc)) return true;
+          // Caso 2: O item do contrato contém a descrição da ficha técnica
+          if (normItem.includes(normSearch)) return true;
 
-          // Caso 3: A descrição da ficha técnica contém o item do contrato (caso raro, mas possível)
-          if (searchDesc.includes(itemDesc)) return true;
+          // Caso 3: A descrição da ficha técnica contém o item do contrato
+          if (normSearch.includes(normItem)) return true;
 
-          // Caso 4: Lógica específica para Carnes e Polpas
-          if (searchDesc === 'CARNE EM ISCAS' && itemDesc.includes('CARNE EM ISCAS')) return true;
-          if (searchDesc === 'POLPA DE' && itemDesc.includes('POLPA DE')) return true;
+          // Caso 4: Lógica específica para Carnes, Polpas e Fermentos
+          if (normSearch.includes('ISCA') && normItem.includes('ISCA')) return true;
+          if (normSearch.includes('POLPA') && normItem.includes('POLPA')) return true;
+          if (normSearch.includes('FERMENTO') && normItem.includes('FERMENTO')) return true;
 
           return false;
         });
