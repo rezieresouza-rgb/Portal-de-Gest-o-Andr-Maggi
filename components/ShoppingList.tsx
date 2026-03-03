@@ -274,7 +274,8 @@ const ShoppingList: React.FC = () => {
         supplier_name: item.supplierName,
         contract_number: item.contractNumber,
         unit_price: item.unit_price,
-        is_perishable: item.isPerishable
+        is_perishable: item.isPerishable,
+        observations: item.observations
       }));
 
       const { error: itemsError } = await supabase
@@ -312,6 +313,26 @@ const ShoppingList: React.FC = () => {
     } catch (error) {
       console.error("Erro ao atualizar item do histórico:", error);
       alert("Erro ao atualizar o item.");
+    }
+  };
+
+  const handleDeleteHistoryItem = async (itemId: string) => {
+    if (!window.confirm("Deseja remover este item da lista salva?")) return;
+    try {
+      const { error } = await supabase
+        .from('merenda_shopping_list_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      setSelectedHistoryList(prev => ({
+        ...prev,
+        items: prev.items.filter((i: any) => i.id !== itemId)
+      }));
+    } catch (error) {
+      console.error("Erro ao excluir item do histórico:", error);
+      alert("Erro ao excluir item.");
     }
   };
 
@@ -483,6 +504,7 @@ const ShoppingList: React.FC = () => {
                         </th>
                         <th className="px-4 py-4">Ingrediente (A-Z)</th>
                         <th className="px-6 py-4 text-center">Quantidade</th>
+                        <th className="px-6 py-4">Observação</th>
                         <th className="px-6 py-4">Fornecedor / Contrato</th>
                         <th className="px-6 py-4 text-right no-print">Ação</th>
                       </tr>
@@ -505,9 +527,19 @@ const ShoppingList: React.FC = () => {
                                 onBlur={(e) => updateItem(idx, 'quantity', e.target.value)}
                                 className="w-24 p-2 bg-white border border-gray-200 rounded-2xl text-center font-black text-orange-600 text-sm outline-none no-print"
                               />
-                              <span className="print:block print:text-xs">{formatQuantity(item.quantity)}</span>
+                              <span className="hidden print:block print:text-xs">{formatQuantity(item.quantity)}</span>
                               <span className="text-[10px] font-black text-gray-400 uppercase">{item.unit}</span>
                             </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <input
+                              type="text"
+                              placeholder="Add observação..."
+                              value={item.observations || ""}
+                              onChange={(e) => updateItem(idx, 'observations', e.target.value)}
+                              className="w-full p-2 bg-gray-50 border-none rounded-xl text-[10px] font-bold text-gray-600 outline-none focus:ring-1 focus:ring-orange-500/20 no-print"
+                            />
+                            <span className="hidden print:block text-[9px] text-gray-500 italic">{item.observations}</span>
                           </td>
                           <td className="px-6 py-5 uppercase text-[10px]">
                             <p className="font-bold text-gray-900">{item.supplierName}</p>
@@ -603,7 +635,9 @@ const ShoppingList: React.FC = () => {
                 <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
                   <th className="px-8 py-4">Ingrediente</th>
                   <th className="px-6 py-4 text-center">Quantidade</th>
+                  <th className="px-6 py-4">Observação</th>
                   <th className="px-6 py-4">Fornecedor / Contrato</th>
+                  <th className="px-6 py-4 text-right no-print">Ação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -629,8 +663,27 @@ const ShoppingList: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-5">
+                      {isEditingHistory ? (
+                        <input
+                          type="text"
+                          defaultValue={item.observations || ""}
+                          onBlur={(e) => handleUpdateHistoryItem(item.id, 'observations', e.target.value)}
+                          className="w-full p-2 bg-orange-50 border border-orange-100 rounded-xl text-[10px] font-bold text-gray-600 outline-none"
+                        />
+                      ) : (
+                        <p className="text-[10px] text-gray-500 italic">{item.observations || "---"}</p>
+                      )}
+                    </td>
+                    <td className="px-6 py-5">
                       <p className="text-[10px] font-bold text-gray-900 uppercase">{item.supplier_name}</p>
                       <p className="text-[8px] text-gray-400 font-black uppercase">CT {item.contract_number}</p>
+                    </td>
+                    <td className="px-6 py-5 text-right no-print">
+                      {isEditingHistory && (
+                        <button onClick={() => handleDeleteHistoryItem(item.id)} className="p-2 text-gray-400 hover:text-red-600 transition-all">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

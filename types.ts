@@ -214,6 +214,7 @@ export interface ShoppingListItem {
   selected?: boolean;
   contractId?: string;
   contractItemId?: string;
+  observations?: string;
 }
 
 export type SchoolEnvironmentCategory =
