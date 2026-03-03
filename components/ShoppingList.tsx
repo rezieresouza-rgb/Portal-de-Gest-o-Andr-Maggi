@@ -200,7 +200,6 @@ const ShoppingList: React.FC = () => {
 
           return false;
         });
-
         if (contractItem) {
           supplier = c.supplierName;
           contractNum = c.number;
@@ -209,6 +208,16 @@ const ShoppingList: React.FC = () => {
           unit = contractItem.unit;
           price = contractItem.unitPrice;
           break;
+        }
+      }
+
+      // Fallback manual para Fermento (J. ASSIS) se não houver vínculo em nenhum contrato
+      if (contractId === "" && normSearch.includes('FERMENTO')) {
+        const jAssis = contracts.find(c => c.supplierName.toUpperCase().includes('J. ASSIS'));
+        if (jAssis) {
+          supplier = jAssis.supplierName;
+          contractNum = jAssis.number;
+          contractId = jAssis.id;
         }
       }
 
