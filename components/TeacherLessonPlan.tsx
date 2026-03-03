@@ -21,7 +21,8 @@ import {
   AlertCircle,
   MessageCircle,
   Clock,
-  X
+  X,
+  Printer
 } from 'lucide-react';
 import { LessonPlan, LessonPlanRow, PedagogicalSkill, User as UserType } from '../types';
 import { fetchBNCCSkillsFromDB } from '../geminiService';
@@ -422,6 +423,13 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => window.print()}
+            className="p-4 bg-gray-50 text-gray-500 hover:text-amber-700 hover:bg-amber-50 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 border border-gray-100"
+            title="Imprimir Roteiro"
+          >
+            <Printer size={18} />
+          </button>
+          <button
             onClick={() => handleSave('RASCUNHO')}
             disabled={isSaving}
             className="px-6 py-4 bg-gray-100 text-gray-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2"
@@ -661,10 +669,143 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         </div>
 
       </div>
+
+      {/* =================== ÁREA DE IMPRESSÃO =================== */}
+      <div className="print-area" style={{ display: 'none' }}>
+        <div className="print-page">
+
+          {/* CABEÇALHO COM LOGOS */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid black', paddingBottom: '12px', marginBottom: '20px' }}>
+            <img src="/logo-escola.png" alt="Logo Escola" style={{ height: '70px', width: 'auto', objectFit: 'contain' }} />
+            <img src="/dados escola.jpeg" alt="Dados da Escola" style={{ height: '80px', width: 'auto', objectFit: 'contain', maxWidth: '50%' }} />
+            <img src="/SEDUC 2.jpg" alt="SEDUC MT" style={{ height: '56px', width: 'auto', objectFit: 'contain' }} />
+          </div>
+
+          {/* TÍTULO */}
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <h1 style={{ fontSize: '16px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '2px', border: '2px solid black', padding: '8px 16px', display: 'inline-block', borderRadius: '8px', background: '#f9fafb' }}>
+              Roteiro Pedagógico — Plano de Ensino Semanal
+            </h1>
+            <p style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '3px', color: '#6b7280', marginTop: '6px' }}>Padrão SEDUC-MT / Referencial Curricular de Mato Grosso</p>
+          </div>
+
+          {/* DADOS DO ROTEIRO */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '10px' }}>
+            <tbody>
+              <tr>
+                <td style={{ border: '1px solid black', padding: '6px 10px', background: '#f3f4f6', fontWeight: 900, textTransform: 'uppercase', width: '20%' }}>Professor(a)</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', fontWeight: 700 }}>{form.teacher}</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', background: '#f3f4f6', fontWeight: 900, textTransform: 'uppercase', width: '15%' }}>Turma</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', fontWeight: 700 }}>{form.className}</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', background: '#f3f4f6', fontWeight: 900, textTransform: 'uppercase', width: '12%' }}>Ano</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', fontWeight: 700 }}>{form.year}</td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid black', padding: '6px 10px', background: '#f3f4f6', fontWeight: 900, textTransform: 'uppercase' }}>Componente</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', fontWeight: 700 }}>{form.subject}</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', background: '#f3f4f6', fontWeight: 900, textTransform: 'uppercase' }}>Bimestre</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', fontWeight: 700 }}>{form.bimestre}</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', background: '#f3f4f6', fontWeight: 900, textTransform: 'uppercase' }}>Aulas/Sem</td>
+                <td style={{ border: '1px solid black', padding: '6px 10px', fontWeight: 700 }}>{form.weeklyClasses}</td>
+              </tr>
+              {form.themes && (
+                <tr>
+                  <td style={{ border: '1px solid black', padding: '6px 10px', background: '#f3f4f6', fontWeight: 900, textTransform: 'uppercase' }}>Unidades Temáticas</td>
+                  <td colSpan={5} style={{ border: '1px solid black', padding: '6px 10px' }}>{form.themes}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* HABILIDADES BNCC SELECIONADAS */}
+          {form.skills && form.skills.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '2px', background: 'black', color: 'white', padding: '4px 10px', marginBottom: '6px' }}>Habilidades BNCC / DRC-MT Selecionadas</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
+                <tbody>
+                  {form.skills.map((s, i) => (
+                    <tr key={i}>
+                      <td style={{ border: '1px solid #d1d5db', padding: '4px 8px', fontWeight: 900, color: '#92400e', whiteSpace: 'nowrap', width: '12%' }}>{s.code}</td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '4px 8px' }}>{s.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ROTEIRO SEMANAL */}
+          <h3 style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '2px', background: 'black', color: 'white', padding: '4px 10px', marginBottom: '6px' }}>Cronograma Semanal de Aulas</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '20px' }}>
+            <thead>
+              <tr style={{ background: '#f3f4f6' }}>
+                <th style={{ border: '1px solid black', padding: '5px 8px', textTransform: 'uppercase', width: '14%', textAlign: 'left' }}>Semana</th>
+                <th style={{ border: '1px solid black', padding: '5px 8px', textTransform: 'uppercase', width: '16%', textAlign: 'left' }}>Tema</th>
+                <th style={{ border: '1px solid black', padding: '5px 8px', textTransform: 'uppercase', textAlign: 'left' }}>Conteúdo</th>
+                <th style={{ border: '1px solid black', padding: '5px 8px', textTransform: 'uppercase', textAlign: 'left' }}>Atividades</th>
+                <th style={{ border: '1px solid black', padding: '5px 8px', textTransform: 'uppercase', textAlign: 'left' }}>Metodologia</th>
+                <th style={{ border: '1px solid black', padding: '5px 8px', textTransform: 'uppercase', width: '10%', textAlign: 'left' }}>Avaliação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {form.rows.map((row, i) => (
+                <tr key={i}>
+                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', fontWeight: 700, color: '#92400e', verticalAlign: 'top' }}>{row.weekOrDate}</td>
+                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top' }}>{row.theme}</td>
+                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'pre-wrap' }}>{row.content}</td>
+                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'pre-wrap' }}>{row.activities}</td>
+                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'pre-wrap' }}>{row.methodology}</td>
+                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top' }}>{row.evaluation}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* OBSERVAÇÕES */}
+          {form.observations && (
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '2px', background: 'black', color: 'white', padding: '4px 10px', marginBottom: '6px' }}>Observações</h3>
+              <p style={{ fontSize: '10px', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', whiteSpace: 'pre-wrap' }}>{form.observations}</p>
+            </div>
+          )}
+
+          {/* ASSINATURAS */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px', marginTop: '40px', textAlign: 'center' }}>
+            <div style={{ borderTop: '1px solid black', paddingTop: '8px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>{form.teacher}</p>
+              <p style={{ fontSize: '9px', color: '#6b7280', textTransform: 'uppercase' }}>Professor(a) Regente</p>
+            </div>
+            <div style={{ borderTop: '1px solid black', paddingTop: '8px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>Coordenação Pedagógica</p>
+              <p style={{ fontSize: '9px', color: '#6b7280', textTransform: 'uppercase' }}>Ciente em ___/___/______</p>
+            </div>
+            <div style={{ borderTop: '1px solid black', paddingTop: '8px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>Direção Escolar</p>
+              <p style={{ fontSize: '9px', color: '#6b7280', textTransform: 'uppercase' }}>Ciente em ___/___/______</p>
+            </div>
+          </div>
+
+          {/* RODAPÉ */}
+          <div style={{ textAlign: 'center', borderTop: '1px solid #e5e7eb', marginTop: '24px', paddingTop: '8px', opacity: 0.4 }}>
+            <p style={{ fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px' }}>Documento Oficializado via Portal de Gestão André Maggi • {new Date().toLocaleDateString('pt-BR')}</p>
+          </div>
+        </div>
+      </div>
+
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+
+        @media print {
+          @page { size: A4 portrait; margin: 15mm 12mm; }
+          body, html { margin: 0; padding: 0; background: white !important; }
+          body > * { display: none !important; }
+          .print-area { display: block !important; }
+          .print-area * { display: revert; }
+          .print-page { width: 100%; background: white; color: black; font-family: Arial, sans-serif; }
+          .no-print, button, nav, aside, header:not(.print-header) { display: none !important; }
+        }
       `}</style>
     </div>
   );
