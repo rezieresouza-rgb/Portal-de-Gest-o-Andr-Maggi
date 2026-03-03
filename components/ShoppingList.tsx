@@ -278,7 +278,9 @@ const ShoppingList: React.FC = () => {
         contract_number: item.contractNumber,
         unit_price: item.unit_price,
         is_perishable: item.isPerishable,
-        observations: item.observations
+        observations: item.observations,
+        contract_id: item.contractId,
+        contract_item_id: item.contractItemId
       }));
 
       const { error: itemsError } = await supabase
@@ -481,7 +483,9 @@ const ShoppingList: React.FC = () => {
             contract_number: newItemBase.contractNumber,
             unit_price: newItemBase.unit_price,
             is_perishable: newItemBase.isPerishable,
-            observations: newItemBase.observations
+            observations: newItemBase.observations,
+            contract_id: newItemBase.contractId,
+            contract_item_id: newItemBase.contractItemId
           }])
           .select()
           .single();
