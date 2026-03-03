@@ -271,6 +271,14 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     const reader = readers.find(r => r.id === loanForm.readerId);
     if (!reader || !selectedBookForLoan) return alert('Selecione um leitor.');
 
+    // OVERDUE VALIDATION
+    const todayStr = new Date().toISOString().split('T')[0];
+    const hasDelayed = loans.some(l => l.readerId === reader.id && l.status === 'ATIVO' && l.dueDate < todayStr);
+    if (hasDelayed) {
+      alert(`Empréstimo bloqueado! O leitor ${reader.name} possui obras em atraso.`);
+      return;
+    }
+
     try {
       // 1. Create Loan
       const { error: loanError } = await supabase.from('library_loans').insert([{
@@ -334,6 +342,27 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const handleRenew = async (loan: Loan) => {
+    if (!window.confirm("Confirmar renovação do livro por mais 7 dias?")) return;
+    try {
+      const currentDueDate = new Date(loan.dueDate);
+      const newDueDate = new Date(currentDueDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const { error } = await supabase
+        .from('library_loans')
+        .update({ due_date: newDueDate })
+        .eq('id', loan.id);
+
+      if (error) throw error;
+
+      await fetchData();
+      alert("Empréstimo renovado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao renovar empréstimo:", error);
+      alert("Erro ao renovar empréstimo.");
+    }
+  };
+
   // FIX: Added missing handleSuggest function for AI book recommendations to fix error on line 411
   const handleSuggest = async () => {
     if (!interests.trim()) return alert('Informe os interesses ou temas para que o Bibliotecário IA possa sugerir obras.');
@@ -358,6 +387,14 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     ).slice(0, 10);
   }, [globalSchoolPeople, peopleSearch]);
 
+  const filteredReadersForLoan = useMemo(() => {
+    if (!loanForm.readerSearch) return [];
+    return readers.filter(r =>
+      r.name.toLowerCase().includes(loanForm.readerSearch.toLowerCase()) ||
+      r.registration.includes(loanForm.readerSearch)
+    ).slice(0, 5);
+  }, [readers, loanForm.readerSearch]);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -372,7 +409,20 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     <p className="text-red-700 text-xs font-bold uppercase">{stats.delayedLoans} Livros pendentes de devolução</p>
                   </div>
                 </div>
-                <button onClick={() => setActiveTab('loans')} className="px-6 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Cobrar Leitores</button>
+                <button onClick={() => setActiveTab('loans')} className="px-6 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-colors">Cobrar Leitores</button>
+              </div>
+            )}
+
+            {stats.expiringSoon.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-[2.5rem] p-6 shadow-sm flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 bg-yellow-500 text-white rounded-2xl animate-pulse"><AlertCircle size={24} /></div>
+                  <div>
+                    <h3 className="text-lg font-black text-yellow-900 uppercase">Vencendo em Breve</h3>
+                    <p className="text-yellow-700 text-xs font-bold uppercase">{stats.expiringSoon.length} Livros para devolução iminente (próx 48h)</p>
+                  </div>
+                </div>
+                <button onClick={() => setActiveTab('loans')} className="px-6 py-2 bg-yellow-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-600 transition-colors">Verificar</button>
               </div>
             )}
 
@@ -533,7 +583,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       <td className={`px-8 py-6 text-center font-black text-[10px] ${loan.status === 'ATIVO' && loan.dueDate < stats.todayStr ? 'text-red-600 animate-pulse' : 'text-indigo-600'}`}>{new Date(loan.dueDate).toLocaleDateString('pt-BR')}</td>
                       <td className="px-8 py-6 text-right">
                         {loan.status === 'ATIVO' ? (
-                          <button onClick={() => handleReturn(loan)} className="px-5 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">Confirmar Recebimento</button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => handleReturn(loan)} className="px-5 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">Confirmar Recebimento</button>
+                            <button onClick={() => handleRenew(loan)} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[9px] font-black uppercase border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">Renovar (+7 dias)</button>
+                          </div>
                         ) : (
                           <div className="flex flex-col items-end"><span className="text-[9px] font-black text-emerald-600 uppercase flex items-center gap-1"><CheckCircle2 size={12} /> Devolvido</span><p className="text-[8px] text-gray-400 uppercase">{new Date(loan.returnDate!).toLocaleDateString('pt-BR')}</p></div>
                         )}
@@ -684,11 +737,58 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><div className="flex items-center gap-4"><div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><BookMarked size={24} /></div><div><h3 className="text-xl font-black text-gray-900 uppercase">Check-out</h3><p className="text-[9px] text-indigo-400 font-black uppercase mt-1">Registrar Empréstimo</p></div></div><button onClick={() => setIsLoanModalOpen(false)} className="p-2 text-gray-300 hover:text-red-500 transition-all"><X size={24} /></button></div>
             <form onSubmit={confirmLoan} className="p-10 space-y-6">
               <div className="bg-gray-900 p-6 rounded-[2rem] text-white relative overflow-hidden"><div className="absolute top-0 right-0 p-4 opacity-10"><BookOpen size={64} /></div><p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Obra</p><h4 className="text-lg font-black uppercase leading-tight">{selectedBookForLoan.title}</h4></div>
-              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Localizar Leitor Cadastrado</label>
-                <select required value={loanForm.readerId} onChange={e => setLoanForm({ ...loanForm, readerId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none uppercase">
-                  <option value="">Selecione o leitor...</option>
-                  {readers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.class})</option>)}
-                </select>
+              <div className="space-y-1.5 relative">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Localizar Leitor Cadastrado</label>
+                {!loanForm.readerId ? (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                      <input
+                        type="text"
+                        placeholder="Buscar por nome ou matrícula..."
+                        value={loanForm.readerSearch}
+                        onChange={e => setLoanForm({ ...loanForm, readerSearch: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase"
+                      />
+                    </div>
+                    {loanForm.readerSearch && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto z-20 p-2 space-y-1">
+                        {filteredReadersForLoan.map(r => (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() => setLoanForm({ ...loanForm, readerId: r.id, readerSearch: '' })}
+                            className="w-full text-left p-3 hover:bg-indigo-50 rounded-xl transition-colors flex items-center justify-between group"
+                          >
+                            <div>
+                              <p className="text-xs font-black text-gray-900 uppercase group-hover:text-indigo-600">{r.name}</p>
+                              <p className="text-[9px] text-gray-400 font-bold uppercase">Mat: {r.registration} - {r.class}</p>
+                            </div>
+                            <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-600 transition-all" />
+                          </button>
+                        ))}
+                        {filteredReadersForLoan.length === 0 && (
+                          <div className="p-4 text-center text-[10px] text-gray-400 font-bold uppercase">Nenhum leitor encontrado</div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black">
+                        {readers.find(r => r.id === loanForm.readerId)?.name?.[0]}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-indigo-900 uppercase">{readers.find(r => r.id === loanForm.readerId)?.name}</p>
+                        <p className="text-[9px] text-indigo-600 font-bold uppercase">{readers.find(r => r.id === loanForm.readerId)?.class}</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setLoanForm({ ...loanForm, readerId: '' })} className="p-2 text-indigo-400 hover:text-red-500 rounded-lg hover:bg-white transition-all">
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data de Devolução</label><input required type="date" value={loanForm.dueDate} onChange={e => setLoanForm({ ...loanForm, dueDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none" /></div>
               <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl">Confirmar Empréstimo</button>
