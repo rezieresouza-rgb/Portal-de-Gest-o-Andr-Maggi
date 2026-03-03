@@ -161,7 +161,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   });
 
   const [bookForm, setBookForm] = useState({
-    title: '', author: '', category: 'Literatura Brasileira', isbn: '', totalCopies: 1, location: ''
+    title: '', author: '', category: 'Literatura Brasileira', isbn: '', totalCopies: 1, location: '', estante: '', prateleira: ''
   });
 
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
@@ -239,14 +239,37 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const handleAddBookClick = () => {
+    setEditingBookId(null);
+    setBookForm({ title: '', author: '', category: 'Literatura Brasileira', isbn: '', totalCopies: 1, location: '', estante: '', prateleira: '' });
+    setIsBookModalOpen(true);
+  };
+
+  const handleEditBookClick = (book: any) => {
+    let estante = '';
+    let prateleira = '';
+    const locMatch = book.location?.match(/Estante (.*?) - Prat\. (.*)/i);
+    if (locMatch) {
+      estante = locMatch[1];
+      prateleira = locMatch[2];
+    } else {
+      estante = book.location || ''; // fallback
+    }
+    setBookForm({ ...book, estante, prateleira });
+    setEditingBookId(book.id);
+    setIsBookModalOpen(true);
+  };
+
   const saveBook = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const finalLocation = `Estante ${bookForm.estante?.trim().toUpperCase()} - Prat. ${bookForm.prateleira?.trim().toUpperCase()}`;
+
       const bookData = {
         title: bookForm.title,
         author: bookForm.author,
         category: bookForm.category,
-        location: bookForm.location,
+        location: finalLocation,
         total_copies: bookForm.totalCopies,
         available_copies: editingBookId
           ? (books.find(b => b.id === editingBookId)?.availableCopies || 0) + (bookForm.totalCopies - (books.find(b => b.id === editingBookId)?.totalCopies || 0))
@@ -510,7 +533,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                 <input type="text" placeholder="Pesquisar título ou autor..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-3 bg-gray-50 border-none rounded-2xl text-xs font-bold outline-none" />
               </div>
-              <button onClick={() => { setEditingBookId(null); setIsBookModalOpen(true); }} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all"><Plus size={16} /> Adicionar Obra</button>
+              <button onClick={handleAddBookClick} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all"><Plus size={16} /> Adicionar Obra</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -519,7 +542,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   <div className="w-full aspect-[3/4] bg-indigo-50 rounded-2xl mb-4 flex items-center justify-center text-indigo-200 relative overflow-hidden">
                     <BookOpen size={48} />
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-10 transition-opacity">
-                      <button onClick={() => { setBookForm({ ...book }); setEditingBookId(book.id); setIsBookModalOpen(true); }} className="p-2 bg-white text-indigo-600 rounded-lg shadow-sm hover:bg-indigo-600 hover:text-white"><Edit3 size={14} /></button>
+                      <button onClick={() => handleEditBookClick(book)} className="p-2 bg-white text-indigo-600 rounded-lg shadow-sm hover:bg-indigo-600 hover:text-white"><Edit3 size={14} /></button>
                       <button onClick={() => { if (window.confirm("Apagar livro?")) setBooks(books.filter(b => b.id !== book.id)); }} className="p-2 bg-white text-red-600 rounded-lg shadow-sm hover:bg-red-600 hover:text-white"><Trash2 size={14} /></button>
                     </div>
                   </div>
@@ -756,9 +779,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Autor</label><input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Categoria</label><select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select></div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">ISBN</label><input value={bookForm.isbn || ''} onChange={e => setBookForm({ ...bookForm, isbn: e.target.value })} placeholder="EX: 978-85-359..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Localização</label><input required value={bookForm.location} onChange={e => setBookForm({ ...bookForm, location: e.target.value.toUpperCase() })} placeholder="EX: EST. 01" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Estante/Corredor</label><input required value={bookForm.estante || ''} onChange={e => setBookForm({ ...bookForm, estante: e.target.value.toUpperCase() })} placeholder="Ex: A, 01, Romance..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Prateleira</label><input required value={bookForm.prateleira || ''} onChange={e => setBookForm({ ...bookForm, prateleira: e.target.value.toUpperCase() })} placeholder="Ex: 1, 2, 3..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Exemplares</label><input required type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({ ...bookForm, totalCopies: parseInt(e.target.value) })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
               </div>
               <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl">Salvar Obra no Acervo</button>
