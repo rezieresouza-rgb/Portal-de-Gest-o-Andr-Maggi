@@ -774,18 +774,18 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl border border-indigo-100 overflow-hidden flex flex-col">
             <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><h3 className="text-2xl font-black text-gray-900 uppercase">{editingBookId ? 'Editar Obra' : 'Nova Obra'}</h3><button onClick={() => setIsBookModalOpen(false)}><X size={24} /></button></div>
             <form onSubmit={saveBook} className="p-10 space-y-6">
-              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Título</label><input required value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
+              <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Título</label><input required value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
               <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Autor</label><input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Categoria</label><select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select></div>
+                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Autor</label><input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
+                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Categoria</label><select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">ISBN</label><input value={bookForm.isbn || ''} onChange={e => setBookForm({ ...bookForm, isbn: e.target.value })} placeholder="EX: 978-85-359..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Estante/Corredor</label><input required value={bookForm.estante || ''} onChange={e => setBookForm({ ...bookForm, estante: e.target.value.toUpperCase() })} placeholder="Ex: A, 01, Romance..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Prateleira</label><input required value={bookForm.prateleira || ''} onChange={e => setBookForm({ ...bookForm, prateleira: e.target.value.toUpperCase() })} placeholder="Ex: 1, 2, 3..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase ml-1">Exemplares</label><input required type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({ ...bookForm, totalCopies: parseInt(e.target.value) })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" /></div>
+                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">ISBN</label><input value={bookForm.isbn || ''} onChange={e => setBookForm({ ...bookForm, isbn: e.target.value })} placeholder="EX: 978-85-359..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
+                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Estante/Corredor</label><input required value={bookForm.estante || ''} onChange={e => setBookForm({ ...bookForm, estante: e.target.value.toUpperCase() })} placeholder="Ex: A, 01, Romance..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
+                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Prateleira</label><input required value={bookForm.prateleira || ''} onChange={e => setBookForm({ ...bookForm, prateleira: e.target.value.toUpperCase() })} placeholder="Ex: 1, 2, 3..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
+                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Exemplares</label><input required type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({ ...bookForm, totalCopies: parseInt(e.target.value) })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
               </div>
-              <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl">Salvar Obra no Acervo</button>
+              <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl">Salvar Obra no Acervo</button>
             </form>
           </div>
         </div>
@@ -810,7 +810,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
               {/* Localizar Obra */}
               <div className="space-y-1.5 relative">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">1. Localizar Obra</label>
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">1. Localizar Obra</label>
                 {!loanForm.bookId ? (
                   <>
                     <div className="relative">
@@ -820,7 +820,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         placeholder="Buscar por Título ou ISBN..."
                         value={loanForm.bookSearch}
                         onChange={e => setLoanForm({ ...loanForm, bookSearch: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white uppercase"
                       />
                     </div>
                     {loanForm.bookSearch && (
@@ -868,7 +868,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
               {/* Localizar Leitor */}
               <div className="space-y-1.5 relative">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">2. Localizar Leitor</label>
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">2. Localizar Leitor</label>
                 {!loanForm.readerId ? (
                   <>
                     <div className="relative">
@@ -878,7 +878,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         placeholder="Buscar por Nome ou Matrícula..."
                         value={loanForm.readerSearch}
                         onChange={e => setLoanForm({ ...loanForm, readerSearch: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white uppercase"
                         disabled={!loanForm.bookId}
                       />
                     </div>
