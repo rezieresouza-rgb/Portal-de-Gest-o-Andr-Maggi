@@ -121,9 +121,13 @@ const ShoppingList: React.FC = () => {
     const consolidation: Record<string, { quantity: number; unit: string; unitPrice: number; supplier: string; contract: string; contractId: string; contractItemId: string }> = {};
 
     weekData.days.forEach(day => {
+    // Split the dish by '+' to handle multiple preparations (lanche + meal)
+    const preparations = day.dish.split('+').map(p => p.trim().toUpperCase());
+    
+    preparations.forEach(prepName => {
       const sheet = TECHNICAL_SHEETS.find(s =>
-        day.dish.toUpperCase().includes(s.preparationName) ||
-        s.preparationName.includes(day.dish.toUpperCase())
+        prepName.includes(s.preparationName) ||
+        s.preparationName.includes(prepName)
       );
 
       if (sheet) {
@@ -132,11 +136,19 @@ const ShoppingList: React.FC = () => {
           processIngredient(ing.description, totalQty);
         });
       } else {
+        // Fallback to day.ingredients if no sheet found for this part
+        // Only if it's the first part or we don't have sheets at all
+        // Actually, better to check if any sheets were found for the day
         day.ingredients.forEach(ingDesc => {
-          processIngredient(ingDesc, (100 * studentCount) / 1000);
+          // Check if this ingredient description is actually in this preparation part
+          // This is a bit fuzzy but helps when sheets are missing
+          if (prepName.includes(ingDesc.toUpperCase()) || ingDesc.toUpperCase().includes(prepName)) {
+            processIngredient(ingDesc, (100 * studentCount) / 1000);
+          }
         });
       }
     });
+  });
 
     function processIngredient(description: string, totalQty: number) {
       let supplier = "NÃO VINCULADO";
