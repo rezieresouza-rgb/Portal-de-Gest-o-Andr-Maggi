@@ -141,18 +141,30 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
   // Modais
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [isGlobalLoanModalOpen, setIsGlobalLoanModalOpen] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
+
+  type LoanFormState = {
+    bookSearch: string;
+    bookId: string;
+    readerSearch: string;
+    readerId: string;
+    dueDate: string;
+  };
+
+  const [loanForm, setLoanForm] = useState<LoanFormState>({
+    bookSearch: '',
+    bookId: '',
+    readerSearch: '',
+    readerId: '',
+    dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+  });
+
   const [bookForm, setBookForm] = useState({
     title: '', author: '', category: 'Literatura Brasileira', isbn: '', totalCopies: 1, location: ''
   });
 
-  const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
-  const [loanForm, setLoanForm] = useState({
-    readerId: '',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    readerSearch: ''
-  });
 
   // Carrega base da secretaria para importação
   useEffect(() => {
@@ -269,7 +281,11 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const confirmLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     const reader = readers.find(r => r.id === loanForm.readerId);
-    if (!reader || !selectedBookForLoan) return alert('Selecione um leitor.');
+    const book = books.find(b => b.id === loanForm.bookId);
+
+    if (!reader) return alert('Selecione um leitor.');
+    if (!book) return alert('Selecione uma obra.');
+    if (book.availableCopies <= 0) return alert('Não há exemplares disponíveis para esta obra.');
 
     // OVERDUE VALIDATION
     const todayStr = new Date().toISOString().split('T')[0];
@@ -282,7 +298,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     try {
       // 1. Create Loan
       const { error: loanError } = await supabase.from('library_loans').insert([{
-        book_id: selectedBookForLoan.id,
+        book_id: book.id,
         reader_id: reader.id,
         loan_date: new Date().toISOString().split('T')[0],
         due_date: loanForm.dueDate,
@@ -291,18 +307,24 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       if (loanError) throw loanError;
 
       // 2. Decrement Available Copies
-      const { error: bookError } = await supabase.rpc('decrement_book_copies', { book_id: selectedBookForLoan.id });
+      const { error: bookError } = await supabase.rpc('decrement_book_copies', { book_id: book.id });
       // Fallback if RPC doesn't exist (basic update)
       if (bookError) {
         await supabase
           .from('library_books')
-          .update({ available_copies: selectedBookForLoan.availableCopies - 1 })
-          .eq('id', selectedBookForLoan.id);
+          .update({ available_copies: book.availableCopies - 1 })
+          .eq('id', book.id);
       }
 
       await fetchData();
-      setIsLoanModalOpen(false);
-      setSelectedBookForLoan(null);
+      setIsGlobalLoanModalOpen(false);
+      setLoanForm({
+        bookSearch: '',
+        bookId: '',
+        readerSearch: '',
+        readerId: '',
+        dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+      });
       alert("Empréstimo registrado!");
     } catch (error) {
       console.error("Erro ao registrar empréstimo:", error);
@@ -394,6 +416,14 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       r.registration.includes(loanForm.readerSearch)
     ).slice(0, 5);
   }, [readers, loanForm.readerSearch]);
+
+  const filteredBooksForLoan = useMemo(() => {
+    if (!loanForm.bookSearch) return [];
+    return books.filter(b =>
+      b.title.toLowerCase().includes(loanForm.bookSearch.toLowerCase()) ||
+      (b.isbn && b.isbn.includes(loanForm.bookSearch))
+    ).slice(0, 5);
+  }, [books, loanForm.bookSearch]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -498,9 +528,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">{book.author}</p>
                     <div className="mt-4 p-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /><span className="text-[9px] font-black text-gray-600 uppercase">{book.location}</span></div>
                   </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
-                    <p className={`text-xs font-black ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{book.availableCopies} / {book.totalCopies} <span className="text-[8px] text-gray-400 uppercase">UN</span></p>
-                    <button onClick={() => { setSelectedBookForLoan(book); setIsLoanModalOpen(true); }} disabled={book.availableCopies <= 0} className={`p-2.5 rounded-xl transition-all shadow-sm ${book.availableCopies > 0 ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}><Bookmark size={18} /></button>
+                  <div className="mt-4 border-t border-gray-50 pt-4 text-center">
+                    <p className={`text-xs font-black uppercase ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{book.availableCopies > 0 ? `${book.availableCopies} Exemplares Disponíveis` : 'Indisponível'}</p>
                   </div>
                 </div>
               ))}
@@ -554,11 +583,19 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         return (
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in duration-500">
             <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Registro de Circulação</h3>
-              <div className="flex gap-2">
-                <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase border border-blue-100">{stats.activeLoans} Ativos</span>
-                <span className="px-3 py-1 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase border border-red-100">{stats.delayedLoans} Atrasados</span>
+              <div className="flex items-center gap-4">
+                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Registro de Circulação</h3>
+                <div className="flex gap-2">
+                  <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase border border-blue-100">{stats.activeLoans} Ativos</span>
+                  <span className="px-3 py-1 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase border border-red-100">{stats.delayedLoans} Atrasados</span>
+                </div>
               </div>
+              <button
+                onClick={() => setIsGlobalLoanModalOpen(true)}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all"
+              >
+                <BookMarked size={16} /> Registrar Empréstimo
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -730,25 +767,95 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         </div>
       )}
 
-      {/* Modal Empréstimo */}
-      {isLoanModalOpen && selectedBookForLoan && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-indigo-950/60 backdrop-blur-sm animate-in fade-in duration-300">
+      {/* Modal Empréstimo Global */}
+      {isGlobalLoanModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[3.5rem] w-full max-w-lg shadow-2xl border border-white/20 overflow-hidden flex flex-col">
-            <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><div className="flex items-center gap-4"><div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><BookMarked size={24} /></div><div><h3 className="text-xl font-black text-gray-900 uppercase">Check-out</h3><p className="text-[9px] text-indigo-400 font-black uppercase mt-1">Registrar Empréstimo</p></div></div><button onClick={() => setIsLoanModalOpen(false)} className="p-2 text-gray-300 hover:text-red-500 transition-all"><X size={24} /></button></div>
+            <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><BookMarked size={24} /></div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900 uppercase">Novo Empréstimo</h3>
+                  <p className="text-[9px] text-indigo-400 font-black uppercase mt-1">Check-out de Obras</p>
+                </div>
+              </div>
+              <button onClick={() => setIsGlobalLoanModalOpen(false)} className="p-2 text-gray-300 hover:text-red-500 transition-all"><X size={24} /></button>
+            </div>
+
             <form onSubmit={confirmLoan} className="p-10 space-y-6">
-              <div className="bg-gray-900 p-6 rounded-[2rem] text-white relative overflow-hidden"><div className="absolute top-0 right-0 p-4 opacity-10"><BookOpen size={64} /></div><p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Obra</p><h4 className="text-lg font-black uppercase leading-tight">{selectedBookForLoan.title}</h4></div>
+
+              {/* Localizar Obra */}
               <div className="space-y-1.5 relative">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Localizar Leitor Cadastrado</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">1. Localizar Obra</label>
+                {!loanForm.bookId ? (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                      <input
+                        type="text"
+                        placeholder="Buscar por Título ou ISBN..."
+                        value={loanForm.bookSearch}
+                        onChange={e => setLoanForm({ ...loanForm, bookSearch: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase"
+                      />
+                    </div>
+                    {loanForm.bookSearch && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto z-20 p-2 space-y-1">
+                        {filteredBooksForLoan.map(b => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            disabled={b.availableCopies <= 0}
+                            onClick={() => setLoanForm({ ...loanForm, bookId: b.id, bookSearch: '' })}
+                            className={`w-full text-left p-3 rounded-xl transition-colors flex items-center justify-between group ${b.availableCopies > 0 ? 'hover:bg-indigo-50' : 'opacity-50 cursor-not-allowed bg-red-50'}`}
+                          >
+                            <div>
+                              <p className="text-xs font-black text-gray-900 uppercase group-hover:text-indigo-600">{b.title}</p>
+                              <p className="text-[9px] text-gray-400 font-bold uppercase">{b.author} - Loc: {b.location}</p>
+                            </div>
+                            <span className={`text-[9px] font-black uppercase ${b.availableCopies > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {b.availableCopies > 0 ? `${b.availableCopies} Disp` : 'Esgotado'}
+                            </span>
+                          </button>
+                        ))}
+                        {filteredBooksForLoan.length === 0 && (
+                          <div className="p-4 text-center text-[10px] text-gray-400 font-bold uppercase">Nenhuma obra encontrada</div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black">
+                        <BookOpen size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-indigo-900 uppercase leading-none">{books.find(b => b.id === loanForm.bookId)?.title}</p>
+                        <p className="text-[9px] text-indigo-600 font-bold uppercase mt-1">{books.find(b => b.id === loanForm.bookId)?.author}</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setLoanForm({ ...loanForm, bookId: '' })} className="p-2 text-indigo-400 hover:text-red-500 rounded-lg hover:bg-white transition-all">
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Localizar Leitor */}
+              <div className="space-y-1.5 relative">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">2. Localizar Leitor</label>
                 {!loanForm.readerId ? (
                   <>
                     <div className="relative">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                       <input
                         type="text"
-                        placeholder="Buscar por nome ou matrícula..."
+                        placeholder="Buscar por Nome ou Matrícula..."
                         value={loanForm.readerSearch}
                         onChange={e => setLoanForm({ ...loanForm, readerSearch: e.target.value })}
                         className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase"
+                        disabled={!loanForm.bookId}
                       />
                     </div>
                     {loanForm.readerSearch && (
@@ -790,8 +897,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   </div>
                 )}
               </div>
-              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data de Devolução</label><input required type="date" value={loanForm.dueDate} onChange={e => setLoanForm({ ...loanForm, dueDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none" /></div>
-              <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl">Confirmar Empréstimo</button>
+
+              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">3. Data de Devolução (+7 Dias)</label><input required type="date" value={loanForm.dueDate} onChange={e => setLoanForm({ ...loanForm, dueDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none text-indigo-900" /></div>
+              <button type="submit" disabled={!loanForm.bookId || !loanForm.readerId} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors mt-4">Confirmar Empréstimo</button>
             </form>
           </div>
         </div>
