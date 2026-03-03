@@ -352,6 +352,71 @@ const ShoppingList: React.FC = () => {
     }
   };
 
+  const handleGenerateOrders = async (items: ShoppingListItem[]) => {
+    const selectedItems = items.filter(i => i.selected && i.contractId && i.contractItemId);
+    if (selectedItems.length === 0) {
+      alert("Selecione itens vinculados a contratos para gerar pedidos.");
+      return;
+    }
+
+    if (!window.confirm(`Deseja gerar pedidos para os ${selectedItems.length} itens selecionados? (Isso criará registros no módulo de Pedidos)`)) return;
+
+    setIsProcessing(true);
+    try {
+      // Agrupar por contrato
+      const groups: Record<string, ShoppingListItem[]> = {};
+      selectedItems.forEach(item => {
+        const key = item.contractId!;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+      });
+
+      for (const [contractId, groupItems] of Object.entries(groups)) {
+        const orderNumber = `${new Date().getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
+        const totalValue = groupItems.reduce((acc, i) => acc + (i.quantity * i.unit_price), 0);
+
+        // 1. Criar Pedido
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .insert([{
+            contract_id: contractId,
+            order_number: orderNumber,
+            issue_date: new Date().toISOString().split('T')[0],
+            delivery_date: new Date().toISOString().split('T')[0],
+            total_value: totalValue,
+            observations: `Pedido gerado automaticamente da Lista de Compras (Semana ${groupItems[0].week})`,
+            status: 'GERADO_DA_LISTA'
+          }])
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+
+        // 2. Criar Itens do Pedido
+        const orderItemsToInsert = groupItems.map(item => ({
+          order_id: orderData.id,
+          contract_item_id: item.contractItemId,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItemsToInsert);
+
+        if (itemsError) throw itemsError;
+      }
+
+      alert("Pedidos gerados com sucesso! Você pode visualizá-los no módulo de Pedidos.");
+    } catch (error) {
+      console.error("Erro ao gerar pedidos:", error);
+      alert("Erro ao gerar pedidos.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const removeItem = (index: number) => {
     setGeneratedList(prev => prev.filter((_, i) => i !== index));
   };
@@ -599,6 +664,14 @@ const ShoppingList: React.FC = () => {
                   {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                   Salvar no Histórico
                 </button>
+                <button
+                  onClick={() => handleGenerateOrders(generatedList)}
+                  disabled={isProcessing || generatedList.filter(i => i.selected).length === 0}
+                  className="px-10 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Truck size={18} />}
+                  Gerar Pedidos de Compra
+                </button>
               </div>
             </div>
           ) : (
@@ -678,6 +751,23 @@ const ShoppingList: React.FC = () => {
               <button onClick={() => setIsEditingHistory(!isEditingHistory)} className={`px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 ${isEditingHistory ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 {isEditingHistory ? <CheckCircle2 size={16} /> : <Edit2 size={16} />}
                 {isEditingHistory ? "Finalizar Edição" : "Editar Lista"}
+              </button>
+              <button
+                onClick={() => handleGenerateOrders(selectedHistoryList.items.map((i: any) => ({
+                  ...i,
+                  supplierName: i.supplier_name,
+                  contractNumber: i.contract_number,
+                  unit_price: i.unit_price,
+                  isPerishable: i.is_perishable,
+                  selected: true, // In history view, we assume items in the list are "selected" for order unless filtered
+                  contractId: i.contract_id || selectedHistoryList.contract_id, // Map database fields
+                  contractItemId: i.contract_item_id
+                })))}
+                disabled={isProcessing}
+                className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all"
+              >
+                {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />}
+                Gerar Pedidos
               </button>
               <button onClick={() => window.print()} className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
                 <Printer size={16} /> Imprimir
