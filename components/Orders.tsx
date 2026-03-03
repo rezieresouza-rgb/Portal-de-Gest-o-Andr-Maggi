@@ -407,21 +407,7 @@ const Orders: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      // 1. REVERT ORIGINAL STOCK
-      // We iterate through original snapshot and add quantities back to contract items
-      for (const oldItem of originalItemsSnapshot) {
-        // Fetch current to be safe? Or just increment.
-        // Increment is safer against race conditions but we need current value.
-        // Let's Fetch current item to get acquired_quantity
-        const { data: currentDbItem } = await supabase.from('contract_items').select('acquired_quantity').eq('id', oldItem.contractItemId).single();
-
-        if (currentDbItem) {
-          const revertedAcquired = Math.max(0, currentDbItem.acquired_quantity - oldItem.quantity);
-          await supabase.from('contract_items').update({ acquired_quantity: revertedAcquired }).eq('id', oldItem.contractItemId);
-        }
-      }
-
-      // 2. UPDATE ORDER RECORD
+      // 1. UPDATE ORDER RECORD
       const { error: headerError } = await supabase.from('orders').update({
         issue_date: orderDate,
         delivery_date: deliveryDate,
@@ -445,13 +431,6 @@ const Orders: React.FC = () => {
           unit_price: parseNumeric(item.unitPrice)
         }]);
         if (itemError) throw itemError;
-
-        // 4. CONSUME NEW STOCK
-        const { data: currentDbItem } = await supabase.from('contract_items').select('acquired_quantity').eq('id', item.contractItemId).single();
-        if (currentDbItem) {
-          const newAcquired = currentDbItem.acquired_quantity + item.requestedQuantity;
-          await supabase.from('contract_items').update({ acquired_quantity: newAcquired }).eq('id', item.contractItemId);
-        }
       }
 
       alert("Pedido atualizado com sucesso!");
@@ -503,7 +482,7 @@ const Orders: React.FC = () => {
 
       if (orderError) throw orderError;
 
-      // 2. Create Order Items and Update Contract Items
+      // 2. Create Order Items
       for (const item of selected) {
         // Insert order item
         const { error: itemError } = await supabase.from('order_items').insert([{
@@ -514,16 +493,6 @@ const Orders: React.FC = () => {
           unit_price: parseNumeric(item.unitPrice)
         }]);
         if (itemError) throw itemError;
-
-        // Update contract item balance
-        const currentItem = selectedContract?.items.find(i => i.id === item.contractItemId);
-        if (currentItem) {
-          const newAcquired = currentItem.acquiredQuantity + item.requestedQuantity;
-          const { error: updateError } = await supabase.from('contract_items')
-            .update({ acquired_quantity: newAcquired })
-            .eq('id', item.contractItemId);
-          if (updateError) throw updateError;
-        }
       }
 
       // 3. Create Event
@@ -548,7 +517,7 @@ const Orders: React.FC = () => {
         }).from(element).save();
       }
 
-      alert("Pedido finalizado com sucesso! O saldo do contrato foi atualizado.");
+      alert("Pedido finalizado com sucesso!");
 
       // Refresh data
       await fetchData();

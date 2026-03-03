@@ -95,7 +95,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
       { description: 'PÃO FRANCÊS', perCapitaLiquido: 50.00 },
       { description: 'QUEIJO MUSSARELA', perCapitaLiquido: 15.00 },
       { description: 'POLPA DE FRUTA', perCapitaLiquido: 50.00 },
-      { description: 'AÇÚCAR CRISTAL', perCapitaLiquido: 10.00 },
+      { description: 'AÇÚCAR', perCapitaLiquido: 10.00 },
     ]
   },
   {
@@ -103,7 +103,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
     ingredients: [
       { description: 'FARINHA DE TRIGO', perCapitaLiquido: 20.00 },
       { description: 'CACAU EM PÓ', perCapitaLiquido: 5.00 },
-      { description: 'AÇÚCAR CRISTAL', perCapitaLiquido: 15.00 },
+      { description: 'AÇÚCAR', perCapitaLiquido: 15.00 },
       { description: 'ÓLEO DE SOJA', perCapitaLiquido: 5.00 },
       { description: 'OVO DE GALINHA', perCapitaLiquido: 10.00 },
       { description: 'FERMENTO QUÍMICO', perCapitaLiquido: 1.00 },
@@ -218,7 +218,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
   {
     preparationName: "YAKISSOBA DE FRANGO",
     ingredients: [
-      { description: 'AÇÚCAR CRISTAL', perCapitaLiquido: 2.00 },
+      { description: 'AÇÚCAR', perCapitaLiquido: 2.00 },
       { description: 'ALHO', perCapitaLiquido: 0.93 },
       { description: 'AMIDO DE MILHO', perCapitaLiquido: 5.00 },
       { description: 'BRÓCOLIS', perCapitaLiquido: 10.00 },
@@ -241,7 +241,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
       { description: 'OVO DE GALINHA', perCapitaLiquido: 25.00 },
       { description: 'ÓLEO DE SOJA', perCapitaLiquido: 2.00 },
       { description: 'SAL', perCapitaLiquido: 0.50 },
-      { description: 'AÇÚCAR CRISTAL', perCapitaLiquido: 10.00 },
+      { description: 'AÇÚCAR', perCapitaLiquido: 10.00 },
       { description: 'CHÁ MATE', perCapitaLiquido: 2.00 },
     ]
   },
