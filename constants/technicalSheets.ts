@@ -92,7 +92,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
   {
     preparationName: "PÃO COM QUEIJO MUSSARELA E SUCO DE POLPA DE FRUTA",
     ingredients: [
-      { description: 'PÃO', perCapitaLiquido: 50.00 },
+      { description: 'PÃO FRANCÊS', perCapitaLiquido: 50.00 },
       { description: 'QUEIJO MUSSARELA', perCapitaLiquido: 15.00 },
       { description: 'POLPA DE FRUTA', perCapitaLiquido: 50.00 },
       { description: 'AÇÚCAR CRISTAL', perCapitaLiquido: 10.00 },
@@ -237,7 +237,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
   {
     preparationName: "PÃO COM OVOS MEXIDOS E CHÁ",
     ingredients: [
-      { description: 'PÃO', perCapitaLiquido: 50.00 },
+      { description: 'PÃO FRANCÊS', perCapitaLiquido: 50.00 },
       { description: 'OVO DE GALINHA', perCapitaLiquido: 25.00 },
       { description: 'ÓLEO DE SOJA', perCapitaLiquido: 2.00 },
       { description: 'SAL', perCapitaLiquido: 0.50 },
