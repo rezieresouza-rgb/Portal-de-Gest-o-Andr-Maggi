@@ -40,8 +40,11 @@ const parseNumeric = (val: any): number => {
   return isNaN(num) ? 0 : num;
 };
 
-const formatQuantity = (val: number) => {
-  return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const formatQuantity = (val: number, unit?: string) => {
+  if (unit?.toUpperCase() === 'KG') {
+    return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  }
+  return val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 };
 
 const normalize = (str: string) => {
@@ -384,24 +387,56 @@ const ShoppingList: React.FC = () => {
     return results.slice(0, 8);
   }, [contracts, globalProductSearch]);
 
-  const addManualItem = (product: any) => {
-    const newItem: ShoppingListItem = {
+  const addManualItem = async (product: any) => {
+    const newItemBase = {
       description: product.description,
       quantity: 1,
       unit: product.unit,
-      week: selectedWeek,
+      week: selectedHistoryList ? selectedHistoryList.week : selectedWeek,
       supplierName: product.supplierName,
       contractNumber: product.contractNumber,
       contractId: product.contractId,
       contractItemId: product.id,
       isPerishable: PERISHABLES.includes(product.description.toUpperCase()),
       unit_price: product.unitPrice,
+      observations: "",
       selected: true
     };
-    setGeneratedList(prev => {
-      const updated = [...prev, newItem];
-      return updated.sort((a, b) => a.description.localeCompare(b.description));
-    });
+
+    if (selectedHistoryList && isEditingHistory) {
+      try {
+        const { data, error } = await supabase
+          .from('merenda_shopping_list_items')
+          .insert([{
+            list_id: selectedHistoryList.id,
+            description: newItemBase.description,
+            quantity: newItemBase.quantity,
+            unit: newItemBase.unit,
+            supplier_name: newItemBase.supplierName,
+            contract_number: newItemBase.contractNumber,
+            unit_price: newItemBase.unit_price,
+            is_perishable: newItemBase.isPerishable,
+            observations: newItemBase.observations
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setSelectedHistoryList(prev => ({
+          ...prev,
+          items: [...prev.items, data].sort((a, b) => a.description.localeCompare(b.description))
+        }));
+      } catch (error) {
+        console.error("Erro ao adicionar item ao histórico:", error);
+        alert("Erro ao adicionar item.");
+      }
+    } else {
+      setGeneratedList(prev => {
+        const updated = [...prev, newItemBase];
+        return updated.sort((a, b) => a.description.localeCompare(b.description));
+      });
+    }
     setGlobalProductSearch("");
   };
 
@@ -523,11 +558,11 @@ const ShoppingList: React.FC = () => {
                             <div className="flex items-center justify-center gap-2">
                               <input
                                 type="text"
-                                defaultValue={formatQuantity(item.quantity)}
+                                defaultValue={formatQuantity(item.quantity, item.unit)}
                                 onBlur={(e) => updateItem(idx, 'quantity', e.target.value)}
                                 className="w-24 p-2 bg-white border border-gray-200 rounded-2xl text-center font-black text-orange-600 text-sm outline-none no-print"
                               />
-                              <span className="hidden print:block print:text-xs">{formatQuantity(item.quantity)}</span>
+                              <span className="hidden print:block print:text-xs">{formatQuantity(item.quantity, item.unit)}</span>
                               <span className="text-[10px] font-black text-gray-400 uppercase">{item.unit}</span>
                             </div>
                           </td>
@@ -615,6 +650,31 @@ const ShoppingList: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {isEditingHistory && (
+                <div className="relative group no-print mr-2">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Adicionar ao histórico..."
+                    value={globalProductSearch}
+                    onChange={(e) => setGlobalProductSearch(e.target.value)}
+                    className="pl-12 pr-6 py-3 bg-gray-100 border-none rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-orange-500/20 w-64"
+                  />
+                  {allAvailableProducts.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden min-w-[300px]">
+                      {allAvailableProducts.map(p => (
+                        <button key={p.id} onClick={() => addManualItem(p)} className="w-full text-left p-4 hover:bg-orange-50 flex items-center justify-between group">
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-gray-900">{p.description}</p>
+                            <p className="text-[8px] font-bold text-gray-400 uppercase">{p.supplierName}</p>
+                          </div>
+                          <Plus size={14} className="text-orange-600" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <button onClick={() => setIsEditingHistory(!isEditingHistory)} className={`px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 ${isEditingHistory ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                 {isEditingHistory ? <CheckCircle2 size={16} /> : <Edit2 size={16} />}
                 {isEditingHistory ? "Finalizar Edição" : "Editar Lista"}
@@ -652,14 +712,14 @@ const ShoppingList: React.FC = () => {
                         <div className="flex items-center justify-center gap-2">
                           <input
                             type="text"
-                            defaultValue={formatQuantity(item.quantity)}
+                            defaultValue={formatQuantity(item.quantity, item.unit)}
                             onBlur={(e) => handleUpdateHistoryItem(item.id, 'quantity', parseNumeric(e.target.value))}
                             className="w-24 p-2 bg-orange-50 border border-orange-100 rounded-xl text-center font-black text-orange-600 text-xs"
                           />
                           <span className="text-[9px] font-bold text-gray-400">{item.unit}</span>
                         </div>
                       ) : (
-                        <p className="font-black text-gray-900 text-sm">{formatQuantity(item.quantity)} <span className="text-[10px] text-gray-400 uppercase">{item.unit}</span></p>
+                        <p className="font-black text-gray-900 text-sm">{formatQuantity(item.quantity, item.unit)} <span className="text-[10px] text-gray-400 uppercase">{item.unit}</span></p>
                       )}
                     </td>
                     <td className="px-6 py-5">
