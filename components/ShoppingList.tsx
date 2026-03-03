@@ -33,9 +33,15 @@ import { ShoppingListItem, Contract } from '../types';
 const parseNumeric = (val: any): number => {
   if (typeof val === 'number') return val;
   if (!val) return 0;
-  const cleaned = String(val).replace(/\./g, '').replace(',', '.');
+  // Sanitização robusta: Remove pontos (milhar) e troca vírgula por ponto (decimal)
+  // Também remove caracteres não numéricos como 'kg', 'un', etc.
+  const cleaned = String(val).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
+};
+
+const formatQuantity = (val: number) => {
+  return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 };
 
 const ShoppingList: React.FC = () => {
@@ -191,7 +197,7 @@ const ShoppingList: React.FC = () => {
 
     const newList: ShoppingListItem[] = Object.entries(consolidation).map(([desc, data]) => ({
       description: desc,
-      quantity: Number(data.quantity.toFixed(2)),
+      quantity: Number(data.quantity.toFixed(3)),
       unit: data.unit,
       week: selectedWeek,
       supplierName: data.supplier,
@@ -466,8 +472,13 @@ const ShoppingList: React.FC = () => {
                           </td>
                           <td className="px-6 py-5 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <input type="number" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} className="w-20 p-2 bg-white border border-gray-200 rounded-2xl text-center font-black text-orange-600 text-sm outline-none no-print" />
-                              <span className="print:block print:text-xs">{item.quantity}</span>
+                              <input 
+                                type="text" 
+                                defaultValue={formatQuantity(item.quantity)} 
+                                onBlur={(e) => updateItem(idx, 'quantity', e.target.value)} 
+                                className="w-24 p-2 bg-white border border-gray-200 rounded-2xl text-center font-black text-orange-600 text-sm outline-none no-print" 
+                              />
+                              <span className="print:block print:text-xs">{formatQuantity(item.quantity)}</span>
                               <span className="text-[10px] font-black text-gray-400 uppercase">{item.unit}</span>
                             </div>
                           </td>
@@ -579,15 +590,15 @@ const ShoppingList: React.FC = () => {
                       {isEditingHistory ? (
                         <div className="flex items-center justify-center gap-2">
                           <input 
-                            type="number" 
-                            defaultValue={item.quantity} 
+                            type="text" 
+                            defaultValue={formatQuantity(item.quantity)} 
                             onBlur={(e) => handleUpdateHistoryItem(item.id, 'quantity', parseNumeric(e.target.value))}
-                            className="w-20 p-2 bg-orange-50 border border-orange-100 rounded-xl text-center font-black text-orange-600 text-xs" 
+                            className="w-24 p-2 bg-orange-50 border border-orange-100 rounded-xl text-center font-black text-orange-600 text-xs" 
                           />
                           <span className="text-[9px] font-bold text-gray-400">{item.unit}</span>
                         </div>
                       ) : (
-                        <p className="font-black text-gray-900 text-sm">{item.quantity} <span className="text-[10px] text-gray-400 uppercase">{item.unit}</span></p>
+                        <p className="font-black text-gray-900 text-sm">{formatQuantity(item.quantity)} <span className="text-[10px] text-gray-400 uppercase">{item.unit}</span></p>
                       )}
                     </td>
                     <td className="px-6 py-5">

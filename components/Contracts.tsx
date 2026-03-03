@@ -47,9 +47,13 @@ interface ExecutionEvent {
 const parseNumeric = (val: any): number => {
   if (typeof val === 'number') return val;
   if (!val) return 0;
-  const cleaned = String(val).replace(/\./g, '').replace(',', '.');
+  const cleaned = String(val).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
+};
+
+const formatQuantity = (val: number) => {
+  return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 };
 
 const Contracts: React.FC = () => {
@@ -198,6 +202,9 @@ const Contracts: React.FC = () => {
 
   const [aditivoModal, setAditivoModal] = useState<{ contractId: string, itemId: string, description: string } | null>(null);
   const [aditivoQty, setAditivoQty] = useState<number | "">("");
+
+  const [outputModal, setOutputModal] = useState<{ contractId: string, itemId: string, description: string } | null>(null);
+  const [outputQty, setOutputQty] = useState<number | "">("");
 
   const [isNewContractModalOpen, setIsNewContractModalOpen] = useState(false);
   const [availableSuppliers, setAvailableSuppliers] = useState<{ id: string, name: string, category: string }[]>([]);
@@ -532,6 +539,57 @@ const Contracts: React.FC = () => {
     }
   };
 
+  const handleConfirmOutput = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!outputModal || outputQty === "" || Number(outputQty) <= 0) return;
+
+    try {
+      const contract = contracts.find(c => c.id === outputModal.contractId);
+      const item = contract?.items.find(i => i.id === outputModal.itemId);
+      if (!contract || !item) return;
+
+      const numericOutput = parseNumeric(outputQty);
+      if (numericOutput <= 0) return alert("Informe uma quantidade válida.");
+
+      const newAcquired = item.acquiredQuantity + numericOutput;
+      if (newAcquired > item.contractedQuantity) {
+        alert("Quantidade excede o saldo disponível no contrato!");
+        return;
+      }
+
+      const impact = numericOutput * item.unitPrice;
+
+      const { error } = await supabase
+        .from('contract_items')
+        .update({ acquired_quantity: newAcquired })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      setContracts(prev => prev.map(c => {
+        if (c.id !== outputModal.contractId) return c;
+        return {
+          ...c,
+          items: c.items.map(i => {
+            if (i.id !== outputModal.itemId) return i;
+            return {
+              ...i,
+              acquiredQuantity: newAcquired
+            };
+          })
+        };
+      }));
+
+      await addExecutionEvent(outputModal.contractId, 'PEDIDO', `Saída Manual: ${outputQty} ${item.unit} de ${outputModal.description}`, impact);
+      setOutputModal(null);
+      setOutputQty("");
+      alert("Saída de estoque registrada com sucesso!");
+
+    } catch (error: any) {
+      alert("Erro ao registrar saída: " + error.message);
+    }
+  };
+
   if (selectedContract) {
     const { totalValue, totalSpent, remainingValue, daysRemaining } = calculateContractStats(selectedContract);
     const timeProgress = Math.min(100, Math.max(0, (365 - daysRemaining) / 3.65));
@@ -560,9 +618,54 @@ const Contracts: React.FC = () => {
               <form onSubmit={handleConfirmAditivo} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase">Quantidade Adicional</label>
-                  <input autoFocus type="number" step="0.01" required value={aditivoQty} onChange={e => setAditivoQty(e.target.value === "" ? "" : Number(e.target.value))} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-black text-center text-xl" placeholder="0.00" />
+                  <input 
+                    autoFocus 
+                    type="text" 
+                    required 
+                    defaultValue={formatQuantity(0)}
+                    onBlur={e => setAditivoQty(parseNumeric(e.target.value))} 
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-black text-center text-xl" 
+                    placeholder="0,000" 
+                  />
                 </div>
                 <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg">Confirmar Aditivo</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {outputModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setOutputModal(null)}></div>
+            <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 relative z-10 shadow-2xl border border-gray-100">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-red-100 text-red-600"><TrendingUp size={24} className="rotate-180" /></div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Saída de Estoque</h3>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Baixa Manual de Saldo</p>
+                  </div>
+                </div>
+                <button onClick={() => setOutputModal(null)} className="text-gray-300 hover:text-gray-600 transition-colors"><X size={24} /></button>
+              </div>
+              <div className="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Produto</p>
+                <p className="font-black text-gray-900 text-sm uppercase">{outputModal.description}</p>
+              </div>
+              <form onSubmit={handleConfirmOutput} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantidade a Retirar</label>
+                  <input 
+                    autoFocus 
+                    required 
+                    type="text" 
+                    defaultValue={formatQuantity(0)}
+                    onBlur={(e) => setOutputQty(parseNumeric(e.target.value))} 
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-lg focus:border-red-500 transition-all text-center" 
+                    placeholder="0,000"
+                  />
+                </div>
+                <button type="submit" className="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-red-700 transition-all">Confirmar Saída</button>
               </form>
             </div>
           </div>
@@ -589,7 +692,15 @@ const Contracts: React.FC = () => {
               <form onSubmit={handleConfirmDelivery} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantidade Recebida</label>
-                  <input autoFocus required type="number" step="0.01" value={deliveryQty} onChange={(e) => setDeliveryQty(e.target.value === "" ? "" : Number(e.target.value))} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-lg focus:border-emerald-500 transition-all text-center" />
+                  <input 
+                    autoFocus 
+                    required 
+                    type="text" 
+                    defaultValue={formatQuantity(0)}
+                    onBlur={(e) => setDeliveryQty(parseNumeric(e.target.value))} 
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-lg focus:border-emerald-500 transition-all text-center" 
+                    placeholder="0,000"
+                  />
                 </div>
                 <button type="submit" className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all">Confirmar Recebimento</button>
               </form>
@@ -685,7 +796,7 @@ const Contracts: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-5 text-center">
-                          <p className="text-xs font-black text-gray-900">{item.contractedQuantity.toLocaleString()} / <span className="text-blue-600">{remaining.toLocaleString()}</span></p>
+                          <p className="text-xs font-black text-gray-900">{formatQuantity(item.contractedQuantity)} / <span className="text-blue-600">{formatQuantity(remaining)}</span></p>
                           <div className="w-20 bg-gray-100 h-1 rounded-full mx-auto mt-2 overflow-hidden">
                             <div className={`h-full ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
                           </div>
@@ -694,7 +805,8 @@ const Contracts: React.FC = () => {
                         <td className="px-6 py-5 text-right">
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setAditivoModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Aditivo"><Plus size={14} /></button>
-                            <button onClick={() => setDeliveryModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2 shadow-sm"><Truck size={12} /> Receber</button>
+                            <button onClick={() => setDeliveryModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2 shadow-sm" title="Receber Gêneros"><Truck size={12} /> Receber</button>
+                            <button onClick={() => setOutputModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-[9px] font-black uppercase hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 shadow-sm" title="Saída de Estoque"><TrendingUp size={12} className="rotate-180" /> Saída</button>
                           </div>
                         </td>
                       </tr>

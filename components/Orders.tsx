@@ -48,10 +48,13 @@ const parseNumeric = (val: any): number => {
   if (typeof val === 'number') return val;
   if (!val) return 0;
   // Sanitização robusta: Remove pontos (milhar) e troca vírgula por ponto (decimal)
-  // Se houver múltiplos pontos (como "5.83.300"), remove todos eles.
-  const cleaned = String(val).replace(/\./g, '').replace(',', '.');
+  const cleaned = String(val).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
+};
+
+const formatQuantity = (val: number) => {
+  return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 };
 
 const Orders: React.FC = () => {
@@ -631,7 +634,7 @@ const Orders: React.FC = () => {
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
                               {p.supplierName} • CT {p.contractNumber}
                             </p>
-                            <p className="text-[9px] text-emerald-600 font-black mt-1">DISPONÍVEL: {p.remaining.toFixed(1)} {p.unit}</p>
+                            <p className="text-[9px] text-emerald-600 font-black mt-1">DISPONÍVEL: {formatQuantity(p.remaining)} {p.unit}</p>
                           </div>
                           <ChevronRight size={16} className="text-gray-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
                         </button>
@@ -768,17 +771,17 @@ const Orders: React.FC = () => {
                           {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
                         </div>
                       </td>
-                      <td className="p-3 text-center font-black uppercase text-blue-600">{remaining.toFixed(1)}</td>
+                      <td className="p-3 text-center font-black uppercase text-blue-600">{formatQuantity(remaining)}</td>
                       <td className="p-3 text-center bg-emerald-50/30">
                         <div className="flex flex-col items-center gap-1">
                           <input
-                            type="number"
-                            value={item.requestedQuantity || ""}
-                            onChange={(e) => updateLocalItem(item.contractItemId, 'requestedQuantity', e.target.value)}
-                            className="w-20 border border-gray-300 p-2 text-center font-black rounded-lg no-print outline-none focus:border-emerald-500"
-                            placeholder="0"
+                            type="text"
+                            defaultValue={formatQuantity(item.requestedQuantity)}
+                            onBlur={(e) => updateLocalItem(item.contractItemId, 'requestedQuantity', e.target.value)}
+                            className="w-24 border border-gray-300 p-2 text-center font-black rounded-lg no-print outline-none focus:border-emerald-500"
+                            placeholder="0,000"
                           />
-                          <span className="hidden pdf-show font-black text-sm">{item.requestedQuantity || '0'}</span>
+                          <span className="hidden pdf-show font-black text-sm">{formatQuantity(item.requestedQuantity)}</span>
                         </div>
                       </td>
                       <td className="p-3 text-right font-black text-gray-900">
