@@ -57,7 +57,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
   {
     preparationName: "ESTROGONOFE DE CARNE E ARROZ",
     ingredients: [
-      { description: 'CARNE BOVINA ISCAS', perCapitaLiquido: 40.00 },
+      { description: 'CARNE EM ISCAS', perCapitaLiquido: 40.00 },
       { description: 'ARROZ BRANCO', perCapitaLiquido: 30.00 },
       { description: 'ALHO', perCapitaLiquido: 0.93 },
       { description: 'CEBOLA', perCapitaLiquido: 2.73 },
@@ -94,7 +94,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
     ingredients: [
       { description: 'PÃO FRANCÊS', perCapitaLiquido: 50.00 },
       { description: 'QUEIJO MUSSARELA', perCapitaLiquido: 15.00 },
-      { description: 'POLPA DE FRUTA', perCapitaLiquido: 50.00 },
+      { description: 'POLPA DE', perCapitaLiquido: 50.00 },
       { description: 'AÇÚCAR', perCapitaLiquido: 10.00 },
     ]
   },
@@ -303,7 +303,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
 ];
 
 export const PERISHABLES = [
-  'ALFACE', 'TOMATE', 'ABACAXI', 'FRANGO', 'CARNE MOIDA', 'CARNE SUÍNA', 
+  'ALFACE', 'TOMATE', 'ABACAXI', 'FRANGO', 'CARNE MOIDA', 'CARNE SUÍNA',
   'BANANA', 'MELÃO', 'PEIXE', 'CEBOLINHA', 'SALSA', 'MANDIOCA', 'ABÓBORA',
   'LEITE', 'QUEIJO MUSSARELA', 'MAMÃO', 'MAÇÃ', 'PONCÃ', 'MELANCIA'
 ];

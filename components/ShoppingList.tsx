@@ -127,34 +127,34 @@ const ShoppingList: React.FC = () => {
     const consolidation: Record<string, { quantity: number; unit: string; unitPrice: number; supplier: string; contract: string; contractId: string; contractItemId: string }> = {};
 
     weekData.days.forEach(day => {
-    // Split the dish by '+' to handle multiple preparations (lanche + meal)
-    const preparations = day.dish.split('+').map(p => p.trim().toUpperCase());
-    
-    preparations.forEach(prepName => {
-      const sheet = TECHNICAL_SHEETS.find(s =>
-        prepName.includes(s.preparationName) ||
-        s.preparationName.includes(prepName)
-      );
+      // Split the dish by '+' to handle multiple preparations (lanche + meal)
+      const preparations = day.dish.split('+').map(p => p.trim().toUpperCase());
 
-      if (sheet) {
-        sheet.ingredients.forEach(ing => {
-          const totalQty = (ing.perCapitaLiquido * studentCount) / 1000;
-          processIngredient(ing.description, totalQty);
-        });
-      } else {
-        // Fallback to day.ingredients if no sheet found for this part
-        // Only if it's the first part or we don't have sheets at all
-        // Actually, better to check if any sheets were found for the day
-        day.ingredients.forEach(ingDesc => {
-          // Check if this ingredient description is actually in this preparation part
-          // This is a bit fuzzy but helps when sheets are missing
-          if (prepName.includes(ingDesc.toUpperCase()) || ingDesc.toUpperCase().includes(prepName)) {
-            processIngredient(ingDesc, (100 * studentCount) / 1000);
-          }
-        });
-      }
+      preparations.forEach(prepName => {
+        const sheet = TECHNICAL_SHEETS.find(s =>
+          prepName.includes(s.preparationName) ||
+          s.preparationName.includes(prepName)
+        );
+
+        if (sheet) {
+          sheet.ingredients.forEach(ing => {
+            const totalQty = (ing.perCapitaLiquido * studentCount) / 1000;
+            processIngredient(ing.description, totalQty);
+          });
+        } else {
+          // Fallback to day.ingredients if no sheet found for this part
+          // Only if it's the first part or we don't have sheets at all
+          // Actually, better to check if any sheets were found for the day
+          day.ingredients.forEach(ingDesc => {
+            // Check if this ingredient description is actually in this preparation part
+            // This is a bit fuzzy but helps when sheets are missing
+            if (prepName.includes(ingDesc.toUpperCase()) || ingDesc.toUpperCase().includes(prepName)) {
+              processIngredient(ingDesc, (100 * studentCount) / 1000);
+            }
+          });
+        }
+      });
     });
-  });
 
     function processIngredient(description: string, totalQty: number) {
       let supplier = "NÃO VINCULADO";
@@ -164,11 +164,29 @@ const ShoppingList: React.FC = () => {
       let unit = "KG";
       let price = 0;
 
+      const searchDesc = description.toUpperCase().trim();
+
+      // Busca por correspondência exata ou parcial inteligente
       for (const c of contracts) {
-        const contractItem = c.items.find(i =>
-          i.description.toUpperCase().includes(description.toUpperCase()) ||
-          description.toUpperCase().includes(i.description.toUpperCase())
-        );
+        const contractItem = c.items.find(i => {
+          const itemDesc = i.description.toUpperCase().trim();
+
+          // Caso 1: Correspondência direta
+          if (itemDesc === searchDesc) return true;
+
+          // Caso 2: O item do contrato contém a descrição da ficha técnica (ex: "POLPA DE ACEROLA" contém "POLPA DE")
+          if (itemDesc.includes(searchDesc)) return true;
+
+          // Caso 3: A descrição da ficha técnica contém o item do contrato (caso raro, mas possível)
+          if (searchDesc.includes(itemDesc)) return true;
+
+          // Caso 4: Lógica específica para Carnes e Polpas
+          if (searchDesc === 'CARNE EM ISCAS' && itemDesc.includes('CARNE EM ISCAS')) return true;
+          if (searchDesc === 'POLPA DE' && itemDesc.includes('POLPA DE')) return true;
+
+          return false;
+        });
+
         if (contractItem) {
           supplier = c.supplierName;
           contractNum = c.number;
@@ -276,7 +294,7 @@ const ShoppingList: React.FC = () => {
         .eq('id', itemId);
 
       if (error) throw error;
-      
+
       // Update local state
       setSelectedHistoryList(prev => ({
         ...prev,
@@ -332,7 +350,7 @@ const ShoppingList: React.FC = () => {
       });
     });
     // SORT RESULTS TOO
-    results.sort((a,b) => a.description.localeCompare(b.description));
+    results.sort((a, b) => a.description.localeCompare(b.description));
     return results.slice(0, 8);
   }, [contracts, globalProductSearch]);
 
@@ -352,7 +370,7 @@ const ShoppingList: React.FC = () => {
     };
     setGeneratedList(prev => {
       const updated = [...prev, newItem];
-      return updated.sort((a,b) => a.description.localeCompare(b.description));
+      return updated.sort((a, b) => a.description.localeCompare(b.description));
     });
     setGlobalProductSearch("");
   };
@@ -368,16 +386,16 @@ const ShoppingList: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      
+
       {/* Vistas / Tabs */}
       <div className="flex gap-4 mb-2 no-print">
-        <button 
+        <button
           onClick={() => { setActiveView('new'); setSelectedHistoryList(null); }}
           className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeView === 'new' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-white text-gray-400 border border-gray-100'}`}
         >
           <Plus size={16} /> Nova Lista
         </button>
-        <button 
+        <button
           onClick={() => setActiveView('history')}
           className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeView === 'history' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-white text-gray-400 border border-gray-100'}`}
         >
@@ -472,11 +490,11 @@ const ShoppingList: React.FC = () => {
                           </td>
                           <td className="px-6 py-5 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <input 
-                                type="text" 
-                                defaultValue={formatQuantity(item.quantity)} 
-                                onBlur={(e) => updateItem(idx, 'quantity', e.target.value)} 
-                                className="w-24 p-2 bg-white border border-gray-200 rounded-2xl text-center font-black text-orange-600 text-sm outline-none no-print" 
+                              <input
+                                type="text"
+                                defaultValue={formatQuantity(item.quantity)}
+                                onBlur={(e) => updateItem(idx, 'quantity', e.target.value)}
+                                className="w-24 p-2 bg-white border border-gray-200 rounded-2xl text-center font-black text-orange-600 text-sm outline-none no-print"
                               />
                               <span className="print:block print:text-xs">{formatQuantity(item.quantity)}</span>
                               <span className="text-[10px] font-black text-gray-400 uppercase">{item.unit}</span>
@@ -532,7 +550,7 @@ const ShoppingList: React.FC = () => {
                   <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase">{list.student_count} Alunos</span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedHistoryList(list)}
                 className="mt-6 w-full py-3 bg-gray-50 group-hover:bg-orange-600 group-hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
               >
@@ -557,7 +575,7 @@ const ShoppingList: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <button onClick={() => setIsEditingHistory(!isEditingHistory)} className={`px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 ${isEditingHistory ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                {isEditingHistory ? <CheckCircle2 size={16} /> : <Edit2 size={16} />} 
+                {isEditingHistory ? <CheckCircle2 size={16} /> : <Edit2 size={16} />}
                 {isEditingHistory ? "Finalizar Edição" : "Editar Lista"}
               </button>
               <button onClick={() => window.print()} className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
@@ -589,11 +607,11 @@ const ShoppingList: React.FC = () => {
                     <td className="px-6 py-5 text-center">
                       {isEditingHistory ? (
                         <div className="flex items-center justify-center gap-2">
-                          <input 
-                            type="text" 
-                            defaultValue={formatQuantity(item.quantity)} 
+                          <input
+                            type="text"
+                            defaultValue={formatQuantity(item.quantity)}
                             onBlur={(e) => handleUpdateHistoryItem(item.id, 'quantity', parseNumeric(e.target.value))}
-                            className="w-24 p-2 bg-orange-50 border border-orange-100 rounded-xl text-center font-black text-orange-600 text-xs" 
+                            className="w-24 p-2 bg-orange-50 border border-orange-100 rounded-xl text-center font-black text-orange-600 text-xs"
                           />
                           <span className="text-[9px] font-bold text-gray-400">{item.unit}</span>
                         </div>
