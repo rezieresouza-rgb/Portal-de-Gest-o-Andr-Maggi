@@ -19,15 +19,17 @@ import {
   Send,
   MessageCircle,
   FileCheck,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { INITIAL_STUDENTS } from '../constants/initialData';
+import { useStudents } from '../hooks/useStudents';
 import BuscaAtivaActionsModal from './BuscaAtivaActionsModal';
 
 const BuscaAtivaDashboard: React.FC = () => {
+  const { students: dbStudents, loading: studentsLoading } = useStudents();
   const [stats, setStats] = useState({
-    totalStudents: INITIAL_STUDENTS.length,
+    totalStudents: 0,
     criticalCount: 0,
     recoveredCount: 0,
     ficaiCount: 0
@@ -36,95 +38,120 @@ const BuscaAtivaDashboard: React.FC = () => {
   const [chartData, setChartData] = useState<{ name: string, faltas: number }[]>([]);
   const [criticalCases, setCriticalCases] = useState<any[]>([]);
   const [selectedActionStudent, setSelectedActionStudent] = useState<{ id: string, name: string, class: string } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(true);
 
+  // Initialize and subscribe to changes
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (!studentsLoading && dbStudents.length > 0) {
+      fetchDashboardData();
+
+      // Subscribe to real-time attendance changes
+      const channel = supabase
+        .channel('busca-ativa-dashboard-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'class_attendance_students' },
+          () => {
+            console.log('Attendance changed, updating dashboard...');
+            fetchDashboardData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [studentsLoading, dbStudents]);
 
   const fetchDashboardData = async () => {
-    // 1. Fetch Attendance to calculate Critical Cases
-    const { data: attendanceData } = await supabase
-      .from('class_attendance_students')
-      .select('student_id, is_present, class_attendance_records(classroom_name)'); // Join to get class name if needed
+    setIsProcessing(true);
+    try {
+      // 1. Fetch Attendance (all records for simplification, but could be optimized)
+      const { data: attendanceData } = await supabase
+        .from('class_attendance_students')
+        .select('student_id, is_present, class_attendance_records(classroom_name)');
 
-    // 2. Fetch Referrals to count Recovered and FICAI
-    const { data: referralsData } = await supabase
-      .from('referrals')
-      .select('*');
+      // 2. Fetch Referrals
+      const { data: referralsData } = await supabase
+        .from('referrals')
+        .select('*');
 
-    // Process Attendance
-    const studentStats: Record<string, { total: number, present: number, class?: string }> = {};
-    if (attendanceData) {
-      attendanceData.forEach(r => {
-        const sid = r.student_id;
-        if (!studentStats[sid]) studentStats[sid] = { total: 0, present: 0 };
-        studentStats[sid].total++;
-        if (r.is_present) studentStats[sid].present++;
-        // @ts-ignore
-        if (r.class_attendance_records?.classroom_name && !studentStats[sid].class) {
-          // @ts-ignore
-          studentStats[sid].class = r.class_attendance_records.classroom_name;
-        }
-      });
-    }
-
-    let critical = 0;
-    const criticalList: any[] = [];
-    const infrequencyByYear: Record<string, number> = {};
-
-    INITIAL_STUDENTS.forEach((s: any) => {
-      const stat = studentStats[s.CodigoAluno] || { total: 0, present: 0 };
-      const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
-
-      if (percent <= 90) { // 10% Absences Threshold
-        critical++;
-        criticalList.push({
-          id: s.id || s.CodigoAluno, // Ensure ID is passed
-          name: s.Nome,
-          class: s.Turma,
-          absences: `${Math.round(100 - percent)}%`,
-          status: 'Risco Evasão'
+      // Process Attendance Stats
+      const studentStats: Record<string, { total: number, present: number }> = {};
+      if (attendanceData) {
+        attendanceData.forEach(r => {
+          const sid = r.student_id;
+          if (!studentStats[sid]) studentStats[sid] = { total: 0, present: 0 };
+          studentStats[sid].total++;
+          if (r.is_present) studentStats[sid].present++;
         });
       }
 
-      // Aggregate for chart (Infrequência count per class)
-      // Assuming 'class' field in student e.g. "6º Ano A"
-      // We can group by Year e.g. "6º Ano"
-      const year = s.Turma.split(' ')[0] + ' ' + s.Turma.split(' ')[1]; // "6º Ano"
-      if (!infrequencyByYear[year]) infrequencyByYear[year] = 0;
-      if (percent < 90) infrequencyByYear[year]++;
-    });
+      let critical = 0;
+      const criticalList: any[] = [];
+      const infrequencyByYear: Record<string, number> = {};
 
-    // Process Referrals
-    let recovered = 0;
-    let ficai = 0;
-    if (referralsData) {
-      recovered = referralsData.filter(r => r.status === 'CONCLUÍDO').length;
-      ficai = referralsData.filter(r => r.type === 'CONSELHO_TUTELAR' && r.status !== 'CONCLUÍDO').length; // Approximation for FICAI
+      dbStudents.forEach((s: any) => {
+        const stat = studentStats[s.id] || { total: 0, present: 0 };
+        const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
+
+        // Threshold for risk (e.g., <= 85% attendance)
+        if (percent < 85) { 
+          critical++;
+          criticalList.push({
+            id: s.id,
+            name: s.name,
+            class: s.class,
+            absences: `${Math.round(100 - percent)}%`,
+            status: 'Crítico'
+          });
+        }
+
+        // Aggregate for chart by Year
+        const turmParts = s.class.split(' ');
+        const year = turmParts.length >= 2 ? turmParts[0] + ' ' + turmParts[1] : s.class;
+        
+        if (!infrequencyByYear[year]) infrequencyByYear[year] = 0;
+        if (percent < 85) infrequencyByYear[year]++;
+      });
+
+      // Process referrals
+      let recovered = 0;
+      let ficai = 0;
+      if (referralsData) {
+        recovered = referralsData.filter(r => r.status === 'CONCLUÍDO').length;
+        ficai = referralsData.filter(r => r.type === 'CONSELHO_TUTELAR' && r.status !== 'CONCLUÍDO').length;
+      }
+
+      setStats({
+        totalStudents: dbStudents.length,
+        criticalCount: critical,
+        recoveredCount: recovered,
+        ficaiCount: ficai
+      });
+
+      // Format Chart Data
+      const sortedYears = Object.keys(infrequencyByYear).sort();
+      const chart = sortedYears.map(key => ({
+        name: key,
+        faltas: infrequencyByYear[key]
+      }));
+      setChartData(chart);
+
+      // Top 5 Critical
+      setCriticalCases(criticalList.sort((a,b) => parseInt(b.absences) - parseInt(a.absences)).slice(0, 5));
+
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setIsProcessing(false);
     }
-
-    setStats({
-      totalStudents: INITIAL_STUDENTS.length,
-      criticalCount: critical,
-      recoveredCount: recovered,
-      ficaiCount: ficai
-    });
-
-    // Chart Data
-    const chart = Object.keys(infrequencyByYear).map(key => ({
-      name: key,
-      faltas: infrequencyByYear[key]
-    }));
-    setChartData(chart);
-
-    // Critical Cases (Top 5)
-    setCriticalCases(criticalList.slice(0, 5));
   };
 
   const handleForwardToMediation = async (student: any) => {
     if (!window.confirm(`Deseja encaminhar ${student.name} para a Equipe de Mediação devido à infrequência crítica?`)) return;
 
-    // Check if already exists to avoid duplicates (optional but good)
     const { data: existing } = await supabase
       .from('psychosocial_referrals')
       .select('id')
@@ -156,7 +183,6 @@ const BuscaAtivaDashboard: React.FC = () => {
       alert("Erro ao encaminhar.");
     } else {
       alert("Encaminhamento realizado com sucesso!");
-      // Notify
       await supabase.from('psychosocial_notifications').insert([{
         title: 'Alerta de Busca Ativa',
         message: `A Busca Ativa encaminhou ${student.name} por infrequência crítica (${student.absences}).`,
@@ -165,6 +191,14 @@ const BuscaAtivaDashboard: React.FC = () => {
     }
   };
 
+  if (studentsLoading || (isProcessing && chartData.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 size={48} className="animate-spin text-emerald-600" />
+        <p className="text-gray-400 font-black uppercase text-xs tracking-widest animate-pulse">Sincronizando Busca Ativa em Tempo Real...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -176,7 +210,7 @@ const BuscaAtivaDashboard: React.FC = () => {
           <p className="text-3xl font-black text-gray-900 mt-1">{stats.totalStudents}</p>
         </div>
         <div className="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm">
-          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Infrequentes (&gt;15%)</p>
+          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Infrequentes (&lt;15%)</p>
           <p className="text-3xl font-black text-red-700 mt-1">{stats.criticalCount}</p>
         </div>
         <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm">
@@ -192,7 +226,10 @@ const BuscaAtivaDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* GRÁFICO DE INFREQUÊNCIA */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-8">Alunos em Alerta por Ano</h3>
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Alunos em Alerta por Ano</h3>
+            {isProcessing && <Loader2 size={16} className="animate-spin text-emerald-600" />}
+          </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -212,9 +249,12 @@ const BuscaAtivaDashboard: React.FC = () => {
 
         {/* CASOS CRÍTICOS */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
-          <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-            <ShieldAlert className="text-red-500" /> Casos de Urgência
-          </h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+              <ShieldAlert className="text-red-500" /> Casos de Urgência
+            </h3>
+            {isProcessing && <Loader2 size={16} className="animate-spin text-red-500" />}
+          </div>
           <div className="space-y-4">
             {criticalCases.length > 0 ? criticalCases.map((c, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-100 transition-all group cursor-pointer" onClick={() => setSelectedActionStudent(c)}>

@@ -1,18 +1,38 @@
-
-const XLSX = require('xlsx');
+const { createClient } = require('@supabase/supabase-js');
+const dotenv = require('dotenv');
 const path = require('path');
 
-const filePath = path.join('c:', 'Users', 'rezie', 'Downloads', 'BNCC_Ensino Fundamental.xlsx');
+dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
-try {
-    const workbook = XLSX.readFile(filePath);
-    const sheet = workbook.Sheets['História'];
-    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Imprimir as linhas 2, 3, 4, 5
-    for (let i = 2; i < 10; i++) {
-        console.log(`Row ${i}:`, JSON.stringify(data[i]));
+async function inspectBncc() {
+    console.log('Inspecting bncc_skills for forbidden terms...');
+    const TERMS = ['Religioso', 'experimentais', 'Vida'];
+
+    for (const term of TERMS) {
+        console.log(`\n--- Term: ${term} ---`);
+        const { data, error } = await supabase
+            .from('bncc_skills')
+            .select('code, subject, description, year_range')
+            .ilike('description', `%${term}%`);
+
+        if (error) {
+            console.error(error);
+        } else {
+            data.forEach(d => {
+                // filter false positives for "Vida" if they contain "atividade"
+                if (term === 'Vida' && d.description.toLowerCase().includes('atividade')) {
+                    // console.log(`[Skipping false positive: ${d.code}]`);
+                    return;
+                }
+                console.log(`Code: ${d.code}, Subject: ${d.subject}, Year: ${d.year_range}`);
+                console.log(`Description: ${d.description.substring(0, 100)}...`);
+            });
+        }
     }
-} catch (error) {
-    console.error('Error reading file:', error.message);
 }
+
+inspectBncc();

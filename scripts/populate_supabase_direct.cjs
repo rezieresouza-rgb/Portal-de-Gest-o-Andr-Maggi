@@ -37,7 +37,6 @@ const subjectMapping = {
     'ARTE': 'ARTE',
     'FISIC': 'EDUCAÇÃO FÍSICA',
     'INGLE': 'LÍNGUA INGLESA',
-    'RELIGIO': 'ENSINO RELIGIOSO'
 };
 
 function normalize(str) {

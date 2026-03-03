@@ -40,25 +40,34 @@ const BuscaAtivaStudentList: React.FC = () => {
     }
   }, [dbStudents]);
 
-  useEffect(() => {
-    fetchData();
-
-    const subs = supabase
-      .channel('busca-ativa-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'referrals' }, fetchReferrals)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'class_attendance_students' }, fetchAttendance)
-      .subscribe();
-
-    return () => {
-      subs.unsubscribe();
-    };
-  }, []);
 
   const fetchData = async () => {
-    setLoading(true);
+    // We already have student loading from useStudents, so we focus on attendance/referrals
+    // Use a local loading state to avoid flickering if needed, but the main list is handled by dbStudents
     await Promise.all([fetchAttendance(), fetchReferrals()]);
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchData();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('busca-ativa-student-list-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'referrals' }, () => {
+        console.log('Referrals changed, updating list...');
+        fetchReferrals();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'class_attendance_students' }, () => {
+        console.log('Attendance changed, updating list stats...');
+        fetchAttendance();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const fetchAttendance = async () => {
     // Fetch all attendance records
