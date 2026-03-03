@@ -301,6 +301,93 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const handleDeleteBook = async (bookId: string) => {
+    if (!window.confirm("Atenção: Tem certeza que deseja apagar este livro do acervo? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      // Check if there are active loans pointing to this book
+      const { data: activeLoans, error: countError } = await supabase
+        .from('library_loans')
+        .select('id')
+        .eq('book_id', bookId)
+        .eq('status', 'ATIVO');
+      
+      if (countError) throw countError;
+
+      if (activeLoans && activeLoans.length > 0) {
+        alert("Não é possível apagar a obra pois ela possui empréstimos ativos. Solicite primeiro a devolução do livro.");
+        return;
+      }
+
+      // Proceed to Delete
+      const { error: deleteError } = await supabase
+        .from('library_books')
+        .delete()
+        .eq('id', bookId);
+
+      if (deleteError) {
+        // Typically handles referential integrity violation if it's tied to historic returns
+        if (deleteError.code === '23503') {
+          alert("Não é possível apagar a obra pois ela já possui histórico de circulação registrado. O ideal em relatórios é mantê-la.");
+          return;
+        }
+        throw deleteError;
+      }
+
+      setBooks(prev => prev.filter(b => b.id !== bookId));
+      alert("Obra removida com sucesso do acervo.");
+      await fetchData(); // Refresh stats fully
+    } catch (error) {
+      console.error("Erro ao deletar obra:", error);
+      alert("Ocorreu um erro ao tentar apagar a obra.");
+    }
+  };
+
+  const handleDeleteReader = async (readerId: string) => {
+    if (!window.confirm("Atenção: Tem certeza que deseja remover este leitor? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      // Check active loans
+      const { data: activeLoans, error: countError } = await supabase
+        .from('library_loans')
+        .select('id')
+        .eq('reader_id', readerId)
+        .eq('status', 'ATIVO');
+      
+      if (countError) throw countError;
+
+      if (activeLoans && activeLoans.length > 0) {
+        alert("Não é possível remover o leitor pois ele possui livros emprestados e pendentes de devolução.");
+        return;
+      }
+
+      // Proceed
+      const { error: deleteError } = await supabase
+        .from('library_readers')
+        .delete()
+        .eq('id', readerId);
+
+      if (deleteError) {
+        if (deleteError.code === '23503') {
+          alert("Não é possível remover pois ele já possui histórico de circulação registrado. O banco de dados preservará o cadastro para os relatórios passados.");
+          return;
+        }
+        throw deleteError;
+      }
+
+      setReaders(prev => prev.filter(r => r.id !== readerId));
+      alert("Leitor removido com sucesso.");
+      await fetchData(); 
+    } catch (error) {
+      console.error("Erro ao deletar leitor:", error);
+      alert("Ocorreu um erro ao tentar remover o leitor.");
+    }
+  };
+
   const confirmLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     const reader = readers.find(r => r.id === loanForm.readerId);
@@ -541,9 +628,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <div key={book.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-indigo-200 transition-all group flex flex-col h-full">
                   <div className="w-full aspect-[3/4] bg-indigo-50 rounded-2xl mb-4 flex items-center justify-center text-indigo-200 relative overflow-hidden">
                     <BookOpen size={48} />
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-10 transition-opacity">
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => handleEditBookClick(book)} className="p-2 bg-white text-indigo-600 rounded-lg shadow-sm hover:bg-indigo-600 hover:text-white"><Edit3 size={14} /></button>
-                      <button onClick={() => { if (window.confirm("Apagar livro?")) setBooks(books.filter(b => b.id !== book.id)); }} className="p-2 bg-white text-red-600 rounded-lg shadow-sm hover:bg-red-600 hover:text-white"><Trash2 size={14} /></button>
+                      <button onClick={() => handleDeleteBook(book.id)} className="p-2 bg-white text-red-600 rounded-lg shadow-sm hover:bg-red-600 hover:text-white"><Trash2 size={14} /></button>
                     </div>
                   </div>
                   <div className="flex-1">
@@ -579,7 +666,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {readers.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(reader => (
                 <div key={reader.id} className="bg-white p-6 rounded-3xl border border-gray-100 flex flex-col group hover:border-indigo-300 hover:shadow-lg transition-all relative">
-                  <button onClick={() => setReaders(readers.filter(r => r.id !== reader.id))} className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
+                  <button onClick={() => handleDeleteReader(reader.id)} className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm font-black text-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">{reader.name[0]}</div>
                     <div className="flex-1 min-w-0">
@@ -624,7 +711,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="px-8 py-5">Leitor / Aluno</th>
+                    <th className="px-8 py-5">Colaborador / Aluno</th>
                     <th className="px-8 py-5">Obra / Exemplar</th>
                     <th className="px-8 py-5 text-center">Data Saída</th>
                     <th className="px-8 py-5 text-center">Vencimento</th>
