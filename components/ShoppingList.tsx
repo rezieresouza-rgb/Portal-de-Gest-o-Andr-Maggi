@@ -195,6 +195,8 @@ const ShoppingList: React.FC = () => {
           if (normSearch.includes('ISCA') && normItem.includes('ISCA')) return true;
           if (normSearch.includes('POLPA') && normItem.includes('POLPA')) return true;
           if (normSearch.includes('FERMENTO') && normItem.includes('FERMENTO')) return true;
+          if (normSearch.includes('SUINA') && normItem.includes('SUINO')) return true;
+          if (normSearch.includes('SUINO') && normItem.includes('SUINA')) return true;
 
           return false;
         });
