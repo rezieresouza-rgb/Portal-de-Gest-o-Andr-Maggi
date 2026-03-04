@@ -28,6 +28,8 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
   const [selectedShift, setSelectedShift] = useState<Shift>('MATUTINO');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSaving, setIsSaving] = useState(false);
+  const [existingRecordIds, setExistingRecordIds] = useState<Record<number, string>>({});
+  const [isLoadingExisting, setIsLoadingExisting] = useState(false);
 
   const [selectedPeriods, setSelectedPeriods] = useState<number[]>([1]); // Default 1st period
 
@@ -57,14 +59,74 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
   useEffect(() => {
     if (selectedClass) {
-      fetchStudentsFromDB(selectedClass);
-      fetchRiskStats(selectedClass);
+      fetchStudentsAndAttendance();
     } else {
       setStudents([]);
       setOtherAttendance({});
       setRiskStats({});
+      setExistingRecordIds({});
     }
-  }, [selectedClass, date]);
+  }, [selectedClass, date, selectedSubject]);
+
+  const fetchStudentsAndAttendance = async () => {
+    const loadedStudents = await fetchStudentsFromDB(selectedClass);
+    if (loadedStudents && loadedStudents.length > 0) {
+      await loadExistingAttendance(loadedStudents);
+      fetchRiskStats(selectedClass);
+    }
+  };
+
+  const loadExistingAttendance = async (currentStudents: any[]) => {
+    if (!selectedClass || !selectedSubject || !date || currentStudents.length === 0) return;
+    setIsLoadingExisting(true);
+
+    try {
+      const newExistingRecordIds: Record<number, string> = {};
+      const newAttendance: Record<string, Record<number, boolean>> = {};
+
+      // Initialize with default values first
+      currentStudents.forEach(s => {
+        newAttendance[s.CodigoAluno] = {};
+        selectedPeriods.forEach(p => {
+          newAttendance[s.CodigoAluno][p] = true;
+        });
+      });
+
+      for (const period of selectedPeriods) {
+        const periodSubject = `${selectedSubject} - ${period}ª Aula`;
+        const { data: record } = await supabase
+          .from('class_attendance_records')
+          .select('id')
+          .eq('classroom_name', selectedClass)
+          .eq('date', date)
+          .eq('subject', periodSubject)
+          .maybeSingle();
+
+        if (record) {
+          newExistingRecordIds[period] = record.id;
+
+          const { data: studentAttendance } = await supabase
+            .from('class_attendance_students')
+            .select('student_id, is_present')
+            .eq('attendance_record_id', record.id);
+
+          if (studentAttendance) {
+            studentAttendance.forEach((sa: any) => {
+              if (newAttendance[sa.student_id]) {
+                newAttendance[sa.student_id][period] = sa.is_present;
+              }
+            });
+          }
+        }
+      }
+      setExistingRecordIds(newExistingRecordIds);
+      setAttendance(newAttendance);
+    } catch (error) {
+      console.error('Error loading existing attendance:', error);
+    } finally {
+      setIsLoadingExisting(false);
+    }
+  };
 
   const fetchStudentsFromDB = async (className: string) => {
     try {
@@ -77,7 +139,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
       if (classError || !classData) {
         setStudents([]);
-        return;
+        return [];
       }
 
       // 2. Get Students enrolled in this class
@@ -108,22 +170,16 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
         setStudents(mappedStudents);
 
-        const initialAttendance: Record<string, Record<number, boolean>> = {};
-        mappedStudents.forEach((s: any) => {
-          initialAttendance[s.CodigoAluno] = {};
-          selectedPeriods.forEach(p => {
-            initialAttendance[s.CodigoAluno][p] = true;
-          });
-        });
-        setAttendance(initialAttendance);
-
         // Fetch cross attendance after loading students
         fetchCrossAttendance(className, date);
         fetchStudentsMovements(mappedStudents.map(s => s.id));
+        return mappedStudents;
       }
+      return [];
     } catch (error) {
       console.error('Error fetching students:', error);
       alert('Erro ao buscar alunos da turma. Verifique a conexão.');
+      return [];
     }
   };
 
@@ -245,30 +301,33 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
     try {
       for (const period of selectedPeriods) {
-        // We append the period to the subject string to distinguish it in the records table
-        // For example: "MATEMÁTICA (1ª Aula)"
         const periodSubject = `${selectedSubject} - ${period}ª Aula`;
+        const existingRecordId = existingRecordIds[period];
+        let recordId = existingRecordId;
 
-        // 1. Insert Record for this period
-        const { data: recordData, error: recordError } = await supabase
-          .from('class_attendance_records')
-          .insert([
-            {
-              classroom_name: selectedClass,
-              teacher_name: user.name,
-              date: date,
-              shift: selectedShift,
-              subject: periodSubject
-            }
-          ])
-          .select()
-          .single();
+        if (!existingRecordId) {
+          // 1. Insert Record for this period
+          const { data: recordData, error: recordError } = await supabase
+            .from('class_attendance_records')
+            .insert([
+              {
+                classroom_name: selectedClass,
+                teacher_name: user.name,
+                date: date,
+                shift: selectedShift,
+                subject: periodSubject
+              }
+            ])
+            .select()
+            .single();
 
-        if (recordError) throw recordError;
+          if (recordError) throw recordError;
+          recordId = recordData.id;
+        }
 
-        // 2. Insert Students for this period record
+        // 2. Insert/Update Students for this period record
         const studentRecords = students.map(s => ({
-          attendance_record_id: recordData.id,
+          attendance_record_id: recordId,
           student_id: s.CodigoAluno,
           student_name: s.Nome,
           is_present: attendance[s.CodigoAluno]?.[period] ?? false
@@ -276,13 +335,17 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
         const { error: studentsError } = await supabase
           .from('class_attendance_students')
-          .insert(studentRecords);
+          .upsert(studentRecords, { onConflict: 'attendance_record_id, student_id' });
 
         if (studentsError) throw studentsError;
       }
 
-      alert("Chamada realizada e salva com sucesso para todas as aulas selecionadas!");
+      alert(Object.keys(existingRecordIds).length > 0
+        ? "Chamada atualizada com sucesso!"
+        : "Chamada realizada e salva com sucesso!"
+      );
       setSelectedClass('');
+      setExistingRecordIds({});
       setSelectedPeriods([1]); // Reset periods
 
     } catch (error) {
@@ -364,11 +427,11 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
 
           <button
             onClick={handleSave}
-            disabled={isSaving || students.length === 0}
-            className="w-full md:w-auto px-8 py-4 bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-600/20 hover:bg-amber-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+            disabled={isSaving || students.length === 0 || isLoadingExisting}
+            className={`w-full md:w-auto px-8 py-4 ${Object.keys(existingRecordIds).length > 0 ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20' : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'} text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0`}
           >
-            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-            Salvar Diário
+            {isSaving ? <Loader2 size={18} className="animate-spin" /> : (Object.keys(existingRecordIds).length > 0 ? <Check size={18} /> : <Save size={18} />)}
+            {isLoadingExisting ? 'Carregando...' : (Object.keys(existingRecordIds).length > 0 ? 'Atualizar Diário' : 'Salvar Diário')}
           </button>
         </div>
       </div>

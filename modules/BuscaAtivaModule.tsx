@@ -16,7 +16,8 @@ import {
   MessageSquare,
   Search,
   CalendarDays,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Settings2
 } from 'lucide-react';
 import BuscaAtivaDashboard from '../components/BuscaAtivaDashboard';
 import BuscaAtivaStudentList from '../components/BuscaAtivaStudentList';
@@ -24,13 +25,14 @@ import BuscaAtivaFICAI from '../components/BuscaAtivaFICAI';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import PsychosocialReferralList from '../components/PsychosocialReferralList';
 import BuscaAtivaAttendanceHistory from '../components/BuscaAtivaAttendanceHistory';
+import BuscaAtivaContactChannels from '../components/BuscaAtivaContactChannels';
 
 interface BuscaAtivaModuleProps {
   onExit: () => void;
 }
 
 const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
@@ -38,6 +40,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
     { id: 'attendance', label: 'Conferência de Chamadas', icon: History },
     { id: 'students', label: 'Monitoramento Alunos', icon: Users },
     { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
+    { id: 'channels', label: 'Canais de Contato', icon: Settings2 },
     { id: 'ficai', label: 'Gerador FICAi', icon: FileText },
   ];
 
@@ -110,6 +113,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'attendance' && <BuscaAtivaAttendanceHistory />}
+          {activeTab === 'channels' && <BuscaAtivaContactChannels />}
           {activeTab === 'referrals' && <PsychosocialReferralList role="PSICOSSOCIAL" />}
           {activeTab === 'ficai' && <BuscaAtivaFICAI />}
         </div>
