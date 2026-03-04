@@ -322,7 +322,7 @@ const SecretariatAttendanceHistory: React.FC = () => {
 
             {/* --- HIDDEN PRINT AREA --- */}
             {(printingRecord || printingBatch) && (
-                <div className="print-area hidden">
+                <div className="print-area">
                     {(printingBatch ? records : printingRecord ? [printingRecord] : []).map((record, rIndex) => (
                         <div key={record.id} className="pdf-page p-8" style={{ fontFamily: 'Arial, sans-serif', pageBreakAfter: 'always' }}>
                             {/* Cabecalho Oficial */}
@@ -400,11 +400,28 @@ const SecretariatAttendanceHistory: React.FC = () => {
             {/* CSS For Print */}
             <style dangerouslySetInnerHTML={{
                 __html: `
+        @media screen {
+          .print-area { display: none !important; }
+        }
         @media print {
-          body * { visibility: hidden; }
-          .print-area, .print-area * { visibility: visible; }
-          .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+          body * { visibility: hidden !important; }
+          .print-area, .print-area * { visibility: visible !important; }
+          .print-area { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important; 
+            display: block !important;
+            background: white !important;
+          }
           .no-print { display: none !important; }
+          
+          /* Force page breaks and ensure colors are printed */
+          .pdf-page { 
+            page-break-after: always !important; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+          }
         }
       `}} />
         </div>
