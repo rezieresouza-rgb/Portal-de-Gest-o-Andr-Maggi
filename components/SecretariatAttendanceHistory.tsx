@@ -17,6 +17,12 @@ interface AttendanceRecord {
     }[];
 }
 
+interface ConsolidatedGroup {
+    date: string;
+    classroom_name: string;
+    records: AttendanceRecord[];
+}
+
 const SecretariatAttendanceHistory: React.FC = () => {
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(false);
@@ -36,6 +42,7 @@ const SecretariatAttendanceHistory: React.FC = () => {
     // Print State
     const [printingRecord, setPrintingRecord] = useState<AttendanceRecord | null>(null);
     const [printingBatch, setPrintingBatch] = useState(false);
+    const [printingConsolidated, setPrintingConsolidated] = useState(false);
 
     const fetchRecords = async () => {
         setLoading(true);
@@ -144,10 +151,31 @@ const SecretariatAttendanceHistory: React.FC = () => {
         if (records.length === 0) return;
         setPrintingRecord(null);
         setPrintingBatch(true);
+        setPrintingConsolidated(false);
         setTimeout(() => {
             window.print();
         }, 500);
     };
+
+    const handlePrintConsolidated = () => {
+        if (records.length === 0) return;
+        setPrintingRecord(null);
+        setPrintingBatch(false);
+        setPrintingConsolidated(true);
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    };
+
+    // Calculate consolidated groups to avoid TS errors in JSX
+    const consolidatedGroups: ConsolidatedGroup[] = Object.values(records.reduce((acc, r) => {
+        const key = `${r.date}-${r.classroom_name}`;
+        if (!acc[key]) {
+            acc[key] = { date: r.date, classroom_name: r.classroom_name, records: [] };
+        }
+        acc[key].records.push(r);
+        return acc;
+    }, {} as Record<string, ConsolidatedGroup>));
 
     return (
         <div className="space-y-6">
@@ -156,14 +184,24 @@ const SecretariatAttendanceHistory: React.FC = () => {
                     <h2 className="text-2xl font-black text-indigo-900 uppercase tracking-tight">Histórico de Chamadas</h2>
                     <p className="text-sm text-gray-500 font-medium">Consulte e imprima os diários de presença lançados pelos professores</p>
                 </div>
-                <button
-                    onClick={handlePrintAll}
-                    disabled={records.length === 0 || loading}
-                    className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                    <Printer size={16} />
-                    Imprimir Filtradas
-                </button>
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button
+                        onClick={handlePrintAll}
+                        disabled={records.length === 0 || loading}
+                        className="flex-1 md:flex-none px-4 py-3 bg-white border border-indigo-100 text-indigo-600 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm hover:bg-indigo-50 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        <Printer size={14} />
+                        Imprimir Listagem
+                    </button>
+                    <button
+                        onClick={handlePrintConsolidated}
+                        disabled={records.length === 0 || loading}
+                        className="flex-1 md:flex-none px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        <Printer size={16} />
+                        Diário Consolidado (5 Aulas)
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -321,79 +359,182 @@ const SecretariatAttendanceHistory: React.FC = () => {
             </div>
 
             {/* --- HIDDEN PRINT AREA --- */}
-            {(printingRecord || printingBatch) && (
+            {(printingRecord || printingBatch || printingConsolidated) && (
                 <div className="print-area">
-                    {(printingBatch ? records : printingRecord ? [printingRecord] : []).map((record, rIndex) => (
-                        <div key={record.id} className="pdf-page p-8" style={{ fontFamily: 'Arial, sans-serif', pageBreakAfter: 'always' }}>
-                            {/* Cabecalho Oficial */}
-                            <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
-                                <img src="/logo-escola.png" alt="Escola André Maggi" className="h-20 object-contain" />
-                                <div className="text-center flex-1 mx-4">
-                                    <img src="/dados escola.jpeg" alt="Dados Escola" className="max-h-24 mx-auto mix-blend-multiply" />
-                                </div>
-                                <img src="/SEDUC 2.jpg" alt="Seduc MT" className="h-20 object-contain" />
-                            </div>
+                    {printingConsolidated ? (
+                        // CONSOLIDATED PRINT LAYOUT
+                        consolidatedGroups.map((group, gIdx) => {
+                            // Collect unique students across all records in this group
+                            const studentMap: Record<string, { name: string, status: Record<number, boolean | null> }> = {};
+                            const periods = [1, 2, 3, 4, 5];
 
-                            <div className="text-center mb-8">
-                                <h1 className="text-xl font-bold uppercase tracking-widest border-b border-black inline-block pb-1 px-8">Diário de Controle de Frequência</h1>
-                            </div>
+                            group.records.forEach(record => {
+                                const lessonMatch = record.subject.match(/(\d+)ª Aula/);
+                                const period = lessonMatch ? parseInt(lessonMatch[1]) : null;
 
-                            <div className="grid grid-cols-2 gap-4 mb-8 text-sm border-2 border-black p-4 bg-gray-50">
-                                <div>
-                                    <p><strong>Turma:</strong> {record.classroom_name}</p>
-                                    <p className="mt-2"><strong>Professor(a):</strong> <span className="uppercase">{record.teacher_name}</span></p>
-                                </div>
-                                <div>
-                                    <p><strong>Data da Aula:</strong> {record.date.split('-').reverse().join('/')}</p>
-                                    <p className="mt-2"><strong>Componente Curricular:</strong> <span className="uppercase">{record.subject}</span></p>
-                                </div>
-                            </div>
+                                record.students.forEach(s => {
+                                    if (!studentMap[s.student_id]) {
+                                        studentMap[s.student_id] = { name: s.student_name, status: {} };
+                                    }
+                                    if (period) {
+                                        studentMap[s.student_id].status[period] = s.is_present;
+                                    }
+                                });
+                            });
 
-                            <table className="w-full border-collapse border border-black text-xs">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="border border-black p-2 text-center w-12">Nº</th>
-                                        <th className="border border-black p-2 text-left">NOME DO ESTUDANTE</th>
-                                        <th className="border border-black p-2 text-center w-24">PRESENTE</th>
-                                        <th className="border border-black p-2 text-center w-24">FALTA</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {record.students.map((student, idx) => (
-                                        <tr key={student.student_id}>
-                                            <td className="border border-black p-1.5 text-center font-bold text-gray-600">{idx + 1}</td>
-                                            <td className="border border-black p-1.5 uppercase font-medium">{student.student_name}</td>
-                                            <td className="border border-black p-1.5 text-center font-bold text-lg leading-none">
-                                                {student.is_present ? 'X' : ''}
-                                            </td>
-                                            <td className="border border-black p-1.5 text-center font-bold text-lg leading-none">
-                                                {!student.is_present ? 'X' : ''}
-                                            </td>
+                            const students = Object.entries(studentMap)
+                                .map(([id, data]) => ({ id, ...data }))
+                                .sort((a, b) => a.name.localeCompare(b.name));
+
+                            return (
+                                <div key={gIdx} className="pdf-page p-8" style={{ fontFamily: 'Arial, sans-serif', pageBreakAfter: 'always' }}>
+                                    {/* Cabecalho Oficial */}
+                                    <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+                                        <img src="/logo-escola.png" alt="Escola André Maggi" className="h-20 object-contain" />
+                                        <div className="text-center flex-1 mx-4">
+                                            <img src="/dados escola.jpeg" alt="Dados Escola" className="max-h-24 mx-auto mix-blend-multiply" />
+                                        </div>
+                                        <img src="/SEDUC 2.jpg" alt="Seduc MT" className="h-20 object-contain" />
+                                    </div>
+
+                                    <div className="text-center mb-6">
+                                        <h1 className="text-xl font-bold uppercase tracking-widest border-b border-black inline-block pb-1 px-8">Diário de Controle de Frequência Consolidado</h1>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 mb-6 text-sm border-2 border-black p-4 bg-gray-50">
+                                        <div>
+                                            <p><strong>Turma:</strong> {group.classroom_name}</p>
+                                            <p className="mt-2"><strong>Unidade Escolar:</strong> ENSINO MÉDIO INTEGRADO ANTÔNIO MAGGI</p>
+                                        </div>
+                                        <div>
+                                            <p><strong>Data:</strong> {group.date.split('-').reverse().join('/')}</p>
+                                            <p className="mt-2"><strong>Professor(a):</strong> <span className="uppercase">{group.records[0]?.teacher_name}</span></p>
+                                        </div>
+                                    </div>
+
+                                    <table className="w-full border-collapse border border-black text-[10px]">
+                                        <thead className="bg-gray-100">
+                                            <tr>
+                                                <th className="border border-black p-2 text-center w-8" rowSpan={2}>Nº</th>
+                                                <th className="border border-black p-2 text-left" rowSpan={2}>NOME DO ESTUDANTE</th>
+                                                <th className="border border-black p-1 text-center" colSpan={5}>AULAS DO DIA</th>
+                                            </tr>
+                                            <tr>
+                                                {periods.map(p => (
+                                                    <th key={p} className="border border-black p-1 text-center w-8">{p}ª</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {students.map((student, idx) => (
+                                                <tr key={student.id}>
+                                                    <td className="border border-black p-1 text-center font-bold text-gray-600">{idx + 1}</td>
+                                                    <td className="border border-black p-1 uppercase font-medium">{student.name}</td>
+                                                    {periods.map(p => (
+                                                        <td key={p} className="border border-black p-1 text-center font-bold">
+                                                            {student.status[p] === true ? 'P' : student.status[p] === false ? 'F' : '-'}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+                                    <div className="mt-10 pt-6 grid grid-cols-2 gap-16 text-center text-sm">
+                                        <div>
+                                            <div className="border-t border-black pt-2 mx-8">
+                                                <p className="font-bold uppercase">Secretaria Escolar</p>
+                                                <p className="text-[10px] text-gray-600 uppercase mt-1">Conferência</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="border-t border-black pt-2 mx-8">
+                                                <p className="font-bold uppercase">Visto da Coordenação</p>
+                                                <p className="text-[10px] text-gray-600 uppercase mt-1">Assinatura</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 text-center text-[9px] text-gray-500 uppercase tracking-widest border-t border-gray-300 pt-2">
+                                        Relatório Consolidado de Frequência Diária — Portal André Maggi
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        // ORIGINAL PRINT LAYOUT (BATCH OR SINGLE)
+                        (printingBatch ? records : printingRecord ? [printingRecord] : []).map((record, rIndex) => (
+                            <div key={record.id} className="pdf-page p-8" style={{ fontFamily: 'Arial, sans-serif', pageBreakAfter: 'always' }}>
+                                {/* Cabecalho Oficial */}
+                                <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+                                    <img src="/logo-escola.png" alt="Escola André Maggi" className="h-20 object-contain" />
+                                    <div className="text-center flex-1 mx-4">
+                                        <img src="/dados escola.jpeg" alt="Dados Escola" className="max-h-24 mx-auto mix-blend-multiply" />
+                                    </div>
+                                    <img src="/SEDUC 2.jpg" alt="Seduc MT" className="h-20 object-contain" />
+                                </div>
+
+                                <div className="text-center mb-8">
+                                    <h1 className="text-xl font-bold uppercase tracking-widest border-b border-black inline-block pb-1 px-8">Diário de Controle de Frequência</h1>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mb-8 text-sm border-2 border-black p-4 bg-gray-50">
+                                    <div>
+                                        <p><strong>Turma:</strong> {record.classroom_name}</p>
+                                        <p className="mt-2"><strong>Professor(a):</strong> <span className="uppercase">{record.teacher_name}</span></p>
+                                    </div>
+                                    <div>
+                                        <p><strong>Data da Aula:</strong> {record.date.split('-').reverse().join('/')}</p>
+                                        <p className="mt-2"><strong>Componente Curricular:</strong> <span className="uppercase">{record.subject}</span></p>
+                                    </div>
+                                </div>
+
+                                <table className="w-full border-collapse border border-black text-xs">
+                                    <thead className="bg-gray-100">
+                                        <tr>
+                                            <th className="border border-black p-2 text-center w-12">Nº</th>
+                                            <th className="border border-black p-2 text-left">NOME DO ESTUDANTE</th>
+                                            <th className="border border-black p-2 text-center w-24">PRESENTE</th>
+                                            <th className="border border-black p-2 text-center w-24">FALTA</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {record.students.map((student, idx) => (
+                                            <tr key={student.student_id}>
+                                                <td className="border border-black p-1.5 text-center font-bold text-gray-600">{idx + 1}</td>
+                                                <td className="border border-black p-1.5 uppercase font-medium">{student.student_name}</td>
+                                                <td className="border border-black p-1.5 text-center font-bold text-lg leading-none">
+                                                    {student.is_present ? 'X' : ''}
+                                                </td>
+                                                <td className="border border-black p-1.5 text-center font-bold text-lg leading-none">
+                                                    {!student.is_present ? 'X' : ''}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
 
-                            <div className="mt-12 pt-8 grid grid-cols-2 gap-16 text-center text-sm">
-                                <div>
-                                    <div className="border-t border-black pt-2 mx-8">
-                                        <p className="font-bold uppercase">{record.teacher_name}</p>
-                                        <p className="text-xs text-gray-600 uppercase mt-1">Professor(a) Responsável</p>
+                                <div className="mt-12 pt-8 grid grid-cols-2 gap-16 text-center text-sm">
+                                    <div>
+                                        <div className="border-t border-black pt-2 mx-8">
+                                            <p className="font-bold uppercase">{record.teacher_name}</p>
+                                            <p className="text-xs text-gray-600 uppercase mt-1">Professor(a) Responsável</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="border-t border-black pt-2 mx-8">
+                                            <p className="font-bold uppercase">Secretaria Escolar</p>
+                                            <p className="text-xs text-gray-600 uppercase mt-1">Visto / Conferência</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <div className="border-t border-black pt-2 mx-8">
-                                        <p className="font-bold uppercase">Secretaria Escolar</p>
-                                        <p className="text-xs text-gray-600 uppercase mt-1">Visto / Conferência</p>
-                                    </div>
+
+                                <div className="mt-8 text-center text-[10px] text-gray-500 uppercase tracking-widest border-t border-gray-300 pt-4">
+                                    Documento gerado eletronicamente pelo Portal Gestão Escolar — André Antônio Maggi
                                 </div>
                             </div>
-
-                            <div className="mt-8 text-center text-[10px] text-gray-500 uppercase tracking-widest border-t border-gray-300 pt-4">
-                                Documento gerado eletronicamente pelo Portal Gestão Escolar — André Antônio Maggi
-                            </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             )}
 
