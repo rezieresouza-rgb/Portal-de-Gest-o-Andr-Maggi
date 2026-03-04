@@ -22,6 +22,23 @@ const BuscaAtivaFICAI: React.FC = () => {
 
    useEffect(() => {
       fetchRiskStudents();
+
+      // Subscribe to real-time attendance changes
+      const channel = supabase
+         .channel('busca-ativa-ficai-realtime')
+         .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'class_attendance_students' },
+            () => {
+               console.log('Attendance changed, updating FICAI risk students...');
+               fetchRiskStudents();
+            }
+         )
+         .subscribe();
+
+      return () => {
+         supabase.removeChannel(channel);
+      };
    }, []);
 
    const fetchRiskStudents = async () => {
