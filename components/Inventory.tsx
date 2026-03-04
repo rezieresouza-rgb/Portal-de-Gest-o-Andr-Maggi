@@ -133,14 +133,15 @@ const Inventory: React.FC = () => {
   };
 
   const syncWithMenu = () => {
-    const weekMenu = OFFICIAL_MENUS.find(m => m.week === selectedWeek);
-    const dayMenu = weekMenu?.days.find(d => d.day === selectedDay);
-
-    if (!dayMenu) return alert("Cardápio não encontrado para esta seleção.");
+    const allIngredients = new Set<string>();
+    OFFICIAL_MENUS.forEach(week => {
+      week.days.forEach(day => {
+        day.ingredients.forEach(ing => allIngredients.add(ing.toUpperCase()));
+      });
+    });
 
     const newItemsFound: SeducInventoryItem[] = [];
-    dayMenu.ingredients.forEach(ingName => {
-      const upperName = ingName.toUpperCase();
+    allIngredients.forEach(upperName => {
       const exists = items.some(i => i.name === upperName);
       if (!exists) {
         newItemsFound.push({
@@ -157,9 +158,9 @@ const Inventory: React.FC = () => {
 
     if (newItemsFound.length > 0) {
       setItems(prev => [...prev, ...newItemsFound]);
-      alert(`${newItemsFound.length} novos ingredientes adicionados do cardápio!`);
+      alert(`${newItemsFound.length} novos ingredientes carregados de todo o cardápio (5 semanas)!`);
     } else {
-      alert("Todos os ingredientes do cardápio já estão na lista.");
+      alert("Todos os ingredientes do cardápio completo já estão na lista.");
     }
   };
 
@@ -257,19 +258,14 @@ const Inventory: React.FC = () => {
               <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Data do Lançamento</label><input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none focus:ring-2 focus:ring-emerald-500/20" /></div>
               <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações Rápidas</label>
                 <button onClick={syncWithMenu} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
-                  <RotateCcw size={14} /> Carregar Menu {selectedDay}
+                  <RotateCcw size={14} /> Carregar Ingredientes do Mês
                 </button>
               </div>
             </div>
 
             <div className="flex items-center gap-3 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 no-print">
               <Info size={16} className="text-emerald-600" />
-              <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">O sistema carregará automaticamente ingredientes da {selectedWeek}ª Semana para {selectedDay}.</p>
-              <div className="flex gap-2 ml-auto">
-                {[1, 2, 3, 4, 5].map(w => (
-                  <button key={w} onClick={() => setSelectedWeek(w)} className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${selectedWeek === w ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-100'}`}>Sem {w}</button>
-                ))}
-              </div>
+              <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">O sistema carregará automaticamente todos os ingredientes únicos das 5 semanas do cardápio oficial.</p>
             </div>
           </div>
         )}
