@@ -402,9 +402,8 @@ const SecretariatAttendanceHistory: React.FC = () => {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 mb-6 text-sm border-2 border-black p-4 bg-gray-50">
-                                        <div>
-                                            <p><strong>Unidade Escolar:</strong> E.E. ANDRÉ ANTÔNIO MAGGI</p>
-                                        </div>
+                                        <p><strong>Turma:</strong> {group.classroom_name}</p>
+                                        <p className="mt-2"><strong>Unidade Escolar:</strong> E.E. ANDRÉ ANTÔNIO MAGGI</p>
                                         <div>
                                             <p><strong>Data:</strong> {group.date.split('-').reverse().join('/')}</p>
                                             <p className="mt-2"><strong>Professor(a):</strong> <span className="uppercase">{group.records[0]?.teacher_name}</span></p>
