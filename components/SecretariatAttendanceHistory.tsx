@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, Printer, Calendar, Users, BookOpen, AlertTriangle } from 'lucide-react';
+import { Search, Printer, Calendar, Users, BookOpen, AlertTriangle, Trash2 } from 'lucide-react';
 import { SCHOOL_CLASSES, SCHOOL_SUBJECTS } from '../constants/initialData';
 
 interface AttendanceRecord {
@@ -96,6 +96,41 @@ const SecretariatAttendanceHistory: React.FC = () => {
     useEffect(() => {
         fetchRecords();
     }, [startDate, endDate, filterClass]);
+
+    const handleDelete = async (record: AttendanceRecord) => {
+        const confirmDelete = window.confirm(
+            `Tem certeza que deseja EXCLUIR permanentemente a chamada de ${record.classroom_name} - ${record.subject} do dia ${record.date.split('-').reverse().join('/')}?\n\nEsta ação permitirá que o professor realize o lançamento novamente.`
+        );
+
+        if (!confirmDelete) return;
+
+        setLoading(true);
+        try {
+            // 1. Delete student records first (foreign key)
+            const { error: studentError } = await supabase
+                .from('class_attendance_students')
+                .delete()
+                .eq('attendance_record_id', record.id);
+
+            if (studentError) throw studentError;
+
+            // 2. Delete main record
+            const { error: recordError } = await supabase
+                .from('class_attendance_records')
+                .delete()
+                .eq('id', record.id);
+
+            if (recordError) throw recordError;
+
+            alert('Chamada excluída com sucesso!');
+            fetchRecords(); // Refresh list
+        } catch (error: any) {
+            console.error('Erro ao excluir chamada:', error);
+            alert('Erro ao excluir chamada: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handlePrint = (record: AttendanceRecord) => {
         setPrintingRecord(record);
@@ -259,13 +294,22 @@ const SecretariatAttendanceHistory: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="p-4 text-right">
-                                                <button
-                                                    onClick={() => handlePrint(r)}
-                                                    className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors inline-flex"
-                                                    title="Imprimir Diário"
-                                                >
-                                                    <Printer size={16} />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handlePrint(r)}
+                                                        className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors inline-flex"
+                                                        title="Imprimir Diário"
+                                                    >
+                                                        <Printer size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(r)}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex"
+                                                        title="Excluir Lançamento"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
