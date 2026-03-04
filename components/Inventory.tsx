@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Package,
   ClipboardCheck,
@@ -221,6 +221,10 @@ const Inventory: React.FC = () => {
     } catch (e) { console.error(e); } finally { setIsSaving(false); }
   };
 
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => a.name.localeCompare(b.name));
+  }, [items]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm no-print">
@@ -284,7 +288,7 @@ const Inventory: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {items.map((item) => {
+            {sortedItems.map((item) => {
               const currentBalance = item.previousBalance + item.entries - item.outputs;
               const isCritical = currentBalance < item.min;
               return (
