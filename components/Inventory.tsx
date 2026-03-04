@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Package, 
+import {
+  Package,
   ClipboardCheck,
   User,
   Clock,
@@ -21,8 +21,18 @@ import {
   Plus,
   Trash2,
   X,
-  Save
+  Save,
+  ChevronDown
 } from 'lucide-react';
+import { OFFICIAL_MENUS } from '../constants/menus';
+import { supabase } from '../supabaseClient';
+import { StaffMember } from '../types';
+
+const ENTRADA_KEYWORDS = [
+  'ABACAXI', 'BANANA', 'MAMÃO', 'MELÃO', 'MELANCIA', 'LARANJA', 'PONCÃ', 'MAÇÃ',
+  'PÃO', 'BOLO', 'LEITE', 'BEBIDA LÁCTEA', 'QUEIJO', 'REQUEIJÃO', 'CAFÉ',
+  'BOLACHA', 'BISCOITO', 'IOGURTE', 'MANTEIGA', 'FRUTA', 'SUCO', 'MARACUJÁ', 'ACEROLA'
+];
 
 interface SeducInventoryItem {
   id: string;
@@ -61,8 +71,33 @@ const Inventory: React.FC = () => {
   const [turno, setTurno] = useState('Matutino');
   const [responsavel, setResponsavel] = useState('Gestor André');
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
+  const [selectedDay, setSelectedDay] = useState<string>('Segunda');
+  const [nutricaoStaff, setNutricaoStaff] = useState<StaffMember[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchStaff = async () => {
+      const { data: staffData } = await supabase
+        .from('staff')
+        .select('*')
+        .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRIÇÃO%')
+        .eq('status', 'EM_ATIVIDADE');
+      if (staffData) setNutricaoStaff(staffData);
+    };
+    fetchStaff();
+  }, []);
+
+  // Sync week/day based on date
+  useEffect(() => {
+    const d = new Date(data);
+    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const dayName = days[d.getUTCDay()];
+    if (dayName !== 'Domingo' && dayName !== 'Sábado') {
+      setSelectedDay(dayName);
+    }
+  }, [data]);
 
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -92,20 +127,51 @@ const Inventory: React.FC = () => {
 
   const handleUpdateItem = (id: string, field: 'entries' | 'outputs', value: string) => {
     const numValue = value === "" ? 0 : parseFloat(value);
-    setItems(prev => prev.map(item => 
+    setItems(prev => prev.map(item =>
       item.id === id ? { ...item, [field]: numValue } : item
     ));
   };
 
+  const syncWithMenu = () => {
+    const weekMenu = OFFICIAL_MENUS.find(m => m.week === selectedWeek);
+    const dayMenu = weekMenu?.days.find(d => d.day === selectedDay);
+
+    if (!dayMenu) return alert("Cardápio não encontrado para esta seleção.");
+
+    const newItemsFound: SeducInventoryItem[] = [];
+    dayMenu.ingredients.forEach(ingName => {
+      const upperName = ingName.toUpperCase();
+      const exists = items.some(i => i.name === upperName);
+      if (!exists) {
+        newItemsFound.push({
+          id: `item-${Date.now()}-${Math.random()}`,
+          name: upperName,
+          unit: ENTRADA_KEYWORDS.some(key => upperName.includes(key)) ? 'Un' : 'Kg',
+          previousBalance: 0,
+          entries: 0,
+          outputs: 0,
+          min: 1
+        });
+      }
+    });
+
+    if (newItemsFound.length > 0) {
+      setItems(prev => [...prev, ...newItemsFound]);
+      alert(`${newItemsFound.length} novos ingredientes adicionados do cardápio!`);
+    } else {
+      alert("Todos os ingredientes do cardápio já estão na lista.");
+    }
+  };
+
   const handleResetDaily = () => {
     if (items.length === 0) return alert("Cadastre itens antes de fechar o turno.");
-    if (window.confirm("Deseja fechar este turno? Os saldos serão consolidados no histórico.")) {
+    if (window.confirm(`Deseja fechar o turno ${turno}? Os saldos serão consolidados no histórico.`)) {
       const snapshot: InventorySnapshot = {
         id: `inv-${Date.now()}`,
         date: data,
         turno: turno,
         responsavel: responsavel,
-        items: [...items],
+        items: items.map(i => ({ ...i })),
         timestamp: Date.now()
       };
 
@@ -113,6 +179,7 @@ const Inventory: React.FC = () => {
       setHistory(updatedHistory);
       localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updatedHistory));
 
+      // Update balances for the NEXT shift
       setItems(prev => prev.map(item => ({
         ...item,
         previousBalance: item.previousBalance + item.entries - item.outputs,
@@ -120,7 +187,20 @@ const Inventory: React.FC = () => {
         outputs: 0
       })));
 
-      alert("Fechamento de turno realizado!");
+      // Auto-advance Shift
+      const shifts = ['Matutino', 'Vespertino', 'Noturno', 'Integral'];
+      const currentIndex = shifts.indexOf(turno);
+      if (currentIndex < shifts.length - 1) {
+        setTurno(shifts[currentIndex + 1]);
+      } else {
+        // End of day, advance date and reset shift to first
+        setTurno(shifts[0]);
+        const nextDate = new Date(data);
+        nextDate.setDate(nextDate.getDate() + 1);
+        setData(nextDate.toISOString().split('T')[0]);
+      }
+
+      alert("Fechamento de turno realizado! Avançando para o próximo período.");
     }
   };
 
@@ -152,20 +232,45 @@ const Inventory: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-3">
-             {viewMode === 'active' && (
-               <button onClick={() => setIsAddItemModalOpen(true)} className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Plus size={14}/> Novo Produto</button>
-             )}
-             <button onClick={() => setViewMode(viewMode === 'active' ? 'history' : 'active')} className="px-5 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest"><History size={14} /></button>
-             {viewMode === 'active' && <button onClick={handleResetDaily} className="px-5 py-3 bg-emerald-100 text-emerald-700 rounded-2xl font-black uppercase text-[10px] tracking-widest">Fechar Turno</button>}
-             <button onClick={handleDownloadPDF} disabled={isSaving} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest">{isSaving ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}</button>
+            {viewMode === 'active' && (
+              <button onClick={() => setIsAddItemModalOpen(true)} className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Plus size={14} /> Novo Produto</button>
+            )}
+            <button onClick={() => setViewMode(viewMode === 'active' ? 'history' : 'active')} className="px-5 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest"><History size={14} /></button>
+            {viewMode === 'active' && <button onClick={handleResetDaily} className="px-5 py-3 bg-emerald-100 text-emerald-700 rounded-2xl font-black uppercase text-[10px] tracking-widest">Fechar Turno</button>}
+            <button onClick={handleDownloadPDF} disabled={isSaving} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest">{isSaving ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}</button>
           </div>
         </div>
 
         {viewMode === 'active' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-300">
-            <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno</label><select value={turno} onChange={(e) => setTurno(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl font-black text-sm uppercase outline-none">{['Matutino','Vespertino','Noturno','Integral'].map(t => <option key={t}>{t}</option>)}</select></div>
-            <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assinatura</label><input value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none" /></div>
-            <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Data</label><input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none" /></div>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-300">
+              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno</label><select value={turno} onChange={(e) => setTurno(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl font-black text-xs uppercase outline-none focus:ring-2 focus:ring-emerald-500/20">{['Matutino', 'Vespertino', 'Noturno', 'Integral'].map(t => <option key={t}>{t}</option>)}</select></div>
+              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Responsável (AAE Nutrição)</label>
+                <div className="relative">
+                  <select value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase outline-none appearance-none focus:ring-2 focus:ring-emerald-500/20">
+                    <option value="Gestor André">Gestor André</option>
+                    {nutricaoStaff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                </div>
+              </div>
+              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Data do Lançamento</label><input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none focus:ring-2 focus:ring-emerald-500/20" /></div>
+              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações Rápidas</label>
+                <button onClick={syncWithMenu} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+                  <RotateCcw size={14} /> Carregar Menu {selectedDay}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 no-print">
+              <Info size={16} className="text-emerald-600" />
+              <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">O sistema carregará automaticamente ingredientes da {selectedWeek}ª Semana para {selectedDay}.</p>
+              <div className="flex gap-2 ml-auto">
+                {[1, 2, 3, 4, 5].map(w => (
+                  <button key={w} onClick={() => setSelectedWeek(w)} className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${selectedWeek === w ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-100'}`}>Sem {w}</button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -198,7 +303,7 @@ const Inventory: React.FC = () => {
                   <td className="px-4 py-4 text-center bg-emerald-50/10"><input type="number" step="0.01" value={item.entries || ""} onChange={(e) => handleUpdateItem(item.id, 'entries', e.target.value)} className="w-full bg-transparent text-center font-black text-emerald-600 outline-none no-print" /><span className="hidden pdf-show">{item.entries || '0'}</span></td>
                   <td className="px-4 py-4 text-center bg-red-50/10"><input type="number" step="0.01" value={item.outputs || ""} onChange={(e) => handleUpdateItem(item.id, 'outputs', e.target.value)} className="w-full bg-transparent text-center font-black text-red-600 outline-none no-print" /><span className="hidden pdf-show">{item.outputs || '0'}</span></td>
                   <td className={`px-6 py-6 text-center text-sm font-black ${isCritical ? 'text-red-700 bg-red-50/40' : 'text-gray-900'}`}>{currentBalance.toLocaleString('pt-BR')}</td>
-                  {viewMode === 'active' && <td className="px-4 py-6 no-print text-right"><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={16}/></button></td>}
+                  {viewMode === 'active' && <td className="px-4 py-6 no-print text-right"><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button></td>}
                 </tr>
               );
             })}
@@ -212,20 +317,20 @@ const Inventory: React.FC = () => {
       {/* Modal Adicionar Item */}
       {isAddItemModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md">
-           <div className="bg-white rounded-[3rem] w-full max-w-md shadow-2xl overflow-hidden">
-              <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
-                 <h3 className="text-xl font-black text-gray-900 uppercase">Novo Item de Estoque</h3>
-                 <button onClick={() => setIsAddItemModalOpen(false)}><X size={24}/></button>
+          <div className="bg-white rounded-[3rem] w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+              <h3 className="text-xl font-black text-gray-900 uppercase">Novo Item de Estoque</h3>
+              <button onClick={() => setIsAddItemModalOpen(false)}><X size={24} /></button>
+            </div>
+            <form onSubmit={handleAddItem} className="p-10 space-y-6">
+              <div className="space-y-1"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Descrição do Alimento</label><input required value={newItem.name} onChange={e => setNewItem({ ...newItem, name: e.target.value.toUpperCase() })} placeholder="EX: ARROZ AGULHINHA" className="w-full p-4 bg-gray-50 rounded-2xl border-none font-bold text-sm outline-none focus:bg-white transition-all" /></div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unidade</label><select value={newItem.unit} onChange={e => setNewItem({ ...newItem, unit: e.target.value })} className="w-full p-4 bg-gray-50 rounded-2xl font-black text-xs uppercase outline-none"><option>Kg</option><option>Un</option><option>Litro</option><option>Pct</option><option>Dz</option></select></div>
+                <div className="space-y-1"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estoque Mínimo</label><input required type="number" step="0.01" value={newItem.min} onChange={e => setNewItem({ ...newItem, min: parseFloat(e.target.value) || 0 })} className="w-full p-4 bg-gray-50 rounded-2xl border-none font-bold text-sm outline-none focus:bg-white transition-all" /></div>
               </div>
-              <form onSubmit={handleAddItem} className="p-10 space-y-6">
-                 <div className="space-y-1"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Descrição do Alimento</label><input required value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value.toUpperCase()})} placeholder="EX: ARROZ AGULHINHA" className="w-full p-4 bg-gray-50 rounded-2xl border-none font-bold text-sm outline-none focus:bg-white transition-all" /></div>
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-1"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unidade</label><select value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})} className="w-full p-4 bg-gray-50 rounded-2xl font-black text-xs uppercase outline-none"><option>Kg</option><option>Un</option><option>Litro</option><option>Pct</option><option>Dz</option></select></div>
-                    <div className="space-y-1"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estoque Mínimo</label><input required type="number" step="0.01" value={newItem.min} onChange={e => setNewItem({...newItem, min: parseFloat(e.target.value) || 0})} className="w-full p-4 bg-gray-50 rounded-2xl border-none font-bold text-sm outline-none focus:bg-white transition-all" /></div>
-                 </div>
-                 <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"><Save size={20}/> Cadastrar Alimento</button>
-              </form>
-           </div>
+              <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"><Save size={20} /> Cadastrar Alimento</button>
+            </form>
+          </div>
         </div>
       )}
     </div>
