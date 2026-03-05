@@ -860,14 +860,71 @@ const ShoppingList: React.FC = () => {
 
       <style>{`
         @media print {
+          /* Hide non-printing elements */
           .no-print { display: none !important; }
-          body { background: white !important; margin: 0; padding: 20px !important; }
+          
+          /* Reset outer layout for full content flow */
+          html, body {
+            height: auto !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
+
+          /* Reset parent containers (Tailwind classes) */
+          .h-screen, 
+          .overflow-hidden, 
+          .overflow-y-auto, 
+          .flex-1,
+          main,
+          aside {
+            height: auto !important;
+            overflow: visible !important;
+            max-height: none !important;
+            position: static !important;
+            display: block !important;
+          }
+
+          /* Specific structure within MerendaModule and App */
+          #root, .min-h-screen {
+            height: auto !important;
+            overflow: visible !important;
+          }
+
+          /* Table styling for print */
+          .overflow-x-auto {
+            overflow: visible !important;
+          }
+          
+          table { 
+            width: 100% !important; 
+            border-collapse: collapse !important; 
+            table-layout: auto !important;
+          }
+
+          th, td { 
+            border-bottom: 1px solid #eee !important; 
+            padding: 10px 6px !important; 
+            word-break: break-word !important;
+          }
+
+          /* Avoid breaking rows across pages */
+          tr {
+            page-break-inside: avoid !important;
+          }
+
+          /* Aesthetic adjustments for print */
           .bg-white { border: none !important; box-shadow: none !important; }
-          .shadow-sm, .shadow-xl { box-shadow: none !important; }
-          table { width: 100% !important; border-collapse: collapse !important; }
-          th, td { border-bottom: 1px solid #eee !important; padding: 12px 8px !important; }
+          .shadow-sm, .shadow-xl, .shadow-lg { box-shadow: none !important; }
           .font-black { font-weight: 800 !important; }
           .text-orange-600 { color: #ea580c !important; }
+          
+          /* Ensure colors and backgrounds print */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
     </div>
