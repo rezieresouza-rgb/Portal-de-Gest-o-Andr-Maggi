@@ -68,7 +68,7 @@ const INITIAL_STATE: Omit<ObservationData, 'id' | 'timestamp'> = {
   teacher: '',
   subject: 'MATEMÁTICA',
   className: '',
-  date: new Date().toISOString().split('T')[0],
+  date: new Date().toLocaleDateString('sv-SE'),
   observador: 'COORDENADOR ANDRÉ',
   cargo: 'Coordenador Pedagógico',
   organizacional: {

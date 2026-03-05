@@ -81,7 +81,7 @@ const PPEControl: React.FC = () => {
     ppeId: '',
     ppeName: '',
     quantity: 1,
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toLocaleDateString('sv-SE'),
   });
 
   useEffect(() => {
@@ -139,7 +139,7 @@ const PPEControl: React.FC = () => {
       ppeId: '',
       ppeName: '',
       quantity: 1,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
     });
   };
 

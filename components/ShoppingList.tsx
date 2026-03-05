@@ -394,8 +394,8 @@ const ShoppingList: React.FC = () => {
           .insert([{
             contract_id: contractId,
             order_number: orderNumber,
-            issue_date: new Date().toISOString().split('T')[0],
-            delivery_date: new Date().toISOString().split('T')[0],
+            issue_date: new Date().toLocaleDateString('sv-SE'),
+            delivery_date: new Date().toLocaleDateString('sv-SE'),
             total_value: totalValue,
             observations: `Pedido gerado automaticamente da Lista de Compras (Semana ${groupItems[0].week})`,
             status: 'GERADO_DA_LISTA'

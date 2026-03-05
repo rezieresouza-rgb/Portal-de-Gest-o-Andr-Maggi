@@ -68,7 +68,7 @@ const CleaningMaterialControl: React.FC = () => {
     materialId: '',
     materialName: '',
     quantity: 1,
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toLocaleDateString('sv-SE'),
   });
 
   const [entryForm, setEntryForm] = useState({
@@ -77,7 +77,7 @@ const CleaningMaterialControl: React.FC = () => {
     receiverName: '',
     quantity: 1,
     invoice: '',
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toLocaleDateString('sv-SE'),
   });
 
   const fetchData = async () => {
@@ -314,7 +314,7 @@ const CleaningMaterialControl: React.FC = () => {
       receiverName: '',
       quantity: 1,
       invoice: '',
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
     });
   };
 
@@ -325,7 +325,7 @@ const CleaningMaterialControl: React.FC = () => {
       materialId: '',
       materialName: '',
       quantity: 1,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
     });
   };
 

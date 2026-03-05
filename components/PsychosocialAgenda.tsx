@@ -55,7 +55,7 @@ const PsychosocialAgenda: React.FC<{ role: PsychosocialRole }> = ({ role }) => {
   const [studentSearch, setStudentSearch] = useState('');
   
   const [form, setForm] = useState<Partial<PsychosocialAppointment>>({
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toLocaleDateString('sv-SE'),
     time: '08:00',
     type: 'ESCUTA_INDIVIDUAL',
     professionalName: 'EQUIPE PSICOSSOCIAL',
@@ -103,7 +103,7 @@ const PsychosocialAgenda: React.FC<{ role: PsychosocialRole }> = ({ role }) => {
 
   const resetForm = () => {
     setForm({
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
       time: '08:00',
       type: 'ESCUTA_INDIVIDUAL',
       professionalName: 'EQUIPE PSICOSSOCIAL',

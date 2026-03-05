@@ -101,9 +101,9 @@ const SupplierNotifications: React.FC = () => {
     status: 'PENDENTE',
     description: '',
     itemsAffected: [],
-    issueDate: new Date().toISOString().split('T')[0],
-    orderDate: new Date().toISOString().split('T')[0],
-    deadlineDate: new Date().toISOString().split('T')[0],
+    issueDate: new Date().toLocaleDateString('sv-SE'),
+    orderDate: new Date().toLocaleDateString('sv-SE'),
+    deadlineDate: new Date().toLocaleDateString('sv-SE'),
     responsible: 'Gestor André',
     orderNumber: ''
   });
@@ -151,9 +151,9 @@ const SupplierNotifications: React.FC = () => {
       status: 'PENDENTE',
       description: '',
       itemsAffected: [],
-      issueDate: new Date().toISOString().split('T')[0],
-      orderDate: new Date().toISOString().split('T')[0],
-      deadlineDate: new Date().toISOString().split('T')[0],
+      issueDate: new Date().toLocaleDateString('sv-SE'),
+      orderDate: new Date().toLocaleDateString('sv-SE'),
+      deadlineDate: new Date().toLocaleDateString('sv-SE'),
       responsible: 'Gestor André',
       orderNumber: ''
     });
@@ -194,7 +194,7 @@ const SupplierNotifications: React.FC = () => {
     setOccurrences(prev => prev.map(o => o.id === id ? {
       ...o,
       status,
-      resolutionDate: status === 'RESOLVIDO' ? new Date().toISOString().split('T')[0] : o.resolutionDate
+      resolutionDate: status === 'RESOLVIDO' ? new Date().toLocaleDateString('sv-SE') : o.resolutionDate
     } : o));
   };
 

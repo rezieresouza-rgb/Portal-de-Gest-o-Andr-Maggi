@@ -26,7 +26,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
   const [selectedShift, setSelectedShift] = useState<Shift>('MATUTINO');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [isSaving, setIsSaving] = useState(false);
   const [existingRecordIds, setExistingRecordIds] = useState<Record<number, string>>({});
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);

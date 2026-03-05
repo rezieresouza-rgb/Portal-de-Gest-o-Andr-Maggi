@@ -63,8 +63,8 @@ const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const [selectedContractId, setSelectedContractId] = useState<string>("");
-  const [orderDate, setOrderDate] = useState(new Date().toISOString().split('T')[0]);
-  const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [orderDate, setOrderDate] = useState(new Date().toLocaleDateString('sv-SE'));
+  const [deliveryDate, setDeliveryDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [observations, setObservations] = useState("");
   const [itemSearchTerm, setItemSearchTerm] = useState("");
   const [globalProductSearch, setGlobalProductSearch] = useState("");

@@ -66,7 +66,7 @@ const CoordinationExternalGrades: React.FC = () => {
 
    // Form State
    const [form, setForm] = useState<Omit<Assessment, 'id' | 'timestamp'>>({
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
       bimestre: '1º BIMESTRE',
       className: '',
       subject: SUBJECTS[0],

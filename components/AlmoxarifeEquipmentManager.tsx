@@ -40,7 +40,7 @@ const AlmoxarifeEquipmentManager: React.FC = () => {
       teacher_name: '',
       equipment_type: 'FONES DE OUVIDO',
       quantity: 1,
-      return_time: new Date().toISOString().slice(0, 16),
+      return_time: new Date().toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16),
    });
 
    const fetchBookings = async () => {
@@ -61,7 +61,7 @@ const AlmoxarifeEquipmentManager: React.FC = () => {
                   resource_type: 'EQUIPMENT',
                   user_name: 'PROF. CARLOS SILVA',
                   purpose: '9º ANO A',
-                  date: new Date().toISOString().split('T')[0],
+                  date: new Date().toLocaleDateString('sv-SE'),
                   shift: 'MATUTINO',
                   status: 'SOLICITADO',
                   description: 'PEDRO, MARIA, JOAO, ANA'
@@ -71,7 +71,7 @@ const AlmoxarifeEquipmentManager: React.FC = () => {
                   resource_type: 'EQUIPMENT',
                   user_name: 'PROF. ANA SOUZA',
                   purpose: '8º ANO B',
-                  date: new Date().toISOString().split('T')[0],
+                  date: new Date().toLocaleDateString('sv-SE'),
                   shift: 'VESPERTINO',
                   status: 'RETIRADO',
                   description: 'CARLOS, BEATRIZ, LUCAS'
@@ -81,7 +81,7 @@ const AlmoxarifeEquipmentManager: React.FC = () => {
                   resource_type: 'EQUIPMENT',
                   user_name: 'PROF. MARCOS',
                   purpose: '7º ANO C',
-                  date: new Date().toISOString().split('T')[0],
+                  date: new Date().toLocaleDateString('sv-SE'),
                   shift: 'MATUTINO',
                   status: 'SOLICITADO',
                   description: ''
@@ -179,7 +179,7 @@ const AlmoxarifeEquipmentManager: React.FC = () => {
                resource_type: 'EQUIPMENT',
                user_name: newRequest.teacher_name,
                purpose: 'NOVA SOLICITACAO', // Placeholder
-               date: new Date().toISOString().split('T')[0],
+               date: new Date().toLocaleDateString('sv-SE'),
                shift: 'MATUTINO', // Placeholder
                status: 'SOLICITADO',
                description: '',
@@ -194,7 +194,7 @@ const AlmoxarifeEquipmentManager: React.FC = () => {
             teacher_name: '',
             equipment_type: 'FONES DE OUVIDO',
             quantity: 1,
-            return_time: new Date().toISOString().slice(0, 16),
+            return_time: new Date().toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16),
          });
          addToast('Solicitação de empréstimo criada com sucesso!', 'success');
       } catch (error) {
@@ -212,7 +212,7 @@ const AlmoxarifeEquipmentManager: React.FC = () => {
       return {
          pending: bookings.filter(b => b.status === 'SOLICITADO').length,
          inUse: bookings.filter(b => b.status === 'RETIRADO').length,
-         today: bookings.filter(b => b.date === new Date().toISOString().split('T')[0]).length
+         today: bookings.filter(b => b.date === new Date().toLocaleDateString('sv-SE')).length
       };
    }, [bookings]);
 

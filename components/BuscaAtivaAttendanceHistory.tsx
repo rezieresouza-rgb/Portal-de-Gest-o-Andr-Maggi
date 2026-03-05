@@ -36,7 +36,7 @@ interface AttendanceRecord {
 const BuscaAtivaAttendanceHistory: React.FC = () => {
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
     const [selectedClass, setSelectedClass] = useState('');
     const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
 

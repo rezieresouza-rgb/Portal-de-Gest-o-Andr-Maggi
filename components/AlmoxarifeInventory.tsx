@@ -49,7 +49,7 @@ const AlmoxarifeInventory: React.FC = () => {
       quantity: 1,
       supplier: '',
       invoice: '',
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toLocaleDateString('sv-SE')
    });
 
    const fetchItems = async () => {
@@ -244,7 +244,7 @@ const AlmoxarifeInventory: React.FC = () => {
             quantity: 1,
             supplier: '',
             invoice: '',
-            date: new Date().toISOString().split('T')[0]
+            date: new Date().toLocaleDateString('sv-SE')
          });
          addToast("Entrada registrada com sucesso!", "success");
          fetchItems();

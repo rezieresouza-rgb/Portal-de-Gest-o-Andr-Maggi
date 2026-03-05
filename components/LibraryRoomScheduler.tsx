@@ -27,7 +27,7 @@ const ACTIVITY_TYPES = ['Leitura Livre', 'Pesquisa Orientada', 'Contação de Hi
 
 const LibraryRoomScheduler: React.FC = () => {
    const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
-   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
    const [bookings, setBookings] = useState<LibraryRoomBooking[]>([]);
    const { staff } = useStaff();
    const { classrooms } = useClassrooms();

@@ -73,7 +73,7 @@ const MenuChecklist: React.FC = () => {
 
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [selectedDay, setSelectedDay] = useState<string>('Segunda');
-  const [serviceDate, setServiceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [serviceDate, setServiceDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [selectedShift, setSelectedShift] = useState<string>('MATUTINO / VESPERTINO');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);

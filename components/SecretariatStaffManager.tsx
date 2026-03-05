@@ -130,7 +130,7 @@ const SecretariatStaffManager: React.FC = () => {
 
    const [movementForm, setMovementForm] = useState<Partial<StaffMovement>>({
       type: 'FÉRIAS',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: new Date().toLocaleDateString('sv-SE'),
       endDate: '',
       durationDays: 0,
       substituteId: '',

@@ -103,7 +103,7 @@ const SecretariatStudentRegistry: React.FC = () => {
             Turma: classroom?.name || 'SEM TURMA',
             Turno: classroom?.shift || '---',
             Sequencia: '', // Será calculado no frontend
-            DataMatricula: s.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+            DataMatricula: s.created_at?.split('T')[0] || new Date().toLocaleDateString('sv-SE'),
             PAED: s.paed ? 'Sim' : 'Não',
             TransporteEscolar: s.school_transport ? 'Sim' : 'Não',
             NomeResponsavel: s.guardian_name || '',
@@ -146,7 +146,7 @@ const SecretariatStudentRegistry: React.FC = () => {
   const [newMovement, setNewMovement] = useState<{ type: string; description: string; date: string }>({
     type: 'TRANSFERENCIA',
     description: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toLocaleDateString('sv-SE')
   });
 
   const fetchMovements = async (studentId: string) => {
@@ -170,7 +170,7 @@ const SecretariatStudentRegistry: React.FC = () => {
     setNewMovement({
       type: 'TRANSFERENCIA',
       description: '',
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toLocaleDateString('sv-SE')
     });
     setMovements([]); // Clear previous
     if (student.id) {
@@ -311,7 +311,7 @@ const SecretariatStudentRegistry: React.FC = () => {
             await supabase.from('enrollments').insert([{
               student_id: studentId,
               classroom_id: classroom.id,
-              enrollment_date: new Date().toISOString().split('T')[0]
+              enrollment_date: new Date().toLocaleDateString('sv-SE')
             }]);
           }
           successCount++;
@@ -343,7 +343,7 @@ const SecretariatStudentRegistry: React.FC = () => {
     Turno: 'MATUTINO',
     Sequencia: '',
     CodigoAluno: '',
-    DataMatricula: new Date().toISOString().split('T')[0],
+    DataMatricula: new Date().toLocaleDateString('sv-SE'),
     DataNascimento: '',
     PAED: 'Não',
     TransporteEscolar: 'Não',
@@ -424,7 +424,7 @@ const SecretariatStudentRegistry: React.FC = () => {
             await supabase.from('enrollments').insert([{
               student_id: editingId,
               classroom_id: newClassroom.id,
-              enrollment_date: new Date().toISOString().split('T')[0]
+              enrollment_date: new Date().toLocaleDateString('sv-SE')
             }]);
           }
         } else {
@@ -611,7 +611,7 @@ const SecretariatStudentRegistry: React.FC = () => {
             dateObj.getMonth() === m - 1 &&
             dateObj.getDate() === d
           ) {
-            return dateObj.toISOString().split('T')[0];
+            return dateObj.toLocaleDateString('sv-SE');
           }
 
           return null;
@@ -671,7 +671,7 @@ const SecretariatStudentRegistry: React.FC = () => {
                 await supabase.from('enrollments').insert([{
                   student_id: newStudent.id,
                   classroom_id: classroom.id,
-                  enrollment_date: new Date().toISOString().split('T')[0]
+                  enrollment_date: new Date().toLocaleDateString('sv-SE')
                 }]);
               }
             }
@@ -780,7 +780,7 @@ const SecretariatStudentRegistry: React.FC = () => {
               await supabase.from('enrollments').insert([{
                 student_id: newStudent.id,
                 classroom_id: classroom.id,
-                enrollment_date: new Date().toISOString().split('T')[0]
+                enrollment_date: new Date().toLocaleDateString('sv-SE')
               }]);
             }
           }

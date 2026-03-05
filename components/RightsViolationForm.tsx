@@ -29,7 +29,7 @@ import { RightsViolationNotification } from '../types';
 
 // FIX: Updated property names to match RightsViolationNotification interface in types.ts (using snake_case where defined)
 const INITIAL_FORM_STATE: Omit<RightsViolationNotification, 'id' | 'timestamp'> = {
-  notificationDate: new Date().toISOString().split('T')[0],
+  notificationDate: new Date().toLocaleDateString('sv-SE'),
   municipality: 'COLÍDER',
   uf: 'MT',
   school_name: 'E.E. ANDRÉ ANTÔNIO MAGGI',

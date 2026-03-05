@@ -28,7 +28,7 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
     status: 'ABERTO' as 'ABERTO' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO',
     responsible: 'COORDENADOR ANDRÉ',
     notes: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toLocaleDateString('sv-SE')
   });
 
   const handleSubmit = (e: React.FormEvent) => {

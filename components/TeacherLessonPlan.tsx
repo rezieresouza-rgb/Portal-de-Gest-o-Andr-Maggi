@@ -54,6 +54,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     teacher: user.name,
     year: new Date().getFullYear().toString(),
     className: '',
+    classNames: [],
     weeklyClasses: '6',
     skills: [],
     recompositionSkills: [],
@@ -90,7 +91,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
             subject: p.subject,
             teacher: content.teacher || user.name,
             year: content.year || new Date().getFullYear().toString(),
-            className: content.className || '',
+            className: content.className || p.classrooms?.name || '',
+            classNames: content.classNames || (content.className ? [content.className] : []),
             weeklyClasses: content.weeklyClasses || '0',
             skills: content.skills || [],
             recompositionSkills: content.recompositionSkills || [],
@@ -137,14 +139,15 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
   }, []);
 
   useEffect(() => {
-    if (form.subject && form.className) {
-      fetchBNCCSkillsFromDB(form.subject, form.className).then(skills => {
+    const classToFetch = form.classNames.length > 0 ? form.classNames[0] : form.className;
+    if (form.subject && classToFetch) {
+      fetchBNCCSkillsFromDB(form.subject, classToFetch).then(skills => {
         setDbSkills(skills || []);
       });
     } else {
       setDbSkills([]);
     }
-  }, [form.subject, form.className]);
+  }, [form.subject, form.className, form.classNames]);
 
   const addRow = () => {
     setForm(prev => {
@@ -239,7 +242,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     const contentJson = {
       teacher: form.teacher,
       year: form.year,
-      className: form.className,
+      className: form.classNames.length > 0 ? form.classNames[0] : form.className,
+      classNames: form.classNames,
       weeklyClasses: form.weeklyClasses,
       skills: form.skills,
       recompositionSkills: form.recompositionSkills,
@@ -287,6 +291,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         teacher: user.name,
         year: new Date().getFullYear().toString(),
         className: '',
+        classNames: [],
         weeklyClasses: '6',
         skills: [],
         recompositionSkills: [],
@@ -320,6 +325,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       teacher: user.name,
       year: new Date().getFullYear().toString(),
       className: '',
+      classNames: [],
       weeklyClasses: '6',
       skills: [],
       recompositionSkills: [],
@@ -373,7 +379,9 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                       </span>
                     </div>
                     <h4 className="text-lg font-black text-gray-900 uppercase leading-tight line-clamp-1">{p.subject}</h4>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Turma: {p.className} • {p.year}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">
+                      Turma: {p.classNames && p.classNames.length > 0 ? p.classNames.join(', ') : p.className} • {p.year}
+                    </p>
 
                     {p.status === 'CORRECAO_SOLICITADA' && (
                       <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
@@ -479,11 +487,25 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
             </select>
           </div>
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ano/Turma</label>
-            <select value={form.className} onChange={e => setForm({ ...form, className: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none">
-              <option value="">Selecione a turma...</option>
-              {GRADE_LEVELS.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turmas (Selecione uma ou mais)</label>
+            <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border border-gray-100 rounded-2xl max-h-40 overflow-y-auto custom-scrollbar">
+              {GRADE_LEVELS.map(g => (
+                <label key={g} className={`flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all ${form.classNames.includes(g) ? 'bg-amber-600 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100 hover:border-amber-200'}`}>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={form.classNames.includes(g)}
+                    onChange={() => {
+                      const newClasses = form.classNames.includes(g)
+                        ? form.classNames.filter(c => c !== g)
+                        : [...form.classNames, g];
+                      setForm({ ...form, classNames: newClasses, className: newClasses[0] || '' });
+                    }}
+                  />
+                  <span className="text-[10px] font-black uppercase tracking-tight">{g}</span>
+                </label>
+              ))}
+            </div>
           </div>
           <div className="md:col-span-1 space-y-1.5">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Aulas/Sem</label>

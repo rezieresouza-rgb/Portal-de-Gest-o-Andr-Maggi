@@ -70,7 +70,7 @@ const Inventory: React.FC = () => {
 
   const [turno, setTurno] = useState('Matutino');
   const [responsavel, setResponsavel] = useState('Gestor André');
-  const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+  const [data, setData] = useState(new Date().toLocaleDateString('sv-SE'));
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [selectedDay, setSelectedDay] = useState<string>('Segunda');
   const [nutricaoStaff, setNutricaoStaff] = useState<StaffMember[]>([]);
@@ -198,7 +198,7 @@ const Inventory: React.FC = () => {
         setTurno(shifts[0]);
         const nextDate = new Date(data);
         nextDate.setDate(nextDate.getDate() + 1);
-        setData(nextDate.toISOString().split('T')[0]);
+        setData(nextDate.toLocaleDateString('sv-SE'));
       }
 
       alert("Fechamento de turno realizado! Avançando para o próximo período.");

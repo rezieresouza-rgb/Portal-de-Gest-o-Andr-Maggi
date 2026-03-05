@@ -126,6 +126,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
             teacher: content.teacher || p.users?.name || 'Professor',
             year: content.year || 'N/A',
             className: content.className || p.classrooms?.name || 'N/A',
+            classNames: content.classNames || (content.className ? [content.className] : []),
             weeklyClasses: content.weeklyClasses || '4',
             skills: content.skills || [],
             recompositionSkills: content.recompositionSkills || [],
@@ -523,7 +524,9 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                   <div>
                     <button onClick={() => setSelectedPlan(null)} className="text-violet-400 font-black uppercase text-[9px] flex items-center gap-1 mb-4 hover:text-white transition-all"><ArrowLeft size={10} /> Voltar para lista</button>
                     <h3 className="text-2xl font-black text-white uppercase">{selectedPlan.subject}</h3>
-                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mt-1">{selectedPlan.teacher} • {selectedPlan.className} • {selectedPlan.bimestre}</p>
+                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mt-1">
+                      {selectedPlan.teacher} • Turma: {selectedPlan.classNames && selectedPlan.classNames.length > 0 ? selectedPlan.classNames.join(', ') : selectedPlan.className} • {selectedPlan.bimestre}
+                    </p>
                   </div>
                 </div>
 
@@ -642,7 +645,9 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                         </div>
                         <div>
                           <h4 className="text-lg font-black text-white uppercase">{plan.subject}</h4>
-                          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{plan.teacher} • Turma: {plan.className}</p>
+                          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                            {plan.teacher} • Turma: {plan.classNames && plan.classNames.length > 0 ? plan.classNames.join(', ') : plan.className}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-6">

@@ -50,7 +50,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
       },
       report: '',
       status: 'PENDENTE',
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
       timestamp: Date.now()
    });
 

@@ -47,7 +47,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [selectedStudents, setSelectedStudents] = useState<{ name: string; class: string }[]>([]);
 
    const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean }>({
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
       teacherName: user.name,
       className: '',
       studentName: '',
@@ -99,7 +99,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
    const resetForm = () => {
       setForm({
-         date: new Date().toISOString().split('T')[0],
+         date: new Date().toLocaleDateString('sv-SE'),
          teacherName: user.name,
          className: '',
          studentName: '',

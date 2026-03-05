@@ -29,39 +29,39 @@ import MaintenanceReports from './MaintenanceReports';
 
 const INITIAL_TASKS: MaintenanceTask[] = [
    // DIÁRIA / CONTÍNUA
-   { id: 'mt-1', area: 'ESTRUTURAL', title: 'Vistorias Visuais dos Ambientes', description: 'Rachaduras, infiltrações, instalações elétricas e hidráulicas.', frequency: 'DIÁRIA', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-2', area: 'ESTRUTURAL', title: 'Limpeza e Conservação de Áreas Comuns', description: 'Manutenção contínua de pisos, paredes e áreas comuns.', frequency: 'DIÁRIA', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-3', area: 'ELÉTRICA', title: 'Monitoramento de Equipamentos Constantes', description: 'Ventiladores, ar-condicionado, bebedouros.', frequency: 'DIÁRIA', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
+   { id: 'mt-1', area: 'ESTRUTURAL', title: 'Vistorias Visuais dos Ambientes', description: 'Rachaduras, infiltrações, instalações elétricas e hidráulicas.', frequency: 'DIÁRIA', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-2', area: 'ESTRUTURAL', title: 'Limpeza e Conservação de Áreas Comuns', description: 'Manutenção contínua de pisos, paredes e áreas comuns.', frequency: 'DIÁRIA', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-3', area: 'ELÉTRICA', title: 'Monitoramento de Equipamentos Constantes', description: 'Ventiladores, ar-condicionado, bebedouros.', frequency: 'DIÁRIA', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
 
    // SEMANAL
-   { id: 'mt-4', area: 'ELÉTRICA', title: 'Testes Básicos Elétricos/Hidráulicos', description: 'Verificação de funcionalidade simples em sistemas básicos.', frequency: 'SEMANAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-5', area: 'HIDRÁULICA', title: 'Inspeção de Ralos, Sifões e Válvulas', description: 'Prevenção de entupimentos e vazamentos.', frequency: 'SEMANAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-6', area: 'INCÊNDIO', title: 'Verificação de Extintores e Sinalização', description: 'Checagem visual de carga e placas de emergência.', frequency: 'SEMANAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
+   { id: 'mt-4', area: 'ELÉTRICA', title: 'Testes Básicos Elétricos/Hidráulicos', description: 'Verificação de funcionalidade simples em sistemas básicos.', frequency: 'SEMANAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-5', area: 'HIDRÁULICA', title: 'Inspeção de Ralos, Sifões e Válvulas', description: 'Prevenção de entupimentos e vazamentos.', frequency: 'SEMANAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-6', area: 'INCÊNDIO', title: 'Verificação de Extintores e Sinalização', description: 'Checagem visual de carga e placas de emergência.', frequency: 'SEMANAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
 
    // MENSAL
-   { id: 'mt-7', area: 'HIDRÁULICA', title: 'Inspeção de Reservatórios de Água', description: 'Caixas d’água e cisternas.', frequency: 'MENSAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-8', area: 'HIDRÁULICA', title: 'Verificação de Tubulações e Registros', description: 'Detecção de vazamentos e travamentos.', frequency: 'MENSAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-9', area: 'INCÊNDIO', title: 'Sistemas de Combate a Incêndio', description: 'Hidrantes e mangueiras.', frequency: 'MENSAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-10', area: 'ESTRUTURAL', title: 'Avaliação de Pintura e Revestimentos', description: 'Manutenção de fachadas e salas.', frequency: 'MENSAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
+   { id: 'mt-7', area: 'HIDRÁULICA', title: 'Inspeção de Reservatórios de Água', description: 'Caixas d’água e cisternas.', frequency: 'MENSAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-8', area: 'HIDRÁULICA', title: 'Verificação de Tubulações e Registros', description: 'Detecção de vazamentos e travamentos.', frequency: 'MENSAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-9', area: 'INCÊNDIO', title: 'Sistemas de Combate a Incêndio', description: 'Hidrantes e mangueiras.', frequency: 'MENSAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-10', area: 'ESTRUTURAL', title: 'Avaliação de Pintura e Revestimentos', description: 'Manutenção de fachadas e salas.', frequency: 'MENSAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
 
    // TRIMESTRAL
-   { id: 'mt-11', area: 'ESTRUTURAL', title: 'Revisão de Cobertura e Forros', description: 'Telhas, lajes e forros de gesso/pvc.', frequency: 'TRIMESTRAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-12', area: 'ESTRUTURAL', title: 'Inspeção de Esquadrias', description: 'Portas e janelas.', frequency: 'TRIMESTRAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-13', area: 'ELÉTRICA', title: 'Testes de Prevenção (SPDA)', description: 'Para-raios e aterramento.', frequency: 'TRIMESTRAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-14', area: 'ESTRUTURAL', title: 'Avaliação de Quadras Poliesportivas', description: 'Piso e pintura de demarcação.', frequency: 'TRIMESTRAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
+   { id: 'mt-11', area: 'ESTRUTURAL', title: 'Revisão de Cobertura e Forros', description: 'Telhas, lajes e forros de gesso/pvc.', frequency: 'TRIMESTRAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-12', area: 'ESTRUTURAL', title: 'Inspeção de Esquadrias', description: 'Portas e janelas.', frequency: 'TRIMESTRAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-13', area: 'ELÉTRICA', title: 'Testes de Prevenção (SPDA)', description: 'Para-raios e aterramento.', frequency: 'TRIMESTRAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-14', area: 'ESTRUTURAL', title: 'Avaliação de Quadras Poliesportivas', description: 'Piso e pintura de demarcação.', frequency: 'TRIMESTRAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
 
    // SEMESTRAL
-   { id: 'mt-15', area: 'INCÊNDIO', title: 'Revisão de Instalações de Gás', description: 'Válvulas, mangueiras e central.', frequency: 'SEMESTRAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-16', area: 'OUTROS', title: 'Equipamentos Industriais (Cozinha)', description: 'Fogão, forno, balcão térmico.', frequency: 'SEMESTRAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-17', area: 'MOBILIÁRIO', title: 'Verificação de Mobiliário Escolar', description: 'Mesas, cadeiras e armários.', frequency: 'SEMESTRAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
+   { id: 'mt-15', area: 'INCÊNDIO', title: 'Revisão de Instalações de Gás', description: 'Válvulas, mangueiras e central.', frequency: 'SEMESTRAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-16', area: 'OUTROS', title: 'Equipamentos Industriais (Cozinha)', description: 'Fogão, forno, balcão térmico.', frequency: 'SEMESTRAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-17', area: 'MOBILIÁRIO', title: 'Verificação de Mobiliário Escolar', description: 'Mesas, cadeiras e armários.', frequency: 'SEMESTRAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
 
    // ANUAL
-   { id: 'mt-18', area: 'ELÉTRICA', title: 'Manutenção Elétrica Completa', description: 'Aperto de barramentos e revisão de quadros.', frequency: 'ANUAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-19', area: 'HIDRÁULICA', title: 'Manutenção Hidráulica Completa', description: 'Revisão de bombas e sistema principal.', frequency: 'ANUAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-20', area: 'ESTRUTURAL', title: 'Inspeção de Muros e Calçamentos', description: 'Gradis e acessos externos.', frequency: 'ANUAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-21', area: 'ACESSIBILIDADE', title: 'Avaliação de Acessibilidade', description: 'Rampas, corrimãos, piso tátil.', frequency: 'ANUAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-22', area: 'OUTROS', title: 'Controle de Pragas e Drenagem', description: 'Desinsetização e limpeza de drenos.', frequency: 'ANUAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
-   { id: 'mt-23', area: 'OUTROS', title: 'Revisão de Eletrônicos', description: 'Computadores, Chromes e TVs.', frequency: 'ANUAL', dueDate: new Date().toISOString().split('T')[0], status: 'PENDENTE' },
+   { id: 'mt-18', area: 'ELÉTRICA', title: 'Manutenção Elétrica Completa', description: 'Aperto de barramentos e revisão de quadros.', frequency: 'ANUAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-19', area: 'HIDRÁULICA', title: 'Manutenção Hidráulica Completa', description: 'Revisão de bombas e sistema principal.', frequency: 'ANUAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-20', area: 'ESTRUTURAL', title: 'Inspeção de Muros e Calçamentos', description: 'Gradis e acessos externos.', frequency: 'ANUAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-21', area: 'ACESSIBILIDADE', title: 'Avaliação de Acessibilidade', description: 'Rampas, corrimãos, piso tátil.', frequency: 'ANUAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-22', area: 'OUTROS', title: 'Controle de Pragas e Drenagem', description: 'Desinsetização e limpeza de drenos.', frequency: 'ANUAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
+   { id: 'mt-23', area: 'OUTROS', title: 'Revisão de Eletrônicos', description: 'Computadores, Chromes e TVs.', frequency: 'ANUAL', dueDate: new Date().toLocaleDateString('sv-SE'), status: 'PENDENTE' },
 ];
 
 import { supabase } from '../supabaseClient';
@@ -217,7 +217,7 @@ const PredialMaintenanceDashboard: React.FC<{ onNavigateToPreventive?: () => voi
             await supabase.from('maintenance_tasks').update({
                status: 'CONCLUIDO',
                last_performed: new Date().toISOString(),
-               due_date: nextDate.toISOString().split('T')[0]
+               due_date: nextDate.toLocaleDateString('sv-SE')
             }).eq('id', id);
             alert("Atividade concluída e próxima data agendada!");
          } catch (error) {

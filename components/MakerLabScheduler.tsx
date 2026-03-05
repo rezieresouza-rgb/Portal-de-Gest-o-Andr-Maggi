@@ -26,7 +26,7 @@ const EQUIPMENTS = ["Impressora 3D", "Cortadora Laser", "Kits Robótica", "Banca
 
 const MakerLabScheduler: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [bookings, setBookings] = useState<MakerLabBooking[]>([]);
   const { staff } = useStaff();
   const { classrooms } = useClassrooms();

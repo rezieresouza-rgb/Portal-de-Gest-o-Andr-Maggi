@@ -26,7 +26,7 @@ const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
 
 const ScienceLabScheduler: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [bookings, setBookings] = useState<ScienceLabBooking[]>([]);
   const { staff } = useStaff();
   const { classrooms } = useClassrooms();

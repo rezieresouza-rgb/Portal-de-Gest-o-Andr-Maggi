@@ -168,7 +168,7 @@ const BuscaAtivaDashboard: React.FC = () => {
       class_name: student.class,
       teacher_name: 'BUSCA ATIVA',
       school_unit: 'ESCOLA ANDRÉ MAGGI',
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
       report: `[VIA BUSCA ATIVA] Aluno apresenta ${student.absences} de infrequência. Risco iminente de evasão.`,
       status: 'AGUARDANDO_TRIAGEM',
       student_age: 'Não informado',

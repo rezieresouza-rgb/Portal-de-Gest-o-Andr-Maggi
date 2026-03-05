@@ -206,7 +206,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
             case 'BIENAL': date.setFullYear(date.getFullYear() + 2); break;
             default: break;
         }
-        return date.toISOString().split('T')[0];
+        return date.toLocaleDateString('sv-SE');
     };
 
     const handleExecutionChange = (id: string, date: string, freq: MaintenanceFrequency) => {

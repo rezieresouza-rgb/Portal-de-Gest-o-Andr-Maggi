@@ -27,7 +27,7 @@ interface PedagogicalOccurrenceFormProps {
 const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ onCancel, onSave, initialData }) => {
    const [form, setForm] = useState<PedagogicalOccurrence>(initialData || {
       id: `occ-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toLocaleDateString('sv-SE'),
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       involvedStudents: '',
       className: '',

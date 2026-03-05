@@ -32,9 +32,9 @@ const SecretariatAttendanceHistory: React.FC = () => {
     const [startDate, setStartDate] = useState(() => {
         const d = new Date();
         d.setDate(d.getDate() - 7); // Default to last 7 days
-        return d.toISOString().split('T')[0];
+        return d.toLocaleDateString('sv-SE');
     });
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toLocaleDateString('sv-SE'));
     const [filterClass, setFilterClass] = useState('');
     const [filterTeacher, setFilterTeacher] = useState('');
     const [filterSubject, setFilterSubject] = useState('');

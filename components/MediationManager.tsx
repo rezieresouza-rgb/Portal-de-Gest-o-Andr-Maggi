@@ -95,11 +95,11 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
       type: newCase.type as any,
       severity: newCase.severity as any,
       status: 'ABERTURA',
-      openedAt: new Date().toISOString().split('T')[0],
+      openedAt: new Date().toLocaleDateString('sv-SE'),
       description: newCase.description!,
       involvedParties: newCase.involvedParties || [],
       steps: [
-        { id: '1', label: 'Acolhimento Inicial', completed: true, date: new Date().toISOString().split('T')[0] },
+        { id: '1', label: 'Acolhimento Inicial', completed: true, date: new Date().toLocaleDateString('sv-SE') },
         { id: '2', label: 'Escuta das Partes', completed: false },
         { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
         { id: '4', label: 'Acordo / Finalização', completed: false }

@@ -111,7 +111,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
         // Default/Hidden fields
         school_unit: newReferral.school_unit,
         teacher_name: newReferral.teacher_name,
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toLocaleDateString('sv-SE')
       };
 
       if (editingId) {

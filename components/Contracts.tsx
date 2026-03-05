@@ -218,8 +218,8 @@ const Contracts: React.FC = () => {
   const [newContractForm, setNewContractForm] = useState({
     number: '',
     supplierId: '',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    startDate: new Date().toLocaleDateString('sv-SE'),
+    endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE'),
     type: 'Pregão Presencial'
   });
 
@@ -288,8 +288,8 @@ const Contracts: React.FC = () => {
         .insert({
           number: extractedData.contractNumber,
           supplier_id: supplierId,
-          start_date: extractedData.startDate || new Date().toISOString().split('T')[0],
-          end_date: extractedData.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          start_date: extractedData.startDate || new Date().toLocaleDateString('sv-SE'),
+          end_date: extractedData.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('sv-SE'),
           type: extractedData.type || 'Pregão Presencial',
           status: 'ATIVO'
         })

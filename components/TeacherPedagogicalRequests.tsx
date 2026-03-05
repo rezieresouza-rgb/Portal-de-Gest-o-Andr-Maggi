@@ -57,7 +57,7 @@ const TeacherPedagogicalRequests: React.FC<TeacherPedagogicalRequestsProps> = ({
    const [history, setHistory] = useState<PedagogicalMaterialRequest[]>([]);
 
    // Equipment State
-   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
+   const [bookingDate, setBookingDate] = useState(new Date().toLocaleDateString('sv-SE'));
    const [equipmentBookings, setEquipmentBookings] = useState<EquipmentBooking[]>([]);
    const [activeSlot, setActiveSlot] = useState<{ kitId: string, kitName: string, shift: Shift } | null>(null);
    const [targetClass, setTargetClass] = useState('');

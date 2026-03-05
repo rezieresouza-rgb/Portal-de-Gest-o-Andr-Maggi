@@ -131,7 +131,7 @@ const Settings: React.FC = () => {
          const url = URL.createObjectURL(blob);
          const a = document.createElement('a');
          a.href = url;
-         a.download = `Backup_Configuracoes_${new Date().toISOString().split('T')[0]}.json`;
+         a.download = `Backup_Configuracoes_${new Date().toLocaleDateString('sv-SE')}.json`;
          a.click();
 
          setStatusMessage({ type: 'success', text: 'Backup de configurações gerado!' });
