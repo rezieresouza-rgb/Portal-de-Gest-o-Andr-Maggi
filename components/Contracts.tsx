@@ -340,7 +340,7 @@ const Contracts: React.FC = () => {
         c.items.some(item => item.description.toLowerCase().includes(term))
       );
     }
-    return result.sort((a, b) => b.number.localeCompare(a.number, undefined, { numeric: true, sensitivity: 'base' }));
+    return result.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' }));
   }, [contracts, globalSearch]);
 
   const selectedContract = useMemo(() =>
