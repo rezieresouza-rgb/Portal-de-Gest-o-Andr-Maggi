@@ -177,38 +177,76 @@ const ShoppingList: React.FC = () => {
 
       const normSearch = normalize(description);
 
-      // Busca por correspondência exata ou parcial inteligente
+      let bestMatch = {
+        supplier: "NÃO VINCULADO",
+        contractNum: "---",
+        contractId: "",
+        contractItemId: "",
+        unit: "KG",
+        price: 0,
+        score: -1
+      };
+
+      // Pass 1: Localizar a melhor correspondência em todos os contratos ativos
       for (const c of contracts) {
-        const contractItem = c.items.find(i => {
-          const normItem = normalize(i.description);
+        for (const contractItem of c.items) {
+          const normItem = normalize(contractItem.description);
+          let score = -1;
 
-          // Caso 1: Correspondência direta após normalização
-          if (normItem === normSearch) return true;
+          // Sistema de Pontuação (Scoring)
+          if (normItem === normSearch) {
+            score = 100; // Correspondência EXATA
+          } else if (normItem.startsWith(normSearch + ' ')) {
+            score = 90; // Começa com (ex: "TOMATE" em "TOMATE SALADA")
+          } else if (normItem.startsWith(normSearch)) {
+            score = 80; // Prefixo forte
+          } else {
+            const searchWords = normSearch.split(' ');
+            const itemWords = normItem.split(' ');
 
-          // Caso 2: O item do contrato contém a descrição da ficha técnica
-          if (normItem.includes(normSearch)) return true;
+            // Verifica se todas as palavras da busca estão contidas no item (independente da ordem)
+            const allWordsMatch = searchWords.every(sw => itemWords.includes(sw));
 
-          // Caso 3: A descrição da ficha técnica contém o item do contrato
-          if (normSearch.includes(normItem)) return true;
+            if (allWordsMatch) {
+              score = 70; // Todas as palavras batem
+            } else if (normItem.includes(normSearch)) {
+              score = 40; // Inclusão simples (ex: "TOMATE" em "EXTRATO DE TOMATE")
+            } else if (normSearch.includes(normItem)) {
+              score = 20; // Inclusão reversa
+            }
+          }
 
-          // Caso 4: Lógica específica para Carnes, Polpas e Fermentos
-          if (normSearch.includes('ISCA') && normItem.includes('ISCA')) return true;
-          if (normSearch.includes('POLPA') && normItem.includes('POLPA')) return true;
-          if (normSearch.includes('FERMENTO') && normItem.includes('FERMENTO')) return true;
-          if (normSearch.includes('SUINA') && normItem.includes('SUINO')) return true;
-          if (normSearch.includes('SUINO') && normItem.includes('SUINA')) return true;
+          // Lógica de Prioridade Especial para Carnes e Polpas (Fuzzy Matcher)
+          if (score < 60) {
+            if (normSearch.includes('ISCA') && normItem.includes('ISCA')) score = 65;
+            if (normSearch.includes('POLPA') && normItem.includes('POLPA')) score = 65;
+            if (normSearch.includes('FERMENTO') && normItem.includes('FERMENTO')) score = 65;
+            if ((normSearch.includes('SUINA') || normSearch.includes('SUINO')) &&
+              (normItem.includes('SUINA') || normItem.includes('SUINO'))) score = 65;
+          }
 
-          return false;
-        });
-        if (contractItem) {
-          supplier = c.supplierName;
-          contractNum = c.number;
-          contractId = c.id;
-          contractItemId = contractItem.id;
-          unit = contractItem.unit;
-          price = contractItem.unitPrice;
-          break;
+          // Atualiza se for a melhor pontuação encontrada até agora
+          if (score > bestMatch.score) {
+            bestMatch = {
+              supplier: c.supplierName,
+              contractNum: c.number,
+              contractId: c.id,
+              contractItemId: contractItem.id,
+              unit: contractItem.unit,
+              price: contractItem.unitPrice,
+              score: score
+            };
+          }
         }
+      }
+
+      if (bestMatch.score >= 0) {
+        supplier = bestMatch.supplier;
+        contractNum = bestMatch.contractNum;
+        contractId = bestMatch.contractId;
+        contractItemId = bestMatch.contractItemId;
+        unit = bestMatch.unit;
+        price = bestMatch.price;
       }
 
       // Fallback manual para Fermento (J. ASSIS) se não houver vínculo em nenhum contrato
