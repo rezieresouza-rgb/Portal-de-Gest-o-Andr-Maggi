@@ -1206,8 +1206,7 @@ const Contracts: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-gray-100/50 rounded-2xl w-fit">
-
+        <div className="flex items-center gap-1 p-1 bg-gray-200/50 rounded-2xl w-fit">
           <button
             onClick={() => setActiveTab('ITEMS')}
             className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'ITEMS' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
