@@ -340,7 +340,7 @@ const Contracts: React.FC = () => {
         c.items.some(item => item.description.toLowerCase().includes(term))
       );
     }
-    return result.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    return result.sort((a, b) => b.number.localeCompare(a.number, undefined, { numeric: true, sensitivity: 'base' }));
   }, [contracts, globalSearch]);
 
   const selectedContract = useMemo(() =>
@@ -618,14 +618,14 @@ const Contracts: React.FC = () => {
               <form onSubmit={handleConfirmAditivo} className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase">Quantidade Adicional</label>
-                  <input 
-                    autoFocus 
-                    type="text" 
-                    required 
+                  <input
+                    autoFocus
+                    type="text"
+                    required
                     defaultValue={formatQuantity(0)}
-                    onBlur={e => setAditivoQty(parseNumeric(e.target.value))} 
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-black text-center text-xl" 
-                    placeholder="0,000" 
+                    onBlur={e => setAditivoQty(parseNumeric(e.target.value))}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-black text-center text-xl"
+                    placeholder="0,000"
                   />
                 </div>
                 <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg">Confirmar Aditivo</button>
@@ -655,13 +655,13 @@ const Contracts: React.FC = () => {
               <form onSubmit={handleConfirmOutput} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantidade a Retirar</label>
-                  <input 
-                    autoFocus 
-                    required 
-                    type="text" 
+                  <input
+                    autoFocus
+                    required
+                    type="text"
                     defaultValue={formatQuantity(0)}
-                    onBlur={(e) => setOutputQty(parseNumeric(e.target.value))} 
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-lg focus:border-red-500 transition-all text-center" 
+                    onBlur={(e) => setOutputQty(parseNumeric(e.target.value))}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-lg focus:border-red-500 transition-all text-center"
                     placeholder="0,000"
                   />
                 </div>
@@ -692,13 +692,13 @@ const Contracts: React.FC = () => {
               <form onSubmit={handleConfirmDelivery} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantidade Recebida</label>
-                  <input 
-                    autoFocus 
-                    required 
-                    type="text" 
+                  <input
+                    autoFocus
+                    required
+                    type="text"
                     defaultValue={formatQuantity(0)}
-                    onBlur={(e) => setDeliveryQty(parseNumeric(e.target.value))} 
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-lg focus:border-emerald-500 transition-all text-center" 
+                    onBlur={(e) => setDeliveryQty(parseNumeric(e.target.value))}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-lg focus:border-emerald-500 transition-all text-center"
                     placeholder="0,000"
                   />
                 </div>
