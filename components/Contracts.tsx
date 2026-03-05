@@ -1404,248 +1404,249 @@ const Contracts: React.FC = () => {
             </div>
           </div>
         </div>
-        );
+      </div>
+    );
   }
 
-        return (
+  return (
 
-        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Gestão de Contratos</h2>
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
-                  <ShieldCheck size={14} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Base Auditada 2026</span>
-                </div>
-              </div>
-              <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-1">Controle fiscal, vigência e saldos por item</p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="relative w-full md:w-80 no-print">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                <input type="text" placeholder="Nº Contrato ou Fornecedor..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] font-black text-sm uppercase shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
-              </div>
-              <button onClick={() => setIsImportModalOpen(true)} className="p-4 bg-emerald-100 text-emerald-700 rounded-[1.5rem] hover:bg-emerald-200 transition-all shadow-lg flex items-center gap-3 group border border-emerald-200">
-                <Zap size={24} className="group-hover:scale-110 transition-transform fill-emerald-500" />
-                <span className="hidden md:block text-xs font-black uppercase tracking-widest">Importar PDF</span>
-              </button>
-              <button onClick={() => setIsNewContractModalOpen(true)} className="p-4 bg-gray-900 text-white rounded-[1.5rem] hover:bg-black transition-all shadow-xl flex items-center gap-3 group">
-                <FilePlus size={24} className="group-hover:scale-110 transition-transform" />
-                <span className="hidden md:block text-xs font-black uppercase tracking-widest">Novo Contrato</span>
-              </button>
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Gestão de Contratos</h2>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+              <ShieldCheck size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Base Auditada 2026</span>
             </div>
           </div>
+          <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-1">Controle fiscal, vigência e saldos por item</p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredContracts.map(contract => {
-              const { totalValue, totalSpent, daysRemaining } = calculateContractStats(contract);
-              const usagePercent = (totalSpent / totalValue) * 100;
-              return (
-                <div key={contract.id} onClick={() => setSelectedContractId(contract.id)} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between h-80">
+        <div className="flex items-center gap-4">
+          <div className="relative w-full md:w-80 no-print">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+            <input type="text" placeholder="Nº Contrato ou Fornecedor..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] font-black text-sm uppercase shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
+          </div>
+          <button onClick={() => setIsImportModalOpen(true)} className="p-4 bg-emerald-100 text-emerald-700 rounded-[1.5rem] hover:bg-emerald-200 transition-all shadow-lg flex items-center gap-3 group border border-emerald-200">
+            <Zap size={24} className="group-hover:scale-110 transition-transform fill-emerald-500" />
+            <span className="hidden md:block text-xs font-black uppercase tracking-widest">Importar PDF</span>
+          </button>
+          <button onClick={() => setIsNewContractModalOpen(true)} className="p-4 bg-gray-900 text-white rounded-[1.5rem] hover:bg-black transition-all shadow-xl flex items-center gap-3 group">
+            <FilePlus size={24} className="group-hover:scale-110 transition-transform" />
+            <span className="hidden md:block text-xs font-black uppercase tracking-widest">Novo Contrato</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredContracts.map(contract => {
+          const { totalValue, totalSpent, daysRemaining } = calculateContractStats(contract);
+          const usagePercent = (totalSpent / totalValue) * 100;
+          return (
+            <div key={contract.id} onClick={() => setSelectedContractId(contract.id)} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between h-80">
+              <div>
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`p-4 rounded-2xl ${contract.type.includes('Agric') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'} transition-transform group-hover:scale-110`}>
+                    {contract.type.includes('Agric') ? <Sprout size={28} /> : <FileText size={28} />}
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${(daysRemaining as number) < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                      {daysRemaining < 0 ? 'Vencido' : `${daysRemaining} Dias`}
+                    </span>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-black text-gray-900 uppercase leading-tight mb-1">Contrato {contract.number}</h3>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{contract.supplierName}</p>
+
+                <div className="mt-8 space-y-4">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase">
+                    <span className="text-gray-400">Execução Financeira</span>
+                    <span className={usagePercent > 90 ? 'text-red-600' : 'text-emerald-600'}>{usagePercent.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+                    <div className={`h-full transition-all duration-1000 ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
+                <div>
+                  <p className="text-[8px] font-black text-gray-300 uppercase mb-0.5">Saldo Disponível</p>
+                  <p className="text-sm font-black text-gray-900">R$ {(totalValue - totalSpent).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                </div>
+                <div className="p-2 bg-gray-50 text-gray-400 group-hover:bg-emerald-600 group-hover:text-white rounded-xl transition-all">
+                  <ChevronRight size={20} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {
+        isNewContractModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-8 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg"><FilePlus size={24} /></div>
+                  <h3 className="text-2xl font-black text-gray-900 uppercase">Novo Contrato Administrativo</h3>
+                </div>
+                <button onClick={() => setIsNewContractModalOpen(false)}><X size={24} className="text-gray-300" /></button>
+              </div>
+              <form onSubmit={handleCreateContract} className="p-10 space-y-6 overflow-y-auto custom-scrollbar">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase">Número do Contrato / Processo</label>
+                  <input required value={newContractForm.number} onChange={e => setNewContractForm({ ...newContractForm, number: e.target.value })} placeholder="Ex: 015/2026/SEDUC" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase">Fornecedor Ganhador (Licitante)</label>
+                  <select required value={newContractForm.supplierId} onChange={e => setNewContractForm({ ...newContractForm, supplierId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase">
+                    <option value="">Selecione...</option>
+                    {INITIAL_SUPPLIERS.map(s => <option key={s.id} value={s.id}>{s.name} ({s.category})</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Início Vigência</label><input type="date" value={newContractForm.startDate} onChange={e => setNewContractForm({ ...newContractForm, startDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
+                  <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Término Vigência</label><input type="date" value={newContractForm.endDate} onChange={e => setNewContractForm({ ...newContractForm, endDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
+                </div>
+                <button type="submit" className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl hover:bg-emerald-700 transition-all">Iniciar Monitoramento Contratual</button>
+              </form>
+            </div>
+          </div>
+        )
+      }
+
+      {/* MODAL IMPORTAÇÃO IA */}
+      {
+        isImportModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-8 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg relative overflow-hidden">
+                    <Zap size={24} className="relative z-10" />
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
                   <div>
-                    <div className="flex justify-between items-start mb-6">
-                      <div className={`p-4 rounded-2xl ${contract.type.includes('Agric') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'} transition-transform group-hover:scale-110`}>
-                        {contract.type.includes('Agric') ? <Sprout size={28} /> : <FileText size={28} />}
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${(daysRemaining as number) < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
-                          {daysRemaining < 0 ? 'Vencido' : `${daysRemaining} Dias`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <h3 className="text-xl font-black text-gray-900 uppercase leading-tight mb-1">Contrato {contract.number}</h3>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{contract.supplierName}</p>
-
-                    <div className="mt-8 space-y-4">
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                        <span className="text-gray-400">Execução Financeira</span>
-                        <span className={usagePercent > 90 ? 'text-red-600' : 'text-emerald-600'}>{usagePercent.toFixed(0)}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
-                        <div className={`h-full transition-all duration-1000 ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
-                    <div>
-                      <p className="text-[8px] font-black text-gray-300 uppercase mb-0.5">Saldo Disponível</p>
-                      <p className="text-sm font-black text-gray-900">R$ {(totalValue - totalSpent).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
-                    </div>
-                    <div className="p-2 bg-gray-50 text-gray-400 group-hover:bg-emerald-600 group-hover:text-white rounded-xl transition-all">
-                      <ChevronRight size={20} />
-                    </div>
+                    <h3 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter">Importar Contrato via IA</h3>
+                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Extração automática de PDF de Licitação ou Ata</p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {
-            isNewContractModalOpen && (
-              <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
-                <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                  <div className="p-8 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                      <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg"><FilePlus size={24} /></div>
-                      <h3 className="text-2xl font-black text-gray-900 uppercase">Novo Contrato Administrativo</h3>
-                    </div>
-                    <button onClick={() => setIsNewContractModalOpen(false)}><X size={24} className="text-gray-300" /></button>
-                  </div>
-                  <form onSubmit={handleCreateContract} className="p-10 space-y-6 overflow-y-auto custom-scrollbar">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-400 uppercase">Número do Contrato / Processo</label>
-                      <input required value={newContractForm.number} onChange={e => setNewContractForm({ ...newContractForm, number: e.target.value })} placeholder="Ex: 015/2026/SEDUC" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-gray-400 uppercase">Fornecedor Ganhador (Licitante)</label>
-                      <select required value={newContractForm.supplierId} onChange={e => setNewContractForm({ ...newContractForm, supplierId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase">
-                        <option value="">Selecione...</option>
-                        {INITIAL_SUPPLIERS.map(s => <option key={s.id} value={s.id}>{s.name} ({s.category})</option>)}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Início Vigência</label><input type="date" value={newContractForm.startDate} onChange={e => setNewContractForm({ ...newContractForm, startDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
-                      <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Término Vigência</label><input type="date" value={newContractForm.endDate} onChange={e => setNewContractForm({ ...newContractForm, endDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
-                    </div>
-                    <button type="submit" className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl hover:bg-emerald-700 transition-all">Iniciar Monitoramento Contratual</button>
-                  </form>
-                </div>
+                <button onClick={() => { setIsImportModalOpen(false); setExtractedData(null); }}><X size={24} className="text-gray-300 hover:text-red-500 transition-colors" /></button>
               </div>
-            )
-          }
 
-          {/* MODAL IMPORTAÇÃO IA */}
-          {
-            isImportModalOpen && (
-              <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
-                <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                  <div className="p-8 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                      <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg relative overflow-hidden">
-                        <Zap size={24} className="relative z-10" />
-                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter">Importar Contrato via IA</h3>
-                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Extração automática de PDF de Licitação ou Ata</p>
-                      </div>
-                    </div>
-                    <button onClick={() => { setIsImportModalOpen(false); setExtractedData(null); }}><X size={24} className="text-gray-300 hover:text-red-500 transition-colors" /></button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                    {!extractedData ? (
-                      <div className="h-full flex flex-col items-center justify-center py-20 text-center border-4 border-dashed border-emerald-100 rounded-[3rem] bg-emerald-50/30">
-                        {isProcessingPdf ? (
-                          <div className="space-y-6">
-                            <div className="w-20 h-20 border-8 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                            <p className="text-sm font-black text-emerald-800 uppercase animate-pulse">A Inteligência Artificial está lendo o documento...</p>
-                            <p className="text-[10px] text-emerald-600 font-bold uppercase">Aguarde extração de itens e vigências</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-6 max-w-sm">
-                            <div className="p-8 bg-white rounded-full shadow-lg mx-auto w-32 h-32 flex items-center justify-center">
-                              <FileSearch size={48} className="text-emerald-300" />
-                            </div>
-                            <div>
-                              <h4 className="text-lg font-black text-emerald-900 uppercase">Selecione o PDF do Contrato</h4>
-                              <p className="text-xs text-emerald-600 font-medium mt-2 leading-relaxed">Nossa IA irá identificar o número, fornecedor, datas e todos os itens registrados.</p>
-                            </div>
-                            <label className="block">
-                              <span className="sr-only">Choose file</span>
-                              <input
-                                type="file"
-                                accept="application/pdf"
-                                onChange={handlePdfUpload}
-                                className="block w-full text-sm text-emerald-500 file:mr-4 file:py-3 file:px-8 file:rounded-2xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 transition-all cursor-pointer"
-                              />
-                            </label>
-                          </div>
-                        )}
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                {!extractedData ? (
+                  <div className="h-full flex flex-col items-center justify-center py-20 text-center border-4 border-dashed border-emerald-100 rounded-[3rem] bg-emerald-50/30">
+                    {isProcessingPdf ? (
+                      <div className="space-y-6">
+                        <div className="w-20 h-20 border-8 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                        <p className="text-sm font-black text-emerald-800 uppercase animate-pulse">A Inteligência Artificial está lendo o documento...</p>
+                        <p className="text-[10px] text-emerald-600 font-bold uppercase">Aguarde extração de itens e vigências</p>
                       </div>
                     ) : (
-                      <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contrato Extraído</label>
-                            <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900">{extractedData.contractNumber}</div>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fornecedor Identificado</label>
-                            <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-emerald-700">{extractedData.supplierName}</div>
-                          </div>
+                      <div className="space-y-6 max-w-sm">
+                        <div className="p-8 bg-white rounded-full shadow-lg mx-auto w-32 h-32 flex items-center justify-center">
+                          <FileSearch size={48} className="text-emerald-300" />
                         </div>
-
-                        <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 bg-white rounded-xl shadow-sm text-emerald-600"><Calendar size={20} /></div>
-                            <div>
-                              <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Vigência Encontrada</p>
-                              <p className="text-sm font-black text-emerald-600 mt-1 uppercase">
-                                {new Date(extractedData.startDate).toLocaleDateString()} ATÉ {new Date(extractedData.endDate).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Total de Itens</p>
-                            <p className="text-2xl font-black text-emerald-900 leading-none mt-1">{extractedData.items?.length || 0}</p>
-                          </div>
+                        <div>
+                          <h4 className="text-lg font-black text-emerald-900 uppercase">Selecione o PDF do Contrato</h4>
+                          <p className="text-xs text-emerald-600 font-medium mt-2 leading-relaxed">Nossa IA irá identificar o número, fornecedor, datas e todos os itens registrados.</p>
                         </div>
-
-                        <div className="space-y-4">
-                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><ShoppingBag size={14} /> Prévia da Planilha de Itens</h4>
-                          <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                            <table className="w-full text-left border-collapse">
-                              <thead className="bg-gray-50 text-[8px] font-black text-gray-400 uppercase">
-                                <tr>
-                                  <th className="px-5 py-3">Item / Marca</th>
-                                  <th className="px-5 py-3 text-center">Quant.</th>
-                                  <th className="px-5 py-3 text-right">Preço Un.</th>
-                                  <th className="px-5 py-3 text-right">Total</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-50">
-                                {extractedData.items?.slice(0, 10).map((item: any, idx: number) => (
-                                  <tr key={idx} className="bg-white">
-                                    <td className="px-5 py-3">
-                                      <p className="text-[10px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
-                                      <p className="text-[8px] font-black text-emerald-500 uppercase">{item.brand || 'Marca não ident.'}</p>
-                                    </td>
-                                    <td className="px-5 py-3 text-center text-xs font-bold text-gray-900">{item.quantity} {item.unit}</td>
-                                    <td className="px-5 py-3 text-right text-xs font-bold text-gray-900">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td className="px-5 py-3 text-right text-xs font-black text-emerald-700">R$ {(item.quantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                            {extractedData.items?.length > 10 && (
-                              <div className="p-3 bg-gray-50 text-center text-[8px] font-black text-gray-400 uppercase tracking-widest border-t border-gray-100">
-                                + {extractedData.items.length - 10} itens ocultos na prévia
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={handleConfirmImport}
-                          className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
-                        >
-                          <Save size={24} /> Confirmar Importação de {(extractedData.items?.length || 0)} Itens
-                        </button>
-                        <p className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest px-10">Ao confirmar, o sistema irá cadastrar o fornecedor (se necessário), o contrato e todos os itens vinculados automaticamente.</p>
+                        <label className="block">
+                          <span className="sr-only">Choose file</span>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handlePdfUpload}
+                            className="block w-full text-sm text-emerald-500 file:mr-4 file:py-3 file:px-8 file:rounded-2xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 transition-all cursor-pointer"
+                          />
+                        </label>
                       </div>
                     )}
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contrato Extraído</label>
+                        <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900">{extractedData.contractNumber}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fornecedor Identificado</label>
+                        <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-emerald-700">{extractedData.supplierName}</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white rounded-xl shadow-sm text-emerald-600"><Calendar size={20} /></div>
+                        <div>
+                          <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Vigência Encontrada</p>
+                          <p className="text-sm font-black text-emerald-600 mt-1 uppercase">
+                            {new Date(extractedData.startDate).toLocaleDateString()} ATÉ {new Date(extractedData.endDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Total de Itens</p>
+                        <p className="text-2xl font-black text-emerald-900 leading-none mt-1">{extractedData.items?.length || 0}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><ShoppingBag size={14} /> Prévia da Planilha de Itens</h4>
+                      <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-gray-50 text-[8px] font-black text-gray-400 uppercase">
+                            <tr>
+                              <th className="px-5 py-3">Item / Marca</th>
+                              <th className="px-5 py-3 text-center">Quant.</th>
+                              <th className="px-5 py-3 text-right">Preço Un.</th>
+                              <th className="px-5 py-3 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {extractedData.items?.slice(0, 10).map((item: any, idx: number) => (
+                              <tr key={idx} className="bg-white">
+                                <td className="px-5 py-3">
+                                  <p className="text-[10px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
+                                  <p className="text-[8px] font-black text-emerald-500 uppercase">{item.brand || 'Marca não ident.'}</p>
+                                </td>
+                                <td className="px-5 py-3 text-center text-xs font-bold text-gray-900">{item.quantity} {item.unit}</td>
+                                <td className="px-5 py-3 text-right text-xs font-bold text-gray-900">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                <td className="px-5 py-3 text-right text-xs font-black text-emerald-700">R$ {(item.quantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {extractedData.items?.length > 10 && (
+                          <div className="p-3 bg-gray-50 text-center text-[8px] font-black text-gray-400 uppercase tracking-widest border-t border-gray-100">
+                            + {extractedData.items.length - 10} itens ocultos na prévia
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleConfirmImport}
+                      className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
+                    >
+                      <Save size={24} /> Confirmar Importação de {(extractedData.items?.length || 0)} Itens
+                    </button>
+                    <p className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest px-10">Ao confirmar, o sistema irá cadastrar o fornecedor (se necessário), o contrato e todos os itens vinculados automaticamente.</p>
+                  </div>
+                )}
               </div>
-            )
-          }
-        </div>
-        );
+            </div>
+          </div>
+        )
+      }
+    </div>
+  );
 };
 
-        export default Contracts;
+export default Contracts;
