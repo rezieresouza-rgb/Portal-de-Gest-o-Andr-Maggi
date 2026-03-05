@@ -216,6 +216,11 @@ const Contracts: React.FC = () => {
   const [isSavingBatch, setIsSavingBatch] = useState(false);
   const [generatedGuidePdf, setGeneratedGuidePdf] = useState<{ guide: any, items: any[] } | null>(null);
 
+  // Guide History State
+  const [paymentGuides, setPaymentGuides] = useState<any[]>([]);
+  const [isLoadingGuides, setIsLoadingGuides] = useState(false);
+  const [activeTab, setActiveTab] = useState<'ITEMS' | 'LOG' | 'GUIDES'>('ITEMS');
+
   useEffect(() => {
     supabase.from('suppliers').select('id, name, category').then(({ data }) => {
       if (data) setAvailableSuppliers(data);
@@ -407,6 +412,130 @@ const Contracts: React.FC = () => {
     }
   };
 
+  const fetchPaymentGuides = async (contractId: string) => {
+    try {
+      setIsLoadingGuides(true);
+      const { data, error } = await supabase
+        .from('payment_guides')
+        .select('*')
+        .eq('contract_id', contractId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPaymentGuides(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar guias:", err);
+    } finally {
+      setIsLoadingGuides(false);
+    }
+  };
+
+  const handleViewPastGuide = async (guide: any) => {
+    try {
+      setIsLoadingGuides(true);
+      const { data, error } = await supabase
+        .from('payment_guide_items')
+        .select('*, item:contract_items(*)')
+        .eq('guide_id', guide.id);
+
+      if (error) throw error;
+
+      const formattedItems = data.map((gi: any) => ({
+        ...gi.item,
+        quantity: gi.quantity,
+        unitPrice: gi.unit_price,
+        total: gi.total_item_value || gi.quantity * gi.unit_price
+      }));
+
+      setGeneratedGuidePdf({ guide, items: formattedItems });
+    } catch (err) {
+      console.error("Erro ao buscar detalhes da guia:", err);
+      alert("Erro ao carregar detalhes da guia.");
+    } finally {
+      setIsLoadingGuides(false);
+    }
+  };
+
+  const handleDeletePaymentGuide = async (guide: any) => {
+    if (!window.confirm(`DESEJA REALMENTE EXCLUIR ESTA GUIA? \n\nIsto irá estornar o saldo dos produtos no contrato e registrar um log de cancelamento.`)) return;
+
+    try {
+      setIsLoadingGuides(true);
+
+      // 1. Buscar itens desta guia para saber quanto estornar
+      const { data: guideItems, error: itemsError } = await supabase
+        .from('payment_guide_items')
+        .select('*')
+        .eq('guide_id', guide.id);
+
+      if (itemsError) throw itemsError;
+
+      // 2. Reverter os saldos no banco de dados
+      for (const gi of guideItems) {
+        // Buscar saldo atual para garantir precisão
+        const { data: currentItem, error: fetchError } = await supabase
+          .from('contract_items')
+          .select('acquired_quantity')
+          .eq('id', gi.contract_item_id)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const newQuantity = Math.max(0, (currentItem.acquired_quantity || 0) - gi.quantity);
+
+        const { error: updateError } = await supabase
+          .from('contract_items')
+          .update({ acquired_quantity: newQuantity })
+          .eq('id', gi.contract_item_id);
+
+        if (updateError) throw updateError;
+      }
+
+      // 3. Excluir a guia (o cascade delete cuidará dos itens da guia no Supabase)
+      const { error: deleteError } = await supabase
+        .from('payment_guides')
+        .delete()
+        .eq('id', guide.id);
+
+      if (deleteError) throw deleteError;
+
+      // 4. Registrar o log do estorno
+      await addExecutionEvent(guide.contract_id, 'DELIVERY', `⚠️ ESTORNO: Guia ${guide.guide_number} excluída e saldo devolvido`, -guide.total_value);
+
+      // 5. Atualizar estado local dos contratos
+      setContracts(prev => prev.map(c => {
+        if (c.id !== guide.contract_id) return c;
+        return {
+          ...c,
+          items: c.items.map(i => {
+            const gi = guideItems.find(g => g.contract_item_id === i.id);
+            if (!gi) return i;
+            return {
+              ...i,
+              acquiredQuantity: Math.max(0, (i.acquiredQuantity || 0) - gi.quantity)
+            };
+          })
+        };
+      }));
+
+      // 6. Recarregar lista de guias
+      fetchPaymentGuides(guide.contract_id);
+      alert("Estorno realizado com sucesso!");
+
+    } catch (error: any) {
+      alert("Erro ao estornar: " + error.message);
+    } finally {
+      setIsLoadingGuides(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedContractId) {
+      fetchPaymentGuides(selectedContractId);
+      setActiveTab('ITEMS');
+    }
+  }, [selectedContractId]);
+
   const handleCreateContract = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -587,7 +716,7 @@ const Contracts: React.FC = () => {
         };
       }));
 
-      await addExecutionEvent(outputModal.contractId, 'PEDIDO', `Saída Manual: ${outputQty} ${item.unit} de ${outputModal.description}`, impact);
+      await addExecutionEvent(outputModal.contractId, 'DELIVERY', `Saída Manual: ${outputQty} ${item.unit} de ${outputModal.description}`, impact);
       setOutputModal(null);
       setOutputQty("");
       alert("Saída de estoque registrada com sucesso!");
@@ -608,10 +737,10 @@ const Contracts: React.FC = () => {
       if (!contract) throw new Error("Contrato não encontrado.");
 
       const guideNumber = `PAG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const totalValue = Object.entries(batchDeliveryData).reduce((sum, [itemId, qty]) => {
+      const totalValue = Math.round(Object.entries(batchDeliveryData).reduce((sum, [itemId, qty]) => {
         const item = contract.items.find(i => i.id === itemId);
-        return sum + (qty * (item?.unitPrice || 0));
-      }, 0);
+        return sum + ((qty as number) * ((item?.unitPrice as number) || 0));
+      }, 0) * 100) / 100;
 
       // 1. Create Payment Guide
       const { data: guide, error: guideError } = await supabase
@@ -630,7 +759,7 @@ const Contracts: React.FC = () => {
       // 2. Prepare Items and Update Stock
       const guideItems = [];
       for (const [itemId, qty] of Object.entries(batchDeliveryData)) {
-        if (qty <= 0) continue;
+        if ((qty as number) <= 0) continue;
         const item = contract.items.find(i => i.id === itemId);
         if (!item) continue;
 
@@ -659,11 +788,11 @@ const Contracts: React.FC = () => {
         guideItems.push({
           ...item,
           quantity: qty,
-          total: qty * (item.unitPrice as number)
+          total: Math.round((qty as number) * (item.unitPrice as number) * 100) / 100
         });
 
         // Add to Execution Events
-        await addExecutionEvent(selectedContractId, 'DELIVERY', `Recebimento: ${qty} ${item.unit} de ${item.description}`, qty * item.unitPrice);
+        await addExecutionEvent(selectedContractId, 'DELIVERY', `Recebimento: ${qty} ${item.unit} de ${item.description}`, (qty as number) * (item.unitPrice as number));
       }
 
       // 3. Update Local State
@@ -686,6 +815,9 @@ const Contracts: React.FC = () => {
       setShowBatchDeliveryModal(false);
       setSelectedItems(new Set());
       setBatchDeliveryData({});
+
+      // Refresh guides list
+      if (selectedContractId) fetchPaymentGuides(selectedContractId);
 
     } catch (error: any) {
       alert("Erro ao gerar guia: " + error.message);
@@ -796,15 +928,15 @@ const Contracts: React.FC = () => {
                           <td className="py-4 pr-4 font-bold uppercase">{item.description}</td>
                           <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
                           <td className="py-4 px-4 text-center font-black">{formatQuantity(item.quantity)}</td>
-                          <td className="py-4 px-4 text-right font-bold">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="py-4 pl-4 text-right font-black">R$ {item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="py-4 px-4 text-right font-bold">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-4 pl-4 text-right font-black">R$ {item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-gray-900">
                         <td colSpan={4} className="py-6 text-right text-xs font-black uppercase">Valor Total da Guia:</td>
-                        <td className="py-6 pl-4 text-right text-lg font-black text-emerald-700">R$ {generatedGuidePdf.guide.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-6 pl-4 text-right text-lg font-black text-emerald-700">R$ {generatedGuidePdf.guide.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -862,13 +994,13 @@ const Contracts: React.FC = () => {
                         if (!item) return null;
                         const remaining = item.contractedQuantity - item.acquiredQuantity;
                         const quantity = batchDeliveryData[itemId] || 0;
-                        const total = quantity * item.unitPrice;
+                        const total = Math.round((quantity as number) * (item.unitPrice as number) * 100) / 100;
 
                         return (
                           <tr key={itemId} className="hover:bg-gray-50/50 transition-colors">
                             <td className="px-6 py-4">
                               <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
-                              <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / {item.unit}</p>
+                              <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {item.unit}</p>
                             </td>
                             <td className="px-6 py-4 text-center">
                               <span className="text-[10px] font-bold text-gray-500">{formatQuantity(remaining)} {item.unit}</span>
@@ -883,7 +1015,7 @@ const Contracts: React.FC = () => {
                               />
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <p className="text-[11px] font-black text-emerald-700">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              <p className="text-[11px] font-black text-emerald-700">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             </td>
                           </tr>
                         );
@@ -897,8 +1029,8 @@ const Contracts: React.FC = () => {
                     <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1">Valor Total da Entrega</p>
                     <p className="text-4xl font-black text-white">R$ {Object.entries(batchDeliveryData).reduce((sum, [itemId, qty]) => {
                       const item = selectedContract.items.find(i => i.id === itemId);
-                      return sum + (qty * (item?.unitPrice || 0));
-                    }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      return sum + ((qty as number) * ((item?.unitPrice as number) || 0));
+                    }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <button
                     type="submit"
@@ -1041,15 +1173,15 @@ const Contracts: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor Global</p>
-                <p className="text-xl font-black text-gray-900 leading-none">R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-black text-gray-900 leading-none">R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
               <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Total Executado</p>
-                <p className="text-xl font-black text-emerald-700 leading-none">R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-black text-emerald-700 leading-none">R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
               <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100">
                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Saldo Disponível</p>
-                <p className="text-xl font-black text-blue-700 leading-none">R$ {remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-black text-blue-700 leading-none">R$ {remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           </div>
@@ -1074,374 +1206,447 @@ const Contracts: React.FC = () => {
           </div>
         </div>
 
+        <div className="flex items-center gap-1 p-1 bg-gray-100/50 rounded-2xl w-fit">
+
+          <button
+            onClick={() => setActiveTab('ITEMS')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'ITEMS' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Itens do Contrato
+          </button>
+          <button
+            onClick={() => setActiveTab('GUIDES')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'GUIDES' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Histórico de Guias ({paymentGuides.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('LOG')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'LOG' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Log de Execução
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2 bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-              <div className="flex items-center gap-6">
-                <h3 className="text-lg font-black text-gray-900 uppercase flex items-center gap-2 whitespace-nowrap"><ShoppingBag size={20} className="text-emerald-600" /> Planilha de Itens</h3>
-                <div className="relative w-64 md:w-80 no-print">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
-                  <input type="text" placeholder="Pesquisar produto..." value={itemFilter} onChange={(e) => setItemFilter(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white transition-all" />
+          <div className={`xl:col-span-2 space-y-6 ${activeTab !== 'ITEMS' ? 'hidden' : ''}`}>
+            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-6">
+                  <h3 className="text-lg font-black text-gray-900 uppercase flex items-center gap-2 whitespace-nowrap"><ShoppingBag size={20} className="text-emerald-600" /> Planilha de Itens</h3>
+                  <div className="relative w-64 md:w-80 no-print">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                    <input type="text" placeholder="Pesquisar produto..." value={itemFilter} onChange={(e) => setItemFilter(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white transition-all" />
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-3 no-print">
-                {selectedItems.size > 0 && (
-                  <button
-                    onClick={() => setShowBatchDeliveryModal(true)}
-                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg animate-in slide-in-from-right-4"
-                  >
-                    <Truck size={14} /> Registrar Entrega ({selectedItems.size})
+                <div className="flex items-center gap-3 no-print">
+                  <button onClick={() => setShowBatchDeliveryModal(true)} disabled={selectedItems.size === 0} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 disabled:opacity-50 disabled:grayscale">
+                    <FileCheck size={18} /> Registrar Entrega em Lote ({selectedItems.size})
                   </button>
-                )}
-                <button
-                  onClick={() => {
-                    const allItems = new Set(filteredItems.map(i => i.id));
-                    setSelectedItems(selectedItems.size === filteredItems.length ? new Set() : allItems);
-                  }}
-                  className="px-5 py-2.5 bg-gray-50 text-gray-500 border border-gray-100 rounded-xl text-[10px] font-black uppercase hover:bg-gray-100 transition-all"
-                >
-                  {selectedItems.size === filteredItems.length ? 'Desmarcar Tudo' : 'Marcar Tudo'}
-                </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-3xl border border-gray-100">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                      <th className="px-6 py-4 w-12 text-center">
+                        <input type="checkbox" onChange={(e) => {
+                          if (e.target.checked) setSelectedItems(new Set(filteredItems.map(i => i.id)));
+                          else setSelectedItems(new Set());
+                        }} checked={selectedItems.size === filteredItems.length && filteredItems.length > 0} className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                      </th>
+                      <th className="px-6 py-4">Item (Descrição / Marca)</th>
+                      <th className="px-6 py-4 text-center">Saldo Restante</th>
+                      <th className="px-6 py-4 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filteredItems.map(item => {
+                      const remaining = item.contractedQuantity - item.acquiredQuantity;
+                      const usage = (item.acquiredQuantity / item.contractedQuantity) * 100;
+                      return (
+                        <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors ${selectedItems.has(item.id) ? 'bg-emerald-50/30' : ''}`}>
+                          <td className="px-6 py-5 text-center">
+                            <input type="checkbox" checked={selectedItems.has(item.id)} onChange={() => {
+                              const next = new Set(selectedItems);
+                              if (next.has(item.id)) next.delete(item.id);
+                              else next.add(item.id);
+                              setSelectedItems(next);
+                            }} className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                          </td>
+                          <td className="px-6 py-5">
+                            <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
+                            <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {item.unit} • {item.brand || 'Original'}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex flex-col items-center">
+                              <span className="text-[10px] font-bold text-gray-500 mb-1">{formatQuantity(remaining)} / {formatQuantity(item.contractedQuantity)}</span>
+                              <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50"><div className={`h-full transition-all duration-1000 ${usage > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usage}%` }} /></div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => setAditivoModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Aditivo"><FilePlus size={14} /></button>
+                              <button onClick={() => setDeliveryModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2 shadow-sm" title="Receber Gêneros"><Truck size={12} /> Receber</button>
+                              <button onClick={() => setOutputModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-[9px] font-black uppercase hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 shadow-sm" title="Saída de Estoque"><TrendingUp size={12} className="rotate-180" /> Saída</button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
+          </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-gray-100">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
-                    <th className="px-6 py-4 w-10 no-print">
-                      <Check size={14} />
-                    </th>
-                    <th className="px-6 py-4">Descrição do Produto</th>
-                    <th className="px-6 py-4 text-center">Contratado / Saldo</th>
-                    <th className="px-6 py-4 text-right">Saldo Valor</th>
-                    <th className="px-6 py-4 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredItems.map((item) => {
-                    const remaining = item.contractedQuantity - item.acquiredQuantity;
-                    const usagePercent = (item.acquiredQuantity / item.contractedQuantity) * 100;
-                    return (
-                      <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors group ${selectedItems.has(item.id) ? 'bg-emerald-50/30' : ''}`}>
-                        <td className="px-6 py-5 no-print">
-                          <input
-                            type="checkbox"
-                            checked={selectedItems.has(item.id)}
-                            onChange={(e) => {
-                              const newSelected = new Set(selectedItems);
-                              if (e.target.checked) newSelected.add(item.id);
-                              else newSelected.delete(item.id);
-                              setSelectedItems(newSelected);
-                            }}
-                            className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                          />
-                        </td>
-                        <td className="px-6 py-5">
-                          <p className="font-black text-gray-900 text-xs uppercase leading-tight">{item.description}</p>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <span className="text-[7px] font-black bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase">{item.unit}</span>
-                            {usagePercent >= 90 && <span className="text-[7px] font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded uppercase animate-pulse">Esgotando</span>}
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 text-center">
-                          <p className="text-xs font-black text-gray-900">{formatQuantity(item.contractedQuantity)} / <span className="text-blue-600">{formatQuantity(remaining)}</span></p>
-                          <div className="w-20 bg-gray-100 h-1 rounded-full mx-auto mt-2 overflow-hidden">
-                            <div className={`h-full ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 text-right font-black text-gray-900 text-xs">R$ {(remaining * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                        <td className="px-6 py-5 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button onClick={() => setAditivoModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Aditivo"><Plus size={14} /></button>
-                            <button onClick={() => setDeliveryModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2 shadow-sm" title="Receber Gêneros"><Truck size={12} /> Receber</button>
-                            <button onClick={() => setOutputModal({ contractId: selectedContract.id, itemId: item.id, description: item.description })} className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-[9px] font-black uppercase hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 shadow-sm" title="Saída de Estoque"><TrendingUp size={12} className="rotate-180" /> Saída</button>
-                          </div>
-                        </td>
+
+          <div className={`xl:col-span-2 space-y-6 ${activeTab !== 'GUIDES' ? 'hidden' : ''}`}>
+            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+                  <FileCheck size={20} className="text-emerald-600" /> Guias de Pagamento Geradas
+                </h3>
+              </div>
+
+              {isLoadingGuides ? (
+                <div className="py-20 text-center">
+                  <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase">Carregando histórico...</p>
+                </div>
+              ) : paymentGuides.length > 0 ? (
+                <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                        <th className="px-6 py-4">Nº da Guia</th>
+                        <th className="px-6 py-4">Data de Emissão</th>
+                        <th className="px-6 py-4 text-right">Valor Total</th>
+                        <th className="px-6 py-4 text-right">Ações</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* TIMELINE DE EXECUÇÃO */}
-          <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                <History size={20} className="text-indigo-600" /> Log de Execução
-              </h3>
-            </div>
-
-            <div className="flex-1 space-y-6 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-px before:bg-gray-100">
-              {selectedEvents.length > 0 ? selectedEvents.map(evt => (
-                <div key={evt.id} className="relative pl-12">
-                  <div className={`absolute left-0 top-1 w-10 h-10 rounded-xl flex items-center justify-center border-4 border-white shadow-sm z-10 ${evt.type === 'DELIVERY' ? 'bg-emerald-500 text-white' :
-                    evt.type === 'ADITIVO' ? 'bg-blue-500 text-white' : 'bg-gray-900 text-white'
-                    }`}>
-                    {evt.type === 'DELIVERY' ? <Truck size={14} /> :
-                      evt.type === 'ADITIVO' ? <FilePlus size={14} /> : <Zap size={14} />}
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <p className="text-[10px] font-black text-gray-900 uppercase leading-none">{evt.description}</p>
-                      <span className="text-[8px] font-bold text-gray-400 uppercase">{new Date(evt.date).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    {evt.value !== undefined && (
-                      <p className="text-[10px] font-black text-indigo-600 mt-1">Impacto: R$ {evt.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    )}
-                    <p className="text-[8px] text-gray-400 font-bold uppercase mt-1">Resp: {evt.responsible}</p>
-                  </div>
-                </div>
-              )) : (
-                <div className="py-20 text-center opacity-20">
-                  <FileSearch size={48} className="mx-auto mb-2" />
-                  <p className="text-[10px] font-black uppercase">Nenhum evento registrado</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Gestão de Contratos</h2>
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
-              <ShieldCheck size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Base Auditada 2026</span>
-            </div>
-          </div>
-          <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-1">Controle fiscal, vigência e saldos por item</p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="relative w-full md:w-80 no-print">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-            <input type="text" placeholder="Nº Contrato ou Fornecedor..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] font-black text-sm uppercase shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
-          </div>
-          <button onClick={() => setIsImportModalOpen(true)} className="p-4 bg-emerald-100 text-emerald-700 rounded-[1.5rem] hover:bg-emerald-200 transition-all shadow-lg flex items-center gap-3 group border border-emerald-200">
-            <Zap size={24} className="group-hover:scale-110 transition-transform fill-emerald-500" />
-            <span className="hidden md:block text-xs font-black uppercase tracking-widest">Importar PDF</span>
-          </button>
-          <button onClick={() => setIsNewContractModalOpen(true)} className="p-4 bg-gray-900 text-white rounded-[1.5rem] hover:bg-black transition-all shadow-xl flex items-center gap-3 group">
-            <FilePlus size={24} className="group-hover:scale-110 transition-transform" />
-            <span className="hidden md:block text-xs font-black uppercase tracking-widest">Novo Contrato</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredContracts.map(contract => {
-          const { totalValue, totalSpent, daysRemaining } = calculateContractStats(contract);
-          const usagePercent = (totalSpent / totalValue) * 100;
-          return (
-            <div key={contract.id} onClick={() => setSelectedContractId(contract.id)} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between h-80">
-              <div>
-                <div className="flex justify-between items-start mb-6">
-                  <div className={`p-4 rounded-2xl ${contract.type.includes('Agric') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'} transition-transform group-hover:scale-110`}>
-                    {contract.type.includes('Agric') ? <Sprout size={28} /> : <FileText size={28} />}
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${(daysRemaining as number) < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
-                      {daysRemaining < 0 ? 'Vencido' : `${daysRemaining} Dias`}
-                    </span>
-                  </div>
-                </div>
-
-                <h3 className="text-xl font-black text-gray-900 uppercase leading-tight mb-1">Contrato {contract.number}</h3>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{contract.supplierName}</p>
-
-                <div className="mt-8 space-y-4">
-                  <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                    <span className="text-gray-400">Execução Financeira</span>
-                    <span className={usagePercent > 90 ? 'text-red-600' : 'text-emerald-600'}>{usagePercent.toFixed(0)}%</span>
-                  </div>
-                  <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
-                    <div className={`h-full transition-all duration-1000 ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
-                <div>
-                  <p className="text-[8px] font-black text-gray-300 uppercase mb-0.5">Saldo Disponível</p>
-                  <p className="text-sm font-black text-gray-900">R$ {(totalValue - totalSpent).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
-                </div>
-                <div className="p-2 bg-gray-50 text-gray-400 group-hover:bg-emerald-600 group-hover:text-white rounded-xl transition-all">
-                  <ChevronRight size={20} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {isNewContractModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-8 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg"><FilePlus size={24} /></div>
-                <h3 className="text-2xl font-black text-gray-900 uppercase">Novo Contrato Administrativo</h3>
-              </div>
-              <button onClick={() => setIsNewContractModalOpen(false)}><X size={24} className="text-gray-300" /></button>
-            </div>
-            <form onSubmit={handleCreateContract} className="p-10 space-y-6 overflow-y-auto custom-scrollbar">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase">Número do Contrato / Processo</label>
-                <input required value={newContractForm.number} onChange={e => setNewContractForm({ ...newContractForm, number: e.target.value })} placeholder="Ex: 015/2026/SEDUC" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase">Fornecedor Ganhador (Licitante)</label>
-                <select required value={newContractForm.supplierId} onChange={e => setNewContractForm({ ...newContractForm, supplierId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase">
-                  <option value="">Selecione...</option>
-                  {INITIAL_SUPPLIERS.map(s => <option key={s.id} value={s.id}>{s.name} ({s.category})</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Início Vigência</label><input type="date" value={newContractForm.startDate} onChange={e => setNewContractForm({ ...newContractForm, startDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Término Vigência</label><input type="date" value={newContractForm.endDate} onChange={e => setNewContractForm({ ...newContractForm, endDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
-              </div>
-              <button type="submit" className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl hover:bg-emerald-700 transition-all">Iniciar Monitoramento Contratual</button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL IMPORTAÇÃO IA */}
-      {isImportModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-8 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg relative overflow-hidden">
-                  <Zap size={24} className="relative z-10" />
-                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter">Importar Contrato via IA</h3>
-                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Extração automática de PDF de Licitação ou Ata</p>
-                </div>
-              </div>
-              <button onClick={() => { setIsImportModalOpen(false); setExtractedData(null); }}><X size={24} className="text-gray-300 hover:text-red-500 transition-colors" /></button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-              {!extractedData ? (
-                <div className="h-full flex flex-col items-center justify-center py-20 text-center border-4 border-dashed border-emerald-100 rounded-[3rem] bg-emerald-50/30">
-                  {isProcessingPdf ? (
-                    <div className="space-y-6">
-                      <div className="w-20 h-20 border-8 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                      <p className="text-sm font-black text-emerald-800 uppercase animate-pulse">A Inteligência Artificial está lendo o documento...</p>
-                      <p className="text-[10px] text-emerald-600 font-bold uppercase">Aguarde extração de itens e vigências</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6 max-w-sm">
-                      <div className="p-8 bg-white rounded-full shadow-lg mx-auto w-32 h-32 flex items-center justify-center">
-                        <FileSearch size={48} className="text-emerald-300" />
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-black text-emerald-900 uppercase">Selecione o PDF do Contrato</h4>
-                        <p className="text-xs text-emerald-600 font-medium mt-2 leading-relaxed">Nossa IA irá identificar o número, fornecedor, datas e todos os itens registrados.</p>
-                      </div>
-                      <label className="block">
-                        <span className="sr-only">Choose file</span>
-                        <input
-                          type="file"
-                          accept="application/pdf"
-                          onChange={handlePdfUpload}
-                          className="block w-full text-sm text-emerald-500 file:mr-4 file:py-3 file:px-8 file:rounded-2xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 transition-all cursor-pointer"
-                        />
-                      </label>
-                    </div>
-                  )}
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paymentGuides.map((guide) => (
+                        <tr key={guide.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-5">
+                            <p className="font-black text-gray-900 text-xs uppercase">{guide.guide_number}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-gray-500 text-xs">{new Date(guide.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                          </td>
+                          <td className="px-6 py-5 text-right font-black text-emerald-700 text-xs">
+                            R$ {guide.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-6 py-5 text-right flex justify-end gap-2">
+                            <button
+                              onClick={() => handleViewPastGuide(guide)}
+                              className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-all inline-flex items-center gap-2"
+                              title="Visualizar Guia"
+                            >
+                              <FileSearch size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePaymentGuide(guide)}
+                              className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                              title="Excluir Guia / Estornar Saldo"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
-                <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contrato Extraído</label>
-                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900">{extractedData.contractNumber}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fornecedor Identificado</label>
-                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-emerald-700">{extractedData.supplierName}</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-white rounded-xl shadow-sm text-emerald-600"><Calendar size={20} /></div>
-                      <div>
-                        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Vigência Encontrada</p>
-                        <p className="text-sm font-black text-emerald-600 mt-1 uppercase">
-                          {new Date(extractedData.startDate).toLocaleDateString()} ATÉ {new Date(extractedData.endDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Total de Itens</p>
-                      <p className="text-2xl font-black text-emerald-900 leading-none mt-1">{extractedData.items?.length || 0}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><ShoppingBag size={14} /> Prévia da Planilha de Itens</h4>
-                    <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50 text-[8px] font-black text-gray-400 uppercase">
-                          <tr>
-                            <th className="px-5 py-3">Item / Marca</th>
-                            <th className="px-5 py-3 text-center">Quant.</th>
-                            <th className="px-5 py-3 text-right">Preço Un.</th>
-                            <th className="px-5 py-3 text-right">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                          {extractedData.items?.slice(0, 10).map((item: any, idx: number) => (
-                            <tr key={idx} className="bg-white">
-                              <td className="px-5 py-3">
-                                <p className="text-[10px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
-                                <p className="text-[8px] font-black text-emerald-500 uppercase">{item.brand || 'Marca não ident.'}</p>
-                              </td>
-                              <td className="px-5 py-3 text-center text-xs font-bold text-gray-900">{item.quantity} {item.unit}</td>
-                              <td className="px-5 py-3 text-right text-xs font-bold text-gray-900">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                              <td className="px-5 py-3 text-right text-xs font-black text-emerald-700">R$ {(item.quantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {extractedData.items?.length > 10 && (
-                        <div className="p-3 bg-gray-50 text-center text-[8px] font-black text-gray-400 uppercase tracking-widest border-t border-gray-100">
-                          + {extractedData.items.length - 10} itens ocultos na prévia
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleConfirmImport}
-                    className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
-                  >
-                    <Save size={24} /> Confirmar Importação de {(extractedData.items?.length || 0)} Itens
-                  </button>
-                  <p className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest px-10">Ao confirmar, o sistema irá cadastrar o fornecedor (se necessário), o contrato e todos os itens vinculados automaticamente.</p>
+                <div className="py-20 text-center opacity-20 border-2 border-dashed border-gray-200 rounded-[2rem]">
+                  <FileSearch size={48} className="mx-auto mb-2" />
+                  <p className="text-[10px] font-black uppercase">Nenhuma guia encontrada para este contrato</p>
                 </div>
               )}
             </div>
           </div>
+
+          <div className={`xl:col-span-2 space-y-6 ${activeTab !== 'LOG' ? 'hidden' : ''}`}>
+            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+                  <History size={20} className="text-indigo-600" /> Log de Execução Completo
+                </h3>
+              </div>
+              <div className="space-y-6 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-px before:bg-gray-100">
+                {selectedEvents.length > 0 ? selectedEvents.map(evt => (
+                  <div key={evt.id} className="relative pl-12">
+                    <div className={`absolute left-0 top-1 w-10 h-10 rounded-xl flex items-center justify-center border-4 border-white shadow-sm z-10 ${evt.type === 'DELIVERY' ? 'bg-emerald-500 text-white' :
+                      evt.type === 'ADITIVO' ? 'bg-blue-500 text-white' : 'bg-gray-900 text-white'
+                      }`}>
+                      {evt.type === 'DELIVERY' ? <Truck size={14} /> :
+                        evt.type === 'ADITIVO' ? <FilePlus size={14} /> : <Zap size={14} />}
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <p className="text-[10px] font-black text-gray-900 uppercase leading-none">{evt.description}</p>
+                        <span className="text-[8px] font-bold text-gray-400 uppercase">{new Date(evt.date).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      {evt.value !== undefined && (
+                        <p className="text-[10px] font-black text-indigo-600 mt-1">Impacto: R$ {evt.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      )}
+                      <p className="text-[8px] text-gray-400 font-bold uppercase mt-1">Resp: {evt.responsible}</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="py-20 text-center opacity-20">
+                    <FileSearch size={48} className="mx-auto mb-2" />
+                    <p className="text-[10px] font-black uppercase">Nenhum evento registrado</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  );
+        );
+  }
+
+        return (
+
+        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Gestão de Contratos</h2>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+                  <ShieldCheck size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Base Auditada 2026</span>
+                </div>
+              </div>
+              <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-1">Controle fiscal, vigência e saldos por item</p>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="relative w-full md:w-80 no-print">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                <input type="text" placeholder="Nº Contrato ou Fornecedor..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] font-black text-sm uppercase shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
+              </div>
+              <button onClick={() => setIsImportModalOpen(true)} className="p-4 bg-emerald-100 text-emerald-700 rounded-[1.5rem] hover:bg-emerald-200 transition-all shadow-lg flex items-center gap-3 group border border-emerald-200">
+                <Zap size={24} className="group-hover:scale-110 transition-transform fill-emerald-500" />
+                <span className="hidden md:block text-xs font-black uppercase tracking-widest">Importar PDF</span>
+              </button>
+              <button onClick={() => setIsNewContractModalOpen(true)} className="p-4 bg-gray-900 text-white rounded-[1.5rem] hover:bg-black transition-all shadow-xl flex items-center gap-3 group">
+                <FilePlus size={24} className="group-hover:scale-110 transition-transform" />
+                <span className="hidden md:block text-xs font-black uppercase tracking-widest">Novo Contrato</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredContracts.map(contract => {
+              const { totalValue, totalSpent, daysRemaining } = calculateContractStats(contract);
+              const usagePercent = (totalSpent / totalValue) * 100;
+              return (
+                <div key={contract.id} onClick={() => setSelectedContractId(contract.id)} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between h-80">
+                  <div>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className={`p-4 rounded-2xl ${contract.type.includes('Agric') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'} transition-transform group-hover:scale-110`}>
+                        {contract.type.includes('Agric') ? <Sprout size={28} /> : <FileText size={28} />}
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${(daysRemaining as number) < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                          {daysRemaining < 0 ? 'Vencido' : `${daysRemaining} Dias`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h3 className="text-xl font-black text-gray-900 uppercase leading-tight mb-1">Contrato {contract.number}</h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{contract.supplierName}</p>
+
+                    <div className="mt-8 space-y-4">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase">
+                        <span className="text-gray-400">Execução Financeira</span>
+                        <span className={usagePercent > 90 ? 'text-red-600' : 'text-emerald-600'}>{usagePercent.toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+                        <div className={`h-full transition-all duration-1000 ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <div>
+                      <p className="text-[8px] font-black text-gray-300 uppercase mb-0.5">Saldo Disponível</p>
+                      <p className="text-sm font-black text-gray-900">R$ {(totalValue - totalSpent).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                    </div>
+                    <div className="p-2 bg-gray-50 text-gray-400 group-hover:bg-emerald-600 group-hover:text-white rounded-xl transition-all">
+                      <ChevronRight size={20} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {
+            isNewContractModalOpen && (
+              <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="p-8 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg"><FilePlus size={24} /></div>
+                      <h3 className="text-2xl font-black text-gray-900 uppercase">Novo Contrato Administrativo</h3>
+                    </div>
+                    <button onClick={() => setIsNewContractModalOpen(false)}><X size={24} className="text-gray-300" /></button>
+                  </div>
+                  <form onSubmit={handleCreateContract} className="p-10 space-y-6 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-400 uppercase">Número do Contrato / Processo</label>
+                      <input required value={newContractForm.number} onChange={e => setNewContractForm({ ...newContractForm, number: e.target.value })} placeholder="Ex: 015/2026/SEDUC" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-400 uppercase">Fornecedor Ganhador (Licitante)</label>
+                      <select required value={newContractForm.supplierId} onChange={e => setNewContractForm({ ...newContractForm, supplierId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase">
+                        <option value="">Selecione...</option>
+                        {INITIAL_SUPPLIERS.map(s => <option key={s.id} value={s.id}>{s.name} ({s.category})</option>)}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Início Vigência</label><input type="date" value={newContractForm.startDate} onChange={e => setNewContractForm({ ...newContractForm, startDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
+                      <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase">Término Vigência</label><input type="date" value={newContractForm.endDate} onChange={e => setNewContractForm({ ...newContractForm, endDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" /></div>
+                    </div>
+                    <button type="submit" className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl hover:bg-emerald-700 transition-all">Iniciar Monitoramento Contratual</button>
+                  </form>
+                </div>
+              </div>
+            )
+          }
+
+          {/* MODAL IMPORTAÇÃO IA */}
+          {
+            isImportModalOpen && (
+              <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="p-8 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg relative overflow-hidden">
+                        <Zap size={24} className="relative z-10" />
+                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter">Importar Contrato via IA</h3>
+                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Extração automática de PDF de Licitação ou Ata</p>
+                      </div>
+                    </div>
+                    <button onClick={() => { setIsImportModalOpen(false); setExtractedData(null); }}><X size={24} className="text-gray-300 hover:text-red-500 transition-colors" /></button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                    {!extractedData ? (
+                      <div className="h-full flex flex-col items-center justify-center py-20 text-center border-4 border-dashed border-emerald-100 rounded-[3rem] bg-emerald-50/30">
+                        {isProcessingPdf ? (
+                          <div className="space-y-6">
+                            <div className="w-20 h-20 border-8 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                            <p className="text-sm font-black text-emerald-800 uppercase animate-pulse">A Inteligência Artificial está lendo o documento...</p>
+                            <p className="text-[10px] text-emerald-600 font-bold uppercase">Aguarde extração de itens e vigências</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-6 max-w-sm">
+                            <div className="p-8 bg-white rounded-full shadow-lg mx-auto w-32 h-32 flex items-center justify-center">
+                              <FileSearch size={48} className="text-emerald-300" />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-black text-emerald-900 uppercase">Selecione o PDF do Contrato</h4>
+                              <p className="text-xs text-emerald-600 font-medium mt-2 leading-relaxed">Nossa IA irá identificar o número, fornecedor, datas e todos os itens registrados.</p>
+                            </div>
+                            <label className="block">
+                              <span className="sr-only">Choose file</span>
+                              <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={handlePdfUpload}
+                                className="block w-full text-sm text-emerald-500 file:mr-4 file:py-3 file:px-8 file:rounded-2xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 transition-all cursor-pointer"
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contrato Extraído</label>
+                            <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900">{extractedData.contractNumber}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fornecedor Identificado</label>
+                            <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-emerald-700">{extractedData.supplierName}</div>
+                          </div>
+                        </div>
+
+                        <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-xl shadow-sm text-emerald-600"><Calendar size={20} /></div>
+                            <div>
+                              <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Vigência Encontrada</p>
+                              <p className="text-sm font-black text-emerald-600 mt-1 uppercase">
+                                {new Date(extractedData.startDate).toLocaleDateString()} ATÉ {new Date(extractedData.endDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Total de Itens</p>
+                            <p className="text-2xl font-black text-emerald-900 leading-none mt-1">{extractedData.items?.length || 0}</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2"><ShoppingBag size={14} /> Prévia da Planilha de Itens</h4>
+                          <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                            <table className="w-full text-left border-collapse">
+                              <thead className="bg-gray-50 text-[8px] font-black text-gray-400 uppercase">
+                                <tr>
+                                  <th className="px-5 py-3">Item / Marca</th>
+                                  <th className="px-5 py-3 text-center">Quant.</th>
+                                  <th className="px-5 py-3 text-right">Preço Un.</th>
+                                  <th className="px-5 py-3 text-right">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-50">
+                                {extractedData.items?.slice(0, 10).map((item: any, idx: number) => (
+                                  <tr key={idx} className="bg-white">
+                                    <td className="px-5 py-3">
+                                      <p className="text-[10px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
+                                      <p className="text-[8px] font-black text-emerald-500 uppercase">{item.brand || 'Marca não ident.'}</p>
+                                    </td>
+                                    <td className="px-5 py-3 text-center text-xs font-bold text-gray-900">{item.quantity} {item.unit}</td>
+                                    <td className="px-5 py-3 text-right text-xs font-bold text-gray-900">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td className="px-5 py-3 text-right text-xs font-black text-emerald-700">R$ {(item.quantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            {extractedData.items?.length > 10 && (
+                              <div className="p-3 bg-gray-50 text-center text-[8px] font-black text-gray-400 uppercase tracking-widest border-t border-gray-100">
+                                + {extractedData.items.length - 10} itens ocultos na prévia
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleConfirmImport}
+                          className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
+                        >
+                          <Save size={24} /> Confirmar Importação de {(extractedData.items?.length || 0)} Itens
+                        </button>
+                        <p className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest px-10">Ao confirmar, o sistema irá cadastrar o fornecedor (se necessário), o contrato e todos os itens vinculados automaticamente.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        </div>
+        );
 };
 
-export default Contracts;
+        export default Contracts;

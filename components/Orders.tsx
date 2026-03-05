@@ -395,7 +395,7 @@ const Orders: React.FC = () => {
   }, [localItems, itemSearchTerm]);
 
   const totalValue = useMemo(() =>
-    localItems.reduce((acc, item) => item.selected ? acc + (item.requestedQuantity * item.unitPrice) : acc, 0),
+    localItems.reduce((acc, item) => item.selected ? acc + Math.round((item.requestedQuantity * item.unitPrice) * 100) / 100 : acc, 0),
     [localItems]);
 
   const handleUpdateOrder = async () => {
@@ -785,7 +785,7 @@ const Orders: React.FC = () => {
                         </div>
                       </td>
                       <td className="p-3 text-right font-black text-gray-900">
-                        R$ {(item.requestedQuantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ {(item.requestedQuantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   );
@@ -797,7 +797,7 @@ const Orders: React.FC = () => {
                 <tr className="bg-black text-white border-2 border-black">
                   <td colSpan={4} className="p-4 text-right font-black uppercase text-xs tracking-widest">Valor Total do Pedido:</td>
                   <td className="p-4 text-right font-black text-lg">
-                    R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               </tfoot>
@@ -855,7 +855,7 @@ const Orders: React.FC = () => {
                     <p className="text-sm font-bold text-gray-500 uppercase tracking-tight line-clamp-1">{order.supplierName}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <p className="text-xl font-black text-gray-900">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-xl font-black text-gray-900">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.items.length} itens</p>
                     <button
                       onClick={(e) => {
@@ -975,7 +975,7 @@ const Orders: React.FC = () => {
                         {item.quantity}
                       </td>
                       <td className="p-3 text-right font-black text-gray-900">
-                        R$ {(item.quantity * item.unit_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ {(item.quantity * item.unit_price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   ))}
@@ -984,7 +984,7 @@ const Orders: React.FC = () => {
                   <tr className="bg-black text-white border-2 border-black">
                     <td colSpan={3} className="p-4 text-right font-black uppercase text-xs tracking-widest">Valor Total do Pedido:</td>
                     <td className="p-4 text-right font-black text-lg">
-                      R$ {pdfData.order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {pdfData.order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tfoot>
