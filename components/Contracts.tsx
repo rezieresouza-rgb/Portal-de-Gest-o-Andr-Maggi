@@ -220,6 +220,7 @@ const Contracts: React.FC = () => {
   const [paymentGuides, setPaymentGuides] = useState<any[]>([]);
   const [isLoadingGuides, setIsLoadingGuides] = useState(false);
   const [activeTab, setActiveTab] = useState<'ITEMS' | 'LOG' | 'GUIDES'>('ITEMS');
+  const [showConsumptionStatement, setShowConsumptionStatement] = useState(false);
 
   useEffect(() => {
     supabase.from('suppliers').select('id, name, category').then(({ data }) => {
@@ -847,18 +848,47 @@ const Contracts: React.FC = () => {
     }
   };
 
+  const handleDownloadConsumptionPdf = async () => {
+    const element = document.getElementById('consumption-statement-printable');
+    if (!element) return;
+
+    try {
+      await (window as any).html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `Extrato_Consumo_${selectedContract?.number}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(element).save();
+
+      setShowConsumptionStatement(false);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Erro ao gerar PDF.");
+    }
+  };
+
   if (selectedContract) {
     const { totalValue, totalSpent, remainingValue, daysRemaining } = calculateContractStats(selectedContract);
     const timeProgress = Math.min(100, Math.max(0, (365 - daysRemaining) / 3.65));
 
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
-        <button
-          onClick={() => { setSelectedContractId(null); setItemFilter(''); setSelectedItems(new Set()); }}
-          className="flex items-center gap-2 text-emerald-700 font-black uppercase text-xs tracking-widest hover:text-emerald-800 transition-colors group"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar para lista
-        </button>
+        <div className="flex justify-between items-center">
+          <button
+            onClick={() => { setSelectedContractId(null); setItemFilter(''); setSelectedItems(new Set()); }}
+            className="flex items-center gap-2 text-emerald-700 font-black uppercase text-xs tracking-widest hover:text-emerald-800 transition-colors group"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar para lista
+          </button>
+
+          <button
+            onClick={() => setShowConsumptionStatement(true)}
+            className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+          >
+            <Printer size={16} /> Gerar Extrato de Consumo
+          </button>
+        </div>
 
         {generatedGuidePdf && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -948,13 +978,120 @@ const Contracts: React.FC = () => {
                       <p className="text-[8px] font-bold text-gray-400 uppercase">Representante Legal</p>
                     </div>
                     <div className="text-center pt-8 border-t border-gray-400">
-                      <p className="text-[10px] font-black uppercase">Responsável pelo Recebimento</p>
-                      <p className="text-[8px] font-bold text-gray-400 uppercase">Setor de Merenda Escolar</p>
+                      <p className="text-[10px] font-black uppercase">Secretaria de Educação</p>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase">Gestor do Contrato</p>
                     </div>
                   </div>
 
                   <div className="mt-20 p-6 border-2 border-dashed border-gray-200 rounded-2xl">
                     <p className="text-[8px] font-bold text-gray-400 uppercase text-center">Esta guia certifica o recebimento físico dos produtos acima relacionados e serve como base para o processamento do pagamento correspondente.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showConsumptionStatement && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" onClick={() => setShowConsumptionStatement(false)}></div>
+            <div className="bg-white rounded-[3rem] w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl">
+              <div className="p-8 bg-indigo-600 text-white flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-2xl"><TrendingUp size={28} /></div>
+                  <div>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter">Extrato de Consumo Acumulado</h3>
+                    <p className="text-[10px] font-bold uppercase opacity-80">Saldo total executado vs contratado até {new Date().toLocaleDateString('pt-BR')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleDownloadConsumptionPdf} className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-black uppercase text-xs flex items-center gap-2 hover:bg-indigo-50 transition-all">
+                    <Printer size={16} /> Imprimir / PDF
+                  </button>
+                  <button onClick={() => setShowConsumptionStatement(false)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-12 bg-gray-50">
+                <div id="consumption-statement-printable" className="bg-white p-12 shadow-sm border border-gray-100 mx-auto max-w-[210mm] min-h-[297mm] text-gray-900 font-sans">
+                  {/* Header PDF */}
+                  <div className="flex justify-between items-start border-b-2 border-gray-900 pb-8 mb-8">
+                    <div className="flex items-center gap-6">
+                      <img src="/logo-escola.png" alt="Logo Escola" className="w-24 h-auto" />
+                      <div>
+                        <h2 className="text-lg font-black uppercase tracking-tight">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</h2>
+                        <p className="text-[9px] font-black text-gray-600 uppercase">CDCE DA ESC. EST. DE ENS. FUN. ANDRÉ A. MAGGI</p>
+                        <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">CNPJ: 11.906.357/0001-50</p>
+                        <p className="text-[8px] font-medium text-gray-400 uppercase mt-0.5">Avenida Borba Gato, nº 80, Colíder-MT - CEP 78500-000</p>
+                        <p className="text-[8px] font-medium text-emerald-600 uppercase mt-0.5">escola.153830@edu.mt.gov.br | 66 996648410 (whatsApp)</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Extrato de Consumo</p>
+                      <h1 className="text-xl font-black text-gray-900 truncate max-w-[200px]">{selectedContract.number}</h1>
+                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">Emissão: {new Date().toLocaleDateString('pt-BR')}</p>
+                    </div>
+                  </div>
+
+                  {/* Summary PDF */}
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                      <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Contratada</p>
+                      <p className="text-sm font-black text-gray-900 uppercase">{selectedContract.supplierName}</p>
+                    </div>
+                    <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center">
+                      <div>
+                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Execução Financeira</p>
+                        <p className="text-lg font-black text-indigo-700">R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Vigência até</p>
+                        <p className="text-xs font-black text-indigo-700 uppercase">{new Date(selectedContract.endDate).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Items Table PDF */}
+                  <table className="w-full mb-8 border-collapse">
+                    <thead>
+                      <tr className="border-b-2 border-gray-200 text-[8px] font-black uppercase text-gray-500 text-left">
+                        <th className="py-3 pr-4">Descrição do Item</th>
+                        <th className="py-3 px-4 text-center">Unid.</th>
+                        <th className="py-3 px-4 text-center">Contratada</th>
+                        <th className="py-3 px-4 text-center">Adquirida</th>
+                        <th className="py-3 px-4 text-center">Saldo</th>
+                        <th className="py-3 pl-4 text-right">Preço Un.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {selectedContract.items.map((item, idx) => {
+                        const remaining = item.contractedQuantity - item.acquiredQuantity;
+                        return (
+                          <tr key={idx} className="text-[9px]">
+                            <td className="py-4 pr-4 font-bold uppercase leading-tight">{item.description}</td>
+                            <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
+                            <td className="py-4 px-4 text-center font-bold text-gray-400">{formatQuantity(item.contractedQuantity)}</td>
+                            <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.acquiredQuantity)}</td>
+                            <td className={`py-4 px-4 text-center font-black ${remaining <= 0 ? 'text-red-500' : 'text-gray-900'}`}>{formatQuantity(remaining)}</td>
+                            <td className="py-4 pl-4 text-right font-bold text-gray-600">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  <div className="mt-auto pt-20 border-t-2 border-gray-100">
+                    <p className="text-[8px] font-bold text-gray-400 uppercase text-center mb-10">Este documento detalha o consumo acumulado do contrato administrativo nº {selectedContract.number} até a presente data.</p>
+                    <div className="grid grid-cols-2 gap-20">
+                      <div className="text-center pt-8 border-t border-gray-400">
+                        <p className="text-[10px] font-black uppercase leading-tight">{selectedContract.supplierName}</p>
+                        <p className="text-[8px] font-bold text-gray-400 uppercase">Representante Legal (Fornecedor)</p>
+                      </div>
+                      <div className="text-center pt-8 border-t border-gray-400">
+                        <p className="text-[10px] font-black uppercase">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</p>
+                        <p className="text-[8px] font-bold text-gray-400 uppercase">Gestor Escolar / CDCE</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
