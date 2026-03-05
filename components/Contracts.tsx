@@ -209,6 +209,13 @@ const Contracts: React.FC = () => {
   const [isNewContractModalOpen, setIsNewContractModalOpen] = useState(false);
   const [availableSuppliers, setAvailableSuppliers] = useState<{ id: string, name: string, category: string }[]>([]);
 
+  // Multi-item Delivery State
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [showBatchDeliveryModal, setShowBatchDeliveryModal] = useState(false);
+  const [batchDeliveryData, setBatchDeliveryData] = useState<Record<string, number>>({});
+  const [isSavingBatch, setIsSavingBatch] = useState(false);
+  const [generatedGuidePdf, setGeneratedGuidePdf] = useState<{ guide: any, items: any[] } | null>(null);
+
   useEffect(() => {
     supabase.from('suppliers').select('id, name, category').then(({ data }) => {
       if (data) setAvailableSuppliers(data);
@@ -590,6 +597,124 @@ const Contracts: React.FC = () => {
     }
   };
 
+  const handleConfirmBatchDelivery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (Object.keys(batchDeliveryData).length === 0) return;
+    if (!selectedContractId) return;
+
+    setIsSavingBatch(true);
+    try {
+      const contract = contracts.find(c => c.id === selectedContractId);
+      if (!contract) throw new Error("Contrato não encontrado.");
+
+      const guideNumber = `PAG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const totalValue = Object.entries(batchDeliveryData).reduce((sum, [itemId, qty]) => {
+        const item = contract.items.find(i => i.id === itemId);
+        return sum + (qty * (item?.unitPrice || 0));
+      }, 0);
+
+      // 1. Create Payment Guide
+      const { data: guide, error: guideError } = await supabase
+        .from('payment_guides')
+        .insert({
+          contract_id: selectedContractId,
+          guide_number: guideNumber,
+          total_value: totalValue,
+          status: 'GERADA'
+        })
+        .select()
+        .single();
+
+      if (guideError) throw guideError;
+
+      // 2. Prepare Items and Update Stock
+      const guideItems = [];
+      for (const [itemId, qty] of Object.entries(batchDeliveryData)) {
+        if (qty <= 0) continue;
+        const item = contract.items.find(i => i.id === itemId);
+        if (!item) continue;
+
+        const newAcquired = item.acquiredQuantity + qty;
+
+        // Update DB
+        const { error: itemUpdateError } = await supabase
+          .from('contract_items')
+          .update({ acquired_quantity: newAcquired })
+          .eq('id', item.id);
+
+        if (itemUpdateError) throw itemUpdateError;
+
+        // Add to Guide Items
+        const { error: guideItemError } = await supabase
+          .from('payment_guide_items')
+          .insert({
+            guide_id: guide.id,
+            contract_item_id: item.id,
+            quantity: qty,
+            unit_price: item.unitPrice
+          });
+
+        if (guideItemError) throw guideItemError;
+
+        guideItems.push({
+          ...item,
+          quantity: qty,
+          total: qty * (item.unitPrice as number)
+        });
+
+        // Add to Execution Events
+        await addExecutionEvent(selectedContractId, 'DELIVERY', `Recebimento: ${qty} ${item.unit} de ${item.description}`, qty * item.unitPrice);
+      }
+
+      // 3. Update Local State
+      setContracts(prev => prev.map(c => {
+        if (c.id !== selectedContractId) return c;
+        return {
+          ...c,
+          items: c.items.map(i => {
+            const delivered = batchDeliveryData[i.id];
+            if (!delivered) return i;
+            return { ...i, acquiredQuantity: i.acquiredQuantity + delivered };
+          })
+        };
+      }));
+
+      // 4. Set for PDF Generation
+      setGeneratedGuidePdf({ guide, items: guideItems });
+
+      alert("Guia de Pagamento gerada com sucesso!");
+      setShowBatchDeliveryModal(false);
+      setSelectedItems(new Set());
+      setBatchDeliveryData({});
+
+    } catch (error: any) {
+      alert("Erro ao gerar guia: " + error.message);
+    } finally {
+      setIsSavingBatch(false);
+    }
+  };
+
+  const handleDownloadGuidePdf = async () => {
+    if (!generatedGuidePdf) return;
+    const element = document.getElementById('payment-guide-printable');
+    if (!element) return;
+
+    try {
+      await (window as any).html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `Guia_Pagamento_${generatedGuidePdf.guide.guide_number}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(element).save();
+
+      setGeneratedGuidePdf(null);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Erro ao gerar PDF.");
+    }
+  };
+
   if (selectedContract) {
     const { totalValue, totalSpent, remainingValue, daysRemaining } = calculateContractStats(selectedContract);
     const timeProgress = Math.min(100, Math.max(0, (365 - daysRemaining) / 3.65));
@@ -597,11 +722,200 @@ const Contracts: React.FC = () => {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
         <button
-          onClick={() => { setSelectedContractId(null); setItemFilter(''); }}
+          onClick={() => { setSelectedContractId(null); setItemFilter(''); setSelectedItems(new Set()); }}
           className="flex items-center gap-2 text-emerald-700 font-black uppercase text-xs tracking-widest hover:text-emerald-800 transition-colors group"
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar para lista
         </button>
+
+        {generatedGuidePdf && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" onClick={() => setGeneratedGuidePdf(null)}></div>
+            <div className="bg-white rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl">
+              <div className="p-8 bg-emerald-600 text-white flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-2xl"><FileCheck size={28} /></div>
+                  <div>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter">Guia de Pagamento Gerada</h3>
+                    <p className="text-[10px] font-bold uppercase opacity-80">Documento pronto para conferência e assinatura</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleDownloadGuidePdf} className="px-6 py-3 bg-white text-emerald-700 rounded-xl font-black uppercase text-xs flex items-center gap-2 hover:bg-emerald-50 transition-all">
+                    <Printer size={16} /> Imprimir / PDF
+                  </button>
+                  <button onClick={() => setGeneratedGuidePdf(null)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-12 bg-gray-50">
+                <div id="payment-guide-printable" className="bg-white p-12 shadow-sm border border-gray-100 mx-auto max-w-[210mm] min-h-[297mm] text-gray-900 font-sans">
+                  {/* Header PDF */}
+                  <div className="flex justify-between items-start border-b-2 border-gray-900 pb-8 mb-8">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 bg-gray-900 rounded-xl flex items-center justify-center text-white font-black text-2xl">AM</div>
+                      <div>
+                        <h2 className="text-xl font-black uppercase tracking-tight">Prefeitura de Colíder</h2>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase">Secretaria Municipal de Educação</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase">Setor de Nutrição Escolar</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Guia de Pagamento</p>
+                      <h1 className="text-2xl font-black text-gray-900">{generatedGuidePdf.guide.guide_number}</h1>
+                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">{new Date(generatedGuidePdf.guide.issue_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                    </div>
+                  </div>
+
+                  {/* Info PDF */}
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Fornecedor</p>
+                      <p className="text-xs font-black uppercase">{selectedContract.supplierName}</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Contrato Administrativo</p>
+                      <p className="text-xs font-black uppercase">{selectedContract.number}</p>
+                    </div>
+                  </div>
+
+                  {/* Items Table PDF */}
+                  <table className="w-full mb-8 border-collapse">
+                    <thead>
+                      <tr className="border-b-2 border-gray-200 text-[9px] font-black uppercase text-gray-500 text-left">
+                        <th className="py-3 pr-4">Descrição do Produto</th>
+                        <th className="py-3 px-4 text-center">Unid.</th>
+                        <th className="py-3 px-4 text-center">Quant.</th>
+                        <th className="py-3 px-4 text-right">Preço Un.</th>
+                        <th className="py-3 pl-4 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {generatedGuidePdf.items.map((item, idx) => (
+                        <tr key={idx} className="text-[10px]">
+                          <td className="py-4 pr-4 font-bold uppercase">{item.description}</td>
+                          <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
+                          <td className="py-4 px-4 text-center font-black">{formatQuantity(item.quantity)}</td>
+                          <td className="py-4 px-4 text-right font-bold">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="py-4 pl-4 text-right font-black">R$ {item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-gray-900">
+                        <td colSpan={4} className="py-6 text-right text-xs font-black uppercase">Valor Total da Guia:</td>
+                        <td className="py-6 pl-4 text-right text-lg font-black text-emerald-700">R$ {generatedGuidePdf.guide.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+
+                  {/* Signatures PDF */}
+                  <div className="grid grid-cols-2 gap-20 mt-20">
+                    <div className="text-center pt-8 border-t border-gray-400">
+                      <p className="text-[10px] font-black uppercase">{selectedContract.supplierName}</p>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase">Representante Legal</p>
+                    </div>
+                    <div className="text-center pt-8 border-t border-gray-400">
+                      <p className="text-[10px] font-black uppercase">Responsável pelo Recebimento</p>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase">Setor de Merenda Escolar</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-20 p-6 border-2 border-dashed border-gray-200 rounded-2xl">
+                    <p className="text-[8px] font-bold text-gray-400 uppercase text-center">Esta guia certifica o recebimento físico dos produtos acima relacionados e serve como base para o processamento do pagamento correspondente.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showBatchDeliveryModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowBatchDeliveryModal(false)}></div>
+            <div className="bg-white rounded-[3.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl border border-gray-100">
+              <div className="p-8 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg"><Truck size={24} /></div>
+                  <div>
+                    <h3 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter">Recebimento em Lote</h3>
+                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Gerar Guia de Pagamento para {selectedItems.size} produtos</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowBatchDeliveryModal(false)} className="text-gray-300 hover:text-red-500 transition-colors"><X size={28} /></button>
+              </div>
+
+              <form onSubmit={handleConfirmBatchDelivery} className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
+                <div className="bg-white border text-left border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-gray-50 text-[9px] font-black text-gray-400 uppercase">
+                      <tr>
+                        <th className="px-6 py-4">Produto</th>
+                        <th className="px-6 py-4 text-center">Saldo Restante</th>
+                        <th className="px-6 py-4 text-center w-40">Quant. Recebida</th>
+                        <th className="px-6 py-4 text-right">Total Item</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {Array.from(selectedItems).map(itemId => {
+                        const item = selectedContract.items.find(i => i.id === itemId);
+                        if (!item) return null;
+                        const remaining = item.contractedQuantity - item.acquiredQuantity;
+                        const quantity = batchDeliveryData[itemId] || 0;
+                        const total = quantity * item.unitPrice;
+
+                        return (
+                          <tr key={itemId} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
+                              <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / {item.unit}</p>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="text-[10px] font-bold text-gray-500">{formatQuantity(remaining)} {item.unit}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <input
+                                type="text"
+                                defaultValue={formatQuantity(quantity)}
+                                onBlur={(e) => setBatchDeliveryData(prev => ({ ...prev, [itemId as string]: parseNumeric(e.target.value) }))}
+                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-sm focus:border-emerald-500 outline-none transition-all"
+                                placeholder="0,000"
+                              />
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <p className="text-[11px] font-black text-emerald-700">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-emerald-900 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+                  <div>
+                    <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1">Valor Total da Entrega</p>
+                    <p className="text-4xl font-black text-white">R$ {Object.entries(batchDeliveryData).reduce((sum, [itemId, qty]) => {
+                      const item = selectedContract.items.find(i => i.id === itemId);
+                      return sum + (qty * (item?.unitPrice || 0));
+                    }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSavingBatch || Object.values(batchDeliveryData).every(v => (v as number) <= 0)}
+                    className="w-full md:w-auto px-12 py-5 bg-white text-emerald-900 rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-emerald-50 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isSavingBatch ? (
+                      <><div className="w-5 h-5 border-4 border-emerald-200 border-t-emerald-900 rounded-full animate-spin"></div> Processando...</>
+                    ) : (
+                      <><FilePlus size={20} /> Confirmar e Gerar Guia</>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {aditivoModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
@@ -770,12 +1084,35 @@ const Contracts: React.FC = () => {
                   <input type="text" placeholder="Pesquisar produto..." value={itemFilter} onChange={(e) => setItemFilter(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white transition-all" />
                 </div>
               </div>
+
+              <div className="flex items-center gap-3 no-print">
+                {selectedItems.size > 0 && (
+                  <button
+                    onClick={() => setShowBatchDeliveryModal(true)}
+                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg animate-in slide-in-from-right-4"
+                  >
+                    <Truck size={14} /> Registrar Entrega ({selectedItems.size})
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    const allItems = new Set(filteredItems.map(i => i.id));
+                    setSelectedItems(selectedItems.size === filteredItems.length ? new Set() : allItems);
+                  }}
+                  className="px-5 py-2.5 bg-gray-50 text-gray-500 border border-gray-100 rounded-xl text-[10px] font-black uppercase hover:bg-gray-100 transition-all"
+                >
+                  {selectedItems.size === filteredItems.length ? 'Desmarcar Tudo' : 'Marcar Tudo'}
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto rounded-2xl border border-gray-100">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                    <th className="px-6 py-4 w-10 no-print">
+                      <Check size={14} />
+                    </th>
                     <th className="px-6 py-4">Descrição do Produto</th>
                     <th className="px-6 py-4 text-center">Contratado / Saldo</th>
                     <th className="px-6 py-4 text-right">Saldo Valor</th>
@@ -787,7 +1124,20 @@ const Contracts: React.FC = () => {
                     const remaining = item.contractedQuantity - item.acquiredQuantity;
                     const usagePercent = (item.acquiredQuantity / item.contractedQuantity) * 100;
                     return (
-                      <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                      <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors group ${selectedItems.has(item.id) ? 'bg-emerald-50/30' : ''}`}>
+                        <td className="px-6 py-5 no-print">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.has(item.id)}
+                            onChange={(e) => {
+                              const newSelected = new Set(selectedItems);
+                              if (e.target.checked) newSelected.add(item.id);
+                              else newSelected.delete(item.id);
+                              setSelectedItems(newSelected);
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                        </td>
                         <td className="px-6 py-5">
                           <p className="font-black text-gray-900 text-xs uppercase leading-tight">{item.description}</p>
                           <div className="flex items-center gap-2 mt-1.5">
@@ -900,7 +1250,7 @@ const Contracts: React.FC = () => {
                     {contract.type.includes('Agric') ? <Sprout size={28} /> : <FileText size={28} />}
                   </div>
                   <div className="text-right">
-                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${daysRemaining < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${(daysRemaining as number) < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
                       {daysRemaining < 0 ? 'Vencido' : `${daysRemaining} Dias`}
                     </span>
                   </div>
