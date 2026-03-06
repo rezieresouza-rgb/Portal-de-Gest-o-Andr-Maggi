@@ -1120,7 +1120,7 @@ const Contracts: React.FC = () => {
                     <thead className="bg-gray-50 text-[9px] font-black text-gray-400 uppercase">
                       <tr>
                         <th className="px-6 py-4">Produto</th>
-                        <th className="px-6 py-4 text-center">Saldo Restante</th>
+                        <th className="px-6 py-4 text-center">Preço Un.</th>
                         <th className="px-6 py-4 text-center w-40">Quant. Recebida</th>
                         <th className="px-6 py-4 text-right">Total Item</th>
                       </tr>
@@ -1137,10 +1137,10 @@ const Contracts: React.FC = () => {
                           <tr key={itemId} className="hover:bg-gray-50/50 transition-colors">
                             <td className="px-6 py-4">
                               <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
-                              <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {item.unit}</p>
+                              <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">Marca: {item.brand || 'Não informada'} • Un: {item.unit}</p>
                             </td>
                             <td className="px-6 py-4 text-center">
-                              <span className="text-[10px] font-bold text-gray-500">{formatQuantity(remaining)} {item.unit}</span>
+                              <span className="text-[10px] font-black text-gray-900">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </td>
                             <td className="px-6 py-4">
                               <input
