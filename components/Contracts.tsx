@@ -915,11 +915,13 @@ const Contracts: React.FC = () => {
                   {/* Header PDF */}
                   <div className="flex justify-between items-start border-b-2 border-gray-900 pb-8 mb-8">
                     <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 bg-gray-900 rounded-xl flex items-center justify-center text-white font-black text-2xl">AM</div>
+                      <img src="/logo-escola.png" alt="Logo Escola" className="w-20 h-auto" />
                       <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight">Prefeitura de Colíder</h2>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase">Secretaria Municipal de Educação</p>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase">Setor de Nutrição Escolar</p>
+                        <h2 className="text-lg font-black uppercase tracking-tight">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</h2>
+                        <p className="text-[9px] font-black text-gray-600 uppercase">CDCE DA ESC. EST. DE ENS. FUN. ANDRÉ A. MAGGI</p>
+                        <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">CNPJ: 11.906.357/0001-50</p>
+                        <p className="text-[8px] font-medium text-gray-400 uppercase mt-0.5">Avenida Borba Gato, nº 80, Colíder-MT - CEP 78500-000</p>
+                        <p className="text-[8px] font-medium text-emerald-600 uppercase mt-0.5">escola.153830@edu.mt.gov.br | 66 996648410 (whatsApp)</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -978,7 +980,7 @@ const Contracts: React.FC = () => {
                       <p className="text-[8px] font-bold text-gray-400 uppercase">Representante Legal</p>
                     </div>
                     <div className="text-center pt-8 border-t border-gray-400">
-                      <p className="text-[10px] font-black uppercase">Secretaria de Educação</p>
+                      <p className="text-[10px] font-black uppercase">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</p>
                       <p className="text-[8px] font-bold text-gray-400 uppercase">Gestor do Contrato</p>
                     </div>
                   </div>
