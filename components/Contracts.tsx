@@ -812,7 +812,7 @@ const Contracts: React.FC = () => {
       // 4. Set for PDF Generation
       setGeneratedGuidePdf({ guide, items: guideItems });
 
-      alert("Guia de Pagamento gerada com sucesso!");
+      alert("Guia de Recebimento gerada com sucesso!");
       setShowBatchDeliveryModal(false);
       setSelectedItems(new Set());
       setBatchDeliveryData({});
@@ -835,7 +835,7 @@ const Contracts: React.FC = () => {
     try {
       await (window as any).html2pdf().set({
         margin: [10, 10, 10, 10],
-        filename: `Guia_Pagamento_${generatedGuidePdf.guide.guide_number}.pdf`,
+        filename: `Guia_Recebimento_${generatedGuidePdf.guide.guide_number}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -898,7 +898,7 @@ const Contracts: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white/20 rounded-2xl"><FileCheck size={28} /></div>
                   <div>
-                    <h3 className="text-2xl font-black uppercase tracking-tighter">Guia de Pagamento Gerada</h3>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter">Guia de Recebimento Gerada</h3>
                     <p className="text-[10px] font-bold uppercase opacity-80">Documento pronto para conferência e assinatura</p>
                   </div>
                 </div>
@@ -925,9 +925,9 @@ const Contracts: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Guia de Pagamento</p>
+                      <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Guia de Recebimento</p>
                       <h1 className="text-2xl font-black text-gray-900">{generatedGuidePdf.guide.guide_number}</h1>
-                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">{new Date(generatedGuidePdf.guide.issue_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">Data de Recebimento: {new Date(generatedGuidePdf.guide.issue_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                     </div>
                   </div>
 
@@ -1356,7 +1356,7 @@ const Contracts: React.FC = () => {
             onClick={() => setActiveTab('GUIDES')}
             className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'GUIDES' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
           >
-            Guia de Pagamento ({paymentGuides.length})
+            Guia de Recebimento ({paymentGuides.length})
           </button>
           <button
             onClick={() => setActiveTab('LOG')}
@@ -1504,7 +1504,7 @@ const Contracts: React.FC = () => {
                   </div>
                   <h4 className="text-sm font-black text-gray-900 uppercase mb-2">Nenhuma guia gerada ainda</h4>
                   <p className="text-[10px] font-bold text-gray-400 uppercase max-w-xs mx-auto leading-relaxed">
-                    Para realizar um lançamento e gerar uma guia de pagamento, selecione os produtos na aba <span className="text-emerald-600">"Itens do Contrato"</span> e clique no botão verde <span className="text-emerald-600">"Registrar Entrega em Lote"</span>.
+                    Para realizar um lançamento e gerar uma guia de recebimento, selecione os produtos na aba <span className="text-emerald-600">"Itens do Contrato"</span> e clique no botão verde <span className="text-emerald-600">"Registrar Entrega em Lote"</span>.
                   </p>
                   <button
                     onClick={() => setActiveTab('ITEMS')}
