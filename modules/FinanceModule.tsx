@@ -942,7 +942,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             </div>
                             <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 backdrop-blur-md flex-1 text-center flex flex-col justify-center min-w-[150px]">
                               <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Saldo Total</p>
-                              <p className={`text-3xl font-black ${stats?.balance! < 0 ? 'text-red-600' : 'text-white'}`}>R$ {stats?.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              <p className={`text-2xl font-black ${stats?.balance! < 0 ? 'text-red-600' : 'text-white'}`}>R$ {stats?.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                             </div>
                           </div>
                         ) : (
