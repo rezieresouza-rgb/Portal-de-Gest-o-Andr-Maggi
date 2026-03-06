@@ -216,6 +216,14 @@ const Contracts: React.FC = () => {
   const [isSavingBatch, setIsSavingBatch] = useState(false);
   const [generatedGuidePdf, setGeneratedGuidePdf] = useState<{ guide: any, items: any[] } | null>(null);
 
+  // Fix timezone issue by formatting the local date properly YYYY-MM-DD
+  const getLocalDateString = () => {
+    const d = new Date();
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+  };
+  const [receiptDate, setReceiptDate] = useState<string>(getLocalDateString());
+
   // Guide History State
   const [paymentGuides, setPaymentGuides] = useState<any[]>([]);
   const [isLoadingGuides, setIsLoadingGuides] = useState(false);
@@ -386,15 +394,24 @@ const Contracts: React.FC = () => {
     return { totalValue, totalSpent, remainingValue, daysRemaining };
   };
 
-  const addExecutionEvent = async (contractId: string, type: ExecutionEvent['type'], description: string, value?: number) => {
+  const addExecutionEvent = async (contractId: string, type: ExecutionEvent['type'], description: string, value?: number, customDateStr?: string) => {
     try {
+      // Use custom date or current local time
+      let eventDateISO = new Date().toISOString();
+      if (customDateStr) {
+        // Create date at noon local time to avoid timezone shifts
+        const [year, month, day] = customDateStr.split('-');
+        const dateObj = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0);
+        eventDateISO = dateObj.toISOString();
+      }
+
       const { data, error } = await supabase.from('contract_events').insert({
         contract_id: contractId,
         type,
         description,
         value,
         responsible: 'Gestor da Merenda',
-        date: new Date().toISOString()
+        date: eventDateISO
       }).select().single();
 
       if (error) throw error;
@@ -750,7 +767,8 @@ const Contracts: React.FC = () => {
           contract_id: selectedContractId,
           guide_number: guideNumber,
           total_value: totalValue,
-          status: 'GERADA'
+          status: 'GERADA',
+          issue_date: receiptDate
         })
         .select()
         .single();
@@ -793,7 +811,7 @@ const Contracts: React.FC = () => {
         });
 
         // Add to Execution Events
-        await addExecutionEvent(selectedContractId, 'DELIVERY', `Recebimento: ${qty} ${item.unit} de ${item.description}`, (qty as number) * (item.unitPrice as number));
+        await addExecutionEvent(selectedContractId, 'DELIVERY', `Recebimento: ${qty} ${item.unit} de ${item.description}`, (qty as number) * (item.unitPrice as number), receiptDate);
       }
 
       // 3. Update Local State
@@ -816,6 +834,7 @@ const Contracts: React.FC = () => {
       setShowBatchDeliveryModal(false);
       setSelectedItems(new Set());
       setBatchDeliveryData({});
+      setReceiptDate(getLocalDateString());
 
       // Refresh guides list
       if (selectedContractId) fetchPaymentGuides(selectedContractId);
@@ -927,7 +946,10 @@ const Contracts: React.FC = () => {
                     <div className="text-right">
                       <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Guia de Recebimento</p>
                       <h1 className="text-2xl font-black text-gray-900">{generatedGuidePdf.guide.guide_number}</h1>
-                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">Data de Recebimento: {new Date(generatedGuidePdf.guide.issue_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">Data de Recebimento: {
+                        new Date(generatedGuidePdf.guide.issue_date + 'T12:00:00')
+                          .toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+                      }</p>
                     </div>
                   </div>
 
@@ -1117,6 +1139,20 @@ const Contracts: React.FC = () => {
               </div>
 
               <form onSubmit={handleConfirmBatchDelivery} className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
+                <div className="mb-2 px-6 py-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
+                  <div>
+                    <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Data do Recebimento</h4>
+                    <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Preencha a data da guia</p>
+                  </div>
+                  <input
+                    type="date"
+                    required
+                    value={receiptDate}
+                    onChange={(e) => setReceiptDate(e.target.value)}
+                    className="p-3 bg-gray-50 border border-emerald-200 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-inner"
+                  />
+                </div>
+
                 <div className="bg-white border text-left border-gray-100 rounded-3xl overflow-hidden shadow-sm">
                   <table className="w-full border-collapse">
                     <thead className="bg-gray-50 text-[9px] font-black text-gray-400 uppercase">

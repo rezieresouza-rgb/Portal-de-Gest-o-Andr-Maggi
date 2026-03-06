@@ -96,6 +96,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const [funds, setFunds] = useState<Record<string, FundData>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [tempFile, setTempFile] = useState<File | null>(null);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [activeContracts, setActiveContracts] = useState<any[]>([]);
 
   const [newTx, setNewTx] = useState({
     description: '',
@@ -216,8 +218,28 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     }
   };
 
+  const fetchContracts = async () => {
+    try {
+      // Fetch active contracts strictly to help standardizing descriptions
+      const { data, error } = await supabase
+        .from('contracts')
+        .select(`
+          id,
+          number,
+          suppliers (
+            name
+          )
+        `);
+      if (error) throw error;
+      if (data) setActiveContracts(data);
+    } catch (err) {
+      console.error("Error fetching contracts for autofill:", err);
+    }
+  };
+
   useEffect(() => {
     fetchFinancialData();
+    fetchContracts();
   }, []);
 
 
@@ -276,12 +298,35 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const getFundStats = (fund: FundData) => {
     if (!fund) return null;
     const entries = fund.transactions.filter(t => t.type === 'ENTRY').reduce((acc, t) => acc + t.value, 0);
+
+    // Federal vs Estadual (specific for Merenda)
     const federalEntries = fund.transactions.filter(t => t.type === 'ENTRY' && t.fundingSource === 'FEDERAL').reduce((acc, t) => acc + t.value, 0);
+    const stateEntries = fund.transactions.filter(t => t.type === 'ENTRY' && t.fundingSource === 'ESTADUAL').reduce((acc, t) => acc + t.value, 0);
+
     const expenses = fund.transactions.filter(t => t.type === 'EXPENSE');
     const totalExpenses = expenses.reduce((acc, t) => acc + t.value, 0);
+
+    // Expenses split by source (only applicable if fundingSource was tracked on expense, assuming default fallback based on some logic, but typically we track fundingSource on Expense too in this app)
+    const federalExpenses = expenses.filter(t => t.fundingSource === 'FEDERAL').reduce((acc, t) => acc + t.value, 0);
+    const stateExpenses = expenses.filter(t => t.fundingSource === 'ESTADUAL').reduce((acc, t) => acc + t.value, 0);
+
     const afTotalFederal = expenses.filter(t => t.isFamilyAgriculture && t.fundingSource === 'FEDERAL').reduce((acc, t) => acc + t.value, 0);
     const afGoalPercent = federalEntries > 0 ? (afTotalFederal / federalEntries) * 100 : 0;
-    return { balance: entries - totalExpenses, totalEntries: entries, federalEntries, totalExpenses, afTotalFederal, afGoalPercent, execPercent: entries > 0 ? (totalExpenses / entries) * 100 : 0 };
+
+    return {
+      balance: entries - totalExpenses,
+      totalEntries: entries,
+      federalEntries,
+      stateEntries,
+      totalExpenses,
+      federalExpenses,
+      stateExpenses,
+      federalBalance: federalEntries - federalExpenses,
+      stateBalance: stateEntries - stateExpenses,
+      afTotalFederal,
+      afGoalPercent,
+      execPercent: entries > 0 ? (totalExpenses / entries) * 100 : 0
+    };
   };
 
   const globalStats = useMemo(() => {
@@ -334,7 +379,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         receiptUrl = publicUrl;
       }
 
-      const { error } = await supabase.from('transactions').insert([{
+      const txPayload = {
         fund_id: currentFund.dbId,
         date: newTx.date,
         description: newTx.description.toUpperCase(),
@@ -349,14 +394,24 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         funding_source: activeTab === 'merenda' ? newTx.fundingSource : null,
         is_family_agriculture: activeTab === 'merenda' ? newTx.isFamilyAgriculture : false,
         is_individual_producer: activeTab === 'merenda' ? newTx.isIndividualProducer : false,
-        receipt_url: receiptUrl
-      }]);
+        ...(receiptUrl ? { receipt_url: receiptUrl } : {})
+      };
 
-      if (error) throw error;
+      if (editingTx) {
+        const { error } = await supabase.from('transactions')
+          .update(txPayload)
+          .eq('id', editingTx.id);
+        if (error) throw error;
+        addToast("Lançamento atualizado com sucesso!", "success");
+      } else {
+        const { error } = await supabase.from('transactions').insert([txPayload]);
+        if (error) throw error;
+        addToast("Lançamento realizado com sucesso!", "success");
+      }
 
-      addToast("Lançamento realizado com sucesso!", "success");
       setIsModalOpen(false);
       setTempFile(null);
+      setEditingTx(null);
       setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: new Date().toISOString().split('T')[0] });
       fetchFinancialData();
     } catch (error: any) {
@@ -535,14 +590,14 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   <Plus size={28} strokeWidth={3} />
                                 </div>
                                 <div>
-                                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Novo Lançamento</h3>
+                                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{editingTx ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
                                   <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
                                     <span className={`w-2 h-2 rounded-full ${funds[activeTab].color === 'purple' ? 'bg-purple-500' : funds[activeTab].color === 'emerald' ? 'bg-emerald-500' : 'bg-blue-500'}`}></span>
                                     Recurso: {funds[activeTab].fullName}
                                   </p>
                                 </div>
                               </div>
-                              <button onClick={() => setIsModalOpen(false)} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
+                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: new Date().toISOString().split('T')[0] }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
                                 <X size={24} />
                               </button>
                             </div>
@@ -640,17 +695,32 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                 <div className="space-y-6">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Descrição do Lançamento</label>
+                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Fornecedor / Descrição</label>
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Tag size={18} /></div>
-                                        <input type="text" required value={newTx.description} onChange={(e) => setNewTx({ ...newTx, description: e.target.value })} placeholder="Ex: Aquisição de Gêneros..." className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
+                                        <input
+                                          type="text"
+                                          required
+                                          list={activeTab === 'merenda' ? "contracts-list" : undefined}
+                                          value={newTx.description}
+                                          onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
+                                          placeholder="Ex: SILVA COMERCIO - Contrato 028/2026"
+                                          className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
+                                        />
+                                        {activeTab === 'merenda' && activeContracts.length > 0 && (
+                                          <datalist id="contracts-list">
+                                            {activeContracts.map(c => (
+                                              <option key={c.id} value={`${c.suppliers?.name} - Contrato ${c.number}`} />
+                                            ))}
+                                          </datalist>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="space-y-2">
                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Número da Nota Fiscal</label>
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Hash size={18} /></div>
-                                        <input type="text" value={newTx.invoiceNumber} onChange={(e) => setNewTx({ ...newTx, invoiceNumber: e.target.value })} placeholder="Opcional" className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
+                                        <input type="text" value={newTx.invoiceNumber} onChange={(e) => setNewTx({ ...newTx, invoiceNumber: e.target.value })} placeholder="Opcional" className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
                                       </div>
                                     </div>
                                   </div>
@@ -667,7 +737,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Data da Operação</label>
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Calendar size={18} /></div>
-                                        <input type="date" value={newTx.date} onChange={(e) => setNewTx({ ...newTx, date: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
+                                        <input type="date" value={newTx.date} onChange={(e) => setNewTx({ ...newTx, date: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
                                       </div>
                                     </div>
                                   </div>
@@ -677,7 +747,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Categoria Contábil</label>
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><FileCheck size={18} /></div>
-                                        <select value={newTx.category} onChange={(e) => setNewTx({ ...newTx, category: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold appearance-none outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all uppercase">
+                                        <select value={newTx.category} onChange={(e) => setNewTx({ ...newTx, category: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 appearance-none outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all uppercase">
                                           {getAvailableCategories(newTx.group, activeTab, newTx.type).map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
                                         <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300"><ChevronRight size={18} className="rotate-90" /></div>
@@ -824,7 +894,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                 <button type="submit" className={`w-full py-5 rounded-[2rem] text-sm font-black uppercase tracking-[0.2em] shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${funds[activeTab].color === 'purple' ? 'bg-purple-700 shadow-purple-900/20' :
                                   funds[activeTab].color === 'emerald' ? 'bg-emerald-700 shadow-emerald-900/20' :
                                     'bg-gray-900 shadow-gray-900/20'
-                                  } text-white`}>Confirmar Lançamento Financeiro</button>
+                                  } text-white`}>{editingTx ? 'Salvar Alterações' : 'Confirmar Lançamento Financeiro'}</button>
                               </form>
                             </div>
                           </div>
@@ -860,6 +930,21 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                               );
                             })}
                           </div>
+                        ) : activeTab === 'merenda' ? (
+                          <div className="flex gap-6 overflow-x-auto pb-2 custom-scrollbar flex-1">
+                            <div className="bg-emerald-900/20 p-6 rounded-[2rem] border border-emerald-500/20 backdrop-blur-md flex-1 text-center flex flex-col justify-center min-w-[150px]">
+                              <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1 flex items-center justify-center gap-2"><Building size={12} /> Saldo Federal</p>
+                              <p className={`text-2xl font-black ${stats?.federalBalance! < 0 ? 'text-red-400' : 'text-emerald-400'}`}>R$ {stats?.federalBalance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</p>
+                            </div>
+                            <div className="bg-blue-900/20 p-6 rounded-[2rem] border border-blue-500/20 backdrop-blur-md flex-1 text-center flex flex-col justify-center min-w-[150px]">
+                              <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1 flex items-center justify-center gap-2"><Flag size={12} /> Saldo Estadual</p>
+                              <p className={`text-2xl font-black ${stats?.stateBalance! < 0 ? 'text-red-400' : 'text-blue-400'}`}>R$ {stats?.stateBalance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</p>
+                            </div>
+                            <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 backdrop-blur-md flex-1 text-center flex flex-col justify-center min-w-[150px]">
+                              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Saldo Total</p>
+                              <p className={`text-3xl font-black ${stats?.balance! < 0 ? 'text-red-600' : 'text-white'}`}>R$ {stats?.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                          </div>
                         ) : (
                           <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex items-center gap-12 px-12">
                             <div className="text-center"><p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Saldo Caixa</p><p className={`text-3xl font-black ${stats?.balance! < 0 ? 'text-red-600' : 'text-white'}`}>R$ {stats?.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></div>
@@ -870,7 +955,11 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                       <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl space-y-6 backdrop-blur-md">
                         <div className="flex justify-between items-center border-b border-white/5 pb-6">
                           <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><ArrowRightLeft className="text-blue-400" size={20} /> Livro Caixa</h3>
-                          <button onClick={() => setIsModalOpen(true)} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
+                          <button onClick={() => {
+                            setEditingTx(null);
+                            setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: new Date().toISOString().split('T')[0] });
+                            setIsModalOpen(true);
+                          }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-[11px] border-collapse">
@@ -892,13 +981,38 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </td>
                                   <td className="px-6 py-4 text-right font-black"><span className={t.type === 'ENTRY' ? 'text-emerald-400' : 'text-red-400'}>R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></td>
                                   <td className="px-6 py-4 text-center">
-                                    {t.receiptUrl ? (
-                                      <a href={t.receiptUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all inline-block" title="Visualizar Nota Fiscal">
-                                        <FileText size={14} />
-                                      </a>
-                                    ) : (
-                                      <span className="text-white/10"><FileText size={14} /></span>
-                                    )}
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button
+                                        onClick={() => {
+                                          setEditingTx(t);
+                                          setNewTx({
+                                            description: t.description,
+                                            invoiceNumber: t.invoiceNumber || '',
+                                            value: t.value.toString(),
+                                            type: t.type,
+                                            group: t.group,
+                                            category: t.category,
+                                            integratedAction: t.integratedAction || '',
+                                            fundingSource: t.fundingSource || '',
+                                            isFamilyAgriculture: t.isFamilyAgriculture || false,
+                                            isIndividualProducer: t.isIndividualProducer || false,
+                                            date: t.date
+                                          });
+                                          setIsModalOpen(true);
+                                        }}
+                                        className="p-2 bg-white/5 text-white/40 rounded-lg hover:bg-white/10 hover:text-white transition-all shadow-sm"
+                                        title="Editar Lançamento"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                      </button>
+                                      {t.receiptUrl ? (
+                                        <a href={t.receiptUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Visualizar Nota Fiscal">
+                                          <FileText size={14} />
+                                        </a>
+                                      ) : (
+                                        <span className="p-2 text-white/10" title="Sem Nota Anexada"><FileText size={14} /></span>
+                                      )}
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
