@@ -695,19 +695,21 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                 <div className="space-y-6">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Fornecedor / Descrição</label>
+                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">
+                                        {newTx.type === 'ENTRY' ? 'Descrição do Repasse / Recebimento' : 'Fornecedor / Descrição'}
+                                      </label>
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Tag size={18} /></div>
                                         <input
                                           type="text"
                                           required
-                                          list={activeTab === 'merenda' ? "contracts-list" : undefined}
+                                          list={(activeTab === 'merenda' && newTx.type === 'EXPENSE') ? "contracts-list" : undefined}
                                           value={newTx.description}
                                           onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
-                                          placeholder="Ex: SILVA COMERCIO - Contrato 028/2026"
+                                          placeholder={newTx.type === 'ENTRY' ? "Ex: Repasse FNDE Mês 05..." : "Ex: SILVA COMERCIO - Contrato 028/2026"}
                                           className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
                                         />
-                                        {activeTab === 'merenda' && activeContracts.length > 0 && (
+                                        {activeTab === 'merenda' && newTx.type === 'EXPENSE' && activeContracts.length > 0 && (
                                           <datalist id="contracts-list">
                                             {activeContracts.map(c => (
                                               <option key={c.id} value={`${c.suppliers?.name} - Contrato ${c.number}`} />
