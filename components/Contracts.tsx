@@ -1079,29 +1079,37 @@ const Contracts: React.FC = () => {
                   <table className="w-full mb-8 border-collapse">
                     <thead>
                       <tr className="border-b-2 border-gray-200 text-[8px] font-black uppercase text-gray-500 text-left">
-                        <th className="py-3 pr-4">Descrição do Item</th>
+                        <th className="py-3 pr-4">Produtos Adquiridos</th>
                         <th className="py-3 px-4 text-center">Unid.</th>
-                        <th className="py-3 px-4 text-center">Contratada</th>
-                        <th className="py-3 px-4 text-center">Adquirida</th>
-                        <th className="py-3 px-4 text-center">Saldo</th>
-                        <th className="py-3 pl-4 text-right">Preço Un.</th>
+                        <th className="py-3 px-4 text-center">Marca</th>
+                        <th className="py-3 px-4 text-right">V. Unit.</th>
+                        <th className="py-3 px-4 text-center">Qtd. Adquirida</th>
+                        <th className="py-3 pl-4 text-right">Subtotal R$</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {selectedContract.items.map((item, idx) => {
-                        const remaining = item.contractedQuantity - item.acquiredQuantity;
-                        return (
-                          <tr key={idx} className="text-[9px]">
-                            <td className="py-4 pr-4 font-bold uppercase leading-tight">{item.description}</td>
-                            <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
-                            <td className="py-4 px-4 text-center font-bold text-gray-400">{formatQuantity(item.contractedQuantity)}</td>
-                            <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.acquiredQuantity)}</td>
-                            <td className={`py-4 px-4 text-center font-black ${remaining <= 0 ? 'text-red-500' : 'text-gray-900'}`}>{formatQuantity(remaining)}</td>
-                            <td className="py-4 pl-4 text-right font-bold text-gray-600">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          </tr>
-                        );
-                      })}
+                      {selectedContract.items
+                        .filter((item) => item.acquiredQuantity > 0)
+                        .map((item, idx) => {
+                          const subtotal = item.acquiredQuantity * item.unitPrice;
+                          return (
+                            <tr key={idx} className="text-[9px]">
+                              <td className="py-4 pr-4 font-bold uppercase leading-tight">{item.description}</td>
+                              <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
+                              <td className="py-4 px-4 text-center font-bold text-gray-400">{item.brand || '-'}</td>
+                              <td className="py-4 px-4 text-right font-bold text-gray-600">{item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.acquiredQuantity)}</td>
+                              <td className="py-4 pl-4 text-right font-black text-indigo-700">{subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-gray-200 bg-gray-50">
+                        <td colSpan={5} className="py-4 pr-4 text-right font-black uppercase text-gray-900 text-xs">Valor Total (R$)</td>
+                        <td className="py-4 pl-4 text-right font-black text-indigo-700 text-xs">{totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      </tr>
+                    </tfoot>
                   </table>
 
                   <div className="mt-auto pt-20 border-t-2 border-gray-100">
