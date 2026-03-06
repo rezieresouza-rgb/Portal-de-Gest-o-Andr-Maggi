@@ -38,7 +38,8 @@ import {
   ReceiptText,
   UserCheck,
   Maximize2,
-  Database
+  Database,
+  Trash2 // Added Trash2 icon
 } from 'lucide-react';
 import { extractInvoiceInfo } from '../geminiService';
 import { supabase } from '../supabaseClient';
@@ -385,6 +386,28 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         receiptUrl = publicUrl;
       }
 
+      // === DUPLICATE CHECK LOGIC ===
+      // Only warn on creations, bypass if it's an edit
+      if (!editingTx) {
+        // Compare with local transactions of the current fund
+        const duplicateWarning = currentFund.transactions.some(tx =>
+          tx.date === newTx.date &&
+          tx.description.trim().toUpperCase() === newTx.description.trim().toUpperCase() &&
+          tx.value === netValue &&
+          tx.type === newTx.type
+        );
+
+        if (duplicateWarning) {
+          const userConfirmed = window.confirm(
+            "ALERTA: Parece que você já tem um lançamento anotado nesse mesmo dia, com o mesmo fornecedor e mesmo valor.\n\nTem certeza que não é duplicado e deseja prosseguir para salvar mesmo assim?"
+          );
+          if (!userConfirmed) {
+            setIsScanning(false);
+            return;
+          }
+        }
+      }
+
       const txPayload = {
         fund_id: currentFund.dbId,
         date: newTx.date,
@@ -423,6 +446,22 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
       addToast("Erro ao salvar: " + (error.message || "Erro desconhecido"), "error");
+    }
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (!window.confirm("ATENÇÃO: Você tem certeza que deseja EXCLUIR PERMANENTEMENTE este lançamento? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('transactions').delete().eq('id', id);
+      if (error) throw error;
+      addToast("Lançamento excluído com sucesso!", "success");
+      fetchFinancialData();
+    } catch (error: any) {
+      console.error("Erro ao deletar lançamento:", error);
+      addToast("Erro ao excluir. Tente novamente.", "error");
     }
   };
 
@@ -1012,6 +1051,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                         title="Editar Lançamento"
                                       >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteTransaction(t.id)}
+                                        className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                        title="Excluir Lançamento"
+                                      >
+                                        <Trash2 size={14} />
                                       </button>
                                       {t.receiptUrl ? (
                                         <a href={t.receiptUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Visualizar Nota Fiscal">
