@@ -99,6 +99,12 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [activeContracts, setActiveContracts] = useState<any[]>([]);
 
+  const getLocalDateString = () => {
+    const d = new Date();
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+  };
+
   const [newTx, setNewTx] = useState({
     description: '',
     invoiceNumber: '',
@@ -110,7 +116,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     fundingSource: '',
     isFamilyAgriculture: false,
     isIndividualProducer: false,
-    date: new Date().toISOString().split('T')[0]
+    date: getLocalDateString()
   });
 
   const toggleFullScreen = () => {
@@ -412,7 +418,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       setIsModalOpen(false);
       setTempFile(null);
       setEditingTx(null);
-      setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: new Date().toISOString().split('T')[0] });
+      setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
       fetchFinancialData();
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
@@ -597,7 +603,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </p>
                                 </div>
                               </div>
-                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: new Date().toISOString().split('T')[0] }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
+                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
                                 <X size={24} />
                               </button>
                             </div>
@@ -959,7 +965,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                           <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><ArrowRightLeft className="text-blue-400" size={20} /> Livro Caixa</h3>
                           <button onClick={() => {
                             setEditingTx(null);
-                            setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: new Date().toISOString().split('T')[0] });
+                            setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
                             setIsModalOpen(true);
                           }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
                         </div>
@@ -969,7 +975,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             <tbody className="divide-y divide-white/5">
                               {funds[activeTab].transactions.map((t) => (
                                 <tr key={t.id} className="hover:bg-white/5 transition-colors">
-                                  <td className="px-6 py-4 font-bold text-white/50">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                                  <td className="px-6 py-4 font-bold text-white/50">{t.date ? t.date.split('-').reverse().join('/') : ''}</td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
                                       <p className="font-black text-white uppercase leading-tight">{t.description}</p>
