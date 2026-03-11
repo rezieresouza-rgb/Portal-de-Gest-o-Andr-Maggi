@@ -1,0 +1,44 @@
+[
+  {
+    "id": "d7d7a624-54fa-4e2e-8436-e9c49c1e687b",
+    "description": "SALDO INICIAL - REC. ÚNICO",
+    "type": "ENTRY",
+    "net_value": 50000
+  },
+  {
+    "id": "00fd9b76-0cf5-48b6-9a36-4cce8d668aed",
+    "description": "REPASSE MERENDA PNAE",
+    "type": "ENTRY",
+    "net_value": 12500
+  },
+  {
+    "id": "c115264e-344c-4ac4-9cd5-00b3615c0c78",
+    "description": "SALDO ANTERIOR PDDE BÁSICO",
+    "type": "ENTRY",
+    "net_value": 3450.2
+  },
+  {
+    "id": "3fe7ccf1-d119-4be2-b936-c0bce054557d",
+    "description": "PROGRAMA ESCOLA CONECTADA",
+    "type": "ENTRY",
+    "net_value": 8000
+  },
+  {
+    "id": "fac4fbb6-078d-41f3-b546-ac272ef67ca6",
+    "description": "PRIMEIRO REPASSE",
+    "type": "ENTRY",
+    "net_value": 20086
+  },
+  {
+    "id": "2b3791e0-9946-4a31-a9d7-f26f9f2e4b46",
+    "description": "COMERCIAL ASSIS",
+    "type": "EXPENSE",
+    "net_value": 227.76
+  },
+  {
+    "id": "15048e21-737c-4c31-ba7d-11fd97c28d8b",
+    "description": "L BATISTA DA SILVA",
+    "type": "EXPENSE",
+    "net_value": 4343.63
+  }
+]

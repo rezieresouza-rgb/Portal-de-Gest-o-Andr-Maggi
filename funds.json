@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ca49b52c-1459-41f8-a3e3-a7672b5d7a6f",
+    "name": "ru",
+    "full_name": "Recurso Único Estadual (PAF)",
+    "budget_year": "2026"
+  },
+  {
+    "id": "c2ea58c8-9d4d-47f7-ab1a-1928768384d5",
+    "name": "merenda",
+    "full_name": "Recurso Alimentação (PNAE/Estadual)",
+    "budget_year": "2026"
+  },
+  {
+    "id": "14b89ad6-5ff8-4f11-852b-1568b13f98b6",
+    "name": "pdde_basico",
+    "full_name": "PDDE Básico (Prog. Dinheiro Direto na Escola)",
+    "budget_year": "2026"
+  },
+  {
+    "id": "ccf3e3b2-0356-4c8f-bfe4-0f5636112a4c",
+    "name": "pdde_qualidade",
+    "full_name": "PDDE Qualidade (Ações Integradas)",
+    "budget_year": "2026"
+  }
+]

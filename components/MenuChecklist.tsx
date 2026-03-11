@@ -60,6 +60,7 @@ const ENTRADA_KEYWORDS = [
 
 const MenuChecklist: React.FC = () => {
   const [viewMode, setViewMode] = useState<'form' | 'history'>('form');
+  const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false); // NOVO: Bloqueia edição de históricos
   const [history, setHistory] = useState<SavedMealRecord[]>(() => {
     try {
@@ -84,7 +85,7 @@ const MenuChecklist: React.FC = () => {
   const [principal, setPrincipal] = useState<MealRecord>({ ...INITIAL_MEAL });
 
   useEffect(() => {
-    if (viewMode === 'form' && !isLocked) {
+    if (viewMode === 'form' && !isLocked && !currentRecordId) {
       const weekMenu = OFFICIAL_MENUS.find(m => m.week === selectedWeek);
       const dayMenu = weekMenu?.days.find(d => d.day === selectedDay);
 
@@ -112,20 +113,29 @@ const MenuChecklist: React.FC = () => {
         }));
       }
     }
-  }, [selectedWeek, selectedDay, viewMode, selectedShift, isLocked]);
+  }, [selectedWeek, selectedDay, viewMode, selectedShift, isLocked, currentRecordId]);
 
   const saveToHistory = () => {
+    const recordId = currentRecordId || `meal-${Date.now()}`;
     const newRecord: SavedMealRecord = {
-      id: `meal-${Date.now()}`,
+      id: recordId,
       date: serviceDate,
       shift: selectedShift,
       entrada: { ...entrada, shift: selectedShift },
       principal: { ...principal, shift: selectedShift },
       timestamp: Date.now()
     };
-    const updatedHistory = [newRecord, ...history];
+    
+    let updatedHistory;
+    if (currentRecordId) {
+      updatedHistory = history.map(r => r.id === currentRecordId ? newRecord : r);
+    } else {
+      updatedHistory = [newRecord, ...history];
+    }
+    
     setHistory(updatedHistory);
     localStorage.setItem('merenda_meal_records_v1', JSON.stringify(updatedHistory));
+    setCurrentRecordId(recordId);
   };
 
   const deleteFromHistory = (id: string, e: React.MouseEvent) => {
@@ -138,6 +148,7 @@ const MenuChecklist: React.FC = () => {
   };
 
   const loadFromHistory = (record: SavedMealRecord) => {
+    setCurrentRecordId(record.id);
     setServiceDate(record.date);
     setSelectedShift(record.shift || 'MATUTINO / VESPERTINO');
     setEntrada(record.entrada);
@@ -147,6 +158,7 @@ const MenuChecklist: React.FC = () => {
   };
 
   const startNewRecord = () => {
+    setCurrentRecordId(null);
     setIsLocked(false);
     setEntrada({ ...INITIAL_MEAL });
     setPrincipal({ ...INITIAL_MEAL });
@@ -266,9 +278,14 @@ const MenuChecklist: React.FC = () => {
                 </button>
 
                 {isLocked && (
-                  <button onClick={startNewRecord} className="px-6 py-2 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-emerald-700 transition-all shadow-lg">
-                    Novo Registro
-                  </button>
+                  <>
+                    <button onClick={() => setIsLocked(false)} className="px-6 py-2 bg-yellow-500 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-yellow-600 transition-all shadow-lg">
+                      Editar Registro
+                    </button>
+                    <button onClick={startNewRecord} className="px-6 py-2 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-emerald-700 transition-all shadow-lg">
+                      Novo Registro
+                    </button>
+                  </>
                 )}
               </>
             ) : (

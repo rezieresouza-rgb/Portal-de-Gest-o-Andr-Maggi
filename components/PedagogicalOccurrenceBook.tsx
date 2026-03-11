@@ -239,6 +239,7 @@ const PedagogicalOccurrenceBook: React.FC = () => {
                            <span className="text-[10px] font-bold text-white/40 uppercase flex items-center gap-1"><Clock size={12} /> {new Date(occ.date).toLocaleDateString('pt-BR')} às {occ.time}</span>
                            <span className="text-[10px] font-bold text-white/40 uppercase flex items-center gap-1"><Users size={12} /> {occ.className}</span>
                            <span className="text-[10px] font-bold text-white/40 uppercase flex items-center gap-1"><MapPin size={12} /> {occ.location}</span>
+                           <span className="text-[10px] font-bold text-violet-400 uppercase flex items-center gap-1" title="Registrado por"><User size={12} /> {occ.responsible}</span>
                         </div>
                      </div>
                   </div>

@@ -22,9 +22,12 @@ import {
   Trash2,
   X,
   Save,
-  ChevronDown
+  ChevronDown,
+  ShoppingCart,
+  Search
 } from 'lucide-react';
 import { OFFICIAL_MENUS } from '../constants/menus';
+import { INITIAL_CONTRACTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { StaffMember } from '../types';
 
@@ -164,6 +167,38 @@ const Inventory: React.FC = () => {
     }
   };
 
+  const syncWithContracts = () => {
+    const allContractProducts = new Set<string>();
+    INITIAL_CONTRACTS.forEach(contract => {
+      contract.items.forEach(item => {
+        allContractProducts.add(item.description.toUpperCase());
+      });
+    });
+
+    const newItemsFound: SeducInventoryItem[] = [];
+    allContractProducts.forEach(upperName => {
+      const exists = items.some(i => i.name === upperName);
+      if (!exists) {
+        newItemsFound.push({
+          id: `item-${Date.now()}-${Math.random()}`,
+          name: upperName,
+          unit: ENTRADA_KEYWORDS.some(key => upperName.includes(key)) ? 'Un' : 'Kg',
+          previousBalance: 0,
+          entries: 0,
+          outputs: 0,
+          min: 1
+        });
+      }
+    });
+
+    if (newItemsFound.length > 0) {
+      setItems(prev => [...prev, ...newItemsFound]);
+      alert(`${newItemsFound.length} novos produtos carregados dos 12 contratos ativos!`);
+    } else {
+      alert("Todos os produtos dos contratos já estão na lista de estoque.");
+    }
+  };
+
   const handleResetDaily = () => {
     if (items.length === 0) return alert("Cadastre itens antes de fechar o turno.");
     if (window.confirm(`Deseja fechar o turno ${turno}? Os saldos serão consolidados no histórico.`)) {
@@ -241,7 +276,19 @@ const Inventory: React.FC = () => {
               <button onClick={() => setIsAddItemModalOpen(true)} className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Plus size={14} /> Novo Produto</button>
             )}
             <button onClick={() => setViewMode(viewMode === 'active' ? 'history' : 'active')} className="px-5 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest"><History size={14} /></button>
-            {viewMode === 'active' && <button onClick={handleResetDaily} className="px-5 py-3 bg-emerald-100 text-emerald-700 rounded-2xl font-black uppercase text-[10px] tracking-widest">Fechar Turno</button>}
+            {viewMode === 'active' && (
+              <div className="flex flex-wrap gap-2">
+                <button onClick={syncWithMenu} className="px-4 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2">
+                  <Search size={14} /> Sincronizar Cardápio (5 Semanas)
+                </button>
+                <button onClick={syncWithContracts} className="px-4 py-3 bg-blue-50 text-blue-700 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-blue-100 hover:bg-blue-100 transition-all flex items-center gap-2">
+                  <ShoppingCart size={14} /> Sincronizar Contratos (12 Ativos)
+                </button>
+                <button onClick={handleResetDaily} className="px-4 py-3 bg-emerald-100 text-emerald-700 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-200 transition-all">
+                  Fechar Turno
+                </button>
+              </div>
+            )}
             <button onClick={handleDownloadPDF} disabled={isSaving} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest">{isSaving ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}</button>
           </div>
         </div>
