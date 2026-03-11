@@ -74,7 +74,14 @@ const MenuChecklist: React.FC = () => {
 
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [selectedDay, setSelectedDay] = useState<string>('Segunda');
-  const [serviceDate, setServiceDate] = useState(new Date().toLocaleDateString('sv-SE'));
+  const getLocalDateString = () => {
+    let today = new Date();
+    const offset = today.getTimezoneOffset();
+    today = new Date(today.getTime() - (offset*60*1000));
+    return today.toISOString().split('T')[0];
+  };
+
+  const [serviceDate, setServiceDate] = useState(getLocalDateString());
   const [selectedShift, setSelectedShift] = useState<string>('MATUTINO / VESPERTINO');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -317,7 +324,7 @@ const MenuChecklist: React.FC = () => {
             </div>
             <div className="text-right flex-1 border-l-2 border-black pl-4">
               <h3 className="text-xs font-black uppercase leading-tight">Registro Diário da Alimentação</h3>
-              <p className="text-[9px] font-bold uppercase mt-1">Data: {new Date(serviceDate).toLocaleDateString('pt-BR')}</p>
+              <p className="text-[9px] font-bold uppercase mt-1">Data: {new Date(serviceDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
               <p className="text-[9px] font-bold uppercase">Turno: {selectedShift}</p>
             </div>
           </div>
@@ -455,7 +462,7 @@ const MenuChecklist: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Documento Registrado</p>
-                      <p className="text-sm font-black text-gray-900">{new Date(record.date).toLocaleDateString('pt-BR')}</p>
+                      <p className="text-sm font-black text-gray-900">{new Date(record.date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                     </div>
                   </div>
 
