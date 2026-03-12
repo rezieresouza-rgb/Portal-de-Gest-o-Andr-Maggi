@@ -225,7 +225,11 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         skillsText: newSkillsText,
         content: newContent
       };
-      return { ...prevForm, rows: updatedRows };
+      
+      const skillExists = prevForm.skills.some(s => s.code === skill.code);
+      const newSkills = skillExists ? prevForm.skills : [...prevForm.skills, skill];
+
+      return { ...prevForm, rows: updatedRows, skills: newSkills };
     });
 
     // Clear the search input for this row and hide the dropdown
