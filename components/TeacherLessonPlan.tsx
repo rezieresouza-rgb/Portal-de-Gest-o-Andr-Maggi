@@ -603,22 +603,24 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Página do material</label>
                     <input value={row.materialPage} onChange={e => updateRow(idx, 'materialPage', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold outline-none" />
                   </div>
-                  <div className="space-y-1.5 md:col-span-2 relative">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Habilidades a serem trabalhadas</label>
-                    <div className="relative mb-2">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
+                  <div className="space-y-2 md:col-span-2 relative mt-4">
+                    <label className="text-xs font-black text-amber-700 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <Sparkles size={14} /> Seleção de Habilidades (Busca)
+                    </label>
+                    <div className="relative mb-3">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500" size={18} />
                       <input
                         type="text"
-                        placeholder={dbSkills.length > 0 ? "Buscar habilidade para inserir..." : "Selecione disciplina/turma primeiro..."}
+                        placeholder={dbSkills.length > 0 ? "Digite o código ou palavra-chave da habilidade..." : "Selecione disciplina/turma primeiro..."}
                         value={rowSkillSearch[idx] || ''}
                         onChange={e => setRowSkillSearch(prev => ({ ...prev, [idx]: e.target.value }))}
                         onFocus={() => setFocusedRowIdx(idx)}
                         onBlur={() => setTimeout(() => setFocusedRowIdx(null), 200)}
                         disabled={dbSkills.length === 0}
-                        className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-[10px] font-bold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+                        className="w-full pl-11 pr-4 py-4 bg-amber-50/40 border-2 border-amber-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 transition-all text-gray-900 placeholder:text-gray-400 shadow-sm"
                       />
                       {focusedRowIdx === idx && (rowSkillSearch[idx] || '').trim().length > 0 && (
-                        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-xl rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
+                        <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border-2 border-amber-100 shadow-2xl rounded-2xl max-h-80 overflow-y-auto custom-scrollbar">
                           {dbSkills
                             .filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()))
                             .map(s => {
@@ -629,29 +631,33 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                                 <div
                                   key={s.code}
                                   onClick={() => appendSkillToRow(idx, s)}
-                                  className="p-3 hover:bg-amber-50 cursor-pointer border-b border-gray-50 last:border-0"
+                                  className="p-5 hover:bg-amber-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors group"
                                 >
-                                  <div className="flex flex-col gap-1 mb-1">
-                                    <div className="flex justify-between items-start gap-2">
-                                      <p className="text-xs font-black text-amber-600 uppercase shrink-0">{s.code}</p>
+                                  <div className="flex flex-col gap-2 mb-2">
+                                    <div className="flex justify-between items-start gap-4">
+                                      <p className="text-sm font-black text-amber-700 uppercase shrink-0 group-hover:text-amber-900">{s.code}</p>
                                       {ko && (
-                                        <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 line-clamp-1 text-right" title={ko}>
-                                          {ko.length > 50 ? `${ko.substring(0, 50)}...` : ko}
+                                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 text-right leading-tight" title={ko}>
+                                          {ko.length > 80 ? `${ko.substring(0, 80)}...` : ko}
                                         </span>
                                       )}
                                     </div>
                                   </div>
-                                  <p className="text-[10px] text-gray-600 line-clamp-3 leading-relaxed mt-1" title={pureDesc}>{pureDesc}</p>
+                                  <p className="text-xs text-gray-700 font-medium leading-relaxed group-hover:text-gray-900" title={pureDesc}>{pureDesc}</p>
                                 </div>
                               );
                             })}
                           {dbSkills.filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase())).length === 0 && (
-                            <div className="p-4 text-center text-xs text-gray-400">Nenhuma habilidade encontrada.</div>
+                            <div className="p-8 text-center bg-gray-50/50">
+                              <p className="text-sm font-bold text-gray-500">Nenhuma habilidade encontrada.</p>
+                              <p className="text-xs text-gray-400 mt-1">Tente usar outros termos de busca.</p>
+                            </div>
                           )}
                         </div>
                       )}
                     </div>
-                    <textarea value={row.skillsText} onChange={e => updateRow(idx, 'skillsText', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-semibold resize-none outline-none h-24" placeholder="Habilidades selecionadas aparecerão aqui. Você pode digitar livremente também." />
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mt-2 block">Habilidades Inseridas neste Roteiro</label>
+                    <textarea value={row.skillsText} onChange={e => updateRow(idx, 'skillsText', e.target.value)} className="w-full p-5 bg-white border border-gray-200 rounded-2xl text-[13px] font-semibold resize-none outline-none min-h-[120px] focus:border-amber-400 transition-all text-gray-800" placeholder="As habilidades selecionadas acima aparecerão aqui. Você também pode digitar livremente." />
                   </div>
                 </div>
 
