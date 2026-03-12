@@ -65,7 +65,8 @@ const App: React.FC = () => {
     }
   });
 
-  const INACTIVITY_LIMIT = 15 * 60 * 1000;
+  // Aumentado o limite de inatividade para 12 horas a pedido do usuário
+  const INACTIVITY_LIMIT = 12 * 60 * 60 * 1000;
   const logout = useCallback(() => {
     localStorage.removeItem('active_session_v1');
     setActiveModule('hub');
