@@ -586,7 +586,7 @@ const Orders: React.FC = () => {
                   className={`px-8 py-2.5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${totalValue === 0 ? 'bg-gray-100 text-gray-400' : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'}`}
                 >
                   {isProcessing ? <Loader2 size={16} className="animate-spin" /> : editingOrder ? <Save size={16} /> : <CheckCircle2 size={16} />}
-                  {editingOrder ? "Salvar Alterações" : "Gerar Guia & Baixar Saldo"}
+                  {editingOrder ? "Salvar Alterações" : "Gerar Pedido"}
                 </button>
               </div>
             )}
