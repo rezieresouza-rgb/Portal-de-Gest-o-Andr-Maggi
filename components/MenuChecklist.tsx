@@ -123,7 +123,9 @@ const MenuChecklist: React.FC = () => {
   }, [selectedWeek, selectedDay, viewMode, selectedShift, isLocked, currentRecordId]);
 
   const saveToHistory = () => {
-    const recordId = currentRecordId || `meal-${Date.now()}`;
+    // Usar ID determinístico baseado em data e turno garante que turnos diferentes não se sobrescrevam
+    // caso o usuário altere o turno sem clicar em "Novo Registro".
+    const recordId = `meal-${serviceDate}-${selectedShift.replace(/\s+/g, '_')}`;
     const newRecord: SavedMealRecord = {
       id: recordId,
       date: serviceDate,
@@ -133,12 +135,15 @@ const MenuChecklist: React.FC = () => {
       timestamp: Date.now()
     };
     
-    let updatedHistory;
-    if (currentRecordId) {
-      updatedHistory = history.map(r => r.id === currentRecordId ? newRecord : r);
-    } else {
-      updatedHistory = [newRecord, ...history];
-    }
+    // Remove qualquer registro existente que tenha EXATAMENTE a mesma data e o mesmo turno (caso esteja editando)
+    let updatedHistory = history.filter(r => r.id !== recordId);
+    
+    // E se o usuário estiver editando um registro antigo (currentRecordId) e APENAS corrigiu o turno/data?
+    // Nesse caso o currentRecordId antigo ficaria "órfão" no histórico.
+    // Para resolver o bug do usuário (onde registrar a tarde apaga a manhã), é preferível deixar o registro original intacto
+    // e criar um novo para o novo turno. Se for erro de digitação, o usuário exclui o errado no histórico.
+    
+    updatedHistory = [newRecord, ...updatedHistory];
     
     setHistory(updatedHistory);
     localStorage.setItem('merenda_meal_records_v1', JSON.stringify(updatedHistory));
