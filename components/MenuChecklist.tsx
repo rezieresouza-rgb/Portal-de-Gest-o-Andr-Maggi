@@ -120,25 +120,40 @@ const MenuChecklist: React.FC = () => {
             timestamp: row.timestamp
           }));
           
-          // Se o banco estiver vazio mas temos dados locais, envia pra nuvem
-          if (loadedHistory.length === 0) {
-            const localSaved = localStorage.getItem('merenda_meal_records_v1');
-            if (localSaved) {
-              const parsedLocal = JSON.parse(localSaved);
-              if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
-                const rowsToInsert = parsedLocal.map((r: any) => ({
-                  id: r.id,
-                  date: r.date,
-                  shift: r.shift,
-                  entrada: r.entrada,
-                  principal: r.principal,
-                  timestamp: r.timestamp
-                }));
-                const { error: syncError } = await supabase.from('merenda_meal_records').upsert(rowsToInsert);
-                if (!syncError) {
-                  setHistory(parsedLocal);
-                  return;
-                }
+          // Sync: Tenta subir registros locais que não estão na nuvem
+          const localSaved = localStorage.getItem('merenda_meal_records_v1');
+          if (localSaved) {
+            const parsedLocal: SavedMealRecord[] = JSON.parse(localSaved);
+            const cloudIds = new Set(loadedHistory.map(r => r.id));
+            const missingLocally = parsedLocal.filter(r => !cloudIds.has(r.id));
+
+            // Upload missing local records to Supabase
+            if (missingLocally.length > 0) {
+              await supabase.from('merenda_meal_records').upsert(missingLocally.map(r => ({
+                id: r.id,
+                date: r.date,
+                shift: r.shift,
+                entrada: r.entrada,
+                principal: r.principal,
+                timestamp: r.timestamp
+              })));
+              
+              // Recarrega tudo para garantir que temos a lista completa e atualizada
+              const { data: refreshedData } = await supabase
+                .from('merenda_meal_records')
+                .select('*')
+                .order('timestamp', { ascending: false });
+              
+              if (refreshedData) {
+                setHistory(refreshedData.map((row: any) => ({
+                  id: row.id,
+                  date: row.date,
+                  shift: row.shift,
+                  entrada: typeof row.entrada === 'string' ? JSON.parse(row.entrada) : row.entrada,
+                  principal: typeof row.principal === 'string' ? JSON.parse(row.principal) : row.principal,
+                  timestamp: row.timestamp
+                })));
+                return;
               }
             }
           }

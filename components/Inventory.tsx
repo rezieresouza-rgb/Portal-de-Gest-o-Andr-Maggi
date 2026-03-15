@@ -91,21 +91,38 @@ const Inventory: React.FC = () => {
             timestamp: row.timestamp
           }));
 
-          // Sync local to cloud if cloud is empty
-          if (formattedHistory.length === 0) {
-            const localSaved = localStorage.getItem('merenda_inventory_history_v1');
-            if (localSaved) {
-              const parsedLocal = JSON.parse(localSaved);
-              if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
-                await supabase.from('merenda_inventory_history').upsert(parsedLocal.map(r => ({
-                  id: r.id,
-                  date: r.date,
-                  turno: r.turno,
-                  responsavel: r.responsavel,
-                  items: r.items,
-                  timestamp: r.timestamp
+          // Sync: Tenta subir registros locais que não estão na nuvem
+          const localSaved = localStorage.getItem('merenda_inventory_history_v1');
+          if (localSaved) {
+            const parsedLocal: InventorySnapshot[] = JSON.parse(localSaved);
+            const cloudIds = new Set(formattedHistory.map(r => r.id));
+            const missingLocally = parsedLocal.filter(r => !cloudIds.has(r.id));
+
+            if (missingLocally.length > 0) {
+              await supabase.from('merenda_inventory_history').upsert(missingLocally.map(r => ({
+                id: r.id,
+                date: r.date,
+                turno: r.turno,
+                responsavel: r.responsavel,
+                items: r.items,
+                timestamp: r.timestamp
+              })));
+
+              // Recarrega tudo para garantir que o estado reflete a nuvem completa
+              const { data: refreshedData } = await supabase
+                .from('merenda_inventory_history')
+                .select('*')
+                .order('timestamp', { ascending: false });
+              
+              if (refreshedData) {
+                setHistory(refreshedData.map((row: any) => ({
+                  id: row.id,
+                  date: row.date,
+                  turno: row.turno,
+                  responsavel: row.responsavel,
+                  items: typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
+                  timestamp: row.timestamp
                 })));
-                setHistory(parsedLocal);
                 return;
               }
             }
