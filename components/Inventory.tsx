@@ -64,9 +64,60 @@ const Inventory: React.FC = () => {
   });
 
   const [history, setHistory] = useState<InventorySnapshot[]>(() => {
-    const saved = localStorage.getItem('merenda_inventory_history_v1');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('merenda_inventory_history_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Erro ao carregar histórico local", e);
+      return [];
+    }
   });
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const { data: dbHistory, error } = await supabase
+          .from('merenda_inventory_history')
+          .select('*')
+          .order('timestamp', { ascending: false });
+
+        if (!error && dbHistory) {
+          const formattedHistory = dbHistory.map((row: any) => ({
+            id: row.id,
+            date: row.date,
+            turno: row.turno,
+            responsavel: row.responsavel,
+            items: typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
+            timestamp: row.timestamp
+          }));
+
+          // Sync local to cloud if cloud is empty
+          if (formattedHistory.length === 0) {
+            const localSaved = localStorage.getItem('merenda_inventory_history_v1');
+            if (localSaved) {
+              const parsedLocal = JSON.parse(localSaved);
+              if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
+                await supabase.from('merenda_inventory_history').upsert(parsedLocal.map(r => ({
+                  id: r.id,
+                  date: r.date,
+                  turno: r.turno,
+                  responsavel: r.responsavel,
+                  items: r.items,
+                  timestamp: r.timestamp
+                })));
+                setHistory(parsedLocal);
+                return;
+              }
+            }
+          }
+          setHistory(formattedHistory);
+        }
+      } catch (e) {
+        console.error("Erro ao buscar histórico do Supabase:", e);
+      }
+    };
+    fetchHistory();
+  }, []);
 
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({ name: '', unit: 'Kg', min: 0 });
@@ -215,6 +266,23 @@ const Inventory: React.FC = () => {
       setHistory(updatedHistory);
       localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updatedHistory));
 
+      // Salva no Supabase
+      const saveSnapshot = async () => {
+        try {
+          await supabase.from('merenda_inventory_history').upsert({
+            id: snapshot.id,
+            date: snapshot.date,
+            turno: snapshot.turno,
+            responsavel: snapshot.responsavel,
+            items: snapshot.items,
+            timestamp: snapshot.timestamp
+          });
+        } catch (err) {
+          console.error("Erro ao salvar fechamento no banco:", err);
+        }
+      };
+      saveSnapshot();
+
       // Update balances for the NEXT shift
       setItems(prev => prev.map(item => ({
         ...item,
@@ -318,6 +386,49 @@ const Inventory: React.FC = () => {
               <Info size={16} className="text-emerald-600" />
               <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">O sistema carregará automaticamente todos os ingredientes únicos das 5 semanas do cardápio oficial.</p>
             </div>
+          </div>
+        {viewMode === 'history' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 duration-300">
+            {history.length > 0 ? history.map((h) => (
+              <div key={h.id} className="bg-gray-50 p-6 rounded-3xl border border-gray-100 hover:border-emerald-200 transition-all">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-emerald-100 text-emerald-600 rounded-2xl"><Calendar size={20} /></div>
+                    <div>
+                      <p className="font-black text-gray-900 uppercase text-xs">{h.date} - {h.turno}</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h.responsavel}</p>
+                    </div>
+                  </div>
+                  <button onClick={async (e) => {
+                    e.stopPropagation();
+                    if(window.confirm("Excluir este fechamento de histórico?")) {
+                      const updated = history.filter(item => item.id !== h.id);
+                      setHistory(updated);
+                      localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updated));
+                      await supabase.from('merenda_inventory_history').delete().eq('id', h.id);
+                    }
+                  }} className="text-gray-300 hover:text-red-500 p-2"><Trash2 size={16} /></button>
+                </div>
+                
+                <div className="bg-white p-4 rounded-2xl border border-gray-100 space-y-2">
+                   <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase border-b pb-1">
+                     <span>Produto</span>
+                     <span>Final</span>
+                   </div>
+                   {h.items.filter(i => i.entries > 0 || i.outputs > 0 || i.previousBalance > 0).slice(0, 5).map(item => (
+                     <div key={item.id} className="flex justify-between text-[10px] items-center">
+                       <span className="font-bold text-gray-700 truncate w-32">{item.name}</span>
+                       <span className="font-black text-emerald-700">{(item.previousBalance + item.entries - item.outputs).toLocaleString('pt-BR')} {item.unit}</span>
+                     </div>
+                   ))}
+                   {h.items.length > 5 && <p className="text-[8px] text-center text-gray-400 font-bold uppercase mt-2">... e mais {h.items.length - 5} itens</p>}
+                </div>
+              </div>
+            )) : (
+              <div className="col-span-full py-12 text-center text-gray-300 font-black uppercase text-xs tracking-widest border-2 border-dashed border-gray-100 rounded-[2.5rem]">
+                Nenhum fechamento histórico encontrado.
+              </div>
+            )}
           </div>
         )}
       </div>
