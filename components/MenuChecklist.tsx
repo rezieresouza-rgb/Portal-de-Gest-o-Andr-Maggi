@@ -14,10 +14,20 @@ import {
   Trash2,
   FileText,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Save,
+  Edit
 } from 'lucide-react';
 import { OFFICIAL_MENUS } from '../constants/menus';
 import { supabase } from '../supabaseClient';
+
+interface StaffMember {
+  id: string;
+  name: string;
+  role: string;
+  job_function: string;
+  status: string;
+}
 
 interface MealRecord {
   id?: string;
@@ -72,6 +82,25 @@ const MenuChecklist: React.FC = () => {
       return [];
     }
   });
+
+  const [nutricaoStaff, setNutricaoStaff] = useState<StaffMember[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('*')
+          .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRIÇÃO%')
+          .eq('status', 'EM_ATIVIDADE');
+        if (staffData) setNutricaoStaff(staffData);
+      } catch (err) {
+        console.error("Erro ao buscar funcionários:", err);
+      }
+    };
+    fetchStaff();
+  }, []);
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -439,8 +468,18 @@ const MenuChecklist: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="border-b border-black">
                     <p className="text-[8px] font-black uppercase text-gray-500">Merendeira(o) Responsável</p>
-                    <input type="text" value={section.state.responsible} onChange={(e) => updateMealField(section.setter, 'responsible', e.target.value)} disabled={isLocked} placeholder="Nome..." className="w-full bg-transparent text-[11px] font-bold uppercase outline-none py-1 no-print" />
-                    <div className="hidden pdf-show text-[11px] font-bold h-6 uppercase">{section.state.responsible || '________________________'}</div>
+                    <div className="relative">
+                      <select 
+                        value={section.state.responsible} 
+                        onChange={(e) => updateMealField(section.setter, 'responsible', e.target.value)} 
+                        disabled={isLocked} 
+                        className="w-full bg-transparent text-[11px] font-bold uppercase outline-none py-1 no-print appearance-none"
+                      >
+                        <option value="">Selecione...</option>
+                        {nutricaoStaff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                      <div className="hidden pdf-show text-[11px] font-bold h-6 uppercase">{section.state.responsible || '________________________'}</div>
+                    </div>
                   </div>
                   <div className="border-b border-black">
                     <p className="text-[8px] font-black uppercase text-gray-500">Cardápio do Dia</p>
