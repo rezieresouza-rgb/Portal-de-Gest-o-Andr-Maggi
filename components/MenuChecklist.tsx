@@ -17,6 +17,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { OFFICIAL_MENUS } from '../constants/menus';
+import { supabase } from '../supabaseClient';
 
 interface MealRecord {
   id?: string;
@@ -72,6 +73,56 @@ const MenuChecklist: React.FC = () => {
     }
   });
 
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('merenda_meal_records')
+          .select('*')
+          .order('timestamp', { ascending: false });
+
+        if (!error && data) {
+          const loadedHistory = data.map((row: any) => ({
+            id: row.id,
+            date: row.date,
+            shift: row.shift,
+            entrada: typeof row.entrada === 'string' ? JSON.parse(row.entrada) : row.entrada,
+            principal: typeof row.principal === 'string' ? JSON.parse(row.principal) : row.principal,
+            timestamp: row.timestamp
+          }));
+          
+          // Se o banco estiver vazio mas temos dados locais, envia pra nuvem
+          if (loadedHistory.length === 0) {
+            const localSaved = localStorage.getItem('merenda_meal_records_v1');
+            if (localSaved) {
+              const parsedLocal = JSON.parse(localSaved);
+              if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
+                const rowsToInsert = parsedLocal.map((r: any) => ({
+                  id: r.id,
+                  date: r.date,
+                  shift: r.shift,
+                  entrada: r.entrada,
+                  principal: r.principal,
+                  timestamp: r.timestamp
+                }));
+                const { error: syncError } = await supabase.from('merenda_meal_records').upsert(rowsToInsert);
+                if (!syncError) {
+                  setHistory(parsedLocal);
+                  return;
+                }
+              }
+            }
+          }
+          
+          setHistory(loadedHistory);
+        }
+      } catch (e) {
+        console.error("Erro ao buscar histórico do Supabase:", e);
+      }
+    };
+    fetchRecords();
+  }, []);
+
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [selectedDay, setSelectedDay] = useState<string>('Segunda');
   const getLocalDateString = () => {
@@ -122,7 +173,7 @@ const MenuChecklist: React.FC = () => {
     }
   }, [selectedWeek, selectedDay, viewMode, selectedShift, isLocked, currentRecordId]);
 
-  const saveToHistory = () => {
+  const saveToHistory = async () => {
     // Usar ID determinístico baseado em data e turno garante que turnos diferentes não se sobrescrevam
     // caso o usuário altere o turno sem clicar em "Novo Registro".
     const recordId = `meal-${serviceDate}-${selectedShift.replace(/\s+/g, '_')}`;
@@ -145,17 +196,39 @@ const MenuChecklist: React.FC = () => {
     
     updatedHistory = [newRecord, ...updatedHistory];
     
+    // Salva local (cache imediato)
     setHistory(updatedHistory);
     localStorage.setItem('merenda_meal_records_v1', JSON.stringify(updatedHistory));
     setCurrentRecordId(recordId);
+
+    // Salva na Nuvem (Supabase)
+    try {
+      await supabase.from('merenda_meal_records').upsert({
+        id: newRecord.id,
+        date: newRecord.date,
+        shift: newRecord.shift,
+        entrada: newRecord.entrada,
+        principal: newRecord.principal,
+        timestamp: newRecord.timestamp
+      });
+    } catch (err) {
+      console.error("Falha ao salvar no banco:", err);
+    }
   };
 
-  const deleteFromHistory = (id: string, e: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm("ATENÇÃO: Deseja excluir permanentemente este registro oficial? Esta ação será auditada.")) {
       const updated = history.filter(r => r.id !== id);
       setHistory(updated);
       localStorage.setItem('merenda_meal_records_v1', JSON.stringify(updated));
+
+      // Deleta da Nuvem (Supabase)
+      try {
+        await supabase.from('merenda_meal_records').delete().eq('id', id);
+      } catch (err) {
+        console.error("Falha ao remover do banco:", err);
+      }
     }
   };
 
