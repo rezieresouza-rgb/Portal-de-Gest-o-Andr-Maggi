@@ -324,14 +324,14 @@ const Inventory: React.FC = () => {
 
       <div ref={printRef} className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse table-fixed">
-          <thead>
+          <thead className="sticky top-0 z-20 shadow-sm">
             <tr className="bg-gray-900 text-white">
-              <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest w-[35%]">Produto</th>
+              <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest w-[35%] rounded-tl-[2rem]">Produto</th>
               <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center w-[15%]">Saldo Inicial</th>
-              <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center bg-emerald-800/50 w-[15%]">Entradas</th>
-              <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center bg-red-800/50 w-[15%]">Saídas</th>
+              <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center bg-emerald-800/80 w-[15%]">Entradas</th>
+              <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center bg-red-800/80 w-[15%]">Saídas</th>
               <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center w-[15%]">Saldo Final</th>
-              {viewMode === 'active' && <th className="px-4 py-5 w-[5%] no-print"></th>}
+              {viewMode === 'active' && <th className="px-4 py-5 w-[5%] no-print rounded-tr-[2rem]"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
