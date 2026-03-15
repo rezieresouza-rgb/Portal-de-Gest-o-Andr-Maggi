@@ -382,11 +382,8 @@ const MenuChecklist: React.FC = () => {
                       onChange={(e) => setSelectedShift(e.target.value)}
                       className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 text-xs font-black uppercase outline-none focus:border-emerald-500"
                     >
-                      <option value="MATUTINO / VESPERTINO">Matutino / Vespertino</option>
-                      <option value="MATUTINO">Apenas Matutino</option>
-                      <option value="VESPERTINO">Apenas Vespertino</option>
-                      <option value="NOTURNO">Noturno</option>
-                      <option value="INTEGRAL">Integral</option>
+                      <option value="MATUTINO">Matutino</option>
+                      <option value="VESPERTINO">Vespertino</option>
                     </select>
                   </>
                 ) : (
