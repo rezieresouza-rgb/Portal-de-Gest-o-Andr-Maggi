@@ -272,15 +272,20 @@ const MenuChecklist: React.FC = () => {
     }));
   };
 
-  const handleGeneratePDF = async () => {
+  const handleGeneratePDF = async (recordToPrint?: SavedMealRecord) => {
+    // Se passarem um record, carregamos ele temporariamente para impressão se necessário, 
+    // mas aqui o componente já está exibindo o estado correto (seja locked ou editando).
     setIsGenerating(true);
     const element = printRef.current;
     if (!element) return;
 
     try {
+      const fileNameDate = recordToPrint ? recordToPrint.date : serviceDate;
+      const fileNameShift = recordToPrint ? recordToPrint.shift : selectedShift;
+
       const opt = {
         margin: [5, 5, 5, 5],
-        filename: `Registro_Alimentacao_${serviceDate}_${selectedShift.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+        filename: `Registro_Alimentacao_${fileNameDate}_${fileNameShift.replace(/[^a-z0-9]/gi, '_')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 3, useCORS: true, letterRendering: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -289,7 +294,6 @@ const MenuChecklist: React.FC = () => {
       // @ts-ignore
       await window.html2pdf().set(opt).from(element).save();
 
-      if (!isLocked) saveToHistory();
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
@@ -298,6 +302,14 @@ const MenuChecklist: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleManualSave = async () => {
+    setIsSaving(true);
+    await saveToHistory();
+    setIsSaving(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   return (
@@ -357,10 +369,17 @@ const MenuChecklist: React.FC = () => {
 
                 <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} disabled={isLocked} className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 text-xs font-black outline-none focus:border-emerald-500 disabled:opacity-50" />
 
-                <button onClick={handleGeneratePDF} disabled={isGenerating} className={`px-6 py-2 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 transition-all shadow-lg ${showSuccess ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-900 text-white hover:bg-black'}`}>
-                  {isGenerating ? <Loader2 size={16} className="animate-spin" /> : showSuccess ? <CheckCircle2 size={16} /> : <Printer size={16} />}
-                  {isGenerating ? "Gerando..." : isLocked ? "Reimprimir Documento" : "Imprimir e Salvar"}
-                </button>
+                {!isLocked ? (
+                  <button onClick={handleManualSave} disabled={isSaving} className={`px-6 py-2 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 transition-all shadow-lg ${showSuccess ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                    {isSaving ? <Loader2 size={16} className="animate-spin" /> : showSuccess ? <CheckCircle2 size={16} /> : <Save size={16} />}
+                    {isSaving ? "Salvando..." : showSuccess ? "Salvo com Sucesso!" : "Salvar Registro"}
+                  </button>
+                ) : (
+                  <button onClick={() => handleGeneratePDF()} disabled={isGenerating} className="px-6 py-2 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 transition-all shadow-lg bg-emerald-900 text-white hover:bg-black">
+                    {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
+                    {isGenerating ? "Gerando..." : "Reimprimir Documento"}
+                  </button>
+                )}
 
                 {isLocked && (
                   <>
@@ -520,8 +539,7 @@ const MenuChecklist: React.FC = () => {
               {history.length > 0 ? history.map(record => (
                 <div
                   key={record.id}
-                  onClick={() => loadFromHistory(record)}
-                  className="bg-gray-50 p-6 rounded-2xl border border-gray-100 hover:border-emerald-300 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
+                  className="bg-white p-6 rounded-[2rem] border border-gray-100 hover:border-emerald-300 hover:shadow-lg transition-all group relative overflow-hidden"
                 >
                   <div className="absolute -top-1 -right-1 w-12 h-12 bg-emerald-500/10 rotate-45 flex items-end justify-center pb-1">
                     <Lock size={12} className="text-emerald-600 -rotate-45" />
@@ -555,8 +573,23 @@ const MenuChecklist: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 w-full justify-center py-2.5 rounded-xl border border-emerald-100">
-                    <ShieldCheck size={14} /> Ver Arquivo Original
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <button
+                      onClick={() => loadFromHistory(record)}
+                      className="flex items-center justify-center gap-2 text-[9px] font-black text-blue-700 uppercase tracking-widest bg-blue-50 py-2.5 rounded-xl border border-blue-100 hover:bg-blue-100 transition-all"
+                    >
+                      <Edit size={14} /> Editar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        loadFromHistory(record);
+                        // Pequeno delay para garantir que o DOM atualizou com o registro carregado antes de imprimir
+                        setTimeout(() => handleGeneratePDF(record), 500);
+                      }}
+                      className="flex items-center justify-center gap-2 text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 py-2.5 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all"
+                    >
+                      <Printer size={14} /> Imprimir
+                    </button>
                   </div>
                 </div>
               )) : (
