@@ -387,6 +387,7 @@ const Inventory: React.FC = () => {
               <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">O sistema carregará automaticamente todos os ingredientes únicos das 5 semanas do cardápio oficial.</p>
             </div>
           </div>
+        )}
         {viewMode === 'history' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 duration-300">
             {history.length > 0 ? history.map((h) => (
