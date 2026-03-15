@@ -162,7 +162,7 @@ const MenuChecklist: React.FC = () => {
   };
 
   const [serviceDate, setServiceDate] = useState(getLocalDateString());
-  const [selectedShift, setSelectedShift] = useState<string>('MATUTINO / VESPERTINO');
+  const [selectedShift, setSelectedShift] = useState<string>('MATUTINO');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -264,7 +264,7 @@ const MenuChecklist: React.FC = () => {
   const loadFromHistory = (record: SavedMealRecord) => {
     setCurrentRecordId(record.id);
     setServiceDate(record.date);
-    setSelectedShift(record.shift || 'MATUTINO / VESPERTINO');
+    setSelectedShift(record.shift || 'MATUTINO');
     setEntrada(record.entrada);
     setPrincipal(record.principal);
     setIsLocked(true); // Blinda o formulário para apenas leitura
