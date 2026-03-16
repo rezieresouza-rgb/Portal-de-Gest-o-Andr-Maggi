@@ -616,7 +616,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (!loanForm.bookSearch) return [];
     return books.filter(b =>
       b.title.toLowerCase().includes(loanForm.bookSearch.toLowerCase()) ||
-      (b.isbn && b.isbn.includes(loanForm.bookSearch))
+      (b.isbn && b.isbn.includes(loanForm.bookSearch)) ||
+      (b.internalRegistration && b.internalRegistration.toLowerCase().includes(loanForm.bookSearch.toLowerCase()))
     ).slice(0, 5);
   }, [books, loanForm.bookSearch]);
 
@@ -703,13 +704,17 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center justify-between">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                <input type="text" placeholder="Pesquisar título ou autor..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-3 bg-gray-50 border-none rounded-2xl text-xs font-bold outline-none" />
+                <input type="text" placeholder="Título, autor ou registro interno..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-3 bg-gray-50 border-none rounded-2xl text-xs font-bold outline-none" />
               </div>
               <button onClick={handleAddBookClick} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all"><Plus size={16} /> Adicionar Obra</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {books.filter(b => b.title.toLowerCase().includes(searchTerm.toLowerCase())).map(book => (
+              {books.filter(b => 
+                b.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                b.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (b.internalRegistration && b.internalRegistration.toLowerCase().includes(searchTerm.toLowerCase()))
+              ).map(book => (
                 <div key={book.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-indigo-200 transition-all group flex flex-col h-full">
                   <div className="w-full aspect-[3/4] bg-indigo-50 rounded-2xl mb-4 flex items-center justify-center text-indigo-200 relative overflow-hidden">
                     <BookOpen size={48} />
@@ -1120,7 +1125,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                       <input
                         type="text"
-                        placeholder="Buscar por Título ou ISBN..."
+                        placeholder="Título, ISBN ou Registro..."
                         value={loanForm.bookSearch}
                         onChange={e => setLoanForm({ ...loanForm, bookSearch: e.target.value })}
                         className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white uppercase"
