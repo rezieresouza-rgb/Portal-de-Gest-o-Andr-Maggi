@@ -31,10 +31,13 @@ import {
   Maximize2,
   Mail,
   GraduationCap,
-  UserCheck
+  UserCheck,
+  Camera,
+  Upload,
+  Info
 } from 'lucide-react';
 import { Book, Reader, Loan, StaffMember } from '../types';
-import { suggestBooks } from '../geminiService';
+import { suggestBooks, fetchBookSynopsis } from '../geminiService';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 
@@ -71,7 +74,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           bookType: b.book_type,
           volumeNumber: b.volume_number,
           subtitle: b.subtitle,
-          colorTag: b.color_tag
+          colorTag: b.color_tag,
+          coverUrl: b.cover_url,
+          synopsis: b.synopsis
         })));
       }
 
@@ -144,6 +149,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [interests, setInterests] = useState('');
+  const [loadingSynopsis, setLoadingSynopsis] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Modais
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
@@ -180,7 +187,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
     volumeNumber: '',
     subtitle: '',
-    colorTag: ''
+    colorTag: '',
+    coverUrl: '',
+    synopsis: ''
   });
 
   const [availableColors, setAvailableColors] = useState<{ name: string; hex: string }[]>(() => {
@@ -310,7 +319,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
       volumeNumber: '',
       subtitle: '',
-      colorTag: ''
+      colorTag: '',
+      coverUrl: '',
+      synopsis: ''
     });
     setIsBookModalOpen(true);
   };
@@ -334,7 +345,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       bookType: book.bookType || 'AVULSO',
       volumeNumber: book.volumeNumber || '',
       subtitle: book.subtitle || '',
-      colorTag: book.colorTag || ''
+      colorTag: book.colorTag || '',
+      coverUrl: book.coverUrl || '',
+      synopsis: book.synopsis || ''
     });
     setEditingBookId(book.id);
     setIsBookModalOpen(true);
@@ -360,7 +373,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         book_type: bookForm.bookType,
         volume_number: bookForm.volumeNumber,
         subtitle: bookForm.subtitle,
-        color_tag: bookForm.colorTag
+        color_tag: bookForm.colorTag,
+        cover_url: bookForm.coverUrl,
+        synopsis: bookForm.synopsis
       };
 
       if (editingBookId) {
@@ -581,7 +596,6 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
-  // FIX: Added missing handleSuggest function for AI book recommendations to fix error on line 411
   const handleSuggest = async () => {
     if (!interests.trim()) return alert('Informe os interesses ou temas para que o Bibliotecário IA possa sugerir obras.');
     setAiLoading(true);
@@ -597,11 +611,64 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const handleGenerateSynopsis = async () => {
+    if (!bookForm.title || !bookForm.author) {
+      alert("Informe o título e o autor para gerar a sinopse.");
+      return;
+    }
+    setLoadingSynopsis(true);
+    try {
+      const result = await fetchBookSynopsis(bookForm.title, bookForm.author);
+      setBookForm({ ...bookForm, synopsis: result || '' });
+    } catch (error) {
+      console.error("Erro ao gerar sinopse:", error);
+      alert("Não foi possível gerar a sinopse automaticamente.");
+    } finally {
+      setLoadingSynopsis(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("A imagem deve ter no máximo 2MB.");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `covers/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('library_covers')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('library_covers')
+        .getPublicUrl(filePath);
+
+      setBookForm({ ...bookForm, coverUrl: publicUrl });
+    } catch (error) {
+      console.error("Erro no upload da capa:", error);
+      alert("Erro ao enviar a imagem. Verifique se o bucket 'library_covers' existe no seu Supabase.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const filteredPeople = useMemo(() => {
     if (!peopleSearch || peopleSearch.length < 2) return [];
     return globalSchoolPeople.filter(p =>
       p.name.toLowerCase().includes(peopleSearch.toLowerCase()) ||
-      p.reg.includes(peopleSearch)
+      p.reg.includes(peopleSearch) ||
+      (p.sub && p.sub.toLowerCase().includes(peopleSearch.toLowerCase()))
     ).slice(0, 10);
   }, [globalSchoolPeople, peopleSearch]);
 
@@ -613,12 +680,13 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     // 1. Buscar nos já cadastrados
     const existing = readers.filter(r => 
       r.name.toLowerCase().includes(search) || 
-      r.registration.includes(search)
+      r.registration.includes(search) ||
+      (r.class && r.class.toLowerCase().includes(search))
     ).map(r => ({ ...r, source: 'library' as const }));
 
     // 2. Buscar na base global (filtra duplicados)
     const school = globalSchoolPeople.filter(p => 
-      (p.name.toLowerCase().includes(search) || p.reg.includes(search)) &&
+      (p.name.toLowerCase().includes(search) || p.reg.includes(search) || (p.sub && p.sub.toLowerCase().includes(search))) &&
       !readers.some(r => r.registration === p.reg)
     ).map(p => ({
       id: p.id,
@@ -757,12 +825,28 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 (b.internalRegistration && b.internalRegistration.toLowerCase().includes(searchTerm.toLowerCase()))
               ).map(book => (
                 <div key={book.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-indigo-200 transition-all group flex flex-col h-full">
-                  <div className="w-full aspect-[3/4] bg-indigo-50 rounded-2xl mb-4 flex items-center justify-center text-indigo-200 relative overflow-hidden">
-                    <BookOpen size={48} />
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleEditBookClick(book)} className="p-2 bg-white text-indigo-600 rounded-lg shadow-sm hover:bg-indigo-600 hover:text-white"><Edit3 size={14} /></button>
-                      <button onClick={() => handleDeleteBook(book.id)} className="p-2 bg-white text-red-600 rounded-lg shadow-sm hover:bg-red-600 hover:text-white"><Trash2 size={14} /></button>
+                  <div className="w-full aspect-[3/4] bg-indigo-50 rounded-2xl mb-4 flex items-center justify-center text-indigo-200 relative overflow-hidden group/cover shadow-sm">
+                    {book.coverUrl ? (
+                      <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/cover:scale-110" />
+                    ) : (
+                      <BookOpen size={48} className="opacity-20 translate-y-2" />
+                    )}
+                    <div className="absolute inset-0 bg-indigo-900/0 group-hover/cover:bg-indigo-900/20 transition-all duration-300"></div>
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/cover:opacity-100 transition-all duration-300 translate-y-1 group-hover/cover:translate-y-0">
+                      <button onClick={() => handleEditBookClick(book)} title="Editar" className="p-2 bg-white text-indigo-600 rounded-lg shadow-lg hover:bg-indigo-600 hover:text-white transition-all active:scale-90"><Edit3 size={14} /></button>
+                      <button onClick={() => handleDeleteBook(book.id)} title="Excluir" className="p-2 bg-white text-red-600 rounded-lg shadow-lg hover:bg-red-600 hover:text-white transition-all active:scale-90"><Trash2 size={14} /></button>
                     </div>
+                    {book.synopsis && (
+                      <div className="absolute bottom-2 left-2 opacity-0 group-hover/cover:opacity-100 transition-all duration-300 translate-y-1 group-hover/cover:translate-y-0">
+                        <button 
+                          onClick={() => alert(`SINOPSE:\n\n${book.synopsis}`)}
+                          className="p-2 bg-white/90 backdrop-blur-md text-indigo-600 rounded-lg shadow-lg hover:bg-white transition-all flex items-center gap-1.5"
+                        >
+                          <Info size={14} />
+                          <span className="text-[8px] font-black uppercase">Sinopse</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1">
                     <h4 className="text-sm font-black text-gray-900 uppercase leading-tight line-clamp-1">{book.title}</h4>
@@ -1018,13 +1102,90 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl border border-indigo-100 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><h3 className="text-2xl font-black text-gray-900 uppercase">{editingBookId ? 'Editar Obra' : 'Nova Obra'}</h3><button onClick={() => setIsBookModalOpen(false)}><X size={24} /></button></div>
             <form onSubmit={saveBook} className="flex flex-col flex-1 overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
-              <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Título</label><input required value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Autor</label><input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
-                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Categoria</label><select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select></div>
-                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Tipo de Obra</label><select value={bookForm.bookType} onChange={e => setBookForm({ ...bookForm, bookType: e.target.value as any })} className="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option value="AVULSO">Livro Avulso</option><option value="COLEÇÃO">Obra de Coleção</option></select></div>
-              </div>
+              <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+                {/* Área da Capa e Informações Básicas */}
+                <div className="flex flex-col md:flex-row gap-8">
+                  {/* Upload de Capa */}
+                  <div className="w-full md:w-48 shrink-0">
+                    <label className="text-xs font-black text-gray-400 uppercase ml-1 mb-2 block">Capa do Livro</label>
+                    <div 
+                      onClick={() => document.getElementById('cover-upload')?.click()}
+                      className="aspect-[3/4] bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all group relative overflow-hidden shadow-inner"
+                    >
+                      {bookForm.coverUrl ? (
+                        <img src={bookForm.coverUrl} alt="Capa" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-gray-300 group-hover:text-indigo-400 p-4 text-center">
+                          {uploadingImage ? <Loader2 className="animate-spin" size={32} /> : <Camera size={32} />}
+                          <span className="text-[10px] font-black uppercase leading-tight">Clique para enviar capa</span>
+                        </div>
+                      )}
+                      {bookForm.coverUrl && !uploadingImage && (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <Upload size={24} className="text-white" />
+                        </div>
+                      )}
+                      <input 
+                        id="cover-upload"
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleImageUpload}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Informações Principais */}
+                  <div className="flex-1 space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-gray-400 uppercase ml-1">Título da Obra</label>
+                      <input required value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-gray-400 uppercase ml-1">Autor</label>
+                        <input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-gray-400 uppercase ml-1">Categoria</label>
+                        <select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center ml-1">
+                        <label className="text-xs font-black text-gray-400 uppercase">Resumo / Sinopse</label>
+                        <button 
+                          type="button"
+                          onClick={handleGenerateSynopsis}
+                          disabled={loadingSynopsis || !bookForm.title}
+                          className="flex items-center gap-1.5 text-[10px] font-black text-indigo-600 uppercase hover:bg-indigo-50 px-2 py-1 rounded-lg transition-all disabled:opacity-50"
+                        >
+                          {loadingSynopsis ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                          Gerar via IA
+                        </button>
+                      </div>
+                      <textarea 
+                        value={bookForm.synopsis} 
+                        onChange={e => setBookForm({ ...bookForm, synopsis: e.target.value })} 
+                        placeholder="Um breve resumo sobre a obra..."
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-medium text-sm outline-none focus:bg-white min-h-[100px] resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-px bg-gray-100 w-full my-2"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-gray-400 uppercase ml-1">Tipo de Obra</label>
+                    <select value={bookForm.bookType} onChange={e => setBookForm({ ...bookForm, bookType: e.target.value as any })} className="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white">
+                      <option value="AVULSO">Livro Avulso</option>
+                      <option value="COLEÇÃO">Obra de Coleção</option>
+                    </select>
+                  </div>
+                </div>
 
               {bookForm.bookType === 'COLEÇÃO' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
