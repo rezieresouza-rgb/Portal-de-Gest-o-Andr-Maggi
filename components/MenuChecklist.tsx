@@ -529,17 +529,60 @@ const MenuChecklist: React.FC = () => {
                       </thead>
                       <tbody className="divide-y divide-black">
                         {section.state.ingredients.map((ing, iIdx) => (
-                          <tr key={iIdx}>
-                            <td className="px-3 py-0.5 text-[10px] font-bold uppercase">
-                              <input value={ing.name} onChange={(e) => {
-                                const n = [...section.state.ingredients]; n[iIdx].name = e.target.value.toUpperCase();
-                                updateMealField(section.setter, 'ingredients', n);
-                              }} disabled={isLocked} className="w-full bg-transparent outline-none no-print" />
-                              <span className="hidden pdf-show">{ing.name}</span>
+                          <tr key={iIdx} className={`${ing.quantity ? 'qty-filled' : 'qty-empty'} transition-all`}>
+                            <td className="px-3 py-1 text-[10px] font-bold uppercase group relative">
+                              <input 
+                                value={ing.name} 
+                                onChange={(e) => {
+                                  const n = [...section.state.ingredients]; n[iIdx].name = e.target.value.toUpperCase();
+                                  updateMealField(section.setter, 'ingredients', n);
+                                }} 
+                                disabled={isLocked} 
+                                className="w-full bg-transparent outline-none no-print border-none focus:ring-0" 
+                              />
+                               <span className="hidden pdf-show">{ing.name}</span>
                             </td>
-                            <td className="px-3 py-0.5 text-right">
-                              <input value={ing.quantity} onChange={(e) => updateIngredientQty(section.setter, iIdx, e.target.value)} disabled={isLocked} placeholder="0" className="w-full bg-transparent text-right outline-none text-[10px] font-black no-print" />
-                              <span className="hidden pdf-show font-black text-[10px]">{ing.quantity || '____'}</span>
+                            <td className="px-3 py-1 relative">
+                              <div className="flex flex-col items-end">
+                                <input 
+                                  id={`qty-${idx}-${iIdx}`}
+                                  value={ing.quantity} 
+                                  onChange={(e) => updateIngredientQty(section.setter, iIdx, e.target.value)} 
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      const nextId = `qty-${idx}-${iIdx + 1}`;
+                                      const nextEl = document.getElementById(nextId);
+                                      if (nextEl) {
+                                        nextEl.focus();
+                                      } else if (idx === 0) {
+                                        // End of snack list -> jump to first of main list
+                                        const firstMain = document.getElementById(`qty-1-0`);
+                                        if (firstMain) firstMain.focus();
+                                      }
+                                    }
+                                  }}
+                                  disabled={isLocked} 
+                                  placeholder="0" 
+                                  className="w-full bg-transparent text-right outline-none text-[10px] font-black no-print qty-input transition-all rounded px-1" 
+                                />
+                                <span className="hidden pdf-show font-black text-[10px]">{ing.quantity || '____'}</span>
+                                
+                                {/* Sugestões de Unidade (Floating small tags) */}
+                                {!isLocked && !ing.quantity.includes(' ') && ing.quantity.length > 0 && (
+                                  <div className="flex gap-1 mt-1 no-print">
+                                    {['KG', 'L', 'UN', 'MAÇO'].map(unit => (
+                                      <button 
+                                        key={unit}
+                                        onClick={() => updateIngredientQty(section.setter, iIdx, `${ing.quantity} ${unit}`)}
+                                        className="text-[7px] font-black bg-emerald-50 text-emerald-600 px-1 rounded hover:bg-emerald-600 hover:text-white border border-emerald-100 transition-colors"
+                                      >
+                                        +{unit}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -673,6 +716,9 @@ const MenuChecklist: React.FC = () => {
         .pdf-document { font-family: 'Arial', sans-serif !important; }
         .pdf-show { display: none; }
         .page-break-avoid { page-break-inside: avoid; }
+        .qty-input:focus { background-color: #f0fdf4; border-color: #10b981; }
+        .qty-filled { border-left: 3px solid #10b981 !important; }
+        .qty-empty { border-left: 3px solid #f3f4f6 !important; }
         @media print, .pdf-mode {
           .no-print { display: none !important; }
           .pdf-show { display: block !important; }
