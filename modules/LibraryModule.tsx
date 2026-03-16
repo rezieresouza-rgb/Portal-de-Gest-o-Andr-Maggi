@@ -261,7 +261,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     return {
       totalBooks: books.reduce((acc, b) => acc + b.totalCopies, 0),
       activeLoans: loans.filter(l => l.status === 'ATIVO').length,
-      delayedLoans: delayed.length,
+      delayedLoans: delayed,
       expiringSoon,
       totalReaders: readers.length,
       todayStr
@@ -646,16 +646,37 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       case 'dashboard':
         return (
           <div className="space-y-8 animate-in fade-in duration-500">
-            {stats.delayedLoans > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-[2.5rem] p-6 shadow-sm flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-red-600 text-white rounded-2xl animate-pulse"><AlertTriangle size={24} /></div>
-                  <div>
-                    <h3 className="text-lg font-black text-red-900 uppercase">Atrasos Críticos</h3>
-                    <p className="text-red-700 text-xs font-bold uppercase">{stats.delayedLoans} Livros pendentes de devolução</p>
+            {stats.delayedLoans.length > 0 && (
+              <div className="bg-red-50 border-2 border-red-100 rounded-[3rem] p-10 shadow-xl animate-in zoom-in-95 duration-500 relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 opacity-5 -rotate-12"><AlertTriangle size={180} className="text-red-600" /></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                  <div className="flex items-center gap-6">
+                    <div className="p-5 bg-red-600 text-white rounded-[2rem] shadow-lg shadow-red-200 animate-pulse transition-all hover:scale-105 active:scale-95"><AlertTriangle size={32} /></div>
+                    <div>
+                      <h3 className="text-3xl font-black text-red-900 uppercase tracking-tighter">Atrasos Críticos</h3>
+                      <p className="text-red-700 text-sm font-black uppercase tracking-widest mt-1">{stats.delayedLoans.length} Obras pendentes de devolução imediata</p>
+                    </div>
                   </div>
+                  <button onClick={() => setActiveTab('loans')} className="px-10 py-5 bg-red-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-red-700 hover:shadow-red-200 transition-all active:scale-95">Gerenciar Devoluções</button>
                 </div>
-                <button onClick={() => setActiveTab('loans')} className="px-6 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-colors">Cobrar Leitores</button>
+                
+                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+                  {stats.delayedLoans.slice(0, 3).map(l => (
+                    <div key={l.id} className="bg-white/80 backdrop-blur-sm p-5 rounded-2xl border border-red-100 flex items-center gap-4 group hover:bg-white transition-all">
+                      <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-600 shrink-0 font-black group-hover:bg-red-600 group-hover:text-white transition-colors">{l.readerName[0]}</div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black text-red-900 uppercase truncate">{l.bookTitle}</p>
+                        <p className="text-[8px] text-red-400 font-bold uppercase truncate">{l.readerName}</p>
+                        <p className="text-[8px] text-red-600 font-black uppercase mt-1">Vencido em: {new Date(l.dueDate).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {stats.delayedLoans.length > 3 && (
+                    <button onClick={() => setActiveTab('loans')} className="bg-red-100/50 hover:bg-red-100 p-5 rounded-2xl border border-red-200/50 flex items-center justify-center text-[9px] font-black text-red-700 uppercase tracking-widest transition-all">
+                      + {stats.delayedLoans.length - 3} Outros Atrasos
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -833,7 +854,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Registro de Circulação</h3>
                 <div className="flex gap-2">
                   <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase border border-blue-100">{stats.activeLoans} Ativos</span>
-                  <span className="px-3 py-1 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase border border-red-100">{stats.delayedLoans} Atrasados</span>
+                  <span className="px-3 py-1 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase border border-red-100">{stats.delayedLoans.length} Atrasados</span>
                 </div>
               </div>
               <button
