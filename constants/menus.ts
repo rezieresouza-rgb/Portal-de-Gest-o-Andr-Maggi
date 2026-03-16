@@ -141,7 +141,13 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
     week: 4,
     label: "4ª SEMANA",
     days: [
-      { day: "Segunda", dish: "CARNE COM MANDIOCA E ARROZ + MELÃO", ingredients: ["CARNE BOVINA CUBOS", "MANDIOCA", "ARROZ BRANCO", "MELÃO"] },
+      { 
+        day: "Segunda", 
+        dish: "CARNE COM MANDIOCA E ARROZ", 
+        entradaDish: "MELÃO",
+        entradaIngredients: ["MELÃO"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "COLORAU", "MANDIOCA", "ÓLEO DE SOJA", "PIMENTA DE CHEIRO", "SAL", "SALSA"] 
+      },
       { day: "Terça", dish: "FEIJOADA, FAROFA DE COUVE E ARROZ + PÃO COM MANTEIGA E LEITE COM CAFÉ", ingredients: ["FEIJÃO PRETO", "CARNE SUÍNA", "COUVE", "FARINHA DE MANDIOCA", "PÃO", "LEITE", "CAFÉ"] },
       { day: "Quarta", dish: "SALADA DE REPOLHO, PEPINO E RÚCULA, BOBÓ DE FRANGO E ARROZ + BANANA", ingredients: ["REPOLHO", "PEPINO", "RÚCULA", "FILÉ DE PEITO DE FRANGO", "MANDIOCA", "ARROZ BRANCO", "BANANA"] },
       { day: "Quinta", dish: "ESCONDIDINHO DE PEIXE E ARROZ + BOLO DE COCO E SUCO DE POLPA DE FRUTA", ingredients: ["PEIXE", "BATATA INGLESA", "ARROZ BRANCO", "BOLO DE COCO", "POLPA DE FRUTA"] },
