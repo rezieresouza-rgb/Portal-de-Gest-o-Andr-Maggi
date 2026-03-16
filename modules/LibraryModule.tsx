@@ -208,6 +208,16 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     setNewColorName('');
   };
 
+  const handleRemoveColor = (colorName: string) => {
+    if (!window.confirm(`Deseja remover a cor "${colorName}"?`)) return;
+    const updated = availableColors.filter(c => c.name !== colorName);
+    setAvailableColors(updated);
+    localStorage.setItem('library_custom_colors_v1', JSON.stringify(updated));
+    if (bookForm.colorTag === colorName) {
+      setBookForm({ ...bookForm, colorTag: '' });
+    }
+  };
+
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
 
   // Carrega base da secretaria para importação
@@ -986,21 +996,30 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <label className="text-xs font-black text-gray-400 uppercase ml-1">Cor do Identificador (Tag)</label>
                 <div className="flex flex-wrap gap-3">
                   {availableColors.map(c => (
-                    <button
-                      key={c.name}
-                      type="button"
-                      onClick={() => setBookForm({ ...bookForm, colorTag: c.name })}
-                      className={`px-4 py-3 rounded-2xl flex items-center gap-2 border-2 transition-all ${bookForm.colorTag === c.name ? 'ring-4 ring-offset-2' : 'hover:scale-105 opacity-60 hover:opacity-100'}`}
-                      style={{ 
-                        backgroundColor: c.hex, 
-                        borderColor: bookForm.colorTag === c.name ? 'white' : 'transparent',
-                        boxShadow: bookForm.colorTag === c.name ? `0 0 20px ${c.hex}60` : 'none',
-                        color: 'white'
-                      } as any}
-                    >
-                      <span className="text-[10px] font-black uppercase">{c.name}</span>
-                      {bookForm.colorTag === c.name && <CheckCircle2 size={14} />}
-                    </button>
+                    <div key={c.name} className="relative group/color">
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => setBookForm({ ...bookForm, colorTag: c.name })}
+                        className={`px-4 py-3 rounded-2xl flex items-center gap-2 border-2 transition-all ${bookForm.colorTag === c.name ? 'ring-4 ring-offset-2' : 'hover:scale-105 opacity-60 hover:opacity-100'}`}
+                        style={{ 
+                          backgroundColor: c.hex, 
+                          borderColor: bookForm.colorTag === c.name ? 'white' : 'transparent',
+                          boxShadow: bookForm.colorTag === c.name ? `0 0 20px ${c.hex}60` : 'none',
+                          color: 'white'
+                        } as any}
+                      >
+                        <span className="text-[10px] font-black uppercase">{c.name}</span>
+                        {bookForm.colorTag === c.name && <CheckCircle2 size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleRemoveColor(c.name); }}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/color:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-10"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
                   ))}
                   <button
                     type="button"
