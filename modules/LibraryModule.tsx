@@ -221,34 +221,35 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
 
   // Carrega base da secretaria para importação
+  const loadSchoolPeople = () => {
+    const savedStudents = localStorage.getItem('secretariat_detailed_students_v1');
+    const students = savedStudents ? JSON.parse(savedStudents) : INITIAL_STUDENTS;
+
+    const savedStaff = localStorage.getItem('secretariat_staff_v4');
+    const staff = savedStaff ? JSON.parse(savedStaff) : [];
+
+    const combined = [
+      ...students.map((s: any) => ({
+        id: s.CodigoAluno,
+        name: s.Nome,
+        type: 'ALUNO',
+        sub: s.Turma,
+        reg: s.CodigoAluno
+      })),
+      ...staff.map((s: StaffMember) => ({
+        id: s.id,
+        name: s.name,
+        type: 'SERVIDOR',
+        sub: s.jobFunction,
+        reg: s.registration
+      }))
+    ];
+    setGlobalSchoolPeople(combined);
+  };
+
   useEffect(() => {
-    const loadSchoolPeople = () => {
-      const savedStudents = localStorage.getItem('secretariat_detailed_students_v1');
-      const students = savedStudents ? JSON.parse(savedStudents) : INITIAL_STUDENTS;
-
-      const savedStaff = localStorage.getItem('secretariat_staff_v4');
-      const staff = savedStaff ? JSON.parse(savedStaff) : [];
-
-      const combined = [
-        ...students.map((s: any) => ({
-          id: s.CodigoAluno,
-          name: s.Nome,
-          type: 'ALUNO',
-          sub: s.Turma,
-          reg: s.CodigoAluno
-        })),
-        ...staff.map((s: StaffMember) => ({
-          id: s.id,
-          name: s.name,
-          type: 'SERVIDOR',
-          sub: s.jobFunction,
-          reg: s.registration
-        }))
-      ];
-      setGlobalSchoolPeople(combined);
-    };
     loadSchoolPeople();
-  }, [isImportModalOpen]);
+  }, [isImportModalOpen, isGlobalLoanModalOpen]);
 
 
 
@@ -605,12 +606,31 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   }, [globalSchoolPeople, peopleSearch]);
 
   const filteredReadersForLoan = useMemo(() => {
-    if (!loanForm.readerSearch) return [];
-    return readers.filter(r =>
-      r.name.toLowerCase().includes(loanForm.readerSearch.toLowerCase()) ||
-      r.registration.includes(loanForm.readerSearch)
-    ).slice(0, 5);
-  }, [readers, loanForm.readerSearch]);
+    if (!loanForm.readerSearch || loanForm.readerSearch.length < 2) return [];
+    
+    const search = loanForm.readerSearch.toLowerCase();
+    
+    // 1. Buscar nos já cadastrados
+    const existing = readers.filter(r => 
+      r.name.toLowerCase().includes(search) || 
+      r.registration.includes(search)
+    ).map(r => ({ ...r, source: 'library' as const }));
+
+    // 2. Buscar na base global (filtra duplicados)
+    const school = globalSchoolPeople.filter(p => 
+      (p.name.toLowerCase().includes(search) || p.reg.includes(search)) &&
+      !readers.some(r => r.registration === p.reg)
+    ).map(p => ({
+      id: p.id,
+      name: p.name,
+      registration: p.reg,
+      class: p.sub,
+      type: p.type,
+      source: 'school' as const
+    }));
+
+    return [...existing, ...school].slice(0, 10);
+  }, [readers, globalSchoolPeople, loanForm.readerSearch]);
 
   const filteredBooksForLoan = useMemo(() => {
     if (!loanForm.bookSearch) return [];
@@ -1194,20 +1214,49 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto z-20 p-2 space-y-1">
                         {filteredReadersForLoan.map(r => (
                           <button
-                            key={r.id}
+                            key={`${r.source}-${r.registration}`}
                             type="button"
-                            onClick={() => setLoanForm({ ...loanForm, readerId: r.id, readerSearch: '' })}
+                            onClick={async () => {
+                              if (r.source === 'school') {
+                                // Auto-import reader
+                                try {
+                                  const { data, error } = await supabase.from('library_readers').insert([{
+                                    name: r.name,
+                                    registration: r.registration,
+                                    type: r.type,
+                                    class_info: r.class
+                                  }]).select();
+                                  if (error) throw error;
+                                  if (data && data[0]) {
+                                    setLoanForm({ ...loanForm, readerId: data[0].id, readerSearch: '' });
+                                    await fetchData();
+                                  }
+                                } catch (err) {
+                                  console.error("Erro no auto-import:", err);
+                                  alert("Erro ao vincular leitor automaticamente.");
+                                }
+                              } else {
+                                setLoanForm({ ...loanForm, readerId: r.id, readerSearch: '' });
+                              }
+                            }}
                             className="w-full text-left p-3 hover:bg-indigo-50 rounded-xl transition-colors flex items-center justify-between group"
                           >
-                            <div>
-                              <p className="text-xs font-black text-gray-900 uppercase group-hover:text-indigo-600">{r.name}</p>
-                              <p className="text-[9px] text-gray-400 font-bold uppercase">Mat: {r.registration} - {r.class}</p>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${r.source === 'library' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                {r.name[0]}
+                              </div>
+                              <div>
+                                <p className="text-xs font-black text-gray-900 uppercase group-hover:text-indigo-600">{r.name}</p>
+                                <p className="text-[9px] text-gray-400 font-bold uppercase">Mat: {r.registration} - {r.class}</p>
+                              </div>
                             </div>
-                            <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-600 transition-all" />
+                            <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg ${r.source === 'library' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700 animate-pulse'}`}>
+                              {r.source === 'library' ? 'Leitor Ativo' : 'Vincular Agora'}
+                            </span>
                           </button>
                         ))}
                         {filteredReadersForLoan.length === 0 && (
-                          <div className="p-4 text-center text-[10px] text-gray-400 font-bold uppercase">Nenhum leitor encontrado</div>
+                          <div className="p-4 text-center text-[10px] text-gray-400 font-bold uppercase">Nenhum leitor encontrado na base</div>
                         )}
                       </div>
                     )}
