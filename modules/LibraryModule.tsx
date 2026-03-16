@@ -67,7 +67,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           availableCopies: b.available_copies,
           location: b.location,
           internalRegistration: b.internal_registration,
-          registrationDate: b.registration_date
+          registrationDate: b.registration_date,
+          bookType: b.book_type,
+          volumeNumber: b.volume_number,
+          subtitle: b.subtitle
         })));
       }
 
@@ -172,7 +175,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     estante: '', 
     prateleira: '',
     internalRegistration: '',
-    registrationDate: new Date().toISOString().split('T')[0]
+    registrationDate: new Date().toISOString().split('T')[0],
+    bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
+    volumeNumber: '',
+    subtitle: ''
   });
 
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
@@ -262,7 +268,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       estante: '', 
       prateleira: '',
       internalRegistration: '',
-      registrationDate: new Date().toISOString().split('T')[0]
+      registrationDate: new Date().toISOString().split('T')[0],
+      bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
+      volumeNumber: '',
+      subtitle: ''
     });
     setIsBookModalOpen(true);
   };
@@ -282,7 +291,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       estante, 
       prateleira,
       internalRegistration: book.internalRegistration || '',
-      registrationDate: book.registrationDate || new Date().toISOString().split('T')[0]
+      registrationDate: book.registrationDate || new Date().toISOString().split('T')[0],
+      bookType: book.bookType || 'AVULSO',
+      volumeNumber: book.volumeNumber || '',
+      subtitle: book.subtitle || ''
     });
     setEditingBookId(book.id);
     setIsBookModalOpen(true);
@@ -304,7 +316,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           : bookForm.totalCopies,
         isbn: bookForm.isbn,
         internal_registration: bookForm.internalRegistration,
-        registration_date: bookForm.registrationDate
+        registration_date: bookForm.registrationDate,
+        book_type: bookForm.bookType,
+        volume_number: bookForm.volumeNumber,
+        subtitle: bookForm.subtitle
       };
 
       if (editingBookId) {
@@ -673,6 +688,14 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         <span className="text-[9px] font-black text-indigo-700 uppercase">Reg: {book.internalRegistration}</span>
                       </div>
                     )}
+                    {book.bookType === 'COLEÇÃO' && (
+                      <div className="mt-2 p-2 bg-amber-50 rounded-xl border border-amber-100 flex items-center gap-2">
+                        <Bookmark size={12} className="text-amber-600" />
+                        <span className="text-[9px] font-black text-amber-800 uppercase">
+                          Vol: {book.volumeNumber || '-'} {book.subtitle && `| ${book.subtitle}`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-4 border-t border-gray-50 pt-4 text-center">
                     <p className={`text-xs font-black uppercase ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{book.availableCopies > 0 ? `${book.availableCopies} Exemplares Disponíveis` : 'Indisponível'}</p>
@@ -898,10 +921,18 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><h3 className="text-2xl font-black text-gray-900 uppercase">{editingBookId ? 'Editar Obra' : 'Nova Obra'}</h3><button onClick={() => setIsBookModalOpen(false)}><X size={24} /></button></div>
             <form onSubmit={saveBook} className="p-10 space-y-6">
               <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Título</label><input required value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Autor</label><input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Categoria</label><select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select></div>
+                <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Tipo de Obra</label><select value={bookForm.bookType} onChange={e => setBookForm({ ...bookForm, bookType: e.target.value as any })} className="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option value="AVULSO">Livro Avulso</option><option value="COLEÇÃO">Obra de Coleção</option></select></div>
               </div>
+
+              {bookForm.bookType === 'COLEÇÃO' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-1.5"><label className="text-xs font-black text-indigo-400 uppercase ml-1">Numeração / Volume</label><input required value={bookForm.volumeNumber} onChange={e => setBookForm({ ...bookForm, volumeNumber: e.target.value.toUpperCase() })} placeholder="EX: VOL 01, PARTE 2..." className="w-full p-4 bg-indigo-50/30 border border-indigo-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
+                  <div className="space-y-1.5"><label className="text-xs font-black text-indigo-400 uppercase ml-1">Subtítulo da Coleção</label><input value={bookForm.subtitle} onChange={e => setBookForm({ ...bookForm, subtitle: e.target.value.toUpperCase() })} placeholder="EX: O IMPÉRIO CONTRA-ATACA" className="w-full p-4 bg-indigo-50/30 border border-indigo-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">ISBN</label><input value={bookForm.isbn || ''} onChange={e => setBookForm({ ...bookForm, isbn: e.target.value })} placeholder="EX: 978-85-359..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Estante/Corredor</label><input required value={bookForm.estante || ''} onChange={e => setBookForm({ ...bookForm, estante: e.target.value.toUpperCase() })} placeholder="Ex: A, 01, Romance..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
