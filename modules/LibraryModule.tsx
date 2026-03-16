@@ -70,7 +70,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           registrationDate: b.registration_date,
           bookType: b.book_type,
           volumeNumber: b.volume_number,
-          subtitle: b.subtitle
+          subtitle: b.subtitle,
+          colorTag: b.color_tag
         })));
       }
 
@@ -178,8 +179,34 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     registrationDate: new Date().toISOString().split('T')[0],
     bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
     volumeNumber: '',
-    subtitle: ''
+    subtitle: '',
+    colorTag: ''
   });
+
+  const [availableColors, setAvailableColors] = useState<{ name: string; hex: string }[]>(() => {
+    const saved = localStorage.getItem('library_custom_colors_v1');
+    const defaults = [
+      { name: 'AMARELO', hex: '#fbbf24' },
+      { name: 'VERDE', hex: '#10b981' },
+      { name: 'AZUL CLARO', hex: '#60a5fa' },
+      { name: 'AZUL ESCURO', hex: '#1e3a8a' }
+    ];
+    return saved ? JSON.parse(saved) : defaults;
+  });
+
+  const [isAddingColor, setIsAddingColor] = useState(false);
+  const [newColorName, setNewColorName] = useState('');
+  const [newColorHex, setNewColorHex] = useState('#6366f1');
+
+  const handleAddCustomColor = () => {
+    if (!newColorName.trim()) return;
+    const updated = [...availableColors, { name: newColorName.toUpperCase().trim(), hex: newColorHex }];
+    setAvailableColors(updated);
+    localStorage.setItem('library_custom_colors_v1', JSON.stringify(updated));
+    setBookForm({ ...bookForm, colorTag: newColorName.toUpperCase().trim() });
+    setIsAddingColor(false);
+    setNewColorName('');
+  };
 
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
 
@@ -271,7 +298,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       registrationDate: new Date().toISOString().split('T')[0],
       bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
       volumeNumber: '',
-      subtitle: ''
+      subtitle: '',
+      colorTag: ''
     });
     setIsBookModalOpen(true);
   };
@@ -294,7 +322,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       registrationDate: book.registrationDate || new Date().toISOString().split('T')[0],
       bookType: book.bookType || 'AVULSO',
       volumeNumber: book.volumeNumber || '',
-      subtitle: book.subtitle || ''
+      subtitle: book.subtitle || '',
+      colorTag: book.colorTag || ''
     });
     setEditingBookId(book.id);
     setIsBookModalOpen(true);
@@ -319,7 +348,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         registration_date: bookForm.registrationDate,
         book_type: bookForm.bookType,
         volume_number: bookForm.volumeNumber,
-        subtitle: bookForm.subtitle
+        subtitle: bookForm.subtitle,
+        color_tag: bookForm.colorTag
       };
 
       if (editingBookId) {
@@ -696,6 +726,18 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         </span>
                       </div>
                     )}
+                    {book.colorTag && (
+                      <div className="mt-2 p-2 rounded-xl border flex items-center gap-2" 
+                           style={{ 
+                             backgroundColor: `${availableColors.find(c => c.name === book.colorTag)?.hex}10`,
+                             borderColor: `${availableColors.find(c => c.name === book.colorTag)?.hex}40`
+                           }}>
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: availableColors.find(c => c.name === book.colorTag)?.hex }}></div>
+                        <span className="text-[9px] font-black uppercase" style={{ color: availableColors.find(c => c.name === book.colorTag)?.hex }}>
+                          Tag: {book.colorTag}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-4 border-t border-gray-50 pt-4 text-center">
                     <p className={`text-xs font-black uppercase ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{book.availableCopies > 0 ? `${book.availableCopies} Exemplares Disponíveis` : 'Indisponível'}</p>
@@ -939,6 +981,67 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Prateleira</label><input required value={bookForm.prateleira || ''} onChange={e => setBookForm({ ...bookForm, prateleira: e.target.value.toUpperCase() })} placeholder="Ex: 1, 2, 3..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Exemplares</label><input required type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({ ...bookForm, totalCopies: parseInt(e.target.value) })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
               </div>
+
+              <div className="space-y-3">
+                <label className="text-xs font-black text-gray-400 uppercase ml-1">Cor do Identificador (Tag)</label>
+                <div className="flex flex-wrap gap-3">
+                  {availableColors.map(c => (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => setBookForm({ ...bookForm, colorTag: c.name })}
+                      className={`px-4 py-3 rounded-2xl flex items-center gap-2 border-2 transition-all ${bookForm.colorTag === c.name ? 'ring-4 ring-offset-2' : 'hover:scale-105 opacity-60 hover:opacity-100'}`}
+                      style={{ 
+                        backgroundColor: c.hex, 
+                        borderColor: bookForm.colorTag === c.name ? 'white' : 'transparent',
+                        boxShadow: bookForm.colorTag === c.name ? `0 0 20px ${c.hex}60` : 'none',
+                        color: 'white'
+                      } as any}
+                    >
+                      <span className="text-[10px] font-black uppercase">{c.name}</span>
+                      {bookForm.colorTag === c.name && <CheckCircle2 size={14} />}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingColor(true)}
+                    className="px-4 py-3 bg-gray-100 text-gray-400 rounded-2xl flex items-center gap-2 border-2 border-dashed border-gray-200 hover:bg-gray-200 transition-all group"
+                  >
+                    <Plus size={14} className="group-hover:rotate-90 transition-transform" />
+                    <span className="text-[10px] font-black uppercase">Nova Cor</span>
+                  </button>
+                </div>
+              </div>
+
+              {isAddingColor && (
+                <div className="p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100 space-y-4 animate-in slide-in-from-top-4 duration-300">
+                  <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Personalizar Nova Tag</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input 
+                      autoFocus
+                      placeholder="NOME DA COR"
+                      value={newColorName}
+                      onChange={e => setNewColorName(e.target.value.toUpperCase())}
+                      className="p-3 bg-white border border-indigo-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="color"
+                        value={newColorHex}
+                        onChange={e => setNewColorHex(e.target.value)}
+                        className="w-12 h-10 bg-transparent cursor-pointer rounded-lg overflow-hidden border-none"
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleAddCustomColor}
+                        className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all"
+                      >
+                        Adicionar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
