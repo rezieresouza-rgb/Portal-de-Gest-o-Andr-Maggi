@@ -66,7 +66,8 @@ const INITIAL_MEAL: MealRecord = {
 const ENTRADA_KEYWORDS = [
   'ABACAXI', 'BANANA', 'MAMÃO', 'MELÃO', 'MELANCIA', 'LARANJA', 'PONCÃ', 'MAÇÃ',
   'PÃO', 'BOLO', 'LEITE', 'BEBIDA LÁCTEA', 'QUEIJO', 'REQUEIJÃO', 'CAFÉ',
-  'BOLACHA', 'BISCOITO', 'IOGURTE', 'MANTEIGA', 'FRUTA', 'SUCO', 'MARACUJÁ', 'ACEROLA'
+  'BOLACHA', 'BISCOITO', 'IOGURTE', 'MANTEIGA', 'FRUTA', 'SUCO', 'MARACUJÁ', 'ACEROLA',
+  'AÇÚCAR', 'CHÁ', 'ACHOCOLATADO', 'AVEIA', 'MEL'
 ];
 
 const MenuChecklist: React.FC = () => {
