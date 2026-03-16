@@ -196,7 +196,13 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["BEBIDA LÁCTEA", "PÃO DOCE"],
         ingredients: ["ALHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "FARINHA DE TRIGO", "FILÉ DE PEITO DE FRANGO", "LEITE", "LIMÃO", "MASSA PARA LASANHA", "ÓLEO DE SOJA", "QUEIJO MUSSARELA", "SAL", "SALSA"] 
       },
-      { day: "Quarta", dish: "SALADA DE REPOLHO E RÚCULA, ARROZ COM CARNE E FEIJÃO + MAÇÃ", ingredients: ["REPOLHO", "RÚCULA", "ARROZ BRANCO", "CARNE BOVINA CUBOS", "FEIJÃO CARIOCA", "MAÇÃ"] },
+      { 
+        day: "Quarta", 
+        dish: "SALADA DE REPOLHO E RÚCULA, ARROZ COM CARNE E FEIJÃO", 
+        entradaDish: "MAÇÃ",
+        entradaIngredients: ["MAÇÃ"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "ÓLEO DE SOJA", "PIMENTA DE CHEIRO", "REPOLHO", "RÚCULA", "SAL", "SALSA"] 
+      },
       { day: "Quinta", dish: "SALADA DE ALFACE COM CENOURA, ESTROGONOFE DE CARNE SUÍNA E ARROZ + PÃO COM REQUEIJÃO E LEITE COM CACAU", ingredients: ["ALFACE", "CENOURA", "CARNE SUÍNA", "ARROZ BRANCO", "REQUEIJÃO CREMOSO", "LEITE", "CACAU EM PÓ"] },
       { day: "Sexta", dish: "ARROZ CUIABANO E FEIJÃO + PONCÃ", ingredients: ["CARNE BOVINA CUBOS", "BANANA DA TERRA", "ARROZ BRANCO", "FEIJÃO CARIOCA", "PONCÃ"] }
     ]
