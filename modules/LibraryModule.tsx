@@ -1034,7 +1034,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       <button 
                         type="button"
                         onClick={handleAddCustomColor}
-                        className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all"
+                        className="flex-1 py-3 text-white rounded-xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all"
+                        style={{ backgroundColor: newColorHex, boxShadow: `0 4px 12px ${newColorHex}40` }}
                       >
                         Adicionar
                       </button>
