@@ -87,7 +87,13 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["AÇÚCAR CRISTAL", "PÃO", "POLPA DE FRUTA", "REQUEIJÃO CREMOSO"],
         ingredients: ["AÇAFRÃO", "ALHO", "ARROZ BRANCO", "BANANA DA TERRA", "CEBOLA", "CEBOLINHA", "FARINHA DE MANDIOCA", "FEIJÃO CARIOCA", "FILÉ DE PEITO DE FRANGO", "LOURO", "ÓLEO DE SOJA", "REPOLHO", "RÚCULA", "SAL", "SALSA", "VINAGRE"] 
       },
-      { day: "Sexta", dish: "PICADINHO DE CARNE SUÍNA E ARROZ + BANANA", ingredients: ["CARNE SUÍNA", "ARROZ BRANCO", "BATATA INGLESA", "CENOURA", "BANANA"] }
+      { 
+        day: "Sexta", 
+        dish: "PICADINHO DE CARNE SUÍNA E ARROZ", 
+        entradaDish: "BANANA",
+        entradaIngredients: ["BANANA"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CARNE SUÍNA", "CEBOLA", "CEBOLINHA", "CENOURA", "COLORAU", "ÓLEO DE SOJA", "SAL", "SALSA"] 
+      }
     ]
   },
   {
