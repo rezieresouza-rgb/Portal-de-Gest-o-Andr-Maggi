@@ -148,9 +148,27 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["MELÃO"],
         ingredients: ["ALHO", "ARROZ BRANCO", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "COLORAU", "MANDIOCA", "ÓLEO DE SOJA", "PIMENTA DE CHEIRO", "SAL", "SALSA"] 
       },
-      { day: "Terça", dish: "FEIJOADA, FAROFA DE COUVE E ARROZ + PÃO COM MANTEIGA E LEITE COM CAFÉ", ingredients: ["FEIJÃO PRETO", "CARNE SUÍNA", "COUVE", "FARINHA DE MANDIOCA", "PÃO", "LEITE", "CAFÉ"] },
-      { day: "Quarta", dish: "SALADA DE REPOLHO, PEPINO E RÚCULA, BOBÓ DE FRANGO E ARROZ + BANANA", ingredients: ["REPOLHO", "PEPINO", "RÚCULA", "FILÉ DE PEITO DE FRANGO", "MANDIOCA", "ARROZ BRANCO", "BANANA"] },
-      { day: "Quinta", dish: "ESCONDIDINHO DE PEIXE E ARROZ + BOLO DE COCO E SUCO DE POLPA DE FRUTA", ingredients: ["PEIXE", "BATATA INGLESA", "ARROZ BRANCO", "BOLO DE COCO", "POLPA DE FRUTA"] },
+      { 
+        day: "Terça", 
+        dish: "FEIJOADA, FAROFA DE COUVE E ARROZ", 
+        entradaDish: "PÃO COM MANTEIGA E LEITE COM CAFÉ",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "CAFÉ", "LEITE", "MANTEIGA", "PÃO"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CARNE SUÍNA", "CEBOLA", "CEBOLINHA", "COUVE", "FARINHA DE MANDIOCA", "FEIJÃO PRETO", "LIMÃO", "LOURO", "ÓLEO DE SOJA", "SAL", "SALSA"] 
+      },
+      { 
+        day: "Quarta", 
+        dish: "SALADA DE REPOLHO, PEPINO E RÚCULA, BOBÓ DE FRANGO E ARROZ", 
+        entradaDish: "BANANA",
+        entradaIngredients: ["BANANA"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "COLORAU", "FILÉ DE PEITO DE FRANGO", "LEITE", "LIMÃO", "MANDIOCA", "ÓLEO DE SOJA", "PEPINO", "REPOLHO", "RÚCULA", "SAL", "SALSA"] 
+      },
+      { 
+        day: "Quinta", 
+        dish: "ESCONDIDINHO DE PEIXE E ARROZ", 
+        entradaDish: "BOLO DE COCO E SUCO DE POLPA DE FRUTA",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "COCO RALADO", "FARINHA DE TRIGO", "FERMENTO QUÍMICO", "LEITE", "ÓLEO DE SOJA", "OVO DE GALINHA", "POLPA DE FRUTA"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CARNE MOÍDA DE PEIXE", "CEBOLA", "CEBOLINHA", "COENTRO", "COLORAU", "LEITE", "LIMÃO", "MANTEIGA", "ÓLEO DE SOJA", "PIMENTA DE CHEIRO", "SAL", "TOMATE"] 
+      },
       { day: "Sexta", dish: "SALADA DE ALFACE, AGRIÃO E CENOURA, MACARRÃO COM MOLHO DE CARNE MOÍDA E FEIJÃO + MAMÃO", ingredients: ["ALFACE", "AGRIÃO", "CENOURA", "MACARRÃO", "CARNE BOVINA MOÍDA", "FEIJÃO CARIOCA", "MAMÃO"] }
     ]
   },
