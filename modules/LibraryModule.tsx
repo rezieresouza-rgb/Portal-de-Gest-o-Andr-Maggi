@@ -969,9 +969,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       {/* Modal Cadastro Livro */}
       {isBookModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-indigo-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl border border-indigo-100 overflow-hidden flex flex-col">
+          <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl border border-indigo-100 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-8 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center"><h3 className="text-2xl font-black text-gray-900 uppercase">{editingBookId ? 'Editar Obra' : 'Nova Obra'}</h3><button onClick={() => setIsBookModalOpen(false)}><X size={24} /></button></div>
-            <form onSubmit={saveBook} className="p-10 space-y-6">
+            <form onSubmit={saveBook} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
               <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Título</label><input required value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Autor</label><input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
@@ -1084,7 +1085,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   />
                 </div>
               </div>
-              <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl">Salvar Obra no Acervo</button>
+              </div>
+              <div className="p-8 bg-white border-t border-gray-100">
+                <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all active:scale-[0.98]">Salvar Obra no Acervo</button>
+              </div>
             </form>
           </div>
         </div>
