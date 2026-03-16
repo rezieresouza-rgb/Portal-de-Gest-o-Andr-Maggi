@@ -169,7 +169,13 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["AÇÚCAR CRISTAL", "COCO RALADO", "FARINHA DE TRIGO", "FERMENTO QUÍMICO", "LEITE", "ÓLEO DE SOJA", "OVO DE GALINHA", "POLPA DE FRUTA"],
         ingredients: ["ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CARNE MOÍDA DE PEIXE", "CEBOLA", "CEBOLINHA", "COENTRO", "COLORAU", "LEITE", "LIMÃO", "MANTEIGA", "ÓLEO DE SOJA", "PIMENTA DE CHEIRO", "SAL", "TOMATE"] 
       },
-      { day: "Sexta", dish: "SALADA DE ALFACE, AGRIÃO E CENOURA, MACARRÃO COM MOLHO DE CARNE MOÍDA E FEIJÃO + MAMÃO", ingredients: ["ALFACE", "AGRIÃO", "CENOURA", "MACARRÃO", "CARNE BOVINA MOÍDA", "FEIJÃO CARIOCA", "MAMÃO"] }
+      { 
+        day: "Sexta", 
+        dish: "SALADA DE ALFACE, AGRIÃO E CENOURA, MACARRÃO COM MOLHO DE CARNE MOÍDA E FEIJÃO", 
+        entradaDish: "MAMÃO",
+        entradaIngredients: ["MAMÃO"],
+        ingredients: ["AGRIÃO", "ALFACE", "ALHO", "CARNE BOVINA MOÍDA", "CEBOLA", "CEBOLINHA", "CENOURA", "EXTRATO DE TOMATE", "FEIJÃO CARIOCA", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA", "VINAGRE"] 
+      }
     ]
   },
   {
