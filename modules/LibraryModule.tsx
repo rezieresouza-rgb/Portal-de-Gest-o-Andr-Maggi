@@ -163,7 +163,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     bookId: '',
     readerSearch: '',
     readerId: '',
-    dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+    dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
   });
 
   const [bookForm, setBookForm] = useState({
@@ -519,7 +519,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         bookId: '',
         readerSearch: '',
         readerId: '',
-        dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+        dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
       });
       alert("Empréstimo registrado!");
     } catch (error) {
@@ -561,10 +561,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   };
 
   const handleRenew = async (loan: Loan) => {
-    if (!window.confirm("Confirmar renovação do livro por mais 7 dias?")) return;
+    if (!window.confirm("Confirmar renovação do livro por mais 15 dias?")) return;
     try {
       const currentDueDate = new Date(loan.dueDate);
-      const newDueDate = new Date(currentDueDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const newDueDate = new Date(currentDueDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
       const { error } = await supabase
         .from('library_loans')
@@ -868,7 +868,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         {loan.status === 'ATIVO' ? (
                           <div className="flex items-center justify-end gap-2">
                             <button onClick={() => handleReturn(loan)} className="px-5 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">Confirmar Recebimento</button>
-                            <button onClick={() => handleRenew(loan)} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[9px] font-black uppercase border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">Renovar (+7 dias)</button>
+                            <button onClick={() => handleRenew(loan)} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[9px] font-black uppercase border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">Renovar (+15 dias)</button>
                           </div>
                         ) : (
                           <div className="flex flex-col items-end"><span className="text-[9px] font-black text-emerald-600 uppercase flex items-center gap-1"><CheckCircle2 size={12} /> Devolvido</span><p className="text-[8px] text-gray-400 uppercase">{new Date(loan.returnDate!).toLocaleDateString('pt-BR')}</p></div>
@@ -1279,7 +1279,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 )}
               </div>
 
-              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">3. Data de Devolução (+7 Dias)</label><input required type="date" value={loanForm.dueDate} onChange={e => setLoanForm({ ...loanForm, dueDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none text-indigo-900" /></div>
+              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">3. Data de Devolução (+15 Dias)</label><input required type="date" value={loanForm.dueDate} onChange={e => setLoanForm({ ...loanForm, dueDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none text-indigo-900" /></div>
               <button type="submit" disabled={!loanForm.bookId || !loanForm.readerId} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors mt-4">Confirmar Empréstimo</button>
             </form>
           </div>
