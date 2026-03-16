@@ -596,13 +596,6 @@ const MenuChecklist: React.FC = () => {
                     <Lock size={12} className="text-emerald-600 -rotate-45" />
                   </div>
 
-                  <button
-                    onClick={(e) => deleteFromHistory(record.id, e)}
-                    className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
                       <Calendar size={20} />
@@ -624,7 +617,7 @@ const MenuChecklist: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="grid grid-cols-3 gap-2 mt-4">
                     <button
                       onClick={() => loadFromHistory(record)}
                       className="flex items-center justify-center gap-2 text-[9px] font-black text-blue-700 uppercase tracking-widest bg-blue-50 py-2.5 rounded-xl border border-blue-100 hover:bg-blue-100 transition-all"
@@ -640,6 +633,12 @@ const MenuChecklist: React.FC = () => {
                       className="flex items-center justify-center gap-2 text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 py-2.5 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all"
                     >
                       <Printer size={14} /> Imprimir
+                    </button>
+                    <button
+                      onClick={(e) => deleteFromHistory(record.id, e)}
+                      className="flex items-center justify-center gap-2 text-[9px] font-black text-red-700 uppercase tracking-widest bg-red-50 py-2.5 rounded-xl border border-red-100 hover:bg-red-100 transition-all"
+                    >
+                      <Trash2 size={14} /> Excluir
                     </button>
                   </div>
                 </div>
