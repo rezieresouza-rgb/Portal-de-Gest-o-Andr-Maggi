@@ -88,6 +88,14 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   // Outros cargos seguem o mapeamento dinâmico baseado na Função Atual.
   const isAdmin = user.role === 'GESTAO' || user.role === 'ADMINISTRADOR';
   const allowedModules = allModules.filter(mod => {
+    // Restrição específica para a servidora Luzia conforme solicitado
+    const isLuzia = user.name?.toUpperCase().includes('LUZIA') || 
+                    user.login?.toUpperCase().includes('LUZIA');
+    
+    if (isLuzia) {
+      return ['scheduling', 'library'].includes(mod.id);
+    }
+
     if (mod.adminOnly && !isAdmin) return false;
     if (isAdmin) return true;
 

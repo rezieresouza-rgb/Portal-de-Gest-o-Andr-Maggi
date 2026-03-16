@@ -140,7 +140,7 @@ const Inventory: React.FC = () => {
   const [newItem, setNewItem] = useState({ name: '', unit: 'Kg', min: 0 });
 
   const [turno, setTurno] = useState('Matutino');
-  const [responsavel, setResponsavel] = useState('Gestor André');
+  const [responsavel, setResponsavel] = useState('');
   const [data, setData] = useState(new Date().toLocaleDateString('sv-SE'));
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [selectedDay, setSelectedDay] = useState<string>('Segunda');
@@ -309,7 +309,7 @@ const Inventory: React.FC = () => {
       })));
 
       // Auto-advance Shift
-      const shifts = ['Matutino', 'Vespertino', 'Noturno', 'Integral'];
+      const shifts = ['Matutino', 'Vespertino'];
       const currentIndex = shifts.indexOf(turno);
       if (currentIndex < shifts.length - 1) {
         setTurno(shifts[currentIndex + 1]);
@@ -381,11 +381,11 @@ const Inventory: React.FC = () => {
         {viewMode === 'active' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-300">
-              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno</label><select value={turno} onChange={(e) => setTurno(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl font-black text-xs uppercase outline-none focus:ring-2 focus:ring-emerald-500/20">{['Matutino', 'Vespertino', 'Noturno', 'Integral'].map(t => <option key={t}>{t}</option>)}</select></div>
+              <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno</label><select value={turno} onChange={(e) => setTurno(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl font-black text-xs uppercase outline-none focus:ring-2 focus:ring-emerald-500/20">{['Matutino', 'Vespertino'].map(t => <option key={t}>{t}</option>)}</select></div>
               <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Responsável (AAE Nutrição)</label>
                 <div className="relative">
                   <select value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase outline-none appearance-none focus:ring-2 focus:ring-emerald-500/20">
-                    <option value="Gestor André">Gestor André</option>
+                    <option value="">Selecione...</option>
                     {nutricaoStaff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
