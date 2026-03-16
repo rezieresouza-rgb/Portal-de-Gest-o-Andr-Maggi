@@ -193,18 +193,31 @@ const MenuChecklist: React.FC = () => {
       const dayMenu = weekMenu?.days.find(d => d.day === selectedDay);
 
       if (dayMenu) {
-        const allIngredients = dayMenu.ingredients;
-        const entradaIngs = allIngredients.filter(ing =>
-          ENTRADA_KEYWORDS.some(key => ing.toUpperCase().includes(key))
-        );
-        const principalIngs = allIngredients.filter(ing =>
-          !ENTRADA_KEYWORDS.some(key => ing.toUpperCase().includes(key))
-        );
+        let entradaIngs: string[] = [];
+        let principalIngs: string[] = [];
+        let entradaDishName = '';
+
+        if (dayMenu.entradaIngredients && dayMenu.entradaIngredients.length > 0) {
+          // New explicit format
+          entradaIngs = dayMenu.entradaIngredients;
+          principalIngs = dayMenu.ingredients;
+          entradaDishName = dayMenu.entradaDish || (entradaIngs.length > 0 ? entradaIngs.join(' + ') : '');
+        } else {
+          // Legacy/Fallback automatic filtering
+          const allIngredients = dayMenu.ingredients;
+          entradaIngs = allIngredients.filter(ing =>
+            ENTRADA_KEYWORDS.some(key => ing.toUpperCase().includes(key))
+          );
+          principalIngs = allIngredients.filter(ing =>
+            !ENTRADA_KEYWORDS.some(key => ing.toUpperCase().includes(key))
+          );
+          entradaDishName = entradaIngs.join(' + ') || (entradaIngs.length > 0 ? 'Lanche / Complemento' : '');
+        }
 
         setEntrada(prev => ({
           ...prev,
           shift: selectedShift,
-          dishName: entradaIngs.join(' + ') || (entradaIngs.length > 0 ? 'Lanche / Complemento' : ''),
+          dishName: entradaDishName,
           ingredients: entradaIngs.map(ing => ({ name: ing, quantity: '', checked: false }))
         }));
 

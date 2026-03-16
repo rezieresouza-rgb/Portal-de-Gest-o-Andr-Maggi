@@ -2,6 +2,8 @@
 export interface MenuItem {
   day: string;
   dish: string;
+  entradaDish?: string;
+  entradaIngredients?: string[];
   ingredients: string[];
 }
 
@@ -16,20 +18,68 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
     week: 1,
     label: "1ª SEMANA",
     days: [
-      { day: "Segunda", dish: "SALADA DE ALFACE COM TOMATE, MACARRÃO COM MOLHO DE CARNE MOÍDA + ABACAXI", ingredients: ["ABACAXI", "ALFACE", "ALHO", "CARNE BOVINA MOÍDA", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "LIMÃO", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA", "TOMATE"] },
-      { day: "Terça", dish: "FRICASSÊ DE FRANGO COM ABÓBORA E ARROZ + PÃO COM QUEIJO MUÇARELA E SUCO DE POLPA DE FRUTA", ingredients: ["ABÓBORA", "AÇÚCAR CRISTAL", "ALHO", "AMIDO DE MILHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "COLORAU", "FILÉ DE PEITO DE FRANGO", "LEITE", "ÓLEO DE SOJA", "PÃO FRANCÊS", "PIMENTÃO", "POLPA DE FRUTA", "QUEIJO MUÇARELA", "SAL"] },
-      { day: "Quarta", dish: "SALADA DE REPOLHO COM COUVE, ARROZ COM CARNE SUÍNA E FEIJÃO + BANANA", ingredients: ["ALHO", "ARROZ BRANCO", "BANANA", "CARNE SUÍNA", "CEBOLA", "CEBOLINHA", "COUVE", "FEIJÃO CARIOCA", "LIMÃO", "ÓLEO DE SOJA", "REPOLHO", "SAL", "SALSA"] },
-      { day: "Quinta", dish: "ESTROGONOFE DE CARNE E ARROZ + BOLO DE CHOCOLATE E CHÁ", ingredients: ["AÇÚCAR CRISTAL", "ALHO", "ARROZ BRANCO", "CACAU EM PÓ", "CARNE BOVINA ISCAS", "CEBOLA", "CEBOLINHA", "CHÁ MATE", "EXTRATO DE TOMATE", "FARINHA DE TRIGO", "FERMENTO QUÍMICO", "LEITE", "MANTEIGA", "ÓLEO DE SOJA", "OVO DE GALINHA", "SAL", "SALSA"] },
-      { day: "Sexta", dish: "FRANGO AO MOLHO COM BATATA E CENOURA, ARROZ, FEIJÃO + MELÃO", ingredients: ["ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CEBOLA", "CEBOLINHA", "CENOURA", "COLORAU", "FEIJÃO CARIOCA", "FILÉ DE PEITO DE FRANGO", "MELÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] }
+      { 
+        day: "Segunda", 
+        dish: "SALADA DE ALFACE COM TOMATE, MACARRÃO COM MOLHO DE CARNE MOÍDA", 
+        entradaDish: "ABACAXI",
+        entradaIngredients: ["ABACAXI"],
+        ingredients: ["ALFACE", "ALHO", "CARNE BOVINA MOÍDA", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "LIMÃO", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA", "TOMATE"] 
+      },
+      { 
+        day: "Terça", 
+        dish: "FRICASSÊ DE FRANGO COM ABÓBORA E ARROZ", 
+        entradaDish: "PÃO COM QUEIJO MUÇARELA E SUCO DE POLPA DE FRUTA",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "PÃO FRANCÊS", "POLPA DE FRUTA", "QUEIJO MUÇARELA"],
+        ingredients: ["ABÓBORA", "ALHO", "AMIDO DE MILHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "COLORAU", "FILÉ DE PEITO DE FRANGO", "LEITE", "ÓLEO DE SOJA", "PIMENTÃO", "QUEIJO MUÇARELA", "SAL"] 
+      },
+      { 
+        day: "Quarta", 
+        dish: "SALADA DE REPOLHO COM COUVE, ARROZ COM CARNE SUÍNA E FEIJÃO", 
+        entradaDish: "MAÇÃ",
+        entradaIngredients: ["MAÇÃ"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CARNE SUÍNA", "CEBOLA", "CEBOLINHA", "COUVE", "FEIJÃO CARIOCA", "LIMÃO", "ÓLEO DE SOJA", "REPOLHO", "SAL", "SALSA"] 
+      },
+      { 
+        day: "Quinta", 
+        dish: "ESTROGONOFE DE CARNE E ARROZ", 
+        entradaDish: "BOLO DE CHOCOLATE E CHÁ",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "CACAU EM PÓ", "CHÁ MATE", "FARINHA DE TRIGO", "FERMENTO QUÍMICO", "ÓLEO DE SOJA", "OVO DE GALINHA"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CARNE BOVINA ISCAS", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "FARINHA DE TRIGO", "LEITE", "MANTEIGA", "ÓLEO DE SOJA", "SAL", "SALSA"] 
+      },
+      { 
+        day: "Sexta", 
+        dish: "FRANGO AO MOLHO COM BATATA E CENOURA, ARROZ, FEIJÃO", 
+        entradaDish: "MELÃO",
+        entradaIngredients: ["MELÃO"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CEBOLA", "CEBOLINHA", "CENOURA", "COLORAU", "FEIJÃO CARIOCA", "FILÉ DE PEITO DE FRANGO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] 
+      }
     ]
   },
   {
     week: 2,
     label: "2ª SEMANA",
     days: [
-      { day: "Segunda", dish: "SALADA DE COUVE COM TOMATE, ESTROGONOFE DE FRANGO E ARROZ + MAMÃO", ingredients: ["ALHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "COUVE", "EXTRATO DE TOMATE", "FARINHA DE TRIGO", "FILÉ DE PEITO DE FRANGO", "LEITE", "MAMÃO", "MANTEIGA", "ÓLEO DE SOJA", "SAL", "TOMATE", "VINAGRE"] },
-      { day: "Terça", dish: "SALADA DE ALFACE COM ALMEIRÃO, CARNE COM MANDIOCA, ARROZ E FEIJÃO + PÃO COM MANTEIGA E LEITE COM CAFÉ", ingredients: ["AÇÚCAR CRISTAL", "ALFACE", "ALHO", "ALMEIRÃO", "ARROZ BRANCO", "CAFÉ", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "LEITE", "MANDIOCA", "MANTEIGA", "ÓLEO DE SOJA", "PÃO", "PIMENTA DE CHEIRO", "SAL", "SALSA", "VINAGRE"] },
-      { day: "Quarta", dish: "PEIXE A PARMEGIANA E ARROZ + MAÇÃ", ingredients: ["PEIXE", "QUEIJO MUSSARELA", "ARROZ BRANCO", "MAÇÃ", "EXTRATO DE TOMATE"] },
+      { 
+        day: "Segunda", 
+        dish: "SALADA DE COUVE COM TOMATE, ESTROGONOFE DE FRANGO E ARROZ", 
+        entradaDish: "MAMÃO",
+        entradaIngredients: ["MAMÃO"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "COUVE", "EXTRATO DE TOMATE", "FARINHA DE TRIGO", "FILÉ DE PEITO DE FRANGO", "LEITE", "MANTEIGA", "ÓLEO DE SOJA", "SAL", "TOMATE", "VINAGRE"] 
+      },
+      { 
+        day: "Terça", 
+        dish: "SALADA DE ALFACE COM ALMEIRÃO, CARNE COM MANDIOCA, ARROZ E FEIJÃO", 
+        entradaDish: "PÃO COM MANTEIGA E LEITE COM CAFÉ",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "CAFÉ", "LEITE", "MANTEIGA", "PÃO"],
+        ingredients: ["ALFACE", "ALHO", "ALMEIRÃO", "ARROZ BRANCO", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "MANDIOCA", "ÓLEO DE SOJA", "PIMENTA DE CHEIRO", "SAL", "SALSA", "VINAGRE"] 
+      },
+      { 
+        day: "Quarta", 
+        dish: "PEIXE A PARMEGIANA E ARROZ", 
+        entradaDish: "MAÇÃ",
+        entradaIngredients: ["MAÇÃ"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "FARINHA DE ROSCA", "LIMÃO", "ÓLEO DE SOJA", "PEIXE", "PIMENTA DE CHEIRO", "QUEIJO MUÇARELA", "SAL"] 
+      },
       { day: "Quinta", dish: "SALADA DE REPOLHO COM RÚCULA, GALINHADA, FAROFA DE BANANA E FEIJÃO + PÃO COM REQUEIJÃO E SUCO DE POLPA DE FRUTA", ingredients: ["REPOLHO", "RÚCULA", "ARROZ BRANCO", "BANANA", "FEIJÃO CARIOCA", "PÃO", "REQUEIJÃO CREMOSO", "POLPA DE FRUTA"] },
       { day: "Sexta", dish: "PICADINHO DE CARNE SUÍNA E ARROZ + BANANA", ingredients: ["CARNE SUÍNA", "ARROZ BRANCO", "BATATA INGLESA", "CENOURA", "BANANA"] }
     ]
