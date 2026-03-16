@@ -203,7 +203,7 @@ const MenuChecklist: React.FC = () => {
         setEntrada(prev => ({
           ...prev,
           shift: selectedShift,
-          dishName: entradaIngs.length > 0 ? 'Lanche / Complemento' : '',
+          dishName: entradaIngs.join(' + ') || (entradaIngs.length > 0 ? 'Lanche / Complemento' : ''),
           ingredients: entradaIngs.map(ing => ({ name: ing, quantity: '', checked: false }))
         }));
 
