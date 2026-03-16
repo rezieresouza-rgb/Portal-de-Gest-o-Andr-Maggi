@@ -210,7 +210,13 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["AÇÚCAR CRISTAL", "CACAU EM PÓ", "LEITE", "PÃO", "REQUEIJÃO CREMOSO"],
         ingredients: ["ALFACE", "ALHO", "ARROZ BRANCO", "CARNE SUÍNA", "CEBOLA", "CEBOLINHA", "CENOURA", "EXTRATO DE TOMATE", "FARINHA DE TRIGO", "LEITE", "LIMÃO", "MANTEIGA", "ÓLEO DE SOJA", "SAL", "SALSA"] 
       },
-      { day: "Sexta", dish: "ARROZ CUIABANO E FEIJÃO + PONCÃ", ingredients: ["CARNE BOVINA CUBOS", "BANANA DA TERRA", "ARROZ BRANCO", "FEIJÃO CARIOCA", "PONCÃ"] }
+      { 
+        day: "Sexta", 
+        dish: "ARROZ CUIABANO E FEIJÃO", 
+        entradaDish: "PONCÃ",
+        entradaIngredients: ["PONCÃ"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "BANANA DA TERRA", "CEBOLA", "CEBOLINHA", "COLORAU", "COUVE", "FEIJÃO CARIOCA", "FILÉ DE PEITO DE FRANGO", "ÓLEO DE SOJA", "SAL", "SALSA"] 
+      }
     ]
   }
 ];
