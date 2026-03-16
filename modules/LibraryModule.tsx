@@ -65,7 +65,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           isbn: b.isbn,
           totalCopies: b.total_copies,
           availableCopies: b.available_copies,
-          location: b.location
+          location: b.location,
+          internalRegistration: b.internal_registration,
+          registrationDate: b.registration_date
         })));
       }
 
@@ -161,7 +163,16 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   });
 
   const [bookForm, setBookForm] = useState({
-    title: '', author: '', category: 'Literatura Brasileira', isbn: '', totalCopies: 1, location: '', estante: '', prateleira: ''
+    title: '', 
+    author: '', 
+    category: 'Literatura Brasileira', 
+    isbn: '', 
+    totalCopies: 1, 
+    location: '', 
+    estante: '', 
+    prateleira: '',
+    internalRegistration: '',
+    registrationDate: new Date().toISOString().split('T')[0]
   });
 
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
@@ -241,7 +252,18 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
   const handleAddBookClick = () => {
     setEditingBookId(null);
-    setBookForm({ title: '', author: '', category: 'Literatura Brasileira', isbn: '', totalCopies: 1, location: '', estante: '', prateleira: '' });
+    setBookForm({ 
+      title: '', 
+      author: '', 
+      category: 'Literatura Brasileira', 
+      isbn: '', 
+      totalCopies: 1, 
+      location: '', 
+      estante: '', 
+      prateleira: '',
+      internalRegistration: '',
+      registrationDate: new Date().toISOString().split('T')[0]
+    });
     setIsBookModalOpen(true);
   };
 
@@ -255,7 +277,13 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     } else {
       estante = book.location || ''; // fallback
     }
-    setBookForm({ ...book, estante, prateleira });
+    setBookForm({ 
+      ...book, 
+      estante, 
+      prateleira,
+      internalRegistration: book.internalRegistration || '',
+      registrationDate: book.registrationDate || new Date().toISOString().split('T')[0]
+    });
     setEditingBookId(book.id);
     setIsBookModalOpen(true);
   };
@@ -274,7 +302,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         available_copies: editingBookId
           ? (books.find(b => b.id === editingBookId)?.availableCopies || 0) + (bookForm.totalCopies - (books.find(b => b.id === editingBookId)?.totalCopies || 0))
           : bookForm.totalCopies,
-        isbn: bookForm.isbn
+        isbn: bookForm.isbn,
+        internal_registration: bookForm.internalRegistration,
+        registration_date: bookForm.registrationDate
       };
 
       if (editingBookId) {
@@ -637,6 +667,12 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     <h4 className="text-sm font-black text-gray-900 uppercase leading-tight line-clamp-1">{book.title}</h4>
                     <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">{book.author}</p>
                     <div className="mt-4 p-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /><span className="text-[9px] font-black text-gray-600 uppercase">{book.location}</span></div>
+                    {book.internalRegistration && (
+                      <div className="mt-2 p-2 bg-indigo-50/50 rounded-xl border border-indigo-100/50 flex items-center gap-2">
+                        <ShieldCheck size={12} className="text-indigo-500" />
+                        <span className="text-[9px] font-black text-indigo-700 uppercase">Reg: {book.internalRegistration}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-4 border-t border-gray-50 pt-4 text-center">
                     <p className={`text-xs font-black uppercase ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{book.availableCopies > 0 ? `${book.availableCopies} Exemplares Disponíveis` : 'Indisponível'}</p>
@@ -866,11 +902,33 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Autor</label><input required value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Categoria</label><select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select></div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">ISBN</label><input value={bookForm.isbn || ''} onChange={e => setBookForm({ ...bookForm, isbn: e.target.value })} placeholder="EX: 978-85-359..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Estante/Corredor</label><input required value={bookForm.estante || ''} onChange={e => setBookForm({ ...bookForm, estante: e.target.value.toUpperCase() })} placeholder="Ex: A, 01, Romance..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Prateleira</label><input required value={bookForm.prateleira || ''} onChange={e => setBookForm({ ...bookForm, prateleira: e.target.value.toUpperCase() })} placeholder="Ex: 1, 2, 3..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
                 <div className="space-y-1.5"><label className="text-xs font-black text-gray-400 uppercase ml-1">Exemplares</label><input required type="number" min="1" value={bookForm.totalCopies} onChange={e => setBookForm({ ...bookForm, totalCopies: parseInt(e.target.value) })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" /></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Nº Registro Interno</label>
+                  <input 
+                    value={bookForm.internalRegistration} 
+                    onChange={e => setBookForm({ ...bookForm, internalRegistration: e.target.value.toUpperCase() })} 
+                    placeholder="EX: LIB-2024-001" 
+                    className="w-full p-4 bg-emerald-50/30 border border-emerald-100/50 rounded-2xl font-bold text-base outline-none focus:bg-white" 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-400 uppercase ml-1">Data do Cadastro</label>
+                  <input 
+                    type="date" 
+                    required 
+                    value={bookForm.registrationDate} 
+                    onChange={e => setBookForm({ ...bookForm, registrationDate: e.target.value })} 
+                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-base outline-none focus:bg-white" 
+                  />
+                </div>
               </div>
               <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl">Salvar Obra no Acervo</button>
             </form>
