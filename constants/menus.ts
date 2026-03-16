@@ -100,8 +100,20 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
     week: 3,
     label: "3ª SEMANA",
     days: [
-      { day: "Segunda", dish: "RISOTO DE CARNE COM ABÓBORA E FEIJÃO + MELANCIA", ingredients: ["CARNE BOVINA MOÍDA", "ABÓBORA", "ARROZ BRANCO", "FEIJÃO CARIOCA", "MELANCIA"] },
-      { day: "Terça", dish: "YAKISSOBA DE FRANGO + PÃO COM OVOS MEXIDOS E CHÁ", ingredients: ["FILÉ DE PEITO DE FRANGO", "MACARRÃO", "BRÓCOLIS", "CENOURA", "PÃO", "OVO DE GALINHA", "CHÁ MATE"] },
+      { 
+        day: "Segunda", 
+        dish: "RISOTO DE CARNE COM ABÓBORA E FEIJÃO", 
+        entradaDish: "MELANCIA",
+        entradaIngredients: ["MELANCIA"],
+        ingredients: ["ABÓBORA", "ALHO", "ARROZ BRANCO", "CARNE BOVINA MOÍDA", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] 
+      },
+      { 
+        day: "Terça", 
+        dish: "YAKISSOBA DE FRANGO", 
+        entradaDish: "PÃO COM OVOS MEXIDOS E CHÁ",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "CHÁ MATE", "ÓLEO DE SOJA", "OVO DE GALINHA", "PÃO", "SAL"],
+        ingredients: ["AÇÚCAR CRISTAL", "ALHO", "AMIDO DE MILHO", "BRÓCOLIS", "CEBOLA", "CEBOLINHA", "CENOURA", "COLORAU", "FILÉ DE PEITO DE FRANGO", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] 
+      },
       { day: "Quarta", dish: "SALADA DE RÚCULA COM TOMATE E ARROZ CAIPIRA + LARANJA", ingredients: ["RÚCULA", "CARNE BOVINA CUBOS", "ARROZ BRANCO", "MILHO VERDE", "TOMATE", "LARANJA"] },
       { day: "Quinta", dish: "SALADA DE REPOLHO COM AGRIÃO, CARNE COM BATATA, ARROZ E FEIJÃO + BOLO SIMPLES E LEITE COM CACAU", ingredients: ["REPOLHO", "AGRIÃO", "CARNE BOVINA CUBOS", "BATATA INGLESA", "ARROZ BRANCO", "FEIJÃO CARIOCA", "BOLO SIMPLES", "LEITE", "CACAU EM PÓ"] },
       { day: "Sexta", dish: "ESCONDIDINHO DE FRANGO COM BATATA DOCE, ARROZ E FEIJÃO + ABACAXI", ingredients: ["FILÉ DE PEITO DE FRANGO", "BATATA DOCE", "ARROZ BRANCO", "FEIJÃO CARIOCA", "ABACAXI"] }
