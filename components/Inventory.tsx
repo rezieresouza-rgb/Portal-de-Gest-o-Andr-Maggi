@@ -464,21 +464,64 @@ const Inventory: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {sortedItems.map((item) => {
+            {sortedItems.map((item, index) => {
               const currentBalance = item.previousBalance + item.entries - item.outputs;
               const isCritical = currentBalance < item.min;
+              const hasEntries = item.entries > 0;
+              const hasOutputs = item.outputs > 0;
+              
               return (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors group ${isCritical ? 'bg-red-50/20' : ''}`}>
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-2xl ${isCritical ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-400'}`}><Package size={20} /></div>
-                      <div><p className="font-black text-gray-900 uppercase text-xs">{item.name}</p><p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">UN: {item.unit}</p></div>
+                      <div className={`p-3 rounded-2xl ${isCritical ? 'bg-red-50 text-red-500 animate-pulse' : 'bg-gray-50 text-gray-400'}`}>
+                        <Package size={20} />
+                      </div>
+                      <div>
+                        <p className={`font-black uppercase text-xs ${isCritical ? 'text-red-700' : 'text-gray-900'}`}>{item.name}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">UN: {item.unit}</p>
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-6 text-center text-sm font-bold text-gray-400">{item.previousBalance.toLocaleString('pt-BR')}</td>
-                  <td className="px-4 py-4 text-center bg-emerald-50/10"><input type="number" step="0.01" value={item.entries || ""} onChange={(e) => handleUpdateItem(item.id, 'entries', e.target.value)} className="w-full bg-transparent text-center font-black text-emerald-600 outline-none no-print" /><span className="hidden pdf-show">{item.entries || '0'}</span></td>
-                  <td className="px-4 py-4 text-center bg-red-50/10"><input type="number" step="0.01" value={item.outputs || ""} onChange={(e) => handleUpdateItem(item.id, 'outputs', e.target.value)} className="w-full bg-transparent text-center font-black text-red-600 outline-none no-print" /><span className="hidden pdf-show">{item.outputs || '0'}</span></td>
-                  <td className={`px-6 py-6 text-center text-sm font-black ${isCritical ? 'text-red-700 bg-red-50/40' : 'text-gray-900'}`}>{currentBalance.toLocaleString('pt-BR')}</td>
+                  <td className={`px-4 py-4 text-center transition-all ${hasEntries ? 'bg-emerald-50' : 'bg-emerald-50/10'}`}>
+                    <input 
+                      id={`entry-${index}`}
+                      type="number" 
+                      step="0.01" 
+                      value={item.entries || ""} 
+                      onChange={(e) => handleUpdateItem(item.id, 'entries', e.target.value)} 
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          document.getElementById(`output-${index}`)?.focus();
+                        }
+                      }}
+                      className={`w-full bg-transparent text-center font-black outline-none no-print transition-all ${hasEntries ? 'text-emerald-700 scale-110' : 'text-emerald-600'}`} 
+                    />
+                    <span className="hidden pdf-show">{item.entries || '0'}</span>
+                  </td>
+                  <td className={`px-4 py-4 text-center transition-all ${hasOutputs ? 'bg-red-50' : 'bg-red-50/10'}`}>
+                    <input 
+                      id={`output-${index}`}
+                      type="number" 
+                      step="0.01" 
+                      value={item.outputs || ""} 
+                      onChange={(e) => handleUpdateItem(item.id, 'outputs', e.target.value)} 
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          document.getElementById(`entry-${index + 1}`)?.focus();
+                        }
+                      }}
+                      className={`w-full bg-transparent text-center font-black outline-none no-print transition-all ${hasOutputs ? 'text-red-700 scale-110' : 'text-red-600'}`} 
+                    />
+                    <span className="hidden pdf-show">{item.outputs || '0'}</span>
+                  </td>
+                  <td className={`px-6 py-6 text-center text-sm font-black ${isCritical ? 'text-red-700 bg-red-100/40 shadow-inner' : 'text-gray-900'}`}>
+                    {currentBalance.toLocaleString('pt-BR')}
+                    {isCritical && <span className="block text-[8px] mt-1 text-red-500 animate-bounce">ABAIXO DO MÍNIMO ({item.min})</span>}
+                  </td>
                   {viewMode === 'active' && <td className="px-4 py-6 no-print text-right"><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button></td>}
                 </tr>
               );
