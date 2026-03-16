@@ -80,7 +80,13 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["MAÇÃ"],
         ingredients: ["ALHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "FARINHA DE ROSCA", "LIMÃO", "ÓLEO DE SOJA", "PEIXE", "PIMENTA DE CHEIRO", "QUEIJO MUÇARELA", "SAL"] 
       },
-      { day: "Quinta", dish: "SALADA DE REPOLHO COM RÚCULA, GALINHADA, FAROFA DE BANANA E FEIJÃO + PÃO COM REQUEIJÃO E SUCO DE POLPA DE FRUTA", ingredients: ["REPOLHO", "RÚCULA", "ARROZ BRANCO", "BANANA", "FEIJÃO CARIOCA", "PÃO", "REQUEIJÃO CREMOSO", "POLPA DE FRUTA"] },
+      { 
+        day: "Quinta", 
+        dish: "SALADA DE REPOLHO COM RÚCULA, GALINHADA, FAROFA DE BANANA E FEIJÃO", 
+        entradaDish: "PÃO COM REQUEIJÃO E SUCO DE POLPA DE FRUTA",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "PÃO", "POLPA DE FRUTA", "REQUEIJÃO CREMOSO"],
+        ingredients: ["AÇAFRÃO", "ALHO", "ARROZ BRANCO", "BANANA DA TERRA", "CEBOLA", "CEBOLINHA", "FARINHA DE MANDIOCA", "FEIJÃO CARIOCA", "FILÉ DE PEITO DE FRANGO", "LOURO", "ÓLEO DE SOJA", "REPOLHO", "RÚCULA", "SAL", "SALSA", "VINAGRE"] 
+      },
       { day: "Sexta", dish: "PICADINHO DE CARNE SUÍNA E ARROZ + BANANA", ingredients: ["CARNE SUÍNA", "ARROZ BRANCO", "BATATA INGLESA", "CENOURA", "BANANA"] }
     ]
   },
