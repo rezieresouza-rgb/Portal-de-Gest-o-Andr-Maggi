@@ -114,8 +114,20 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["AÇÚCAR CRISTAL", "CHÁ MATE", "ÓLEO DE SOJA", "OVO DE GALINHA", "PÃO", "SAL"],
         ingredients: ["AÇÚCAR CRISTAL", "ALHO", "AMIDO DE MILHO", "BRÓCOLIS", "CEBOLA", "CEBOLINHA", "CENOURA", "COLORAU", "FILÉ DE PEITO DE FRANGO", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] 
       },
-      { day: "Quarta", dish: "SALADA DE RÚCULA COM TOMATE E ARROZ CAIPIRA + LARANJA", ingredients: ["RÚCULA", "CARNE BOVINA CUBOS", "ARROZ BRANCO", "MILHO VERDE", "TOMATE", "LARANJA"] },
-      { day: "Quinta", dish: "SALADA DE REPOLHO COM AGRIÃO, CARNE COM BATATA, ARROZ E FEIJÃO + BOLO SIMPLES E LEITE COM CACAU", ingredients: ["REPOLHO", "AGRIÃO", "CARNE BOVINA CUBOS", "BATATA INGLESA", "ARROZ BRANCO", "FEIJÃO CARIOCA", "BOLO SIMPLES", "LEITE", "CACAU EM PÓ"] },
+      { 
+        day: "Quarta", 
+        dish: "SALADA DE RÚCULA COM TOMATE E ARROZ CAIPIRA", 
+        entradaDish: "LARANJA",
+        entradaIngredients: ["LARANJA"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "CENOURA", "LIMÃO", "MILHO VERDE", "ÓLEO DE SOJA", "RÚCULA", "SAL", "SALSA", "TOMATE"] 
+      },
+      { 
+        day: "Quinta", 
+        dish: "SALADA DE REPOLHO COM AGRIÃO, CARNE COM BATATA, ARROZ E FEIJÃO", 
+        entradaDish: "BOLO SIMPLES E LEITE COM CACAU",
+        entradaIngredients: ["AÇÚCAR CRISTAL", "CACAU EM PÓ", "FARINHA DE TRIGO", "FERMENTO QUÍMICO", "LEITE", "ÓLEO DE SOJA", "OVO DE GALINHA"],
+        ingredients: ["AGRIÃO", "ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "ÓLEO DE SOJA", "PIMENTÃO", "REPOLHO", "SAL", "SALSA", "VINAGRE"] 
+      },
       { day: "Sexta", dish: "ESCONDIDINHO DE FRANGO COM BATATA DOCE, ARROZ E FEIJÃO + ABACAXI", ingredients: ["FILÉ DE PEITO DE FRANGO", "BATATA DOCE", "ARROZ BRANCO", "FEIJÃO CARIOCA", "ABACAXI"] }
     ]
   },
