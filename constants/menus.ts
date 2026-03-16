@@ -182,8 +182,20 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
     week: 5,
     label: "5ª SEMANA",
     days: [
-      { day: "Segunda", dish: "CARNE COM BATATA E CENOURA E ARROZ + MELANCIA", ingredients: ["CARNE BOVINA CUBOS", "BATATA INGLESA", "CENOURA", "ARROZ BRANCO", "MELANCIA"] },
-      { day: "Terça", dish: "LASANHA DE FRANGO E ARROZ + PÃO DOCE E BEBIDA LÁCTEA", ingredients: ["FILÉ DE PEITO DE FRANGO", "MASSA PARA LASANHA", "QUEIJO MUSSARELA", "LEITE", "PÃO DOCE", "BEBIDA LÁCTEA"] },
+      { 
+        day: "Segunda", 
+        dish: "CARNE COM BATATA E CENOURA E ARROZ", 
+        entradaDish: "MELANCIA",
+        entradaIngredients: ["MELANCIA"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "CENOURA", "COLORAU", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] 
+      },
+      { 
+        day: "Terça", 
+        dish: "LASANHA DE FRANGO E ARROZ", 
+        entradaDish: "PÃO DOCE E BEBIDA LÁCTEA",
+        entradaIngredients: ["BEBIDA LÁCTEA", "PÃO DOCE"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "FARINHA DE TRIGO", "FILÉ DE PEITO DE FRANGO", "LEITE", "LIMÃO", "MASSA PARA LASANHA", "ÓLEO DE SOJA", "QUEIJO MUSSARELA", "SAL", "SALSA"] 
+      },
       { day: "Quarta", dish: "SALADA DE REPOLHO E RÚCULA, ARROZ COM CARNE E FEIJÃO + MAÇÃ", ingredients: ["REPOLHO", "RÚCULA", "ARROZ BRANCO", "CARNE BOVINA CUBOS", "FEIJÃO CARIOCA", "MAÇÃ"] },
       { day: "Quinta", dish: "SALADA DE ALFACE COM CENOURA, ESTROGONOFE DE CARNE SUÍNA E ARROZ + PÃO COM REQUEIJÃO E LEITE COM CACAU", ingredients: ["ALFACE", "CENOURA", "CARNE SUÍNA", "ARROZ BRANCO", "REQUEIJÃO CREMOSO", "LEITE", "CACAU EM PÓ"] },
       { day: "Sexta", dish: "ARROZ CUIABANO E FEIJÃO + PONCÃ", ingredients: ["CARNE BOVINA CUBOS", "BANANA DA TERRA", "ARROZ BRANCO", "FEIJÃO CARIOCA", "PONCÃ"] }
