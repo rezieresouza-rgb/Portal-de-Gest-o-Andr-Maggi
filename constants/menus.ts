@@ -128,7 +128,13 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         entradaIngredients: ["AÇÚCAR CRISTAL", "CACAU EM PÓ", "FARINHA DE TRIGO", "FERMENTO QUÍMICO", "LEITE", "ÓLEO DE SOJA", "OVO DE GALINHA"],
         ingredients: ["AGRIÃO", "ALHO", "ARROZ BRANCO", "BATATA INGLESA", "CARNE BOVINA CUBOS", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "ÓLEO DE SOJA", "PIMENTÃO", "REPOLHO", "SAL", "SALSA", "VINAGRE"] 
       },
-      { day: "Sexta", dish: "ESCONDIDINHO DE FRANGO COM BATATA DOCE, ARROZ E FEIJÃO + ABACAXI", ingredients: ["FILÉ DE PEITO DE FRANGO", "BATATA DOCE", "ARROZ BRANCO", "FEIJÃO CARIOCA", "ABACAXI"] }
+      { 
+        day: "Sexta", 
+        dish: "ESCONDIDINHO DE FRANGO COM BATATA DOCE, ARROZ E FEIJÃO", 
+        entradaDish: "ABACAXI",
+        entradaIngredients: ["ABACAXI"],
+        ingredients: ["ALHO", "ARROZ BRANCO", "BATATA DOCE", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "FILÉ DE PEITO DE FRANGO", "LEITE", "MANTEIGA", "ÓLEO DE SOJA", "PIMENTA DE CHEIRO", "SAL", "SALSA"] 
+      }
     ]
   },
   {
