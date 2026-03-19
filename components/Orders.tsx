@@ -659,11 +659,11 @@ const Orders: React.FC = () => {
                 <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none h-[54px]" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-emerald-700 uppercase tracking-widest ml-1">Previsão de Entrega</label>
+                <label className="text-[10px] font-black text-emerald-700 uppercase tracking-widest ml-1">Previsão de Entrega (Opcional)</label>
                 <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black text-sm outline-none h-[54px]" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observações Gerais</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nota da Entrega / Observações</label>
                 <input
                   type="text"
                   value={observations}
@@ -718,7 +718,9 @@ const Orders: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-gray-400 font-black text-emerald-700">Prev. Entrega:</p>
-                  <p className="text-sm font-black text-emerald-800 underline decoration-2">{formatDateDisplay(deliveryDate)}</p>
+                  <p className={`text-sm font-black text-emerald-800 underline decoration-2 ${!deliveryDate ? 'text-[9px]' : ''}`}>
+                    {deliveryDate ? formatDateDisplay(deliveryDate) : "OLHAR A DATA DE ENTREGA NO CAMPO NOTA DA ENTREGA"}
+                  </p>
                 </div>
               </div>
             </div>
