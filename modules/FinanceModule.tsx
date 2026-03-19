@@ -1139,7 +1139,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                           setNewTx({
                                             description: t.description,
                                             invoiceNumber: t.invoiceNumber || '',
-                                            value: t.value.toString(),
+                                              invoiceDate: t.invoiceDate || '',
+                                              value: t.value.toString(),
                                             type: t.type,
                                             group: t.group,
                                             category: t.category,
@@ -1406,3 +1407,4 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 };
 
 export default FinanceModule;
+
