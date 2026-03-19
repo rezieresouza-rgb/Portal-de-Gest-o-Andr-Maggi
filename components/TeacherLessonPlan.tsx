@@ -22,9 +22,11 @@ import {
   MessageCircle,
   Clock,
   X,
-  Printer
+  Printer,
+  BookOpen,
+  Copy
 } from 'lucide-react';
-import { LessonPlan, LessonPlanRow, PedagogicalSkill, User as UserType } from '../types';
+import { LessonPlan, LessonPlanRow, PedagogicalSkill, User as UserType, Book } from '../types';
 import { fetchBNCCSkillsFromDB } from '../geminiService';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
@@ -70,6 +72,70 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
   const [dbSkills, setDbSkills] = useState<PedagogicalSkill[]>([]);
   const [rowSkillSearch, setRowSkillSearch] = useState<{ [key: number]: string }>({});
   const [focusedRowIdx, setFocusedRowIdx] = useState<number | null>(null);
+
+  // === LIBRARY DRAWER STATE ===
+  const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
+  const [libraryBooks, setLibraryBooks] = useState<Book[]>([]);
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [isFetchingLibrary, setIsFetchingLibrary] = useState(false);
+
+  // Fetch Library Books
+  const fetchLibraryCatalog = async () => {
+    setIsFetchingLibrary(true);
+    try {
+      const { data, error } = await supabase
+        .from('library_books')
+        .select('*')
+        .order('title');
+      
+      if (!error && data) {
+        setLibraryBooks(data.map(b => ({
+          id: b.id,
+          title: b.title,
+          author: b.author,
+          category: b.category,
+          isbn: b.isbn,
+          totalCopies: b.total_copies,
+          availableCopies: b.available_copies,
+          location: b.location,
+          internalRegistration: b.internal_registration,
+          registrationDate: b.registration_date,
+          bookType: b.book_type,
+          volumeNumber: b.volume_number,
+          subtitle: b.subtitle,
+          colorTag: b.color_tag,
+          coverUrl: b.cover_url,
+          synopsis: b.synopsis
+        })));
+      }
+    } catch (err) {
+      console.error("Erro ao buscar livros da biblioteca:", err);
+    } finally {
+      setIsFetchingLibrary(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLibraryPanelOpen && libraryBooks.length === 0) {
+      fetchLibraryCatalog();
+    }
+  }, [isLibraryPanelOpen]);
+
+  const filteredLibraryBooks = useMemo(() => {
+    if (!librarySearch.trim()) return libraryBooks;
+    const s = librarySearch.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return libraryBooks.filter(b => {
+      const t = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const a = b.author?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || '';
+      return t.includes(s) || a.includes(s);
+    });
+  }, [librarySearch, libraryBooks]);
+
+  const copyBookReference = (book: Book) => {
+    const textToCopy = `Referência (Biblioteca Escolar): ${book.title} - ${book.author}`;
+    navigator.clipboard.writeText(textToCopy);
+    alert(`Livro copiado! Agora aperte Ctrl+V no campo de atividades do roteiro.`);
+  };
 
   const fetchPlans = async () => {
     setLoading(true);
@@ -434,6 +500,13 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsLibraryPanelOpen(true)}
+            className="p-4 bg-emerald-50 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 border border-emerald-100"
+            title="Consultar Acervo da Biblioteca"
+          >
+            <BookOpen size={18} /> Acervo da Escola
+          </button>
           <button
             onClick={() => window.print()}
             className="p-4 bg-gray-50 text-gray-500 hover:text-amber-700 hover:bg-amber-50 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 border border-gray-100"
@@ -823,6 +896,91 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
           </div>
         </div>
       </div>
+
+      {/* =================== LIBRARY DRAWER =================== */}
+      {isLibraryPanelOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end no-print">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsLibraryPanelOpen(false)} />
+          <div className="relative w-full max-w-sm md:max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right-8 duration-300">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-emerald-700">
+              <div className="flex items-center gap-3 text-white">
+                <BookOpen size={24} />
+                <h3 className="text-xl font-black uppercase tracking-tight leading-none">Acervo da<br/>Biblioteca</h3>
+              </div>
+              <button onClick={() => setIsLibraryPanelOpen(false)} className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4 border-b border-gray-100 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Buscar por título ou autor..."
+                  value={librarySearch}
+                  onChange={e => setLibrarySearch(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-3 text-center">
+                {filteredLibraryBooks.length} livro{filteredLibraryBooks.length !== 1 ? 's' : ''} encontrado{filteredLibraryBooks.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
+              {isFetchingLibrary ? (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                  <Loader2 className="animate-spin mb-4" size={32} />
+                  <p className="text-xs font-black uppercase tracking-widest">Carregando acervo...</p>
+                </div>
+              ) : (
+                filteredLibraryBooks.map(book => (
+                  <div key={book.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-col gap-3 group hover:border-emerald-200 hover:shadow-md transition-all">
+                    <div className="flex gap-4">
+                      {book.coverUrl ? (
+                        <div className="w-16 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                          <img src={book.coverUrl} alt="Capa" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-24 shrink-0 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-200 border border-emerald-100">
+                          <BookOpen size={24} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-sm font-black text-gray-900 leading-tight group-hover:text-emerald-700 transition-colors line-clamp-2" title={book.title}>
+                            {book.title}
+                          </h4>
+                          <p className="text-[10px] font-bold text-gray-500 uppercase mt-1 leading-none line-clamp-1">{book.author || 'Autor não informado'}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/70 mt-1">{book.category}</p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${book.availableCopies > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                            {book.availableCopies} {book.availableCopies === 1 ? 'CÓPIA DISPONÍVEL' : 'CÓPIAS DISPONÍVEIS'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyBookReference(book)}
+                      className="w-full py-2.5 bg-gray-50 hover:bg-emerald-600 text-gray-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-gray-100 hover:border-emerald-700"
+                    >
+                      <Copy size={14} /> Usar no Planejamento
+                    </button>
+                  </div>
+                ))
+              )}
+              {!isFetchingLibrary && filteredLibraryBooks.length === 0 && (
+                <div className="text-center py-10">
+                  <BookOpen size={32} className="mx-auto text-gray-200 mb-3" />
+                  <p className="text-xs font-black uppercase text-gray-400 tracking-widest">Nenhum livro encontrado</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
