@@ -943,7 +943,6 @@ const Contracts: React.FC = () => {
 
       alert("Guia de Recebimento gerada com sucesso!");
       setShowBatchDeliveryModal(false);
-      setSelectedItems(new Set());
       setBatchDeliveryData({});
       setReceiptDate(getLocalDateString());
 
@@ -1302,13 +1301,13 @@ const Contracts: React.FC = () => {
         {showBatchDeliveryModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowBatchDeliveryModal(false)}></div>
-            <div className="bg-white rounded-[3.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl border border-gray-100">
+            <div className="bg-white rounded-[3.5rem] w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl border border-gray-100">
               <div className="p-8 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-lg"><Truck size={24} /></div>
                   <div>
                     <h3 className="text-2xl font-black text-emerald-900 uppercase tracking-tighter">Recebimento em Lote</h3>
-                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Gerar Guia de Pagamento para {selectedItems.size} produtos</p>
+                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Gerar Guia de Pagamento para {Object.keys(batchDeliveryData).length} produtos</p>
                   </div>
                 </div>
                 <button onClick={() => setShowBatchDeliveryModal(false)} className="text-gray-300 hover:text-red-500 transition-colors"><X size={28} /></button>
@@ -1329,51 +1328,7 @@ const Contracts: React.FC = () => {
                   />
                 </div>
 
-                <div className="bg-white border text-left border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                  <table className="w-full border-collapse">
-                    <thead className="bg-gray-50 text-[9px] font-black text-gray-400 uppercase">
-                      <tr>
-                        <th className="px-6 py-4">Produto</th>
-                        <th className="px-6 py-4 text-center">Preço Un.</th>
-                        <th className="px-6 py-4 text-center w-40">Quant. Recebida</th>
-                        <th className="px-6 py-4 text-right">Total Item</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {Array.from(selectedItems).map(itemId => {
-                        const item = selectedContract.items.find(i => i.id === itemId);
-                        if (!item) return null;
-                        const remaining = item.contractedQuantity - item.acquiredQuantity;
-                        const quantity = batchDeliveryData[itemId] || 0;
-                        const total = Math.round((quantity as number) * (item.unitPrice as number) * 100) / 100;
 
-                        return (
-                          <tr key={itemId} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="px-6 py-4">
-                              <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
-                              <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">Marca: {item.brand || 'Não informada'} • Un: {item.unit}</p>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className="text-[10px] font-black text-gray-900">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <input
-                                type="text"
-                                defaultValue={formatQuantity(quantity)}
-                                onBlur={(e) => setBatchDeliveryData(prev => ({ ...prev, [itemId as string]: parseNumeric(e.target.value) }))}
-                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-sm focus:border-emerald-500 outline-none transition-all"
-                                placeholder="0,000"
-                              />
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <p className="text-[11px] font-black text-emerald-700">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
 
                 <div className="bg-emerald-900 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
                   <div>
@@ -1596,8 +1551,8 @@ const Contracts: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 no-print">
-                  <button onClick={() => setShowBatchDeliveryModal(true)} disabled={selectedItems.size === 0} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 disabled:opacity-50 disabled:grayscale ring-4 ring-emerald-500/20">
-                    <FileCheck size={18} /> Registrar Entrega em Lote ({selectedItems.size})
+                  <button onClick={() => setShowBatchDeliveryModal(true)} disabled={Object.keys(batchDeliveryData).length === 0} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-3 disabled:opacity-50 disabled:grayscale ring-4 ring-emerald-500/20">
+                    <FileCheck size={18} /> Confirmar Lançamentos ({Object.keys(batchDeliveryData).length})
                   </button>
                 </div>
               </div>
@@ -1606,12 +1561,7 @@ const Contracts: React.FC = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
-                      <th className="px-6 py-4 w-12 text-center">
-                        <input type="checkbox" onChange={(e) => {
-                          if (e.target.checked) setSelectedItems(new Set(filteredItems.map(i => i.id)));
-                          else setSelectedItems(new Set());
-                        }} checked={selectedItems.size === filteredItems.length && filteredItems.length > 0} className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
-                      </th>
+                      <th className="px-6 py-4 w-32 text-center bg-emerald-50 text-emerald-700 shadow-inner">Qtd. Receber</th>
                       <th className="px-6 py-4">Item (Descrição / Marca)</th>
                       <th className="px-6 py-4 text-center">Saldo Restante</th>
                       <th className="px-6 py-4 text-right">Ações</th>
@@ -1623,13 +1573,32 @@ const Contracts: React.FC = () => {
                       const usage = (item.acquiredQuantity / item.contractedQuantity) * 100;
                       return (
                         <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors ${selectedItems.has(item.id) ? 'bg-emerald-50/30' : ''}`}>
-                          <td className="px-6 py-5 text-center">
-                            <input type="checkbox" checked={selectedItems.has(item.id)} onChange={() => {
-                              const next = new Set(selectedItems);
-                              if (next.has(item.id)) next.delete(item.id);
-                              else next.add(item.id);
-                              setSelectedItems(next);
-                            }} className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                          <td className="px-6 py-5 text-center bg-emerald-50/10">
+                            <input
+                              key={`qty-${item.id}-${batchDeliveryData[item.id] || 0}`}
+                              type="text"
+                              defaultValue={batchDeliveryData[item.id] ? formatQuantity(batchDeliveryData[item.id]) : ''}
+                              onBlur={(e) => {
+                                const val = parseNumeric(e.target.value);
+                                setBatchDeliveryData(prev => {
+                                  const next = { ...prev };
+                                  if (val > 0) {
+                                    const available = item.contractedQuantity - item.acquiredQuantity;
+                                    if (val > available) {
+                                      alert(`Aviso: A quantidade para ${item.description} excede o saldo (${formatQuantity(available)}).`);
+                                      next[item.id] = available;
+                                    } else {
+                                      next[item.id] = val;
+                                    }
+                                  } else {
+                                    delete next[item.id];
+                                  }
+                                  return next;
+                                });
+                              }}
+                              placeholder="0,000"
+                              className="w-full text-center border border-emerald-200 bg-white p-2.5 rounded-xl text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-inner placeholder-gray-300"
+                            />
                           </td>
                           <td className="px-6 py-5">
                             <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
