@@ -187,7 +187,7 @@ const LibraryRoomScheduler: React.FC = () => {
          <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-8 border-b border-gray-50 bg-indigo-50/30 flex items-center gap-3">
                <Library className="text-indigo-600" />
-               <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight">Ocupação do Dia: {new Date(selectedDate).toLocaleDateString('pt-BR')}</h4>
+               <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight">Ocupação do Dia: {selectedDate.split('-').reverse().join('/')}</h4>
             </div>
 
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -273,7 +273,7 @@ const LibraryRoomScheduler: React.FC = () => {
                      {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => (
                         <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                            <td className="px-8 py-6">
-                              <p className="font-black text-gray-900">{new Date(b.date).toLocaleDateString('pt-BR')}</p>
+                              <p className="font-black text-gray-900">{b.date.split('-').reverse().join('/')}</p>
                               <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-widest">{b.shift} • Aulas: {b.classes.join(', ')}</p>
                            </td>
                            <td className="px-8 py-6">
@@ -323,7 +323,7 @@ const LibraryRoomScheduler: React.FC = () => {
                            <div className="p-4 bg-indigo-600 text-white rounded-3xl shadow-xl shadow-indigo-600/20"><Plus size={28} strokeWidth={3} /></div>
                            <div>
                               <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Reservar Biblioteca</h3>
-                              <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Espaço Coletivo: {new Date(selectedDate).toLocaleDateString('pt-BR')}</p>
+                              <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Espaço Coletivo: {selectedDate.split('-').reverse().join('/')}</p>
                            </div>
                         </div>
                         <button type="button" onClick={() => setIsModalOpen(false)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 rounded-2xl transition-all"><X size={24} /></button>

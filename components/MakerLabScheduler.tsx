@@ -284,7 +284,7 @@ const MakerLabScheduler: React.FC = () => {
               {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => (
                 <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-8 py-6">
-                    <p className="font-black text-gray-900">{new Date(b.date).toLocaleDateString('pt-BR')}</p>
+                    <p className="font-black text-gray-900">{b.date.split('-').reverse().join('/')}</p>
                     <p className="text-[9px] text-sky-600 font-bold uppercase tracking-widest">{b.shift} • {b.classes.join(', ')} aulas</p>
                   </td>
                   <td className="px-8 py-6">
@@ -336,7 +336,7 @@ const MakerLabScheduler: React.FC = () => {
                   <div className="p-4 bg-sky-600 text-white rounded-3xl shadow-xl shadow-sky-600/20"><Plus size={28} strokeWidth={3} /></div>
                   <div>
                     <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Reservar Lab Maker</h3>
-                    <p className="text-[10px] text-sky-400 font-bold uppercase tracking-widest mt-1">Data: {new Date(selectedDate).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-[10px] text-sky-400 font-bold uppercase tracking-widest mt-1">Data: {selectedDate.split('-').reverse().join('/')}</p>
                   </div>
                 </div>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 rounded-2xl transition-all"><X size={24} /></button>
