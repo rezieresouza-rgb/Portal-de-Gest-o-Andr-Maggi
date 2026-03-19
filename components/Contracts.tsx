@@ -227,8 +227,13 @@ const Contracts: React.FC = () => {
   // Guide History State
   const [paymentGuides, setPaymentGuides] = useState<any[]>([]);
   const [isLoadingGuides, setIsLoadingGuides] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ITEMS' | 'LOG' | 'GUIDES'>('ITEMS');
-  const [showConsumptionStatement, setShowConsumptionStatement] = useState(false);
+  const [activeTab, setActiveTab] = useState<'ITEMS' | 'LOG' | 'GUIDES' | 'EXTRACTS'>('ITEMS');
+  
+  // Consumption Statements State
+  const [consumptionStatements, setConsumptionStatements] = useState<any[]>([]);
+  const [isLoadingStatements, setIsLoadingStatements] = useState(false);
+  const [previewExtract, setPreviewExtract] = useState<{ items: any[], guides: any[], totalValue: number } | null>(null);
+  const [generatedStatementPdf, setGeneratedStatementPdf] = useState<{ statement: any, items: any[] } | null>(null);
 
   useEffect(() => {
     supabase.from('suppliers').select('id, name, category').then(({ data }) => {
@@ -547,12 +552,171 @@ const Contracts: React.FC = () => {
     }
   };
 
+  const fetchStatements = async (contractId: string) => {
+    try {
+      setIsLoadingStatements(true);
+      const { data, error } = await supabase
+        .from('consumption_statements')
+        .select('*')
+        .eq('contract_id', contractId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setConsumptionStatements(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar extratos:", err);
+    } finally {
+      setIsLoadingStatements(false);
+    }
+  };
+
   useEffect(() => {
     if (selectedContractId) {
       fetchPaymentGuides(selectedContractId);
+      fetchStatements(selectedContractId);
       setActiveTab('ITEMS');
     }
   }, [selectedContractId]);
+
+  const handlePreviewExtract = async () => {
+    if (!selectedContract) return;
+
+    const pendingGuides = paymentGuides.filter(g => g.contract_id === selectedContract.id && !g.statement_id);
+    if (pendingGuides.length === 0) {
+      alert("Não há guias de recebimento pendentes para fechar um novo período de extrato.");
+      return;
+    }
+
+    try {
+      setIsLoadingStatements(true);
+      const { data: guideItems, error } = await supabase
+        .from('payment_guide_items')
+        .select('*, item:contract_items(*)')
+        .in('guide_id', pendingGuides.map(g => g.id));
+
+      if (error) throw error;
+
+      const itemSummaryMap: Record<string, any> = {};
+      let totalValue = 0;
+
+      for (const gi of guideItems) {
+        const itemId = gi.contract_item_id;
+        if (!itemSummaryMap[itemId]) {
+          itemSummaryMap[itemId] = {
+            ...gi.item,
+            quantity: 0,
+            total: 0
+          };
+        }
+        itemSummaryMap[itemId].quantity += gi.quantity;
+        const subtotal = gi.quantity * gi.unit_price;
+        itemSummaryMap[itemId].total += subtotal;
+        totalValue += subtotal;
+      }
+
+      setPreviewExtract({
+        items: Object.values(itemSummaryMap).sort((a,b) => a.description.localeCompare(b.description)),
+        guides: pendingGuides,
+        totalValue
+      });
+    } catch (error) {
+      console.error("Erro ao gerar prévia:", error);
+      alert("Erro ao buscar dados das guias.");
+    } finally {
+      setIsLoadingStatements(false);
+    }
+  };
+
+  const handleConfirmExtract = async () => {
+    if (!selectedContract || !previewExtract) return;
+
+    try {
+      const statementNumber = `EXT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const lastStatement = consumptionStatements[0];
+      const periodStart = lastStatement ? lastStatement.period_end : selectedContract.startDate;
+      const periodEnd = getLocalDateString();
+
+      const { data: newStatement, error: statementError } = await supabase
+        .from('consumption_statements')
+        .insert({
+          contract_id: selectedContract.id,
+          statement_number: statementNumber,
+          period_start: periodStart,
+          period_end: periodEnd,
+          total_value: previewExtract.totalValue
+        })
+        .select()
+        .single();
+
+      if (statementError) throw statementError;
+
+      const { error: updateError } = await supabase
+        .from('payment_guides')
+        .update({ statement_id: newStatement.id })
+        .in('id', previewExtract.guides.map(g => g.id));
+
+      if (updateError) throw updateError;
+
+      alert("Extrato de Consumo gerado e salvo com sucesso!");
+
+      const itemsToPrint = previewExtract.items;
+      setPreviewExtract(null);
+      await fetchStatements(selectedContract.id);
+      await fetchPaymentGuides(selectedContract.id);
+
+      setGeneratedStatementPdf({ statement: newStatement, items: itemsToPrint });
+
+    } catch (error: any) {
+      alert("Erro ao salvar extrato: " + error.message);
+    }
+  };
+
+  const handleViewPastStatement = async (statement: any) => {
+    try {
+      setIsLoadingStatements(true);
+      const { data: guides, error: guidesError } = await supabase
+        .from('payment_guides')
+        .select('id')
+        .eq('statement_id', statement.id);
+
+      if (guidesError) throw guidesError;
+
+      const guideIds = guides.map((g: any) => g.id);
+      if (guideIds.length === 0) {
+        setGeneratedStatementPdf({ statement, items: [] });
+        return;
+      }
+
+      const { data: guideItems, error: itemsError } = await supabase
+        .from('payment_guide_items')
+        .select('*, item:contract_items(*)')
+        .in('guide_id', guideIds);
+
+      if (itemsError) throw itemsError;
+
+      const itemSummaryMap: Record<string, any> = {};
+      for (const gi of guideItems) {
+        const itemId = gi.contract_item_id;
+        if (!itemSummaryMap[itemId]) {
+          itemSummaryMap[itemId] = {
+            ...gi.item,
+            quantity: 0,
+            total: 0
+          };
+        }
+        itemSummaryMap[itemId].quantity += gi.quantity;
+        itemSummaryMap[itemId].total += (gi.quantity * gi.unit_price);
+      }
+
+      setGeneratedStatementPdf({ statement, items: Object.values(itemSummaryMap).sort((a,b) => a.description.localeCompare(b.description)) });
+
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao buscar detalhes do extrato.");
+    } finally {
+      setIsLoadingStatements(false);
+    }
+  };
 
   const handleCreateContract = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -655,38 +819,12 @@ const Contracts: React.FC = () => {
       const numericDelivery = parseNumeric(deliveryQty);
       if (numericDelivery <= 0) return alert("Informe uma quantidade válida.");
 
-      const newAcquired = item.acquiredQuantity + numericDelivery;
-      if (newAcquired > item.contractedQuantity) {
-        alert("Quantidade excede o saldo do contrato!");
-        return;
-      }
-
       const impact = numericDelivery * item.unitPrice;
 
-      const { error } = await supabase
-        .from('contract_items')
-        .update({ acquired_quantity: newAcquired })
-        .eq('id', item.id);
-
-      if (error) throw error;
-
-      setContracts(prev => prev.map(c => {
-        if (c.id !== deliveryModal.contractId) return c;
-        return {
-          ...c,
-          items: c.items.map(i => {
-            if (i.id !== deliveryModal.itemId) return i;
-            return {
-              ...i,
-              acquiredQuantity: newAcquired
-            };
-          })
-        };
-      }));
-
-      await addExecutionEvent(deliveryModal.contractId, 'DELIVERY', `Recebimento: ${deliveryQty} un de ${deliveryModal.description}`, impact);
+      await addExecutionEvent(deliveryModal.contractId, 'DELIVERY', `Recebimento Avulso: ${deliveryQty} un de ${deliveryModal.description} (Não altera o saldo do contrato)`, impact);
       setDeliveryModal(null);
       setDeliveryQty("");
+      alert("Recebimento avulso registrado apenas no log (saldo do contrato inalterado).");
 
     } catch (error: any) {
       alert("Erro ao registrar entrega: " + error.message);
@@ -705,39 +843,12 @@ const Contracts: React.FC = () => {
       const numericOutput = parseNumeric(outputQty);
       if (numericOutput <= 0) return alert("Informe uma quantidade válida.");
 
-      const newAcquired = item.acquiredQuantity + numericOutput;
-      if (newAcquired > item.contractedQuantity) {
-        alert("Quantidade excede o saldo disponível no contrato!");
-        return;
-      }
-
       const impact = numericOutput * item.unitPrice;
 
-      const { error } = await supabase
-        .from('contract_items')
-        .update({ acquired_quantity: newAcquired })
-        .eq('id', item.id);
-
-      if (error) throw error;
-
-      setContracts(prev => prev.map(c => {
-        if (c.id !== outputModal.contractId) return c;
-        return {
-          ...c,
-          items: c.items.map(i => {
-            if (i.id !== outputModal.itemId) return i;
-            return {
-              ...i,
-              acquiredQuantity: newAcquired
-            };
-          })
-        };
-      }));
-
-      await addExecutionEvent(outputModal.contractId, 'DELIVERY', `Saída Manual: ${outputQty} ${item.unit} de ${outputModal.description}`, impact);
+      await addExecutionEvent(outputModal.contractId, 'DELIVERY', `Saída Manual: ${outputQty} ${item.unit} de ${outputModal.description} (Não altera o saldo do contrato)`, impact);
       setOutputModal(null);
       setOutputQty("");
-      alert("Saída de estoque registrada com sucesso!");
+      alert("Saída de estoque registrada apenas no log (saldo do contrato inalterado).");
 
     } catch (error: any) {
       alert("Erro ao registrar saída: " + error.message);
@@ -880,7 +991,7 @@ const Contracts: React.FC = () => {
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       }).from(element).save();
 
-      setShowConsumptionStatement(false);
+      setGeneratedStatementPdf(null);
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
       alert("Erro ao gerar PDF.");
@@ -902,7 +1013,7 @@ const Contracts: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setShowConsumptionStatement(true)}
+            onClick={handlePreviewExtract}
             className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
           >
             <Printer size={16} /> Gerar Extrato de Consumo
@@ -1016,28 +1127,89 @@ const Contracts: React.FC = () => {
           </div>
         )}
 
-        {showConsumptionStatement && (
+        {previewExtract && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" onClick={() => setShowConsumptionStatement(false)}></div>
+            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" onClick={() => setPreviewExtract(null)}></div>
+            <div className="bg-white rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl">
+              <div className="p-8 bg-indigo-600 text-white flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-2xl"><TrendingUp size={28} /></div>
+                  <div>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter">Novo Extrato de Consumo</h3>
+                    <p className="text-[10px] font-bold uppercase opacity-80">Prévia do fechamento. O período será encerrado após a confirmação.</p>
+                  </div>
+                </div>
+                <button onClick={() => setPreviewExtract(null)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-12 bg-gray-50 text-gray-900">
+                <div className="mb-8 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex justify-between items-center">
+                   <div>
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Guias Incluídas</p>
+                     <p className="text-2xl font-black text-gray-900">{previewExtract.guides.length} Recebimento(s)</p>
+                   </div>
+                   <div className="text-right">
+                     <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Valor do Período</p>
+                     <p className="text-3xl font-black text-indigo-700">R$ {previewExtract.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                   </div>
+                </div>
+
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Produtos Consumidos no Período</h4>
+                <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                      <tr>
+                        <th className="px-6 py-4">Produto</th>
+                        <th className="px-6 py-4 text-center">Un.</th>
+                        <th className="px-6 py-4 text-center">Qtd. no Período</th>
+                        <th className="px-6 py-4 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {previewExtract.items.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50/50">
+                           <td className="px-6 py-4 font-black text-xs uppercase text-gray-900">{item.description}</td>
+                           <td className="px-6 py-4 text-center font-bold text-gray-500 uppercase text-xs">{item.unit}</td>
+                           <td className="px-6 py-4 text-center font-black text-indigo-600">{formatQuantity(item.quantity)}</td>
+                           <td className="px-6 py-4 text-right font-black text-indigo-700">R$ {item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-8">
+                  <button onClick={handleConfirmExtract} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex justify-center items-center gap-3">
+                     <Check size={20} /> Confirmar e Fechar Período
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {generatedStatementPdf && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" onClick={() => setGeneratedStatementPdf(null)}></div>
             <div className="bg-white rounded-[3rem] w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl">
               <div className="p-8 bg-indigo-600 text-white flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white/20 rounded-2xl"><TrendingUp size={28} /></div>
                   <div>
-                    <h3 className="text-2xl font-black uppercase tracking-tighter">Extrato de Consumo Acumulado</h3>
-                    <p className="text-[10px] font-bold uppercase opacity-80">Saldo total executado vs contratado até {new Date().toLocaleDateString('pt-BR')}</p>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter">Extrato de Consumo - {generatedStatementPdf.statement.statement_number}</h3>
+                    <p className="text-[10px] font-bold uppercase opacity-80">Comprovante de fechamento de período</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <button onClick={handleDownloadConsumptionPdf} className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-black uppercase text-xs flex items-center gap-2 hover:bg-indigo-50 transition-all">
                     <Printer size={16} /> Imprimir / PDF
                   </button>
-                  <button onClick={() => setShowConsumptionStatement(false)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
+                  <button onClick={() => setGeneratedStatementPdf(null)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-12 bg-gray-50">
-                <div id="consumption-statement-printable" className="bg-white p-12 shadow-sm border border-gray-100 mx-auto max-w-[210mm] min-h-[297mm] text-gray-900 font-sans">
+                <div id="consumption-statement-printable" className="bg-white p-12 shadow-sm border border-gray-100 mx-auto max-w-[210mm] min-h-[297mm] text-gray-900 font-sans flex flex-col">
                   {/* Header PDF */}
                   <div className="flex justify-between items-start border-b-2 border-gray-900 pb-8 mb-8">
                     <div className="flex items-center gap-6">
@@ -1052,8 +1224,8 @@ const Contracts: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Extrato de Consumo</p>
-                      <h1 className="text-xl font-black text-gray-900 truncate max-w-[200px]">{selectedContract.number}</h1>
-                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">Emissão: {new Date().toLocaleDateString('pt-BR')}</p>
+                      <h1 className="text-xl font-black text-gray-900 truncate max-w-[200px]">{generatedStatementPdf.statement.statement_number}</h1>
+                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">Emissão: {new Date(generatedStatementPdf.statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                     </div>
                   </div>
 
@@ -1062,15 +1234,16 @@ const Contracts: React.FC = () => {
                     <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
                       <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Contratada</p>
                       <p className="text-sm font-black text-gray-900 uppercase">{selectedContract.supplierName}</p>
+                      <p className="text-[9px] font-black text-gray-500 uppercase mt-1">Contrato: {selectedContract.number}</p>
                     </div>
                     <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center">
                       <div>
-                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Execução Financeira</p>
-                        <p className="text-lg font-black text-indigo-700">R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Consumo no Período</p>
+                        <p className="text-lg font-black text-indigo-700">R$ {generatedStatementPdf.statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Vigência até</p>
-                        <p className="text-xs font-black text-indigo-700 uppercase">{new Date(selectedContract.endDate).toLocaleDateString('pt-BR')}</p>
+                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Período</p>
+                        <p className="text-[10px] font-black text-indigo-700 uppercase">{new Date(generatedStatementPdf.statement.period_start + 'T12:00:00').toLocaleDateString('pt-BR')} até {new Date(generatedStatementPdf.statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                       </div>
                     </div>
                   </div>
@@ -1082,38 +1255,33 @@ const Contracts: React.FC = () => {
                         <th className="py-3 pr-4">Produtos Adquiridos</th>
                         <th className="py-3 px-4 text-center">Unid.</th>
                         <th className="py-3 px-4 text-center">Marca</th>
+                        <th className="py-3 px-4 text-center">Qtd. Período</th>
                         <th className="py-3 px-4 text-right">V. Unit.</th>
-                        <th className="py-3 px-4 text-center">Qtd. Adquirida</th>
                         <th className="py-3 pl-4 text-right">Subtotal R$</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {selectedContract.items
-                        .filter((item) => item.acquiredQuantity > 0)
-                        .map((item, idx) => {
-                          const subtotal = item.acquiredQuantity * item.unitPrice;
-                          return (
-                            <tr key={idx} className="text-[9px]">
-                              <td className="py-4 pr-4 font-bold uppercase leading-tight">{item.description}</td>
-                              <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
-                              <td className="py-4 px-4 text-center font-bold text-gray-400">{item.brand || '-'}</td>
-                              <td className="py-4 px-4 text-right font-bold text-gray-600">{item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                              <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.acquiredQuantity)}</td>
-                              <td className="py-4 pl-4 text-right font-black text-indigo-700">{subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            </tr>
-                          );
-                        })}
+                      {generatedStatementPdf.items.map((item, idx) => (
+                        <tr key={idx} className="text-[9px]">
+                          <td className="py-4 pr-4 font-bold uppercase leading-tight">{item.description}</td>
+                          <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
+                          <td className="py-4 px-4 text-center font-bold text-gray-400">{item.brand || '-'}</td>
+                          <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity)}</td>
+                          <td className="py-4 px-4 text-right font-bold text-gray-600">{item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-4 pl-4 text-right font-black text-indigo-700">{item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-gray-200 bg-gray-50">
-                        <td colSpan={5} className="py-4 pr-4 text-right font-black uppercase text-gray-900 text-xs">Valor Total (R$)</td>
-                        <td className="py-4 pl-4 text-right font-black text-indigo-700 text-xs">{totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td colSpan={5} className="py-4 pr-4 text-right font-black uppercase text-gray-900 text-xs">Total do Período (R$)</td>
+                        <td className="py-4 pl-4 text-right font-black text-indigo-700 text-xs">{generatedStatementPdf.statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       </tr>
                     </tfoot>
                   </table>
 
                   <div className="mt-auto pt-20 border-t-2 border-gray-100">
-                    <p className="text-[8px] font-bold text-gray-400 uppercase text-center mb-10">Este documento detalha o consumo acumulado do contrato administrativo nº {selectedContract.number} até a presente data.</p>
+                    <p className="text-[8px] font-bold text-gray-400 uppercase text-center mb-10">Este documento certifica o fechamento de guias de recebimento e consumo do contrato administrativo nº {selectedContract.number} no período discriminado acima.</p>
                     <div className="grid grid-cols-2 gap-20">
                       <div className="text-center pt-8 border-t border-gray-400">
                         <p className="text-[10px] font-black uppercase leading-tight">{selectedContract.supplierName}</p>
@@ -1408,6 +1576,12 @@ const Contracts: React.FC = () => {
           >
             Log de Execução
           </button>
+          <button
+            onClick={() => setActiveTab('EXTRACTS')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'EXTRACTS' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Extratos de Consumo ({consumptionStatements.length})
+          </button>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -1556,6 +1730,71 @@ const Contracts: React.FC = () => {
                   >
                     Ir para Planilha de Itens
                   </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className={`xl:col-span-2 space-y-6 ${activeTab !== 'EXTRACTS' ? 'hidden' : ''}`}>
+            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+                  <TrendingUp size={20} className="text-indigo-600" /> Histórico de Extratos
+                </h3>
+              </div>
+
+              {isLoadingStatements ? (
+                <div className="py-20 text-center">
+                  <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase">Carregando histórico...</p>
+                </div>
+              ) : consumptionStatements.length > 0 ? (
+                <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                        <th className="px-6 py-4">Nº do Extrato</th>
+                        <th className="px-6 py-4">Período</th>
+                        <th className="px-6 py-4 text-right">Valor Total</th>
+                        <th className="px-6 py-4 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {consumptionStatements.map((statement) => (
+                        <tr key={statement.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-5">
+                            <p className="font-black text-gray-900 text-xs uppercase">{statement.statement_number}</p>
+                            <p className="font-bold text-gray-500 text-[9px] mt-1 uppercase">Emissão: {new Date(statement.created_at).toLocaleDateString('pt-BR')}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-gray-500 text-xs uppercase">{new Date(statement.period_start + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                          </td>
+                          <td className="px-6 py-5 text-right font-black text-indigo-700 text-xs">
+                            R$ {statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <button
+                              onClick={() => handleViewPastStatement(statement)}
+                              className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-600 hover:text-white transition-all inline-flex items-center gap-2"
+                              title="Visualizar Extrato"
+                            >
+                              <FileSearch size={14} /> Ver Extrato
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[2rem] bg-gray-50/50">
+                  <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                    <TrendingUp size={32} className="text-indigo-300" />
+                  </div>
+                  <h4 className="text-sm font-black text-gray-900 uppercase mb-2">Nenhum extrato gerado</h4>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase max-w-xs mx-auto leading-relaxed">
+                    Para fechar um período e gerar o extrato de consumo, clique no botão <span className="text-indigo-600">"Gerar Extrato de Consumo"</span> no topo da página.
+                  </p>
                 </div>
               )}
             </div>

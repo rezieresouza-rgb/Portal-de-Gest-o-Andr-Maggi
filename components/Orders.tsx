@@ -412,6 +412,7 @@ const Orders: React.FC = () => {
     try {
       // 1. UPDATE ORDER RECORD
       const { error: headerError } = await supabase.from('orders').update({
+        contract_id: selectedContractId,
         issue_date: orderDate,
         delivery_date: deliveryDate,
         total_value: totalValue,
@@ -602,25 +603,18 @@ const Orders: React.FC = () => {
                 <label className="text-[10px] font-black text-emerald-700 uppercase tracking-widest ml-1 flex items-center gap-2">
                   <PackageSearch size={14} /> Busca Inteligente em Contratos
                 </label>
-                {/* Disable search locally when editing to keep focus on current contract items */}
-                {editingOrder ? (
-                  <div className="p-4 bg-gray-100 rounded-2xl text-gray-400 text-xs font-bold uppercase text-center border-2 border-dashed border-gray-200">
-                    Busca de produtos bloqueada durante a edição
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                    <input
-                      type="text"
-                      placeholder="Busque um alimento no acervo de contratos..."
-                      value={globalProductSearch}
-                      onChange={(e) => setGlobalProductSearch(e.target.value)}
-                      className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white transition-all"
-                    />
-                  </div>
-                )}
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Busque um alimento no acervo de contratos..."
+                    value={globalProductSearch}
+                    onChange={(e) => setGlobalProductSearch(e.target.value)}
+                    className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white transition-all"
+                  />
+                </div>
 
-                {allAvailableProducts.length > 0 && !editingOrder && (
+                {allAvailableProducts.length > 0 && (
                   <div className="absolute z-[110] left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="divide-y divide-gray-50 max-h-[300px] overflow-y-auto">
                       {allAvailableProducts.map((p) => (
@@ -649,8 +643,7 @@ const Orders: React.FC = () => {
                 <select
                   value={selectedContractId}
                   onChange={(e) => handleContractChange(e.target.value)}
-                  disabled={!!editingOrder} // Disable changing contract while editing
-                  className={`w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white transition-all h-[54px] ${editingOrder ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white transition-all h-[54px]`}
                 >
                   <option value="">Selecione o contrato...</option>
                   {contracts.map(c => <option key={c.id} value={c.id}>CT {c.number} - {c.supplierName}</option>)}
