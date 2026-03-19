@@ -59,6 +59,7 @@ type SubModuleType = 'dashboard' | 'ru' | 'merenda' | 'pdde_basico' | 'pdde_qual
 interface Transaction {
   id: string;
   date: string;
+  invoiceDate?: string;
   description: string;
   invoiceNumber?: string;
   type: 'ENTRY' | 'EXPENSE';
@@ -109,6 +110,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const [newTx, setNewTx] = useState({
     description: '',
     invoiceNumber: '',
+    invoiceDate: '',
     value: '',
     type: 'EXPENSE' as 'ENTRY' | 'EXPENSE',
     group: 'CUSTEIO' as 'CUSTEIO' | 'CAPITAL',
@@ -166,6 +168,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         const fundTransactions = transactionsData?.filter(t => t.fund_id === fund.id).map(t => ({
           id: t.id,
           date: t.date,
+          invoiceDate: t.invoice_date,
           description: t.description,
           invoiceNumber: t.invoice_number,
           type: t.type,
@@ -422,6 +425,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         date: newTx.date,
         description: newTx.description.toUpperCase(),
         invoice_number: newTx.invoiceNumber.toUpperCase(),
+        invoice_date: newTx.invoiceDate || null,
         type: newTx.type,
         tx_group: (activeTab === 'merenda' && newTx.type === 'ENTRY') ? 'CUSTEIO' : newTx.group,
         gross_value: rawValue,
@@ -450,7 +454,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       setIsModalOpen(false);
       setTempFile(null);
       setEditingTx(null);
-      setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
+      setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
       fetchFinancialData();
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
@@ -485,7 +489,14 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         const data = await extractInvoiceInfo(base64, file.type);
         if (data) {
           setTempFile(file);
-          setNewTx(prev => ({ ...prev, description: data.description || prev.description, invoiceNumber: data.invoiceNumber || prev.invoiceNumber, value: data.totalValue?.toString() || prev.value, date: data.invoiceDate || prev.date }));
+          setNewTx(prev => ({ 
+            ...prev, 
+            description: data.description || prev.description, 
+            invoiceNumber: data.invoiceNumber || prev.invoiceNumber, 
+            invoiceDate: data.invoiceDate || prev.invoiceDate,
+            value: data.totalValue?.toString() || prev.value, 
+            date: getLocalDateString() // Data da operação fica como data de hoje, a NF vai pro invoiceDate
+          }));
         }
       } catch (err) { addToast("Erro ao ler nota fiscal com IA.", "error"); } finally { setIsScanning(false); }
     };
@@ -651,7 +662,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </p>
                                 </div>
                               </div>
-                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
+                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
                                 <X size={24} />
                               </button>
                             </div>
@@ -781,7 +792,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="space-y-2">
                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Valor Bruto (R$)</label>
                                       <div className="relative">
@@ -790,10 +801,17 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       </div>
                                     </div>
                                     <div className="space-y-2">
-                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Data da Operação</label>
+                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Data Emissão NF</label>
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Calendar size={18} /></div>
-                                        <input type="date" value={newTx.date} onChange={(e) => setNewTx({ ...newTx, date: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
+                                        <input type="date" value={newTx.invoiceDate} onChange={(e) => setNewTx({ ...newTx, invoiceDate: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Data Operação</label>
+                                      <div className="relative">
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Calendar size={18} /></div>
+                                        <input type="date" required value={newTx.date} onChange={(e) => setNewTx({ ...newTx, date: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
                                       </div>
                                     </div>
                                   </div>
@@ -1090,13 +1108,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                           <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><ArrowRightLeft className="text-blue-400" size={20} /> Livro Caixa</h3>
                           <button onClick={() => {
                             setEditingTx(null);
-                            setNewTx({ description: '', invoiceNumber: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
+                            setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
                             setIsModalOpen(true);
                           }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-[11px] border-collapse">
-                            <thead><tr className="text-white/40 border-b border-white/5"><th className="px-6 py-4 font-black uppercase tracking-widest">Data</th><th className="px-6 py-4 font-black uppercase tracking-widest">Descrição / NF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Grupo / AF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-right">Valor</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Docs</th></tr></thead>
+                            <thead><tr className="text-white/40 border-b border-white/5"><th className="px-6 py-4 font-black uppercase tracking-widest">Data Op.</th><th className="px-6 py-4 font-black uppercase tracking-widest">Descrição / NF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Grupo / AF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-right">Valor</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Docs</th></tr></thead>
                             <tbody className="divide-y divide-white/5">
                               {funds[activeTab].transactions.map((t) => (
                                 <tr key={t.id} className="hover:bg-white/5 transition-colors">
@@ -1104,7 +1122,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
                                       <p className="font-black text-white uppercase leading-tight">{t.description}</p>
-                                      {t.invoiceNumber && <span className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded text-[8px] font-black border border-white/10">NF: {t.invoiceNumber}</span>}
+                                      {t.invoiceNumber && <span className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded text-[8px] font-black border border-white/10">NF: {t.invoiceNumber} {t.invoiceDate ? `(${t.invoiceDate.split('-').reverse().join('/')})` : ''}</span>}
                                     </div>
                                     <div className="flex items-center gap-2 mt-1"><span className="text-[8px] text-white/30 font-bold uppercase">{t.category}</span>{t.integratedAction && <span className="text-[8px] bg-purple-500/10 text-purple-300 px-1.5 py-0.5 rounded font-black uppercase border border-purple-500/20">{t.integratedAction}</span>}</div>
                                   </td>
