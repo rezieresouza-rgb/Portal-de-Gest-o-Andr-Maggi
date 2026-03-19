@@ -23,7 +23,13 @@ import { useClassrooms } from '../hooks/useClassrooms';
 import { useSubjects } from '../hooks/useSubjects';
 import { supabase } from '../supabaseClient';
 
-const STATIONS = ["Estação 01", "Estação 02", "Estação 03", "Estação 04"];
+const STATIONS = [
+  "Estação 01 (biblioteca)", 
+  "Estação 02 (sala 22)", 
+  "Estação 03 (sala 22)", 
+  "Estação 04 (biblioteca)", 
+  "Estação 05 (biblioteca)"
+];
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
 
@@ -151,6 +157,7 @@ const ChromebookScheduler: React.FC = () => {
       try {
         const { error } = await supabase.from('bookings').delete().eq('id', id);
         if (error) throw error;
+        setBookings(prev => prev.filter(b => b.id !== id));
       } catch (error) {
         console.error("Erro ao cancelar agendamento:", error);
         alert("Erro ao cancelar agendamento.");

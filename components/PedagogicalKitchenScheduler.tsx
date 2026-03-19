@@ -146,6 +146,7 @@ const PedagogicalKitchenScheduler: React.FC = () => {
       try {
         const { error } = await supabase.from('bookings').delete().eq('id', id);
         if (error) throw error;
+        setBookings(prev => prev.filter(b => b.id !== id));
       } catch (error) {
         console.error("Erro ao cancelar agendamento:", error);
         alert("Erro ao cancelar agendamento.");

@@ -159,6 +159,7 @@ const AuditoriumScheduler: React.FC = () => {
          try {
             const { error } = await supabase.from('bookings').delete().eq('id', id);
             if (error) throw error;
+            setBookings(prev => prev.filter(b => b.id !== id));
          } catch (error) {
             console.error("Erro ao cancelar reserva:", error);
             alert("Erro ao cancelar reserva.");
