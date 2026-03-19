@@ -412,9 +412,9 @@ const Orders: React.FC = () => {
     try {
       // 1. UPDATE ORDER RECORD
       const { error: headerError } = await supabase.from('orders').update({
-        contract_id: selectedContractId,
-        issue_date: orderDate,
-        delivery_date: deliveryDate,
+        contract_id: selectedContractId || null,
+        issue_date: orderDate || null,
+        delivery_date: deliveryDate || null,
         total_value: totalValue,
         observations: observations.trim()
       }).eq('id', editingOrder.id);
@@ -425,16 +425,17 @@ const Orders: React.FC = () => {
       // This is cleaner than trying to diff updates/inserts/deletes
       await supabase.from('order_items').delete().eq('order_id', editingOrder.id);
 
-      for (const item of selected) {
-        // Insert new order item
-        const { error: itemError } = await supabase.from('order_items').insert([{
+      if (selected.length > 0) {
+        const itemsToInsert = selected.map(item => ({
           order_id: editingOrder.id,
           contract_item_id: item.contractItemId,
           description: item.description,
           quantity: parseNumeric(item.requestedQuantity),
           unit_price: parseNumeric(item.unitPrice)
-        }]);
-        if (itemError) throw itemError;
+        }));
+        
+        const { error: itemsError } = await supabase.from('order_items').insert(itemsToInsert);
+        if (itemsError) throw itemsError;
       }
 
       alert("Pedido atualizado com sucesso!");
@@ -475,10 +476,10 @@ const Orders: React.FC = () => {
 
       // 1. Create Order
       const { data: orderData, error: orderError } = await supabase.from('orders').insert([{
-        contract_id: selectedContractId,
+        contract_id: selectedContractId || null,
         order_number: orderNumber,
-        issue_date: orderDate,
-        delivery_date: deliveryDate,
+        issue_date: orderDate || null,
+        delivery_date: deliveryDate || null,
         total_value: totalValue,
         observations: observations.trim(),
         status: 'EM_PROCESSAMENTO'
@@ -487,16 +488,17 @@ const Orders: React.FC = () => {
       if (orderError) throw orderError;
 
       // 2. Create Order Items
-      for (const item of selected) {
-        // Insert order item
-        const { error: itemError } = await supabase.from('order_items').insert([{
+      if (selected.length > 0) {
+        const itemsToInsert = selected.map(item => ({
           order_id: orderData.id,
           contract_item_id: item.contractItemId,
           description: item.description,
           quantity: parseNumeric(item.requestedQuantity),
           unit_price: parseNumeric(item.unitPrice)
-        }]);
-        if (itemError) throw itemError;
+        }));
+        
+        const { error: itemsError } = await supabase.from('order_items').insert(itemsToInsert);
+        if (itemsError) throw itemsError;
       }
 
       // 3. Create Event
