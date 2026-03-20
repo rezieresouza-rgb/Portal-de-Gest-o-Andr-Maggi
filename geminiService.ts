@@ -262,7 +262,7 @@ export const suggestBooks = async (readerInterests: string) => {
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [{ text: `Você é um bibliotecário especialista. Com base nos interesses: "${readerInterests}", sugira 3 livros clássicos ou contemporâneos adequados para idade escolar. Forneça o título, autor e um pequeno motivo da recomendação. Responda em Português do Brasil.` }]
       },
@@ -888,7 +888,7 @@ export const fetchBookSynopsis = async (title: string, author: string) => {
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [{ text: `Você é um bibliotecário especialista. Forneça uma sinopse concisa, atraente e profissional para o livro "${title}" do autor "${author}". Se não encontrar informações específicas sobre este livro exato, tente gerar uma descrição baseada no título e tema provável, ou retorne uma mensagem cordial dizendo que a sinopse não foi encontrada. Responda em Português do Brasil.` }]
       },
