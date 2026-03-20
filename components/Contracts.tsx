@@ -27,7 +27,8 @@ import {
   Printer,
   History,
   FileSearch,
-  Zap
+  Zap,
+  Edit3
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ContractStatus, Contract, ContractItem } from '../types';
@@ -215,6 +216,13 @@ const Contracts: React.FC = () => {
   const [batchDeliveryData, setBatchDeliveryData] = useState<Record<string, number>>({});
   const [isSavingBatch, setIsSavingBatch] = useState(false);
   const [generatedGuidePdf, setGeneratedGuidePdf] = useState<{ guide: any, items: any[] } | null>(null);
+
+  // Edit Guide State
+  const [editGuideModal, setEditGuideModal] = useState<any | null>(null);
+  const [editBatchDeliveryData, setEditBatchDeliveryData] = useState<Record<string, number>>({});
+  const [originalBatchDeliveryData, setOriginalBatchDeliveryData] = useState<Record<string, number>>({});
+  const [editReceiptDate, setEditReceiptDate] = useState<string>('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Fix timezone issue by formatting the local date properly YYYY-MM-DD
   const getLocalDateString = () => {
@@ -956,6 +964,136 @@ const Contracts: React.FC = () => {
     }
   };
 
+  const handleOpenEditGuide = async (guide: any) => {
+    try {
+      setIsLoadingGuides(true);
+      const { data: items, error } = await supabase
+        .from('payment_guide_items')
+        .select('*')
+        .eq('guide_id', guide.id);
+      
+      if (error) throw error;
+
+      const itemsMap: Record<string, number> = {};
+      items.forEach((i: any) => {
+        itemsMap[i.contract_item_id] = i.quantity;
+      });
+
+      setOriginalBatchDeliveryData(itemsMap);
+      setEditBatchDeliveryData({ ...itemsMap });
+      setEditReceiptDate(guide.issue_date || getLocalDateString());
+      setEditGuideModal(guide);
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao abrir edição da guia.");
+    } finally {
+      setIsLoadingGuides(false);
+    }
+  };
+
+  const handleSaveEditGuide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editGuideModal || !selectedContractId) return;
+
+    setIsSavingEdit(true);
+    try {
+      const contract = contracts.find(c => c.id === selectedContractId);
+      if (!contract) throw new Error("Contrato não encontrado.");
+
+      let newTotalValue = 0;
+      const guideItemsToUpsert = [];
+      const guideItemsToDelete = [];
+      let itemsUpdatedCount = 0;
+
+      for (const item of contract.items) {
+        const oldQty = originalBatchDeliveryData[item.id] || 0;
+        const newQty = editBatchDeliveryData[item.id] || 0;
+        const delta = newQty - oldQty;
+
+        if (newQty > 0) {
+          newTotalValue += newQty * item.unitPrice;
+          guideItemsToUpsert.push({
+            guide_id: editGuideModal.id,
+            contract_item_id: item.id,
+            quantity: newQty,
+            unit_price: item.unitPrice
+          });
+        } else if (oldQty > 0 && newQty === 0) {
+          guideItemsToDelete.push(item.id);
+        }
+
+        if (delta !== 0) {
+          const newAcquired = Math.max(0, item.acquiredQuantity + delta);
+          const { error: itemUpdateError } = await supabase
+            .from('contract_items')
+            .update({ acquired_quantity: newAcquired })
+            .eq('id', item.id);
+          if (itemUpdateError) throw itemUpdateError;
+          itemsUpdatedCount++;
+        }
+      }
+
+      if (guideItemsToDelete.length > 0) {
+        const { error: delError } = await supabase
+          .from('payment_guide_items')
+          .delete()
+          .eq('guide_id', editGuideModal.id)
+          .in('contract_item_id', guideItemsToDelete);
+        if (delError) throw delError;
+      }
+
+      for (const gi of guideItemsToUpsert) {
+        await supabase
+          .from('payment_guide_items')
+          .delete()
+          .eq('guide_id', gi.guide_id)
+          .eq('contract_item_id', gi.contract_item_id);
+          
+        const { error: insError } = await supabase
+          .from('payment_guide_items')
+          .insert(gi);
+        if (insError) throw insError;
+      }
+
+      const { error: guideUpdateError } = await supabase
+        .from('payment_guides')
+        .update({
+          total_value: newTotalValue,
+          issue_date: editReceiptDate
+        })
+        .eq('id', editGuideModal.id);
+
+      if (guideUpdateError) throw guideUpdateError;
+
+      if (itemsUpdatedCount > 0 || editReceiptDate !== editGuideModal.issue_date) {
+        await addExecutionEvent(selectedContractId, 'ADITIVO', `Edição de Guia: ${editGuideModal.guide_number}`, newTotalValue - editGuideModal.total_value, editReceiptDate);
+      }
+
+      setContracts(prev => prev.map(c => {
+        if (c.id !== selectedContractId) return c;
+        return {
+          ...c,
+          items: c.items.map(i => {
+            const oldQty = originalBatchDeliveryData[i.id] || 0;
+            const newQty = editBatchDeliveryData[i.id] || 0;
+            const delta = newQty - oldQty;
+            if (delta === 0) return i;
+            return { ...i, acquiredQuantity: Math.max(0, i.acquiredQuantity + delta) };
+          })
+        };
+      }));
+
+      fetchPaymentGuides(selectedContractId);
+      setEditGuideModal(null);
+      alert("Guia atualizada com sucesso!");
+
+    } catch (error: any) {
+      alert("Erro ao salvar edição: " + error.message);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   const handleDownloadGuidePdf = async () => {
     if (!generatedGuidePdf) return;
     const element = document.getElementById('payment-guide-printable');
@@ -1355,6 +1493,107 @@ const Contracts: React.FC = () => {
           </div>
         )}
 
+        {editGuideModal && selectedContract && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setEditGuideModal(null)}></div>
+            <div className="bg-white rounded-[3.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-10 shadow-2xl border border-gray-100">
+              <div className="p-8 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 bg-blue-600 text-white rounded-3xl shadow-lg"><Edit3 size={24} /></div>
+                  <div>
+                    <h3 className="text-2xl font-black text-blue-900 uppercase tracking-tighter">Editar Guia {editGuideModal.guide_number}</h3>
+                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">Ajuste os itens e a data do recebimento</p>
+                  </div>
+                </div>
+                <button onClick={() => setEditGuideModal(null)} className="text-gray-300 hover:text-red-500 transition-colors"><X size={28} /></button>
+              </div>
+
+              <form onSubmit={handleSaveEditGuide} className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar text-sm">
+                <div className="mb-2 px-6 py-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
+                  <div>
+                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Data do Recebimento</h4>
+                    <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Corrija a data se necessário</p>
+                  </div>
+                  <input
+                    type="date"
+                    required
+                    value={editReceiptDate}
+                    onChange={(e) => setEditReceiptDate(e.target.value)}
+                    className="p-3 bg-gray-50 border border-blue-200 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner"
+                  />
+                </div>
+
+                <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm mt-6">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                        <th className="px-6 py-4">Produto</th>
+                        <th className="px-6 py-4 text-center">Unidade</th>
+                        <th className="px-6 py-4 text-center">Saldo Restante Atual</th>
+                        <th className="px-6 py-4 text-center">Quantidade na Guia</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {selectedContract.items.map(item => {
+                        const originalQty = originalBatchDeliveryData[item.id] || 0;
+                        const currentQty = editBatchDeliveryData[item.id] || 0;
+                        const remaining = item.contractedQuantity - item.acquiredQuantity + originalQty;
+
+                        return (
+                          <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-6 py-5">
+                              <p className="font-black text-gray-900 text-xs uppercase">{item.description}</p>
+                            </td>
+                            <td className="px-6 py-5 text-center">
+                              <p className="font-bold text-gray-500 text-xs uppercase">{item.unit}</p>
+                            </td>
+                            <td className="px-6 py-5 text-center">
+                              <p className="font-black text-gray-600 text-xs">{formatQuantity(remaining)}</p>
+                            </td>
+                            <td className="px-6 py-5 flex justify-center">
+                              <input
+                                type="number"
+                                min="0"
+                                max={remaining}
+                                step="any"
+                                value={currentQty || ""}
+                                onChange={(e) => setEditBatchDeliveryData(prev => ({ ...prev, [item.id]: Number(e.target.value) }))}
+                                className="w-24 p-2 bg-white border border-gray-200 rounded-lg text-center font-black text-blue-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                placeholder="0"
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-blue-900 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl mt-6">
+                  <div>
+                    <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Novo Valor Total</p>
+                    <p className="text-4xl font-black text-white">R$ {Object.entries(editBatchDeliveryData).reduce((sum, [itemId, qty]) => {
+                      const item = selectedContract.items.find(i => i.id === itemId);
+                      return sum + ((qty as number) * ((item?.unitPrice as number) || 0));
+                    }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSavingEdit}
+                    className="w-full md:w-auto px-12 py-5 bg-white text-blue-900 rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isSavingEdit ? (
+                      <><div className="w-5 h-5 border-4 border-blue-200 border-t-blue-900 rounded-full animate-spin"></div> Processando...</>
+                    ) : (
+                      <><Save size={20} /> Salvar Alterações</>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {aditivoModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setAditivoModal(null)}></div>
@@ -1674,6 +1913,13 @@ const Contracts: React.FC = () => {
                               title="Visualizar Guia"
                             >
                               <FileSearch size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditGuide(guide)}
+                              className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                              title="Editar Guia"
+                            >
+                              <Edit3 size={14} />
                             </button>
                             <button
                               onClick={() => handleDeletePaymentGuide(guide)}
