@@ -352,9 +352,25 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     setEditingBookId(book.id);
     setIsBookModalOpen(true);
   };
+  const [isSavingBook, setIsSavingBook] = useState(false);
 
   const saveBook = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingBook) return;
+
+    // Validação de unicidade do Registro Interno (Tombo)
+    if (bookForm.internalRegistration) {
+      const duplicate = books.find(b => 
+        b.internalRegistration === bookForm.internalRegistration && 
+        b.id !== editingBookId
+      );
+      if (duplicate) {
+        alert(`Erro: O Registro Interno "${bookForm.internalRegistration}" já está sendo usado pela obra "${duplicate.title}".`);
+        return;
+      }
+    }
+
+    setIsSavingBook(true);
     try {
       const finalLocation = `Estante ${bookForm.estante?.trim().toUpperCase()} - Prat. ${bookForm.prateleira?.trim().toUpperCase()}`;
 
@@ -399,6 +415,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     } catch (error) {
       console.error("Erro ao salvar obra:", error);
       alert("Erro ao salvar obra.");
+    } finally {
+      setIsSavingBook(false);
     }
   };
 
@@ -1402,7 +1420,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               </div>
               </div>
               <div className="p-8 bg-white border-t border-gray-100">
-                <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all active:scale-[0.98]">Salvar Obra no Acervo</button>
+                <button type="submit" disabled={isSavingBook} className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all active:scale-[0.98] disabled:opacity-50">
+                  {isSavingBook ? 'Salvando...' : 'Salvar Obra no Acervo'}
+                </button>
               </div>
             </form>
           </div>

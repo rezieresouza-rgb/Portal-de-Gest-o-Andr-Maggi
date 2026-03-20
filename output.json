@@ -1,0 +1,114 @@
+[
+  {
+    "title": "DESTINADO",
+    "total_copies": 1,
+    "internal_registration": "1937",
+    "id": "f1f4372e-ea55-4bbd-b33b-f2fd690db6c2",
+    "created_at": "2026-03-20T16:16:30.98789+00:00"
+  },
+  {
+    "title": "ANNE DE INGLESIDE",
+    "total_copies": 1,
+    "internal_registration": "1081",
+    "id": "f59353a9-dbc8-41ae-ad1c-ce01d8957782",
+    "created_at": "2026-03-20T15:58:18.238228+00:00"
+  },
+  {
+    "title": "ANNE DE INGLESIDE",
+    "total_copies": 1,
+    "internal_registration": "1096",
+    "id": "ec4439d8-beec-4990-8b6c-37cf407e03e8",
+    "created_at": "2026-03-20T15:58:18.238151+00:00"
+  },
+  {
+    "title": "ANNE DE INGLESIDE",
+    "total_copies": 1,
+    "internal_registration": "1081",
+    "id": "6b420898-9105-4c55-9201-24cbe4ce8bbc",
+    "created_at": "2026-03-20T14:40:36.537174+00:00"
+  },
+  {
+    "title": "ANNE DE GREEN GABLES",
+    "total_copies": 1,
+    "internal_registration": "1098",
+    "id": "d698f734-f9ad-435e-939d-a14d70a5dc60",
+    "created_at": "2026-03-20T13:42:22.127561+00:00"
+  },
+  {
+    "title": "ENCONTRADA",
+    "total_copies": 1,
+    "internal_registration": "1936",
+    "id": "c6a5470f-0177-4778-bf76-01277b7f9af1",
+    "created_at": "2026-03-19T16:18:00.009423+00:00"
+  },
+  {
+    "title": "PERDIDA",
+    "total_copies": 1,
+    "internal_registration": "1935",
+    "id": "34949191-4828-443f-b2bc-0e6356c0b4ef",
+    "created_at": "2026-03-19T16:16:16.338762+00:00"
+  },
+  {
+    "title": "PERDIDA",
+    "total_copies": 1,
+    "internal_registration": "1935",
+    "id": "ff5e6b58-2b56-494a-916d-7cdbbe95df19",
+    "created_at": "2026-03-19T16:16:16.338754+00:00"
+  },
+  {
+    "title": "DESENCANTADA ",
+    "total_copies": 1,
+    "internal_registration": "1939",
+    "id": "0571c41f-401b-4173-a590-de3ea0949ada",
+    "created_at": "2026-03-19T16:04:05.219435+00:00"
+  },
+  {
+    "title": "ANNE GREEN GABLES",
+    "total_copies": 1,
+    "internal_registration": "1084",
+    "id": "55812bff-73d6-402c-ba08-ad6356eeb7a5",
+    "created_at": "2026-03-19T14:00:48.433218+00:00"
+  },
+  {
+    "title": "PEQUENO GRANDE HERÓI ",
+    "total_copies": 1,
+    "internal_registration": "1478456",
+    "id": "bab47ebf-d1ee-4fbe-99d3-4f451859280e",
+    "created_at": "2026-03-16T13:17:27.898276+00:00"
+  },
+  {
+    "title": "ENIGMA NA TELEVISÃO",
+    "total_copies": 1,
+    "internal_registration": "1457",
+    "id": "46bc6474-dc93-4e21-b0a9-dcd6955b4215",
+    "created_at": "2026-03-16T13:16:30.408987+00:00"
+  },
+  {
+    "title": "ENIGMA NA TELEVISÃO",
+    "total_copies": 1,
+    "internal_registration": "1457",
+    "id": "b69e4cdf-c027-41e8-a4bb-8d5dafe54cf5",
+    "created_at": "2026-03-16T13:16:29.765706+00:00"
+  },
+  {
+    "title": "HISTÓRIA DIVERTIDAS DA WAYSIDE SCHOOL",
+    "total_copies": 1,
+    "internal_registration": "12345456",
+    "id": "616c8003-0609-40a9-845b-ba0929237b61",
+    "created_at": "2026-03-16T13:15:23.918347+00:00"
+  },
+  {
+    "title": "DIÁRIO DE UMA GAROTA NADA POPULAR ",
+    "total_copies": 1,
+    "internal_registration": "234567",
+    "id": "75203281-4b3e-4e81-8b31-5e9dfe21f8f9",
+    "created_at": "2026-03-16T13:13:39.984098+00:00"
+  },
+  {
+    "title": "DIÁRIO DE UMA GAROTA NADA POPULAR",
+    "total_copies": 1,
+    "internal_registration": "123456",
+    "id": "8ca78b5a-4fc9-4294-a7a8-232fa94235c2",
+    "created_at": "2026-03-16T12:34:52.576372+00:00"
+  }
+]
