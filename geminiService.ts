@@ -905,18 +905,25 @@ export const fetchBookSynopsis = async (title: string, author: string) => {
  */
 export const fetchBookCover = async (title: string, author: string, isbn?: string) => {
   try {
-    const query = isbn ? `isbn:${isbn}` : `intitle:${title}+inauthor:${author}`;
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
-    const data = await response.json();
+    // 1. Tenta primeira busca (mais restrita por título/autor ou ISBN)
+    let query = isbn ? `isbn:${isbn}` : `intitle:${title}+inauthor:${author}`;
+    let response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+    let data = await response.json();
     
+    // 2. Fallback: Se não encontrar nada, tenta busca ampla (só texto livre)
+    if (!data.items || data.items.length === 0) {
+      query = `${title} ${author}`;
+      response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+      data = await response.json();
+    }
+
     if (data.items && data.items.length > 0) {
-      // Tenta encontrar uma imagem de alta qualidade ou a primeira disponível
       for (const item of data.items) {
-        const volumeInfo = item.volumeInfo;
-        const imageLinks = volumeInfo.imageLinks;
-        
+        const imageLinks = item.volumeInfo.imageLinks;
         if (imageLinks) {
-          return imageLinks.thumbnail || imageLinks.smallThumbnail || null;
+          const url = imageLinks.thumbnail || imageLinks.smallThumbnail || null;
+          // Força HTTPS para evitar bloqueio de conteúdo misto no Vercel
+          return url ? url.replace('http://', 'https://') : null;
         }
       }
     }
@@ -925,4 +932,5 @@ export const fetchBookCover = async (title: string, author: string, isbn?: strin
   }
   return null;
 };
+
 
