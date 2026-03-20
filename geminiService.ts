@@ -899,3 +899,30 @@ export const fetchBookSynopsis = async (title: string, author: string) => {
     return "Erro ao gerar sinopse via IA.";
   }
 };
+
+/**
+ * Busca a capa de um livro via Google Books API.
+ */
+export const fetchBookCover = async (title: string, author: string, isbn?: string) => {
+  try {
+    const query = isbn ? `isbn:${isbn}` : `intitle:${title}+inauthor:${author}`;
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    
+    if (data.items && data.items.length > 0) {
+      // Tenta encontrar uma imagem de alta qualidade ou a primeira disponível
+      for (const item of data.items) {
+        const volumeInfo = item.volumeInfo;
+        const imageLinks = volumeInfo.imageLinks;
+        
+        if (imageLinks) {
+          return imageLinks.thumbnail || imageLinks.smallThumbnail || null;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao buscar capa do livro:", error);
+  }
+  return null;
+};
+

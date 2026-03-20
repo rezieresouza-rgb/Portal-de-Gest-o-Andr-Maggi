@@ -37,7 +37,7 @@ import {
   Info
 } from 'lucide-react';
 import { Book, Reader, Loan, StaffMember } from '../types';
-import { suggestBooks, fetchBookSynopsis } from '../geminiService';
+import { suggestBooks, fetchBookSynopsis, fetchBookCover } from '../geminiService';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 
@@ -671,20 +671,34 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
   const handleGenerateSynopsis = async () => {
     if (!bookForm.title || !bookForm.author) {
-      alert("Informe o título e o autor para gerar a sinopse.");
+      alert("Informe o título e o autor para gerar os dados.");
       return;
     }
     setLoadingSynopsis(true);
     try {
-      const result = await fetchBookSynopsis(bookForm.title, bookForm.author);
-      setBookForm({ ...bookForm, synopsis: result || '' });
+      // Busca simultaneamente a sinopse e a capa
+      const [synopsisResult, coverResult] = await Promise.all([
+        fetchBookSynopsis(bookForm.title, bookForm.author),
+        fetchBookCover(bookForm.title, bookForm.author, bookForm.isbn)
+      ]);
+
+      setBookForm({ 
+        ...bookForm, 
+        synopsis: synopsisResult || '',
+        coverUrl: coverResult || bookForm.coverUrl // Mantém a atual se não encontrar
+      });
+
+      if (!coverResult) {
+        console.log("Capa não encontrada automaticamente.");
+      }
     } catch (error) {
-      console.error("Erro ao gerar sinopse:", error);
-      alert("Não foi possível gerar a sinopse automaticamente.");
+      console.error("Erro ao gerar dados da obra:", error);
+      alert("Não foi possível gerar todos os dados automaticamente.");
     } finally {
       setLoadingSynopsis(false);
     }
   };
+
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1289,7 +1303,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                           className="flex items-center gap-1.5 text-[10px] font-black text-indigo-600 uppercase hover:bg-indigo-50 px-2 py-1 rounded-lg transition-all disabled:opacity-50"
                         >
                           {loadingSynopsis ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                          Gerar via IA
+                          Gerar via IA (Incluso Capa)
                         </button>
                       </div>
                       <textarea 
