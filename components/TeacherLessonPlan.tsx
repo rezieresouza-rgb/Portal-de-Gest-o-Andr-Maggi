@@ -212,8 +212,11 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
               }))
             : prev.rows
         }));
+        setActiveId(null);
+        setViewMode('form');
         alert("Documento importado e processado com sucesso!");
       }
+
 
     } catch (err: any) {
       console.error("Erro na importação:", err);
