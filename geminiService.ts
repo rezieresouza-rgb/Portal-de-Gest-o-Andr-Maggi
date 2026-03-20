@@ -929,42 +929,58 @@ export const fetchBookSynopsis = async (title: string, author: string) => {
  */
 export const fetchBookCover = async (title: string, author: string, isbn?: string) => {
   try {
-    // Lista de tentativas de busca da mais específica para a mais genérica
-    const queries = [
+    // 1. TENTA GOOGLE BOOKS API (Vários níveis de busca)
+    const googleQueries = [
       isbn ? `isbn:${isbn}` : null,
       `intitle:${title} inauthor:${author}`,
       `${title} ${author}`,
       title 
     ].filter(Boolean);
 
-    for (const query of queries) {
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query!)}&maxResults=5`);
-      const data = await response.json();
-      
-      if (data.items && data.items.length > 0) {
-        for (const item of data.items) {
-          const imageLinks = item.volumeInfo.imageLinks;
-          if (imageLinks) {
-            // Tenta pegar a melhor qualidade disponível
-            const url = imageLinks.medium || 
-                        imageLinks.small || 
-                        imageLinks.thumbnail || 
-                        imageLinks.smallThumbnail || 
-                        null;
-
-            if (url) {
-              // Força HTTPS para compatibilidade com Vercel (SSL)
-              return url.replace('http://', 'https://');
+    for (const query of googleQueries) {
+      try {
+        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query!)}&maxResults=5`);
+        const data = await response.json();
+        
+        if (data.items && data.items.length > 0) {
+          for (const item of data.items) {
+            const imageLinks = item.volumeInfo.imageLinks;
+            if (imageLinks) {
+              const url = imageLinks.medium || imageLinks.small || imageLinks.thumbnail || imageLinks.smallThumbnail;
+              if (url) return url.replace('http://', 'https://');
             }
           }
         }
+      } catch (err) {
+        console.warn("Erro parcial na busca Google Books:", err);
       }
     }
+
+    // 2. TENTA OPEN LIBRARY API (Fallback se Google falhar)
+    try {
+      const olSearchQuery = isbn ? `isbn=${isbn}` : `title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}`;
+      const olResponse = await fetch(`https://openlibrary.org/search.json?${olSearchQuery}`);
+      const olData = await olResponse.json();
+
+      if (olData.docs && olData.docs.length > 0) {
+        for (const doc of olData.docs.slice(0, 3)) {
+          if (doc.cover_i) {
+            return `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+          }
+          if (doc.isbn && doc.isbn.length > 0) {
+            return `https://covers.openlibrary.org/b/isbn/${doc.isbn[0]}-M.jpg`;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Erro fallback OpenLibrary:", err);
+    }
   } catch (error) {
-    console.error("Erro ao buscar capa do livro:", error);
+    console.error("Erro geral ao buscar capa do livro:", error);
   }
   return null;
 };
+
 
 
 
