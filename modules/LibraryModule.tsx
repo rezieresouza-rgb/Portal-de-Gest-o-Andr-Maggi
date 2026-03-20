@@ -588,11 +588,51 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
       if (error) throw error;
 
+      if (error) throw error;
+ 
       await fetchData();
       alert("Empréstimo renovado com sucesso!");
     } catch (error) {
       console.error("Erro ao renovar empréstimo:", error);
       alert("Erro ao renovar empréstimo.");
+    }
+  };
+
+  const handleDeleteLoan = async (loan: Loan) => {
+    const isOverdue = loan.status === 'ATIVO' && loan.dueDate < stats.todayStr;
+    const confirmMsg = isOverdue 
+      ? `ATENÇÃO: Este empréstimo está ATRASADO.\n\nDeseja realmente excluir este registro? Isso não retornará o livro ao estoque automaticamente se você não marcar o livro como devolvido primeiro.`
+      : `Deseja realmente excluir este registro de circulação?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      // If active, we should probably ask if they want to return the book to stock first
+      if (loan.status === 'ATIVO') {
+        const restoreStock = window.confirm("Deseja retornar o livro ao estoque (disponível para novo empréstimo)?");
+        if (restoreStock) {
+          const book = books.find(b => b.id === loan.bookId);
+          if (book) {
+            await supabase
+              .from('library_books')
+              .update({ available_copies: book.availableCopies + 1 })
+              .eq('id', book.id);
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from('library_loans')
+        .delete()
+        .eq('id', loan.id);
+
+      if (error) throw error;
+
+      await fetchData();
+      alert("Registro de circulação excluído!");
+    } catch (error) {
+      console.error("Erro ao excluir empréstimo:", error);
+      alert("Erro ao excluir registro.");
     }
   };
 
@@ -664,31 +704,75 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   };
 
   const filteredPeople = useMemo(() => {
-    if (!peopleSearch || peopleSearch.length < 2) return [];
-    return globalSchoolPeople.filter(p =>
-      p.name.toLowerCase().includes(peopleSearch.toLowerCase()) ||
-      p.reg.includes(peopleSearch) ||
-      (p.sub && p.sub.toLowerCase().includes(peopleSearch.toLowerCase()))
-    ).slice(0, 10);
+    if (!peopleSearch) return [];
+    
+    const normalize = (s: string) => s.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/º/g, "o").replace(/ª/g, "a");
+
+    const greedyNormalize = (s: string) => s.toLowerCase()
+      .replace(/º|°|ª/g, "")
+      .replace(/ano/g, "")
+      .replace(/\s+/g, "");
+
+    const search = normalize(peopleSearch);
+    const gSearch = greedyNormalize(peopleSearch);
+    
+    return globalSchoolPeople.filter(p => {
+      const name = normalize(p.name);
+      const reg = String(p.reg).toLowerCase();
+      const sub = p.sub ? normalize(p.sub) : '';
+      const gSub = p.sub ? greedyNormalize(p.sub) : '';
+      
+      return name.includes(search) || 
+             reg.includes(search) || 
+             sub.includes(search) || 
+             (gSearch.length >= 2 && gSub.includes(gSearch));
+    }).slice(0, 100);
   }, [globalSchoolPeople, peopleSearch]);
 
   const filteredReadersForLoan = useMemo(() => {
-    if (!loanForm.readerSearch || loanForm.readerSearch.length < 2) return [];
+    if (!loanForm.readerSearch) return [];
     
-    const search = loanForm.readerSearch.toLowerCase();
+    const normalize = (s: string) => s.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/º/g, "o").replace(/ª/g, "a");
+
+    const greedyNormalize = (s: string) => s.toLowerCase()
+      .replace(/º|°|ª/g, "")
+      .replace(/ano/g, "")
+      .replace(/\s+/g, "");
+
+    const search = normalize(loanForm.readerSearch);
+    const gSearch = greedyNormalize(loanForm.readerSearch);
     
     // 1. Buscar nos já cadastrados
-    const existing = readers.filter(r => 
-      r.name.toLowerCase().includes(search) || 
-      r.registration.includes(search) ||
-      (r.class && r.class.toLowerCase().includes(search))
-    ).map(r => ({ ...r, source: 'library' as const }));
+    const existing = readers.filter(r => {
+      const name = normalize(r.name);
+      const reg = String(r.registration).toLowerCase();
+      const cls = r.class ? normalize(r.class) : '';
+      const gCls = r.class ? greedyNormalize(r.class) : '';
+      return name.includes(search) || 
+             reg.includes(search) || 
+             cls.includes(search) || 
+             (gSearch.length >= 2 && gCls.includes(gSearch));
+    }).map(r => ({ ...r, source: 'library' as const }));
 
     // 2. Buscar na base global (filtra duplicados)
-    const school = globalSchoolPeople.filter(p => 
-      (p.name.toLowerCase().includes(search) || p.reg.includes(search) || (p.sub && p.sub.toLowerCase().includes(search))) &&
-      !readers.some(r => r.registration === p.reg)
-    ).map(p => ({
+    const school = globalSchoolPeople.filter(p => {
+      const name = normalize(p.name);
+      const reg = String(p.reg).toLowerCase();
+      const sub = p.sub ? normalize(p.sub) : '';
+      const gSub = p.sub ? greedyNormalize(p.sub) : '';
+      
+      const match = name.includes(search) || 
+                    reg.includes(search) || 
+                    sub.includes(search) || 
+                    (gSearch.length >= 2 && gSub.includes(gSearch));
+      const isDuplicate = readers.some(r => r.registration === p.reg);
+      
+      return match && !isDuplicate;
+    }).map(p => ({
       id: p.id,
       name: p.name,
       registration: p.reg,
@@ -697,7 +781,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       source: 'school' as const
     }));
 
-    return [...existing, ...school].slice(0, 10);
+    return [...existing, ...school].slice(0, 100);
   }, [readers, globalSchoolPeople, loanForm.readerSearch]);
 
   const filteredBooksForLoan = useMemo(() => {
@@ -905,7 +989,27 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {readers.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(reader => (
+              {readers.filter(r => {
+                const normalize = (s: string) => s.toLowerCase()
+                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                  .replace(/º/g, "o").replace(/ª/g, "a");
+                const greedyNormalize = (s: string) => s.toLowerCase()
+                  .replace(/º|°|ª/g, "")
+                  .replace(/ano/g, "")
+                  .replace(/\s+/g, "");
+
+                const search = normalize(searchTerm);
+                const gSearch = greedyNormalize(searchTerm);
+                const name = normalize(r.name);
+                const reg = String(r.registration).toLowerCase();
+                const cls = r.class ? normalize(r.class) : '';
+                const gCls = r.class ? greedyNormalize(r.class) : '';
+
+                return name.includes(search) || 
+                       reg.includes(search) || 
+                       cls.includes(search) || 
+                       (gSearch.length >= 2 && gCls.includes(gSearch));
+              }).map(reader => (
                 <div key={reader.id} className="bg-white p-6 rounded-3xl border border-gray-100 flex flex-col group hover:border-indigo-300 hover:shadow-lg transition-all relative">
                   <button onClick={() => handleDeleteReader(reader.id)} className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
                   <div className="flex items-center gap-4 mb-4">
@@ -974,9 +1078,13 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                           <div className="flex items-center justify-end gap-2">
                             <button onClick={() => handleReturn(loan)} className="px-5 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">Confirmar Recebimento</button>
                             <button onClick={() => handleRenew(loan)} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[9px] font-black uppercase border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">Renovar (+15 dias)</button>
+                            <button onClick={() => handleDeleteLoan(loan)} title="Excluir Registro" className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-end"><span className="text-[9px] font-black text-emerald-600 uppercase flex items-center gap-1"><CheckCircle2 size={12} /> Devolvido</span><p className="text-[8px] text-gray-400 uppercase">{new Date(loan.returnDate!).toLocaleDateString('pt-BR')}</p></div>
+                          <div className="flex items-center justify-end gap-4">
+                            <div className="flex flex-col items-end"><span className="text-[9px] font-black text-emerald-600 uppercase flex items-center gap-1"><CheckCircle2 size={12} /> Devolvido</span><p className="text-[8px] text-gray-400 uppercase">{new Date(loan.returnDate!).toLocaleDateString('pt-BR')}</p></div>
+                            <button onClick={() => handleDeleteLoan(loan)} title="Excluir Registro" className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
+                          </div>
                         )}
                       </td>
                     </tr>

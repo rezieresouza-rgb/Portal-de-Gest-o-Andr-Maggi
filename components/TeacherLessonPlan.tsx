@@ -684,15 +684,21 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500" size={18} />
                       <input
                         type="text"
-                        placeholder={dbSkills.length > 0 ? "Digite o código ou palavra-chave da habilidade..." : "Selecione disciplina/turma primeiro..."}
+                        placeholder={
+                          (!form.subject || (!form.className && form.classNames.length === 0))
+                            ? "Selecione disciplina e turma primeiro..."
+                            : dbSkills.length === 0
+                              ? "Nenhuma habilidade no banco para esta turma/disciplina."
+                              : "Digite o código ou palavra (ou clique para ver todas)..."
+                        }
                         value={rowSkillSearch[idx] || ''}
                         onChange={e => setRowSkillSearch(prev => ({ ...prev, [idx]: e.target.value }))}
                         onFocus={() => setFocusedRowIdx(idx)}
                         onBlur={() => setTimeout(() => setFocusedRowIdx(null), 200)}
-                        disabled={dbSkills.length === 0}
+                        disabled={!form.subject || (!form.className && form.classNames.length === 0) || dbSkills.length === 0}
                         className="w-full pl-11 pr-4 py-4 bg-amber-50/40 border-2 border-amber-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 transition-all text-gray-900 placeholder:text-gray-400 shadow-sm"
                       />
-                      {focusedRowIdx === idx && (rowSkillSearch[idx] || '').trim().length > 0 && (
+                      {focusedRowIdx === idx && dbSkills.length > 0 && (
                         <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border-2 border-amber-100 shadow-2xl rounded-2xl max-h-80 overflow-y-auto custom-scrollbar">
                           {dbSkills
                             .filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()))
