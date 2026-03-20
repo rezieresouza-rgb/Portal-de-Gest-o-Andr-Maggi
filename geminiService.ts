@@ -981,6 +981,83 @@ export const fetchBookCover = async (title: string, author: string, isbn?: strin
   return null;
 };
 
+/**
+ * Recebe um texto bruto de um documento (PDF, Word, Excel) e tenta estruturar 
+ * em um JSON compatível com o Roteiro Pedagógico.
+ */
+export const parseLessonPlanWithAI = async (rawText: string) => {
+  const ai = getAIClient();
+  if (!ai) return null;
+
+  const prompt = `
+    Você é um assistente pedagógico especializado. Recebi o texto bruto de um planejamento/roteiro de aula extraído de um arquivo.
+    Sua tarefa é extrair as informações e organizar em um JSON estruturado seguindo EXATAMENTE este formato:
+
+    {
+      "bimestre": "1º BIMESTRE", // ou 2º, 3º, 4º
+      "subject": "DISCIPLINA", // Ex: MATEMÁTICA, HISTÓRIA
+      "className": "TURMA", // Ex: 1º ANO A
+      "weeklyClasses": "6", // Número de aulas semanais se houver
+      "themes": "TEMAS GERAIS",
+      "observations": "OBSERVAÇÕES",
+      "rows": [
+        {
+          "weekOrDate": "Período ou Data",
+          "theme": "Tema da Aula",
+          "materialPage": "Página do Material",
+          "skillsText": "Código ou descrição da Habilidade (Ex: EF01MA01)",
+          "content": "Conteúdo",
+          "activities": "Atividades",
+          "methodology": "Metodologia",
+          "duration": "Duração em aulas",
+          "evaluation": "Avaliação"
+        }
+      ]
+    }
+
+    REGRAS CRÍTICAS:
+    1. Responda APENAS o JSON puro, sem markdown, sem explicações.
+    2. Se não encontrar uma informação, deixe a string vazia "".
+    3. Tente identificar o máximo de linhas (rows) possível baseando-se na estrutura do texto.
+    4. Idioma: Português do Brasil.
+
+    TEXTO BRUTO PARA PROCESSAR:
+    ---
+    ${rawText.substring(0, 15000)}
+    ---
+  `;
+
+  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro'];
+  let lastError = '';
+
+  for (const modelName of models) {
+    try {
+      const result = await ai.models.generateContent({
+        model: modelName,
+        contents: { parts: [{ text: prompt }] }
+      });
+
+      const text = result.text;
+      if (!text) continue;
+
+      // Limpa possíveis marcações de markdown do JSON
+      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (e: any) {
+      console.warn(`parseLessonPlanWithAI - Falha no modelo ${modelName}:`, e.message);
+      lastError = e.message;
+      if (lastError.includes('404') || lastError.includes('not found') || lastError.includes('supported')) {
+        continue;
+      }
+      break;
+    }
+  }
+
+  throw new Error(`Falha ao processar roteiro com IA: ${lastError}`);
+};
+
+
+
 
 
 

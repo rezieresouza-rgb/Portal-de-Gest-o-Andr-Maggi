@@ -30,6 +30,15 @@ import { LessonPlan, LessonPlanRow, PedagogicalSkill, User as UserType, Book } f
 import { fetchBNCCSkillsFromDB } from '../geminiService';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
+import * as XLSX from 'xlsx';
+import * as pdfjs from 'pdfjs-dist';
+import mammoth from 'mammoth';
+
+// Configuração do worker do PDF.js para Vite
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+import { parseLessonPlanWithAI } from '../geminiService';
+
 
 const CURRICULAR_COMPONENTS = [
   "LÍNGUA PORTUGUESA", "MATEMÁTICA", "HISTÓRIA", "GEOGRAFIA", "CIÊNCIAS",
@@ -78,7 +87,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
   const [libraryBooks, setLibraryBooks] = useState<Book[]>([]);
   const [librarySearch, setLibrarySearch] = useState('');
   const [isFetchingLibrary, setIsFetchingLibrary] = useState(false);
-
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Fetch Library Books
   const fetchLibraryCatalog = async () => {
     setIsFetchingLibrary(true);
@@ -136,6 +146,84 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     navigator.clipboard.writeText(textToCopy);
     alert(`Livro copiado! Agora aperte Ctrl+V no campo de atividades do roteiro.`);
   };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      let rawText = '';
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+
+      if (fileExt === 'pdf') {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          fullText += textContent.items.map((item: any) => item.str).join(' ') + '\n';
+        }
+        rawText = fullText;
+      } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer);
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        rawText = XLSX.utils.sheet_to_csv(worksheet);
+      } else if (fileExt === 'docx') {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        rawText = result.value;
+      } else if (fileExt === 'txt') {
+        rawText = await file.text();
+      } else {
+        alert("Formato de arquivo não suportado. Use PDF, DOCX ou XLSX.");
+        setIsImporting(false);
+        return;
+      }
+
+      if (!rawText.trim()) {
+        throw new Error("Não foi possível extrair texto do arquivo.");
+      }
+
+      const structuredData = await parseLessonPlanWithAI(rawText);
+      if (structuredData) {
+        setForm(prev => ({
+          ...prev,
+          bimestre: structuredData.bimestre || prev.bimestre,
+          subject: structuredData.subject || prev.subject,
+          className: structuredData.className || prev.className,
+          weeklyClasses: structuredData.weeklyClasses || prev.weeklyClasses,
+          themes: structuredData.themes || prev.themes,
+          observations: structuredData.observations || prev.observations,
+          rows: structuredData.rows && structuredData.rows.length > 0 
+            ? structuredData.rows.map((r: any) => ({
+                weekOrDate: r.weekOrDate || '',
+                theme: r.theme || '',
+                materialPage: r.materialPage || '',
+                skillsText: r.skillsText || '',
+                content: r.content || '',
+                activities: r.activities || '',
+                methodology: r.methodology || '',
+                duration: r.duration || '',
+                evaluation: r.evaluation || ''
+              }))
+            : prev.rows
+        }));
+        alert("Documento importado e processado com sucesso!");
+      }
+
+    } catch (err: any) {
+      console.error("Erro na importação:", err);
+      alert(`Falha ao importar documento: ${err.message || 'Erro desconhecido'}`);
+    } finally {
+      setIsImporting(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
 
   const fetchPlans = async () => {
     setLoading(true);
@@ -425,12 +513,31 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
             <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">Meus Roteiros</h2>
             <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">Acompanhamento Pedagógico (6º ao 9º Ano)</p>
           </div>
-          <button
-            onClick={handleNewPlan}
-            className="px-8 py-4 bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-600/20 hover:bg-amber-700 transition-all flex items-center gap-2"
-          >
-            <Plus size={18} /> Novo Roteiro
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleNewPlan}
+              className="px-8 py-4 bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-600/20 hover:bg-amber-700 transition-all flex items-center gap-2"
+            >
+              <Plus size={18} /> Novo Roteiro
+            </button>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              {isImporting ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+              {isImporting ? 'Importando...' : 'Importar Documento'}
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleImportFile} 
+              className="hidden" 
+              accept=".pdf,.docx,.xlsx,.xls,.txt"
+            />
+          </div>
+
         </div>
 
         {loading ? (
