@@ -41,6 +41,15 @@ import { suggestBooks, fetchBookSynopsis, fetchBookCover } from '../geminiServic
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 
+const formatDate = (dateString?: string) => {
+  if (!dateString) return '-';
+  // Evita problemas de fuso horário ao não usar 'new Date()' para parsear strings YYYY-MM-DD
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return dateString;
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
+};
+
 const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai'>('dashboard');
 
@@ -183,7 +192,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     estante: '', 
     prateleira: '',
     internalRegistration: '',
-    registrationDate: new Date().toISOString().split('T')[0],
+    registrationDate: new Date().toLocaleDateString('en-CA'),
     bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
     volumeNumber: '',
     subtitle: '',
@@ -263,8 +272,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
 
   const stats = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const expiringSoon = loans.filter(l => l.status === 'ATIVO' && l.dueDate >= todayStr && l.dueDate <= new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0]);
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const expiringSoon = loans.filter(l => l.status === 'ATIVO' && l.dueDate >= todayStr && l.dueDate <= new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-CA'));
     const delayed = loans.filter(l => l.status === 'ATIVO' && l.dueDate < todayStr);
 
     return {
@@ -315,7 +324,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       estante: '', 
       prateleira: '',
       internalRegistration: '',
-      registrationDate: new Date().toISOString().split('T')[0],
+      registrationDate: new Date().toLocaleDateString('en-CA'),
       bookType: 'AVULSO' as 'AVULSO' | 'COLEÇÃO',
       volumeNumber: '',
       subtitle: '',
@@ -341,7 +350,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       estante, 
       prateleira,
       internalRegistration: book.internalRegistration || '',
-      registrationDate: book.registrationDate || new Date().toISOString().split('T')[0],
+      registrationDate: book.registrationDate || new Date().toLocaleDateString('en-CA'),
       bookType: book.bookType || 'AVULSO',
       volumeNumber: book.volumeNumber || '',
       subtitle: book.subtitle || '',
@@ -517,7 +526,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (book.availableCopies <= 0) return alert('Não há exemplares disponíveis para esta obra.');
 
     // OVERDUE VALIDATION
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA');
     const hasDelayed = loans.some(l => l.readerId === reader.id && l.status === 'ATIVO' && l.dueDate < todayStr);
     if (hasDelayed) {
       alert(`Empréstimo bloqueado! O leitor ${reader.name} possui obras em atraso.`);
@@ -529,7 +538,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       const { error: loanError } = await supabase.from('library_loans').insert([{
         book_id: book.id,
         reader_id: reader.id,
-        loan_date: new Date().toISOString().split('T')[0],
+        loan_date: new Date().toLocaleDateString('en-CA'),
         due_date: loanForm.dueDate,
         status: 'ATIVO'
       }]);
@@ -569,7 +578,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         .from('library_loans')
         .update({
           status: 'DEVOLVIDO',
-          return_date: new Date().toISOString().split('T')[0]
+          return_date: new Date().toLocaleDateString('en-CA')
         })
         .eq('id', loan.id);
       if (loanError) throw loanError;
@@ -597,7 +606,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (!window.confirm("Confirmar renovação do livro por mais 15 dias?")) return;
     try {
       const currentDueDate = new Date(loan.dueDate);
-      const newDueDate = new Date(currentDueDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const newDueDate = new Date(currentDueDate.getTime() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA');
 
       const { error } = await supabase
         .from('library_loans')
@@ -851,7 +860,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       <div className="min-w-0">
                         <p className="text-[10px] font-black text-red-900 uppercase truncate">{l.bookTitle}</p>
                         <p className="text-[8px] text-red-400 font-bold uppercase truncate">{l.readerName}</p>
-                        <p className="text-[8px] text-red-600 font-black uppercase mt-1">Vencido em: {new Date(l.dueDate).toLocaleDateString('pt-BR')}</p>
+                        <p className="text-[8px] text-red-600 font-black uppercase mt-1">Vencido em: {formatDate(l.dueDate)}</p>
                       </div>
                     </div>
                   ))}
@@ -1103,8 +1112,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         <p className="text-[9px] text-gray-400 font-bold uppercase">ID: {loan.readerId}</p>
                       </td>
                       <td className="px-8 py-6"><p className="font-bold text-indigo-600 uppercase leading-tight">{loan.bookTitle}</p></td>
-                      <td className="px-8 py-6 text-center text-[10px] font-black text-gray-400">{new Date(loan.loanDate).toLocaleDateString('pt-BR')}</td>
-                      <td className={`px-8 py-6 text-center font-black text-[10px] ${loan.status === 'ATIVO' && loan.dueDate < stats.todayStr ? 'text-red-600 animate-pulse' : 'text-indigo-600'}`}>{new Date(loan.dueDate).toLocaleDateString('pt-BR')}</td>
+                      <td className="px-8 py-6 text-center text-[10px] font-black text-gray-400">{formatDate(loan.loanDate)}</td>
+                      <td className={`px-8 py-6 text-center font-black text-[10px] ${loan.status === 'ATIVO' && loan.dueDate < stats.todayStr ? 'text-red-600 animate-pulse' : 'text-indigo-600'}`}>{formatDate(loan.dueDate)}</td>
                       <td className="px-8 py-6 text-right">
                         {loan.status === 'ATIVO' ? (
                           <div className="flex items-center justify-end gap-2">
@@ -1114,7 +1123,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                           </div>
                         ) : (
                           <div className="flex items-center justify-end gap-4">
-                            <div className="flex flex-col items-end"><span className="text-[9px] font-black text-emerald-600 uppercase flex items-center gap-1"><CheckCircle2 size={12} /> Devolvido</span><p className="text-[8px] text-gray-400 uppercase">{new Date(loan.returnDate!).toLocaleDateString('pt-BR')}</p></div>
+                            <div className="flex flex-col items-end"><span className="text-[9px] font-black text-emerald-600 uppercase flex items-center gap-1"><CheckCircle2 size={12} /> Devolvido</span><p className="text-[8px] text-gray-400 uppercase">{formatDate(loan.returnDate!)}</p></div>
                             <button onClick={() => handleDeleteLoan(loan)} title="Excluir Registro" className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                           </div>
                         )}
