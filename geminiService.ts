@@ -13,8 +13,9 @@ const getAIClient = () => {
     console.warn("Gemini API Key not found! Features utilizing AI will fail.");
     return null;
   }
-  return new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
+  return new GoogleGenAI({ apiKey, apiVersion: 'v1' });
 };
+
 
 
 // Retry helper for 429 errors
@@ -45,7 +46,7 @@ export const extractDetailedStudentList = async (base64Data: string, mimeType: s
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       // FIX: Updated contents to use { parts: [...] } structure for standard multi-part inputs
       contents: {
         parts: [
@@ -165,7 +166,7 @@ export const consolidateStudentData = async (files: { base64: string; mimeType: 
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: promptParts
       },
@@ -215,7 +216,7 @@ export const generateOccurrenceAta = async (occurrenceData: any) => {
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: `Você é um assistente jurídico e pedagógico de uma secretaria escolar. 
       Com base nos dados da ocorrência abaixo, gere uma Ata de Ocorrência Escolar formal, imparcial e padronizada.
       
@@ -286,7 +287,7 @@ export const analyzeContractHealth = async (contractData: any) => {
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: `Analise o seguinte contrato de merenda escolar e forneça um resumo de saúde (riscos, prazos, custo-benefício): ${JSON.stringify(contractData)}`,
       config: {
         temperature: 0.7,
@@ -307,7 +308,7 @@ export const suggestMenu = async (inventory: any) => {
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: `Com base no estoque atual de merenda escolar: ${JSON.stringify(inventory)}, sugira um cardápio semanal nutricionalmente equilibrado focando em reduzir desperdício de itens próximos do vencimento ou em excesso. Responda em Português do Brasil.`,
     }));
     return response.text;
@@ -324,7 +325,7 @@ export const fetchPedagogicalSkills = async (subject: string, className: string)
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: `Você é um consultor pedagógico da SEDUC-MT especialista em BNCC e DRC-MT.
       Forneça a LISTA COMPLETA e EXAUSTIVA das habilidades essenciais para o componente "${subject}" na turma "${className}".
       Inclua tanto as habilidades da base nacional (BNCC) quanto os acréscimos regionais do Mato Grosso (DRC-MT).
@@ -378,7 +379,7 @@ export const extractInvoiceInfo = async (base64Data: string, mimeType: string) =
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
@@ -421,7 +422,7 @@ export const extractAssessmentResults = async (base64Data: string, mimeType: str
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
@@ -470,7 +471,7 @@ export const extractStudentInfo = async (base64Data: string, mimeType: string) =
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
@@ -543,7 +544,7 @@ export const generateClassSchedule = async (classInfo: any, teachers: any[], val
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: `Você é um coordenador pedagógico especialista em montagem de grades horárias (Cronos).
       
       Tarefa: Criar uma grade horária semanal para a turma ${classInfo.name} (${classInfo.shift}).
@@ -600,7 +601,7 @@ export const generatePedagogicalIntervention = async (assessmentData: any) => {
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: `Você é um especialista em educação e análise de dados pedagógicos (CAED/Sistema Estruturado).
       
       Analise os resultados desta avaliação externa:
@@ -652,7 +653,7 @@ export const extractStaffInfo = async (base64Data: string, mimeType: string) => 
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
@@ -717,7 +718,7 @@ export const extractContractInfo = async (base64Data: string, mimeType: string) 
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
@@ -776,7 +777,7 @@ export const extractSkillsFromPDF = async (base64Data: string, mimeType: string,
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
