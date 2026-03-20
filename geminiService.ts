@@ -13,8 +13,9 @@ const getAIClient = () => {
     console.warn("Gemini API Key not found! Features utilizing AI will fail.");
     return null;
   }
-  return new GoogleGenAI({ apiKey, apiVersion: 'v1' });
+  return new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
 };
+
 
 
 
@@ -893,19 +894,35 @@ export const fetchBNCCSkillsFromDB = async (subject: string, className: string):
 export const fetchBookSynopsis = async (title: string, author: string) => {
   const ai = getAIClient();
   if (!ai) return "Erro: Chave API do Gemini não configurada no ambiente (Vercel). Verifique as variáveis de sistema.";
-  try {
-    const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: {
-        parts: [{ text: `Você é um bibliotecário especialista. Forneça uma sinopse concisa, atraente e profissional para o livro "${title}" do autor "${author}". Se não encontrar informações específicas sobre este livro exato, tente gerar uma descrição baseada no título e tema provável, ou retorne uma mensagem cordial dizendo que a sinopse não foi encontrada. Responda em Português do Brasil.` }]
-      },
-    }));
-    return response.text || "Sinopse não disponível no momento.";
-  } catch (e: any) {
-    console.error("Error fetching book synopsis", e);
-    return `Erro na IA: ${e.message || 'Falha na conexão'}`;
+  
+  // Lista de modelos para tentar (do mais recente para o mais estável)
+  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro'];
+
+  let lastError = '';
+
+  for (const modelName of models) {
+    try {
+      const response = await runWithRetry(() => ai.models.generateContent({
+        model: modelName,
+        contents: {
+          parts: [{ text: `Você é um bibliotecário especialista. Forneça uma sinopse concisa, atraente e profissional para o livro "${title}" do autor "${author}". Se não encontrar informações específicas sobre este livro exato, tente gerar uma descrição baseada no título e tema provável, ou retorne uma mensagem cordial dizendo que a sinopse não foi encontrada. Responda em Português do Brasil.` }]
+        },
+      }));
+      return response.text || "Sinopse não disponível no momento.";
+    } catch (e: any) {
+      console.warn(`Falha ao usar modelo ${modelName}:`, e.message);
+      lastError = e.message || 'Erro desconhecido';
+      // Continua para o próximo modelo se for erro de modelo não encontrado (404)
+      if (lastError.includes('404') || lastError.includes('not found') || lastError.includes('supported')) {
+        continue;
+      }
+      break; // Se for outro erro (ex: 401, 429), para e retorna
+    }
   }
+
+  return `Erro na IA: Nenhum modelo disponível funcionou. Último erro: ${lastError}`;
 };
+
 
 /**
  * Busca a capa de um livro via Google Books API.
