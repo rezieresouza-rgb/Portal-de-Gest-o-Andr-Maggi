@@ -9,9 +9,13 @@ const getAIClient = () => {
 
   const apiKey = metaEnv.VITE_GEMINI_API_KEY || processEnv.NEXT_PUBLIC_GEMINI_API_KEY || processEnv.API_KEY || '';
 
-  if (!apiKey) console.warn("Gemini API Key not found! Features utilizing AI will fail.");
+  if (!apiKey) {
+    console.warn("Gemini API Key not found! Features utilizing AI will fail.");
+    return null;
+  }
   return new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
 };
+
 
 // Retry helper for 429 errors
 const runWithRetry = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
@@ -260,6 +264,7 @@ export const generateOccurrenceAta = async (occurrenceData: any) => {
  */
 export const suggestBooks = async (readerInterests: string) => {
   const ai = getAIClient();
+  if (!ai) return "Erro: Chave API do Gemini não configurada.";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
       model: 'gemini-1.5-flash',
@@ -886,6 +891,7 @@ export const fetchBNCCSkillsFromDB = async (subject: string, className: string):
  */
 export const fetchBookSynopsis = async (title: string, author: string) => {
   const ai = getAIClient();
+  if (!ai) return "Erro: Chave API do Gemini não configurada no ambiente (Vercel). Verifique as variáveis de sistema.";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
       model: 'gemini-1.5-flash',
@@ -894,9 +900,9 @@ export const fetchBookSynopsis = async (title: string, author: string) => {
       },
     }));
     return response.text || "Sinopse não disponível no momento.";
-  } catch (e) {
+  } catch (e: any) {
     console.error("Error fetching book synopsis", e);
-    return "Erro ao gerar sinopse via IA.";
+    return `Erro na IA: ${e.message || 'Falha na conexão'}`;
   }
 };
 
