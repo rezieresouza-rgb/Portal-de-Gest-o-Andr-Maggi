@@ -701,14 +701,20 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                       {focusedRowIdx === idx && dbSkills.length > 0 && (
                         <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border-2 border-amber-100 shadow-2xl rounded-2xl max-h-80 overflow-y-auto custom-scrollbar">
                           {dbSkills
-                            .filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()))
+                            .filter(s => {
+                              const search = (rowSkillSearch[idx] || '').toLowerCase();
+                              const code = (s.code || '').toLowerCase();
+                              const desc = (s.description || '').toLowerCase();
+                              return code.includes(search) || desc.includes(search);
+                            })
                             .map(s => {
                               const pureDesc = s.description;
                               const ko = s.knowledgeObject || null;
 
                               return (
                                 <div
-                                  key={s.code}
+                                  key={s.code || `skill-${Math.random()}`}
+
                                   onClick={() => appendSkillToRow(idx, s)}
                                   className="p-5 hover:bg-amber-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors group"
                                 >
@@ -726,7 +732,12 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                                 </div>
                               );
                             })}
-                          {dbSkills.filter(s => s.code.toLowerCase().includes(rowSkillSearch[idx].toLowerCase()) || s.description.toLowerCase().includes(rowSkillSearch[idx].toLowerCase())).length === 0 && (
+                          {dbSkills.filter(s => {
+                            const search = (rowSkillSearch[idx] || '').toLowerCase();
+                            const code = (s.code || '').toLowerCase();
+                            const desc = (s.description || '').toLowerCase();
+                            return code.includes(search) || desc.includes(search);
+                          }).length === 0 && (
                             <div className="p-8 text-center bg-gray-50/50">
                               <p className="text-sm font-bold text-gray-500">Nenhuma habilidade encontrada.</p>
                               <p className="text-xs text-gray-400 mt-1">Tente usar outros termos de busca.</p>
