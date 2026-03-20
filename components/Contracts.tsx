@@ -1647,6 +1647,7 @@ const Contracts: React.FC = () => {
                       <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
                         <th className="px-6 py-4">Nº da Guia</th>
                         <th className="px-6 py-4">Data de Emissão</th>
+                        <th className="px-6 py-4">Data do Recebimento</th>
                         <th className="px-6 py-4 text-right">Valor Total</th>
                         <th className="px-6 py-4 text-right">Ações</th>
                       </tr>
@@ -1659,6 +1660,9 @@ const Contracts: React.FC = () => {
                           </td>
                           <td className="px-6 py-5">
                             <p className="font-bold text-gray-500 text-xs">{new Date(guide.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-gray-500 text-xs">{guide.issue_date ? new Date(guide.issue_date + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</p>
                           </td>
                           <td className="px-6 py-5 text-right font-black text-emerald-700 text-xs">
                             R$ {guide.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
