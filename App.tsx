@@ -98,29 +98,36 @@ const App: React.FC = () => {
     localStorage.setItem('active_portal_module', activeModule);
   }, [activeModule]);
 
-  // Sincronização forçada dos alunos do 6º ANO A no localStorage
+  // Sincronização forçada dos alunos do 6º ANO A e B no localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('secretariat_detailed_students_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          const filtered = parsed.filter(s => s.Turma !== '6º ANO A');
+          // Remover os antigos A e B
+          const filtered = parsed.filter(s => s.Turma !== '6º ANO A' && s.Turma !== '6º ANO B');
+          
+          // Novos alunos do A e B
           const novos6A = INITIAL_STUDENTS.filter(s => s.Turma === '6º ANO A');
+          const novos6B = INITIAL_STUDENTS.filter(s => s.Turma === '6º ANO B');
           
           const current6A = parsed.filter(s => s.Turma === '6º ANO A');
-          // Verifica se precisa atualizar (tamanho diferente ou códigos diferentes)
-          const needsUpdate = current6A.length !== novos6A.length || current6A.some(c => !novos6A.find(n => n.CodigoAluno === c.CodigoAluno));
+          const current6B = parsed.filter(s => s.Turma === '6º ANO B');
           
-          if (needsUpdate) {
-            const updated = [...filtered, ...novos6A];
+          // Verifica se precisa atualizar
+          const needsUpdateA = current6A.length !== novos6A.length || current6A.some(c => !novos6A.find(n => n.CodigoAluno === c.CodigoAluno));
+          const needsUpdateB = current6B.length !== novos6B.length || current6B.some(c => !novos6B.find(n => n.CodigoAluno === c.CodigoAluno));
+          
+          if (needsUpdateA || needsUpdateB) {
+            const updated = [...filtered, ...novos6A, ...novos6B];
             localStorage.setItem('secretariat_detailed_students_v1', JSON.stringify(updated));
-            console.log("Alunos do 6º ANO A sincronizados com sucesso no localStorage.");
+            console.log("Alunos do 6º ANO A e B sincronizados com sucesso no localStorage.");
           }
         }
       }
     } catch (e) {
-      console.error("Erro ao sincronizar alunos do 6º Ano A:", e);
+      console.error("Erro ao sincronizar alunos:", e);
     }
   }, []);
 
