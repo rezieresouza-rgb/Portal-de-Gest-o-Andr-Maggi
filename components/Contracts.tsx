@@ -246,6 +246,39 @@ const Contracts: React.FC = () => {
   const [showExtractDateModal, setShowExtractDateModal] = useState(false);
   const [extractStartDate, setExtractStartDate] = useState("");
   const [extractEndDate, setExtractEndDate] = useState("");
+  const [paymentModal, setPaymentModal] = useState<{ statementId: string, paymentDate: string, invoiceNumber: string } | null>(null);
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
+
+  const handleOpenPaymentModal = (statement: any) => {
+    setPaymentModal({
+      statementId: statement.id,
+      paymentDate: statement.payment_date ? statement.payment_date : getLocalDateString(),
+      invoiceNumber: statement.invoice_number || ''
+    });
+  };
+
+  const handleSavePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentModal) return;
+    setIsSavingPayment(true);
+    try {
+      const { error } = await supabase
+        .from('consumption_statements')
+        .update({
+          payment_date: paymentModal.paymentDate || null,
+          invoice_number: paymentModal.invoiceNumber || null
+        })
+        .eq('id', paymentModal.statementId);
+
+      if (error) throw error;
+      setPaymentModal(null);
+      if (selectedContractId) fetchStatements(selectedContractId);
+    } catch (error: any) {
+      alert("Erro ao registrar pagamento: " + error.message);
+    } finally {
+      setIsSavingPayment(false);
+    }
+  };
 
   useEffect(() => {
     supabase.from('suppliers').select('id, name, category').then(({ data }) => {
@@ -1457,20 +1490,29 @@ const Contracts: React.FC = () => {
                   </div>
 
                   {/* Summary PDF */}
-                  <div className="grid grid-cols-2 gap-8 mb-8">
-                    <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className={`grid ${generatedStatementPdf.statement.payment_date ? 'grid-cols-3' : 'grid-cols-2'} gap-6 mb-8`}>
+                    <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-center">
                       <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Contratada</p>
-                      <p className="text-sm font-black text-gray-900 uppercase">{selectedContract.supplierName}</p>
+                      <p className="text-sm font-black text-gray-900 uppercase truncate" title={selectedContract.supplierName}>{selectedContract.supplierName}</p>
                       <p className="text-[9px] font-black text-gray-500 uppercase mt-1">Contrato: {selectedContract.number}</p>
                     </div>
-                    <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center">
-                      <div>
-                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Consumo no Período</p>
-                        <p className="text-lg font-black text-indigo-700">R$ {generatedStatementPdf.statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    
+                    {generatedStatementPdf.statement.payment_date && (
+                    <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
+                      <p className="text-[8px] font-black text-emerald-500 uppercase mb-1">Dados de Pagamento</p>
+                      <p className="text-sm font-black text-emerald-700 uppercase">NF: {generatedStatementPdf.statement.invoice_number}</p>
+                      <p className="text-[9px] font-black text-emerald-600 uppercase mt-1">Pago em: {new Date(generatedStatementPdf.statement.payment_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    )}
+
+                    <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex flex-col justify-center">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-[8px] font-black text-indigo-400 uppercase">Consumo no Período</p>
+                        <p className="text-[8px] font-black text-indigo-400 uppercase">Período Apurado</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[8px] font-black text-indigo-400 uppercase mb-1">Período</p>
-                        <p className="text-[10px] font-black text-indigo-700 uppercase">{new Date(generatedStatementPdf.statement.period_start + 'T12:00:00').toLocaleDateString('pt-BR')} até {new Date(generatedStatementPdf.statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                      <div className="flex justify-between items-end">
+                        <p className="text-lg font-black text-indigo-700 leading-none">R$ {generatedStatementPdf.statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p className="text-[10px] font-black text-indigo-700 uppercase leading-none">{new Date(generatedStatementPdf.statement.period_start + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(generatedStatementPdf.statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                       </div>
                     </div>
                   </div>
@@ -2064,6 +2106,7 @@ const Contracts: React.FC = () => {
                       <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
                         <th className="px-6 py-4">Nº do Extrato</th>
                         <th className="px-6 py-4">Período</th>
+                        <th className="px-6 py-4 text-center">Pagamento</th>
                         <th className="px-6 py-4 text-right">Valor Total</th>
                         <th className="px-6 py-4 text-right">Ações</th>
                       </tr>
@@ -2078,17 +2121,36 @@ const Contracts: React.FC = () => {
                           <td className="px-6 py-5">
                             <p className="font-bold text-gray-500 text-xs uppercase">{new Date(statement.period_start + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                           </td>
+                          <td className="px-6 py-5">
+                            {statement.payment_date ? (
+                              <div>
+                                <p className="font-bold text-emerald-600 text-[10px] uppercase">Pago: {new Date(statement.payment_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                                <p className="font-black text-gray-900 text-xs mt-0.5">NF: {statement.invoice_number}</p>
+                              </div>
+                            ) : (
+                              <p className="font-bold text-red-500 text-[10px] uppercase bg-red-50 inline-block px-2 py-1 rounded-md">Pendente</p>
+                            )}
+                          </td>
                           <td className="px-6 py-5 text-right font-black text-indigo-700 text-xs">
                             R$ {statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="px-6 py-5 text-right">
-                            <button
-                              onClick={() => handleViewPastStatement(statement)}
-                              className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-600 hover:text-white transition-all inline-flex items-center gap-2"
-                              title="Visualizar Extrato"
-                            >
-                              <FileSearch size={14} /> Ver Extrato
-                            </button>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleOpenPaymentModal(statement)}
+                                className="px-3 py-2 bg-amber-50 text-amber-700 rounded-xl text-[9px] font-black uppercase hover:bg-amber-600 hover:text-white transition-all inline-flex items-center gap-2"
+                                title="Registrar Nota / Pagamento"
+                              >
+                                <Wallet size={14} /> Registrar Pgto
+                              </button>
+                              <button
+                                onClick={() => handleViewPastStatement(statement)}
+                                className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-600 hover:text-white transition-all inline-flex items-center gap-2"
+                                title="Visualizar Extrato"
+                              >
+                                <FileSearch size={14} /> Ver Extrato
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
