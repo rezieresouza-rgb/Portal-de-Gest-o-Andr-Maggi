@@ -98,7 +98,7 @@ const App: React.FC = () => {
     localStorage.setItem('active_portal_module', activeModule);
   }, [activeModule]);
 
-  // Sincronização forçada dos alunos de algumas turmas (6º ANO A, B, D, E e 7º ANO A, B, D) no localStorage
+  // Sincronização forçada dos alunos de algumas turmas (6º ANO A, B, D, E e 7º ANO A, B, D, E) no localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('secretariat_detailed_students_v1');
@@ -106,7 +106,7 @@ const App: React.FC = () => {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           // Remover os antigos
-          const filtered = parsed.filter(s => s.Turma !== '6º ANO A' && s.Turma !== '6º ANO B' && s.Turma !== '6º ANO D' && s.Turma !== '6º ANO E' && s.Turma !== '7º ANO A' && s.Turma !== '7º ANO B' && s.Turma !== '7º ANO D');
+          const filtered = parsed.filter(s => s.Turma !== '6º ANO A' && s.Turma !== '6º ANO B' && s.Turma !== '6º ANO D' && s.Turma !== '6º ANO E' && s.Turma !== '7º ANO A' && s.Turma !== '7º ANO B' && s.Turma !== '7º ANO D' && s.Turma !== '7º ANO E');
           
           // Novos alunos
           const novos6A = INITIAL_STUDENTS.filter(s => s.Turma === '6º ANO A');
@@ -116,6 +116,7 @@ const App: React.FC = () => {
           const novos7A = INITIAL_STUDENTS.filter(s => s.Turma === '7º ANO A');
           const novos7B = INITIAL_STUDENTS.filter(s => s.Turma === '7º ANO B');
           const novos7D = INITIAL_STUDENTS.filter(s => s.Turma === '7º ANO D');
+          const novos7E = INITIAL_STUDENTS.filter(s => s.Turma === '7º ANO E');
           
           const current6A = parsed.filter(s => s.Turma === '6º ANO A');
           const current6B = parsed.filter(s => s.Turma === '6º ANO B');
@@ -124,6 +125,7 @@ const App: React.FC = () => {
           const current7A = parsed.filter(s => s.Turma === '7º ANO A');
           const current7B = parsed.filter(s => s.Turma === '7º ANO B');
           const current7D = parsed.filter(s => s.Turma === '7º ANO D');
+          const current7E = parsed.filter(s => s.Turma === '7º ANO E');
           
           // Verifica se precisa atualizar
           const checkUpdate = (current: any[], novos: any[]) => current.length !== novos.length || current.some((c, i) => !novos.find(n => n.CodigoAluno === c.CodigoAluno || n.Nome !== c.Nome));
@@ -135,9 +137,10 @@ const App: React.FC = () => {
           const needsUpdate7A = checkUpdate(current7A, novos7A);
           const needsUpdate7B = checkUpdate(current7B, novos7B);
           const needsUpdate7D = checkUpdate(current7D, novos7D);
+          const needsUpdate7E = checkUpdate(current7E, novos7E);
           
-          if (needsUpdateA || needsUpdateB || needsUpdateD || needsUpdateE || needsUpdate7A || needsUpdate7B || needsUpdate7D) {
-            const updated = [...filtered, ...novos6A, ...novos6B, ...novos6D, ...novos6E, ...novos7A, ...novos7B, ...novos7D];
+          if (needsUpdateA || needsUpdateB || needsUpdateD || needsUpdateE || needsUpdate7A || needsUpdate7B || needsUpdate7D || needsUpdate7E) {
+            const updated = [...filtered, ...novos6A, ...novos6B, ...novos6D, ...novos6E, ...novos7A, ...novos7B, ...novos7D, ...novos7E];
             localStorage.setItem('secretariat_detailed_students_v1', JSON.stringify(updated));
             console.log("Alunos sincronizados com sucesso no localStorage.");
           }
