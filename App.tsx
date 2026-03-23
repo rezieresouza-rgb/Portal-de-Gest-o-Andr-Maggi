@@ -98,31 +98,34 @@ const App: React.FC = () => {
     localStorage.setItem('active_portal_module', activeModule);
   }, [activeModule]);
 
-  // Sincronização forçada dos alunos do 6º ANO A e B no localStorage
+  // Sincronização forçada dos alunos do 6º ANO A, B e D no localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('secretariat_detailed_students_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          // Remover os antigos A e B
-          const filtered = parsed.filter(s => s.Turma !== '6º ANO A' && s.Turma !== '6º ANO B');
+          // Remover os antigos A, B e D
+          const filtered = parsed.filter(s => s.Turma !== '6º ANO A' && s.Turma !== '6º ANO B' && s.Turma !== '6º ANO D');
           
-          // Novos alunos do A e B
+          // Novos alunos do A, B e D
           const novos6A = INITIAL_STUDENTS.filter(s => s.Turma === '6º ANO A');
           const novos6B = INITIAL_STUDENTS.filter(s => s.Turma === '6º ANO B');
+          const novos6D = INITIAL_STUDENTS.filter(s => s.Turma === '6º ANO D');
           
           const current6A = parsed.filter(s => s.Turma === '6º ANO A');
           const current6B = parsed.filter(s => s.Turma === '6º ANO B');
+          const current6D = parsed.filter(s => s.Turma === '6º ANO D');
           
           // Verifica se precisa atualizar
-          const needsUpdateA = current6A.length !== novos6A.length || current6A.some(c => !novos6A.find(n => n.CodigoAluno === c.CodigoAluno));
-          const needsUpdateB = current6B.length !== novos6B.length || current6B.some(c => !novos6B.find(n => n.CodigoAluno === c.CodigoAluno));
+          const needsUpdateA = current6A.length !== novos6A.length || current6A.some(c => !novos6A.find(n => n.CodigoAluno === c.CodigoAluno || n.Nome !== c.Nome));
+          const needsUpdateB = current6B.length !== novos6B.length || current6B.some(c => !novos6B.find(n => n.CodigoAluno === c.CodigoAluno || n.Nome !== c.Nome));
+          const needsUpdateD = current6D.length !== novos6D.length || current6D.some(c => !novos6D.find(n => n.CodigoAluno === c.CodigoAluno || n.Nome !== c.Nome));
           
-          if (needsUpdateA || needsUpdateB) {
-            const updated = [...filtered, ...novos6A, ...novos6B];
+          if (needsUpdateA || needsUpdateB || needsUpdateD) {
+            const updated = [...filtered, ...novos6A, ...novos6B, ...novos6D];
             localStorage.setItem('secretariat_detailed_students_v1', JSON.stringify(updated));
-            console.log("Alunos do 6º ANO A e B sincronizados com sucesso no localStorage.");
+            console.log("Alunos do 6º ANO A, B e D sincronizados com sucesso no localStorage.");
           }
         }
       }
