@@ -57,6 +57,12 @@ const formatQuantity = (val: number) => {
   return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 };
 
+const getLocalDateString = () => {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().split('T')[0];
+};
+
 const Contracts: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [events, setEvents] = useState<ExecutionEvent[]>([]);
@@ -1535,16 +1541,16 @@ const Contracts: React.FC = () => {
                           <td className="py-4 pr-4 font-bold uppercase leading-tight">{item.description}</td>
                           <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
                           <td className="py-4 px-4 text-center font-bold text-gray-400">{item.brand || '-'}</td>
-                          <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity)}</td>
-                          <td className="py-4 px-4 text-right font-bold text-gray-600">{item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          <td className="py-4 pl-4 text-right font-black text-indigo-700">{item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity || 0)}</td>
+                          <td className="py-4 px-4 text-right font-bold text-gray-600">{(item.unitPrice || item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-4 pl-4 text-right font-black text-indigo-700">{(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-gray-200 bg-gray-50">
                         <td colSpan={5} className="py-4 pr-4 text-right font-black uppercase text-gray-900 text-xs">Total do Período (R$)</td>
-                        <td className="py-4 pl-4 text-right font-black text-indigo-700 text-xs">{generatedStatementPdf.statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="py-4 pl-4 text-right font-black text-indigo-700 text-xs">{(generatedStatementPdf.statement.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       </tr>
                     </tfoot>
                   </table>
