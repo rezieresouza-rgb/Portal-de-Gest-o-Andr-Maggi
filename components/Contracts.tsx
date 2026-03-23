@@ -2455,6 +2455,56 @@ const Contracts: React.FC = () => {
           </div>
         )
       }
+
+      {paymentModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6 bg-indigo-600 border-b border-indigo-700 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-indigo-500 text-white rounded-2xl shadow-sm">
+                  <Wallet size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tighter">Registrar Pgto</h3>
+                  <p className="text-[9px] text-indigo-200 font-bold uppercase tracking-widest mt-0.5">Vincular Nota Fiscal</p>
+                </div>
+              </div>
+              <button onClick={() => setPaymentModal(null)}><X size={20} className="text-white hover:text-indigo-200 transition-colors" /></button>
+            </div>
+            <form onSubmit={handleSavePayment} className="p-8 space-y-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data do Pagamento</label>
+                <input
+                  type="date"
+                  required
+                  value={paymentModal.paymentDate}
+                  onChange={(e) => setPaymentModal({ ...paymentModal, paymentDate: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Número da Nota Fiscal</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: NF 12345"
+                  value={paymentModal.invoiceNumber}
+                  onChange={(e) => setPaymentModal({ ...paymentModal, invoiceNumber: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSavingPayment}
+                className="w-full py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+              >
+                {isSavingPayment ? "Salvando..." : <><Save size={16} /> Salvar Pagamento</>}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
