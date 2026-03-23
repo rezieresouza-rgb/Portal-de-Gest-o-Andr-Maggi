@@ -598,9 +598,18 @@ const Contracts: React.FC = () => {
       return;
     }
 
-    const lastStatement = consumptionStatements[0];
-    const defaultStart = lastStatement ? lastStatement.period_end : selectedContract.startDate;
-    const defaultEnd = getLocalDateString();
+    const dates = pendingGuides.map(g => g.issue_date).filter(Boolean).sort();
+    let defaultStart = '';
+    let defaultEnd = '';
+
+    if (dates.length > 0) {
+      defaultStart = dates[0];
+      defaultEnd = dates[dates.length - 1];
+    } else {
+      const lastStatement = consumptionStatements[0];
+      defaultStart = lastStatement ? lastStatement.period_end : selectedContract.startDate;
+      defaultEnd = getLocalDateString();
+    }
 
     setExtractStartDate(defaultStart);
     setExtractEndDate(defaultEnd);
