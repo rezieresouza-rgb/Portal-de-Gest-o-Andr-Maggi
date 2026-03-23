@@ -702,9 +702,9 @@ const Contracts: React.FC = () => {
       }
 
       setPreviewExtract({
-        items: Object.values(itemSummaryMap).sort((a,b) => a.description.localeCompare(b.description)),
+        items: Object.values(itemSummaryMap).sort((a,b) => (a.description || '').localeCompare(b.description || '')),
         guides: pendingGuides,
-        totalValue
+        totalValue: totalValue || 0
       });
     } catch (error) {
       console.error("Erro ao gerar prévia:", error);
@@ -794,7 +794,7 @@ const Contracts: React.FC = () => {
         itemSummaryMap[itemId].total += (gi.quantity * gi.unit_price);
       }
 
-      setGeneratedStatementPdf({ statement, items: Object.values(itemSummaryMap).sort((a,b) => a.description.localeCompare(b.description)) });
+      setGeneratedStatementPdf({ statement, items: Object.values(itemSummaryMap).sort((a,b) => (a.description || '').localeCompare(b.description || '')) });
 
     } catch (e) {
       console.error(e);
@@ -1408,7 +1408,7 @@ const Contracts: React.FC = () => {
                    </div>
                    <div className="text-right">
                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Valor do Período</p>
-                     <p className="text-3xl font-black text-indigo-700">R$ {previewExtract.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                     <p className="text-3xl font-black text-indigo-700">R$ {(previewExtract?.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                      <p className="text-[10px] font-bold text-gray-500 uppercase mt-1">Período: {new Date(extractStartDate + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(extractEndDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                    </div>
                 </div>
@@ -1429,8 +1429,8 @@ const Contracts: React.FC = () => {
                         <tr key={idx} className="hover:bg-gray-50/50">
                            <td className="px-6 py-4 font-black text-xs uppercase text-gray-900">{item.description}</td>
                            <td className="px-6 py-4 text-center font-bold text-gray-500 uppercase text-xs">{item.unit}</td>
-                           <td className="px-6 py-4 text-center font-black text-indigo-600">{formatQuantity(item.quantity)}</td>
-                           <td className="px-6 py-4 text-right font-black text-indigo-700">R$ {item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                           <td className="px-6 py-4 text-center font-black text-indigo-600">{formatQuantity(item.quantity || 0)}</td>
+                           <td className="px-6 py-4 text-right font-black text-indigo-700">R$ {(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
                       ))}
                     </tbody>
