@@ -1376,6 +1376,7 @@ const Contracts: React.FC = () => {
                    <div className="text-right">
                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Valor do Período</p>
                      <p className="text-3xl font-black text-indigo-700">R$ {previewExtract.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                     <p className="text-[10px] font-bold text-gray-500 uppercase mt-1">Período: {new Date(extractStartDate + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(extractEndDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                    </div>
                 </div>
 
@@ -1450,7 +1451,8 @@ const Contracts: React.FC = () => {
                     <div className="text-right">
                       <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Extrato de Consumo</p>
                       <h1 className="text-xl font-black text-gray-900 truncate max-w-[200px]">{generatedStatementPdf.statement.statement_number}</h1>
-                      <p className="text-[10px] font-bold text-gray-600 uppercase mt-1">Emissão: {new Date(generatedStatementPdf.statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                      <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Período Apurado: {new Date(generatedStatementPdf.statement.period_start + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(generatedStatementPdf.statement.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                      <p className="text-[9px] font-bold text-gray-500 uppercase mt-0.5">Emissão: {new Date(generatedStatementPdf.statement.created_at || new Date().toISOString()).toLocaleDateString('pt-BR')}</p>
                     </div>
                   </div>
 
