@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { PsychosocialReferral, PsychosocialRole } from '../types';
+import PsychosocialReferralForm from './PsychosocialReferralForm';
 
 interface PsychosocialReferralListProps {
   role: PsychosocialRole;
@@ -97,21 +98,24 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
     return () => { subscription.unsubscribe(); };
   }, []);
 
-  const handleCreateOrUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateOrUpdate = async (formData: PsychosocialReferral) => {
     setLoading(true);
     try {
       const referralData = {
-        student_name: newReferral.student_name,
-        class_name: newReferral.class_name,
-        reason: newReferral.reason,
+        student_name: formData.studentName,
+        class_name: formData.className,
+        reason: formData.report || 'Encaminhamento',
         priority: newReferral.priority,
-        status: newReferral.status,
-        observations: newReferral.observations,
-        // Default/Hidden fields
-        school_unit: newReferral.school_unit,
-        teacher_name: newReferral.teacher_name,
-        date: new Date().toLocaleDateString('sv-SE')
+        status: formData.status,
+        observations: formData.observedAspects,
+        school_unit: formData.schoolUnit,
+        teacher_name: formData.teacherName,
+        date: new Date().toLocaleDateString('sv-SE'),
+        student_age: formData.studentAge,
+        previous_strategies: formData.previousStrategies,
+        attendance_frequency: formData.attendanceFrequency,
+        adopted_procedures: formData.adoptedProcedures,
+        report: formData.report
       };
 
       if (editingId) {
@@ -137,6 +141,35 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
           message: `Aluno ${newReferral.student_name} encaminhado.`,
           is_read: false
         }]);
+
+        // [NOVO] Integração Automática com Módulo de Mediação
+        try {
+          const savedCases = localStorage.getItem('mediation_cases_v1');
+          const mediationCases = savedCases ? JSON.parse(savedCases) : [];
+          
+          const newMediationCase = {
+            id: `med-ref-${Date.now()}`,
+            studentId: 'N/A',
+            studentName: referralData.student_name,
+            className: referralData.class_name,
+            type: 'OUTRO',
+            severity: referralData.priority === 'ALTA' ? 'ALTA' : (referralData.priority === 'BAIXA' ? 'BAIXA' : 'MÉDIA'),
+            status: 'ABERTURA',
+            openedAt: referralData.date,
+            description: `[Origem: Encaminhamento Psicossocial] Motivo/Relato: ${referralData.report || referralData.reason || 'Sem descrição detalhada.'}`,
+            involvedParties: [referralData.teacher_name],
+            steps: [
+              { id: '1', label: 'Análise do Encaminhamento', completed: true, date: referralData.date },
+              { id: '2', label: 'Escuta das Partes', completed: false },
+              { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
+              { id: '4', label: 'Acordo / Finalização', completed: false }
+            ]
+          };
+          
+          localStorage.setItem('mediation_cases_v1', JSON.stringify([newMediationCase, ...mediationCases]));
+        } catch (e) {
+          console.error('Erro ao integrar encaminhamento à mediação:', e);
+        }
       }
 
       await fetchReferrals();
@@ -288,107 +321,31 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#1a1a1a] rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-white/10 overflow-hidden">
-            <div className="p-8 border-b border-white/10 bg-white/5">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-violet-500/10 text-violet-400 rounded-xl border border-violet-500/20">
-                    <ShieldCheck size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-white uppercase tracking-tight">
-                      {editingId ? 'Editar Encaminhamento' : 'Novo Encaminhamento'}
-                    </h3>
-                    <p className="text-[10px] font-bold text-white/40 uppercase">Preencha os dados do estudante</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-xl text-white/40 transition-all">
-                  <X size={20} />
-                </button>
-              </div>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="py-10 min-h-screen flex flex-col items-center">
+            {loading && <div className="text-white mb-4 animate-pulse">Salvando encaminhamento...</div>}
+            <div className="w-full max-w-5xl px-4">
+              <PsychosocialReferralForm 
+                onCancel={() => setIsModalOpen(false)} 
+                onSave={handleCreateOrUpdate} 
+                initialData={{
+                  id: editingId || `ref-${Date.now()}`,
+                  studentName: newReferral.student_name,
+                  className: newReferral.class_name,
+                  report: newReferral.reason || newReferral.report,
+                  status: (newReferral.status as any) || 'PENDENTE',
+                  observedAspects: typeof newReferral.observations === 'string' || !newReferral.observations ? { learning: [], behavioral: [], emotional: [] } : (newReferral.observations as any),
+                  schoolUnit: newReferral.school_unit,
+                  teacherName: newReferral.teacher_name,
+                  date: new Date().toLocaleDateString('sv-SE'),
+                  studentAge: newReferral.student_age,
+                  previousStrategies: newReferral.previous_strategies,
+                  attendanceFrequency: newReferral.attendance_frequency,
+                  adoptedProcedures: newReferral.adopted_procedures,
+                  timestamp: Date.now()
+                }} 
+              />
             </div>
-
-            <form onSubmit={handleCreateOrUpdate} className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-1.5">
-                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Nome do Estudante</label>
-                  <input
-                    required
-                    value={newReferral.student_name}
-                    onChange={e => setNewReferral({ ...newReferral, student_name: e.target.value.toUpperCase() })}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm text-white uppercase outline-none focus:bg-white/10 transition-all placeholder:text-white/20"
-                    placeholder="NOME COMPLETO"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Turma</label>
-                  <input
-                    required
-                    value={newReferral.class_name}
-                    onChange={e => setNewReferral({ ...newReferral, class_name: e.target.value.toUpperCase() })}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm text-white uppercase outline-none focus:bg-white/10 transition-all placeholder:text-white/20"
-                    placeholder="EX: 3º A"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Prioridade</label>
-                  <select
-                    value={newReferral.priority}
-                    onChange={e => setNewReferral({ ...newReferral, priority: e.target.value as any })}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm text-white uppercase outline-none focus:bg-white/10 transition-all [&>option]:bg-gray-900"
-                  >
-                    <option value="BAIXA">BAIXA</option>
-                    <option value="MEDIA">MÉDIA</option>
-                    <option value="ALTA">ALTA</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Motivo do Encaminhamento</label>
-                <textarea
-                  required
-                  value={newReferral.reason}
-                  onChange={e => setNewReferral({ ...newReferral, reason: e.target.value })}
-                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-medium text-sm text-white outline-none focus:bg-white/10 transition-all h-24 resize-none placeholder:text-white/20"
-                  placeholder="Descreva o motivo..."
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Observações Adicionais</label>
-                <textarea
-                  value={newReferral.observations}
-                  onChange={e => setNewReferral({ ...newReferral, observations: e.target.value })}
-                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-medium text-sm text-white outline-none focus:bg-white/10 transition-all h-24 resize-none placeholder:text-white/20"
-                  placeholder="Observações extras..."
-                />
-              </div>
-
-              {editingId && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Status</label>
-                  <select
-                    value={newReferral.status}
-                    onChange={e => setNewReferral({ ...newReferral, status: e.target.value as any })}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm text-white uppercase outline-none focus:bg-white/10 transition-all [&>option]:bg-gray-900"
-                  >
-                    <option value="AGUARDANDO">AGUARDANDO</option>
-                    <option value="EM_ANDAMENTO">EM ANDAMENTO</option>
-                    <option value="CONCLUIDO">CONCLUÍDO</option>
-                  </select>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all border border-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Salvando...' : (editingId ? 'Salvar Alterações' : 'Criar Encaminhamento')}
-              </button>
-            </form>
           </div>
         </div>
       )}

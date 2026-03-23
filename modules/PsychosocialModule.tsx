@@ -61,6 +61,28 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
   };
 
   useEffect(() => {
+    // [Limpeza de Dados Mockados] Remove os dados de teste salvos inicialmente no localStorage do usuário
+    const medSaved = localStorage.getItem('mediation_cases_v1');
+    if (medSaved) {
+      let cases = JSON.parse(medSaved);
+      cases = cases.filter((c: any) => c.id !== 'med-1');
+      localStorage.setItem('mediation_cases_v1', JSON.stringify(cases));
+    }
+    
+    const agSaved = localStorage.getItem('psychosocial_appointments_v1');
+    if (agSaved) {
+      let apps = JSON.parse(agSaved);
+      apps = apps.filter((a: any) => a.id !== 'ap-1');
+      localStorage.setItem('psychosocial_appointments_v1', JSON.stringify(apps));
+    }
+    
+    const campSaved = localStorage.getItem('school_campaigns_v2026');
+    if (campSaved) {
+      let camps = JSON.parse(campSaved);
+      camps = camps.filter((c: any) => !c.id.startsWith('camp-2026-0') && !c.id.startsWith('camp-2026-1'));
+      localStorage.setItem('school_campaigns_v2026', JSON.stringify(camps));
+    }
+
     fetchNotifications();
 
     // Inscrever para atualizações em tempo real

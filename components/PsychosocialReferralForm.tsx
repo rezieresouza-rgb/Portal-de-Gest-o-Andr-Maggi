@@ -62,16 +62,16 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
          "Dificuldade de escrita"
       ],
       behavioral: [
-         "Dificuldade em manter o foco",
+         "Dificuldades em manter o foco",
          "Esquecimento frequente de instruções ou tarefas",
-         "Dificuldade em se manter sentado durante a aula",
+         "Muita Dificuldade de se manter sentado ao decorrer da aula",
          "Dificuldade em esperar a vez",
          "Mudança brusca de comportamento"
       ],
       emotional: [
          "Preocupação excessiva com desempenho escolar",
          "Medo de fracassar ou decepcionar os outros",
-         "Baixa autoestima",
+         "Baixa Autoestima",
          "Sentimentos de inadequação",
          "Tristeza frequente"
       ]
@@ -298,7 +298,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
             {/* Seção 2: Estratégias Realizadas */}
             <div className="space-y-4">
                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-gray-50 pb-2">
-                  <Activity size={14} className="text-rose-600" /> 3. Estratégias Pedagógicas Realizadas
+                  <Activity size={14} className="text-rose-600" /> 3. Estratégias já realizadas pela UE:
                </h4>
                <textarea
                   value={formData.previousStrategies}
@@ -311,7 +311,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
             {/* Seção 3: Aspectos Observados */}
             <div className="space-y-6">
                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-gray-50 pb-2">
-                  <CheckSquare size={14} className="text-rose-600" /> 4. Aspectos Observados em Sala
+                  <CheckSquare size={14} className="text-rose-600" /> 4. Marque com X a alternativa corresponde ao que foi observado.
                </h4>
 
                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -392,7 +392,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
             {/* Seção 4: Relato Descritivo */}
             <div className="space-y-4">
                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-gray-50 pb-2">
-                  <MessageSquare size={14} className="text-rose-600" /> 5. Relato Descritivo Adicional
+                  <MessageSquare size={14} className="text-rose-600" /> 5. Escreva um breve relato:
                </h4>
                <textarea
                   value={formData.report}
@@ -443,14 +443,14 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
                </div>
 
                <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Estratégias Prévias Realizadas</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Estratégias já realizadas pela UE:</h4>
                   <p className="text-xs leading-relaxed border-2 border-black p-4 rounded-xl italic">
                      {formData.previousStrategies || "Nenhuma estratégia relatada."}
                   </p>
                </div>
 
                <div className="space-y-6">
-                  <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Aspectos Observados em Sala</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Marque com X a alternativa corresponde ao que foi observado.</h4>
 
                   <div className="grid grid-cols-1 gap-6 text-[10px]">
                      {Object.entries(ASPECTS).map(([key, list]) => (
@@ -472,7 +472,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
                </div>
 
                <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Relato Descritivo Adicional</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Escreva um breve relato:</h4>
                   <p className="text-xs leading-relaxed border-2 border-black p-4 rounded-xl min-h-[100px]">
                      {formData.report || "Sem observações adicionais."}
                   </p>

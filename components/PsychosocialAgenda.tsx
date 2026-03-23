@@ -35,19 +35,7 @@ const APPOINTMENT_TYPES = [
 const PsychosocialAgenda: React.FC<{ role: PsychosocialRole }> = ({ role }) => {
   const [appointments, setAppointments] = useState<PsychosocialAppointment[]>(() => {
     const saved = localStorage.getItem('psychosocial_appointments_v1');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'ap-1',
-        studentId: 'st-1',
-        studentName: 'MARIA EDUARDA',
-        date: '2026-03-20',
-        time: '09:00',
-        professionalName: 'ANA PAULA (PSICÓLOGA)',
-        type: 'ESCUTA_INDIVIDUAL',
-        notes: 'Acompanhamento de luto familiar.',
-        isConfidential: true
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);

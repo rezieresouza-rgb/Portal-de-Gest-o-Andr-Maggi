@@ -32,25 +32,7 @@ const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
   const [cases, setCases] = useState<MediationCase[]>(() => {
     const saved = localStorage.getItem('mediation_cases_v1');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'med-1',
-        studentId: 'st-101',
-        studentName: 'MARCOS VINICIUS',
-        className: '9º ANO A',
-        type: 'CONFLITO',
-        severity: 'ALTA',
-        status: 'EXECUÇÃO',
-        openedAt: '2026-03-05',
-        description: 'Briga no pátio envolvendo quatro alunos por motivo fútil.',
-        involvedParties: ['Marcos Vinicius', 'Lucas Silva', 'Gustavo Lima'],
-        steps: [
-          { id: '1', label: 'Escuta Individual - Marcos', completed: true, date: '2026-03-06' },
-          { id: '2', label: 'Escuta Individual - Lucas', completed: true, date: '2026-03-06' },
-          { id: '3', label: 'Encontro de Mediação', completed: false },
-        ]
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
