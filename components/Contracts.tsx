@@ -243,6 +243,10 @@ const Contracts: React.FC = () => {
   const [previewExtract, setPreviewExtract] = useState<{ items: any[], guides: any[], totalValue: number } | null>(null);
   const [generatedStatementPdf, setGeneratedStatementPdf] = useState<{ statement: any, items: any[] } | null>(null);
 
+  const [showExtractDateModal, setShowExtractDateModal] = useState(false);
+  const [extractStartDate, setExtractStartDate] = useState("");
+  const [extractEndDate, setExtractEndDate] = useState("");
+
   useEffect(() => {
     supabase.from('suppliers').select('id, name, category').then(({ data }) => {
       if (data) setAvailableSuppliers(data);
@@ -586,14 +590,47 @@ const Contracts: React.FC = () => {
     }
   }, [selectedContractId]);
 
-  const handlePreviewExtract = async () => {
+  const handleOpenExtractDateModal = () => {
     if (!selectedContract) return;
-
     const pendingGuides = paymentGuides.filter(g => g.contract_id === selectedContract.id && !g.statement_id);
     if (pendingGuides.length === 0) {
       alert("Não há guias de recebimento pendentes para fechar um novo período de extrato.");
       return;
     }
+
+    const lastStatement = consumptionStatements[0];
+    const defaultStart = lastStatement ? lastStatement.period_end : selectedContract.startDate;
+    const defaultEnd = getLocalDateString();
+
+    setExtractStartDate(defaultStart);
+    setExtractEndDate(defaultEnd);
+    setShowExtractDateModal(true);
+  };
+
+  const handlePreviewExtract = async () => {
+    if (!selectedContract) return;
+
+    if (!extractStartDate || !extractEndDate) {
+      alert("Preencha as datas inicial e final para o extrato.");
+      return;
+    }
+    if (extractStartDate > extractEndDate) {
+      alert("A data inicial não pode ser superior à data final.");
+      return;
+    }
+
+    const pendingGuides = paymentGuides.filter(g => {
+      if (g.contract_id !== selectedContract.id || g.statement_id) return false;
+      if (!g.issue_date) return true;
+      return g.issue_date >= extractStartDate && g.issue_date <= extractEndDate;
+    });
+
+    if (pendingGuides.length === 0) {
+      alert("Não há guias pendentes neste período para gerar extrato.");
+      return;
+    }
+
+    setShowExtractDateModal(false);
 
     try {
       setIsLoadingStatements(true);
@@ -640,9 +677,8 @@ const Contracts: React.FC = () => {
 
     try {
       const statementNumber = `EXT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const lastStatement = consumptionStatements[0];
-      const periodStart = lastStatement ? lastStatement.period_end : selectedContract.startDate;
-      const periodEnd = getLocalDateString();
+      const periodStart = extractStartDate;
+      const periodEnd = extractEndDate;
 
       const { data: newStatement, error: statementError } = await supabase
         .from('consumption_statements')
@@ -1150,7 +1186,7 @@ const Contracts: React.FC = () => {
           </button>
 
           <button
-            onClick={handlePreviewExtract}
+            onClick={handleOpenExtractDateModal}
             className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
           >
             <Printer size={16} /> Gerar Extrato de Consumo
@@ -1259,6 +1295,49 @@ const Contracts: React.FC = () => {
                     <p className="text-[8px] font-bold text-gray-400 uppercase text-center">Esta guia certifica o recebimento físico dos produtos acima relacionados e serve como base para o processamento do pagamento correspondente.</p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showExtractDateModal && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" onClick={() => setShowExtractDateModal(false)}></div>
+            <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 relative z-10 shadow-2xl border border-gray-100">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-indigo-100 text-indigo-600"><Calendar size={24} /></div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Período do Extrato</h3>
+                  </div>
+                </div>
+                <button onClick={() => setShowExtractDateModal(false)} className="text-gray-300 hover:text-gray-600 transition-colors"><X size={24} /></button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data Inicial</label>
+                  <input
+                    type="date"
+                    required
+                    value={extractStartDate}
+                    onChange={(e) => setExtractStartDate(e.target.value)}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-sm text-gray-900 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data Final</label>
+                  <input
+                    type="date"
+                    required
+                    value={extractEndDate}
+                    onChange={(e) => setExtractEndDate(e.target.value)}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none font-black text-sm text-gray-900 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                <button onClick={handlePreviewExtract} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex justify-center gap-2 items-center">
+                  Avançar <ChevronRight size={16} />
+                </button>
               </div>
             </div>
           </div>
