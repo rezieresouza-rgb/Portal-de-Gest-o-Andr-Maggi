@@ -17,10 +17,12 @@ import {
   Users,
   ShieldAlert,
   Save,
-  UserPlus
+  UserPlus,
+  PlusCircle
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { INITIAL_STUDENTS } from '../constants/initialData';
+import { supabase } from '../supabaseClient';
 
 interface MediationManagerProps {
   role: PsychosocialRole;
@@ -29,8 +31,6 @@ interface MediationManagerProps {
 
 const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
-
-import { supabase } from '../supabaseClient';
 
 const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }) => {
   const [cases, setCases] = useState<MediationCase[]>([]);
@@ -57,7 +57,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
   const filteredStudents = useMemo(() => {
     if (studentSearch.length < 3) return [];
     return masterStudents.filter((s: any) => 
-      s.Nome.toLowerCase().includes(studentSearch.toLowerCase())
+      (s.Nome || s.name || '').toLowerCase().includes(studentSearch.toLowerCase())
     ).slice(0, 5);
   }, [studentSearch, masterStudents]);
 
@@ -74,14 +74,14 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
       const formatted: MediationCase[] = data.map(c => ({
         id: c.id,
         studentId: c.student_id,
-        studentName: c.student_name,
-        className: c.class_name,
-        type: c.type,
-        severity: c.severity,
-        status: c.status,
+        studentName: c.student_name || 'Estudante não identificado',
+        className: c.class_name || 'N/A',
+        type: c.type || 'OUTRO',
+        severity: c.severity || 'MÉDIA',
+        status: (c.status as MediationStatus) || 'ABERTURA',
         openedAt: c.opened_at,
         closedAt: c.closed_at,
-        description: c.description,
+        description: c.description || '',
         involvedParties: c.involved_parties || [],
         steps: c.steps || [
           { id: '1', label: 'Acolhimento Inicial', completed: true, date: c.opened_at },
@@ -104,7 +104,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
 
   const handleCreateCase = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCase.studentName || !newCase.description) return alert("Preencha os campos obrigatórios.");
+    if (!newCase.studentName || !newCase.description) return alert("Por favor, selecione um aluno e escreva o relato do fato.");
 
     const steps = [
       { id: '1', label: 'Acolhimento Inicial', completed: true, date: new Date().toLocaleDateString('sv-SE') },
@@ -133,10 +133,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
       setIsModalOpen(false);
       setNewCase({ type: 'CONFLITO', severity: 'MÉDIA', description: '', involvedParties: [], studentName: '', className: '' });
       setStudentSearch('');
-      alert("Novo caso de mediação aberto!");
-    } catch (error) {
+      alert("Novo caso de mediação aberto com sucesso!");
+    } catch (error: any) {
       console.error("Erro ao salvar caso:", error);
-      alert("Erro ao salvar caso de mediação no banco de dados.");
+      alert("Erro ao salvar caso de mediação: " + (error.message || "Erro de conexão"));
     }
   };
 
@@ -146,6 +146,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
       case 'PLANEJAMENTO': return 'bg-amber-50 text-amber-600 border-amber-100';
       case 'EXECUÇÃO': return 'bg-rose-50 text-rose-600 border-rose-100';
       case 'CONCLUÍDO': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };
 
@@ -159,8 +160,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
   };
 
   const filteredCases = cases.filter(c => 
-    c.studentName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.className.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.studentName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (c.className || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -225,7 +226,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                  <div className="text-right">
                     <p className="text-[10px] font-black text-gray-400 uppercase">Progresso</p>
                     <div className="flex items-center gap-1 mt-1">
-                       {c.steps.map((step, i) => (
+                       {c.steps?.map((step, i) => (
                          <div key={i} className={`h-1.5 w-6 rounded-full ${step.completed ? 'bg-rose-500' : 'bg-gray-100'}`} />
                        ))}
                     </div>
@@ -267,35 +268,69 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                  <form onSubmit={handleCreateCase} className="space-y-8">
                     
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Buscar Aluno Principal</label>
-                       <div className="relative">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                          <input 
-                             type="text" 
-                             placeholder="Digite o nome (mín. 3 letras)..." 
-                             value={studentSearch}
-                             onChange={e => setStudentSearch(e.target.value)}
-                             className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all uppercase"
-                          />
-                       </div>
-                       {studentSearch.length >= 3 && filteredStudents.length > 0 && (
-                          <div className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden divide-y divide-gray-50 animate-in slide-in-from-top-2">
-                             {filteredStudents.map((s: any) => (
-                                <button 
-                                  key={s.CodigoAluno}
-                                  type="button"
-                                  onClick={() => {
-                                     setNewCase({ ...newCase, studentName: s.Nome, studentId: s.CodigoAluno, className: s.Turma });
-                                     setStudentSearch('');
-                                  }}
-                                  className="w-full text-left p-4 hover:bg-rose-50 transition-colors flex justify-between items-center"
-                                >
-                                   <p className="text-xs font-black uppercase text-gray-900">{s.Nome}</p>
-                                   <span className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma}</span>
-                                </button>
-                             ))}
-                          </div>
-                       )}
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Aluno Principal</label>
+                        
+                        {newCase.studentName ? (
+                           <div className="flex items-center justify-between p-5 bg-rose-50 rounded-2xl border-2 border-rose-100 animate-in fade-in zoom-in-95">
+                              <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg rotate-3">
+                                    {newCase.studentName.charAt(0)}
+                                 </div>
+                                 <div>
+                                    <p className="font-black text-gray-900 uppercase tracking-tight">{newCase.studentName}</p>
+                                    <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest">{newCase.className}</p>
+                                 </div>
+                              </div>
+                              <button 
+                                 type="button"
+                                 onClick={() => {
+                                    setNewCase({ ...newCase, studentName: '', studentId: '', className: '' });
+                                    setStudentSearch('');
+                                 }}
+                                 className="p-3 hover:bg-rose-100 rounded-xl text-rose-600 transition-all active:scale-95"
+                              >
+                                 <X size={20} />
+                              </button>
+                           </div>
+                        ) : (
+                           <div className="relative">
+                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                              <input 
+                                 type="text" 
+                                 placeholder="Digite o nome para buscar aluno..." 
+                                 value={studentSearch}
+                                 onChange={e => setStudentSearch(e.target.value)}
+                                 className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all uppercase"
+                              />
+                              
+                              {studentSearch.length >= 3 && filteredStudents.length > 0 && (
+                                 <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden divide-y divide-gray-50 z-[100] animate-in slide-in-from-top-2">
+                                    {filteredStudents.map((s: any) => (
+                                       <button 
+                                          key={s.CodigoAluno || s.id}
+                                          type="button"
+                                          onClick={() => {
+                                             setNewCase({ 
+                                               ...newCase, 
+                                               studentName: (s.Nome || s.name), 
+                                               studentId: (s.CodigoAluno || s.id), 
+                                               className: (s.Turma || s.className || 'N/A') 
+                                             });
+                                             setStudentSearch('');
+                                          }}
+                                          className="w-full text-left p-4 hover:bg-rose-50 transition-colors flex justify-between items-center group"
+                                       >
+                                          <div>
+                                             <p className="text-xs font-black uppercase text-gray-900 group-hover:text-rose-600">{s.Nome || s.name}</p>
+                                             <p className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma || s.className}</p>
+                                          </div>
+                                          <PlusCircle size={16} className="text-gray-200 group-hover:text-rose-400 transition-colors" />
+                                       </button>
+                                    ))}
+                                 </div>
+                              )}
+                           </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -327,7 +362,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                           required
                           value={newCase.description}
                           onChange={e => setNewCase({...newCase, description: e.target.value})}
-                          placeholder="Descreva detalhadamente o ocorrido ou o motivo da abertura do caso..."
+                          placeholder="Descreva detalhadamente o ocorrido..."
                           className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-32 resize-none outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all"
                        />
                     </div>
@@ -367,11 +402,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
            <div className="bg-white h-full w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-right duration-500">
               <div className="p-8 bg-rose-900 text-white shrink-0">
                  <div className="flex justify-between items-start mb-6">
-                    <button onClick={() => { console.log('Fechando modal'); setSelectedCase(null); }} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={28}/></button>
-                    <span className="px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id}</span>
+                    <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={28}/></button>
+                    <span className="px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}</span>
                  </div>
                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl font-black">{selectedCase.studentName ? selectedCase.studentName[0] : '?'}</div>
+                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl font-black">
+                       {(selectedCase.studentName || '?')[0]}
+                    </div>
                     <div>
                        <h3 className="text-2xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
                        <p className="text-rose-300 font-bold uppercase text-[10px] tracking-widest mt-2">{selectedCase.className} • Caso {selectedCase.type}</p>
@@ -392,7 +429,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                        <History size={14} className="text-rose-600" /> Etapas do Processo de Mediação
                     </h4>
                     <div className="space-y-4">
-                       {selectedCase.steps.map((step, idx) => (
+                       {selectedCase.steps?.map((step, idx) => (
                          <div key={idx} className={`p-5 rounded-3xl border-2 transition-all flex items-center justify-between ${step.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-dashed border-gray-200'}`}>
                             <div className="flex items-center gap-4">
                                <div className={`p-2 rounded-lg ${step.completed ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-300'}`}>
@@ -438,9 +475,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                        <h4 className="text-[10px] font-black uppercase tracking-widest">Partes Envolvidas</h4>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                       {selectedCase.involvedParties.map((p, i) => (
+                       {selectedCase.involvedParties?.map((p, i) => (
                          <span key={i} className="px-3 py-1 bg-white border border-rose-100 rounded-lg text-[10px] font-bold text-rose-800 uppercase">{p}</span>
                        ))}
+                       {selectedCase.involvedParties?.length === 0 && <span className="text-gray-400 text-[10px] italic">Nenhuma parte extra registrada</span>}
                     </div>
                  </div>
               </div>
