@@ -48,6 +48,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
     studentName: '',
     className: ''
   });
+  const [activeTab, setActiveTab] = useState<'ativos' | 'historico'>('ativos');
 
   const masterStudents = useMemo(() => {
     const saved = localStorage.getItem('secretariat_detailed_students_v1');
@@ -107,7 +108,39 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
   };
 
   useEffect(() => {
+    const migrateLegacyData = async () => {
+      const legacy = localStorage.getItem('mediation_cases');
+      if (legacy) {
+        try {
+           const parsed = JSON.parse(legacy);
+           if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log('Migrando dados legais do localStorage para o Supabase...');
+              for (const c of parsed) {
+                 await supabase.from('mediation_cases').insert([{
+                    student_id: c.studentId || null,
+                    student_name: c.studentName,
+                    class_name: c.className,
+                    type: c.type,
+                    severity: c.severity,
+                    status: c.status,
+                    opened_at: c.openedAt,
+                    description: c.description,
+                    involved_parties: c.involvedParties || [],
+                    steps: c.steps
+                 }]);
+              }
+              localStorage.removeItem('mediation_cases');
+              console.log('Migração concluída.');
+              await fetchCases();
+           }
+        } catch (e) {
+           console.error('Erro na migração:', e);
+        }
+      }
+    };
+
     fetchCases();
+    migrateLegacyData();
   }, []);
 
   const handleCreateCase = async (e: React.FormEvent) => {
@@ -179,10 +212,17 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
     }
   };
 
-  const filteredCases = cases.filter(c => 
-    (c.studentName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (c.className || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCases = cases.filter(c => {
+    const matchesSearch = 
+      (c.studentName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (c.className || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === 'ativos') return matchesSearch && c.status !== 'CONCLUÍDO';
+    return matchesSearch && c.status === 'CONCLUÍDO';
+  });
+
+  const activeCount = cases.filter(c => c.status !== 'CONCLUÍDO').length;
+  const historyCount = cases.filter(c => c.status === 'CONCLUÍDO').length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
@@ -194,7 +234,20 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
             </div>
             <div>
                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Mediação de Conflitos</h3>
-               <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Gestão de Casos e Resolução Dialógica</p>
+               <div className="flex items-center gap-2 mt-1">
+                  <button 
+                    onClick={() => setActiveTab('ativos')}
+                    className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${activeTab === 'ativos' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                  >
+                    Ativos ({activeCount})
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('historico')}
+                    className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${activeTab === 'historico' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                  >
+                    Histórico ({historyCount})
+                  </button>
+               </div>
             </div>
          </div>
          <div className="flex items-center gap-4">
