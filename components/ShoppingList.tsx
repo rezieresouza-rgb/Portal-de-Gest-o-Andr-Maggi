@@ -66,9 +66,10 @@ const ShoppingList: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
 
   // History State
-  const [historyLists, setHistoryLists] = useState<any[]>([]);
-  const [selectedHistoryList, setSelectedHistoryList] = useState<any | null>(null);
-  const [isEditingHistory, setIsEditingHistory] = useState(false);
+   const [historyLists, setHistoryLists] = useState<any[]>([]);
+   const [selectedHistoryList, setSelectedHistoryList] = useState<any | null>(null);
+   const [isEditingHistory, setIsEditingHistory] = useState(false);
+   const [latestInventory, setLatestInventory] = useState<any[]>([]);
 
   // Carrega contratos, alunos e histórico do Supabase
   useEffect(() => {
@@ -108,10 +109,22 @@ const ShoppingList: React.FC = () => {
             brand: i.brand
           }))
         }));
-        setContracts(formatted);
-      }
-
-      fetchHistory();
+         setContracts(formatted);
+       }
+ 
+       // [NOVO] Carregar último fechamento de estoque para mostrar saldo disponível
+       const { data: latestInvData } = await supabase
+         .from('merenda_inventory_history')
+         .select('items')
+         .order('timestamp', { ascending: false })
+         .limit(1);
+       
+       if (latestInvData && latestInvData.length > 0) {
+         const items = typeof latestInvData[0].items === 'string' ? JSON.parse(latestInvData[0].items) : latestInvData[0].items;
+         setLatestInventory(items);
+       }
+ 
+       fetchHistory();
 
     } catch (error) {
       console.error("Erro ao carregar dados do Supabase:", error);
@@ -503,6 +516,31 @@ const ShoppingList: React.FC = () => {
     return results.slice(0, 8);
   }, [contracts, globalProductSearch]);
 
+  const getStockForProduct = (productName: string) => {
+    if (!latestInventory || latestInventory.length === 0) return null;
+    const normSearch = normalize(productName);
+    
+    // Fuzzy matching similar to general list generation
+    let bestMatch: any = null;
+    let maxScore = -1;
+
+    for (const invItem of latestInventory) {
+      const normItem = normalize(invItem.name || invItem.description || '');
+      let score = -1;
+
+      if (normItem === normSearch) score = 100;
+      else if (normItem.includes(normSearch) || normSearch.includes(normItem)) score = 50;
+
+      if (score > maxScore) {
+        maxScore = score;
+        bestMatch = invItem;
+      }
+    }
+    
+    if (maxScore >= 50) return bestMatch;
+    return null;
+  };
+
   const addManualItem = async (product: any) => {
     const newItemBase = {
       description: product.description,
@@ -656,7 +694,8 @@ const ShoppingList: React.FC = () => {
                           <input type="checkbox" checked={generatedList.length > 0 && generatedList.every(i => i.selected)} onChange={(e) => toggleAll(e.target.checked)} className="rounded border-gray-300 text-orange-600" />
                         </th>
                         <th className="px-4 py-4">Ingrediente (A-Z)</th>
-                        <th className="px-6 py-4 text-center">Quantidade</th>
+                        <th className="px-6 py-4 text-center">Estoque Atual</th>
+                        <th className="px-6 py-4 text-center">Qtd. Necessária</th>
                         <th className="px-6 py-4">Observação</th>
                         <th className="px-6 py-4">Fornecedor / Contrato</th>
                         <th className="px-6 py-4 text-right no-print">Ação</th>
@@ -671,6 +710,19 @@ const ShoppingList: React.FC = () => {
                           <td className="px-4 py-5 font-black text-gray-900 uppercase text-xs">
                             {item.description}
                             {item.isPerishable && <span className="block text-[7px] font-black bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase mt-1 w-fit">Perecível</span>}
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                             {(() => {
+                                const stock = getStockForProduct(item.description);
+                                if (!stock) return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">Não mapeado</span>;
+                                const balance = (stock.previousBalance || 0) + (stock.entries || 0) - (stock.outputs || 0);
+                                return (
+                                   <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl border ${balance <= 0 ? 'bg-red-50 border-red-100 text-red-600' : balance < (stock.min || 5) ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+                                      <span className="text-xs font-black">{balance.toLocaleString('pt-BR')}</span>
+                                      <span className="text-[7px] font-bold uppercase tracking-widest">{stock.unit}</span>
+                                   </div>
+                                );
+                             })()}
                           </td>
                           <td className="px-6 py-5 text-center">
                             <div className="flex items-center justify-center gap-2">
@@ -836,8 +888,9 @@ const ShoppingList: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                  <th className="px-8 py-4">Ingrediente</th>
-                  <th className="px-6 py-4 text-center">Quantidade</th>
+                   <th className="px-8 py-4">Ingrediente</th>
+                   <th className="px-6 py-4 text-center">Estoque Atual</th>
+                   <th className="px-6 py-4 text-center">Quantidade</th>
                   <th className="px-6 py-4">Observação</th>
                   <th className="px-6 py-4">Fornecedor / Contrato</th>
                   <th className="px-6 py-4 text-right no-print">Ação</th>
@@ -847,10 +900,23 @@ const ShoppingList: React.FC = () => {
                 {selectedHistoryList.items.sort((a: any, b: any) => a.description.localeCompare(b.description)).map((item: any) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-8 py-5">
-                      <p className="font-black text-gray-900 uppercase text-xs">{item.description}</p>
-                      {item.is_perishable && <span className="text-[7px] font-black bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase mt-1 inline-block">Perecível</span>}
-                    </td>
-                    <td className="px-6 py-5 text-center">
+                     <p className="font-black text-gray-900 uppercase text-xs">{item.description}</p>
+                     {item.is_perishable && <span className="text-[7px] font-black bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase mt-1 inline-block">Perecível</span>}
+                   </td>
+                   <td className="px-6 py-5 text-center">
+                      {(() => {
+                         const stock = getStockForProduct(item.description);
+                         if (!stock) return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">---</span>;
+                         const balance = (stock.previousBalance || 0) + (stock.entries || 0) - (stock.outputs || 0);
+                         return (
+                            <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl border ${balance <= 0 ? 'bg-red-50 border-red-100 text-red-600' : balance < (stock.min || 5) ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+                               <span className="text-xs font-black">{balance.toLocaleString('pt-BR')}</span>
+                               <span className="text-[7px] font-bold uppercase tracking-widest">{stock.unit}</span>
+                            </div>
+                         );
+                      })()}
+                   </td>
+                   <td className="px-6 py-5 text-center">
                       {isEditingHistory ? (
                         <div className="flex items-center justify-center gap-2">
                           <input
