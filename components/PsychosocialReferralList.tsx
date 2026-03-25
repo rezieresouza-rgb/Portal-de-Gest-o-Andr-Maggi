@@ -142,33 +142,29 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
           is_read: false
         }]);
 
-        // [NOVO] Integração Automática com Módulo de Mediação
+        // [NOVO] Integração Automática com Módulo de Mediação (Supabase)
         try {
-          const savedCases = localStorage.getItem('mediation_cases_v1');
-          const mediationCases = savedCases ? JSON.parse(savedCases) : [];
-          
-          const newMediationCase = {
-            id: `med-ref-${Date.now()}`,
-            studentId: 'N/A',
-            studentName: referralData.student_name,
-            className: referralData.class_name,
+          const { error: mediationError } = await supabase.from('mediation_cases').insert([{
+            student_id: 'N/A',
+            student_name: referralData.student_name,
+            class_name: referralData.class_name,
             type: 'OUTRO',
             severity: referralData.priority === 'ALTA' ? 'ALTA' : (referralData.priority === 'BAIXA' ? 'BAIXA' : 'MÉDIA'),
             status: 'ABERTURA',
-            openedAt: referralData.date,
+            opened_at: referralData.date,
             description: `[Origem: Encaminhamento Psicossocial] Motivo/Relato: ${referralData.report || referralData.reason || 'Sem descrição detalhada.'}`,
-            involvedParties: [referralData.teacher_name],
+            involved_parties: [referralData.teacher_name],
             steps: [
               { id: '1', label: 'Análise do Encaminhamento', completed: true, date: referralData.date },
               { id: '2', label: 'Escuta das Partes', completed: false },
               { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
               { id: '4', label: 'Acordo / Finalização', completed: false }
             ]
-          };
-          
-          localStorage.setItem('mediation_cases_v1', JSON.stringify([newMediationCase, ...mediationCases]));
+          }]);
+
+          if (mediationError) console.error('Erro ao criar caso de mediação automático:', mediationError);
         } catch (e) {
-          console.error('Erro ao integrar encaminhamento à mediação:', e);
+          console.error('Erro na integração com mediação:', e);
         }
       }
 
@@ -178,7 +174,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
       // alert("Salvo com sucesso!"); // Removed alert for smoother UX or use toast later
     } catch (error) {
       console.error("Erro ao salvar:", error);
-      alert("Erro ao salvar encaminhamento.");
+      alert(`Erro ao salvar encaminhamento: ${error.message || 'Erro desconhecido'}. Verifique se as tabelas foram criadas no Supabase.`);
     } finally {
       setLoading(false);
     }

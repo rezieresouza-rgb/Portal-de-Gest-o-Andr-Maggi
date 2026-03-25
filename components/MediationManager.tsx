@@ -29,12 +29,11 @@ interface MediationManagerProps {
 const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
-const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
-  const [cases, setCases] = useState<MediationCase[]>(() => {
-    const saved = localStorage.getItem('mediation_cases_v1');
-    return saved ? JSON.parse(saved) : [];
-  });
+import { supabase } from '../supabaseClient';
 
+const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
+  const [cases, setCases] = useState<MediationCase[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCase, setSelectedCase] = useState<MediationCase | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,38 +60,83 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
     ).slice(0, 5);
   }, [studentSearch, masterStudents]);
 
-  useEffect(() => {
-    localStorage.setItem('mediation_cases_v1', JSON.stringify(cases));
-  }, [cases]);
+  const fetchCases = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('mediation_cases')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const handleCreateCase = (e: React.FormEvent) => {
+      if (error) throw error;
+      
+      const formatted: MediationCase[] = data.map(c => ({
+        id: c.id,
+        studentId: c.student_id,
+        studentName: c.student_name,
+        className: c.class_name,
+        type: c.type,
+        severity: c.severity,
+        status: c.status,
+        openedAt: c.opened_at,
+        closedAt: c.closed_at,
+        description: c.description,
+        involvedParties: c.involved_parties || [],
+        steps: c.steps || [
+          { id: '1', label: 'Acolhimento Inicial', completed: true, date: c.opened_at },
+          { id: '2', label: 'Escuta das Partes', completed: false },
+          { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
+          { id: '4', label: 'Acordo / Finalização', completed: false }
+        ]
+      }));
+      setCases(formatted);
+    } catch (error) {
+      console.error("Erro ao buscar casos de mediação:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCases();
+  }, []);
+
+  const handleCreateCase = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCase.studentName || !newCase.description) return alert("Preencha os campos obrigatórios.");
 
-    const createdCase: MediationCase = {
-      id: `med-${Date.now()}`,
-      studentId: newCase.studentId || 'N/A',
-      studentName: newCase.studentName!,
-      className: newCase.className!,
-      type: newCase.type as any,
-      severity: newCase.severity as any,
-      status: 'ABERTURA',
-      openedAt: new Date().toLocaleDateString('sv-SE'),
-      description: newCase.description!,
-      involvedParties: newCase.involvedParties || [],
-      steps: [
-        { id: '1', label: 'Acolhimento Inicial', completed: true, date: new Date().toLocaleDateString('sv-SE') },
-        { id: '2', label: 'Escuta das Partes', completed: false },
-        { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
-        { id: '4', label: 'Acordo / Finalização', completed: false }
-      ]
-    };
+    const steps = [
+      { id: '1', label: 'Acolhimento Inicial', completed: true, date: new Date().toLocaleDateString('sv-SE') },
+      { id: '2', label: 'Escuta das Partes', completed: false },
+      { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
+      { id: '4', label: 'Acordo / Finalização', completed: false }
+    ];
 
-    setCases([createdCase, ...cases]);
-    setIsModalOpen(false);
-    setNewCase({ type: 'CONFLITO', severity: 'MÉDIA', description: '', involvedParties: [], studentName: '', className: '' });
-    setStudentSearch('');
-    alert("Novo caso de mediação aberto!");
+    try {
+      const { error } = await supabase.from('mediation_cases').insert([{
+        student_id: newCase.studentId || 'N/A',
+        student_name: newCase.studentName,
+        class_name: newCase.className,
+        type: newCase.type,
+        severity: newCase.severity,
+        status: 'ABERTURA',
+        opened_at: new Date().toLocaleDateString('sv-SE'),
+        description: newCase.description,
+        involved_parties: newCase.involvedParties || [],
+        steps: steps
+      }]);
+
+      if (error) throw error;
+
+      await fetchCases();
+      setIsModalOpen(false);
+      setNewCase({ type: 'CONFLITO', severity: 'MÉDIA', description: '', involvedParties: [], studentName: '', className: '' });
+      setStudentSearch('');
+      alert("Novo caso de mediação aberto!");
+    } catch (error) {
+      console.error("Erro ao salvar caso:", error);
+      alert("Erro ao salvar caso de mediação no banco de dados.");
+    }
   };
 
   const getStatusStyle = (status: MediationStatus) => {

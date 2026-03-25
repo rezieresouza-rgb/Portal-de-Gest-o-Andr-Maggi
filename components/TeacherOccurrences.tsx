@@ -270,6 +270,9 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                         message: `O professor(a) ${form.teacherName} encaminhou o aluno ${student.name} através de um registro de ocorrência.`,
                         is_read: false
                      }]);
+                  } else {
+                     console.error('Erro ao encaminhar para psicossocial:', referralError);
+                     alert(`Ocorrência salva, mas o encaminhamento falhou: ${referralError.message}. Verifique o Supabase.`);
                   }
                }
             }

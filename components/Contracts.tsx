@@ -262,20 +262,57 @@ const Contracts: React.FC = () => {
 
   const handleSavePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!paymentModal) return;
+    if (!paymentModal || !selectedContractId) return;
     setIsSavingPayment(true);
     try {
+      // 1. Get the statement to get its total value
+      const { data: statement, error: fetchErr } = await supabase
+        .from('consumption_statements')
+        .select('*')
+        .eq('id', paymentModal.statementId)
+        .single();
+      
+      if (fetchErr) throw fetchErr;
+
+      // 2. Update Statement status
       const { error } = await supabase
         .from('consumption_statements')
         .update({
           payment_date: paymentModal.paymentDate || null,
-          invoice_number: paymentModal.invoiceNumber || null
+          invoice_number: paymentModal.invoiceNumber || null,
+          status: 'PAGO'
         })
         .eq('id', paymentModal.statementId);
 
       if (error) throw error;
+
+      // 3. Create Finance Transaction
+      const { data: contract } = await supabase
+        .from('contracts')
+        .select('*, suppliers(name)')
+        .eq('id', selectedContractId)
+        .single();
+
+      const { error: transError } = await supabase
+        .from('transactions')
+        .insert({
+          gross_value: statement.total_value,
+          net_value: statement.total_value,
+          tax_value: 0,
+          date: paymentModal.paymentDate,
+          description: `PAGAMENTO: ${contract?.suppliers?.name || 'FORNECEDOR'} (NF ${paymentModal.invoiceNumber})`,
+          type: 'EXPENSE',
+          category: 'Alimentação',
+          tx_group: 'CUSTEIO',
+          fund_id: '4f4f3469-6f96-419b-8994-3e9196b05322', // ID fixo da Merenda
+          created_at: new Date().toISOString()
+        });
+
+      if (transError) console.error("Erro ao criar transação financeira:", transError.message);
+
       setPaymentModal(null);
       if (selectedContractId) fetchStatements(selectedContractId);
+      alert("Pagamento registrado e lançado no financeiro com sucesso!");
     } catch (error: any) {
       alert("Erro ao registrar pagamento: " + error.message);
     } finally {
@@ -662,7 +699,7 @@ const Contracts: React.FC = () => {
     });
   }, [paymentGuides, selectedContract, extractStartDate, extractEndDate]);
 
-  const handlePreviewExtract = async () => {
+  const handleGenerateExtract = async () => {
     if (!selectedContract) return;
 
     if (!extractStartDate || !extractEndDate) {
@@ -1205,6 +1242,48 @@ const Contracts: React.FC = () => {
       console.error("Erro ao gerar PDF:", error);
       alert("Erro ao gerar PDF.");
     }
+  };
+
+  const handlePrintGuide = () => {
+    const element = document.getElementById('guide-printable');
+    if (!element) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const styles = Array.from(document.styleSheets)
+      .map(styleSheet => {
+        try {
+          return Array.from(styleSheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('');
+        } catch (e) {
+          return '';
+        }
+      })
+      .join('\n');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Imprimir Guia</title>
+          <style>${styles}</style>
+          <style>
+            @media print {
+              body { margin: 0; padding: 20px; }
+              #guide-printable { scale: 1 !important; border: none !important; box-shadow: none !important; transform: none !important; margin: 0 auto !important; }
+              .no-print { display: none !important; }
+            }
+          </style>
+        </head>
+        <body onload="setTimeout(() => { window.print(); window.close(); }, 500)">
+          <div id="guide-printable" style="width: 210mm; min-height: 297mm; padding: 12mm; background: white;">
+            ${element.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleDownloadConsumptionPdf = async () => {
@@ -2213,8 +2292,8 @@ const Contracts: React.FC = () => {
                     <tr key={itemId}>
                        <td className="px-6 py-4 font-black text-xs uppercase text-gray-900">{item?.description}</td>
                        <td className="px-6 py-4 text-center font-bold text-gray-500 uppercase text-xs">{item?.unit}</td>
-                       <td className="px-6 py-4 text-center font-black text-emerald-600">{formatQuantity(qty)}</td>
-                       <td className="px-6 py-4 text-right font-black text-emerald-700">R$ {(qty * (item?.unitPrice || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                       <td className="px-6 py-4 text-center font-black text-emerald-600">{formatQuantity(qty as number)}</td>
+                       <td className="px-6 py-4 text-right font-black text-emerald-700">R$ {((qty as number) * ((item?.unitPrice as number) || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                   );
                 })}
@@ -2226,7 +2305,7 @@ const Contracts: React.FC = () => {
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Valor Total da Guia</p>
               <p className="text-4xl font-black text-white">R$ {Object.entries(batchDeliveryData).reduce((sum, [itemId, qty]) => {
                 const item = selectedContract.items.find(i => i.id === itemId);
-                return sum + (qty * (item?.unitPrice || 0));
+                return sum + ((qty as number) * ((item?.unitPrice as number) || 0));
               }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <button onClick={handleConfirmBatchDelivery} disabled={isSavingBatch} className="w-full md:w-auto px-12 py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
@@ -2272,7 +2351,7 @@ const Contracts: React.FC = () => {
               <tbody className="divide-y divide-gray-100">
                 {selectedContract.items.map(item => {
                   const originalQty = originalBatchDeliveryData[item.id] || 0;
-                  const currentQty = editBatchDeliveryData[item.id] || 0;
+                  const currentQty = Number(editBatchDeliveryData[item.id]) || 0;
                   const remaining = item.contractedQuantity - item.acquiredQuantity + originalQty;
                   return (
                     <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
