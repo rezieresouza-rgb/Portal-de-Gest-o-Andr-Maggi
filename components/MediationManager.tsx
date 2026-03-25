@@ -64,14 +64,21 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
   const fetchCases = async () => {
     setLoading(true);
     try {
+      // Começamos buscando sem ordenação fixa para evitar quebra se a coluna created_at não existir
       const { data, error } = await supabase
         .from('mediation_cases')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) throw error;
       
-      const formatted: MediationCase[] = data.map(c => ({
+      // Ordenação em memória para maior robustez
+      const sortedData = [...(data || [])].sort((a, b) => {
+        const dateA = a.created_at || a.opened_at || a.id || '';
+        const dateB = b.created_at || b.opened_at || b.id || '';
+        return dateB.localeCompare(dateA);
+      });
+
+      const formatted: MediationCase[] = sortedData.map(c => ({
         id: c.id,
         studentId: c.student_id,
         studentName: c.student_name || 'Estudante não identificado',
@@ -91,8 +98,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
         ]
       }));
       setCases(formatted);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao buscar casos de mediação:", error);
+      alert("Aviso: Não foi possível carregar o histórico. " + (error.message || "Erro de conexão"));
     } finally {
       setLoading(false);
     }
@@ -104,7 +112,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
 
   const handleCreateCase = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCase.studentName || !newCase.description) return alert("Por favor, selecione um aluno e escreva o relato do fato.");
+    if (!newCase.studentName || !newCase.description) {
+       return alert("Por favor, selecione um aluno e descreva o relato do fato.");
+    }
 
     const steps = [
       { id: '1', label: 'Acolhimento Inicial', completed: true, date: new Date().toLocaleDateString('sv-SE') },
@@ -114,8 +124,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
     ];
 
     try {
-      const { error } = await supabase.from('mediation_cases').insert([{
-        student_id: newCase.studentId || 'N/A',
+      console.log('Iniciando salvamento do caso...', newCase);
+      const payload = {
+        student_id: newCase.studentId && newCase.studentId !== 'N/A' ? newCase.studentId : null,
         student_name: newCase.studentName,
         class_name: newCase.className,
         type: newCase.type,
@@ -125,18 +136,27 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
         description: newCase.description,
         involved_parties: newCase.involvedParties || [],
         steps: steps
-      }]);
+      };
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('mediation_cases')
+        .insert([payload])
+        .select();
 
+      if (error) {
+        console.error("Erro retornado pelo Supabase (Insert):", error);
+        throw error;
+      }
+
+      console.log('Caso salvo com sucesso:', data);
       await fetchCases();
       setIsModalOpen(false);
       setNewCase({ type: 'CONFLITO', severity: 'MÉDIA', description: '', involvedParties: [], studentName: '', className: '' });
       setStudentSearch('');
-      alert("Novo caso de mediação aberto com sucesso!");
+      alert("Novo caso de mediação aberto e registrado no histórico!");
     } catch (error: any) {
-      console.error("Erro ao salvar caso:", error);
-      alert("Erro ao salvar caso de mediação: " + (error.message || "Erro de conexão"));
+      console.error("Erro fatal ao salvar caso:", error);
+      alert("❌ Erro ao salvar o caso: " + (error.message || error.details || "Verifique sua conexão ou se as colunas da tabela estão corretas."));
     }
   };
 
