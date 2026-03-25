@@ -24,6 +24,7 @@ import { INITIAL_STUDENTS } from '../constants/initialData';
 
 interface MediationManagerProps {
   role: PsychosocialRole;
+  onTabChange?: (tab: string) => void;
 }
 
 const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
@@ -31,7 +32,7 @@ const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
 import { supabase } from '../supabaseClient';
 
-const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
+const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }) => {
   const [cases, setCases] = useState<MediationCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -444,7 +445,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
                  </div>
               </div>
 
-              <div className="p-8 bg-white border-t border-gray-50 flex gap-4">
+              <div className="p-8 bg-white border-t border-gray-50 flex flex-wrap gap-4">
                  <button 
                    onClick={async () => {
                      if (!window.confirm("Deseja encerrar este caso com acordo?")) return;
@@ -464,11 +465,19 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
                         alert("Erro ao encerrar caso.");
                      }
                    }}
-                   className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all"
+                   className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all min-w-[200px]"
                  >
                    Encerrar com Acordo
                  </button>
-                 <button onClick={() => setSelectedCase(null)} className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all">Fechar Aba</button>
+                 <button 
+                   onClick={() => {
+                     if (onTabChange) onTabChange('referrals');
+                   }}
+                   className="flex-1 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-violet-700 transition-all min-w-[200px]"
+                 >
+                   Ver Encaminhamento
+                 </button>
+                 <button onClick={() => setSelectedCase(null)} className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all min-w-[200px]">Fechar Aba</button>
               </div>
            </div>
         </div>

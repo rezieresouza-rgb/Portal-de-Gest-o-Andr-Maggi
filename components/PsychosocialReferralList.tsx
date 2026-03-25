@@ -19,7 +19,8 @@ import {
   AlertTriangle,
   PlusCircle,
   HeartHandshake,
-  X
+  X,
+  Scale
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { PsychosocialReferral, PsychosocialRole } from '../types';
@@ -27,9 +28,10 @@ import PsychosocialReferralForm from './PsychosocialReferralForm';
 
 interface PsychosocialReferralListProps {
   role: PsychosocialRole;
+  onTabChange?: (tab: string) => void;
 }
 
-const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ role }) => {
+const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ role, onTabChange }) => {
   const [referrals, setReferrals] = useState<PsychosocialReferral[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -199,6 +201,51 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
     setEditingId(null);
   }
 
+  const handleSendToMediation = async (ref: PsychosocialReferral, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // 1. Verificar se já existe caso para este aluno no mediátion
+      const { data: existing } = await supabase
+        .from('mediation_cases')
+        .select('id')
+        .eq('student_name', ref.studentName)
+        .eq('status', 'ABERTURA') // Ou qualquer status em aberto
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        if (onTabChange) onTabChange('mediation');
+        return;
+      }
+
+      // 2. Se não existir, criar
+      const { error } = await supabase.from('mediation_cases').insert([{
+        student_id: 'N/A',
+        student_name: ref.studentName,
+        class_name: ref.className,
+        type: 'OUTRO',
+        severity: ref.priority === 'ALTA' ? 'ALTA' : (ref.priority === 'BAIXA' ? 'BAIXA' : 'MÉDIA'),
+        status: 'ABERTURA',
+        opened_at: new Date().toLocaleDateString('sv-SE'),
+        description: `[Vínculo Direto] Motivo: ${ref.reason}`,
+        involved_parties: [ref.teacherName || 'EQUIPE MULTI'],
+        steps: [
+          { id: '1', label: 'Início via Encaminhamento', completed: true, date: new Date().toLocaleDateString('sv-SE') },
+          { id: '2', label: 'Escuta das Partes', completed: false },
+          { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
+          { id: '4', label: 'Acordo / Finalização', completed: false }
+        ]
+      }]);
+
+      if (error) throw error;
+
+      alert("Caso de mediação criado com sucesso para este aluno!");
+      if (onTabChange) onTabChange('mediation');
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao vincular com mediação.");
+    }
+  };
+
   const handleDelete = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (window.confirm("Confirmar exclusão?")) {
@@ -289,6 +336,9 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
                   </button>
                   <button onClick={(e) => handleDelete(ref.id, e)} className="p-2 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-600 transition-all">
                     <Trash2 size={16} />
+                  </button>
+                  <button onClick={(e) => handleSendToMediation(ref, e)} title="Enviar/Ver na Mediação" className="p-2 hover:bg-rose-50 rounded-lg text-gray-300 hover:text-rose-600 transition-all">
+                    <Scale size={16} />
                   </button>
                 </div>
               </div>
