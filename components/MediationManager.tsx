@@ -362,15 +362,15 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
 
       {/* MODAL DETALHES DO CASO EXISTENTE */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-end bg-rose-950/40 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[200] flex items-center justify-end bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
            <div className="bg-white h-full w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-right duration-500">
               <div className="p-8 bg-rose-900 text-white shrink-0">
                  <div className="flex justify-between items-start mb-6">
-                    <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={28}/></button>
+                    <button onClick={() => { console.log('Fechando modal'); setSelectedCase(null); }} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={28}/></button>
                     <span className="px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id}</span>
                  </div>
                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl font-black">{selectedCase.studentName[0]}</div>
+                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl font-black">{selectedCase.studentName ? selectedCase.studentName[0] : '?'}</div>
                     <div>
                        <h3 className="text-2xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
                        <p className="text-rose-300 font-bold uppercase text-[10px] tracking-widest mt-2">{selectedCase.className} • Caso {selectedCase.type}</p>
@@ -403,7 +403,28 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
                                </div>
                             </div>
                             {!step.completed && (
-                               <button className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-[9px] font-black uppercase hover:bg-rose-600 transition-all">Registrar</button>
+                               <button 
+                                 onClick={async (e) => {
+                                   e.stopPropagation();
+                                   const updatedSteps = selectedCase.steps.map((s, i) => 
+                                     i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
+                                   );
+                                   try {
+                                     const { error } = await supabase
+                                       .from('mediation_cases')
+                                       .update({ steps: updatedSteps })
+                                       .eq('id', selectedCase.id);
+                                     if (error) throw error;
+                                     await fetchCases();
+                                     setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                   } catch (err) {
+                                     alert("Erro ao atualizar etapa.");
+                                   }
+                                 }}
+                                 className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-[9px] font-black uppercase hover:bg-rose-600 transition-all"
+                               >
+                                 Registrar
+                               </button>
                             )}
                          </div>
                        ))}
@@ -424,8 +445,30 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role }) => {
               </div>
 
               <div className="p-8 bg-white border-t border-gray-50 flex gap-4">
-                 <button className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all">Encerrar com Acordo</button>
-                 <button className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all">Encaminhar Rede Externa</button>
+                 <button 
+                   onClick={async () => {
+                     if (!window.confirm("Deseja encerrar este caso com acordo?")) return;
+                     try {
+                        const { error } = await supabase
+                          .from('mediation_cases')
+                          .update({ 
+                            status: 'CONCLUÍDO', 
+                            closed_at: new Date().toLocaleDateString('sv-SE') 
+                          })
+                          .eq('id', selectedCase.id);
+                        if (error) throw error;
+                        await fetchCases();
+                        setSelectedCase(null);
+                        alert("Caso encerrado com sucesso!");
+                     } catch (err) {
+                        alert("Erro ao encerrar caso.");
+                     }
+                   }}
+                   className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all"
+                 >
+                   Encerrar com Acordo
+                 </button>
+                 <button onClick={() => setSelectedCase(null)} className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all">Fechar Aba</button>
               </div>
            </div>
         </div>
