@@ -850,6 +850,9 @@ const Orders: React.FC = () => {
                       <span className="text-[9px] font-black bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-lg uppercase tracking-widest">Auditado</span>
                     </div>
                     <p className="text-sm font-bold text-gray-500 uppercase tracking-tight line-clamp-1">{order.supplierName}</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                      <CalendarDays size={12} className="text-emerald-600" /> Emissão: {formatDateDisplay(order.issueDate)}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <p className="text-xl font-black text-gray-900">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
