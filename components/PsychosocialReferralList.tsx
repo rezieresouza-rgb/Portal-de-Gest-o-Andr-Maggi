@@ -282,7 +282,6 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
                 <div className="flex gap-2">
                   <button onClick={(e) => {
                     e.stopPropagation();
-                    // Just triggering the same logic as the card click
                     const card = e.currentTarget.closest('[onClick]');
                     if (card) (card as HTMLElement).click();
                   }} className="p-2 hover:bg-violet-50 rounded-lg text-gray-300 hover:text-violet-600 transition-all">
@@ -314,28 +313,18 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
             </div>
           </div>
         ))}
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${ref.status === 'CONCLUÍDO' ? 'bg-emerald-500' :
-                  ref.status === 'EM_ANDAMENTO' || ref.status === 'EM_ACOMPANHAMENTO' ? 'bg-blue-500' : 'bg-amber-500'
-                  }`} />
-                <span className="text-[10px] font-black text-white/60 uppercase">{ref.status.replace('_', ' ')}</span>
-              </div>
-              <span className="text-[10px] font-bold text-white/20">{new Date(ref.date).toLocaleDateString('pt-BR')}</span>
-            </div>
-          </div>
-        ))}
         {filtered.length === 0 && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-white/10 rounded-[3rem] bg-white/5 backdrop-blur-sm">
-            <HeartHandshake size={48} className="mx-auto mb-4 text-white/10" />
-            <p className="text-white/30 font-black uppercase text-xs tracking-widest">Nenhum encaminhamento registrado</p>
+          <div className="col-span-full py-24 text-center border-2 border-dashed border-gray-100 rounded-[3rem] bg-gray-50">
+            <HeartHandshake size={48} className="mx-auto mb-4 text-gray-200" />
+            <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Nenhum encaminhamento registrado</p>
           </div>
         )}
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-rose-950/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="py-10 min-h-screen flex flex-col items-center">
-            {loading && <div className="text-white mb-4 animate-pulse">Salvando encaminhamento...</div>}
+            {loading && <div className="text-white mb-4 animate-pulse font-black uppercase text-xs tracking-widest">Salvando encaminhamento...</div>}
             <div className="w-full max-w-5xl px-4">
               <PsychosocialReferralForm 
                 onCancel={() => setIsModalOpen(false)} 
