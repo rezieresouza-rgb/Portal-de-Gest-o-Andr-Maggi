@@ -28,10 +28,11 @@ import PsychosocialReferralForm from './PsychosocialReferralForm';
 
 interface PsychosocialReferralListProps {
   role: PsychosocialRole;
+  user?: any; // Add user prop for teacher context
   onTabChange?: (tab: string) => void;
 }
 
-const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ role, onTabChange }) => {
+const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ role, user, onTabChange }) => {
   const [referrals, setReferrals] = useState<PsychosocialReferral[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,7 +50,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
     // Additional fields to match type if needed, but for now specific form fields
     student_age: '',
     school_unit: 'Unidade Escolar',
-    teacher_name: 'COORDENAÇÃO', // Default or logged user
+    teacher_name: user?.name || 'COORDENAÇÃO', // Default or logged user
     previous_strategies: '',
     attendance_frequency: '',
     adopted_procedures: [] as string[],
@@ -58,10 +59,17 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
 
   const fetchReferrals = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('psychosocial_referrals')
         .select('*')
         .order('date', { ascending: false });
+
+      // [NOVO] Filtro exclusivo para professor: só vê seus próprios encaminhamentos
+      if (role === 'PROFESSOR' && user?.name) {
+        query = query.eq('teacher_name', user.name);
+      }
+
+      const { data, error } = await query;
 
       if (data) {
         const formatted: PsychosocialReferral[] = data.map(r => ({
@@ -81,7 +89,8 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
           date: r.date,
           observations: typeof r.observations === 'string' ? r.observations : JSON.stringify(r.observations), // Handle varying formats if any
           timestamp: new Date(r.created_at).getTime(),
-          reason: r.reason || r.report || 'Sem motivo especificado' // Fallback
+          reason: r.reason || r.report || 'Sem motivo especificado', // Fallback
+          feedback: r.feedback // [NOVO] Campo de devolutiva da mediação
         }));
         setReferrals(formatted);
       }
@@ -98,7 +107,8 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
       .subscribe();
 
     return () => { subscription.unsubscribe(); };
-  }, []);
+  }, [user?.name, role]);
+;
 
   const handleCreateOrUpdate = async (formData: PsychosocialReferral) => {
     setLoading(true);
@@ -219,6 +229,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
 
       // 2. Se não existir, criar
       const { error } = await supabase.from('mediation_cases').insert([{
+        origin_referral_id: ref.id,
         student_id: 'N/A',
         student_name: ref.studentName,
         class_name: ref.className,
@@ -351,6 +362,18 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
                   <p className="text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Motivo do Encaminhamento</p>
                   <p className="text-xs text-gray-600 font-medium line-clamp-3 leading-relaxed italic">"{ref.reason}"</p>
                 </div>
+
+                {/* [NOVO] Devolutiva da Mediação */}
+                {ref.feedback && (
+                  <div className="bg-emerald-50 p-4 rounded-[2rem] border border-emerald-100 animate-in fade-in slide-in-from-top-2 duration-700 shadow-sm shadow-emerald-100/50">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase mb-2 tracking-widest flex items-center gap-2">
+                       <CheckCircle2 size={12} strokeWidth={3} /> Devolutiva da Mediação
+                    </p>
+                    <p className="text-[11px] text-emerald-800 font-bold leading-relaxed">
+                      {ref.feedback}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -96,7 +96,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
           { id: '2', label: 'Escuta das Partes', completed: false },
           { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
           { id: '4', label: 'Acordo / Finalização', completed: false }
-        ]
+        ],
+        originReferralId: c.origin_referral_id,
+        feedback: c.feedback
       }));
       setCases(formatted);
     } catch (error: any) {
@@ -496,6 +498,58 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                     </h4>
                     <p className="text-sm text-gray-600 leading-relaxed font-medium italic">"{selectedCase.description}"</p>
                  </div>
+
+                  {/* [NOVO] Seção de Devolutiva ao Professor */}
+                  <div className="space-y-4 bg-emerald-50/50 p-6 rounded-[2.5rem] border border-emerald-100/50 relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 p-8 opacity-5 text-emerald-900">
+                        <MessageSquare size={80} strokeWidth={1} />
+                     </div>
+                     
+                     <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircle2 size={14} /> Devolutiva ao Professor(a)
+                     </h4>
+                     
+                     <textarea 
+                        value={selectedCase.feedback || ''}
+                        onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
+                        placeholder="Escreva aqui a resposta/devolutiva para o professor que realizou este encaminhamento..."
+                        className="w-full p-6 bg-white border border-emerald-100 rounded-[2rem] text-sm font-medium h-32 resize-none outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all"
+                     />
+                     
+                     <button 
+                        onClick={async () => {
+                           try {
+                              console.log('Salvando devolutiva...');
+                              // 1. Salva no caso de mediação
+                              const { error: medError } = await supabase
+                                 .from('mediation_cases')
+                                 .update({ feedback: selectedCase.feedback })
+                                 .eq('id', selectedCase.id);
+                              
+                              if (medError) throw medError;
+
+                              // 2. Se houver vínculo, salva no encaminhamento original
+                              if (selectedCase.originReferralId) {
+                                 const { error: refError } = await supabase
+                                    .from('psychosocial_referrals')
+                                    .update({ feedback: selectedCase.feedback })
+                                    .eq('id', selectedCase.originReferralId);
+                                 
+                                 if (refError) console.error("Erro ao sincronizar com encaminhamento:", refError);
+                              }
+
+                              alert("Devolutiva salva e enviada ao Professor Area!");
+                              await fetchCases();
+                           } catch (err: any) {
+                              console.error(err);
+                              alert("Erro ao salvar devolutiva: " + err.message);
+                           }
+                        }}
+                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+                     >
+                        <Save size={16} /> Salvar e Enviar p/ Professor Area
+                     </button>
+                  </div>
 
                  <div className="space-y-6">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
