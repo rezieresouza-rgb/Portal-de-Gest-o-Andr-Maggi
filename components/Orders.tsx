@@ -732,7 +732,7 @@ const Orders: React.FC = () => {
                 <tr className="bg-gray-100 border-2 border-black text-black">
                   <th className="p-3 uppercase no-print w-16 text-center">Sel./Rem.</th>
                   <th className="p-3 uppercase">Descrição do Gênero / Detalhes</th>
-                  <th className="p-3 text-center uppercase w-20">Saldo Ativo</th>
+                  <th className="p-3 text-center uppercase w-28">Valor Unitário</th>
                   <th className="p-3 text-center uppercase w-28 bg-emerald-50">Qtd. Pedido</th>
                   <th className="p-3 text-right uppercase w-32">Total Item</th>
                 </tr>
@@ -768,7 +768,7 @@ const Orders: React.FC = () => {
                           {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
                         </div>
                       </td>
-                      <td className="p-3 text-center font-black uppercase text-blue-600">{formatQuantity(remaining)}</td>
+                      <td className="p-3 text-center font-black uppercase">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td className="p-3 text-center bg-emerald-50/30">
                         <div className="flex flex-col items-center gap-1">
                           <input
@@ -915,7 +915,7 @@ const Orders: React.FC = () => {
               </div>
 
               <div className="bg-black text-white p-3 rounded-lg text-center mb-8">
-                <h2 className="text-sm font-black uppercase tracking-[0.2em]">Guia de Pedido de Gêneros Alimentícios (2ª Via)</h2>
+                <h2 className="text-sm font-black uppercase tracking-[0.2em]">Guia de Pedido de Gêneros Alimentícios</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -955,7 +955,7 @@ const Orders: React.FC = () => {
                 <thead>
                   <tr className="bg-gray-100 border-2 border-black text-black">
                     <th className="p-3 uppercase">Descrição do Gênero / Detalhes</th>
-                    <th className="p-3 text-center uppercase w-20">Saldo Atual</th>
+                    <th className="p-3 text-center uppercase w-28">Valor Unitário</th>
                     <th className="p-3 text-center uppercase w-28 bg-emerald-50">Qtd. Pedido</th>
                     <th className="p-3 text-right uppercase w-32">Total Item</th>
                   </tr>
@@ -970,7 +970,7 @@ const Orders: React.FC = () => {
                           {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
                         </div>
                       </td>
-                      <td className="p-3 text-center font-black uppercase text-blue-600">{item.currentBalance?.toFixed(1) || '---'}</td>
+                      <td className="p-3 text-center font-black uppercase">R$ {item.unit_price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td className="p-3 text-center bg-emerald-50/30 font-black">
                         {item.quantity}
                       </td>
