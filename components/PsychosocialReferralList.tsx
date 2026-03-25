@@ -220,18 +220,18 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black uppercase text-blue-950">Guia de Encaminhamento Psicossocial</h1>
-          <p className="text-[10px] font-bold uppercase text-blue-900/60 tracking-widest">Rede de Proteção à Criança e ao Adolescente</p>
+          <h1 className="text-2xl font-black uppercase text-gray-900 border-b-4 border-violet-500 pb-1">Guia de Encaminhamento Psicossocial</h1>
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest mt-2 font-mono">Rede de Proteção à Criança e ao Adolescente</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
             <input
               type="text"
               placeholder="Buscar..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white outline-none focus:bg-white/10 transition-all w-48 placeholder:text-white/20"
+              className="pl-9 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-violet-100 transition-all w-48 placeholder:text-gray-300"
             />
           </div>
           <button
@@ -239,7 +239,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
               resetForm();
               setIsModalOpen(true);
             }}
-            className="px-6 py-3 bg-violet-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20"
+            className="px-6 py-3 bg-violet-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-violet-700 transition-all flex items-center gap-2"
           >
             <PlusCircle size={18} /> Novo
           </button>
@@ -248,56 +248,72 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map(ref => (
-          <div key={ref.id} className="bg-white/5 p-6 rounded-[2rem] border border-white/10 shadow-sm hover:border-violet-500/30 hover:bg-white/10 transition-all group backdrop-blur-md flex flex-col justify-between">
+          <div 
+             key={ref.id} 
+             onClick={() => {
+               setEditingId(ref.id);
+               setNewReferral({
+                 student_name: ref.studentName,
+                 class_name: ref.className,
+                 reason: ref.reason || '',
+                 priority: ref.priority,
+                 status: ref.status,
+                 observations: typeof ref.observations === 'string' ? ref.observations : '',
+                 student_age: ref.studentAge || '',
+                 school_unit: ref.schoolUnit || 'Unidade Escolar',
+                 teacher_name: ref.teacherName || '',
+                 previous_strategies: ref.previousStrategies || '',
+                 attendance_frequency: ref.attendanceFrequency || '',
+                 adopted_procedures: ref.adoptedProcedures || [],
+                 report: ref.report || ''
+               });
+               setIsModalOpen(true);
+             }}
+             className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-violet-200 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between"
+          >
             <div>
               <div className="flex justify-between items-start mb-4">
-                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${ref.priority === 'ALTA' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                  ref.priority === 'MEDIA' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${ref.priority === 'ALTA' ? 'bg-red-50 text-red-600 border-red-100' :
+                  ref.priority === 'MEDIA' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                    'bg-emerald-50 text-emerald-600 border-emerald-100'
                   }`}>
                   Prioridade {ref.priority}
                 </span>
                 <div className="flex gap-2">
                   <button onClick={(e) => {
                     e.stopPropagation();
-                    setEditingId(ref.id);
-                    setNewReferral({
-                      student_name: ref.studentName,
-                      class_name: ref.className,
-                      reason: ref.reason || '',
-                      priority: ref.priority,
-                      status: ref.status,
-                      observations: typeof ref.observations === 'string' ? ref.observations : '',
-                      student_age: ref.studentAge || '',
-                      school_unit: ref.schoolUnit || 'Unidade Escolar',
-                      teacher_name: ref.teacherName || '',
-                      previous_strategies: ref.previousStrategies || '',
-                      attendance_frequency: ref.attendanceFrequency || '',
-                      adopted_procedures: ref.adoptedProcedures || [],
-                      report: ref.report || ''
-                    });
-                    setIsModalOpen(true);
-                  }} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-violet-400 transition-all">
+                    // Just triggering the same logic as the card click
+                    const card = e.currentTarget.closest('[onClick]');
+                    if (card) (card as HTMLElement).click();
+                  }} className="p-2 hover:bg-violet-50 rounded-lg text-gray-300 hover:text-violet-600 transition-all">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={(e) => handleDelete(ref.id, e)} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-all">
+                  <button onClick={(e) => handleDelete(ref.id, e)} className="p-2 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-600 transition-all">
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
 
-              <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1">{ref.studentName}</h3>
-              <p className="text-xs font-bold text-white/40 uppercase mb-4">{ref.className}</p>
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">{ref.studentName}</h3>
+              <p className="text-xs font-bold text-gray-400 uppercase mb-4">{ref.className}</p>
 
               <div className="space-y-3">
-                <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-                  <p className="text-[10px] font-black text-white/30 uppercase mb-1">Motivo do Encaminhamento</p>
-                  <p className="text-xs text-white/80 font-medium line-clamp-2">{ref.reason}</p>
+                <div className="bg-gray-50 p-4 rounded-[2rem] border border-gray-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Motivo do Encaminhamento</p>
+                  <p className="text-xs text-gray-600 font-medium line-clamp-3 leading-relaxed italic">"{ref.reason}"</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-50">
+               <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${ref.status === 'CONCLUIDO' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`} />
+                  <span className="text-[10px] font-black uppercase text-gray-400">{ref.status || 'AGUARDANDO'}</span>
+               </div>
+               <span className="text-[10px] font-bold text-gray-300 uppercase">{new Date(ref.date).toLocaleDateString()}</span>
+            </div>
+          </div>
+        ))}
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${ref.status === 'CONCLUÍDO' ? 'bg-emerald-500' :
                   ref.status === 'EM_ANDAMENTO' || ref.status === 'EM_ACOMPANHAMENTO' ? 'bg-blue-500' : 'bg-amber-500'
