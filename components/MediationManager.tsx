@@ -278,7 +278,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                              className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all uppercase"
                           />
                        </div>
-                       {filteredStudents.length > 0 && (
+                       {studentSearch.length >= 3 && filteredStudents.length > 0 && (
                           <div className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden divide-y divide-gray-50 animate-in slide-in-from-top-2">
                              {filteredStudents.map((s: any) => (
                                 <button 
@@ -286,7 +286,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }
                                   type="button"
                                   onClick={() => {
                                      setNewCase({ ...newCase, studentName: s.Nome, studentId: s.CodigoAluno, className: s.Turma });
-                                     setStudentSearch(s.Nome);
+                                     setStudentSearch('');
                                   }}
                                   className="w-full text-left p-4 hover:bg-rose-50 transition-colors flex justify-between items-center"
                                 >
