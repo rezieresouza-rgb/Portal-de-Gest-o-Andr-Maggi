@@ -240,9 +240,9 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
 
       alert("Caso de mediação criado com sucesso para este aluno!");
       if (onTabChange) onTabChange('mediation');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Erro ao vincular com mediação.");
+      alert("Erro ao vincular com mediação: " + (err.message || "Erro desconhecido"));
     }
   };
 
