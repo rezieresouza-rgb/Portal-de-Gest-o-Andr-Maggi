@@ -196,13 +196,18 @@ CREATE TABLE referrals (
 
 CREATE TABLE mediation_cases (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID REFERENCES students(id),
-    type VARCHAR(50), -- CONFLITO, BULLYING
+    student_id TEXT, -- Alterado para TEXT para suportar 'N/A'
+    student_name TEXT,
+    class_name TEXT,
+    type VARCHAR(50), -- CONFLITO, BULLYING, DISCIPLINAR, OUTRO
     severity VARCHAR(20),
     status VARCHAR(20),
     description TEXT,
+    involved_parties TEXT[],
+    steps JSONB,
     opened_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    closed_at TIMESTAMP WITH TIME ZONE
+    closed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 8. INDEXAÇÃO PARA PERFORMANCE
