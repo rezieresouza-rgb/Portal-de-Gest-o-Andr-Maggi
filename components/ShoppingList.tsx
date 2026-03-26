@@ -63,13 +63,13 @@ const ShoppingList: React.FC = () => {
   const [globalProductSearch, setGlobalProductSearch] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStock, setIsLoadingStock] = useState(true);
   const [contracts, setContracts] = useState<Contract[]>([]);
 
   // History State
    const [historyLists, setHistoryLists] = useState<any[]>([]);
    const [selectedHistoryList, setSelectedHistoryList] = useState<any | null>(null);
    const [isEditingHistory, setIsEditingHistory] = useState(false);
-   const [latestInventory, setLatestInventory] = useState<any[]>([]);
 
   // Carrega contratos, alunos e histórico do Supabase
   useEffect(() => {
@@ -111,21 +111,9 @@ const ShoppingList: React.FC = () => {
         }));
          setContracts(formatted);
        }
+      setIsLoadingStock(false);
+      fetchHistory();
  
-       // [NOVO] Carregar último fechamento de estoque para mostrar saldo disponível
-       const { data: latestInvData } = await supabase
-         .from('merenda_inventory_history')
-         .select('items')
-         .order('timestamp', { ascending: false })
-         .limit(1);
-       
-       if (latestInvData && latestInvData.length > 0) {
-         const items = typeof latestInvData[0].items === 'string' ? JSON.parse(latestInvData[0].items) : latestInvData[0].items;
-         setLatestInventory(items);
-       }
- 
-       fetchHistory();
-
     } catch (error) {
       console.error("Erro ao carregar dados do Supabase:", error);
     } finally {
@@ -195,6 +183,7 @@ const ShoppingList: React.FC = () => {
         contractNum: "---",
         contractId: "",
         contractItemId: "",
+        contractDescription: description, // Default to the technical sheet name
         unit: "KG",
         price: 0,
         score: -1
@@ -245,6 +234,7 @@ const ShoppingList: React.FC = () => {
               contractNum: c.number,
               contractId: c.id,
               contractItemId: contractItem.id,
+              contractDescription: contractItem.description,
               unit: contractItem.unit,
               price: contractItem.unitPrice,
               score: score
@@ -258,6 +248,7 @@ const ShoppingList: React.FC = () => {
         contractNum = bestMatch.contractNum;
         contractId = bestMatch.contractId;
         contractItemId = bestMatch.contractItemId;
+        description = bestMatch.contractDescription; // Use the contract's name!
         unit = bestMatch.unit;
         price = bestMatch.price;
       }
@@ -516,29 +507,34 @@ const ShoppingList: React.FC = () => {
     return results.slice(0, 8);
   }, [contracts, globalProductSearch]);
 
+  const parseMealQuantity = (qtyStr: string): number => {
+    if (!qtyStr) return 0;
+    // Extrai apenas os números e pontos/vírgulas
+    const cleaned = qtyStr.replace(/[^\d.,]/g, '').replace(',', '.');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  };
+
   const getStockForProduct = (productName: string) => {
-    if (!latestInventory || latestInventory.length === 0) return null;
-    const normSearch = normalize(productName);
-    
-    // Fuzzy matching similar to general list generation
-    let bestMatch: any = null;
-    let maxScore = -1;
+    if (isLoadingStock) return 'loading';
+    const normalizedTarget = normalize(productName);
 
-    for (const invItem of latestInventory) {
-      const normItem = normalize(invItem.name || invItem.description || '');
-      let score = -1;
+    // BUSCAR SALDO NOS CONTRATOS ATIVOS
+    let totalBalance = 0;
+    let found = false;
 
-      if (normItem === normSearch) score = 100;
-      else if (normItem.includes(normSearch) || normSearch.includes(normItem)) score = 50;
+    contracts.forEach(contract => {
+      contract.items.forEach(ci => {
+        const normalizedCi = normalize(ci.description);
+        // Busca exata ou parcial para maior robustez
+        if (normalizedCi === normalizedTarget || normalizedCi.includes(normalizedTarget) || normalizedTarget.includes(normalizedCi)) {
+          totalBalance += ((ci.contractedQuantity || 0) - (ci.acquiredQuantity || 0));
+          found = true;
+        }
+      });
+    });
 
-      if (score > maxScore) {
-        maxScore = score;
-        bestMatch = invItem;
-      }
-    }
-    
-    if (maxScore >= 50) return bestMatch;
-    return null;
+    return found ? totalBalance : null;
   };
 
   const addManualItem = async (product: any) => {
@@ -694,7 +690,7 @@ const ShoppingList: React.FC = () => {
                           <input type="checkbox" checked={generatedList.length > 0 && generatedList.every(i => i.selected)} onChange={(e) => toggleAll(e.target.checked)} className="rounded border-gray-300 text-orange-600" />
                         </th>
                         <th className="px-4 py-4">Ingrediente (A-Z)</th>
-                        <th className="px-6 py-4 text-center">Estoque Atual</th>
+                        <th className="px-6 py-4 text-center">Saldo Contrato</th>
                         <th className="px-6 py-4 text-center">Qtd. Necessária</th>
                         <th className="px-6 py-4">Observação</th>
                         <th className="px-6 py-4">Fornecedor / Contrato</th>
@@ -714,13 +710,28 @@ const ShoppingList: React.FC = () => {
                           <td className="px-6 py-5 text-center">
                              {(() => {
                                 const stock = getStockForProduct(item.description);
-                                if (!stock) return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">Não mapeado</span>;
-                                const balance = (stock.previousBalance || 0) + (stock.entries || 0) - (stock.outputs || 0);
+                                
+                                if (stock === 'loading') return <Loader2 size={12} className="animate-spin text-orange-400 mx-auto" />;
+                                
+                                if (stock === null) return (
+                                  <div className="group relative cursor-help">
+                                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">Não mapeado</span>
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[8px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none text-center font-bold uppercase">
+                                      Nenhum contrato ativo encontrado com este item. Confira o nome no contrato.
+                                    </div>
+                                  </div>
+                                );
+                                
                                 return (
-                                   <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl border ${balance <= 0 ? 'bg-red-50 border-red-100 text-red-600' : balance < (stock.min || 5) ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
-                                      <span className="text-xs font-black">{balance.toLocaleString('pt-BR')}</span>
-                                      <span className="text-[7px] font-bold uppercase tracking-widest">{stock.unit}</span>
-                                   </div>
+                                  <div className="group relative cursor-help flex flex-col items-center">
+                                    <span className={`text-[11px] font-black ${(stock as number) <= (item.quantity * 2) ? 'text-red-500' : 'text-emerald-700'}`}>
+                                      {formatQuantity(stock as number, item.unit)}
+                                    </span>
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-gray-900 text-white text-[8px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none text-center font-bold uppercase leading-relaxed">
+                                      Saldo Disponível no Contrato <br/>
+                                      (Qtd Contratada - Qtd Já Pedida)
+                                    </div>
+                                  </div>
                                 );
                              })()}
                           </td>
@@ -906,12 +917,17 @@ const ShoppingList: React.FC = () => {
                    <td className="px-6 py-5 text-center">
                       {(() => {
                          const stock = getStockForProduct(item.description);
-                         if (!stock) return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">---</span>;
-                         const balance = (stock.previousBalance || 0) + (stock.entries || 0) - (stock.outputs || 0);
+                         if (stock === 'loading') return <Loader2 size={10} className="animate-spin text-gray-400 mx-auto" />;
+                         if (stock === null) return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">---</span>;
+                         
                          return (
-                            <div className={`inline-flex flex-col items-center px-3 py-1.5 rounded-xl border ${balance <= 0 ? 'bg-red-50 border-red-100 text-red-600' : balance < (stock.min || 5) ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
-                               <span className="text-xs font-black">{balance.toLocaleString('pt-BR')}</span>
-                               <span className="text-[7px] font-bold uppercase tracking-widest">{stock.unit}</span>
+                            <div className="group relative cursor-help flex flex-col items-center">
+                               <span className={`text-[11px] font-black ${(stock as number) <= (item.quantity * 2) ? 'text-red-500' : 'text-emerald-700'}`}>
+                                  {formatQuantity(stock as number, item.unit)}
+                               </span>
+                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[7px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none text-center font-bold uppercase leading-relaxed">
+                                  Saldo Contratual na data
+                               </div>
                             </div>
                          );
                       })()}
