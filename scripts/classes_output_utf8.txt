@@ -1,0 +1,20 @@
+﻿
+--- Class: 8┬║ ANO E ---
+Total Enrollments: 29
+Enrollments with NULL students: 0
+
+--- Class: 9┬║ ANO D ---
+Total Enrollments: 30
+Enrollments with NULL students: 0
+
+--- Class: 9┬║ ANO E ---
+Total Enrollments: 29
+Enrollments with NULL students: 0
+
+--- Class: 8┬║ ANO D ---
+Total Enrollments: 30
+Enrollments with NULL students: 0
+
+--- Class: 6┬║ ANO A ---
+Total Enrollments: 30
+Enrollments with NULL students: 0

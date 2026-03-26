@@ -90,11 +90,13 @@ const MenuChecklist: React.FC = () => {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const { data: staffData } = await supabase
+        const { data: staffData, error } = await supabase
           .from('staff')
           .select('*')
-          .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRIÇÃO%')
+          .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRI%')
           .eq('status', 'EM_ATIVIDADE');
+        
+        if (error) throw error;
         if (staffData) setNutricaoStaff(staffData);
       } catch (err) {
         console.error("Erro ao buscar funcionários:", err);
@@ -232,6 +234,11 @@ const MenuChecklist: React.FC = () => {
   }, [selectedWeek, selectedDay, viewMode, selectedShift, isLocked, currentRecordId]);
 
   const saveToHistory = async () => {
+    // Validação mínima
+    if (!serviceDate || !selectedShift) {
+      throw new Error("Data e turno são obrigatórios.");
+    }
+
     // Usar ID determinístico baseado em data e turno garante que turnos diferentes não se sobrescrevam
     // caso o usuário altere o turno sem clicar em "Novo Registro".
     const recordId = `meal-${serviceDate}-${selectedShift.replace(/\s+/g, '_')}`;
@@ -244,34 +251,27 @@ const MenuChecklist: React.FC = () => {
       timestamp: Date.now()
     };
     
-    // Remove qualquer registro existente que tenha EXATAMENTE a mesma data e o mesmo turno (caso esteja editando)
+    // Salva na Nuvem (Supabase) - Tentar primeiro antes de atualizar local para garantir consistência
+    const { error: supabaseError } = await supabase.from('merenda_meal_records').upsert({
+      id: newRecord.id,
+      date: newRecord.date,
+      shift: newRecord.shift,
+      entrada: newRecord.entrada,
+      principal: newRecord.principal,
+      timestamp: newRecord.timestamp
+    });
+
+    if (supabaseError) {
+      throw supabaseError;
+    }
+
+    // Se salvou no banco, atualiza local
     let updatedHistory = history.filter(r => r.id !== recordId);
-    
-    // E se o usuário estiver editando um registro antigo (currentRecordId) e APENAS corrigiu o turno/data?
-    // Nesse caso o currentRecordId antigo ficaria "órfão" no histórico.
-    // Para resolver o bug do usuário (onde registrar a tarde apaga a manhã), é preferível deixar o registro original intacto
-    // e criar um novo para o novo turno. Se for erro de digitação, o usuário exclui o errado no histórico.
-    
     updatedHistory = [newRecord, ...updatedHistory];
     
-    // Salva local (cache imediato)
     setHistory(updatedHistory);
     localStorage.setItem('merenda_meal_records_v1', JSON.stringify(updatedHistory));
     setCurrentRecordId(recordId);
-
-    // Salva na Nuvem (Supabase)
-    try {
-      await supabase.from('merenda_meal_records').upsert({
-        id: newRecord.id,
-        date: newRecord.date,
-        shift: newRecord.shift,
-        entrada: newRecord.entrada,
-        principal: newRecord.principal,
-        timestamp: newRecord.timestamp
-      });
-    } catch (err) {
-      console.error("Falha ao salvar no banco:", err);
-    }
   };
 
   const deleteFromHistory = async (id: string, e: React.MouseEvent) => {
@@ -364,10 +364,16 @@ const MenuChecklist: React.FC = () => {
 
   const handleManualSave = async () => {
     setIsSaving(true);
-    await saveToHistory();
-    setIsSaving(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      await saveToHistory();
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error: any) {
+      console.error("Erro ao salvar:", error);
+      alert(`Erro ao salvar no banco de dados: ${error.message || "Tente novamente."}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (

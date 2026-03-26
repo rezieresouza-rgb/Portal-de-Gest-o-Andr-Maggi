@@ -1,0 +1,23 @@
+[
+  {
+    "id": "b16e2936-6567-4df6-b9dc-628c2adc6a90",
+    "number": "002/2026/SEDUC/MT",
+    "supplier_id": "73e77103-6489-444d-b16a-46b05bf0ad04",
+    "type": "Pregão Presencial",
+    "start_date": "2026-01-20",
+    "end_date": "2027-01-20",
+    "status": "ATIVO",
+    "created_at": "2026-02-13T05:02:35.576223+00:00",
+    "supplier": {
+      "id": "73e77103-6489-444d-b16a-46b05bf0ad04",
+      "cnpj": "08.112.334/0001-22",
+      "name": "MARIA ROMA",
+      "email": "financeiro@mariaroma.com.br",
+      "phone": "66 3541-4455",
+      "score": 4.8,
+      "category": "Perecíveis",
+      "location": "COLÍDER/MT",
+      "full_name": null
+    }
+  }
+]

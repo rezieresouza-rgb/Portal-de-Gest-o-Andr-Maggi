@@ -1,0 +1,11 @@
+﻿├Ültimas turmas criadas:
+- Turma: 9┬║ ANO E | Criada em: 2026-02-18T20:14:57.887823+00:00
+- Turma: 9┬║ ANO D | Criada em: 2026-02-18T20:14:42.443556+00:00
+- Turma: 9┬║ ANO C | Criada em: 2026-02-18T19:58:44.369664+00:00
+- Turma: 8┬║ ANO E | Criada em: 2026-02-18T19:46:21.263564+00:00
+- Turma: 8┬║ ANO D | Criada em: 2026-02-18T19:45:44.184728+00:00
+- Turma: 7┬║ ANO E | Criada em: 2026-02-18T18:31:18.9113+00:00
+- Turma: 7┬║ ANO D | Criada em: 2026-02-18T18:15:46.476635+00:00
+- Turma: 6┬║ ANO E | Criada em: 2026-02-18T17:27:54.235635+00:00
+- Turma: 6┬║ ANO D | Criada em: 2026-02-18T17:21:17.070227+00:00
+- Turma: 7┬║ ANO A | Criada em: 2026-02-12T22:34:12.009175+00:00

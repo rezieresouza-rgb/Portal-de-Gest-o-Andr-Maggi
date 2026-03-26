@@ -21,7 +21,7 @@ export const SCHOOL_SUBJECTS = [
 
 export const INITIAL_SUPPLIERS: Supplier[] = [
   { id: 'sup-alimex', name: 'ALIMEX LIMA', full_name: 'ALIMEX LIMA LTDA', cnpj: '10.234.567/0001-89', email: 'contato@alimex.com.br', phone: '66 3541-1200', category: 'Gêneros Diversos', score: 5.0, location: 'COLÍDER/MT' },
-  { id: 'sup-mariaroma', name: 'MARIA ROMA', full_name: 'CASA DE CARNE E MERCADO MARIA ROMA LTDA', cnpj: '08.112.334/0001-22', email: 'financeiro@mariaroma.com.br', phone: '66 3541-4455', category: 'Perecíveis', score: 4.8, location: 'COLÍDER/MT' },
+  { id: 'sup-mariaroma', name: 'MARIPA ROMA', full_name: 'Casa de Carne e Mercado Maripa Roma LTDA', cnpj: '50.387.266/0001-07', email: 'financeiro@mariaroma.com.br', phone: '66 99231-5431', category: 'Perecíveis', score: 4.8, location: 'COLÍDER/MT' },
   { id: 'sup-cooperlider', name: 'COOPERLIDER', full_name: 'COOPERLIDER COOPERATIVA DE PRODUTORES RURAIS', cnpj: '15.998.776/0001-10', email: 'cooperlider.col@gmail.com', phone: '66 99988-1020', category: 'Agricultura Familiar', score: 5.0, location: 'COLÍDER/MT' },
   { id: 'sup-ivan', name: 'IVAN DIAS', full_name: 'IVAN DIAS LINS ME', cnpj: '12.445.667/0001-33', email: 'ivan.dias@bol.com.br', phone: '66 3541-8899', category: 'Gêneros Secos', score: 4.5, location: 'COLÍDER/MT' },
   { id: 'sup-j-assis', name: 'J. ASSIS', full_name: 'J. ASSIS E CIA LTDA ME', cnpj: '05.667.889/0001-44', email: 'jassis.dist@hotmail.com', phone: '66 3541-7766', category: 'Gêneros Diversos', score: 4.7, location: 'COLÍDER/MT' },
@@ -57,7 +57,7 @@ export const INITIAL_CONTRACTS: Contract[] = [
     id: 'ct-2026-mariaroma-02',
     number: '002/2026/SEDUC/MT',
     supplierId: 'sup-mariaroma',
-    supplierName: 'MARIA ROMA',
+    supplierName: 'MARIPA ROMA',
     startDate: '2026-01-20',
     endDate: '2027-01-20',
     status: ContractStatus.ACTIVE,
@@ -161,7 +161,7 @@ export const INITIAL_CONTRACTS: Contract[] = [
     status: ContractStatus.ACTIVE,
     type: 'Pregão Presencial',
     items: [
-      { id: 'nc-i1', description: 'MANTEIGA PURA COM SAL', contractedQuantity: 86, acquiredQuantity: 0, unit: 'KG', unitPrice: 71.50, brand: 'COOPERNOVA' },
+      { id: 'nc-i1', description: 'MANTEIGA PURA COM SAL', contractedQuantity: 86, acquiredQuantity: 0, unit: 'KG', unitPrice: 71.50, brand: 'SZURA' },
       { id: 'nc-i2', description: 'PEIXE CONGELADO FILÉ DE PINTADO', contractedQuantity: 36, acquiredQuantity: 0, unit: 'KG', unitPrice: 58.00, brand: 'DELICIUS FISH' }
     ]
   },
