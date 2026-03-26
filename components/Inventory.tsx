@@ -445,7 +445,7 @@ const Inventory: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-emerald-100 text-emerald-600 rounded-2xl"><Calendar size={20} /></div>
                     <div>
-                      <p className="font-black text-gray-900 uppercase text-xs">{h.date} - {h.turno}</p>
+                      <p className="font-black text-gray-900 uppercase text-xs">{new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR')} - {h.turno}</p>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h.responsavel}</p>
                     </div>
                   </div>
