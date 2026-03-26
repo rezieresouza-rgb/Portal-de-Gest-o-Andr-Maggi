@@ -181,6 +181,20 @@ const MenuChecklist: React.FC = () => {
 
   const [serviceDate, setServiceDate] = useState(getLocalDateString());
   const [selectedShift, setSelectedShift] = useState<string>('MATUTINO');
+
+  const getDayName = (dateStr: string) => {
+    const dateObj = new Date(dateStr + 'T12:00:00');
+    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    return days[dateObj.getDay()];
+  };
+
+  // Sync selectedDay when serviceDate changes
+  useEffect(() => {
+    const dayName = getDayName(serviceDate);
+    if (dayName !== 'Sábado' && dayName !== 'Domingo') {
+      setSelectedDay(dayName);
+    }
+  }, [serviceDate]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -272,6 +286,24 @@ const MenuChecklist: React.FC = () => {
     setHistory(updatedHistory);
     localStorage.setItem('merenda_meal_records_v1', JSON.stringify(updatedHistory));
     setCurrentRecordId(recordId);
+  };
+
+  const advanceToNextTurn = () => {
+    if (selectedShift === 'MATUTINO') {
+      setSelectedShift('VESPERTINO');
+    } else {
+      setSelectedShift('MATUTINO');
+      // Incrementa a data
+      const current = new Date(serviceDate + 'T12:00:00');
+      current.setDate(current.getDate() + 1);
+      
+      // Pula final de semana se necessário
+      if (current.getDay() === 6) current.setDate(current.getDate() + 2); // Sábado -> Segunda
+      else if (current.getDay() === 0) current.setDate(current.getDate() + 1); // Domingo -> Segunda
+
+      setServiceDate(current.toISOString().split('T')[0]);
+    }
+    // Nota: startNewRecord será chamado após isso no handleManualSave
   };
 
   const deleteFromHistory = async (id: string, e: React.MouseEvent) => {
@@ -367,7 +399,14 @@ const MenuChecklist: React.FC = () => {
     try {
       await saveToHistory();
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      
+      // Avança para o próximo turno/dia após um breve delay para o usuário ver o feedback de sucesso
+      setTimeout(() => {
+        advanceToNextTurn();
+        startNewRecord();
+        setShowSuccess(false);
+      }, 1500);
+      
     } catch (error: any) {
       console.error("Erro ao salvar:", error);
       alert(`Erro ao salvar no banco de dados: ${error.message || "Tente novamente."}`);
