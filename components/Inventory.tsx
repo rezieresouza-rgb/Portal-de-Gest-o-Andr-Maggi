@@ -325,6 +325,14 @@ const Inventory: React.FC = () => {
     }
   };
 
+  const loadFromHistory = (snapshot: InventorySnapshot) => {
+    setItems(snapshot.items.map(i => ({ ...i })));
+    setData(snapshot.date);
+    setTurno(snapshot.turno);
+    setResponsavel(snapshot.responsavel);
+    setViewMode('active');
+  };
+
   const clearAllData = async () => {
     if (!window.confirm("ATENÇÃO: Isso apagará TODOS os registros de estoque da nuvem e do seu computador. Esta ação não pode ser desfeita. Deseja continuar?")) return;
     
@@ -440,7 +448,11 @@ const Inventory: React.FC = () => {
         {viewMode === 'history' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 duration-300">
             {history.length > 0 ? history.map((h) => (
-              <div key={h.id} className="bg-gray-50 p-6 rounded-3xl border border-gray-100 hover:border-emerald-200 transition-all">
+              <div 
+                key={h.id} 
+                onClick={() => loadFromHistory(h)}
+                className="bg-gray-50 p-6 rounded-3xl border border-gray-100 hover:border-emerald-200 transition-all cursor-pointer group relative"
+              >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-emerald-100 text-emerald-600 rounded-2xl"><Calendar size={20} /></div>
