@@ -151,7 +151,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       const { data: transactionsData, error: txError } = await supabase
         .from('transactions')
         .select('*')
-        .order('date', { ascending: false });
+        .order('date', { ascending: true });
 
       if (txError) throw txError;
 
@@ -264,7 +264,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         }
       });
     });
-    return invoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return invoices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [funds]);
 
   // Filtro específico para relatório de impostos AF
@@ -992,17 +992,113 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                         })()}
 
                         {activeTab === 'pdde_qualidade' ? (
-                          <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
-                            {['Escola das Adolescências', 'Educação Conectada', 'Escola e Comunidade'].map(action => {
-                              const actionTx = funds['pdde_qualidade'].transactions.filter(t => t.integratedAction === action);
-                              const actionBalance = actionTx.reduce((acc, t) => acc + (t.type === 'ENTRY' ? t.value : -t.value), 0);
-                              return (
-                                <div key={action} className="bg-purple-500/10 p-6 rounded-[2rem] border border-purple-500/20 backdrop-blur-md min-w-[200px] flex flex-col justify-between">
-                                  <p className="text-[9px] font-black text-purple-300 uppercase tracking-widest mb-2 line-clamp-1" title={action}>{action}</p>
-                                  <p className={`text-xl font-black ${actionBalance < 0 ? 'text-red-600' : 'text-white'}`}>R$ {actionBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                </div>
-                              );
-                            })}
+                          <div className="flex flex-col gap-6 flex-1">
+                            {/* Saldo Geral PDDE Qualidade */}
+                            <div className="flex gap-6 w-full flex-col lg:flex-row">
+                              <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col justify-center min-w-[200px] text-center lg:text-left">
+                                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Saldo Geral Disponível</p>
+                                <p className={`text-4xl font-black ${stats?.balance! < 0 ? 'text-red-500' : 'text-white'} tracking-tighter`}>
+                                  R$ {stats?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                                </p>
+                              </div>
+
+                              {/* CUSTEIO CARD (PDDE Qualidade) */}
+                              {(() => {
+                                const orcado = stats?.entriesCusteio || 0;
+                                const gasto = stats?.expensesCusteio || 0;
+                                const pct = orcado > 0 ? (gasto / orcado) * 100 : 0;
+                                const saldoCusteio = orcado - gasto;
+                                const color = pct >= 95 ? 'red' : pct >= 80 ? 'amber' : 'emerald';
+
+                                return (
+                                  <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex-1 flex flex-col justify-center min-w-[250px]">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Custeio</p>
+                                      </div>
+                                      <p className={`text-[10px] font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                                        R$ {saldoCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
+                                    </div>
+                                    <p className="text-xl font-black text-white">R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3">
+                                      <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* CAPITAL CARD (PDDE Qualidade) */}
+                              {(() => {
+                                const orcado = stats?.entriesCapital || 0;
+                                const gasto = stats?.expensesCapital || 0;
+                                const pct = orcado > 0 ? (gasto / orcado) * 100 : 0;
+                                const saldoCapital = orcado - gasto;
+                                const color = pct >= 95 ? 'red' : pct >= 80 ? 'amber' : 'emerald';
+
+                                return (
+                                  <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex-1 flex flex-col justify-center min-w-[250px]">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Capital</p>
+                                      </div>
+                                      <p className={`text-[10px] font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                                        R$ {saldoCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
+                                    </div>
+                                    <p className="text-xl font-black text-white">R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3">
+                                      <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+
+                            {/* Ações Integradas com Detalhamento Custeio/Capital */}
+                            <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+                              {['Escola das Adolescências', 'Educação Conectada', 'Escola e Comunidade'].map(action => {
+                                const actionTx = funds['pdde_qualidade'].transactions.filter(t => t.integratedAction === action);
+                                const entries = actionTx.filter(t => t.type === 'ENTRY');
+                                const expenses = actionTx.filter(t => t.type === 'EXPENSE');
+
+                                const balance = actionTx.reduce((acc, t) => acc + (t.type === 'ENTRY' ? t.value : -t.value), 0);
+                                
+                                const entriesCusteio = entries.filter(t => t.group === 'CUSTEIO').reduce((acc, t) => acc + t.value, 0);
+                                const expensesCusteio = expenses.filter(t => t.group === 'CUSTEIO').reduce((acc, t) => acc + t.value, 0);
+                                const balanceCusteio = entriesCusteio - expensesCusteio;
+
+                                const entriesCapital = entries.filter(t => t.group === 'CAPITAL').reduce((acc, t) => acc + t.value, 0);
+                                const expensesCapital = expenses.filter(t => t.group === 'CAPITAL').reduce((acc, t) => acc + t.value, 0);
+                                const balanceCapital = entriesCapital - expensesCapital;
+
+                                return (
+                                  <div key={action} className="bg-purple-500/10 p-5 rounded-[2rem] border border-purple-500/20 backdrop-blur-md min-w-[240px] flex flex-col">
+                                    <p className="text-[9px] font-black text-purple-300 uppercase tracking-widest mb-3 line-clamp-1 border-b border-purple-500/10 pb-2" title={action}>{action}</p>
+                                    
+                                    <div className="space-y-3">
+                                      <div className="flex justify-between items-end">
+                                        <p className="text-[8px] font-bold text-white/40 uppercase">Saldo Total</p>
+                                        <p className={`text-lg font-black ${balance < 0 ? 'text-red-400' : 'text-white'}`}>R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-purple-500/10">
+                                        <div>
+                                          <p className="text-[7px] font-black text-blue-300 uppercase tracking-tighter">Custeio</p>
+                                          <p className={`text-[11px] font-black ${balanceCusteio < 0 ? 'text-red-400' : 'text-blue-200'}`}>R$ {balanceCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-[7px] font-black text-amber-300 uppercase tracking-tighter">Capital</p>
+                                          <p className={`text-[11px] font-black ${balanceCapital < 0 ? 'text-red-400' : 'text-amber-200'}`}>R$ {balanceCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         ) : activeTab === 'merenda' ? (
                           <div className="flex gap-6 overflow-x-auto pb-2 custom-scrollbar flex-1">
@@ -1016,7 +1112,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             </div>
                             <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 backdrop-blur-md flex-1 text-center flex flex-col justify-center min-w-[150px]">
                               <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Saldo Total</p>
-                              <p className={`text-2xl font-black ${stats?.balance! < 0 ? 'text-red-600' : 'text-white'}`}>R$ {stats?.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              <p className={`text-2xl font-black ${stats?.balance! < 0 ? 'text-red-600' : 'text-white'}`}>R$ {stats?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</p>
                             </div>
                           </div>
                         ) : (
@@ -1024,7 +1120,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col justify-center min-w-[200px] text-center lg:text-left">
                               <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Saldo Geral Disponível</p>
                               <p className={`text-4xl font-black ${stats?.balance! < 0 ? 'text-red-500' : 'text-white'} tracking-tighter`}>
-                                R$ {stats?.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                R$ {stats?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                               </p>
                             </div>
                             
