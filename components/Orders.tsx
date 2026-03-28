@@ -726,15 +726,15 @@ const Orders: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-6 gap-4">
+          <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6 no-print">
             <div className="flex items-center justify-start flex-1">
-              <img src="/logo-escola.png" alt="Escola Logo" className="h-32 w-auto object-contain" />
+              <img src="/logo-escola.png" alt="Escola Logo" className="h-44 w-auto object-contain" />
             </div>
             <div className="flex-[2] flex justify-center px-4">
-              <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-36 w-full object-contain" />
+              <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-44 w-full object-contain" />
             </div>
             <div className="flex items-center justify-end flex-1">
-              <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-24 w-auto object-contain" />
+              <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-28 w-auto object-contain" />
             </div>
           </div>
 
@@ -953,15 +953,15 @@ const Orders: React.FC = () => {
         pdfData && (
           <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
             <div id="hidden-printable-area" className="bg-white p-12 rounded-[2.5rem] border border-gray-200 shadow-2xl max-w-5xl mx-auto printable-guide relative">
-              <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-6 gap-4">
+              <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
                 <div className="flex items-center justify-start flex-1">
-                  <img src="/logo-escola.png" alt="Escola Logo" className="h-32 w-auto object-contain" />
+                  <img src="/logo-escola.png" alt="Escola Logo" className="h-44 w-auto object-contain" />
                 </div>
                 <div className="flex-[2] flex justify-center px-4">
-                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-36 w-full object-contain" />
+                  <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-44 w-full object-contain" />
                 </div>
                 <div className="flex items-center justify-end flex-1">
-                  <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-24 w-auto object-contain" />
+                  <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-28 w-auto object-contain" />
                 </div>
               </div>
 
