@@ -439,8 +439,8 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            </>
                         )}
                         <button 
-                           onClick={() => handleViewDetails(occ)}
-                           className="p-3 bg-gray-50 text-gray-300 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block"
+                           onClick={(e) => { e.stopPropagation(); handleViewDetails(occ); }}
+                           className="p-3 bg-gray-50 text-gray-300 hover:scale-110 active:scale-95 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block relative z-10"
                            title="Ver Detalhes do Registro"
                         >
                            <ChevronRight size={24} />
@@ -734,7 +734,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
             {/* MODAL DE VISUALIZAÇÃO DETALHADA */}
             {viewingOccurrence && (
-               <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-md animate-in fade-in duration-300 no-print">
+               <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md animate-in fade-in duration-300 no-print pointer-events-auto">
                   <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
                      <div className="p-8 bg-gray-50 flex justify-between items-center border-b border-gray-100 shrink-0">
                         <div className="flex items-center gap-4">
