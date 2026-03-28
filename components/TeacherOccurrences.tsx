@@ -65,7 +65,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       const { data, error } = await supabase
          .from('occurrences')
          .select('*')
-         .eq('responsible_name', user.name)
          .order('date', { ascending: false });
 
       if (error) {
@@ -81,11 +80,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
             type: item.category as any, // category mapped to type
             severity: item.severity as any,
             description: item.description,
-            notifiedParents: false, // This field might need to be added to DB if important, assuming false for now or I can store it in a JSON column if needed. 
-            // Wait, I didn't see notified_parents in DB schema. 
-            // I will assume it's not persisted or I should check if I missed it.
-            // Checking schema again... no notified_parents. 
-            // I'll skip it or add it later. For now, let's just default false.
+            notifiedParents: false, 
             timestamp: new Date(item.created_at || item.date).getTime()
          }));
          setRecentOccurrences(mapped);
@@ -337,9 +332,9 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                  <History className="text-gray-400" size={20} /> Meus Registros Recentes
+                  <History className="text-gray-400" size={20} /> Histórico Global de Registros
                </h4>
-               <span className="text-[10px] font-black bg-white text-gray-400 px-3 py-1 rounded-lg border border-gray-100 uppercase tracking-widest">Diário Docente</span>
+               <span className="text-[10px] font-black bg-white text-gray-400 px-3 py-1 rounded-lg border border-gray-100 uppercase tracking-widest">Monitoramento Portaria/Sala</span>
             </div>
 
             <div className="divide-y divide-gray-50">
@@ -362,6 +357,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            <div className="flex flex-wrap items-center gap-4 mt-3">
                               <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Clock size={12} /> {new Date(occ.date).toLocaleDateString('pt-BR')}</span>
                               <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Flag size={12} /> Turma: {occ.className}</span>
+                              <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-gray-100">
+                                 <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                                 <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter">Relator: {occ.teacherName}</span>
+                              </div>
                            </div>
                         </div>
                      </div>
@@ -369,12 +368,16 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                         <button onClick={() => handlePrint(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Imprimir Ata Oficial">
                            <Printer size={20} />
                         </button>
-                        <button onClick={() => handleEdit(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all" title="Editar Registro">
-                           <Edit3 size={20} />
-                        </button>
-                        <button onClick={() => deleteOccurrence(occ.id)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Excluir Registro">
-                           <Trash2 size={20} />
-                        </button>
+                        {occ.teacherName === user.name && (
+                           <>
+                              <button onClick={() => handleEdit(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all" title="Editar Registro">
+                                 <Edit3 size={20} />
+                              </button>
+                              <button onClick={() => deleteOccurrence(occ.id)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Excluir Registro">
+                                 <Trash2 size={20} />
+                              </button>
+                           </>
+                        )}
                         <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block">
                            <ChevronRight size={24} />
                         </div>
@@ -383,7 +386,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                )) : (
                   <div className="py-24 text-center">
                      <MessageSquare size={48} className="mx-auto mb-4 text-gray-100" />
-                     <p className="text-gray-300 font-black uppercase text-xs tracking-widest">Nenhum registro encontrado no seu histórico</p>
+                     <p className="text-gray-300 font-black uppercase text-xs tracking-widest">Nenhum registro encontrado no histórico global</p>
                   </div>
                )}
             </div>
