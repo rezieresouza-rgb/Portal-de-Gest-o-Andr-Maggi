@@ -333,32 +333,6 @@ const Inventory: React.FC = () => {
     setViewMode('active');
   };
 
-  const clearAllData = async () => {
-    if (!window.confirm("ATENÇÃO: Isso apagará TODOS os registros de estoque da nuvem e do seu computador. Esta ação não pode ser desfeita. Deseja continuar?")) return;
-    
-    try {
-      setIsSaving(true);
-      // 1. Limpar Supabase
-      const { error } = await supabase.from('merenda_inventory_history').delete().neq('id', '0');
-      if (error) throw error;
-
-      // 2. Limpar LocalStorage
-      localStorage.removeItem('seduc_inventory_v3');
-      localStorage.removeItem('merenda_inventory_history_v1');
-
-      // 3. Resetar Estados
-      setItems([]);
-      setHistory([]);
-      
-      alert("Todos os registros de estoque foram apagados com sucesso!");
-      window.location.reload();
-    } catch (error) {
-      console.error("Erro ao zerar dados:", error);
-      alert("Erro ao zerar dados. Verifique sua conexão ou permissões.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleDownloadPDF = async () => {
     setIsSaving(true);
@@ -397,9 +371,6 @@ const Inventory: React.FC = () => {
             )}
             <button onClick={() => setViewMode(viewMode === 'active' ? 'history' : 'active')} className="px-5 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
               <History size={14} /> Histórico
-            </button>
-            <button onClick={clearAllData} className="px-5 py-3 bg-red-100 text-red-700 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-200 transition-all flex items-center gap-2 no-print">
-              <Trash2 size={14} /> Zerar Tudo
             </button>
             {viewMode === 'active' && (
               <div className="flex flex-wrap gap-2">
