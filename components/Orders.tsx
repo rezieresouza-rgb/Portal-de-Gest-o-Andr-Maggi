@@ -79,10 +79,45 @@ const Orders: React.FC = () => {
 
   const [contractId, setContractId] = useState<string>(""); // Helper for pdf generation if needed, but we use pdfData
   const [pdfData, setPdfData] = useState<{ order: Order, contract: Contract, items: any[] } | null>(null);
+  const [nextOrderNumber, setNextOrderNumber] = useState<string>("");
 
   useEffect(() => {
     fetchData();
+    fetchNextOrderNumber();
   }, []);
+
+  const fetchNextOrderNumber = async () => {
+    try {
+      const year = new Date().getFullYear().toString();
+      const { data, error } = await supabase
+        .from('orders')
+        .select('order_number')
+        .ilike('order_number', `${year}%`)
+        .order('order_number', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const lastOrderNumStr = data[0].order_number.replace(/[^\d]/g, '');
+        const lastNum = parseInt(lastOrderNumStr) || 0;
+        
+        // Se o número começar com o ano, incrementamos. Caso contrário, iniciamos do zero no ano atual.
+        if (lastOrderNumStr.startsWith(year)) {
+             setNextOrderNumber((lastNum + 1).toString());
+        } else {
+             setNextOrderNumber(`${year}0001`);
+        }
+      } else {
+        setNextOrderNumber(`${year}0001`);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar próximo número de pedido:", err);
+      // Fallback seguro em caso de erro para não travar a criação
+      const year = new Date().getFullYear().toString();
+      setNextOrderNumber(`${year}${Math.floor(1000 + Math.random() * 9000)}`);
+    }
+  };
 
   // ... (fetchData and other functions)
 
@@ -472,7 +507,22 @@ const Orders: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      const orderNumber = `${new Date().getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
+      // Re-fetch next number to be sure
+      const year = new Date().getFullYear().toString();
+      const { data: latest } = await supabase
+        .from('orders')
+        .select('order_number')
+        .ilike('order_number', `${year}%`)
+        .order('order_number', { ascending: false })
+        .limit(1);
+
+      let orderNumber = nextOrderNumber;
+      if (latest && latest.length > 0) {
+         const lastNum = parseInt(latest[0].order_number.replace(/[^\d]/g, '')) || 0;
+         orderNumber = (lastNum + 1).toString();
+      } else if (!orderNumber) {
+         orderNumber = `${year}0001`;
+      }
 
       // 1. Create Order
       const { data: orderData, error: orderError } = await supabase.from('orders').insert([{
@@ -527,6 +577,7 @@ const Orders: React.FC = () => {
 
       // Refresh data
       await fetchData();
+      fetchNextOrderNumber(); // Refresh next number
       setViewMode('history');
       setLocalItems([]);
       setObservations("");
@@ -706,7 +757,7 @@ const Orders: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase">
                 <div>
                   <p className="text-gray-400 font-black">Nº Controle:</p>
-                  <p className="text-sm font-black">#{new Date().getFullYear()}0001</p>
+                  <p className="text-sm font-black text-emerald-600">#{nextOrderNumber || "CARR..."}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 font-black">Nº Contrato:</p>
