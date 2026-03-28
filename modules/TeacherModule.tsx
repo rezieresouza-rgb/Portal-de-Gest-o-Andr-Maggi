@@ -87,7 +87,7 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
   const menuItems = [
     { id: 'attendance', label: 'Diário de Presença', icon: UserCheck },
     { id: 'grades', label: 'Lançar Notas', icon: GradeIcon },
-    { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
+    { id: 'referrals', label: 'Encaminhamentos para Mediação', icon: FileSpreadsheet },
     { id: 'calendar', label: 'Calendário Letivo', icon: CalendarCheck },
     { id: 'material_requests', label: 'Solicitar Materiais', icon: Package },
     { id: 'occurrences', label: 'Lançar Ocorrência', icon: AlertCircle },
