@@ -1997,9 +1997,9 @@ const Contracts: React.FC = () => {
               </div>
               <div className="text-right">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Guia de Recebimento</p>
-                <h1 className="text-3xl font-black text-gray-900">{generatedGuidePdf.guide_number}</h1>
-                <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Emissão: {new Date(generatedGuidePdf.created_at).toLocaleDateString('pt-BR')}</p>
-                <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Recebimento: {new Date(generatedGuidePdf.issue_date + "T12:00:00").toLocaleDateString('pt-BR')}</p>
+                <h1 className="text-3xl font-black text-gray-900">{generatedGuidePdf.guide.guide_number}</h1>
+                <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Emissão: {new Date(generatedGuidePdf.guide.created_at).toLocaleDateString('pt-BR')}</p>
+                <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Recebimento: {new Date(generatedGuidePdf.guide.issue_date + "T12:00:00").toLocaleDateString('pt-BR')}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-6 mb-8">
@@ -2010,7 +2010,7 @@ const Contracts: React.FC = () => {
               </div>
               <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
                 <p className="text-[8px] font-black text-emerald-600 uppercase mb-1">Valor Total do Recebimento</p>
-                <p className="text-2xl font-black text-emerald-700">R$ {generatedGuidePdf.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-black text-emerald-700">R$ {(generatedGuidePdf.guide.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
             <table className="w-full mb-8 border-collapse">
@@ -2039,7 +2039,7 @@ const Contracts: React.FC = () => {
               <tfoot>
                 <tr className="border-t-2 border-gray-200 bg-gray-50">
                   <td colSpan={5} className="py-4 pr-4 text-right font-black uppercase text-gray-900 text-xs">Valor Total (R$)</td>
-                  <td className="py-4 pl-4 text-right font-black text-emerald-700 text-xs">{(generatedGuidePdf.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td className="py-4 pl-4 text-right font-black text-emerald-700 text-xs">{(generatedGuidePdf.guide.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               </tfoot>
             </table>
