@@ -863,7 +863,7 @@ const Orders: React.FC = () => {
 
           <div className="mt-20 grid grid-cols-2 gap-20 text-center">
             <div className="border-t-2 border-black pt-2">
-              <p className="font-black uppercase text-[10px] leading-tight">Gestão da Merenda / CDCE</p>
+              <p className="font-black uppercase text-[10px] leading-tight text-center">Servidor Responsável pelo Recebimento</p>
             </div>
             <div className="border-t-2 border-black pt-2">
               <p className="font-black uppercase text-[10px] leading-tight">Entregue em ____/____/____</p>
@@ -1048,7 +1048,7 @@ const Orders: React.FC = () => {
 
               <div className="mt-20 grid grid-cols-2 gap-20 text-center">
                 <div className="border-t-2 border-black pt-2">
-                  <p className="font-black uppercase text-[10px] leading-tight">Gestão da Merenda / CDCE</p>
+                  <p className="font-black uppercase text-[10px] leading-tight text-center">Servidor Responsável pelo Recebimento</p>
                 </div>
                 <div className="border-t-2 border-black pt-2">
                   <p className="font-black uppercase text-[10px] leading-tight">Entregue em ____/____/____</p>
