@@ -42,6 +42,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [loading, setLoading] = useState(false);
    const [isSaving, setIsSaving] = useState(false);
    const [editingOccurrenceId, setEditingOccurrenceId] = useState<string | null>(null);
+   const [viewingOccurrence, setViewingOccurrence] = useState<ClassroomOccurrence | null>(null);
    const [printingOccurrence, setPrintingOccurrence] = useState<ClassroomOccurrence | null>(null);
    // Multi-student selection
    const [selectedStudents, setSelectedStudents] = useState<{ name: string; class: string }[]>([]);
@@ -144,6 +145,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       setTimeout(() => {
          window.print();
       }, 500);
+   };
+
+   const handleViewDetails = (occ: ClassroomOccurrence) => {
+      setViewingOccurrence(occ);
    };
 
    // Realtime subscription
@@ -433,9 +438,13 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                               </button>
                            </>
                         )}
-                        <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block">
+                        <button 
+                           onClick={() => handleViewDetails(occ)}
+                           className="p-3 bg-gray-50 text-gray-300 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block"
+                           title="Ver Detalhes do Registro"
+                        >
                            <ChevronRight size={24} />
-                        </div>
+                        </button>
                      </div>
                   </div>
                )) : (
@@ -719,6 +728,93 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      <span className="text-[8px] font-black uppercase tracking-widest">
                         Documento Oficializado via Portal de Gestão André Maggi
                      </span>
+                  </div>
+               </div>
+            )}
+
+            {/* MODAL DE VISUALIZAÇÃO DETALHADA */}
+            {viewingOccurrence && (
+               <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-md animate-in fade-in duration-300 no-print">
+                  <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+                     <div className="p-8 bg-gray-50 flex justify-between items-center border-b border-gray-100 shrink-0">
+                        <div className="flex items-center gap-4">
+                           <div className={`p-4 rounded-3xl shadow-lg border-2 ${getSeverityStyle(viewingOccurrence.severity)}`}>
+                              <ShieldAlert size={28} />
+                           </div>
+                           <div>
+                              <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter line-clamp-1">{viewingOccurrence.studentName}</h3>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Detalhes do Registro Escolar</p>
+                           </div>
+                        </div>
+                        <button onClick={() => setViewingOccurrence(null)} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
+                           <X size={24} />
+                        </button>
+                     </div>
+
+                     <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Data</p>
+                              <p className="text-xs font-black text-gray-900">{new Date(viewingOccurrence.date).toLocaleDateString('pt-BR')}</p>
+                           </div>
+                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Turma</p>
+                              <p className="text-xs font-black text-gray-900">{viewingOccurrence.className}</p>
+                           </div>
+                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Natureza</p>
+                              <p className="text-xs font-black text-gray-900">{viewingOccurrence.type}</p>
+                           </div>
+                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Severidade</p>
+                              <p className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border w-fit ${getSeverityStyle(viewingOccurrence.severity)}`}>
+                                 {viewingOccurrence.severity}
+                              </p>
+                           </div>
+                        </div>
+
+                        <div className="space-y-3">
+                           <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                              <MessageSquare size={14} className="text-red-600" /> Relato Narrativo do Professor
+                           </h4>
+                           <div className="p-6 bg-red-50/30 border border-red-100 rounded-[2rem] text-sm font-medium leading-relaxed text-gray-800 italic">
+                              "{viewingOccurrence.description}"
+                           </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-2xl bg-gray-50/50">
+                           <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-black text-gray-500 text-xs">
+                              {viewingOccurrence.teacherName.charAt(0)}
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Relator(a)</p>
+                              <p className="text-xs font-black text-gray-900 uppercase tracking-tighter">{viewingOccurrence.teacherName}</p>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="p-8 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                        <button 
+                           onClick={() => { setViewingOccurrence(null); handlePrint(viewingOccurrence); }}
+                           className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2"
+                        >
+                           <Printer size={16} /> Imprimir PDF Oficial
+                        </button>
+                        {viewingOccurrence.teacherName === user.name && (
+                           <button 
+                              onClick={() => { handleEdit(viewingOccurrence); setViewingOccurrence(null); }}
+                              className="flex-1 py-4 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                           >
+                              <Edit3 size={16} /> Editar Registro
+                           </button>
+                        )}
+                        <button 
+                           onClick={() => setViewingOccurrence(null)}
+                           className="py-4 px-8 bg-white text-gray-400 border border-gray-200 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-50 transition-all"
+                        >
+                           Fechar
+                        </button>
+                     </div>
                   </div>
                </div>
             )}
