@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { PsychosocialReferral } from '../types';
 import { useStudents } from '../hooks/useStudents';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Target, PhoneCall, Scale } from 'lucide-react';
 
 interface PsychosocialReferralFormProps {
    onCancel: () => void;
@@ -51,7 +51,9 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
       report: '',
       status: 'PENDENTE',
       date: new Date().toLocaleDateString('sv-SE'),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      referralDestination: 'BUSCA_ATIVA',
+      mediationProcedures: []
    });
 
    const ASPECTS = {
@@ -86,6 +88,15 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
       "Encaminhamento para Reforço escolar"
    ];
 
+   const MEDIATION_PROCEDURES = [
+      "Escuta Ativa Individual realizada",
+      "Círculo de Construção de Paz (UE)",
+      "Mediação de Conflitos entre Pares",
+      "Reunião de Mediação com Família",
+      "Acordo de Convivência Firmado",
+      "Pré-Círculo de Acolhimento realizado"
+   ];
+
    const toggleAspect = (category: keyof typeof ASPECTS, aspect: string) => {
       setFormData(prev => {
          const current = prev.observedAspects[category];
@@ -106,6 +117,16 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
             ? current.filter(p => p !== proc)
             : [...current, proc];
          return { ...prev, adoptedProcedures: updated };
+      });
+   };
+
+   const toggleMediationProcedure = (proc: string) => {
+      setFormData(prev => {
+         const current = prev.mediationProcedures || [];
+         const updated = current.includes(proc)
+            ? current.filter(p => p !== proc)
+            : [...current, proc];
+         return { ...prev, mediationProcedures: updated };
       });
    };
 
@@ -211,6 +232,33 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
          {/* FORMULÁRIO VISÍVEL */}
          <form onSubmit={handleSubmit} className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm space-y-10 no-print">
 
+            {/* [NOVO] Seção 0: Destino do Encaminhamento */}
+            <div className="bg-rose-50/30 p-8 rounded-[2.5rem] border-2 border-dashed border-rose-100 space-y-6">
+               <div className="flex items-center gap-3 text-rose-600">
+                  <Target size={18} strokeWidth={3} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Para onde deseja encaminhar este aluno?</span>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button 
+                     type="button"
+                     onClick={() => setFormData({ ...formData, referralDestination: 'BUSCA_ATIVA' })}
+                     className={`py-5 px-8 rounded-2xl font-black uppercase text-xs tracking-widest transition-all flex items-center justify-center gap-4 ${formData.referralDestination === 'BUSCA_ATIVA' ? 'bg-emerald-600 text-white shadow-2xl shadow-emerald-200 scale-[1.02]' : 'bg-white text-emerald-600 border-2 border-emerald-50 hover:bg-emerald-50'}`}
+                  >
+                     <PhoneCall size={20} /> Busca Ativa Escolar
+                  </button>
+                  <button 
+                     type="button"
+                     onClick={() => setFormData({ ...formData, referralDestination: 'MEDIACAO' })}
+                     className={`py-5 px-8 rounded-2xl font-black uppercase text-xs tracking-widest transition-all flex items-center justify-center gap-4 ${formData.referralDestination === 'MEDIACAO' ? 'bg-rose-600 text-white shadow-2xl shadow-rose-200 scale-[1.02]' : 'bg-white text-rose-600 border-2 border-rose-50 hover:bg-rose-50'}`}
+                  >
+                     <Scale size={20} /> Mediação de Conflitos
+                  </button>
+               </div>
+               <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center italic">
+                  * O encaminhamento será enviado automaticamente para a equipe responsável pelo núcleo selecionado.
+               </p>
+            </div>
+
             {/* Seção 1: Dados Iniciais */}
             <div className="space-y-6">
                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-gray-50 pb-2">
@@ -272,28 +320,55 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
                </div>
             </div>
 
-            {/* Seção Nova: Procedimentos Adotados */}
-            <div className="space-y-4">
-               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-gray-50 pb-2">
-                  <ClipboardList size={14} className="text-rose-600" /> 2. Procedimentos Adotados (Busca Ativa)
-               </h4>
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {ADOPTED_PROCEDURES.map(proc => (
-                     <button
-                        key={proc}
-                        type="button"
-                        onClick={() => toggleProcedure(proc)}
-                        className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 text-left ${formData.adoptedProcedures?.includes(proc)
-                           ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm'
-                           : 'bg-gray-50 border-gray-100 text-gray-400'
-                           }`}
-                     >
-                        {formData.adoptedProcedures?.includes(proc) ? <CheckSquare size={18} /> : <Square size={18} />}
-                        <span className="text-[10px] font-black uppercase tracking-tight leading-tight">{proc}</span>
-                     </button>
-                  ))}
+            {/* Seção Nova: Procedimentos Adotados (BUSCA ATIVA) */}
+            {formData.referralDestination === 'BUSCA_ATIVA' && (
+               <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-emerald-50 pb-2">
+                     <ClipboardList size={14} /> 2. Procedimentos Adotados (Busca Ativa)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                     {ADOPTED_PROCEDURES.map(proc => (
+                        <button
+                           key={proc}
+                           type="button"
+                           onClick={() => toggleProcedure(proc)}
+                           className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 text-left ${formData.adoptedProcedures?.includes(proc)
+                              ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm'
+                              : 'bg-gray-50 border-gray-100 text-gray-400'
+                              }`}
+                        >
+                           {formData.adoptedProcedures?.includes(proc) ? <CheckSquare size={18} /> : <Square size={18} />}
+                           <span className="text-[10px] font-black uppercase tracking-tight leading-tight">{proc}</span>
+                        </button>
+                     ))}
+                  </div>
                </div>
-            </div>
+            )}
+
+            {/* [NOVO] Seção: Procedimentos de Mediação (MEDIÇÃO) */}
+            {formData.referralDestination === 'MEDIACAO' && (
+               <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-rose-50 pb-2">
+                     <Scale size={14} /> 2. Mediação Facilitada (Núcleo de Paz)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                     {MEDIATION_PROCEDURES.map(proc => (
+                        <button
+                           key={proc}
+                           type="button"
+                           onClick={() => toggleMediationProcedure(proc)}
+                           className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 text-left ${formData.mediationProcedures?.includes(proc)
+                              ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm'
+                              : 'bg-gray-50 border-gray-100 text-gray-400'
+                              }`}
+                        >
+                           {formData.mediationProcedures?.includes(proc) ? <CheckSquare size={18} /> : <Square size={18} />}
+                           <span className="text-[10px] font-black uppercase tracking-tight leading-tight">{proc}</span>
+                        </button>
+                     ))}
+                  </div>
+               </div>
+            )}
 
             {/* Seção 2: Estratégias Realizadas */}
             <div className="space-y-4">
@@ -407,7 +482,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
          <div className="hidden">
             <div ref={printRef} className="p-16 space-y-12 text-gray-900 font-sans border-[1px] border-gray-200 bg-white min-h-[297mm]">
                <div className="text-center border-b-2 border-black pb-8 space-y-2">
-                  <h1 className="text-2xl font-black uppercase">Ficha de Encaminhamento Psicossocial</h1>
+                  <h1 className="text-2xl font-black uppercase">Encaminhamento: {formData.referralDestination === 'BUSCA_ATIVA' ? 'Busca Ativa Escolar' : 'Mediação de Conflitos'}</h1>
                   <p className="text-sm font-bold uppercase">{formData.schoolUnit}</p>
                   <p className="text-[10px] text-gray-500">Estado de Mato Grosso - Secretaria de Estado de Educação</p>
                </div>
@@ -428,19 +503,35 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
                   </div>
                </div>
 
-               <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Procedimentos Adotados pela Escola</h4>
-                  <div className="grid grid-cols-2 gap-x-10 gap-y-1 text-[10px]">
-                     {ADOPTED_PROCEDURES.map(proc => (
-                        <div key={proc} className="flex items-center gap-2">
-                           <div className="w-3 h-3 border border-black flex items-center justify-center font-black">
-                              {formData.adoptedProcedures?.includes(proc) ? 'X' : ''}
+               {formData.referralDestination === 'BUSCA_ATIVA' ? (
+                  <div className="space-y-4">
+                     <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Procedimentos Adotados (Busca Ativa)</h4>
+                     <div className="grid grid-cols-2 gap-x-10 gap-y-1 text-[10px]">
+                        {ADOPTED_PROCEDURES.map(proc => (
+                           <div key={proc} className="flex items-center gap-2">
+                              <div className="w-3 h-3 border border-black flex items-center justify-center font-black">
+                                 {formData.adoptedProcedures?.includes(proc) ? 'X' : ''}
+                              </div>
+                              <span className="uppercase">{proc}</span>
                            </div>
-                           <span className="uppercase">{proc}</span>
-                        </div>
-                     ))}
+                        ))}
+                     </div>
                   </div>
-               </div>
+               ) : (
+                  <div className="space-y-4">
+                     <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Mediação Facilitada (Núcleo de Paz)</h4>
+                     <div className="grid grid-cols-2 gap-x-10 gap-y-1 text-[10px]">
+                        {MEDIATION_PROCEDURES.map(proc => (
+                           <div key={proc} className="flex items-center gap-2">
+                              <div className="w-3 h-3 border border-black flex items-center justify-center font-black">
+                                 {formData.mediationProcedures?.includes(proc) ? 'X' : ''}
+                              </div>
+                              <span className="uppercase">{proc}</span>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               )}
 
                <div className="space-y-4">
                   <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit">Estratégias já realizadas pela UE:</h4>

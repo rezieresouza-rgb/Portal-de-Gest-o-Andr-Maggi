@@ -30,9 +30,10 @@ interface PsychosocialReferralListProps {
   role: PsychosocialRole;
   user?: any; // Add user prop for teacher context
   onTabChange?: (tab: string) => void;
+  filterDestination?: 'BUSCA_ATIVA' | 'MEDIACAO';
 }
 
-const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ role, user, onTabChange }) => {
+const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ role, user, onTabChange, filterDestination }) => {
   const [referrals, setReferrals] = useState<PsychosocialReferral[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -69,6 +70,11 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
         query = query.eq('teacher_name', user.name);
       }
 
+      // [NOVO] Filtro de destino (Roteamento entre módulos)
+      if (filterDestination) {
+        query = query.eq('referral_destination', filterDestination);
+      }
+
       const { data, error } = await query;
 
       if (data) {
@@ -90,7 +96,9 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
           observations: typeof r.observations === 'string' ? r.observations : JSON.stringify(r.observations), // Handle varying formats if any
           timestamp: new Date(r.created_at).getTime(),
           reason: r.reason || r.report || 'Sem motivo especificado', // Fallback
-          feedback: r.feedback // [NOVO] Campo de devolutiva da mediação
+          feedback: r.feedback, // [NOVO] Campo de devolutiva da mediação
+          referralDestination: r.referral_destination,
+          mediationProcedures: r.mediation_procedures || []
         }));
         setReferrals(formatted);
       }
@@ -127,7 +135,9 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ rol
         previous_strategies: formData.previousStrategies,
         attendance_frequency: formData.attendanceFrequency,
         adopted_procedures: formData.adoptedProcedures,
-        report: formData.report
+        report: formData.report,
+        referral_destination: formData.referralDestination,
+        mediation_procedures: formData.mediationProcedures || []
       };
 
       if (editingId) {

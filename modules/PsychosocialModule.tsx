@@ -225,7 +225,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
-          {activeTab === 'referrals' && <PsychosocialReferralList role={userRole} onTabChange={(tab: any) => setActiveTab(tab)} />}
+          {activeTab === 'referrals' && <PsychosocialReferralList role={userRole} filterDestination="MEDIACAO" onTabChange={(tab: any) => setActiveTab(tab)} />}
           {activeTab === 'atas' && <PsychosocialMeetingAtaManager />}
           {activeTab === 'violation_notification' && <RightsViolationForm />}
           {activeTab === 'mediation' && <MediationManager role={userRole} onTabChange={(tab: any) => setActiveTab(tab)} />}

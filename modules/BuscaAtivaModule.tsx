@@ -114,7 +114,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'attendance' && <BuscaAtivaAttendanceHistory />}
           {activeTab === 'channels' && <BuscaAtivaContactChannels />}
-          {activeTab === 'referrals' && <PsychosocialReferralList role="PSICOSSOCIAL" />}
+          {activeTab === 'referrals' && <PsychosocialReferralList role="PSICOSSOCIAL" filterDestination="BUSCA_ATIVA" />}
           {activeTab === 'ficai' && <BuscaAtivaFICAI />}
         </div>
       </main>
