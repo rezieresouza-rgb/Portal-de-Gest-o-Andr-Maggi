@@ -34,7 +34,10 @@ import {
   UserCheck,
   Camera,
   Upload,
-  Info
+  Info,
+  Printer,
+  FileBarChart,
+  ArrowDownToLine
 } from 'lucide-react';
 import { Book, Reader, Loan, StaffMember } from '../types';
 import { suggestBooks, fetchBookSynopsis, fetchBookCover } from '../geminiService';
@@ -51,7 +54,7 @@ const formatDate = (dateString?: string) => {
 };
 
 const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai' | 'reports'>('dashboard');
 
   /*
    * MIGRAÇÃO SUPABASE: Biblioteca
@@ -145,6 +148,24 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [globalSchoolPeople, setGlobalSchoolPeople] = useState<any[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [peopleSearch, setPeopleSearch] = useState('');
+
+  // Estados dos Filtros dos Relatórios
+  const [reportType, setReportType] = useState<'inventory' | 'circulation'>('inventory');
+  
+  const [inventoryFilter, setInventoryFilter] = useState({
+    category: '',
+    location: '', // Estante
+    availableOnly: false,
+    bookType: '' as '' | 'AVULSO' | 'COLEÇÃO'
+  });
+
+  const [circulationFilter, setCirculationFilter] = useState({
+    status: '' as '' | 'ATIVO' | 'DEVOLVIDO' | 'DELAYED',
+    type: '' as '' | 'ALUNO' | 'SERVIDOR',
+    class: '',
+    dateFrom: '',
+    dateTo: ''
+  });
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -834,6 +855,32 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     ).slice(0, 5);
   }, [books, loanForm.bookSearch]);
 
+  const filteredBooksForReport = useMemo(() => {
+    return books.filter(b => {
+      const matchCategory = !inventoryFilter.category || b.category === inventoryFilter.category;
+      const matchLocation = !inventoryFilter.location || b.location.toUpperCase().includes(inventoryFilter.location.toUpperCase());
+      const matchAvailable = !inventoryFilter.availableOnly || b.availableCopies > 0;
+      const matchType = !inventoryFilter.bookType || b.bookType === inventoryFilter.bookType;
+      return matchCategory && matchLocation && matchAvailable && matchType;
+    });
+  }, [books, inventoryFilter]);
+
+  const filteredLoansForReport = useMemo(() => {
+    return loans.filter(l => {
+      // Find reader for type and class
+      const reader = readers.find(r => r.id === l.readerId);
+      
+      const matchStatus = !circulationFilter.status || 
+        (circulationFilter.status === 'DELAYED' ? (l.status === 'ATIVO' && l.dueDate < stats.todayStr) : l.status === circulationFilter.status);
+      const matchType = !circulationFilter.type || reader?.type === circulationFilter.type;
+      const matchClass = !circulationFilter.class || (reader?.class && reader.class.toUpperCase().includes(circulationFilter.class.toUpperCase()));
+      const matchFrom = !circulationFilter.dateFrom || l.loanDate >= circulationFilter.dateFrom;
+      const matchTo = !circulationFilter.dateTo || l.loanDate <= circulationFilter.dateTo;
+      
+      return matchStatus && matchType && matchClass && matchFrom && matchTo;
+    });
+  }, [loans, readers, circulationFilter, stats.todayStr]);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -1157,6 +1204,263 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             )}
           </div>
         );
+      case 'reports':
+        return (
+          <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 no-print">
+              <div>
+                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter shrink-0 flex items-center gap-3">
+                  <FileBarChart className="text-indigo-600" size={32} /> Central de Relatórios
+                </h2>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1 ml-1">Análise de dados e exportação para PDF/Impressão</p>
+              </div>
+              <div className="flex bg-white p-1.5 rounded-[1.5rem] border border-gray-100 shadow-sm">
+                <button 
+                  onClick={() => setReportType('inventory')} 
+                  className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${reportType === 'inventory' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-indigo-600'}`}>
+                  Acervo / Inventário
+                </button>
+                <button 
+                  onClick={() => setReportType('circulation')} 
+                  className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${reportType === 'circulation' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-indigo-600'}`}>
+                  Circulação / Empréstimos
+                </button>
+              </div>
+            </div>
+
+            {/* SEÇÃO DE FILTROS */}
+            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6 no-print">
+              <div className="flex items-center justify-between border-b border-gray-50 pb-4">
+                <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest">
+                  <Filter size={14} /> Filtros de Relatório
+                </div>
+                <button 
+                  onClick={() => window.print()} 
+                  className="flex items-center gap-2 px-6 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                  <Printer size={14} /> Imprimir Relatório
+                </button>
+              </div>
+
+              {reportType === 'inventory' ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Categoria</label>
+                    <select 
+                      value={inventoryFilter.category} 
+                      onChange={e => setInventoryFilter({ ...inventoryFilter, category: e.target.value })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                      <option value="">TODAS AS CATEGORIAS</option>
+                      <option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Estante / Localização</label>
+                    <input 
+                      type="text" 
+                      placeholder="FILTRAR POR ESTANTE..." 
+                      value={inventoryFilter.location}
+                      onChange={e => setInventoryFilter({ ...inventoryFilter, location: e.target.value })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Obra</label>
+                    <select 
+                      value={inventoryFilter.bookType} 
+                      onChange={e => setInventoryFilter({ ...inventoryFilter, bookType: e.target.value as any })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                      <option value="">TODOS OS TIPOS</option>
+                      <option value="AVULSO">LIVRO AVULSO</option>
+                      <option value="COLEÇÃO">OBRA DE COLEÇÃO</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <button 
+                      onClick={() => setInventoryFilter({ ...inventoryFilter, availableOnly: !inventoryFilter.availableOnly })}
+                      className={`w-full p-3 rounded-xl border font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${inventoryFilter.availableOnly ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100'}`}>
+                      {inventoryFilter.availableOnly && <CheckCircle2 size={12} />}
+                      Somente Disponíveis
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Status</label>
+                    <select 
+                      value={circulationFilter.status} 
+                      onChange={e => setCirculationFilter({ ...circulationFilter, status: e.target.value as any })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                      <option value="">TODOS STATUS</option>
+                      <option value="ATIVO">EMPRÉSTIMO ATIVO</option>
+                      <option value="DEVOLVIDO">JÁ DEVOLVIDOS</option>
+                      <option value="DELAYED">SOMENTE ATRASOS</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Leitor</label>
+                    <select 
+                      value={circulationFilter.type} 
+                      onChange={e => setCirculationFilter({ ...circulationFilter, type: e.target.value as any })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                      <option value="">TODOS PERFIS</option>
+                      <option value="ALUNO">ALUNOS</option>
+                      <option value="SERVIDOR">SERVIDORES</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Filtrar Turma</label>
+                    <input 
+                      type="text" 
+                      placeholder="EX: 9º ANO A" 
+                      value={circulationFilter.class}
+                      onChange={e => setCirculationFilter({ ...circulationFilter, class: e.target.value })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Desde</label>
+                    <input 
+                      type="date" 
+                      value={circulationFilter.dateFrom}
+                      onChange={e => setCirculationFilter({ ...circulationFilter, dateFrom: e.target.value })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Até</label>
+                    <input 
+                      type="date" 
+                      value={circulationFilter.dateTo}
+                      onChange={e => setCirculationFilter({ ...circulationFilter, dateTo: e.target.value })}
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ÁREA DO RELATÓRIO P/ IMPRESSÃO */}
+            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl overflow-hidden print:shadow-none print:border-none">
+              <div className="p-10 border-b border-gray-50 bg-gray-50/50 flex flex-col items-center justify-center text-center space-y-4 print:pb-10">
+                <div className="flex flex-col items-center">
+                  <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 mb-4 no-print">
+                    {reportType === 'inventory' ? <BookOpen className="text-indigo-600" size={40} /> : <Clock className="text-indigo-600" size={40} />}
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">
+                    {reportType === 'inventory' ? 'Relatório Geral do Acervo (Inventário)' : 'Relatório de Circulação e Comodatos'}
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">Biblioteca André Maggi - {new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+                
+                <div className="flex gap-4 no-print">
+                  <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
+                    <p className="text-[8px] font-black text-gray-400 uppercase">Total de Itens Listados</p>
+                    <p className="text-xl font-black text-indigo-600">{reportType === 'inventory' ? filteredBooksForReport.length : filteredLoansForReport.length}</p>
+                  </div>
+                  {reportType === 'inventory' && (
+                    <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
+                      <p className="text-[8px] font-black text-gray-400 uppercase">Total de Exemplares</p>
+                      <p className="text-xl font-black text-emerald-600">
+                        {filteredBooksForReport.reduce((acc, b) => acc + b.totalCopies, 0)}
+                      </p>
+                    </div>
+                  )}
+                  {reportType === 'circulation' && (
+                    <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
+                      <p className="text-[8px] font-black text-gray-400 uppercase">Em Atraso na Lista</p>
+                      <p className="text-xl font-black text-red-600">
+                        {filteredLoansForReport.filter(l => l.status === 'ATIVO' && l.dueDate < stats.todayStr).length}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                {reportType === 'inventory' ? (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                        <th className="px-8 py-5">Tombamento</th>
+                        <th className="px-8 py-5">Título / Autor</th>
+                        <th className="px-8 py-5">Categoria</th>
+                        <th className="px-8 py-5 text-center">Localização</th>
+                        <th className="px-8 py-5 text-center">Exemplares</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-sm">
+                      {filteredBooksForReport.map(b => (
+                        <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-8 py-4 font-black text-gray-400 text-[10px]">{b.internalRegistration || '-'}</td>
+                          <td className="px-8 py-4">
+                            <p className="font-black text-gray-900 uppercase text-xs">{b.title}</p>
+                            <p className="text-[9px] text-gray-400 font-bold uppercase">{b.author}</p>
+                          </td>
+                          <td className="px-8 py-4 text-[10px] font-black text-indigo-400 uppercase">{b.category}</td>
+                          <td className="px-8 py-4 text-center text-[10px] font-black text-gray-600 uppercase italic">{b.location}</td>
+                          <td className="px-8 py-4 text-center">
+                            <div className="inline-flex items-center gap-1 px-3 py-1 bg-gray-50 border border-gray-100 rounded-lg">
+                              <span className="text-[10px] font-black text-gray-900">{b.availableCopies}</span>
+                              <span className="text-[8px] font-black text-gray-300 uppercase">/ {b.totalCopies}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                        <th className="px-8 py-5">Leitor / Perfil</th>
+                        <th className="px-8 py-5">Obra Emprestada</th>
+                        <th className="px-8 py-5 text-center">Data Empr.</th>
+                        <th className="px-8 py-5 text-center">Vencimento</th>
+                        <th className="px-8 py-5 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-sm">
+                      {filteredLoansForReport.map(l => (
+                        <tr key={l.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-8 py-4">
+                            <p className="font-black text-gray-900 uppercase text-xs">{l.readerName}</p>
+                            <p className="text-[9px] text-gray-400 font-bold uppercase">
+                              {readers.find(r => r.id === l.readerId)?.type} - {readers.find(r => r.id === l.readerId)?.class}
+                            </p>
+                          </td>
+                          <td className="px-8 py-4 px-8 py-4 text-indigo-600 font-black uppercase text-xs leading-tight">{l.bookTitle}</td>
+                          <td className="px-8 py-4 text-center text-[10px] font-black text-gray-400">{formatDate(l.loanDate)}</td>
+                          <td className={`px-8 py-4 text-center font-black text-[10px] ${l.status === 'ATIVO' && l.dueDate < stats.todayStr ? 'text-red-600' : 'text-indigo-600'}`}>{formatDate(l.dueDate)}</td>
+                          <td className="px-8 py-4 text-right">
+                             <span className={`text-[9px] font-black px-3 py-1 rounded-lg uppercase border ${
+                               l.status === 'DEVOLVIDO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
+                               (l.dueDate < stats.todayStr ? 'bg-red-50 text-red-700 border-red-100 animate-pulse' : 'bg-indigo-50 text-indigo-700 border-indigo-100')
+                             }`}>
+                               {l.status === 'DEVOLVIDO' ? 'DEVOLVIDO' : (l.dueDate < stats.todayStr ? 'ATRASADO' : 'ATIVO')}
+                             </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {((reportType === 'inventory' && filteredBooksForReport.length === 0) || (reportType === 'circulation' && filteredLoansForReport.length === 0)) && (
+                  <div className="py-20 text-center flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-200">
+                      <Search size={32} />
+                    </div>
+                    <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Nenhum registro encontrado para estes filtros</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-8 bg-gray-50/30 text-center border-t border-gray-50 hidden print:block">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-loose">
+                  ESTE DOCUMENTO FOI GERADO AUTOMATICAMENTE PELO PORTAL DE GESTÃO ANDRÉ MAGGI EM {new Date().toLocaleString('pt-BR')} <br/>
+                  RESPONSÁVEL PELA BIBLIOTECA: __________________________________________________________________
+                </p>
+              </div>
+            </div>
+          </div>
+        );
       default: return null;
     }
   };
@@ -1172,6 +1476,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             { id: 'loans', label: 'Empréstimos', icon: Clock },
             { id: 'readers', label: 'Leitores (School)', icon: Users },
             { id: 'ai', label: 'IA Consultor', icon: BrainCircuit },
+            { id: 'reports', label: 'Relatórios', icon: Filter },
           ].map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-indigo-800 text-white shadow-lg' : 'text-indigo-100 hover:bg-indigo-800/50'}`}>
               <item.icon size={18} /> {item.label}
