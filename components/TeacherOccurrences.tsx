@@ -59,6 +59,18 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    });
 
    const [recentOccurrences, setRecentOccurrences] = useState<ClassroomOccurrence[]>([]);
+   const [filterClass, setFilterClass] = useState('');
+   const [filterStudent, setFilterStudent] = useState('');
+   const [filterType, setFilterType] = useState('');
+
+   const filteredOccurrences = useMemo(() => {
+      return recentOccurrences.filter(occ => {
+         const matchesClass = !filterClass || occ.className === filterClass;
+         const matchesStudent = !filterStudent || occ.studentName.toLowerCase().includes(filterStudent.toLowerCase());
+         const matchesType = !filterType || occ.type === filterType;
+         return matchesClass && matchesStudent && matchesType;
+      });
+   }, [recentOccurrences, filterClass, filterStudent, filterType]);
 
    const fetchOccurrences = async () => {
       setLoading(true);
@@ -330,11 +342,54 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          </div>
 
          <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-               <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                  <History className="text-gray-400" size={20} /> Histórico Global de Registros
-               </h4>
-               <span className="text-[10px] font-black bg-white text-gray-400 px-3 py-1 rounded-lg border border-gray-100 uppercase tracking-widest">Monitoramento Portaria/Sala</span>
+            <div className="p-8 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between bg-gray-50/50 gap-6">
+               <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white text-gray-400 rounded-2xl shadow-sm border border-gray-100">
+                     <History size={20} />
+                  </div>
+                  <div>
+                     <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight">Histórico Global</h4>
+                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Sincronizado com a Coordenação</p>
+                  </div>
+               </div>
+
+               <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative min-w-[200px]">
+                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
+                     <input 
+                        type="text" 
+                        placeholder="BUSCAR PELO NOME..." 
+                        value={filterStudent}
+                        onChange={e => setFilterStudent(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-bold outline-none focus:ring-4 focus:ring-red-500/5 transition-all uppercase"
+                     />
+                  </div>
+                  <select 
+                     value={filterClass}
+                     onChange={e => setFilterClass(e.target.value)}
+                     className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all cursor-pointer"
+                  >
+                     <option value="">TODAS AS TURMAS</option>
+                     {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select 
+                     value={filterType}
+                     onChange={e => setFilterType(e.target.value)}
+                     className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all cursor-pointer"
+                  >
+                     <option value="">TIPO</option>
+                     {OCCURRENCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  {(filterClass || filterStudent || filterType) && (
+                     <button 
+                        onClick={() => { setFilterClass(''); setFilterStudent(''); setFilterType(''); }}
+                        className="p-3 text-red-600 hover:bg-red-50 bg-white border border-red-50 rounded-xl transition-all shadow-sm"
+                        title="Limpar Filtros"
+                     >
+                        <X size={16} strokeWidth={3} />
+                     </button>
+                  )}
+               </div>
             </div>
 
             <div className="divide-y divide-gray-50">
@@ -342,7 +397,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   <div className="p-12 flex justify-center">
                      <Loader2 className="animate-spin text-gray-300" size={32} />
                   </div>
-               ) : recentOccurrences.length > 0 ? recentOccurrences.map(occ => (
+               ) : filteredOccurrences.length > 0 ? filteredOccurrences.map(occ => (
                   <div key={occ.id} className="p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:bg-gray-50/50 transition-all group relative">
                      <div className="flex items-center gap-6 flex-1">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${getSeverityStyle(occ.severity)} shadow-sm`}>
@@ -386,7 +441,11 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                )) : (
                   <div className="py-24 text-center">
                      <MessageSquare size={48} className="mx-auto mb-4 text-gray-100" />
-                     <p className="text-gray-300 font-black uppercase text-xs tracking-widest">Nenhum registro encontrado no histórico global</p>
+                     <p className="text-gray-300 font-black uppercase text-xs tracking-widest">
+                        { (filterClass || filterStudent || filterType) 
+                           ? 'Nenhum registro corresponde aos filtros selecionados' 
+                           : 'Nenhum registro encontrado no histórico global' }
+                     </p>
                   </div>
                )}
             </div>
