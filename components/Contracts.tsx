@@ -711,15 +711,10 @@ const Contracts: React.FC = () => {
       return;
     }
 
-    if (selectedGuideIds.size === 0) {
-      alert("Selecione pelo menos uma guia para gerar o extrato.");
-      return;
-    }
-
-    const pendingGuides = paymentGuides.filter(g => selectedGuideIds.has(g.id));
+    const pendingGuides = guidesInPeriod;
 
     if (pendingGuides.length === 0) {
-      alert("Não há guias pendentes neste período para gerar extrato.");
+      alert("Não há guias de recebimento pendentes neste período para gerar extrato.");
       return;
     }
 
