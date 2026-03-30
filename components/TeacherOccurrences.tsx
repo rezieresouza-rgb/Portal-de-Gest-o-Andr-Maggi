@@ -148,6 +148,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    };
 
    const handleViewDetails = (occ: ClassroomOccurrence) => {
+      alert('Abrindo detalhes: ' + occ.studentName);
       setViewingOccurrence(occ);
    };
 
