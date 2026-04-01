@@ -113,8 +113,8 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
     }
   }, [viewMode]);
 
-  const handleDeleteRecord = async (recordId: string) => {
-    if (!window.confirm("Deseja realmente excluir este registro de chamada permanentemente?")) return;
+  const handleDeleteRecord = async (recordIds: string[]) => {
+    if (!window.confirm("Deseja realmente excluir este(s) registro(s) permanentemente?")) return;
 
     try {
       // O Supabase deve lidar com o cascade delete na tabela class_attendance_students
@@ -122,12 +122,12 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
       const { error } = await supabase
         .from('class_attendance_records')
         .delete()
-        .eq('id', recordId);
+        .in('id', recordIds);
 
       if (error) throw error;
 
-      setAttendanceHistory(prev => prev.filter(r => r.id !== recordId));
-      alert("Registro excluído com sucesso.");
+      setAttendanceHistory(prev => prev.filter(r => !recordIds.includes(r.id)));
+      alert("Registro(s) excluído(s) com sucesso.");
     } catch (err) {
       console.error("Erro ao excluir registro:", err);
       alert("Erro ao excluir o registro. Tente novamente.");
@@ -360,27 +360,39 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
     try {
       for (const period of selectedPeriods) {
         const periodSubject = `${selectedSubject} - ${period}ª Aula`;
-        const existingRecordId = existingRecordIds[period];
-        let recordId = existingRecordId;
+        let recordId = existingRecordIds[period];
 
-        if (!existingRecordId) {
-          // 1. Insert Record for this period
-          const { data: recordData, error: recordError } = await supabase
+        if (!recordId) {
+          // Check if it already exists in DB to prevent duplicates if state is stale
+          const { data: existing } = await supabase
             .from('class_attendance_records')
-            .insert([
-              {
-                classroom_name: selectedClass,
-                teacher_name: user.name,
-                date: date,
-                shift: selectedShift,
-                subject: periodSubject
-              }
-            ])
-            .select()
-            .single();
+            .select('id')
+            .eq('classroom_name', selectedClass)
+            .eq('date', date)
+            .eq('subject', periodSubject)
+            .maybeSingle();
 
-          if (recordError) throw recordError;
-          recordId = recordData.id;
+          if (existing) {
+            recordId = existing.id;
+          } else {
+            // 1. Insert Record for this period
+            const { data: recordData, error: recordError } = await supabase
+              .from('class_attendance_records')
+              .insert([
+                {
+                  classroom_name: selectedClass,
+                  teacher_name: user.name,
+                  date: date,
+                  shift: selectedShift,
+                  subject: periodSubject
+                }
+              ])
+              .select()
+              .single();
+
+            if (recordError) throw recordError;
+            recordId = recordData.id;
+          }
         }
 
         // 2. Insert/Update Students for this period record
@@ -654,12 +666,39 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
               </div>
             ) : attendanceHistory.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {attendanceHistory
-                  .filter(h => h.classroom_name.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map(record => (
-                  <div key={record.id} className="bg-white border border-gray-100 rounded-[2rem] p-6 hover:shadow-xl hover:border-amber-100 transition-all group relative overflow-hidden">
+                {Object.values(
+                  attendanceHistory
+                    .filter(h => h.classroom_name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .reduce((acc: any, record) => {
+                      const baseSubject = record.subject.split(' - ')[0];
+                      const key = `${record.date}|${record.classroom_name}|${record.shift}|${baseSubject}`;
+                      
+                      if (!acc[key]) {
+                        acc[key] = {
+                          id: record.id,
+                          date: record.date,
+                          classroom_name: record.classroom_name,
+                          shift: record.shift,
+                          baseSubject: baseSubject,
+                          periods: [],
+                          recordIds: []
+                        };
+                      }
+                      
+                      const match = record.subject.match(/(\d+)ª Aula/);
+                      if (match) {
+                        acc[key].periods.push(parseInt(match[1]));
+                      }
+                      acc[key].recordIds.push(record.id);
+                      
+                      return acc;
+                    }, {})
+                )
+                  .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .map((group: any) => (
+                  <div key={group.id} className="bg-white border border-gray-100 rounded-[2rem] p-6 hover:shadow-xl hover:border-amber-100 transition-all card-group relative overflow-hidden">
                     {/* Indicador de Status lateral */}
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500/20 group-hover:bg-amber-500 transition-colors"></div>
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500/20 card-group-hover:bg-amber-500 transition-colors"></div>
                     
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -669,14 +708,14 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                         <div>
                           <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Data da Aula</p>
                           <p className="text-sm font-black text-gray-900 tracking-tight">
-                            {new Date(record.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                            {new Date(group.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </p>
                         </div>
                       </div>
                       <button 
-                        onClick={() => handleDeleteRecord(record.id)}
+                        onClick={() => handleDeleteRecord(group.recordIds)}
                         className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                        title="Excluir Registro"
+                        title="Excluir Registro(s)"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -688,7 +727,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turma</span>
                         </div>
-                        <span className="text-xs font-black text-gray-900 uppercase">{record.classroom_name}</span>
+                        <span className="text-xs font-black text-gray-900 uppercase">{group.classroom_name}</span>
                       </div>
                       
                       <div className="flex items-center justify-between">
@@ -696,26 +735,23 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                           <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno</span>
                         </div>
-                        <span className="text-xs font-black text-gray-900 uppercase">{record.shift}</span>
+                        <span className="text-xs font-black text-gray-900 uppercase">{group.shift}</span>
                       </div>
 
                       <div className="pt-4 border-t border-gray-50 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 overflow-hidden">
                           <Clock size={12} className="text-gray-300 shrink-0" />
-                          <p className="text-[10px] font-bold text-gray-500 uppercase truncate">{record.subject}</p>
+                          <p className="text-[10px] font-bold text-gray-500 uppercase truncate">
+                            {group.baseSubject} - {group.periods.sort().join(', ')}ª Aulas
+                          </p>
                         </div>
                         <button 
                           onClick={() => {
-                            setSelectedClass(record.classroom_name);
-                            setDate(record.date);
-                            setSelectedShift(record.shift as Shift);
-                            // Extrair o número da aula do subject se possível
-                            const periodMatch = record.subject.match(/(\d+)ª Aula/);
-                            if (periodMatch) {
-                              const period = parseInt(periodMatch[1]);
-                              setSelectedPeriods([period]);
-                              setSelectedSubject(record.subject.split(' - ')[0]);
-                            }
+                            setSelectedClass(group.classroom_name);
+                            setDate(group.date);
+                            setSelectedShift(group.shift as Shift);
+                            setSelectedPeriods(group.periods);
+                            setSelectedSubject(group.baseSubject);
                             setViewMode('form');
                           }}
                           className="px-3 py-1.5 bg-gray-100 hover:bg-amber-100 hover:text-amber-700 text-gray-600 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all"
