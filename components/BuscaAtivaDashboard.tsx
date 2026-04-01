@@ -97,14 +97,14 @@ const BuscaAtivaDashboard: React.FC = () => {
         const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
 
         // Threshold for risk (e.g., <= 85% attendance)
-        if (percent < 85) { 
+        if (percent <= 85) { 
           critical++;
           criticalList.push({
             id: s.id,
             name: s.name,
             class: s.class,
             absences: `${Math.round(100 - percent)}%`,
-            status: 'Crítico'
+            status: 'Faltoso'
           });
         }
 
@@ -259,12 +259,13 @@ const BuscaAtivaDashboard: React.FC = () => {
             {criticalCases.length > 0 ? criticalCases.map((c, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-100 transition-all group cursor-pointer" onClick={() => setSelectedActionStudent(c)}>
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-black text-xs">
-                    {c.absences}
+                  <div className="w-14 h-12 rounded-xl bg-red-100 text-red-600 flex flex-col items-center justify-center font-black">
+                    <span className="text-sm leading-none">{c.absences}</span>
+                    <span className="text-[7px] uppercase tracking-widest mt-0.5 opacity-80">Faltas</span>
                   </div>
                   <div>
                     <p className="text-xs font-black text-gray-900 uppercase leading-tight">{c.name}</p>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase">{c.class} • {c.status}</p>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase">{c.class} • Alerta: {c.status}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
