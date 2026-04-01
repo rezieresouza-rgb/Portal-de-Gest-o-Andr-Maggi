@@ -96,8 +96,16 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['scheduling', 'library'].includes(mod.id);
     }
 
+    const isDanubia = user.name?.toUpperCase().includes('DANUBIA') || 
+                      user.name?.toUpperCase().includes('DANÚBIA') ||
+                      user.login?.toUpperCase().includes('DANUBIA');
+
     if (mod.adminOnly && !isAdmin) return false;
     if (isAdmin) return true;
+
+    if (isDanubia && ['teacher', 'scheduling'].includes(mod.id)) {
+      return true;
+    }
 
     // Prioriza a Função para permissões dinâmicas, fallback para Role
     const permissionKey = user.jobFunction || user.role;
