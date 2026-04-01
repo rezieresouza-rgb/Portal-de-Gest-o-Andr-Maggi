@@ -112,7 +112,7 @@ const BuscaAtivaStudentList: React.FC = () => {
 
   // Process Student List
   const studentData = useMemo(() => {
-    return students.map(s => {
+    const processed = students.map(s => {
       const stats = attendanceStats[s.id] || { total: 0, present: 0 };
       const totalDays = stats.total;
       const presentDays = stats.present;
@@ -121,8 +121,8 @@ const BuscaAtivaStudentList: React.FC = () => {
       const attendancePercent = totalDays > 0 ? (presentDays / totalDays) * 100 : 100;
 
       let status: 'NORMAL' | 'ALERTA' | 'CRÍTICO' = 'NORMAL';
-      if (attendancePercent < 85) status = 'CRÍTICO';
-      else if (attendancePercent < 90) status = 'ALERTA';
+      if (attendancePercent <= 85) status = 'CRÍTICO';
+      else if (attendancePercent <= 90) status = 'ALERTA';
 
       return {
         ...s,
@@ -133,6 +133,12 @@ const BuscaAtivaStudentList: React.FC = () => {
         class: s.class,
         id: s.id
       };
+    });
+
+    // Sort by lowest attendance first, then alphabetically
+    return processed.sort((a, b) => {
+      if (a.attendance !== b.attendance) return a.attendance - b.attendance;
+      return a.name.localeCompare(b.name);
     });
   }, [students, attendanceStats]);
 
