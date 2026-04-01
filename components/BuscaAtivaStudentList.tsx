@@ -113,7 +113,7 @@ const BuscaAtivaStudentList: React.FC = () => {
   // Process Student List
   const studentData = useMemo(() => {
     const processed = students.map(s => {
-      const stats = attendanceStats[s.id] || { total: 0, present: 0 };
+      const stats = attendanceStats[s.registration_number] || attendanceStats[s.id] || { total: 0, present: 0 };
       const totalDays = stats.total;
       const presentDays = stats.present;
 

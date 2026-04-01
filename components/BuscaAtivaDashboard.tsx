@@ -93,7 +93,7 @@ const BuscaAtivaDashboard: React.FC = () => {
       const infrequencyByYear: Record<string, number> = {};
 
       dbStudents.forEach((s: any) => {
-        const stat = studentStats[s.id] || { total: 0, present: 0 };
+        const stat = studentStats[s.registration_number] || studentStats[s.id] || { total: 0, present: 0 };
         const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
 
         // Threshold for risk (e.g., <= 85% attendance)
