@@ -248,7 +248,7 @@ const Contracts: React.FC = () => {
   const [showExtractDateModal, setShowExtractDateModal] = useState(false);
   const [extractStartDate, setExtractStartDate] = useState("");
   const [extractEndDate, setExtractEndDate] = useState("");
-  const [paymentModal, setPaymentModal] = useState<{ statementId: string, paymentDate: string, invoiceNumber: string } | null>(null);
+  const [paymentModal, setPaymentModal] = useState<{ statementId: string, paymentDate: string, invoiceNumber: string, receiptNumber: string } | null>(null);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
   const [selectedGuideIds, setSelectedGuideIds] = useState<Set<string>>(new Set());
 
@@ -256,7 +256,8 @@ const Contracts: React.FC = () => {
     setPaymentModal({
       statementId: statement.id,
       paymentDate: statement.payment_date ? statement.payment_date : getLocalDateString(),
-      invoiceNumber: statement.invoice_number || ''
+      invoiceNumber: statement.invoice_number || '',
+      receiptNumber: statement.receipt_number || ''
     });
   };
 
@@ -280,6 +281,7 @@ const Contracts: React.FC = () => {
         .update({
           payment_date: paymentModal.paymentDate || null,
           invoice_number: paymentModal.invoiceNumber || null,
+          receipt_number: paymentModal.receiptNumber || null,
           status: 'PAGO'
         })
         .eq('id', paymentModal.statementId);
@@ -525,9 +527,13 @@ const Contracts: React.FC = () => {
       setIsLoadingGuides(true);
       const { data, error } = await supabase
         .from('payment_guides')
-        .select('*')
+        .select(`
+          *,
+          statement:consumption_statements(status, statement_number, receipt_number)
+        `)
         .eq('contract_id', contractId)
-        .order('created_at', { ascending: false });
+        .order('issue_date', { ascending: true })
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       setPaymentGuides(data || []);
@@ -796,7 +802,7 @@ const Contracts: React.FC = () => {
       await fetchStatements(selectedContract.id);
       await fetchPaymentGuides(selectedContract.id);
 
-      setGeneratedStatementPdf({ statement: newStatement, items: itemsToPrint });
+      setGeneratedStatementPdf({ statement: newStatement, items: itemsToPrint, guides: previewExtract.guides });
 
     } catch (error: any) {
       alert("Erro ao salvar extrato: " + error.message);
@@ -808,8 +814,10 @@ const Contracts: React.FC = () => {
       setIsLoadingStatements(true);
       const { data: guides, error: guidesError } = await supabase
         .from('payment_guides')
-        .select('id')
-        .eq('statement_id', statement.id);
+        .select('id, guide_number, issue_date, total_value, created_at')
+        .eq('statement_id', statement.id)
+        .order('issue_date', { ascending: true })
+        .order('created_at', { ascending: true });
 
       if (guidesError) throw guidesError;
 
@@ -840,7 +848,11 @@ const Contracts: React.FC = () => {
         itemSummaryMap[itemId].total += (gi.quantity * gi.unit_price);
       }
 
-      setGeneratedStatementPdf({ statement, items: Object.values(itemSummaryMap).sort((a,b) => (a.description || '').localeCompare(b.description || '')) });
+      setGeneratedStatementPdf({ 
+        statement, 
+        items: Object.values(itemSummaryMap).sort((a,b) => (a.description || '').localeCompare(b.description || '')),
+        guides: guides
+      });
 
     } catch (e) {
       console.error(e);
@@ -1528,6 +1540,7 @@ const Contracts: React.FC = () => {
                         <th className="px-6 py-4">Nº da Guia</th>
                         <th className="px-6 py-4">Data de Emissão</th>
                         <th className="px-6 py-4">Data do Recebimento</th>
+                        <th className="px-6 py-4">Status / Extrato</th>
                         <th className="px-6 py-4 text-right">Valor Total</th>
                         <th className="px-6 py-4 text-right">Ações</th>
                       </tr>
@@ -1543,6 +1556,22 @@ const Contracts: React.FC = () => {
                           </td>
                           <td className="px-6 py-5">
                             <p className="font-bold text-gray-500 text-xs">{guide.issue_date ? new Date(guide.issue_date + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            {!guide.statement ? (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-400 text-[8px] font-black uppercase rounded-md">Disponível</span>
+                            ) : guide.statement.status === 'PAGO' ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="w-fit px-2 py-1 bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase rounded-md">Pago</span>
+                                <span className="text-[7px] font-black text-gray-400 uppercase leading-none">{guide.statement.statement_number}</span>
+                                {guide.statement.receipt_number && <span className="text-[7px] font-black text-emerald-600 uppercase leading-none">Comp: {guide.statement.receipt_number}</span>}
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-1">
+                                <span className="w-fit px-2 py-1 bg-blue-100 text-blue-700 text-[8px] font-black uppercase rounded-md">Em Extrato</span>
+                                <span className="text-[7px] font-black text-gray-400 uppercase leading-none">{guide.statement.statement_number}</span>
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-5 text-right font-black text-emerald-700 text-xs">
                             R$ {guide.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1635,6 +1664,7 @@ const Contracts: React.FC = () => {
                               <div>
                                 <p className="font-bold text-emerald-600 text-[10px] uppercase">Pago: {new Date(statement.payment_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                                 <p className="font-black text-gray-900 text-xs mt-0.5">NF: {statement.invoice_number}</p>
+                                {statement.receipt_number && <p className="font-black text-emerald-700 text-[8px] mt-0.5 uppercase">Comp: {statement.receipt_number}</p>}
                               </div>
                             ) : (
                               <p className="font-bold text-red-500 text-[10px] uppercase bg-red-50 inline-block px-2 py-1 rounded-md">Pendente</p>
@@ -1836,6 +1866,17 @@ const Contracts: React.FC = () => {
               placeholder="Ex: NF 12345"
               value={paymentModal.invoiceNumber}
               onChange={(e) => setPaymentModal({ ...paymentModal, invoiceNumber: e.target.value })}
+              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Número do Comprovante</label>
+            <input
+              type="text"
+              required
+              placeholder="Ex: COMP-98765"
+              value={paymentModal.receiptNumber}
+              onChange={(e) => setPaymentModal({ ...paymentModal, receiptNumber: e.target.value })}
               className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
             />
           </div>
@@ -2196,6 +2237,7 @@ const Contracts: React.FC = () => {
                 <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex flex-col justify-center">
                   <p className="text-[8px] font-black text-indigo-600 uppercase mb-1">Pagamento / NF</p>
                   <p className="text-xs font-black text-indigo-900 uppercase">NF {generatedStatementPdf.statement.invoice_number}</p>
+                  {generatedStatementPdf.statement.receipt_number && <p className="text-[9px] font-black text-emerald-600 mt-1 uppercase leading-none">Comprovante: {generatedStatementPdf.statement.receipt_number}</p>}
                   <p className="text-[8px] font-bold text-indigo-400 mt-0.5 uppercase">{new Date(generatedStatementPdf.statement.payment_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                 </div>
               )}
@@ -2230,6 +2272,33 @@ const Contracts: React.FC = () => {
                 </tr>
               </tfoot>
             </table>
+
+            {generatedStatementPdf.guides && generatedStatementPdf.guides.length > 0 && (
+              <div className="mb-8 mt-4">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Relatório de Guias Consolidadas</h4>
+                <div className="border border-gray-100 rounded-xl overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-gray-50 text-[8px] font-black text-gray-400 uppercase border-b border-gray-100">
+                      <tr>
+                        <th className="px-4 py-2 text-[8px]">Nº da Guia</th>
+                        <th className="px-4 py-2 text-center text-[8px]">Recebimento</th>
+                        <th className="px-4 py-2 text-right text-[8px]">Valor da Guia</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {generatedStatementPdf.guides.map((g: any, gIdx: number) => (
+                        <tr key={gIdx} className="text-[9px] text-gray-600">
+                          <td className="px-4 py-2 font-black uppercase text-gray-900 text-[9px]">{g.guide_number}</td>
+                          <td className="px-4 py-2 text-center font-bold text-[9px]">{new Date(g.issue_date + "T12:00:00").toLocaleDateString('pt-BR')}</td>
+                          <td className="px-4 py-2 text-right font-black text-emerald-700 text-[9px]">R$ {g.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="mt-auto pt-20 border-t-2 border-gray-100">
               <p className="text-[8px] font-bold text-gray-400 uppercase text-center mb-10">Este documento certifica o fechamento de guias de recebimento e consumo do contrato administrativo nº {selectedContract.number} no período discriminado acima.</p>
               <div className="grid grid-cols-2 gap-20">
