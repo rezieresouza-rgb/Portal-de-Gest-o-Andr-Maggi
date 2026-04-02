@@ -532,7 +532,7 @@ const Contracts: React.FC = () => {
           statement:consumption_statements(status, statement_number, receipt_number)
         `)
         .eq('contract_id', contractId)
-        .order('issue_date', { ascending: true })
+        .order('issue_date', { ascending: true, nullsFirst: true })
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -816,7 +816,7 @@ const Contracts: React.FC = () => {
         .from('payment_guides')
         .select('id, guide_number, issue_date, total_value, created_at')
         .eq('statement_id', statement.id)
-        .order('issue_date', { ascending: true })
+        .order('issue_date', { ascending: true, nullsFirst: true })
         .order('created_at', { ascending: true });
 
       if (guidesError) throw guidesError;
