@@ -526,7 +526,7 @@ const Contracts: React.FC = () => {
         .from('payment_guides')
         .select(`
           *,
-          statement:consumption_statements(id, statement_number)
+          statement:consumption_statements(id, statement_number, payment_date, invoice_number)
         `)
         .eq('contract_id', contractId)
         .order('issue_date', { ascending: true, nullsFirst: true })
@@ -1557,11 +1557,11 @@ const Contracts: React.FC = () => {
                           <td className="px-6 py-5">
                             {!guide.statement ? (
                               <span className="px-2 py-1 bg-gray-100 text-gray-400 text-[8px] font-black uppercase rounded-md">Disponível</span>
-                            ) : guide.statement.status === 'PAGO' ? (
+                            ) : guide.statement.payment_date ? (
                               <div className="flex flex-col gap-1">
                                 <span className="w-fit px-2 py-1 bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase rounded-md">Pago</span>
                                 <span className="text-[7px] font-black text-gray-400 uppercase leading-none">{guide.statement.statement_number}</span>
-                                {guide.statement.receipt_number && <span className="text-[7px] font-black text-emerald-600 uppercase leading-none">Comp: {guide.statement.receipt_number}</span>}
+                                <span className="text-[7px] font-black text-emerald-600 uppercase leading-none">NF: {guide.statement.invoice_number}</span>
                               </div>
                             ) : (
                               <div className="flex flex-col gap-1">
