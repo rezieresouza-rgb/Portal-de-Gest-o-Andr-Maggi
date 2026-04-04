@@ -248,7 +248,7 @@ const Contracts: React.FC = () => {
   const [showExtractDateModal, setShowExtractDateModal] = useState(false);
   const [extractStartDate, setExtractStartDate] = useState("");
   const [extractEndDate, setExtractEndDate] = useState("");
-  const [paymentModal, setPaymentModal] = useState<{ statementId: string, paymentDate: string, invoiceNumber: string, receiptNumber: string } | null>(null);
+  const [paymentModal, setPaymentModal] = useState<{ statementId: string, paymentDate: string, invoiceNumber: string } | null>(null);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
   const [selectedGuideIds, setSelectedGuideIds] = useState<Set<string>>(new Set());
 
@@ -256,8 +256,7 @@ const Contracts: React.FC = () => {
     setPaymentModal({
       statementId: statement.id,
       paymentDate: statement.payment_date ? statement.payment_date : getLocalDateString(),
-      invoiceNumber: statement.invoice_number || '',
-      receiptNumber: statement.receipt_number || ''
+      invoiceNumber: statement.invoice_number || ''
     });
   };
 
@@ -280,9 +279,7 @@ const Contracts: React.FC = () => {
         .from('consumption_statements')
         .update({
           payment_date: paymentModal.paymentDate || null,
-          invoice_number: paymentModal.invoiceNumber || null,
-          receipt_number: paymentModal.receiptNumber || null,
-          status: 'PAGO'
+          invoice_number: paymentModal.invoiceNumber || null
         })
         .eq('id', paymentModal.statementId);
 
@@ -1664,7 +1661,6 @@ const Contracts: React.FC = () => {
                               <div>
                                 <p className="font-bold text-emerald-600 text-[10px] uppercase">Pago: {new Date(statement.payment_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                                 <p className="font-black text-gray-900 text-xs mt-0.5">NF: {statement.invoice_number}</p>
-                                {statement.receipt_number && <p className="font-black text-emerald-700 text-[8px] mt-0.5 uppercase">Comp: {statement.receipt_number}</p>}
                               </div>
                             ) : (
                               <p className="font-bold text-red-500 text-[10px] uppercase bg-red-50 inline-block px-2 py-1 rounded-md">Pendente</p>
@@ -1869,17 +1865,7 @@ const Contracts: React.FC = () => {
               className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Número do Comprovante</label>
-            <input
-              type="text"
-              required
-              placeholder="Ex: COMP-98765"
-              value={paymentModal.receiptNumber}
-              onChange={(e) => setPaymentModal({ ...paymentModal, receiptNumber: e.target.value })}
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
-            />
-          </div>
+
           <button
             type="submit"
             disabled={isSavingPayment}
@@ -2237,7 +2223,6 @@ const Contracts: React.FC = () => {
                 <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex flex-col justify-center">
                   <p className="text-[8px] font-black text-indigo-600 uppercase mb-1">Pagamento / NF</p>
                   <p className="text-xs font-black text-indigo-900 uppercase">NF {generatedStatementPdf.statement.invoice_number}</p>
-                  {generatedStatementPdf.statement.receipt_number && <p className="text-[9px] font-black text-emerald-600 mt-1 uppercase leading-none">Comprovante: {generatedStatementPdf.statement.receipt_number}</p>}
                   <p className="text-[8px] font-bold text-indigo-400 mt-0.5 uppercase">{new Date(generatedStatementPdf.statement.payment_date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                 </div>
               )}
