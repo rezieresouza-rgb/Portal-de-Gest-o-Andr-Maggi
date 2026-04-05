@@ -19,14 +19,12 @@ import {
   ArrowLeftRight
 } from 'lucide-react';
 import SecretariatDashboard from '../components/SecretariatDashboard';
-import SecretariatStudentRegistry from '../components/SecretariatStudentRegistry';
 import SecretariatClassroomManager from '../components/SecretariatClassroomManager';
 import SecretariatStaffManager from '../components/SecretariatStaffManager';
 import SecretariatBulletinPrinter from '../components/SecretariatBulletinPrinter';
 import SecretariatNotificationCenter from '../components/SecretariatNotificationCenter';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import SecretariatAttendanceHistory from '../components/SecretariatAttendanceHistory';
-import StudentMovementsManager from '../components/StudentMovementsManager';
 
 interface SecretariatModuleProps {
   user?: any;
