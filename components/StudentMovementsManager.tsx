@@ -20,7 +20,9 @@ import {
   Hash,
   ChevronDown,
   Loader2,
-  Save
+  Save,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
@@ -149,6 +151,7 @@ const StudentMovementsManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('TODOS');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingMovementId, setEditingMovementId] = useState<string | null>(null);
   const [form, setForm] = useState<NewMovementForm>(emptyForm);
   const [studentSearch, setStudentSearch] = useState('');
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
@@ -198,6 +201,37 @@ const StudentMovementsManager: React.FC = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const openEdit = (m: Movement) => {
+    setEditingMovementId(m.id);
+    setForm({
+      student_id: m.student_id,
+      movement_type: m.movement_type,
+      movement_date: m.movement_date?.split('T')[0] || '',
+      description: m.description || '',
+      destination_school: m.destination_school || '',
+      document_number: m.document_number || '',
+      days_absent: m.days_absent?.toString() || '',
+      cid_code: m.cid_code || '',
+      doctor_name: m.doctor_name || '',
+      return_date: m.return_date?.split('T')[0] || '',
+      responsible_name: m.responsible_name || '',
+    });
+    setIsModalOpen(true);
+    setShowStudentDropdown(false);
+  };
+
+  const handleDelete = async (m: Movement) => {
+    const studentName = m.students?.name || 'este aluno';
+    if (!window.confirm(`Excluir a movimentação de ${studentName}?\nEsta ação não pode ser desfeita.`)) return;
+    try {
+      const { error } = await supabase.from('student_movements').delete().eq('id', m.id);
+      if (error) throw error;
+      fetchData();
+    } catch (err: any) {
+      alert('Erro ao excluir: ' + err.message);
+    }
+  };
 
   // Stats
   const stats = useMemo(() => ({
@@ -250,49 +284,68 @@ const StudentMovementsManager: React.FC = () => {
 
       if (form.movement_type === 'TRANSFERENCIA') {
         payload.destination_school = form.destination_school.toUpperCase() || null;
-      }
-      if (form.movement_type === 'ATESTADO') {
+        payload.document_number = null; payload.days_absent = null; payload.cid_code = null;
+        payload.doctor_name = null; payload.return_date = null;
+      } else if (form.movement_type === 'ATESTADO') {
         payload.document_number = form.document_number || null;
         payload.days_absent = form.days_absent ? parseInt(form.days_absent) : null;
         payload.cid_code = form.cid_code.toUpperCase() || null;
         payload.doctor_name = form.doctor_name.toUpperCase() || null;
         payload.return_date = form.return_date || null;
+        payload.destination_school = null;
+      } else if (form.movement_type === 'ABANDONO') {
+        payload.document_number = form.document_number || null;
+        payload.destination_school = null; payload.days_absent = null;
+        payload.cid_code = null; payload.doctor_name = null; payload.return_date = null;
+      } else {
+        payload.destination_school = null; payload.document_number = null;
+        payload.days_absent = null; payload.cid_code = null;
+        payload.doctor_name = null; payload.return_date = null;
       }
 
-      const { error } = await supabase.from('student_movements').insert([payload]);
+      let error;
+      if (editingMovementId) {
+        // EDIÇÃO — UPDATE
+        ({ error } = await supabase.from('student_movements').update(payload).eq('id', editingMovementId));
+      } else {
+        // NOVO — INSERT
+        ({ error } = await supabase.from('student_movements').insert([payload]));
+        // Atualizar status do aluno apenas em novos registros
+        if (!error) {
+          if (form.movement_type === 'TRANSFERENCIA') {
+            await supabase.from('students').update({ status: 'TRANSFERIDO' }).eq('id', form.student_id);
+          } else if (form.movement_type === 'ABANDONO') {
+            await supabase.from('students').update({ status: 'EVADIDO' }).eq('id', form.student_id);
+          }
+          // Notificação
+          try {
+            const cfg = TYPE_CONFIG[form.movement_type as keyof typeof TYPE_CONFIG];
+            const notif = {
+              id: `notif-${Date.now()}`,
+              title: `${cfg.label}: ${selectedStudent?.name}`,
+              message: `Turma ${selectedStudent?.classroomName || ''}. ${form.description}`,
+              date: new Date().toISOString(),
+              priority: ['TRANSFERENCIA', 'ABANDONO'].includes(form.movement_type) ? 'ALTA' : 'NORMAL',
+              isRead: false
+            };
+            const saved = localStorage.getItem('secretariat_notifications_v1');
+            const current = saved ? JSON.parse(saved) : [];
+            localStorage.setItem('secretariat_notifications_v1', JSON.stringify([notif, ...current]));
+            window.dispatchEvent(new Event('storage'));
+          } catch (_) { }
+        }
+      }
+
       if (error) throw error;
 
-      // Atualizar status do aluno no banco se for transferência ou abandono
-      if (form.movement_type === 'TRANSFERENCIA') {
-        await supabase.from('students').update({ status: 'TRANSFERIDO' }).eq('id', form.student_id);
-      } else if (form.movement_type === 'ABANDONO') {
-        await supabase.from('students').update({ status: 'EVADIDO' }).eq('id', form.student_id);
-      }
-
-      // Notificação automática
-      try {
-        const cfg = TYPE_CONFIG[form.movement_type as keyof typeof TYPE_CONFIG];
-        const notif = {
-          id: `notif-${Date.now()}`,
-          title: `${cfg.label}: ${selectedStudent?.name}`,
-          message: `Turma ${selectedStudent?.classroomName || ''}. ${form.description}`,
-          date: new Date().toISOString(),
-          priority: ['TRANSFERENCIA', 'ABANDONO'].includes(form.movement_type) ? 'ALTA' : 'NORMAL',
-          isRead: false
-        };
-        const saved = localStorage.getItem('secretariat_notifications_v1');
-        const current = saved ? JSON.parse(saved) : [];
-        localStorage.setItem('secretariat_notifications_v1', JSON.stringify([notif, ...current]));
-        window.dispatchEvent(new Event('storage'));
-      } catch (_) { /* silencioso */ }
-
       setIsModalOpen(false);
+      setEditingMovementId(null);
       setForm(emptyForm);
       setStudentSearch('');
       fetchData();
     } catch (err: any) {
       console.error('Erro ao salvar:', err.message);
-      alert('Erro ao registrar movimentação: ' + err.message);
+      alert('Erro ao salvar movimentação: ' + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -313,7 +366,7 @@ const StudentMovementsManager: React.FC = () => {
           </div>
         </div>
         <button
-          onClick={() => { setIsModalOpen(true); setForm(emptyForm); setStudentSearch(''); }}
+          onClick={() => { setIsModalOpen(true); setEditingMovementId(null); setForm(emptyForm); setStudentSearch(''); }}
           className="flex items-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs shadow-xl hover:bg-indigo-700 transition-all"
         >
           <Plus size={18} /> Nova Movimentação
@@ -379,19 +432,20 @@ const StudentMovementsManager: React.FC = () => {
                 <th className="px-6 py-4">Tipo</th>
                 <th className="px-6 py-4">Data</th>
                 <th className="px-6 py-4">Detalhes</th>
+                <th className="px-6 py-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center">
+                  <td colSpan={6} className="py-16 text-center">
                     <Loader2 className="animate-spin mx-auto mb-2 text-gray-300" size={28} />
                     <p className="text-xs font-black text-gray-400 uppercase">Carregando...</p>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center">
+                  <td colSpan={6} className="py-16 text-center">
                     <ArrowLeftRight className="mx-auto mb-2 text-gray-200" size={36} />
                     <p className="text-xs font-black text-gray-300 uppercase">Nenhuma movimentação encontrada</p>
                   </td>
@@ -438,6 +492,24 @@ const StudentMovementsManager: React.FC = () => {
                         </p>
                       )}
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEdit(m)}
+                          className="p-2 text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                          title="Editar movimentação"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(m)}
+                          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          title="Excluir movimentação"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -462,8 +534,10 @@ const StudentMovementsManager: React.FC = () => {
                   <ArrowLeftRight size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black uppercase">Nova Movimentação</h3>
-                  <p className="text-indigo-200 text-[10px] font-bold uppercase tracking-widest">Secretaria Escolar</p>
+                  <h3 className="text-lg font-black uppercase">
+                  {editingMovementId ? 'Editar Movimentação' : 'Nova Movimentação'}
+                </h3>
+                <p className="text-indigo-200 text-[10px] font-bold uppercase tracking-widest">Secretaria Escolar</p>
                 </div>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors">
@@ -496,19 +570,26 @@ const StudentMovementsManager: React.FC = () => {
                 })}
               </div>
 
-              {/* Seleção de Aluno */}
+              {/* Seleção de Aluno — desabilitado no modo edição */}
               <div className="space-y-1.5 relative">
                 <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Aluno *</label>
-                <div
-                  className="w-full p-4 bg-gray-50 rounded-2xl font-bold text-sm cursor-pointer border border-gray-100 flex justify-between items-center"
-                  onClick={() => setShowStudentDropdown(!showStudentDropdown)}
-                >
-                  <span className={selectedStudent ? 'text-gray-900' : 'text-gray-400'}>
-                    {selectedStudent ? `${selectedStudent.name} — ${selectedStudent.classroomName}` : 'Clique para selecionar...'}
-                  </span>
-                  <ChevronDown size={16} className="text-gray-400" />
-                </div>
-                {showStudentDropdown && (
+                {editingMovementId ? (
+                  <div className="w-full p-4 bg-gray-100 rounded-2xl font-bold text-sm border border-gray-100 text-gray-500">
+                    {students.find(s => s.id === form.student_id)?.name || 'Aluno não encontrado'}
+                    <span className="ml-2 text-[10px] text-gray-400">(não editável)</span>
+                  </div>
+                ) : (
+                    <div
+                    className="w-full p-4 bg-gray-50 rounded-2xl font-bold text-sm cursor-pointer border border-gray-100 flex justify-between items-center"
+                    onClick={() => setShowStudentDropdown(!showStudentDropdown)}
+                  >
+                    <span className={selectedStudent ? 'text-gray-900' : 'text-gray-400'}>
+                      {selectedStudent ? `${selectedStudent.name} — ${selectedStudent.classroomName}` : 'Clique para selecionar...'}
+                    </span>
+                    <ChevronDown size={16} className="text-gray-400" />
+                  </div>
+                )}
+                {showStudentDropdown && !editingMovementId && (
                   <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-2xl shadow-2xl mt-1 overflow-hidden">
                     <div className="p-3 border-b border-gray-100">
                       <input
@@ -696,7 +777,7 @@ const StudentMovementsManager: React.FC = () => {
                   className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs shadow-xl hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  Registrar Movimentação
+                  {editingMovementId ? 'Salvar Alterações' : 'Registrar Movimentação'}
                 </button>
               </div>
             </form>
