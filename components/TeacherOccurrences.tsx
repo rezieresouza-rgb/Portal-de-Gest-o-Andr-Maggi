@@ -18,7 +18,8 @@ import {
    History,
    Loader2,
    Edit3,
-   Printer
+   Printer,
+   ShieldCheck as ShieldCheckIcon
 } from 'lucide-react';
 import { ClassroomOccurrence, CaseSeverity } from '../types';
 import { INITIAL_STUDENTS, SCHOOL_CLASSES } from '../constants/initialData';
@@ -148,7 +149,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    };
 
    const handleViewDetails = (occ: ClassroomOccurrence) => {
-      alert('Abrindo detalhes: ' + occ.studentName);
       setViewingOccurrence(occ);
    };
 
@@ -327,142 +327,158 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    };
 
    return (
-      <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-
-         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-6">
-               <div className="p-4 bg-red-50 text-red-600 rounded-3xl shadow-lg">
-                  <ShieldAlert size={32} />
-               </div>
-               <div>
-                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight leading-none">Registro de Fatos Escolares</h3>
-                  <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-2">Escrituração disciplinar sincronizada com a coordenação</p>
-               </div>
-            </div>
-            <button
-               onClick={() => { resetForm(); setIsModalOpen(true); }}
-               className="px-8 py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-red-600/20 hover:bg-red-700 active:scale-95 transition-all flex items-center gap-2"
-            >
-               <Plus size={18} /> Novo Registro
-            </button>
-         </div>
-
-         <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between bg-gray-50/50 gap-6">
-               <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white text-gray-400 rounded-2xl shadow-sm border border-gray-100">
-                     <History size={20} />
+      <>
+         {/* CONTEÚDO PRINCIPAL (ANIMADO) */}
+         <div className="space-y-8 animate-in fade-in duration-500 pb-20 no-print">
+            
+            {/* CABEÇALHO E BOTÃO DE AÇÃO */}
+            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+               <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 bg-red-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-red-200 rotate-3 hover:rotate-0 transition-transform duration-500">
+                     <AlertCircle size={40} strokeWidth={2.5} />
                   </div>
                   <div>
-                     <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight">Histórico Global</h4>
-                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Sincronizado com a Coordenação</p>
+                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none mb-2">Lançar Ocorrência</h1>
+                     <div className="flex items-center gap-3">
+                        <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-red-100">Área do Professor</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                        <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">Registro Pedagógico e Disciplinar</span>
+                     </div>
+                  </div>
+               </div>
+               <button onClick={() => setIsModalOpen(true)} className="px-8 py-5 bg-gray-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl hover:bg-black active:scale-95 transition-all flex items-center gap-4 group">
+                  <Plus size={20} strokeWidth={3} className="text-red-500 group-hover:rotate-90 transition-transform duration-500" />
+                  Novo Registro de Fato
+               </button>
+            </div>
+
+            {/* LISTA DE HISTÓRICO GLOBAL */}
+            <div className="bg-white rounded-[3.5rem] border border-gray-100 shadow-sm overflow-hidden">
+               <div className="p-10 border-b border-gray-50 bg-gray-50/30 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                  <div className="flex items-center gap-5">
+                     <div className="p-4 bg-white rounded-3xl shadow-sm border border-gray-100">
+                        <History size={28} className="text-gray-400" />
+                     </div>
+                     <div>
+                        <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Histórico Global</h3>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sincronizado com a coordenação</p>
+                     </div>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row items-center gap-3">
+                     <div className="relative w-full md:w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                        <input
+                           type="text"
+                           placeholder="BUSCAR PELO NOME..."
+                           className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-2xl font-bold text-[10px] uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all"
+                           value={filterStudent}
+                           onChange={(e) => setFilterStudent(e.target.value)}
+                        />
+                     </div>
+                     <select
+                        value={filterClass}
+                        onChange={(e) => setFilterClass(e.target.value)}
+                        className="w-full md:w-48 px-6 py-4 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all appearance-none cursor-pointer"
+                     >
+                        <option value="">TODAS AS TURMAS</option>
+                        {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                     </select>
+                     <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="w-full md:w-40 px-6 py-4 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all appearance-none cursor-pointer"
+                     >
+                        <option value="">TIPO</option>
+                        {OCCURRENCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                     </select>
                   </div>
                </div>
 
-               <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative min-w-[200px]">
-                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
-                     <input 
-                        type="text" 
-                        placeholder="BUSCAR PELO NOME..." 
-                        value={filterStudent}
-                        onChange={e => setFilterStudent(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-bold outline-none focus:ring-4 focus:ring-red-500/5 transition-all uppercase"
-                     />
-                  </div>
-                  <select 
-                     value={filterClass}
-                     onChange={e => setFilterClass(e.target.value)}
-                     className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all cursor-pointer"
-                  >
-                     <option value="">TODAS AS TURMAS</option>
-                     {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <select 
-                     value={filterType}
-                     onChange={e => setFilterType(e.target.value)}
-                     className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all cursor-pointer"
-                  >
-                     <option value="">TIPO</option>
-                     {OCCURRENCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  {(filterClass || filterStudent || filterType) && (
-                     <button 
-                        onClick={() => { setFilterClass(''); setFilterStudent(''); setFilterType(''); }}
-                        className="p-3 text-red-600 hover:bg-red-50 bg-white border border-red-50 rounded-xl transition-all shadow-sm"
-                        title="Limpar Filtros"
-                     >
-                        <X size={16} strokeWidth={3} />
-                     </button>
+               <div className="divide-y divide-gray-50">
+                  {loading ? (
+                     <div className="p-12 flex justify-center">
+                        <Loader2 className="animate-spin text-gray-300" size={32} />
+                     </div>
+                  ) : filteredOccurrences.length > 0 ? filteredOccurrences.map(occ => (
+                     <div key={occ.id} className="p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:bg-gray-50/50 transition-all group relative">
+                        <div className="flex items-center gap-6 flex-1">
+                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${getSeverityStyle(occ.severity)} shadow-sm`}>
+                              <AlertCircle size={24} />
+                           </div>
+                           <div>
+                              <div className="flex items-center gap-3">
+                                 <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight">{occ.studentName}</h4>
+                                 <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${getSeverityStyle(occ.severity)}`}>{occ.type}</span>
+                              </div>
+                              <p className="text-xs text-gray-500 font-medium italic mt-1 line-clamp-1">"{occ.description}"</p>
+                              <div className="flex flex-wrap items-center gap-4 mt-3">
+                                 <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Clock size={12} /> {new Date(occ.date).toLocaleDateString('pt-BR')}</span>
+                                 <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Flag size={12} /> Turma: {occ.className}</span>
+                                 <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-gray-100">
+                                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                                    <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter">Relator: {occ.teacherName}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                           <button onClick={() => handlePrint(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Imprimir Ata Oficial">
+                              <Printer size={20} />
+                           </button>
+                           {occ.teacherName === user.name && (
+                              <>
+                                 <button onClick={() => handleEdit(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all" title="Editar Registro">
+                                    <Edit3 size={20} />
+                                 </button>
+                                 <button onClick={() => deleteOccurrence(occ.id)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Excluir Registro">
+                                    <Trash2 size={20} />
+                                 </button>
+                              </>
+                           )}
+                           <button 
+                              onClick={(e) => { e.stopPropagation(); handleViewDetails(occ); }}
+                              className="p-3 bg-gray-50 text-gray-300 hover:scale-110 active:scale-95 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block relative z-10"
+                              title="Ver Detalhes do Registro"
+                           >
+                              <ChevronRight size={24} />
+                           </button>
+                        </div>
+                     </div>
+                  )) : (
+                     <div className="py-24 text-center">
+                        <MessageSquare size={48} className="mx-auto mb-4 text-gray-100" />
+                        <p className="text-gray-300 font-black uppercase text-xs tracking-widest">
+                           { (filterClass || filterStudent || filterType) 
+                              ? 'Nenhum registro corresponde aos filtros selecionados' 
+                              : 'Nenhum registro encontrado no histórico global' }
+                        </p>
+                     </div>
                   )}
                </div>
             </div>
 
-            <div className="divide-y divide-gray-50">
-               {loading ? (
-                  <div className="p-12 flex justify-center">
-                     <Loader2 className="animate-spin text-gray-300" size={32} />
+            {/* NOTA DE CONFORMIDADE */}
+            <div className="bg-gray-900 p-8 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><ShieldCheckIcon size={140} /></div>
+               <div className="flex items-center gap-6 relative z-10">
+                  <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-md">
+                     <AlertTriangle size={32} className="text-red-400" />
                   </div>
-               ) : filteredOccurrences.length > 0 ? filteredOccurrences.map(occ => (
-                  <div key={occ.id} className="p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:bg-gray-50/50 transition-all group relative">
-                     <div className="flex items-center gap-6 flex-1">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${getSeverityStyle(occ.severity)} shadow-sm`}>
-                           <AlertCircle size={24} />
-                        </div>
-                        <div>
-                           <div className="flex items-center gap-3">
-                              <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight">{occ.studentName}</h4>
-                              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${getSeverityStyle(occ.severity)}`}>{occ.type}</span>
-                           </div>
-                           <p className="text-xs text-gray-500 font-medium italic mt-1 line-clamp-1">"{occ.description}"</p>
-                           <div className="flex flex-wrap items-center gap-4 mt-3">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Clock size={12} /> {new Date(occ.date).toLocaleDateString('pt-BR')}</span>
-                              <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Flag size={12} /> Turma: {occ.className}</span>
-                              <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-gray-100">
-                                 <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                                 <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter">Relator: {occ.teacherName}</span>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                     <div className="flex flex-col sm:flex-row items-center gap-2">
-                        <button onClick={() => handlePrint(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Imprimir Ata Oficial">
-                           <Printer size={20} />
-                        </button>
-                        {occ.teacherName === user.name && (
-                           <>
-                              <button onClick={() => handleEdit(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all" title="Editar Registro">
-                                 <Edit3 size={20} />
-                              </button>
-                              <button onClick={() => deleteOccurrence(occ.id)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Excluir Registro">
-                                 <Trash2 size={20} />
-                              </button>
-                           </>
-                        )}
-                        <button 
-                           onClick={(e) => { e.stopPropagation(); handleViewDetails(occ); }}
-                           className="p-3 bg-gray-50 text-gray-300 hover:scale-110 active:scale-95 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block relative z-10"
-                           title="Ver Detalhes do Registro"
-                        >
-                           <ChevronRight size={24} />
-                        </button>
-                     </div>
+                  <div>
+                     <p className="text-red-400 text-[10px] font-black uppercase tracking-widest mb-1">Atenção Docente</p>
+                     <h4 className="text-xl font-black uppercase">Escrituração Permanente</h4>
+                     <p className="text-gray-400 text-xs font-medium uppercase tracking-tight">Estes registros são sincronizados com o Livro de Ocorrência da Gestão Escolar.</p>
                   </div>
-               )) : (
-                  <div className="py-24 text-center">
-                     <MessageSquare size={48} className="mx-auto mb-4 text-gray-100" />
-                     <p className="text-gray-300 font-black uppercase text-xs tracking-widest">
-                        { (filterClass || filterStudent || filterType) 
-                           ? 'Nenhum registro corresponde aos filtros selecionados' 
-                           : 'Nenhum registro encontrado no histórico global' }
-                     </p>
-                  </div>
-               )}
+               </div>
             </div>
          </div>
 
+         {/* MODAIS (FORA DO CONTAINER ANIMADO PARA GARANTIR POSICIONAMENTO FIXED) */}
+
+         {/* MODAL DE NOVO REGISTRO / EDIÇÃO */}
          {isModalOpen && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-red-950/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-red-950/40 backdrop-blur-sm animate-in fade-in duration-300 no-print">
                <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-red-100 overflow-hidden flex flex-col max-h-[95vh]">
                   <div className="p-8 bg-red-50 flex justify-between items-center border-b border-red-100 shrink-0">
                      <div className="flex items-center gap-4">
@@ -470,11 +486,11 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            <Plus size={28} strokeWidth={3} />
                         </div>
                         <div>
-                           <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Novo Registro de Fato</h3>
+                           <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">{editingOccurrenceId ? 'Editar Fato Pedagógico' : 'Novo Registro de Fato'}</h3>
                            <p className="text-[10px] text-red-600 font-bold uppercase tracking-widest mt-1">Escrituração Disciplinar Docente</p>
                         </div>
                      </div>
-                     <button onClick={() => setIsModalOpen(false)} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
+                     <button onClick={() => { setIsModalOpen(false); resetForm(); }} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
                         <X size={24} />
                      </button>
                   </div>
@@ -482,7 +498,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
                      <form onSubmit={handleSave} className="space-y-8">
                         <div className="space-y-6">
-                           {/* Turma + Busca de aluno */}
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="space-y-1.5">
                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turma</label>
@@ -490,7 +505,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                     value={form.className}
                                     onChange={e => {
                                        setForm({ ...form, className: e.target.value });
-                                       setSelectedStudents([]);
+                                       if (!editingOccurrenceId) setSelectedStudents([]);
                                        if (e.target.value) setShowDropdown(true);
                                     }}
                                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
@@ -501,7 +516,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                               </div>
                               <div className="space-y-1.5 relative">
                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                                    Estudantes <span className="text-red-500">({selectedStudents.length} selecionado{selectedStudents.length !== 1 ? 's' : ''})</span>
+                                    Estudante <span className="text-red-500">*</span>
                                  </label>
                                  <div className="relative">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
@@ -513,64 +528,28 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                           setSearchTerm(e.target.value);
                                           setShowDropdown(true);
                                        }}
-                                       placeholder={form.className ? 'Buscar e adicionar alunos...' : 'Selecione a turma primeiro...'}
+                                       placeholder={form.className ? 'Buscar aluno...' : 'Selecione a turma primeiro...'}
                                        className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-red-500/5 focus:bg-white transition-all uppercase"
                                     />
                                  </div>
 
                                  {showDropdown && filteredStudents.length > 0 && (
                                     <div className="absolute z-[100] left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto max-h-60 divide-y divide-gray-50 animate-in slide-in-from-top-2">
-                                       {filteredStudents.map(s => {
-                                          const alreadySelected = selectedStudents.some(sel => sel.name === s.name);
-                                          return (
-                                             <button
-                                                key={s.id || s.registration_number || s.name}
-                                                type="button"
-                                                onClick={() => handleSelectStudent(s)}
-                                                disabled={alreadySelected}
-                                                className={`w-full text-left p-4 transition-colors flex justify-between items-center ${alreadySelected ? 'opacity-40 cursor-not-allowed bg-gray-50' : 'hover:bg-red-50'
-                                                   }`}
-                                             >
-                                                <span className="text-xs font-black uppercase text-gray-800">{s.name}</span>
-                                                <span className="text-[9px] font-bold text-gray-400 uppercase">{alreadySelected ? '✓ Adicionado' : s.class}</span>
-                                             </button>
-                                          );
-                                       })}
+                                       {filteredStudents.map(s => (
+                                          <button
+                                             key={s.id || s.registration_number || s.name}
+                                             type="button"
+                                             onClick={() => handleSelectStudent(s)}
+                                             className="w-full text-left p-4 hover:bg-red-50 transition-colors flex justify-between items-center"
+                                          >
+                                             <span className="text-xs font-black uppercase text-gray-800">{s.name}</span>
+                                             <span className="text-[9px] font-bold text-gray-400 uppercase">{s.class}</span>
+                                          </button>
+                                       ))}
                                     </div>
                                  )}
                               </div>
                            </div>
-
-                           {/* Chips dos alunos selecionados */}
-                           {selectedStudents.length > 0 && (
-                              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl">
-                                 <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-3">Alunos envolvidos neste registro:</p>
-                                 <div className="flex flex-wrap gap-2">
-                                    {selectedStudents.map(s => (
-                                       <div
-                                          key={s.name}
-                                          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-red-200 rounded-xl shadow-sm text-xs font-black uppercase text-gray-800"
-                                       >
-                                          <span>{s.name}</span>
-                                          <span className="text-[8px] text-red-400 font-bold">{s.class}</span>
-                                          <button
-                                             type="button"
-                                             onClick={() => handleRemoveStudent(s.name)}
-                                             className="ml-1 p-0.5 text-red-400 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"
-                                          >
-                                             <X size={12} strokeWidth={3} />
-                                          </button>
-                                       </div>
-                                    ))}
-                                 </div>
-                              </div>
-                           )}
-                           { /* Empty state hint */}
-                           {selectedStudents.length === 0 && (
-                              <div className="p-4 border-2 border-dashed border-gray-100 rounded-2xl text-center">
-                                 <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Nenhum aluno selecionado — use a busca acima para adicionar</p>
-                              </div>
-                           )}
 
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                               <div className="space-y-1.5">
@@ -597,7 +576,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            </div>
 
                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Descrição Detalhada do Ocorrido</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Relato Descritivo</label>
                               <textarea
                                  required
                                  value={form.description}
@@ -610,20 +589,20 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            <div className="flex items-center gap-4 p-4 bg-red-50 rounded-2xl border border-red-100">
                               <input
                                  type="checkbox"
-                                 id="notif_parents"
-                                 checked={form.notifiedParents}
-                                 onChange={e => setForm({ ...form, notifiedParents: e.target.checked })}
+                                 id="forward_psycho"
+                                 checked={form.forwardToPsychosocial}
+                                 onChange={e => setForm({ ...form, forwardToPsychosocial: e.target.checked })}
                                  className="w-5 h-5 rounded border-red-300 text-red-600 focus:ring-red-500"
                               />
-                              <label htmlFor="notif_parents" className="text-xs font-black text-red-800 uppercase tracking-widest cursor-pointer select-none">
-                                 Confirmo que os responsáveis foram comunicados
+                              <label htmlFor="forward_psycho" className="text-xs font-black text-red-800 uppercase tracking-widest cursor-pointer select-none">
+                                 Encaminhar para o Setor Psicossocial / Mediação
                               </label>
                            </div>
                         </div>
 
                         <button type="submit" disabled={isSaving} className="w-full py-5 bg-red-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] shadow-2xl shadow-red-900/20 hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-3">
                            {isSaving ? <Loader2 className="animate-spin" /> : <Save size={24} />}
-                           Efetivar Registro no Diário
+                           {editingOccurrenceId ? 'Salvar Alterações' : 'Efetivar Registro no Diário'}
                         </button>
                      </form>
                   </div>
@@ -631,26 +610,97 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
             </div>
          )}
 
-         {/* NOTA DE CONFORMIDADE */}
-         <div className="bg-gray-900 p-8 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden no-print">
-            <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><ShieldCheck size={140} /></div>
-            <div className="flex items-center gap-6 relative z-10">
-               <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-md">
-                  <AlertTriangle size={32} className="text-red-400" />
-               </div>
-               <div>
-                  <p className="text-red-400 text-[10px] font-black uppercase tracking-widest mb-1">Atenção Docente</p>
-                  <h4 className="text-xl font-black uppercase">Escrituração Permanente</h4>
-                  <p className="text-gray-400 text-xs font-medium uppercase tracking-tight">Estes registros são sincronizados com o Livro de Ocorrência da Gestão Escolar.</p>
+         {/* MODAL DE VISUALIZAÇÃO DETALHADA */}
+         {viewingOccurrence && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md animate-in fade-in duration-300 no-print pointer-events-auto">
+               <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+                  <div className="p-8 bg-gray-50 flex justify-between items-center border-b border-gray-100 shrink-0">
+                     <div className="flex items-center gap-4">
+                        <div className={`p-4 rounded-3xl shadow-lg border-2 ${getSeverityStyle(viewingOccurrence.severity)}`}>
+                           <ShieldAlert size={28} />
+                        </div>
+                        <div>
+                           <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter line-clamp-1">{viewingOccurrence.studentName}</h3>
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Detalhes do Registro Escolar</p>
+                        </div>
+                     </div>
+                     <button onClick={() => setViewingOccurrence(null)} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
+                        <X size={24} />
+                     </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Data</p>
+                           <p className="text-xs font-black text-gray-900">{new Date(viewingOccurrence.date).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Turma</p>
+                           <p className="text-xs font-black text-gray-900">{viewingOccurrence.className}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Natureza</p>
+                           <p className="text-xs font-black text-gray-900">{viewingOccurrence.type}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Severidade</p>
+                           <p className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border w-fit ${getSeverityStyle(viewingOccurrence.severity)}`}>
+                              {viewingOccurrence.severity}
+                           </p>
+                        </div>
+                     </div>
+
+                     <div className="space-y-3">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                           <MessageSquare size={14} className="text-red-600" /> Relato Narrativo do Professor
+                        </h4>
+                        <div className="p-6 bg-red-50/30 border border-red-100 rounded-[2rem] text-sm font-medium leading-relaxed text-gray-800 italic">
+                           "{viewingOccurrence.description}"
+                        </div>
+                     </div>
+
+                     <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-2xl bg-gray-50/50">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-black text-gray-500 text-xs">
+                           {viewingOccurrence.teacherName.charAt(0)}
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Relator(a)</p>
+                           <p className="text-xs font-black text-gray-900 uppercase tracking-tighter">{viewingOccurrence.teacherName}</p>
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="p-8 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                     <button 
+                        onClick={() => { setViewingOccurrence(null); handlePrint(viewingOccurrence); }}
+                        className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2"
+                     >
+                        <Printer size={16} /> Imprimir PDF Oficial
+                     </button>
+                     {viewingOccurrence.teacherName === user.name && (
+                        <button 
+                           onClick={() => { handleEdit(viewingOccurrence); setViewingOccurrence(null); }}
+                           className="flex-1 py-4 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                        >
+                           <Edit3 size={16} /> Editar Registro
+                        </button>
+                     )}
+                     <button 
+                        onClick={() => setViewingOccurrence(null)}
+                        className="py-4 px-8 bg-white text-gray-400 border border-gray-200 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-50 transition-all"
+                     >
+                        Fechar
+                     </button>
+                  </div>
                </div>
             </div>
-         </div>
+         )}
 
-         {/* ÁREA DE IMPRESSÃO - ATA OFICIAL (OCULTA NA TELA, VISÍVEL NO PDF) */}
-         <div className="print-area hidden">
-            {printingOccurrence && (
+         {/* ÁREA DE IMPRESSÃO (OCULTA NA TELA) */}
+         {printingOccurrence && (
+            <div className="print-area hidden">
                <div className="print-page bg-white text-black p-[20mm]">
-                  {/* CABEÇALHO COM LOGOS (BASEADO NOS BOLETINS DA SECRETARIA) */}
                   <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-8">
                      <div className="flex items-center justify-start w-1/4">
                         <img src="/logo-escola.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
@@ -663,7 +713,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      </div>
                   </div>
 
-                  {/* TÍTULO OFICIAL */}
                   <div className="text-center mb-10 space-y-2">
                      <h1 className="text-2xl font-black uppercase tracking-tight text-gray-900 border-2 border-black py-3 rounded-xl bg-gray-50">
                         Ata Contínua de Registro Escolar
@@ -673,7 +722,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      </p>
                   </div>
 
-                  {/* DADOS DA OCORRÊNCIA EM TABELA */}
                   <div className="border border-black rounded-lg overflow-hidden mb-8">
                      <table className="w-full text-sm font-medium">
                         <tbody>
@@ -685,13 +733,13 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                               <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Turma Base</td>
                               <td className="p-3 uppercase font-black">{printingOccurrence.className}</td>
                            </tr>
-                           <tr className="border-b border-black grid-cols-2">
+                           <tr className="border-b border-black">
                               <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Data/Hora</td>
-                              <td className="p-3">{new Date(printingOccurrence.date).toLocaleDateString('pt-BR')} às {printingOccurrence.time}</td>
+                              <td className="p-3">{new Date(printingOccurrence.date).toLocaleDateString('pt-BR')} às {printingOccurrence.time || '--:--'}</td>
                            </tr>
                            <tr className="border-b border-black">
                               <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Natureza Fato</td>
-                              <td className="p-3 uppercase">{printingOccurrence.type || printingOccurrence.category}</td>
+                              <td className="p-3 uppercase">{printingOccurrence.type}</td>
                            </tr>
                            <tr>
                               <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Severidade</td>
@@ -701,7 +749,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      </table>
                   </div>
 
-                  {/* RELATO NARRATIVO */}
                   <div className="mb-16">
                      <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit mb-4">
                         Relato Narrativo
@@ -711,10 +758,9 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      </p>
                   </div>
 
-                  {/* ESPAÇO PARA ASSINATURAS */}
                   <div className="grid grid-cols-2 gap-16 mt-20 text-center">
                      <div className="border-t border-black pt-4">
-                        <p className="text-xs font-black uppercase">{printingOccurrence.teacherName || printingOccurrence.responsibleName}</p>
+                        <p className="text-xs font-black uppercase">{printingOccurrence.teacherName}</p>
                         <p className="text-[10px] uppercase text-gray-600 font-medium">Docente Relator</p>
                      </div>
                      <div className="border-t border-black pt-4">
@@ -723,104 +769,17 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      </div>
                   </div>
 
-                  {/* RODAPÉ DO DOCUMENTO */}
                   <div className="absolute bottom-10 left-0 w-full text-center opacity-40 flex items-center justify-center gap-2">
-                     <ShieldCheck size={14} />
+                     <ShieldCheckIcon size={14} />
                      <span className="text-[8px] font-black uppercase tracking-widest">
                         Documento Oficializado via Portal de Gestão André Maggi
                      </span>
                   </div>
                </div>
-            )}
+            </div>
+         )}
 
-            {/* MODAL DE VISUALIZAÇÃO DETALHADA */}
-            {viewingOccurrence && (
-               <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md animate-in fade-in duration-300 no-print pointer-events-auto">
-                  <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-                     <div className="p-8 bg-gray-50 flex justify-between items-center border-b border-gray-100 shrink-0">
-                        <div className="flex items-center gap-4">
-                           <div className={`p-4 rounded-3xl shadow-lg border-2 ${getSeverityStyle(viewingOccurrence.severity)}`}>
-                              <ShieldAlert size={28} />
-                           </div>
-                           <div>
-                              <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter line-clamp-1">{viewingOccurrence.studentName}</h3>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Detalhes do Registro Escolar</p>
-                           </div>
-                        </div>
-                        <button onClick={() => setViewingOccurrence(null)} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
-                           <X size={24} />
-                        </button>
-                     </div>
-
-                     <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Data</p>
-                              <p className="text-xs font-black text-gray-900">{new Date(viewingOccurrence.date).toLocaleDateString('pt-BR')}</p>
-                           </div>
-                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Turma</p>
-                              <p className="text-xs font-black text-gray-900">{viewingOccurrence.className}</p>
-                           </div>
-                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Natureza</p>
-                              <p className="text-xs font-black text-gray-900">{viewingOccurrence.type}</p>
-                           </div>
-                           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Severidade</p>
-                              <p className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border w-fit ${getSeverityStyle(viewingOccurrence.severity)}`}>
-                                 {viewingOccurrence.severity}
-                              </p>
-                           </div>
-                        </div>
-
-                        <div className="space-y-3">
-                           <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
-                              <MessageSquare size={14} className="text-red-600" /> Relato Narrativo do Professor
-                           </h4>
-                           <div className="p-6 bg-red-50/30 border border-red-100 rounded-[2rem] text-sm font-medium leading-relaxed text-gray-800 italic">
-                              "{viewingOccurrence.description}"
-                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-2xl bg-gray-50/50">
-                           <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-black text-gray-500 text-xs">
-                              {viewingOccurrence.teacherName.charAt(0)}
-                           </div>
-                           <div>
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Relator(a)</p>
-                              <p className="text-xs font-black text-gray-900 uppercase tracking-tighter">{viewingOccurrence.teacherName}</p>
-                           </div>
-                        </div>
-                     </div>
-
-                     <div className="p-8 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-                        <button 
-                           onClick={() => { setViewingOccurrence(null); handlePrint(viewingOccurrence); }}
-                           className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2"
-                        >
-                           <Printer size={16} /> Imprimir PDF Oficial
-                        </button>
-                        {viewingOccurrence.teacherName === user.name && (
-                           <button 
-                              onClick={() => { handleEdit(viewingOccurrence); setViewingOccurrence(null); }}
-                              className="flex-1 py-4 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
-                           >
-                              <Edit3 size={16} /> Editar Registro
-                           </button>
-                        )}
-                        <button 
-                           onClick={() => setViewingOccurrence(null)}
-                           className="py-4 px-8 bg-white text-gray-400 border border-gray-200 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-50 transition-all"
-                        >
-                           Fechar
-                        </button>
-                     </div>
-                  </div>
-               </div>
-            )}
-         </div>
-
+         {/* ESTILOS DE IMPRESSÃO */}
          <style>{`
             @media print {
                @page { size: A4 portrait; margin: 0; }
@@ -828,7 +787,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                .no-print { display: none !important; }
                .print-area { display: block !important; }
                .animate-in { animation: none !important; transition: none !important; }
-               /* Hide the main wrapper div or un-hide print area absolutely */
                .print-page {
                   width: 210mm;
                   min-height: 297mm;
@@ -838,11 +796,11 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   box-sizing: border-box;
                   position: absolute;
                   top: 0; left: 0; right: 0;
-                  z-index: 9999;
+                  z-index: 99999;
                }
             }
          `}</style>
-      </div>
+      </>
    );
 };
 

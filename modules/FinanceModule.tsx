@@ -73,6 +73,7 @@ interface Transaction {
   isFamilyAgriculture?: boolean;
   isIndividualProducer?: boolean;
   receiptUrl?: string;
+  time?: string;
 }
 
 interface FundData {
@@ -107,6 +108,11 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     return new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
   };
 
+  const getLocalTimeString = () => {
+    const d = new Date();
+    return d.toTimeString().split(' ')[0].substring(0, 5); // HH:mm
+  };
+
   const [newTx, setNewTx] = useState({
     description: '',
     invoiceNumber: '',
@@ -119,7 +125,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     fundingSource: '',
     isFamilyAgriculture: false,
     isIndividualProducer: false,
-    date: getLocalDateString()
+    date: getLocalDateString(),
+    time: getLocalTimeString()
   });
 
   const toggleFullScreen = () => {
@@ -167,21 +174,22 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
         const fundTransactions = transactionsData?.filter(t => t.fund_id === fund.id).map(t => ({
           id: t.id,
-          date: t.date,
-          invoiceDate: t.invoice_date,
-          description: t.description,
-          invoiceNumber: t.invoice_number,
-          type: t.type,
-          group: t.tx_group, // Custeio/Capital
-          value: Number(t.gross_value), // Usar valor bruto na UI principal ou net_value? A interface usa valor.
-          taxValue: Number(t.tax_value),
-          netValue: Number(t.net_value),
-          category: t.category,
-          integratedAction: t.integrated_action,
-          fundingSource: t.funding_source,
-          isFamilyAgriculture: t.is_family_agriculture,
-          isIndividualProducer: t.is_individual_producer,
-          receiptUrl: t.receipt_url
+          date: t.date || '',
+          description: t.description || 'Sem descrição',
+          invoiceNumber: t.invoice_number || '',
+          invoiceDate: t.invoice_date || '',
+          group: t.tx_group || 'CUSTEIO',
+          type: t.type || 'EXPENSE',
+          value: Number(t.gross_value) || 0,
+          category: t.category || '',
+          receiptUrl: t.receipt_url || '',
+          integratedAction: t.integrated_action || '',
+          fundingSource: t.funding_source || '',
+          isFamilyAgriculture: t.is_family_agriculture || false,
+          isIndividualProducer: t.is_individual_producer || false,
+          taxValue: Number(t.tax_value) || 0,
+          netValue: Number(t.net_value) || 0,
+          time: t.time || ''
         })) || [];
 
         // Calcular alocado? Por enquanto fixo ou vindo de algum lugar?
@@ -436,6 +444,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         funding_source: activeTab === 'merenda' ? newTx.fundingSource : null,
         is_family_agriculture: activeTab === 'merenda' ? newTx.isFamilyAgriculture : false,
         is_individual_producer: activeTab === 'merenda' ? newTx.isIndividualProducer : false,
+        time: newTx.time || null,
         ...(receiptUrl ? { receipt_url: receiptUrl } : {})
       };
 
@@ -454,7 +463,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       setIsModalOpen(false);
       setTempFile(null);
       setEditingTx(null);
-      setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
+      setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
       fetchFinancialData();
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
@@ -662,7 +671,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </p>
                                 </div>
                               </div>
-                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
+                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
                                 <X size={24} />
                               </button>
                             </div>
@@ -792,7 +801,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                     <div className="space-y-2">
                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Valor Bruto (R$)</label>
                                       <div className="relative">
@@ -812,6 +821,15 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Calendar size={18} /></div>
                                         <input type="date" required value={newTx.date} onChange={(e) => setNewTx({ ...newTx, date: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2 group/time">
+                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 group-focus-within/time:text-blue-500 transition-colors">Hora do Lançamento</label>
+                                      <div className="relative">
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/time:text-blue-500 transition-colors">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        </div>
+                                        <input type="time" value={newTx.time} onChange={(e) => setNewTx({ ...newTx, time: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
                                       </div>
                                     </div>
                                   </div>
@@ -1018,10 +1036,10 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                         <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Custeio</p>
                                       </div>
                                       <p className={`text-[10px] font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                        R$ {saldoCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        R$ {(saldoCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                       </p>
                                     </div>
-                                    <p className="text-xl font-black text-white">R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
                                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3">
                                       <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                                     </div>
@@ -1045,10 +1063,10 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                         <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Capital</p>
                                       </div>
                                       <p className={`text-[10px] font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                        R$ {saldoCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        R$ {(saldoCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                       </p>
                                     </div>
-                                    <p className="text-xl font-black text-white">R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
                                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3">
                                       <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                                     </div>
@@ -1081,17 +1099,17 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     <div className="space-y-3">
                                       <div className="flex justify-between items-end">
                                         <p className="text-[8px] font-bold text-white/40 uppercase">Saldo Total</p>
-                                        <p className={`text-lg font-black ${balance < 0 ? 'text-red-400' : 'text-white'}`}>R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        <p className={`text-lg font-black ${balance < 0 ? 'text-red-400' : 'text-white'}`}>R$ {(balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                       </div>
 
                                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-purple-500/10">
                                         <div>
                                           <p className="text-[7px] font-black text-blue-300 uppercase tracking-tighter">Custeio</p>
-                                          <p className={`text-[11px] font-black ${balanceCusteio < 0 ? 'text-red-400' : 'text-blue-200'}`}>R$ {balanceCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                          <p className={`text-[11px] font-black ${balanceCusteio < 0 ? 'text-red-400' : 'text-blue-200'}`}>R$ {(balanceCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                         </div>
                                         <div className="text-right">
                                           <p className="text-[7px] font-black text-amber-300 uppercase tracking-tighter">Capital</p>
-                                          <p className={`text-[11px] font-black ${balanceCapital < 0 ? 'text-red-400' : 'text-amber-200'}`}>R$ {balanceCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                          <p className={`text-[11px] font-black ${balanceCapital < 0 ? 'text-red-400' : 'text-amber-200'}`}>R$ {(balanceCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                         </div>
                                       </div>
                                     </div>
@@ -1140,13 +1158,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Limite Custeio</p>
                                     </div>
                                     <p className={`text-[10px] font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                      SALDO: R$ {saldoCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      SALDO: R$ {(saldoCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                     </p>
                                   </div>
                                   <div className="flex justify-between items-end mb-2">
-                                    <p className="text-xl font-black text-white">R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     <div className="text-right">
-                                      <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {orcado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     </div>
                                   </div>
                                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
@@ -1176,13 +1194,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Limite Capital</p>
                                     </div>
                                     <p className={`text-[10px] font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                      SALDO: R$ {saldoCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      SALDO: R$ {(saldoCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                     </p>
                                   </div>
                                   <div className="flex justify-between items-end mb-2">
-                                    <p className="text-xl font-black text-white">R$ {gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     <div className="text-right">
-                                      <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {orcado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     </div>
                                   </div>
                                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
@@ -1204,7 +1222,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                           <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><ArrowRightLeft className="text-blue-400" size={20} /> Livro Caixa</h3>
                           <button onClick={() => {
                             setEditingTx(null);
-                            setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString() });
+                            setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
                             setIsModalOpen(true);
                           }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
                         </div>
@@ -1214,7 +1232,10 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             <tbody className="divide-y divide-white/5">
                               {funds[activeTab].transactions.map((t) => (
                                 <tr key={t.id} className="hover:bg-white/5 transition-colors">
-                                  <td className="px-6 py-4 font-bold text-white/50">{t.date ? t.date.split('-').reverse().join('/') : ''}</td>
+                                  <td className="px-6 py-4 font-bold text-white/50">
+                                    {t.date ? t.date.split('-').reverse().join('/') : ''}
+                                    <span className="block text-[9px] opacity-50 mt-0.5">{t.time?.substring(0, 5)}</span>
+                                  </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
                                       <p className="font-black text-white uppercase leading-tight">{t.description}</p>
@@ -1226,7 +1247,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     <span className={`px-2 py-0.5 rounded font-black text-[7px] uppercase border ${t.group === 'CAPITAL' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' : 'bg-blue-500/10 text-blue-300 border-blue-500/20'}`}>{t.group}</span>
                                     {t.isFamilyAgriculture && <span className={`px-2 py-0.5 rounded font-black text-[7px] uppercase border ml-1 ${t.isIndividualProducer ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'}`}>{t.isIndividualProducer ? '[AF-IND]' : '[AF-COOP]'}</span>}
                                   </td>
-                                  <td className="px-6 py-4 text-right font-black"><span className={t.type === 'ENTRY' ? 'text-emerald-400' : 'text-red-400'}>R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></td>
+                                  <td className="px-6 py-4 text-right font-black"><span className={t.type === 'ENTRY' ? 'text-emerald-400' : 'text-red-400'}>R$ {(t.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></td>
                                   <td className="px-6 py-4 text-center">
                                     <div className="flex items-center justify-center gap-2">
                                       <button
@@ -1235,8 +1256,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                           setNewTx({
                                             description: t.description,
                                             invoiceNumber: t.invoiceNumber || '',
-                                              invoiceDate: t.invoiceDate || '',
-                                              value: t.value.toString(),
+                                            invoiceDate: t.invoiceDate || '',
+                                            value: t.value.toString(),
                                             type: t.type,
                                             group: t.group,
                                             category: t.category,
@@ -1244,7 +1265,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                             fundingSource: t.fundingSource || '',
                                             isFamilyAgriculture: t.isFamilyAgriculture || false,
                                             isIndividualProducer: t.isIndividualProducer || false,
-                                            date: t.date
+                                            date: t.date,
+                                            time: t.time || ''
                                           });
                                           setIsModalOpen(true);
                                         }}
@@ -1288,7 +1310,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                         </div>
                         <div className="bg-white/10 p-8 rounded-3xl border border-white/10 backdrop-blur-sm text-center">
                           <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Saldo Disponível Total</p>
-                          <h3 className="text-4xl font-black">R$ {globalStats.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                          <h3 className="text-4xl font-black">R$ {(globalStats.balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1303,7 +1325,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                 <DashboardIcon size={24} />
                               </div>
                               <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{fund.name}</h4>
-                              <p className="text-xl font-black text-white leading-none">R$ {s.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              <p className="text-xl font-black text-white leading-none">R$ {(s.balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                             </button>
                           );
                         })}
@@ -1349,7 +1371,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                           </div>
                           <div className="bg-white/10 p-6 rounded-3xl border border-white/10 backdrop-blur-md text-center">
                             <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1">Total Retido no Exercício</p>
-                            <h4 className="text-3xl font-black">R$ {totalTaxAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h4>
+                             <h4 className="text-3xl font-black">R$ {(totalTaxAmount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h4>
                           </div>
                         </div>
 
@@ -1376,9 +1398,9 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   <td className="px-8 py-5 text-center">
                                     <span className="bg-white/10 text-white px-2 py-1 rounded text-[9px] font-black uppercase">{tx.fundName}</span>
                                   </td>
-                                  <td className="px-8 py-5 text-right font-bold text-white/60 italic">R$ {tx.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  <td className="px-8 py-5 text-right font-bold text-white/60 italic">R$ {(tx.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                   <td className="px-8 py-5 text-right font-black text-emerald-400">- R$ {(tx.taxValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                  <td className="px-8 py-5 text-right font-black text-white text-sm">R$ {(tx.netValue || tx.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  <td className="px-8 py-5 text-right font-black text-white text-sm">R$ {(tx.netValue || tx.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                 </tr>
                               )) : (
                                 <tr><td colSpan={6} className="py-12 text-center text-emerald-200/40 uppercase font-black text-[10px] tracking-[0.3em]">Nenhuma retenção registrada</td></tr>
@@ -1451,7 +1473,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     </div>
                                   </td>
                                   <td className="px-8 py-6 text-right">
-                                    <span className="font-black text-white text-sm">R$ {inv.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                     <span className="font-black text-white text-sm">R$ {(inv.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                   </td>
                                   <td className="px-8 py-6 text-center">
                                     {inv.receiptUrl ? (

@@ -25,8 +25,13 @@ import {
   Download,
   RefreshCw,
   UserPlus,
-  Pencil, // Added Pencil icon
-  Clock // Added Clock icon for history
+  Pencil,
+  Clock,
+  Stethoscope,
+  LogOut,
+  TrendingDown,
+  Building2,
+  Hash
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { extractDetailedStudentList, consolidateStudentData } from '../geminiService';
@@ -143,11 +148,32 @@ const SecretariatStudentRegistry: React.FC = () => {
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [selectedStudentForMovement, setSelectedStudentForMovement] = useState<DetailedStudent | null>(null);
   const [movements, setMovements] = useState<StudentMovement[]>([]);
-  const [newMovement, setNewMovement] = useState<{ type: string; description: string; date: string }>({
+  const [newMovement, setNewMovement] = useState<{
+    type: string;
+    description: string;
+    date: string;
+    destination_school: string;
+    document_number: string;
+    days_absent: string;
+    cid_code: string;
+    doctor_name: string;
+    return_date: string;
+    responsible_name: string;
+  }>({
     type: 'TRANSFERENCIA',
     description: '',
-    date: new Date().toLocaleDateString('sv-SE')
+    date: new Date().toLocaleDateString('sv-SE'),
+    destination_school: '',
+    document_number: '',
+    days_absent: '',
+    cid_code: '',
+    doctor_name: '',
+    return_date: '',
+    responsible_name: ''
   });
+
+  // STATUS FILTER
+  const [statusFilter, setStatusFilter] = useState<'TODOS' | 'ATIVO' | 'TRANSFERIDO' | 'EVADIDO'>('TODOS');
 
   const fetchMovements = async (studentId: string) => {
     try {
@@ -170,9 +196,16 @@ const SecretariatStudentRegistry: React.FC = () => {
     setNewMovement({
       type: 'TRANSFERENCIA',
       description: '',
-      date: new Date().toLocaleDateString('sv-SE')
+      date: new Date().toLocaleDateString('sv-SE'),
+      destination_school: '',
+      document_number: '',
+      days_absent: '',
+      cid_code: '',
+      doctor_name: '',
+      return_date: '',
+      responsible_name: ''
     });
-    setMovements([]); // Clear previous
+    setMovements([]);
     if (student.id) {
       fetchMovements(student.id);
     }
@@ -183,46 +216,73 @@ const SecretariatStudentRegistry: React.FC = () => {
     if (!selectedStudentForMovement?.id) return;
 
     try {
-      const { error } = await supabase
-        .from('student_movements')
-        .insert([{
-          student_id: selectedStudentForMovement.id,
-          movement_type: newMovement.type,
-          description: newMovement.description.toUpperCase(),
-          movement_date: newMovement.date
-        }]);
-
-      if (error) throw error;
-
-      // --- NEW: AUTOMATIC NOTIFICATION TO TEACHERS ---
-      const notifType = newMovement.type === 'ATESTADO' ? 'ATESTADO MÉDICO' :
-        newMovement.type === 'TRANSFERENCIA' ? 'TRANSFERÊNCIA' : 'MOVIMENTAÇÃO';
-
-      const newNotification = {
-        id: `notif-${Date.now()}`,
-        title: `${notifType}: ${selectedStudentForMovement.Nome}`,
-        message: `${newMovement.type}: ${newMovement.description || 'Registrado pela Secretaria'}.`,
-        date: new Date().toISOString(),
-        priority: newMovement.type === 'TRANSFERENCIA' ? 'ALTA' : 'NORMAL',
-        isRead: false
+      const payload: any = {
+        student_id: selectedStudentForMovement.id,
+        movement_type: newMovement.type,
+        description: newMovement.description.toUpperCase() || newMovement.type,
+        movement_date: newMovement.date,
+        responsible_name: newMovement.responsible_name.toUpperCase() || null,
       };
 
+      if (newMovement.type === 'TRANSFERENCIA') {
+        payload.destination_school = newMovement.destination_school.toUpperCase() || null;
+      }
+      if (newMovement.type === 'ATESTADO') {
+        payload.document_number = newMovement.document_number || null;
+        payload.days_absent = newMovement.days_absent ? parseInt(newMovement.days_absent) : null;
+        payload.cid_code = newMovement.cid_code.toUpperCase() || null;
+        payload.doctor_name = newMovement.doctor_name.toUpperCase() || null;
+        payload.return_date = newMovement.return_date || null;
+      }
+      if (newMovement.type === 'ABANDONO') {
+        payload.document_number = newMovement.document_number || null;
+      }
+
+      const { error } = await supabase.from('student_movements').insert([payload]);
+      if (error) throw error;
+
+      // Atualizar status do aluno
+      if (newMovement.type === 'TRANSFERENCIA') {
+        await supabase.from('students').update({ status: 'TRANSFERIDO' }).eq('id', selectedStudentForMovement.id);
+      } else if (newMovement.type === 'ABANDONO') {
+        await supabase.from('students').update({ status: 'EVADIDO' }).eq('id', selectedStudentForMovement.id);
+      }
+
+      // Notificação automática
+      const notifType = newMovement.type === 'ATESTADO' ? 'ATESTADO MÉDICO' :
+        newMovement.type === 'TRANSFERENCIA' ? 'TRANSFERÊNCIA' : 'MOVIMENTAÇÃO';
       try {
+        const newNotification = {
+          id: `notif-${Date.now()}`,
+          title: `${notifType}: ${selectedStudentForMovement.Nome}`,
+          message: `${notifType} registrado para ${selectedStudentForMovement.Nome} — Turma ${selectedStudentForMovement.Turma}.`,
+          date: new Date().toISOString(),
+          priority: newMovement.type === 'TRANSFERENCIA' || newMovement.type === 'ABANDONO' ? 'ALTA' : 'NORMAL',
+          isRead: false
+        };
         const saved = localStorage.getItem('secretariat_notifications_v1');
         const current = saved ? JSON.parse(saved) : [];
         localStorage.setItem('secretariat_notifications_v1', JSON.stringify([newNotification, ...current]));
         window.dispatchEvent(new Event('storage'));
-      } catch (e) {
-        console.error("Erro ao disparar notificação automática:", e);
-      }
-      // ----------------------------------------------
+      } catch (_) {}
 
-      alert("Movimentação registrada com sucesso!");
-      fetchMovements(selectedStudentForMovement.id); // Refresh list
-      setNewMovement({ ...newMovement, description: '' }); // Clear description
+      alert('Movimentação registrada com sucesso!');
+      fetchMovements(selectedStudentForMovement.id);
+      setNewMovement(prev => ({
+        ...prev,
+        description: '',
+        destination_school: '',
+        document_number: '',
+        days_absent: '',
+        cid_code: '',
+        doctor_name: '',
+        return_date: ''
+      }));
+      // Re-fetch students to update status badges
+      fetchStudents();
     } catch (error: any) {
-      console.error("Erro ao registrar movimentação:", error);
-      alert("Erro ao registrar: " + error.message);
+      console.error('Erro ao registrar movimentação:', error);
+      alert('Erro ao registrar: ' + error.message);
     }
   };
 
@@ -539,12 +599,20 @@ const SecretariatStudentRegistry: React.FC = () => {
   }, [students]);
 
   const filteredStudents = useMemo(() => {
-    return studentsWithSequence.filter(s =>
-      s.Nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.CodigoAluno.includes(searchTerm) ||
-      s.Turma.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => a.Turma.localeCompare(b.Turma) || a.Nome.localeCompare(b.Nome));
+    return studentsWithSequence.filter(s => {
+      const matchSearch =
+        s.Nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.CodigoAluno.includes(searchTerm) ||
+        s.Turma.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchSearch;
+    }).sort((a, b) => a.Turma.localeCompare(b.Turma) || a.Nome.localeCompare(b.Nome));
   }, [studentsWithSequence, searchTerm]);
+
+  // Status badge helper
+  const getStatusBadge = (s: DetailedStudent) => {
+    // Derivar status do último movimento
+    return null; // badges serão controlados pelo painel global
+  };
 
   // Importação PDF com Integração Gemini e Supabase
   const handleImportPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1079,53 +1147,141 @@ const SecretariatStudentRegistry: React.FC = () => {
               )}
             </div>
 
-            <div className="pt-6 border-t border-gray-100 shrink-0">
+            <div className="pt-5 border-t border-gray-100 shrink-0">
               <h4 className="text-sm font-black text-gray-900 uppercase mb-4 flex items-center gap-2">
                 <FileText size={16} className="text-indigo-600" />
                 Registrar Nova Movimentação
               </h4>
-              <form onSubmit={handleRegisterMovement} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Tipo de Movimentação</label>
-                    <select
-                      value={newMovement.type}
-                      onChange={e => setNewMovement({ ...newMovement, type: e.target.value })}
-                      className="w-full p-3 bg-gray-50 rounded-xl font-bold text-xs outline-none border border-gray-200 focus:border-indigo-500"
-                    >
-                      <option value="TRANSFERENCIA">TRANSFERÊNCIA</option>
-                      <option value="ATESTADO">ATESTADO MÉDICO</option>
-                      <option value="ABANDONO">ABANDONO</option>
-                      <option value="OBITO">ÓBITO</option>
-                      <option value="OUTROS">OUTROS</option>
-                    </select>
-                  </div>
+              <form onSubmit={handleRegisterMovement} className="space-y-3">
+                {/* Tipo - visual buttons */}
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[
+                    { value: 'TRANSFERENCIA', label: 'Transferência', icon: LogOut, color: 'amber' },
+                    { value: 'ATESTADO', label: 'Atestado', icon: Stethoscope, color: 'blue' },
+                    { value: 'ABANDONO', label: 'Abandono', icon: TrendingDown, color: 'red' },
+                    { value: 'OBITO', label: 'Óbito', icon: AlertCircle, color: 'gray' },
+                    { value: 'OUTROS', label: 'Outros', icon: FileText, color: 'purple' },
+                  ].map(t => {
+                    const Icon = t.icon;
+                    const isSelected = newMovement.type === t.value;
+                    const colorMap: Record<string, string> = {
+                      amber: isSelected ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-gray-50 border-gray-100 text-gray-400',
+                      blue: isSelected ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-100 text-gray-400',
+                      red: isSelected ? 'bg-red-100 border-red-300 text-red-700' : 'bg-gray-50 border-gray-100 text-gray-400',
+                      gray: isSelected ? 'bg-gray-200 border-gray-400 text-gray-700' : 'bg-gray-50 border-gray-100 text-gray-400',
+                      purple: isSelected ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-gray-50 border-gray-100 text-gray-400',
+                    };
+                    return (
+                      <button key={t.value} type="button"
+                        onClick={() => setNewMovement(prev => ({ ...prev, type: t.value }))}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${colorMap[t.color]}`}
+                      >
+                        <Icon size={14} />
+                        <span className="text-[8px] font-black uppercase leading-tight text-center">{t.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Data do Evento</label>
-                    <input
-                      type="date"
-                      required
-                      value={newMovement.date}
-                      onChange={e => setNewMovement({ ...newMovement, date: e.target.value })}
-                      className="w-full p-3 bg-gray-50 rounded-xl font-bold text-xs outline-none border border-gray-200 focus:border-indigo-500"
+                    <input type="date" required value={newMovement.date}
+                      onChange={e => setNewMovement(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full p-3 bg-gray-50 rounded-xl font-bold text-xs outline-none border border-gray-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Responsável</label>
+                    <input type="text" value={newMovement.responsible_name}
+                      onChange={e => setNewMovement(prev => ({ ...prev, responsible_name: e.target.value }))}
+                      placeholder="Secretário(a)..."
+                      className="w-full p-3 bg-gray-50 rounded-xl font-bold text-xs outline-none border border-gray-200"
                     />
                   </div>
                 </div>
+
+                {/* Transferência */}
+                {newMovement.type === 'TRANSFERENCIA' && (
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                    <label className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-1 mb-2"><LogOut size={11}/> Escola de Destino</label>
+                    <input type="text" value={newMovement.destination_school}
+                      onChange={e => setNewMovement(prev => ({ ...prev, destination_school: e.target.value }))}
+                      placeholder="Nome da escola destino..."
+                      className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none border border-amber-100"
+                    />
+                  </div>
+                )}
+
+                {/* Atestado */}
+                {newMovement.type === 'ATESTADO' && (
+                  <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 space-y-2">
+                    <p className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-1"><Stethoscope size={11}/> Dados do Atestado</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Nº Atestado</label>
+                        <input type="text" value={newMovement.document_number}
+                          onChange={e => setNewMovement(prev => ({ ...prev, document_number: e.target.value }))}
+                          placeholder="AT-001..." className="w-full p-2 bg-white rounded-lg font-bold text-xs outline-none border border-blue-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Dias Afastado</label>
+                        <input type="number" min={1} value={newMovement.days_absent}
+                          onChange={e => setNewMovement(prev => ({ ...prev, days_absent: e.target.value }))}
+                          placeholder="Ex: 3" className="w-full p-2 bg-white rounded-lg font-bold text-xs outline-none border border-blue-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Médico</label>
+                        <input type="text" value={newMovement.doctor_name}
+                          onChange={e => setNewMovement(prev => ({ ...prev, doctor_name: e.target.value }))}
+                          placeholder="Dr(a)..." className="w-full p-2 bg-white rounded-lg font-bold text-xs outline-none border border-blue-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-1">CID</label>
+                        <input type="text" value={newMovement.cid_code}
+                          onChange={e => setNewMovement(prev => ({ ...prev, cid_code: e.target.value }))}
+                          placeholder="Ex: J11.1" className="w-full p-2 bg-white rounded-lg font-bold text-xs outline-none border border-blue-100"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Data de Retorno Prevista</label>
+                        <input type="date" value={newMovement.return_date}
+                          onChange={e => setNewMovement(prev => ({ ...prev, return_date: e.target.value }))}
+                          className="w-full p-2 bg-white rounded-lg font-bold text-xs outline-none border border-blue-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Abandono */}
+                {newMovement.type === 'ABANDONO' && (
+                  <div className="p-3 bg-red-50 rounded-xl border border-red-100">
+                    <label className="text-[10px] font-black text-red-600 uppercase flex items-center gap-1 mb-2"><TrendingDown size={11}/> Protocolo de Notificação</label>
+                    <input type="text" value={newMovement.document_number}
+                      onChange={e => setNewMovement(prev => ({ ...prev, document_number: e.target.value }))}
+                      placeholder="Nº do protocolo de contato com a família..."
+                      className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none border border-red-100"
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Descrição / Observações</label>
-                  <textarea
-                    required
-                    value={newMovement.description}
-                    onChange={e => setNewMovement({ ...newMovement, description: e.target.value })}
-                    placeholder="Detalhes sobre a movimentação..."
-                    className="w-full p-3 bg-gray-50 rounded-xl font-bold text-xs outline-none border border-gray-200 focus:border-indigo-500 min-h-[80px]"
+                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Observações</label>
+                  <textarea value={newMovement.description}
+                    onChange={e => setNewMovement(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Detalhes adicionais..."
+                    className="w-full p-3 bg-gray-50 rounded-xl font-bold text-xs outline-none border border-gray-200 min-h-[60px] resize-none"
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-xs hover:bg-indigo-700 transition-colors shadow-lg"
+
+                <button type="submit"
+                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-xs hover:bg-indigo-700 transition-colors shadow-lg flex items-center justify-center gap-2"
                 >
-                  Salvar Movimentação
+                  <Save size={14} /> Registrar Movimentação
                 </button>
               </form>
             </div>

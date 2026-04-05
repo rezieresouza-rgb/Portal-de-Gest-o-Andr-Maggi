@@ -153,8 +153,8 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
         }
     };
 
-    const formatCurrency = (value: number) => {
-        return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const formatCurrency = (value: number | undefined | null) => {
+        return (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     };
 
     const handlePrint = async () => {
@@ -617,8 +617,8 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                                                     <td className="py-2.5 px-4 border-r border-gray-100 uppercase leading-snug font-bold">{item.description}</td>
                                                     <td className="py-2.5 px-3 text-center border-r border-gray-100 uppercase font-bold">{item.unit}</td>
                                                     <td className="py-2.5 px-3 text-center border-r border-gray-100 tabular-nums">{item.quantity}</td>
-                                                    <td className="py-2.5 px-4 text-right border-r border-gray-100 tabular-nums">{item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                                    <td className="py-2.5 pr-3 text-right font-black tabular-nums">{item.totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                                    <td className="py-2.5 px-4 text-right border-r border-gray-100 tabular-nums">{(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                                    <td className="py-2.5 pr-3 text-right font-black tabular-nums">{(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
