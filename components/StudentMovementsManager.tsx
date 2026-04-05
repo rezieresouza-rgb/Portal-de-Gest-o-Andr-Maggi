@@ -39,6 +39,8 @@ interface Movement {
   doctor_name?: string;
   responsible_name?: string;
   return_date?: string;
+  transfer_subtype?: 'INTERNA' | 'EXTERNA';
+  is_reclassified?: boolean;
   created_at?: string;
   // Joined
   students?: { name: string; registration_number: string };
@@ -127,6 +129,8 @@ interface NewMovementForm {
   return_date: string;
   // Geral
   responsible_name: string;
+  transfer_subtype: 'INTERNA' | 'EXTERNA';
+  is_reclassified: boolean;
 }
 
 const emptyForm: NewMovementForm = {
@@ -140,7 +144,9 @@ const emptyForm: NewMovementForm = {
   cid_code: '',
   doctor_name: '',
   return_date: '',
-  responsible_name: ''
+  responsible_name: '',
+  transfer_subtype: 'EXTERNA',
+  is_reclassified: false
 };
 
 const StudentMovementsManager: React.FC = () => {
@@ -216,6 +222,8 @@ const StudentMovementsManager: React.FC = () => {
       doctor_name: m.doctor_name || '',
       return_date: m.return_date?.split('T')[0] || '',
       responsible_name: m.responsible_name || '',
+      transfer_subtype: m.transfer_subtype || 'EXTERNA',
+      is_reclassified: !!m.is_reclassified
     });
     setIsModalOpen(true);
     setShowStudentDropdown(false);
@@ -280,13 +288,16 @@ const StudentMovementsManager: React.FC = () => {
         movement_date: form.movement_date,
         description: form.description.toUpperCase() || form.movement_type,
         responsible_name: form.responsible_name.toUpperCase() || null,
+        is_reclassified: form.is_reclassified,
       };
 
       if (form.movement_type === 'TRANSFERENCIA') {
         payload.destination_school = form.destination_school.toUpperCase() || null;
+        payload.transfer_subtype = form.transfer_subtype;
         payload.document_number = null; payload.days_absent = null; payload.cid_code = null;
         payload.doctor_name = null; payload.return_date = null;
       } else if (form.movement_type === 'ATESTADO') {
+        payload.transfer_subtype = null;
         payload.document_number = form.document_number || null;
         payload.days_absent = form.days_absent ? parseInt(form.days_absent) : null;
         payload.cid_code = form.cid_code.toUpperCase() || null;
@@ -312,7 +323,7 @@ const StudentMovementsManager: React.FC = () => {
         ({ error } = await supabase.from('student_movements').insert([payload]));
         // Atualizar status do aluno apenas em novos registros
         if (!error) {
-          if (form.movement_type === 'TRANSFERENCIA') {
+          if (form.movement_type === 'TRANSFERENCIA' && form.transfer_subtype === 'EXTERNA') {
             await supabase.from('students').update({ status: 'TRANSFERIDO' }).eq('id', form.student_id);
           } else if (form.movement_type === 'ABANDONO') {
             await supabase.from('students').update({ status: 'EVADIDO' }).eq('id', form.student_id);
@@ -476,9 +487,14 @@ const StudentMovementsManager: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 max-w-xs">
                       <p className="text-xs font-bold text-gray-700 uppercase truncate">{m.description || '---'}</p>
-                      {m.movement_type === 'TRANSFERENCIA' && m.destination_school && (
+                      {m.movement_type === 'TRANSFERENCIA' && (
                         <p className="text-[10px] text-amber-600 font-bold flex items-center gap-1 mt-0.5">
-                          <Building2 size={10} /> {m.destination_school}
+                          <Building2 size={10} /> {m.transfer_subtype === 'INTERNA' ? '[INTERNA] DE TURMA' : `[EXTERNA] ${m.destination_school || 'ESCOLA'}`}
+                        </p>
+                      )}
+                      {m.is_reclassified && (
+                        <p className="text-[10px] text-purple-600 font-black flex items-center gap-1 mt-0.5 bg-purple-50 px-2 py-0.5 rounded-lg w-fit">
+                          RECLASSIFICADO
                         </p>
                       )}
                       {m.movement_type === 'ATESTADO' && m.days_absent && (
@@ -649,6 +665,20 @@ const StudentMovementsManager: React.FC = () => {
                 </div>
               </div>
 
+              {/* Reclassificação */}
+              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                <input
+                  type="checkbox"
+                  id="is_reclassified"
+                  checked={form.is_reclassified}
+                  onChange={e => setForm(prev => ({ ...prev, is_reclassified: e.target.checked }))}
+                  className="w-5 h-5 rounded-lg border-2 border-purple-200 text-purple-600 focus:ring-purple-500"
+                />
+                <label htmlFor="is_reclassified" className="text-xs font-black text-purple-700 uppercase cursor-pointer">
+                  Aluno Reclassificado
+                </label>
+              </div>
+
               {/* ---- Campos específicos por tipo ---- */}
 
               {/* TRANSFERÊNCIA */}
@@ -657,16 +687,40 @@ const StudentMovementsManager: React.FC = () => {
                   <p className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-2">
                     <LogOut size={13} /> Dados da Transferência
                   </p>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Escola de Destino</label>
-                    <input
-                      type="text"
-                      value={form.destination_school}
-                      onChange={e => setForm(prev => ({ ...prev, destination_school: e.target.value }))}
-                      placeholder="Nome da escola para onde o aluno foi transferido..."
-                      className="w-full p-3 bg-white rounded-xl font-bold text-sm outline-none border border-amber-100"
-                    />
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, transfer_subtype: 'EXTERNA' }))}
+                      className={`p-3 rounded-xl border-2 font-black uppercase text-[10px] transition-all ${form.transfer_subtype === 'EXTERNA' 
+                        ? 'bg-amber-100 border-amber-300 text-amber-800' 
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-amber-100'}`}
+                    >
+                      De Escola (Externa)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, transfer_subtype: 'INTERNA' }))}
+                      className={`p-3 rounded-xl border-2 font-black uppercase text-[10px] transition-all ${form.transfer_subtype === 'INTERNA' 
+                        ? 'bg-amber-100 border-amber-300 text-amber-800' 
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-amber-100'}`}
+                    >
+                      De Turma (Interna)
+                    </button>
                   </div>
+
+                  {form.transfer_subtype === 'EXTERNA' && (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Escola de Destino</label>
+                      <input
+                        type="text"
+                        value={form.destination_school}
+                        onChange={e => setForm(prev => ({ ...prev, destination_school: e.target.value }))}
+                        placeholder="Nome da escola para onde o aluno foi transferido..."
+                        className="w-full p-3 bg-white rounded-xl font-bold text-sm outline-none border border-amber-100"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

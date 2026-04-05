@@ -278,6 +278,8 @@ export interface StudentMovement {
   id: string;
   student_id: string;
   movement_type: 'TRANSFERENCIA' | 'ATESTADO' | 'ABANDONO' | 'OBITO' | 'OUTROS';
+  transfer_subtype?: 'INTERNA' | 'EXTERNA';
+  is_reclassified?: boolean;
   description: string;
   movement_date: string;
   created_at?: string;

@@ -159,6 +159,8 @@ const SecretariatStudentRegistry: React.FC = () => {
     doctor_name: string;
     return_date: string;
     responsible_name: string;
+    transfer_subtype: 'INTERNA' | 'EXTERNA';
+    is_reclassified: boolean;
   }>({
     type: 'TRANSFERENCIA',
     description: '',
@@ -168,8 +170,8 @@ const SecretariatStudentRegistry: React.FC = () => {
     days_absent: '',
     cid_code: '',
     doctor_name: '',
-    return_date: '',
-    responsible_name: ''
+    transfer_subtype: 'EXTERNA',
+    is_reclassified: false
   });
 
   // STATUS FILTER
@@ -203,7 +205,9 @@ const SecretariatStudentRegistry: React.FC = () => {
       cid_code: '',
       doctor_name: '',
       return_date: '',
-      responsible_name: ''
+      responsible_name: '',
+      transfer_subtype: 'EXTERNA',
+      is_reclassified: false
     });
     setMovements([]);
     if (student.id) {
@@ -226,6 +230,7 @@ const SecretariatStudentRegistry: React.FC = () => {
 
       if (newMovement.type === 'TRANSFERENCIA') {
         payload.destination_school = newMovement.destination_school.toUpperCase() || null;
+        payload.transfer_subtype = newMovement.transfer_subtype;
       }
       if (newMovement.type === 'ATESTADO') {
         payload.document_number = newMovement.document_number || null;
@@ -237,12 +242,13 @@ const SecretariatStudentRegistry: React.FC = () => {
       if (newMovement.type === 'ABANDONO') {
         payload.document_number = newMovement.document_number || null;
       }
+      payload.is_reclassified = newMovement.is_reclassified;
 
       const { error } = await supabase.from('student_movements').insert([payload]);
       if (error) throw error;
 
       // Atualizar status do aluno
-      if (newMovement.type === 'TRANSFERENCIA') {
+      if (newMovement.type === 'TRANSFERENCIA' && newMovement.transfer_subtype === 'EXTERNA') {
         await supabase.from('students').update({ status: 'TRANSFERIDO' }).eq('id', selectedStudentForMovement.id);
       } else if (newMovement.type === 'ABANDONO') {
         await supabase.from('students').update({ status: 'EVADIDO' }).eq('id', selectedStudentForMovement.id);
@@ -496,6 +502,27 @@ const SecretariatStudentRegistry: React.FC = () => {
       } else {
         // --- CREATE LOGIC ---
 
+        // 1. Verificar se o aluno já existe (Nome + Nascimento) para evitar duplicados
+        const { data: existingStudent } = await supabase
+          .from('students')
+          .select('id, registration_number')
+          .ilike('name', form.Nome)
+          .eq('birth_date', form.DataNascimento)
+          .maybeSingle();
+
+        if (existingStudent) {
+          if (window.confirm(`Já existe um aluno chamado "${form.Nome}" nascido em ${formatDateSafe(form.DataNascimento)}.\n\nMatrícula: ${existingStudent.registration_number}\n\nDeseja atualizar este cadastro em vez de criar um novo?`)) {
+            setEditingId(existingStudent.id);
+            setIsEditing(true);
+            // Continua como se fosse edição na próxima tentativa ou podemos recursivamente chamar com isEditing=true
+            // Por simplicidade, alertamos e pedimos para tentar de novo com a edição ativa
+            alert("O cadastro existente foi carregado. Clique em 'Salvar' novamente para atualizar os dados.");
+            return;
+          } else {
+            return; // Aborta criação
+          }
+        }
+
         // 1. Criar o Aluno
         const { data: newStudent, error: studentError } = await supabase
           .from('students')
@@ -698,17 +725,46 @@ const SecretariatStudentRegistry: React.FC = () => {
               continue;
             }
 
-            // Inserir Aluno
-            // REMOVIDO: paed e school_transport pois não existem no schema atual
-            const { data: newStudent, error: studentError } = await supabase
+            // Tentar encontrar aluno existente por nome e nascimento se a matrícula for suspeita ou se quisermos garantir integridade
+            let studentToUpdate = null;
+            
+            const { data: byNameBirth } = await supabase
               .from('students')
-              .upsert([{
-                name: student.Nome,
-                registration_number: student.CodigoAluno,
-                birth_date: birthDate
-              }], { onConflict: 'registration_number' })
-              .select()
-              .single();
+              .select('id, registration_number')
+              .ilike('name', student.Nome)
+              .eq('birth_date', birthDate)
+              .maybeSingle();
+
+            if (byNameBirth) {
+              studentToUpdate = byNameBirth;
+            }
+
+            // Inserir ou Atualizar Aluno
+            const studentPayload = {
+              name: student.Nome,
+              registration_number: student.CodigoAluno || byNameBirth?.registration_number,
+              birth_date: birthDate
+            };
+
+            let studentResult;
+            if (studentToUpdate) {
+               const { data, error } = await supabase
+                .from('students')
+                .update(studentPayload)
+                .eq('id', studentToUpdate.id)
+                .select()
+                .single();
+               studentResult = { data, error };
+            } else {
+               const { data, error } = await supabase
+                .from('students')
+                .insert([studentPayload])
+                .select()
+                .single();
+               studentResult = { data, error };
+            }
+
+            const { data: newStudent, error: studentError } = studentResult;
 
             if (studentError) {
               console.error(`Erro ao salvar aluno ${student.Nome}:`, studentError);
@@ -1136,10 +1192,23 @@ const SecretariatStudentRegistry: React.FC = () => {
                               'bg-gray-200 text-gray-700'
                             }`}>
                             {mov.movement_type}
+                            {mov.movement_type === 'TRANSFERENCIA' && mov.transfer_subtype && (
+                              <span className="ml-1 opacity-60">({mov.transfer_subtype})</span>
+                            )}
                           </span>
+                          {mov.is_reclassified && (
+                            <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-black uppercase flex items-center gap-1">
+                              <Sparkles size={10} /> Reclassificado
+                            </span>
+                          )}
                           <span className="text-[10px] font-bold text-gray-400">{formatDateSafe(mov.movement_date)}</span>
                         </div>
-                        <p className="text-xs font-bold text-gray-700 uppercase">{mov.description || 'Sem descrição'}</p>
+                        <p className="text-xs font-bold text-gray-700 uppercase">
+                          {mov.movement_type === 'TRANSFERENCIA' && mov.transfer_subtype === 'EXTERNA' && mov.destination_school 
+                            ? `DESTINO: ${mov.destination_school}` 
+                            : (mov.description || 'Sem descrição')
+                          }
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -1201,15 +1270,58 @@ const SecretariatStudentRegistry: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Reclassificação */}
+                <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-xl border border-purple-100">
+                  <input
+                    type="checkbox"
+                    id="is_reclassified_sec"
+                    checked={newMovement.is_reclassified}
+                    onChange={e => setNewMovement(prev => ({ ...prev, is_reclassified: e.target.checked }))}
+                    className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <label htmlFor="is_reclassified_sec" className="text-[10px] font-black text-purple-700 uppercase cursor-pointer">
+                    Aluno Reclassificado
+                  </label>
+                </div>
+
                 {/* Transferência */}
                 {newMovement.type === 'TRANSFERENCIA' && (
-                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
-                    <label className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-1 mb-2"><LogOut size={11}/> Escola de Destino</label>
-                    <input type="text" value={newMovement.destination_school}
-                      onChange={e => setNewMovement(prev => ({ ...prev, destination_school: e.target.value }))}
-                      placeholder="Nome da escola destino..."
-                      className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none border border-amber-100"
-                    />
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 space-y-3">
+                    <p className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-1">
+                      <LogOut size={11} /> Dados da Transferência
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setNewMovement(prev => ({ ...prev, transfer_subtype: 'EXTERNA' }))}
+                        className={`p-2 rounded-lg border-2 font-black uppercase text-[8px] transition-all ${newMovement.transfer_subtype === 'EXTERNA'
+                          ? 'bg-amber-100 border-amber-300 text-amber-800'
+                          : 'bg-white border-gray-100 text-gray-400'}`}
+                      >
+                        Externa (Escola)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewMovement(prev => ({ ...prev, transfer_subtype: 'INTERNA' }))}
+                        className={`p-2 rounded-lg border-2 font-black uppercase text-[8px] transition-all ${newMovement.transfer_subtype === 'INTERNA'
+                          ? 'bg-amber-100 border-amber-300 text-amber-800'
+                          : 'bg-white border-gray-100 text-gray-400'}`}
+                      >
+                        Interna (Turma)
+                      </button>
+                    </div>
+
+                    {newMovement.transfer_subtype === 'EXTERNA' && (
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Escola de Destino</label>
+                        <input type="text" value={newMovement.destination_school}
+                          onChange={e => setNewMovement(prev => ({ ...prev, destination_school: e.target.value }))}
+                          placeholder="Nome da escola destino..."
+                          className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none border border-amber-100"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
