@@ -276,8 +276,7 @@ const SecretariatClassroomManager: React.FC = () => {
             paed: studentForm.PAED === 'Sim',
             school_transport: studentForm.TransporteEscolar === 'Sim',
             guardian_name: studentForm.NomeResponsavel.toUpperCase(),
-            contact_phone: studentForm.TelefoneContato,
-            updated_at: new Date().toISOString()
+            contact_phone: studentForm.TelefoneContato
          };
 
          if (isEditingStudent && editingStudentId) {
