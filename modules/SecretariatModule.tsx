@@ -34,14 +34,12 @@ interface SecretariatModuleProps {
 }
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'students' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'movements'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
     { id: 'attendance_history', label: 'Histórico de Chamadas', icon: ClipboardList },
-    { id: 'students', label: 'Cadastro de Alunos', icon: GraduationCap },
-    { id: 'movements', label: 'Movimentações', icon: ArrowLeftRight },
     { id: 'classes', label: 'Gestão de Turmas', icon: Users },
     { id: 'staff', label: 'Servidores / RH', icon: Briefcase },
     { id: 'bulletins', label: 'Emissão de Boletins', icon: FileText },
@@ -132,8 +130,6 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           {activeTab === 'dashboard' && <SecretariatDashboard />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
-          {activeTab === 'students' && <SecretariatStudentRegistry />}
-          {activeTab === 'movements' && <StudentMovementsManager />}
           {activeTab === 'classes' && <SecretariatClassroomManager />}
           {activeTab === 'staff' && <SecretariatStaffManager />}
           {activeTab === 'bulletins' && <SecretariatBulletinPrinter />}

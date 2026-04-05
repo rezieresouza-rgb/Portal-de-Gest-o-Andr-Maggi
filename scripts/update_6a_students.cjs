@@ -1,94 +1,95 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '.env.local' });
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-const studentList = [
-  { registration: '2667230', name: 'YURY LINS DOS SANTOS MOTA', paed: false },
-  { registration: '2667284', name: 'MICHEL AZEVEDO PEREIRA', paed: false },
-  { registration: '2667289', name: 'MIGUEL AZEVEDO PEREIRA', paed: false },
-  { registration: '2667474', name: 'KAUAN FEITOSA MORAES', paed: false },
-  { registration: '2667419', name: 'JOÃO LUCAS DE SOUZA DA SILVA', paed: false },
-  { registration: '2687673', name: 'DAVI LUCAS LIMA RODRIGUES', paed: false },
-  { registration: '2667888', name: 'WELBER LERHANDRO LOPES APARECIDO', paed: false },
-  { registration: '2667915', name: 'LEONEL FELIPE OLIVEIRA DOS SANTOS', paed: true },
-  { registration: '2667952', name: 'MARIA FERNANDA EQUIDONE MACHADO', paed: false },
-  { registration: '2669227', name: 'CRISLANE EDUARDA FARIAS DE ALMEIDA', paed: false },
-  { registration: '2669069', name: 'CRISLAINE VICTORIA FARIAS DE ALMEIDA', paed: false },
-  { registration: '2668986', name: 'ANA CLARA PEREIRA BRITO', paed: false },
-  { registration: '2668972', name: 'BEPIET PANARA METUKTIRE', paed: false },
-  { registration: '2668902', name: 'ENZO ARTHUR DA SILVA SANTOS', paed: true },
-  { registration: '2668931', name: 'EMILY CRISTINA DO NASCIMENTO', paed: false },
-  { registration: '2668909', name: 'SABRINA VITORIA MATIAS MARTINS', paed: false },
-  { registration: '2668887', name: 'JOAO GABRIEL DE OLIVEIRA MARTINS', paed: false },
-  { registration: '2668889', name: 'ISADORA CAETANO MATTOS', paed: false },
-  { registration: '2670913', name: 'MISAEL LUIZ DA SILVA DIAS', paed: false },
-  { registration: '2285454', name: 'JOÃO VITOR PEREIRA DA SILVA', paed: false },
-  { registration: '2286436', name: 'GUSTAVO HENRIQUE DE PAULA DE LARA', paed: false },
-  { registration: '2292207', name: 'JOÃO OTAVIO GONSALVES DE LIMA', paed: false },
-  { registration: '2302964', name: 'GUILHERME SOUZA ALVES', paed: false },
-  { registration: '2287215', name: 'PAULA FERNANDA COIMBRA DA SILVA', paed: false },
-  { registration: '2325824', name: 'MIKAELY TIBURCIO SILVA', paed: false },
-  { registration: '2304159', name: 'JASMIM RAFAELA AMÂNCIO DE LIMA', paed: false },
-  { registration: '2723258', name: 'FELIPE NUNES DA SILVA', paed: false },
-  { registration: '2387889', name: 'FERNANDO DJARA TXUCARRAMÃE', paed: false },
-  { registration: '2347759', name: 'EMILLY VITÓRIA GOMES DOS SANTOS', paed: false },
-  { registration: '2726402', name: 'DAVI CARVALHO SALMENTO', paed: false }
+// Lista Oficial SIGEEDUCA 2026 - 6º ANO A (Matutino)
+const students6A = [
+  { registration: "2692226", name: "ANA CLARA PEREIRA BRITO",                        birth: "2015-02-12" },
+  { registration: "2930372", name: "BEPIET PANARA METUKTIRE",                        birth: "2014-02-28" },
+  { registration: "2289228", name: "CRISLAINE VICTORIA FARIAS DE ALMEIDA",          birth: "2014-05-27" },
+  { registration: "2289227", name: "CRISLIANE EDUARDA FARIAS DE ALMEIDA",           birth: "2014-05-27" },
+  { registration: "2667873", name: "DAVI LUCAS LIMA RODRIGUES",                     birth: "2014-05-03" },
+  { registration: "2693931", name: "EMILY CRISTINA DO NASCIMENTO",                  birth: "2014-04-30" },
+  { registration: "2288922", name: "ENZO ARTHUR DA SILVA SANTOS",                   birth: "2015-02-02" },
+  { registration: "2733219", name: "FELIPE NUNES DA SILVA",                         birth: "2014-06-05" },
+  { registration: "2322554", name: "GUILHERME SOUZA ALVES",                         birth: "2014-07-03" },
+  { registration: "2295435", name: "GUSTAVO HENRIQUE DE PAULA DE LARA",              birth: "2015-02-05" },
+  { registration: "2695589", name: "ISADORA CAETANO MATEUS",                        birth: "2014-10-09" },
+  { registration: "2324188", name: "JASMIN RAFAELA AMANCIO DE LIMA",                birth: "2015-02-23" },
+  { registration: "2965887", name: "JOÃO GABRIEL DE OLVEIRA MARTINS",               birth: "2014-12-15" },
+  { registration: "2667419", name: "JOÃO LUCAS DE SOUZA DA SILVA",                 birth: "2015-01-01" },
+  { registration: "2262247", name: "JOÃO OTAVIO GONSALVES DE LIMA",                 birth: "2014-04-13" },
+  { registration: "2295434", name: "JOÃO VITOR PEREIRA DA SILVA",                   birth: "2014-06-18" },
+  { registration: "2667474", name: "KAUAN FEITOSA MORAES",                          birth: "2014-10-28" },
+  { registration: "2467915", name: "LEONEL FELIPE OLIVEIRA DOS SANTOS",              birth: "2014-02-13" },
+  { registration: "2667352", name: "MARIA FERNANDA EQUILIDONE MACHADO",              birth: "2014-10-02" },
+  { registration: "2667254", name: "MICHEL AZEVEDO PEREIRA",                        birth: "2014-04-04" },
+  { registration: "2667239", name: "MIGUEL AZEVEDO PEREIRA",                        birth: "2014-04-04" },
+  { registration: "2323854", name: "MIKAELY TIBURCIO SILVA",                        birth: "2014-10-02" },
+  { registration: "2970913", name: "MISAEL LUIZ DA SILVA DIAS",                     birth: "2015-01-09" },
+  { registration: "2267215", name: "PAULA FERNANDA COIMBRA DA SILVA",               birth: "2014-08-02" },
+  { registration: "2288928", name: "SABRINA VITORIA MATIAS MARTINS",                birth: "2014-05-27" },
+  { registration: "2667385", name: "WELDER LERRANDRY LOPES APARECIDO",              birth: "2013-05-05" },
+  { registration: "2667280", name: "YURY LINS DOS SANTOS MOTA",                     birth: "2014-12-21" },
+  { registration: "2317359", name: "FERNANDO OJARA TXUCARRAM\u00c3E",              birth: "2014-06-03" },
+  { registration: "3347759", name: "EMILLY VIT\u00d3RIA GOMES DOS SANTOS",          birth: "2014-08-25" },
+  { registration: "2735402", name: "DAVI CARVALHO SALMENTO",                        birth: "2013-08-20" },
 ];
 
 async function update() {
-  const className = '6º ANO A';
-  const shift = 'MATUTINO';
-  
-  console.log('--- BUSCANDO TURMA ---');
-  const { data: classData } = await supabase.from('classrooms').select('id').eq('name', className).eq('shift', shift).single();
-  const classId = classData.id;
-  console.log('ID Turma:', classId);
+  try {
+    const className = '6\u00ba ANO A';
+    const { data: classroom } = await supabase.from('classrooms').select('id').eq('name', className).single();
+    if (!classroom) return console.error('Turma n\u00e3o encontrada');
 
-  const enrollmentDate = new Date().toISOString().split('T')[0];
+    console.log(`Atualizando ${className}...\n`);
 
-  for(const s of studentList) {
-    console.log(`Processando: ${s.name}`);
-    
-    // Upsert Student
-    const { data: student, error: sErr } = await supabase
-      .from('students')
-      .upsert({
-        registration_number: s.registration,
-        name: s.name,
-        paed: s.paed,
-        school_transport: false
-      }, { onConflict: 'registration_number' })
-      .select('id')
-      .single();
+    for (const s of students6A) {
+      // Upsert Student
+      const { data: st, error: sErr } = await supabase
+        .from('students')
+        .upsert({
+          registration_number: s.registration,
+          name: s.name,
+          birth_date: s.birth,
+          status: 'ATIVO'
+        }, { onConflict: 'registration_number' })
+        .select()
+        .single();
 
-    if(sErr) {
-      console.error('Erro Student:', sErr.message);
-      continue;
+      if (sErr) {
+        console.error(`  Erro ${s.name}:`, sErr.message);
+        continue;
+      }
+
+      // Check Enrollment
+      const { data: enroll } = await supabase
+        .from('enrollments')
+        .select('id, classroom_id')
+        .eq('student_id', st.id)
+        .is('end_date', null)
+        .maybeSingle();
+
+      if (enroll) {
+        if (enroll.classroom_id !== classroom.id) {
+          await supabase.from('enrollments').update({ classroom_id: classroom.id, enrollment_date: '2026-01-20' }).eq('id', enroll.id);
+          process.stdout.write(`  ✓ ${s.name} [Movido para 6A]\n`);
+        } else {
+          process.stdout.write(`  ✓ ${s.name} [J\u00e1 estava no 6A]\n`);
+        }
+      } else {
+        await supabase.from('enrollments').insert({
+          student_id: st.id,
+          classroom_id: classroom.id,
+          enrollment_date: '2026-01-20'
+        });
+        process.stdout.write(`  ✓ ${s.name} [Matriculado no 6A]\n`);
+      }
     }
-
-    const studentId = student.id;
-
-    // Delete existing enrollment to keep only one active
-    await supabase.from('enrollments').delete().eq('student_id', studentId);
-
-    // Insert new enrollment
-    const { error: eErr } = await supabase
-      .from('enrollments')
-      .insert([{
-        student_id: studentId,
-        classroom_id: classId,
-        enrollment_date: enrollmentDate
-      }]);
-
-    if(eErr) {
-      console.error('Erro Enrollment:', eErr.message);
-    } else {
-      console.log(`OK: ${s.name}`);
-    }
+    console.log('\nFinalizado!');
+  } catch (err) {
+    console.error('FATAL:', err.message);
   }
 }
 

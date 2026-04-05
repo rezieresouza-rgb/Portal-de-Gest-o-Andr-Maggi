@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
    Users,
    Plus,
@@ -17,16 +16,55 @@ import {
    GraduationCap,
    MapPin,
    Edit3,
-   Save
+   Save,
+   User,
+   History,
+   FileText,
+   Pencil,
+   Stethoscope,
+   LogOut,
+   TrendingDown,
+   Building2,
+   Hash,
+   Sparkles,
+   Loader2,
+   Download,
+   RefreshCw,
+   UserPlus,
+   AlertCircle,
+   CheckCircle2,
+   FileUp,
+   Phone
 } from 'lucide-react';
-import { Classroom, Shift } from '../types';
+import { Classroom, Shift, StudentMovement } from '../types';
 import { supabase } from '../supabaseClient';
+import { extractDetailedStudentList } from '../geminiService';
 
 interface EnhancedClassroom extends Classroom {
    studentCount: number;
    students: any[];
    salaNum: string;
-   room_number?: string; // Coluna do banco
+   room_number?: string;
+}
+
+interface DetailedStudent {
+  id?: string;
+  Nome: string;
+  registration_number: string;
+  birth_date: string;
+  paed: boolean;
+  school_transport: boolean;
+  guardian_name: string;
+  contact_phone: string;
+  status?: string;
+  Turma: string;
+  Turno: string;
+  Sequencia?: string;
+  DataMatricula?: string;
+  PAED: string;
+  TransporteEscolar: string;
+  NomeResponsavel: string;
+  TelefoneContato: string;
 }
 
 const SecretariatClassroomManager: React.FC = () => {
@@ -35,23 +73,70 @@ const SecretariatClassroomManager: React.FC = () => {
    const [selectedClassDetail, setSelectedClassDetail] = useState<EnhancedClassroom | null>(null);
    const [isLoading, setIsLoading] = useState(true);
 
-   // New State for Create Class
-   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+   // Global Search States
+   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+   const [searchResults, setSearchResults] = useState<DetailedStudent[]>([]);
+   const [isSearching, setIsSearching] = useState(false);
+
+   // Student Registry States
+   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+   const [isEditingStudent, setIsEditingStudent] = useState(false);
+   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+   const [studentForm, setStudentForm] = useState<DetailedStudent>({
+      Nome: '',
+      Turma: '',
+      Turno: 'MATUTINO',
+      registration_number: '',
+      birth_date: '',
+      paed: false,
+      school_transport: false,
+      guardian_name: '',
+      contact_phone: '',
+      PAED: 'Não',
+      TransporteEscolar: 'Não',
+      NomeResponsavel: '',
+      TelefoneContato: ''
+   });
+
+   // Movement States
+   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
+   const [selectedStudentForMovement, setSelectedStudentForMovement] = useState<DetailedStudent | null>(null);
+   const [movements, setMovements] = useState<StudentMovement[]>([]);
+   const [newMovement, setNewMovement] = useState({
+      type: 'TRANSFERENCIA',
+      description: '',
+      date: new Date().toLocaleDateString('sv-SE'),
+      destination_school: '',
+      document_number: '',
+      days_absent: '',
+      cid_code: '',
+      doctor_name: '',
+      return_date: '',
+      responsible_name: '',
+      transfer_subtype: 'EXTERNA' as 'INTERNA' | 'EXTERNA',
+      is_reclassified: false
+   });
+
+   // New Class States
+   const [isCreateClassModalOpen, setIsCreateClassModalOpen] = useState(false);
    const [newClass, setNewClass] = useState({ name: '', year: '6º ANO', shift: 'MATUTINO' as Shift, room_number: '' });
 
-   // State for editing room number inline
+   // Room Editing
    const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
    const [editRoomValue, setEditRoomValue] = useState('');
+
+   // Refs
+   const fileInputRef = useRef<HTMLInputElement>(null);
 
    useEffect(() => {
       fetchClassrooms();
    }, []);
 
+   // --- DATA FETCHING ---
+
    const fetchClassrooms = async () => {
       try {
          setIsLoading(true);
-
-         // 1. Buscar Turmas
          const { data: dbClassrooms, error: classError } = await supabase
             .from('classrooms')
             .select('*')
@@ -59,81 +144,185 @@ const SecretariatClassroomManager: React.FC = () => {
 
          if (classError) throw classError;
 
-         // 2. Buscar Matrículas com dados do Aluno
          const { data: enrollments, error: enrollError } = await supabase
             .from('enrollments')
             .select(`
-          classroom_id,
-          students (
-            id,
-            name,
-            registration_number,
-            paed,
-            school_transport
-          )
-        `);
+               classroom_id,
+               students (*)
+            `);
 
          if (enrollError) throw enrollError;
 
          if (dbClassrooms) {
             const enhanced = dbClassrooms.map((cls: any) => {
-               // Filtrar matrículas desta turma
                const classEnrollments = enrollments?.filter((e: any) => e.classroom_id === cls.id) || [];
                const classStudents = classEnrollments.map((e: any) => ({
                   ...e.students,
-                  Nome: e.students?.name, // Mapeando para formato esperado pela UI antiga
+                  Nome: e.students?.name,
                   CodigoAluno: e.students?.registration_number,
                   PAED: e.students?.paed ? 'Sim' : 'Não',
                   TransporteEscolar: e.students?.school_transport ? 'Sim' : 'Não'
-               }));
+               })).sort((a, b) => a.Nome.localeCompare(b.Nome));
 
-               // Lógica visual de sala: Prioriza o banco, se não tiver, usa fallback hardcoded (retrocompatibilidade)
                let salaNum = cls.room_number || '---';
-
-               // Fallback apenas se não vier do banco (migração gradual)
-               if (!cls.room_number || cls.room_number === '---') {
-                  if (cls.name === '6º ANO A') salaNum = '007';
-                  else if (cls.name === '6º ANO B') salaNum = '008';
-                  else if (cls.name === '6º ANO D') salaNum = '007';
-                  else if (cls.name === '6º ANO E') salaNum = '008';
-                  else if (cls.name === '7º ANO A') salaNum = '010';
-                  else if (cls.name === '7º ANO D') salaNum = '010';
-                  else if (cls.name === '7º ANO B') salaNum = '011';
-                  else if (cls.name === '7º ANO E') salaNum = '011';
-                  else if (cls.name === '8º ANO A') salaNum = '023';
-                  else if (cls.name === '8º ANO B') salaNum = '024';
-                  else if (cls.name === '8º ANO D') salaNum = '023';
-                  else if (cls.name === '8º ANO E') salaNum = '024';
-                  else if (cls.name === '9º ANO A') salaNum = '019';
-                  else if (cls.name === '9º ANO B') salaNum = '020';
-                  else if (cls.name === '9º ANO C') salaNum = '021';
-                  else if (cls.name === '9º ANO D') salaNum = '020';
-                  else if (cls.name === '9º ANO E') salaNum = '021';
-               }
-
+               
                return {
-                  id: cls.id,
-                  name: cls.name,
-                  year: cls.year,
-                  shift: cls.shift,
-                  teacherId: '---', // Não integrado ainda
-                  studentIds: [],
-                  schedule: [],
+                  ...cls,
                   studentCount: classStudents.length,
                   students: classStudents,
-                  salaNum,
-                  room_number: cls.room_number
+                  salaNum
                };
             });
             setClassrooms(enhanced);
          }
-
       } catch (error) {
          console.error("Erro ao carregar turmas:", error);
       } finally {
          setIsLoading(false);
       }
    };
+
+   // --- GLOBAL SEARCH ---
+   useEffect(() => {
+      const delayDebounceFn = setTimeout(() => {
+         if (globalSearchTerm.length >= 3) {
+            performGlobalSearch();
+         } else {
+            setSearchResults([]);
+         }
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+   }, [globalSearchTerm]);
+
+   const performGlobalSearch = async () => {
+      setIsSearching(true);
+      try {
+         const { data, error } = await supabase
+            .from('students')
+            .select(`
+               *,
+               enrollments (
+                  classrooms (name, shift)
+               )
+            `)
+            .ilike('name', `%${globalSearchTerm}%`)
+            .limit(10);
+
+         if (error) throw error;
+
+         if (data) {
+            const mapped: DetailedStudent[] = data.map((s: any) => {
+               const classroom = s.enrollments?.[0]?.classrooms;
+               return {
+                  ...s,
+                  id: s.id,
+                  Nome: s.name,
+                  Turma: classroom?.name || 'SEM TURMA',
+                  Turno: classroom?.shift || '---',
+                  PAED: s.paed ? 'Sim' : 'Não',
+                  TransporteEscolar: s.school_transport ? 'Sim' : 'Não',
+                  NomeResponsavel: s.guardian_name || '',
+                  TelefoneContato: s.contact_phone || '',
+                  registration_number: s.registration_number,
+                  birth_date: s.birth_date
+               };
+            });
+            setSearchResults(mapped);
+         }
+      } catch (error) {
+         console.error("Erro na busca global:", error);
+      } finally {
+         setIsSearching(false);
+      }
+   };
+
+   // --- STUDENT ACTIONS ---
+
+   const openStudentProfile = (student: any) => {
+      // Normalize student data
+      const normalized: DetailedStudent = {
+         id: student.id,
+         Nome: student.name || student.Nome,
+         registration_number: student.registration_number || student.CodigoAluno,
+         birth_date: student.birth_date || student.DataNascimento,
+         paed: student.paed === true || student.PAED === 'Sim',
+         school_transport: student.school_transport === true || student.TransporteEscolar === 'Sim',
+         guardian_name: student.guardian_name || student.NomeResponsavel || '',
+         contact_phone: student.contact_phone || student.TelefoneContato || '',
+         Turma: student.Turma || 'SEM TURMA',
+         Turno: student.Turno || '---',
+         PAED: (student.paed === true || student.PAED === 'Sim') ? 'Sim' : 'Não',
+         TransporteEscolar: (student.school_transport === true || student.TransporteEscolar === 'Sim') ? 'Sim' : 'Não',
+         NomeResponsavel: student.guardian_name || student.NomeResponsavel || '',
+         TelefoneContato: student.contact_phone || student.TelefoneContato || ''
+      };
+
+      setStudentForm(normalized);
+      setIsEditingStudent(true);
+      setEditingStudentId(student.id);
+      setIsStudentModalOpen(true);
+      setGlobalSearchTerm(''); // Limpar busca ao abrir perfil
+   };
+
+   const handleSaveStudent = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+         setIsLoading(true);
+         const payload = {
+            name: studentForm.Nome.toUpperCase(),
+            registration_number: studentForm.registration_number,
+            birth_date: studentForm.birth_date,
+            paed: studentForm.PAED === 'Sim',
+            school_transport: studentForm.TransporteEscolar === 'Sim',
+            guardian_name: studentForm.NomeResponsavel.toUpperCase(),
+            contact_phone: studentForm.TelefoneContato,
+            updated_at: new Date().toISOString()
+         };
+
+         if (isEditingStudent && editingStudentId) {
+            const { error } = await supabase
+               .from('students')
+               .update(payload)
+               .eq('id', editingStudentId);
+
+            if (error) throw error;
+            alert("Cadastro atualizado com sucesso!");
+         } else {
+            // New Student creation logic...
+            const { data: newStudent, error } = await supabase
+               .from('students')
+               .insert([payload])
+               .select()
+               .single();
+            
+            if (error) throw error;
+            
+            // Link to classroom if selected
+            if (studentForm.Turma && studentForm.Turma !== 'SEM TURMA') {
+               const targetClass = classrooms.find(c => c.name === studentForm.Turma);
+               if (targetClass) {
+                  await supabase.from('enrollments').insert([{
+                     student_id: newStudent.id,
+                     classroom_id: targetClass.id,
+                     enrollment_date: new Date().toLocaleDateString('sv-SE')
+                  }]);
+               }
+            }
+            alert("Aluno cadastrado com sucesso!");
+         }
+
+         setIsStudentModalOpen(false);
+         fetchClassrooms();
+      } catch (error: any) {
+         console.error("Erro ao salvar aluno:", error);
+         alert("Erro ao salvar: " + error.message);
+      } finally {
+         setIsLoading(false);
+      }
+   };
+
+   // --- CLASSROOM ACTIONS ---
 
    const handleCreateClass = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -149,7 +338,7 @@ const SecretariatClassroomManager: React.FC = () => {
          if (error) throw error;
 
          alert("Turma criada com sucesso!");
-         setIsCreateModalOpen(false);
+         setIsCreateClassModalOpen(false);
          setNewClass({ name: '', year: '6º ANO', shift: 'MATUTINO', room_number: '' });
          fetchClassrooms();
       } catch (error) {
@@ -158,11 +347,6 @@ const SecretariatClassroomManager: React.FC = () => {
       } finally {
          setIsLoading(false);
       }
-   };
-
-   const startEditingRoom = (cls: EnhancedClassroom) => {
-      setEditingRoomId(cls.id);
-      setEditRoomValue(cls.salaNum === '---' ? '' : cls.salaNum);
    };
 
    const saveRoomNumber = async (classId: string) => {
@@ -175,67 +359,211 @@ const SecretariatClassroomManager: React.FC = () => {
          if (error) throw error;
 
          setEditingRoomId(null);
-         fetchClassrooms(); // Refresh to update UI
+         fetchClassrooms();
       } catch (error) {
          console.error("Erro ao atualizar sala:", error);
-         alert("Erro ao salvar número da sala.");
       }
    };
 
-   const deleteClassroom = async (cls: EnhancedClassroom) => {
-      if (cls.studentCount > 0) {
-         alert(`Não é possível excluir a turma "${cls.name}" pois existem ${cls.studentCount} alunos matriculados nela.\n\nRemova ou transfira os alunos antes de excluir a turma.`);
-         return;
+   // --- MOVEMENT ACTIONS ---
+
+   const openMovementHistory = async (student: DetailedStudent) => {
+      setSelectedStudentForMovement(student);
+      setIsMovementModalOpen(true);
+      
+      try {
+         const { data, error } = await supabase
+            .from('student_movements')
+            .select('*')
+            .eq('student_id', student.id)
+            .order('movement_date', { ascending: false });
+
+         if (error) throw error;
+         setMovements(data || []);
+      } catch (error) {
+         console.error("Erro ao buscar histórico:", error);
       }
+   };
 
-      if (window.confirm(`Tem certeza que deseja excluir a turma "${cls.name}" PERMANENTEMENTE?\n\nEsta ação não pode ser desfeita.`)) {
-         try {
-            setIsLoading(true);
-            const { error } = await supabase
-               .from('classrooms')
-               .delete()
-               .eq('id', cls.id);
+   const handleRegisterMovement = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!selectedStudentForMovement?.id) return;
 
-            if (error) throw error;
+      try {
+         const payload: any = {
+            student_id: selectedStudentForMovement.id,
+            movement_type: newMovement.type,
+            description: newMovement.description.toUpperCase() || newMovement.type,
+            movement_date: newMovement.date,
+            responsible_name: newMovement.responsible_name.toUpperCase(),
+            is_reclassified: newMovement.is_reclassified
+         };
 
-            alert("Turma excluída com sucesso!");
-            fetchClassrooms();
-         } catch (error) {
-            console.error("Erro ao excluir turma:", error);
-            alert("Erro ao excluir a turma.");
-         } finally {
-            setIsLoading(false);
+         if (newMovement.type === 'TRANSFERENCIA') {
+            payload.destination_school = newMovement.destination_school.toUpperCase();
+            payload.transfer_subtype = newMovement.transfer_subtype;
          }
+
+         const { error } = await supabase.from('student_movements').insert([payload]);
+         if (error) throw error;
+
+         // Update Status
+         if (newMovement.type === 'TRANSFERENCIA' && newMovement.transfer_subtype === 'EXTERNA') {
+            await supabase.from('students').update({ status: 'TRANSFERIDO' }).eq('id', selectedStudentForMovement.id);
+         }
+
+         alert("Movimentação registrada!");
+         openMovementHistory(selectedStudentForMovement);
+      } catch (error: any) {
+         console.error("Erro ao registrar movimento:", error);
+         alert("Erro: " + error.message);
       }
+   };
+
+   // --- PDF IMPORT ---
+   const handleImportPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+         setIsLoading(true);
+         const reader = new FileReader();
+         reader.readAsDataURL(file);
+         reader.onload = async () => {
+            const base64Data = reader.result?.toString().split(',')[1];
+            if (!base64Data) return;
+
+            const data = await extractDetailedStudentList(base64Data, "application/pdf");
+            if (!data.Alunos) return;
+
+            // Simple loop to insert/update - logic simplified for brevity
+            for (const s of data.Alunos) {
+               const { data: existing } = await supabase.from('students').select('id').ilike('name', s.Nome).maybeSingle();
+               
+               const payload = {
+                  name: s.Nome,
+                  registration_number: s.CodigoAluno || `PDF-${Date.now()}`,
+                  birth_date: s.DataNascimento,
+                  paed: s.PAED === 'Sim'
+               };
+
+               if (existing) {
+                  await supabase.from('students').update(payload).eq('id', existing.id);
+               } else {
+                  const { data: newS } = await supabase.from('students').insert([payload]).select().single();
+                  // Find classroom
+                  const { data: cls } = await supabase.from('classrooms').select('id').ilike('name', `%${s.Turma}%`).maybeSingle();
+                  if (cls && newS) {
+                     await supabase.from('enrollments').insert([{ student_id: newS.id, classroom_id: cls.id, enrollment_date: new Date().toLocaleDateString('sv-SE') }]);
+                  }
+               }
+            }
+            alert("PDF processado com sucesso!");
+            fetchClassrooms();
+         };
+      } catch (error) {
+         console.error("Erro ao importar PDF:", error);
+      } finally {
+         setIsLoading(false);
+      }
+   };
+
+   // --- RENDERING HELPERS ---
+
+   const formatDateSafe = (dateStr: string) => {
+      if (!dateStr) return '---';
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
    };
 
    return (
-      <div className="space-y-8 animate-in fade-in duration-500">
-
-         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-6">
-               <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl">
-                  <Users size={32} />
+      <div className="space-y-8 animate-in fade-in duration-500 pb-10">
+         
+         {/* HEADER UNIFICADO COM BUSCA GLOBAL */}
+         <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col gap-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+               <div className="flex items-center gap-6">
+                  <div className="p-4 bg-indigo-600 text-white rounded-[1.5rem] shadow-lg">
+                     <Users size={32} />
+                  </div>
+                  <div>
+                     <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Gestão de Turmas</h3>
+                     <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Controle de Enturmação e Cadastro de Alunos</p>
+                  </div>
                </div>
-               <div>
-                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Grade de Turmas</h3>
-                  <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Gerenciamento de Enturmação e Ocupação</p>
+               
+               {/* BUSCA GLOBAL SEMPRE VISÍVEL */}
+               <div className="relative w-full md:w-[400px]">
+                  <div className={`relative transition-all ${globalSearchTerm ? 'scale-[1.02]' : ''}`}>
+                     <Search className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${globalSearchTerm ? 'text-indigo-600' : 'text-gray-300'}`} size={20} />
+                     <input
+                        type="text"
+                        placeholder="Pesquisar aluno em toda a escola..."
+                        value={globalSearchTerm}
+                        onChange={e => setGlobalSearchTerm(e.target.value)}
+                        className="w-full pl-14 pr-6 py-4 bg-gray-50 border-none rounded-[1.5rem] font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300"
+                     />
+                     {isSearching && <Loader2 size={16} className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-indigo-400" />}
+                  </div>
+
+                  {/* RESULTADOS DA BUSCA GLOBAL (POPUP) */}
+                  {searchResults.length > 0 && (
+                     <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white rounded-[1.5rem] shadow-2xl border border-gray-100 p-4 z-[200] max-h-[400px] overflow-y-auto animate-in slide-in-from-top-2 duration-300">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-4 mb-3">Resultados Encontrados</p>
+                        <div className="space-y-1">
+                           {searchResults.map(s => (
+                              <button
+                                 key={s.id}
+                                 onClick={() => openStudentProfile(s)}
+                                 className="w-full text-left p-4 hover:bg-indigo-50 rounded-xl transition-all flex items-center justify-between group"
+                              >
+                                 <div>
+                                    <p className="text-sm font-black text-gray-900 group-hover:text-indigo-600 uppercase">{s.Nome}</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma} • {s.registration_number}</p>
+                                 </div>
+                                 <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-600" />
+                              </button>
+                           ))}
+                        </div>
+                     </div>
+                  )}
                </div>
             </div>
-            <div className="flex gap-3">
+
+            {/* AÇÕES RÁPIDAS NO HEADER */}
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-50">
                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all"
+                  onClick={() => setIsCreateClassModalOpen(true)}
+                  className="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-100 transition-all border border-indigo-100"
                >
                   <Plus size={14} /> Nova Turma
                </button>
+               <button
+                  onClick={() => {
+                     setIsEditingStudent(false);
+                     setStudentForm({ ...studentForm, Nome: '', registration_number: '', birth_date: '', Turma: '' });
+                     setIsStudentModalOpen(true);
+                  }}
+                  className="px-6 py-3 bg-gray-50 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-100 transition-all border border-gray-100"
+               >
+                  <UserPlus size={14} /> Novo Aluno
+               </button>
+               <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-6 py-3 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all shadow-lg"
+               >
+                  <FileUp size={14} /> Importar PDF
+               </button>
+               <input type="file" ref={fileInputRef} onChange={handleImportPDF} className="hidden" accept=".pdf" />
+               
+               <div className="flex-1" />
+
                <div className="flex bg-gray-100 p-1 rounded-2xl">
                   {['TODOS', 'MATUTINO', 'VESPERTINO'].map(s => (
                      <button
                         key={s}
                         onClick={() => setActiveShift(s as any)}
-                        className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all ${activeShift === s ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-                           }`}
+                        className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all ${activeShift === s ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                      >
                         {s}
                      </button>
@@ -244,189 +572,108 @@ const SecretariatClassroomManager: React.FC = () => {
             </div>
          </div>
 
+         {/* GRID DE TURMAS */}
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {classrooms.filter(c => activeShift === 'TODOS' || c.shift === activeShift).map(cls => (
-               <div key={cls.id} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-indigo-300 hover:shadow-2xl transition-all group flex flex-col justify-between">
+               <div key={cls.id} className="bg-white p-8 rounded-[3.5rem] border border-gray-100 shadow-sm hover:border-indigo-300 hover:shadow-2xl transition-all group flex flex-col justify-between">
                   <div>
-                     <div className="flex justify-between items-start mb-6">
-                        <div className="w-16 h-16 bg-gray-900 text-white rounded-[2rem] flex items-center justify-center font-black text-xl group-hover:bg-indigo-600 transition-colors">
+                     <div className="flex justify-between items-start mb-8">
+                        <div className="w-16 h-16 bg-gray-900 text-white rounded-[2rem] flex items-center justify-center font-black text-xl group-hover:bg-indigo-600 transition-colors shadow-xl">
                            {cls.name.substring(0, 2)}
                         </div>
-                        <div className="text-right flex flex-col items-end gap-2">
-                           <span className="text-[10px] font-black text-indigo-600 uppercase bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">{cls.shift}</span>
-                           <button
-                              onClick={() => deleteClassroom(cls)}
-                              className="p-2 text-gray-300 hover:text-red-500 transition-colors"
-                              title="Excluir Turma"
-                           >
-                              <Trash2 size={16} />
-                           </button>
+                        <div className="text-right flex flex-col items-end gap-3">
+                           <span className="text-[10px] font-black text-indigo-600 uppercase bg-indigo-50 px-4 py-1.5 rounded-full border border-indigo-100">{cls.shift}</span>
                         </div>
                      </div>
 
-                     <h3 className="text-2xl font-black text-gray-900 uppercase mb-4">{cls.name}</h3>
+                     <h3 className="text-3xl font-black text-gray-900 uppercase mb-6 tracking-tighter">{cls.name}</h3>
 
                      <div className="grid grid-cols-2 gap-4 mb-8">
-                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center">
-                           <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Alunos</p>
-                           <p className={`text-xl font-black ${cls.studentCount > 0 ? 'text-indigo-600' : 'text-red-400'}`}>{cls.studentCount}</p>
+                        <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 text-center">
+                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1.5">Alunos</p>
+                           <p className={`text-2xl font-black ${cls.studentCount > 0 ? 'text-indigo-600' : 'text-red-400'}`}>{cls.studentCount}</p>
                         </div>
-                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center relative group/sala">
-                           <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Sala</p>
-
+                        <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 text-center relative group/sala cursor-pointer" onClick={() => { setEditingRoomId(cls.id); setEditRoomValue(cls.salaNum); }}>
+                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1.5">Sala</p>
                            {editingRoomId === cls.id ? (
-                              <div className="flex items-center gap-1 justify-center">
-                                 <input
-                                    autoFocus
-                                    value={editRoomValue}
-                                    onChange={e => setEditRoomValue(e.target.value)}
-                                    className="w-12 text-center font-black text-lg bg-white border border-indigo-300 rounded-lg outline-none"
-                                    onBlur={() => saveRoomNumber(cls.id!)}
-                                    onKeyDown={e => e.key === 'Enter' && saveRoomNumber(cls.id!)}
-                                 />
-                                 <button onMouseDown={() => saveRoomNumber(cls.id!)} className="text-emerald-500"><Save size={14} /></button>
-                              </div>
+                              <input
+                                 autoFocus
+                                 value={editRoomValue}
+                                 onChange={e => setEditRoomValue(e.target.value)}
+                                 onBlur={() => saveRoomNumber(cls.id!)}
+                                 onKeyDown={e => e.key === 'Enter' && saveRoomNumber(cls.id!)}
+                                 className="w-12 text-center font-black text-xl bg-white border border-indigo-300 rounded-lg outline-none"
+                              />
                            ) : (
-                              <div className="flex items-center justify-center gap-2 cursor-pointer" onClick={() => startEditingRoom(cls)}>
-                                 <p className="text-xl font-black text-gray-900">{cls.salaNum}</p>
-                                 <Edit3 size={12} className="text-gray-300 opacity-0 group-hover/sala:opacity-100 transition-opacity absolute right-2 top-2" />
-                              </div>
+                              <p className="text-2xl font-black text-gray-900">{cls.salaNum}</p>
                            )}
+                           <Edit3 size={12} className="text-gray-300 opacity-0 group-hover/sala:opacity-100 transition-opacity absolute right-4 top-4" />
                         </div>
                      </div>
                   </div>
 
-                  <div className="mt-8 grid grid-cols-1 gap-3">
-                     <button
-                        onClick={() => setSelectedClassDetail(cls)}
-                        className="py-3 bg-gray-900 text-white hover:bg-black rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 shadow-lg"
-                     >
-                        <BookOpen size={14} /> Detalhar Turma
-                     </button>
-                  </div>
+                  <button
+                     onClick={() => setSelectedClassDetail(cls)}
+                     className="w-full py-4 bg-gray-900 text-white hover:bg-black rounded-2xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-xl"
+                  >
+                     <BookOpen size={16} /> Detalhes da Turma
+                  </button>
                </div>
             ))}
          </div>
 
-         {/* Modal de Nova Turma */}
-         {isCreateModalOpen && (
-            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-indigo-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-               <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden p-8">
-                  <div className="flex justify-between items-center mb-6">
-                     <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Nova Turma</h3>
-                     <button onClick={() => setIsCreateModalOpen(false)}><X size={24} className="text-gray-400 hover:text-red-500" /></button>
-                  </div>
-                  <form onSubmit={handleCreateClass} className="space-y-4">
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Turma</label>
-                           <input
-                              required
-                              placeholder="EX: 6º ANO A"
-                              value={newClass.name}
-                              onChange={e => setNewClass({ ...newClass, name: e.target.value.toUpperCase() })}
-                              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase"
-                           />
-                        </div>
-                     </div>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ano Letivo</label>
-                           <select
-                              value={newClass.year}
-                              onChange={e => setNewClass({ ...newClass, year: e.target.value })}
-                              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white"
-                           >
-                              {["1º ANO", "2º ANO", "3º ANO", "4º ANO", "5º ANO", "6º ANO", "7º ANO", "8º ANO", "9º ANO"].map(y => <option key={y} value={y}>{y}</option>)}
-                           </select>
-                        </div>
-                        <div>
-                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turno</label>
-                           <select
-                              value={newClass.shift}
-                              onChange={e => setNewClass({ ...newClass, shift: e.target.value as Shift })}
-                              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white"
-                           >
-                              {["MATUTINO", "VESPERTINO", "INTEGRAL", "NOTURNO"].map(s => <option key={s} value={s}>{s}</option>)}
-                           </select>
-                        </div>
-                     </div>
-                     <div>
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Número da Sala (Opcional)</label>
-                        <input
-                           placeholder="EX: 007"
-                           value={newClass.room_number}
-                           onChange={e => setNewClass({ ...newClass, room_number: e.target.value })}
-                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase"
-                        />
-                     </div>
-
-                     <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 transition-all flex justify-center gap-2 items-center shadow-lg">
-                        <Plus size={16} /> Criar Turma
-                     </button>
-                  </form>
-               </div>
-            </div>
-         )}
-
-         {/* Modal de Detalhamento da Turma */}
+         {/* MODAL DETALHES DA TURMA (LISTA DE ALUNOS) */}
          {selectedClassDetail && (
-            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-indigo-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-               <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[90vh]">
-                  {/* Header do Modal */}
-                  <div className="p-8 bg-gray-900 text-white flex justify-between items-center shrink-0">
-                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-indigo-600 rounded-[1.5rem] flex items-center justify-center text-2xl font-black">
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-indigo-950/60 backdrop-blur-md animate-in fade-in duration-300">
+               <div className="bg-white rounded-[4rem] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="p-10 bg-gray-900 text-white flex justify-between items-center shrink-0">
+                     <div className="flex items-center gap-8">
+                        <div className="w-20 h-20 bg-indigo-600 rounded-[2.5rem] flex items-center justify-center text-3xl font-black shadow-2xl">
                            {selectedClassDetail.name.substring(0, 2)}
                         </div>
                         <div>
-                           <h3 className="text-2xl font-black uppercase tracking-tighter">{selectedClassDetail.name}</h3>
-                           <div className="flex items-center gap-4 mt-1">
-                              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1">
-                                 <MapPin size={12} /> Sala {selectedClassDetail.salaNum}
+                           <h3 className="text-3xl font-black uppercase tracking-tighter">{selectedClassDetail.name}</h3>
+                           <div className="flex items-center gap-6 mt-2">
+                              <p className="text-[11px] font-black text-indigo-300 uppercase tracking-widest flex items-center gap-2 font-mono">
+                                 <MapPin size={14} /> SALA {selectedClassDetail.salaNum}
                               </p>
-                              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1">
-                                 <GraduationCap size={12} /> {selectedClassDetail.studentCount} Alunos Ativos
+                              <p className="text-[11px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2 font-mono">
+                                 <GraduationCap size={14} /> {selectedClassDetail.studentCount} ALUNOS
                               </p>
                            </div>
                         </div>
                      </div>
-                     <button
-                        onClick={() => setSelectedClassDetail(null)}
-                        className="p-3 bg-white/10 hover:bg-red-50 rounded-2xl transition-all"
-                     >
-                        <X size={24} />
-                     </button>
+                     <button onClick={() => setSelectedClassDetail(null)} className="p-4 bg-white/10 hover:bg-red-500 rounded-3xl transition-all"><X size={28} /></button>
                   </div>
 
-                  {/* Lista de Alunos */}
                   <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                     <div className="bg-gray-50 rounded-[2.5rem] border border-gray-100 overflow-hidden">
+                     <div className="bg-gray-50 rounded-[3rem] border border-gray-100 overflow-hidden">
                         <table className="w-full text-left border-collapse">
                            <thead>
                               <tr className="bg-gray-100/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                 <th className="px-8 py-4 w-20">Seq.</th>
-                                 <th className="px-8 py-4">Código</th>
-                                 <th className="px-8 py-4">Nome do Aluno</th>
-                                 <th className="px-8 py-4 text-center">PAED</th>
-                                 <th className="px-8 py-4 text-center">Tr. Escolar</th>
+                                 <th className="px-10 py-6 w-24">Nº</th>
+                                 <th className="px-10 py-6">Código</th>
+                                 <th className="px-10 py-6">Nome do Aluno</th>
+                                 <th className="px-10 py-6">Status</th>
+                                 <th className="px-10 py-6 text-right">Ação</th>
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-gray-100">
                               {selectedClassDetail.students.map((student: any, idx: number) => (
-                                 <tr key={student.CodigoAluno} className="hover:bg-gray-50 transition-colors group">
-                                    <td className="px-8 py-4"><span className="text-[10px] font-black text-gray-300 group-hover:text-indigo-600">#{idx + 1}</span></td>
-                                    <td className="px-8 py-4"><span className="text-[10px] font-bold text-gray-500">{student.CodigoAluno}</span></td>
-                                    <td className="px-8 py-4"><p className="text-sm font-black text-gray-900 uppercase">{student.Nome}</p></td>
-                                    <td className="px-8 py-4 text-center">
-                                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${student.PAED === 'Sim' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
-                                          {student.PAED}
+                                 <tr key={student.id} className="hover:bg-white transition-all group">
+                                    <td className="px-10 py-6"><span className="text-xs font-black text-gray-300 group-hover:text-indigo-600 font-mono">#{String(idx + 1).padStart(2, '0')}</span></td>
+                                    <td className="px-10 py-6"><span className="text-xs font-bold text-gray-500 font-mono">{student.registration_number}</span></td>
+                                    <td className="px-10 py-6"><p className="text-sm font-black text-gray-900 uppercase group-hover:text-indigo-600 transition-colors">{student.name}</p></td>
+                                    <td className="px-10 py-6">
+                                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${student.status === 'TRANSFERIDO' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                          {student.status || 'ATIVO'}
                                        </span>
                                     </td>
-                                    <td className="px-8 py-4 text-center">
-                                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${student.TransporteEscolar === 'Sim' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
-                                          {student.TransporteEscolar}
-                                       </span>
+                                    <td className="px-10 py-6 text-right">
+                                       <div className="flex items-center justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button onClick={() => openStudentProfile(student)} className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all" title="Ver Perfil/Ficha"><User size={20} /></button>
+                                          <button onClick={() => openMovementHistory(student)} className="p-3 bg-amber-50 text-amber-600 rounded-2xl hover:bg-amber-600 hover:text-white transition-all" title="Movimentações/Histórico"><History size={20} /></button>
+                                       </div>
                                     </td>
                                  </tr>
                               ))}
@@ -434,20 +681,252 @@ const SecretariatClassroomManager: React.FC = () => {
                         </table>
                      </div>
                   </div>
+               </div>
+            </div>
+         )}
 
-                  {/* Footer com Selo de Integridade */}
-                  <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
-                     <div className="flex items-center gap-3">
-                        <ShieldCheck size={20} className="text-indigo-600" />
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Relatório Auditado • Base SEDUC-MT</p>
+         {/* MODAL FICHA DO ALUNO (INTEGRADO DO REGISTRY) */}
+         {isStudentModalOpen && (
+            <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-indigo-950/70 backdrop-blur-lg animate-in fade-in duration-300">
+               <div className="bg-white rounded-[4rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="p-10 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+                     <div className="flex items-center gap-6">
+                        <div className="p-5 bg-indigo-600 text-white rounded-[2rem] shadow-2xl">
+                           <UserPlus size={32} />
+                        </div>
+                        <div>
+                           <h3 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
+                              {isEditingStudent ? 'Perfil do Aluno' : 'Novo Aluno'}
+                           </h3>
+                           <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-1">Dados Cadastrais e Contatos</p>
+                        </div>
                      </div>
-                     <button
-                        onClick={() => window.print()}
-                        className="px-6 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all"
-                     >
-                        Imprimir Relação
-                     </button>
+                     <button onClick={() => setIsStudentModalOpen(false)} className="p-4 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-[1.5rem] transition-all shadow-sm"><X size={28} /></button>
                   </div>
+
+                  <form onSubmit={handleSaveStudent} className="p-12 space-y-8 overflow-y-auto custom-scrollbar">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-6">
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                              <input
+                                 required
+                                 value={studentForm.Nome}
+                                 onChange={e => setStudentForm({ ...studentForm, Nome: e.target.value.toUpperCase() })}
+                                 className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-base outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
+                              />
+                           </div>
+                           <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Matrícula</label>
+                                 <input
+                                    required
+                                    value={studentForm.registration_number}
+                                    onChange={e => setStudentForm({ ...studentForm, registration_number: e.target.value })}
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                 />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nascimento</label>
+                                 <input
+                                    required
+                                    type="date"
+                                    value={studentForm.birth_date}
+                                    onChange={e => setStudentForm({ ...studentForm, birth_date: e.target.value })}
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                 />
+                              </div>
+                           </div>
+                           <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">PAED</label>
+                                 <select
+                                    value={studentForm.PAED}
+                                    onChange={e => setStudentForm({...studentForm, PAED: e.target.value})}
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                 >
+                                    <option>Não</option>
+                                    <option>Sim</option>
+                                 </select>
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tr. Escolar</label>
+                                 <select
+                                    value={studentForm.TransporteEscolar}
+                                    onChange={e => setStudentForm({...studentForm, TransporteEscolar: e.target.value})}
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                 >
+                                    <option>Não</option>
+                                    <option>Sim</option>
+                                 </select>
+                              </div>
+                           </div>
+                        </div>
+
+                        <div className="space-y-6">
+                           <div className="p-8 bg-indigo-900 rounded-[3rem] text-white space-y-6 shadow-2xl relative overflow-hidden">
+                              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />
+                              <h4 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-indigo-300">
+                                 <Building2 size={16} /> Contato do Responsável
+                              </h4>
+                              <div className="space-y-4">
+                                 <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest ml-1">Nome do Responsável</label>
+                                    <input
+                                       required
+                                       value={studentForm.NomeResponsavel}
+                                       onChange={e => setStudentForm({ ...studentForm, NomeResponsavel: e.target.value.toUpperCase() })}
+                                       className="w-full p-4 bg-white/10 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/20 transition-all uppercase placeholder:text-indigo-700"
+                                    />
+                                 </div>
+                                 <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
+                                    <div className="relative">
+                                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={16} />
+                                       <input
+                                          required
+                                          value={studentForm.TelefoneContato}
+                                          onChange={e => setStudentForm({ ...studentForm, TelefoneContato: e.target.value })}
+                                          className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/20 transition-all"
+                                       />
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                           
+                           {!isEditingStudent && (
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Enturmação Inicial</label>
+                                 <select
+                                    value={studentForm.Turma}
+                                    onChange={e => setStudentForm({ ...studentForm, Turma: e.target.value })}
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-sm outline-none focus:bg-white"
+                                 >
+                                    <option value="">Selecione a Turma...</option>
+                                    {classrooms.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                 </select>
+                              </div>
+                           )}
+                        </div>
+                     </div>
+
+                     <button type="submit" className="w-full py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black uppercase text-sm tracking-widest shadow-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-4">
+                        <Save size={24} />
+                        {isEditingStudent ? 'Atualizar Perfil' : 'Cadastrar na Escola'}
+                     </button>
+                  </form>
+               </div>
+            </div>
+         )}
+
+         {/* MODAL HISTÓRICO E MOVIMENTAÇÃO (INTEGRADO) */}
+         {isMovementModalOpen && selectedStudentForMovement && (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-indigo-950/80 backdrop-blur-md animate-in fade-in duration-300">
+               <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl p-10 flex flex-col max-h-[90vh]">
+                  <div className="flex justify-between items-center mb-8 shrink-0">
+                     <div>
+                        <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Movimentações</h3>
+                        <p className="text-sm font-black text-indigo-600 uppercase mt-1">{selectedStudentForMovement.Nome}</p>
+                     </div>
+                     <button onClick={() => setIsMovementModalOpen(false)} className="p-4 bg-gray-50 text-gray-400 hover:text-red-500 rounded-3xl transition-all shadow-sm"><X size={24} /></button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto mb-10 pr-2 custom-scrollbar">
+                     {movements.length === 0 ? (
+                        <div className="text-center py-16 bg-gray-50 rounded-[3rem] border-2 border-gray-100 border-dashed">
+                           <History size={48} className="mx-auto text-gray-200 mb-4" />
+                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nenhuma movimentação registrada</p>
+                        </div>
+                     ) : (
+                        <div className="space-y-4">
+                           {movements.map((mov) => (
+                              <div key={mov.id} className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 flex justify-between items-start hover:border-indigo-200 transition-all">
+                                 <div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${mov.movement_type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                          {mov.movement_type}
+                                       </span>
+                                       <span className="text-[10px] font-black text-gray-300 font-mono">{formatDateSafe(mov.movement_date)}</span>
+                                    </div>
+                                    <p className="text-xs font-black text-gray-700 uppercase leading-relaxed">{mov.description}</p>
+                                    {mov.destination_school && <p className="text-[9px] font-bold text-indigo-400 mt-1 uppercase font-mono">Destino: {mov.destination_school}</p>}
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+
+                  <form onSubmit={handleRegisterMovement} className="pt-8 border-t border-gray-100 shrink-0 space-y-6">
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Evento</label>
+                           <select 
+                              value={newMovement.type}
+                              onChange={e => setNewMovement({...newMovement, type: e.target.value})}
+                              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none"
+                           >
+                              <option value="TRANSFERENCIA">TRANSFERÊNCIA</option>
+                              <option value="ATESTADO">ATESTADO MÉDICO</option>
+                              <option value="ABANDONO">ABANDONO</option>
+                              <option value="OUTROS">OUTROS</option>
+                           </select>
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data</label>
+                           <input 
+                              type="date"
+                              value={newMovement.date}
+                              onChange={e => setNewMovement({...newMovement, date: e.target.value})}
+                              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs"
+                           />
+                        </div>
+                     </div>
+                     <textarea 
+                        placeholder="Descreva o motivo ou detalhes..."
+                        value={newMovement.description}
+                        onChange={e => setNewMovement({...newMovement, description: e.target.value})}
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-xs min-h-[80px] resize-none outline-none"
+                     />
+                     <button type="submit" className="w-full py-4 bg-gray-900 text-white rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl">
+                        Registrar Movimentação
+                     </button>
+                  </form>
+               </div>
+            </div>
+         )}
+
+         {/* MODAL NOVA TURMA */}
+         {isCreateClassModalOpen && (
+            <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-indigo-950/40 backdrop-blur-md animate-in fade-in duration-300">
+               <div className="bg-white rounded-[3rem] w-full max-w-md shadow-2xl p-8 overflow-hidden">
+                  <div className="flex justify-between items-center mb-8">
+                     <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest">Nova Turma</h3>
+                     <button onClick={() => setIsCreateClassModalOpen(false)}><X size={24} className="text-gray-300 hover:text-red-500" /></button>
+                  </div>
+                  <form onSubmit={handleCreateClass} className="space-y-6">
+                     <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Turma</label>
+                        <input required placeholder="EX: 6º ANO A" value={newClass.name} onChange={e => setNewClass({ ...newClass, name: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase" />
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                           <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Série/Ano</label>
+                           <select value={newClass.year} onChange={e => setNewClass({ ...newClass, year: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-xs" >
+                              {["6º ANO", "7º ANO", "8º ANO", "9º ANO"].map(y => <option key={y} value={y}>{y}</option>)}
+                           </select>
+                        </div>
+                        <div className="space-y-1.5">
+                           <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Turno</label>
+                           <select value={newClass.shift} onChange={e => setNewClass({ ...newClass, shift: e.target.value as Shift })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-xs" >
+                              {["MATUTINO", "VESPERTINO"].map(s => <option key={s} value={s}>{s}</option>)}
+                           </select>
+                        </div>
+                     </div>
+                     <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3">
+                        <Plus size={16} /> Criar Turma
+                     </button>
+                  </form>
                </div>
             </div>
          )}
