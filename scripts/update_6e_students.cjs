@@ -3,125 +3,82 @@ require('dotenv').config({ path: '.env.local' });
 
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
-// Lista do SIGEEDUCA - 6º ANO E - Turno VESPERTINO
-// Total: 30 alunos
-const students6E = [
-  { registration: "2671263", name: "JOÃO LUIZ MESQUITA SILVA DOS SANTOS",          transport: true,  paed: false },
-  { registration: "2671633", name: "MIKAELY CRISTINA FERREIRA DOS SANTOS",         transport: true,  paed: false },
-  { registration: "3421444", name: "JOAQUIM LEITE MARCHORO",                        transport: false, paed: false },
-  { registration: "2971945", name: "HECTOR BEATRIZ DOS SANTOS MARTINS",            transport: false, paed: false },
-  { registration: "2675483", name: "JOSE EDUARDO DOURADO DE ARAUJO",               transport: false, paed: false },
-  { registration: "2676657", name: "ANA CLARA DE OLIVEIRA ANDRADE",                transport: false, paed: false },
-  { registration: "3073603", name: "RAYQUE VITOR DOS SANTOS RODRIGUES",            transport: false, paed: false },
-  { registration: "2310125", name: "KHYMERILLY KLEIVE VAZ DE OLIVEIRA",            transport: false, paed: false },
-  { registration: "2879304", name: "ADRIYAN SOUSA DOS ANJOS",                      transport: false, paed: false },
-  { registration: "2290250", name: "KOKOREJI MARUZA METUKIRE",                     transport: false, paed: false },
-  { registration: "2697017", name: "NICOLAS JOSÉ PEREIRA VIANA",                   transport: false, paed: true  },
-  { registration: "3068981", name: "GUILHERME DOS SANTOS AMORIM",                  transport: false, paed: false },
-  { registration: "2297023", name: "MAYRA CLARA FERREIRA DOS SANTOS",              transport: true,  paed: false },
-  { registration: "2475383", name: "VICTOR JOAQUIM MARQUES MADEIRA",               transport: false, paed: false },
-  { registration: "2093087", name: "GUILHERME HENRIQUE MOREIRA DA SILVA",          transport: false, paed: false },
-  { registration: "3093380", name: "GREG NOJAN DO AMARAL",                         transport: false, paed: false },
-  { registration: "3626581", name: "YASMIN MARA VITÓRIA NASCIMENTO DA SILVA PEDROSO", transport: true, paed: false },
-  { registration: "3004352", name: "SAMUEL LUÍS FERREIRA DA SILVA",                transport: true,  paed: false },
-  { registration: "2336717", name: "YAYOKE APISTROS DO NASCIMENTO JURUNA",         transport: false, paed: false },
-  { registration: "2390012", name: "ELOISA MOREIRA DONATO",                        transport: false, paed: false },
-  { registration: "3052584", name: "JOÃO PEDRO FIRMINO DA SILVA",                  transport: false, paed: false },
-  { registration: "2116781", name: "EMI VITÓRIA DE ALMEIDA FAUSTINO",              transport: true,  paed: false },
-  { registration: "2671307", name: "GABRIELA HENRIQUE GIZON DA SILVA",             transport: true,  paed: false },
-  { registration: "2277854", name: "LUZ MIGUEL CHAVES MENDONÇA",                   transport: false, paed: false },
-  { registration: "2312384", name: "RUTE DOS SANTOS MAGOLO",                       transport: false, paed: false },
-  { registration: "3546989", name: "ROSE IRAMUEILY ALMEIDA ARARA",                 transport: false, paed: false },
-  { registration: "3069260", name: "YZANN YOMARA RIBEIRO DE SOUZA",               transport: false, paed: false },
-  { registration: "2727020", name: "ANTONIO HENRIQUE DOS SANTOS CORREIA",          transport: false, paed: false },
-  { registration: "2731926", name: "JOSE MARCIO LEMOS CABRAL",                    transport: true,  paed: true  },
-  { registration: "2735279", name: "ALEXANDRE MOURA DOS SANTOS",                   transport: false, paed: true  },
+const studentsData = [
+  { registration: "2674900", name: "ADRYAN SOUSA DOS ANJOS", guardian: "DIANA DE SOUSA COSTA", contact: "(66) 99614-3026 / 99628-0019" },
+  { registration: "2725279", name: "ALEXANDRE MOURA DOS SANTOS", guardian: "ROSANGELA DE FATIMA MOURA", contact: "(66) 99977-8125 / 99955-5334" },
+  { registration: "2673467", name: "ANA CLARA DE OLIVEIRA ANDRADE", guardian: "MOISES LUCAS ANDRADE", contact: "(66) 99610-5824" },
+  { registration: "2350612", name: "ELOISA MOREIRA DONATO", guardian: "ROSANGELA MOREIRA DOS SANTOS", contact: "(66) 98125-2076 / 98122-2832" },
+  { registration: "2315701", name: "EMILY VITORIA DE ALMEIDA FAUSTINO", guardian: "ERIKA PRISCILA DE ALMEIDA FERREIRA", contact: "(66) 99686-4415 / 99662-1089" },
+  { registration: "2671297", name: "GABRIELA HENRIQUE GIZONI DA SILVA", guardian: "ANDREIA HENRIQUE DA SILVA", contact: "(66) 99638-3173 / 99603-1214" },
+  { registration: "2663489", name: "GREG NAJAN DO AMARAL", guardian: "MARCIA DUTRA DE SOUZA", contact: "(66) 99657-2827 / 99612-7256" },
+  { registration: "2668951", name: "GUILHERME DOS SANTOS AMORIM", guardian: "GEANE CIRILO DOS SANTOS AMORIM", contact: "(66) 99683-3770 / 98115-5650" },
+  { registration: "2283387", name: "GUILHERME HENRIQUE MOREIRA DA SILVA", guardian: "NOELMO MOREIRA DA SILVA", contact: "(66) 99633-8824 / 99934-4885" },
+  { registration: "2671865", name: "HESTER BEATRIZ DOS SANTOS MARTINHO", guardian: "LEIDIANE DOS SANTOS", contact: "(66) 99631-6311 / 8117-6411" },
+  { registration: "2671253", name: "JOÃO LUIZ MESQUITA SILVA DOS SANTOS", guardian: "ABIGAIL MESQUITA SILVA", contact: "(66) 99622-7529 / 99723-3352" },
+  { registration: "2401054", name: "JOÃO PEDRO FERMINO DA SILVA", guardian: "TATIANA LOPES DA SILVA", contact: "(66) 99696-2635 / 99618-0737" },
+  { registration: "2401444", name: "JOAQUIM LEITE MARCHIORO", guardian: "RESNETH SOUZA LEITE", contact: "(66) 99632-0527" },
+  { registration: "2673453", name: "JOSE EDUARDO DOURADO DE ARAUJO", guardian: "JEDA DE SOUSA DOURADO", contact: "(66) 99604-4688 / 99638-7828" },
+  { registration: "2721839", name: "JOSE MARCIO LEMOS CABRAL", guardian: "REJIANE BARBOSA LEMOS", contact: "(66) 99623-2720 / 99634-2405" },
+  { registration: "2315125", name: "KHYMBERLLY KLERYS VAZ DE OLIVEIRA", guardian: "KELYANE DA SILVA VAZ", contact: "(66) 99656-8264 / 99719-8950" },
+  { registration: "2283250", name: "KOKOIREI MARIZA METUKTIRE", guardian: "BERTOTKRAN METUKTIRE", contact: "(66) 99615-1427 / 99717-7758" },
+  { registration: "2277854", name: "LUIZ MIGUEL CHAVES MENDONÇA", guardian: "LUCIANE BENEDITA CHAVES MENDONÇA", contact: "(66) 98404-4311 / 99684-2434" },
+  { registration: "2257923", name: "MARIA CLARA FERREIRA DOS SANTOS", guardian: "PATRICIA DA SILVA FERREIRA", contact: "(66) 99713-5235 / 99200-3236" },
+  { registration: "2671433", name: "MIKAELLY CRISTINA FERREIRA DOS SANTOS", guardian: "SUELI CARDOSO DA CRUZ DOS SANTOS", contact: "(66) 99642-3547 / 99971-0246" },
+  { registration: "2661047", name: "NICOLAS JOSE PEREIRA VIANA", guardian: "AURICELIA GONÇALVES VIANA", contact: "(66) 98127-5588" },
+  { registration: "2673503", name: "RAYQUE VITOR DOS SANTOS RODRIGUES", guardian: "CHYENNE DOS SANTOS CAVALCANTE RODRIGUES", contact: "(66) 99648-9217 / 99911-1863" }
 ];
 
-async function update() {
-  try {
-    const className = '6º ANO E';
-    const { data: classroom, error: cError } = await supabase
-      .from('classrooms')
-      .select('id')
-      .eq('name', className)
+async function updateStudents() {
+  const classroomId = '6d6a2f34-3665-4f40-84dc-660c05872898'; // 6º ANO E
+  
+  for (const student of studentsData) {
+    console.log(`Atualizando: ${student.name}`);
+    
+    // 1. Data check first to avoid NULL violations for REQUIRED fields
+    const { data: existing } = await supabase
+      .from('students')
+      .select('gender, birth_date')
+      .eq('registration_number', student.registration)
       .single();
 
-    if (cError || !classroom) {
-      console.error('❌ Turma não encontrada:', cError?.message);
-      console.log('Turmas disponíveis: procure pelo nome exato no banco.');
-      return;
+    const payload = {
+      registration_number: student.registration,
+      name: student.name,
+      guardian_name: student.guardian,
+      contact_phone: student.contact,
+      status: 'ATIVO'
+    };
+
+    // If student is new or missing required fields, provide defaults
+    if (!existing || !existing.gender) payload.gender = 'M'; // Default to M if unknown
+    if (!existing || !existing.birth_date) payload.birth_date = '2000-01-01'; // Dummy date
+
+    const { data: studentRecord, error: studentError } = await supabase
+      .from('students')
+      .upsert(payload, { onConflict: 'registration_number' })
+      .select('id')
+      .single();
+
+    if (studentError) {
+      console.error(`Erro ao salvar ${student.name}:`, studentError.message);
+      continue;
     }
 
-    console.log(`✅ Turma: ${className} (ID: ${classroom.id})\n`);
-    let matriculados = 0, movidos = 0, jaOk = 0, erros = 0;
-
-    for (const student of students6E) {
-      process.stdout.write(`Processando: ${student.name}... `);
-
-      const { data: newStudent, error: sError } = await supabase
-        .from('students')
-        .upsert([{
-          name: student.name,
-          registration_number: student.registration,
-          birth_date: '2014-01-01', // Placeholder — corrigir individualmente se necessário
-          paed: student.paed,
-          school_transport: student.transport
-        }], { onConflict: 'registration_number' })
-        .select()
-        .single();
-
-      if (sError) {
-        process.stdout.write(`ERRO: ${sError.message}\n`);
-        erros++;
-        continue;
-      }
-
-      const { data: existing } = await supabase
-        .from('enrollments')
-        .select('id, classroom_id')
-        .eq('student_id', newStudent.id)
-        .is('end_date', null)
-        .maybeSingle();
-
-      if (existing) {
-        if (existing.classroom_id !== classroom.id) {
-          await supabase.from('enrollments').update({ classroom_id: classroom.id }).eq('id', existing.id);
-          process.stdout.write(`→ MOVIDO para 6E\n`);
-          movidos++;
-        } else {
-          process.stdout.write(`→ JÁ ESTÁ no 6E\n`);
-          jaOk++;
-        }
-      } else {
-        await supabase.from('enrollments').insert([{
-          student_id: newStudent.id,
-          classroom_id: classroom.id,
-          enrollment_date: new Date().toLocaleDateString('sv-SE')
-        }]);
-        process.stdout.write(`→ MATRICULADO no 6E\n`);
-        matriculados++;
-      }
-    }
-
-    console.log('\n══════════════════════════════════════');
-    console.log(`  FIM DA ATUALIZAÇÃO - 6º ANO E`);
-    console.log(`  Novos: ${matriculados}  |  Movidos: ${movidos}  |  Já ok: ${jaOk}  |  Erros: ${erros}`);
-    console.log('══════════════════════════════════════\n');
-
-    const { data: enrollments } = await supabase
+    // 2. Ensure enrollment in 6E
+    const { error: enrollError } = await supabase
       .from('enrollments')
-      .select('students(name, registration_number)')
-      .eq('classroom_id', classroom.id)
-      .is('end_date', null);
+      .upsert({
+        student_id: studentRecord.id,
+        classroom_id: classroomId,
+        year: 2026,
+        status: 'ATIVO'
+      }, { onConflict: 'student_id,year' });
 
-    console.log(`Total de alunos ativos no 6E: ${enrollments?.length ?? 0}`);
-    enrollments?.forEach((e, i) => {
-      process.stdout.write(`  ${i+1}. [${e.students?.registration_number}] ${e.students?.name}\n`);
-    });
-  } catch (err) {
-    console.error('Erro FATAL:', err.message);
+    if (enrollError) {
+      console.error(`Erro ao enturmar ${student.name}:`, enrollError.message);
+    }
   }
+  console.log('--- FIM DO PROCESSAMENTO ---');
 }
 
-update();
+updateStudents();

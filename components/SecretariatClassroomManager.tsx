@@ -161,7 +161,9 @@ const SecretariatClassroomManager: React.FC = () => {
                   Nome: e.students?.name,
                   CodigoAluno: e.students?.registration_number,
                   PAED: e.students?.paed ? 'Sim' : 'Não',
-                  TransporteEscolar: e.students?.school_transport ? 'Sim' : 'Não'
+                  TransporteEscolar: e.students?.school_transport ? 'Sim' : 'Não',
+                  NomeResponsavel: e.students?.guardian_name || '',
+                  TelefoneContato: e.students?.contact_phone || ''
                })).sort((a, b) => a.Nome.localeCompare(b.Nome));
 
                let salaNum = cls.room_number || '---';
