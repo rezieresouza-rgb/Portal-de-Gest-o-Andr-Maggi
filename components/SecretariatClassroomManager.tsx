@@ -622,64 +622,107 @@ const SecretariatClassroomManager: React.FC = () => {
             ))}
          </div>
 
-         {/* MODAL DETALHES DA TURMA (LISTA DE ALUNOS) */}
+         {/* MODAL DETALHES DA TURMA (LISTA DE ALUNOS - DESIGN LIMPO) */}
          {selectedClassDetail && (
-            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-indigo-950/60 backdrop-blur-md animate-in fade-in duration-300">
-               <div className="bg-white rounded-[4rem] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                  <div className="p-10 bg-gray-900 text-white flex justify-between items-center shrink-0">
-                     <div className="flex items-center gap-8">
-                        <div className="w-20 h-20 bg-indigo-600 rounded-[2.5rem] flex items-center justify-center text-3xl font-black shadow-2xl">
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+               <div className="bg-white rounded-[2rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-100">
+                  {/* HEADER MAIS LEVE */}
+                  <div className="p-8 bg-white border-b border-gray-50 flex justify-between items-center shrink-0">
+                     <div className="flex items-center gap-6">
+                        <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-black border border-indigo-100 shadow-sm">
                            {selectedClassDetail.name.substring(0, 2)}
                         </div>
                         <div>
-                           <h3 className="text-3xl font-black uppercase tracking-tighter">{selectedClassDetail.name}</h3>
-                           <div className="flex items-center gap-6 mt-2">
-                              <p className="text-[11px] font-black text-indigo-300 uppercase tracking-widest flex items-center gap-2 font-mono">
-                                 <MapPin size={14} /> SALA {selectedClassDetail.salaNum}
+                           <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">{selectedClassDetail.name}</h3>
+                           <div className="flex items-center gap-4 mt-1">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                 <MapPin size={12} className="text-indigo-400" /> Sala {selectedClassDetail.salaNum}
                               </p>
-                              <p className="text-[11px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2 font-mono">
-                                 <GraduationCap size={14} /> {selectedClassDetail.studentCount} ALUNOS
+                              <div className="w-1 h-1 bg-gray-200 rounded-full" />
+                              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1.5">
+                                 <Users size={12} /> {selectedClassDetail.studentCount} Alunos Matriculados
                               </p>
                            </div>
                         </div>
                      </div>
-                     <button onClick={() => setSelectedClassDetail(null)} className="p-4 bg-white/10 hover:bg-red-500 rounded-3xl transition-all"><X size={28} /></button>
+                     <button onClick={() => setSelectedClassDetail(null)} className="p-3 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-all"><X size={20} /></button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                     <div className="bg-gray-50 rounded-[3rem] border border-gray-100 overflow-hidden">
-                        <table className="w-full text-left border-collapse">
-                           <thead>
-                              <tr className="bg-gray-100/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                                 <th className="px-10 py-6 w-24">Nº</th>
-                                 <th className="px-10 py-6">Código</th>
-                                 <th className="px-10 py-6">Nome do Aluno</th>
-                                 <th className="px-10 py-6">Status</th>
-                                 <th className="px-10 py-6 text-right">Ação</th>
-                              </tr>
-                           </thead>
-                           <tbody className="divide-y divide-gray-100">
-                              {selectedClassDetail.students.map((student: any, idx: number) => (
-                                 <tr key={student.id} className="hover:bg-white transition-all group">
-                                    <td className="px-10 py-6"><span className="text-xs font-black text-gray-300 group-hover:text-indigo-600 font-mono">#{String(idx + 1).padStart(2, '0')}</span></td>
-                                    <td className="px-10 py-6"><span className="text-xs font-bold text-gray-500 font-mono">{student.registration_number}</span></td>
-                                    <td className="px-10 py-6"><p className="text-sm font-black text-gray-900 uppercase group-hover:text-indigo-600 transition-colors">{student.name}</p></td>
-                                    <td className="px-10 py-6">
-                                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${student.status === 'TRANSFERIDO' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {/* TABELA MAIS LIMPA */}
+                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                     <table className="w-full text-left">
+                        <thead>
+                           <tr className="text-[9px] font-black text-gray-300 uppercase tracking-widest border-b border-gray-50">
+                              <th className="px-6 py-4 w-16">Nº</th>
+                              <th className="px-6 py-4 w-32">Código</th>
+                              <th className="px-6 py-4">Nome do Aluno</th>
+                              <th className="px-6 py-4 w-28">Status</th>
+                              <th className="px-6 py-4 text-right w-32">Ações</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                           {selectedClassDetail.students.map((student: any, idx: number) => (
+                              <tr key={student.id} className="hover:bg-indigo-50/30 transition-all group">
+                                 <td className="px-6 py-4">
+                                    <span className="text-[10px] font-bold text-gray-300 group-hover:text-indigo-400 font-mono">
+                                       {String(idx + 1).padStart(2, '0')}
+                                    </span>
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <span className="text-[10px] font-bold text-gray-400 font-mono">
+                                       {student.registration_number}
+                                    </span>
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <p className="text-sm font-bold text-gray-700 uppercase group-hover:text-gray-900 transition-colors">
+                                       {student.name}
+                                    </p>
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <div className="flex">
+                                       <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${
+                                          student.status === 'TRANSFERIDO' 
+                                          ? 'bg-amber-100 text-amber-600' 
+                                          : 'bg-emerald-50 text-emerald-600'
+                                       }`}>
                                           {student.status || 'ATIVO'}
                                        </span>
-                                    </td>
-                                    <td className="px-10 py-6 text-right">
-                                       <div className="flex items-center justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <button onClick={() => openStudentProfile(student)} className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all" title="Ver Perfil/Ficha"><User size={20} /></button>
-                                          <button onClick={() => openMovementHistory(student)} className="p-3 bg-amber-50 text-amber-600 rounded-2xl hover:bg-amber-600 hover:text-white transition-all" title="Movimentações/Histórico"><History size={20} /></button>
-                                       </div>
-                                    </td>
-                                 </tr>
-                              ))}
-                           </tbody>
-                        </table>
-                     </div>
+                                    </div>
+                                 </td>
+                                 <td className="px-6 py-4 text-right">
+                                    <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                                       <button 
+                                          onClick={() => openStudentProfile(student)} 
+                                          className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                          title="Perfil/Ficha"
+                                       >
+                                          <User size={16} />
+                                       </button>
+                                       <button 
+                                          onClick={() => openMovementHistory(student)} 
+                                          className="p-2 text-amber-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                          title="Movimentações"
+                                       >
+                                          <History size={16} />
+                                       </button>
+                                    </div>
+                                 </td>
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
+
+                     {selectedClassDetail.studentCount === 0 && (
+                        <div className="py-20 text-center flex flex-col items-center gap-3 text-gray-300">
+                           <Users size={40} className="opacity-10" />
+                           <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Nenhum aluno enturmado</p>
+                        </div>
+                     )}
+                  </div>
+
+                  {/* FOOTER DISCRETO */}
+                  <div className="p-4 bg-gray-50/50 border-t border-gray-50 flex justify-center">
+                     <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest font-mono">Escrituração Digital Registrada</p>
                   </div>
                </div>
             </div>
