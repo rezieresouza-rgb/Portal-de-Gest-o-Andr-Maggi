@@ -514,13 +514,27 @@ const SecretariatStudentRegistry: React.FC = () => {
           if (window.confirm(`Já existe um aluno chamado "${form.Nome}" nascido em ${formatDateSafe(form.DataNascimento)}.\n\nMatrícula: ${existingStudent.registration_number}\n\nDeseja atualizar este cadastro em vez de criar um novo?`)) {
             setEditingId(existingStudent.id);
             setIsEditing(true);
-            // Continua como se fosse edição na próxima tentativa ou podemos recursivamente chamar com isEditing=true
-            // Por simplicidade, alertamos e pedimos para tentar de novo com a edição ativa
             alert("O cadastro existente foi carregado. Clique em 'Salvar' novamente para atualizar os dados.");
             return;
           } else {
-            return; // Aborta criação
+            return; 
           }
+        }
+
+        // 1.1 Verificação Fuzzy (Apenas nome)
+        const { data: fuzzyStudent } = await supabase
+          .from('students')
+          .select('id, name, birth_date, registration_number')
+          .ilike('name', form.Name)
+          .maybeSingle();
+
+        if (fuzzyStudent) {
+            if (window.confirm(`Atenção: Já existe um aluno com o nome "${fuzzyStudent.name}" cadastrado, porém com uma data de nascimento diferente (${formatDateSafe(fuzzyStudent.birth_date)}).\n\nÉ o mesmo aluno?`)) {
+                setEditingId(fuzzyStudent.id);
+                setIsEditing(true);
+                alert("O cadastro existente foi carregado. Clique em 'Salvar' novamente para atualizar os dados.");
+                return;
+            }
         }
 
         // 1. Criar o Aluno
@@ -737,6 +751,17 @@ const SecretariatStudentRegistry: React.FC = () => {
 
             if (byNameBirth) {
               studentToUpdate = byNameBirth;
+            } else {
+              // Verificação fuzzy - apenas nome
+              const { data: byNameOnly } = await supabase
+                .from('students')
+                .select('id, registration_number')
+                .ilike('name', student.Nome)
+                .maybeSingle();
+              
+              if (byNameOnly) {
+                studentToUpdate = byNameOnly;
+              }
             }
 
             // Inserir ou Atualizar Aluno
