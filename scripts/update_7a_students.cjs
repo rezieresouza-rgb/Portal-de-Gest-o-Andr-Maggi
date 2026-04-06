@@ -1,99 +1,151 @@
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+const fs = require('fs');
+const path = require('path');
 
-const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
+// Load environment variables from .env.local in root
+const envPath = path.join(__dirname, '../.env.local');
+const envFile = fs.readFileSync(envPath, 'utf8');
+const env = {};
+envFile.split('\n').forEach(line => {
+  const [key, ...rest] = line.split('=');
+  if (key) env[key.trim()] = rest.join('=').trim();
+});
 
-// Lista SIGEEDUCA 2026 - 7º ANO A - MATUTINO
-// Total: 30 alunos
-const students7A = [
-  { registration: "2380648", name: "KAUAN EDUARDO BITENCOURT",                     paed: false },
-  { registration: "2690522", name: "PEDRO HENRIQUE TREVIZAN DA SILVA",            paed: false },
-  { registration: "2213550", name: "SAMELA VITORIA RAMOS ANDRADE",                paed: false },
-  { registration: "2664401", name: "SARAH DOS SANTOS LIMA",                       paed: false },
-  { registration: "2603776", name: "SARAH PEREIRA DE ALMEIDA",                    paed: false },
-  { registration: "2603788", name: "SOPHIA PEREIRA DE ALMEIDA",                   paed: false },
-  { registration: "2664262", name: "TAYNARA FIGUEIREDO VASCON",                   paed: false },
-  { registration: "2155708", name: "VICTTOR HUGO MONTEIRO DE SOUZA",              paed: false },
-  { registration: "2661725", name: "DAVI LUCA BARBOZA MOREIRA",                   paed: false },
-  { registration: "2565180", name: "DHAYYNE LAWINYA GOMES FERREIRA",              paed: false },
-  { registration: "2643822", name: "EMANUELLY MORAES GOMES",                      paed: false },
-  { registration: "2221703", name: "EMANUELLY VITORIA DIAS PRATES",               paed: false },
-  { registration: "2223191", name: "EMILLY VITORIA POCAS DE AMORIM",              paed: false },
-  { registration: "2289546", name: "ENDREW ALVES DE SOUZA",                       paed: false },
-  { registration: "2383040", name: "ENZO DA COSTA LIMA",                          paed: false },
-  { registration: "2664915", name: "ENZO JOS\u00c9 DE SOUZA NICOLETTI",            paed: false },
-  { registration: "2623709", name: "ERYCKSON KAUAM PEREIRA DA SILVA",             paed: false },
-  { registration: "2681822", name: "FABRICIO LEANDRO FLOR VERDADEIRO",            paed: false },
-  { registration: "2381008", name: "FELIPE BONETTI MILHEIRO",                     paed: false },
-  { registration: "2307002", name: "GABRIEL HENRIQUE DUARTE",                     paed: true  },
-  { registration: "2321382", name: "GEOVANA KETELLEN NASCIMENTO DA COSTA",        paed: false },
-  { registration: "2327599", name: "GUSTAVO AMORIM DOS SANTOS",                   paed: false },
-  { registration: "2681830", name: "GUSTAVO SILVA FLOR",                          paed: false },
-  { registration: "2221294", name: "HELOISE PEDROTTI RAMOS",                      paed: false },
-  { registration: "2403307", name: "ISABELA SOARES DO BEM",                       paed: false },
-  { registration: "2283314", name: "JO\u00c3O GABRIEL DA SILVA",                  paed: false },
-  { registration: "2393801", name: "JO\u00c3O LUCAS DO NASCIMENTO LIMA",          paed: false },
-  { registration: "2245470", name: "J\u00daLIA RAFAELA GOMES DA CRUZ",            paed: false },
-  { registration: "2389146", name: "NAYANE FERNANDES DA SILVA",                   paed: false },
-  { registration: "2599022", name: "LORRAYNE SOUZA JACINTO",                      paed: false },
+const supabase = createClient(env['VITE_SUPABASE_URL'], env['VITE_SUPABASE_ANON_KEY']);
+
+const studentsData = [
+  {"code": "250648", "name": "KAUAN EDUARDO BITENCOURT"},
+  {"code": "260523", "name": "PEDRO HENRIQUE TREVIZAN DA SILVA"},
+  {"code": "221358", "name": "PAMELA VITORIA RAMOS ANDRADE"},
+  {"code": "256401", "name": "SARAH DOS SANTOS LIMA"},
+  {"code": "260375", "name": "SARAH PEREIRA DE ALMEIDA"},
+  {"code": "260338", "name": "SOPHIA PEREIRA DE ALMEIDA"},
+  {"code": "264253", "name": "TAYNARA FIGUEIREDO VASCON"},
+  {"code": "215538", "name": "VICTTOR HUGO MONTEIRO DE SOUZA"},
+  {"code": "251735", "name": "DAVI LUCA BARBOZA MOREIRA"},
+  {"code": "255160", "name": "DHAFINE LAVINYA GOMES FERREIRA"},
+  {"code": "264322", "name": "EMANUELLY MORAES GOMES"},
+  {"code": "222108", "name": "EMANUELLY VITORIA DIAS PRATES"},
+  {"code": "222319", "name": "EMILLY VITORIA RODAS DE AMORIM"},
+  {"code": "220546", "name": "ENDREW ALVES DE SOUZA"},
+  {"code": "256048", "name": "ENZO DA COSTA LIMA"},
+  {"code": "255513", "name": "ENZO JOSE DE SOUZA NICOLETTI"},
+  {"code": "253709", "name": "ERYKSON KAIAM PEREIRA DA SILVA"},
+  {"code": "255832", "name": "FABRICIO LEANDRO FLOR VERDADEIRO"},
+  {"code": "256801", "off_code": "256801", "name": "FELIPE BONETTI MILHEIRO"},
+  {"code": "250783", "name": "GABRIEL HENRIQUE DUARTE"},
+  {"code": "256882", "name": "GEOVANA KETTELLEEN NASCIMENTO DA COSTA"},
+  {"code": "251786", "name": "GUSTAVO AMORIM DOS SANTOS"},
+  {"code": "255330", "name": "GUSTAVO SILVA FLOR"},
+  {"code": "223294", "name": "HELOISE PEDROTTI RAMOS"},
+  {"code": "240307", "name": "ISABELA SOARES DO BEM"},
+  {"code": "220014", "name": "JOÃO GABRIEL DA SILVA"},
+  {"code": "255801", "name": "JOÃO LUCAS DO NASCIMENTO LIMA"},
+  {"code": "224547", "name": "JULLIA RAFAELA GOMES DA CRUZ"},
+  {"code": "256018", "name": "NAYANI FERNANDES DA SILVA"},
+  {"code": "259602", "name": "LORRAYNE SOUZA JACINTO"}
 ];
 
-async function update() {
-  try {
-    const className = '7\u00ba ANO A';
-    const { data: classroom } = await supabase.from('classrooms').select('id').eq('name', className).single();
-    if (!classroom) return console.error('Turma n\u00e3o encontrada');
+async function update7A() {
+  console.log("Starting update for 7º Ano A...");
 
-    console.log(`Atualizando ${className}...\n`);
+  const className = '7º ANO A';
+  const year = '2026';
 
-    for (const s of students7A) {
-      // Upsert Student
-      const { data: st, error: sErr } = await supabase
+  // 1. Ensure Classroom exists
+  let { data: classroom, error: cErr } = await supabase
+    .from('classrooms')
+    .select('id')
+    .eq('name', className)
+    .eq('year', year)
+    .single();
+
+  if (!classroom) {
+    console.log(`${className} not found, creating...`);
+    const { data: newRoom, error: createRErr } = await supabase
+      .from('classrooms')
+      .insert({
+        name: className,
+        year: year,
+        shift: 'MATUTINO'
+      })
+      .select()
+      .single();
+    
+    if (createRErr) throw createRErr;
+    classroom = newRoom;
+  }
+
+  const classroomId = classroom.id;
+  console.log(`Classroom ID: ${classroomId}`);
+
+  // 2. Get current enrollments to see who to remove (optional but clean)
+  // For safety, we'll just delete all and re-insert to match the PDF perfectly.
+  console.log("Clearing existing enrollments for this class...");
+  const { error: delErr } = await supabase
+    .from('enrollments')
+    .delete()
+    .eq('classroom_id', classroomId);
+  
+  if (delErr) console.error("Error clearing enrollments:", delErr);
+
+  // 3. Process Students
+  console.log(`Processing ${studentsData.length} students...`);
+  for (const s of studentsData) {
+    // Check if student exists by registration_number
+    let { data: student, error: sErr } = await supabase
+      .from('students')
+      .select('id')
+      .eq('registration_number', s.code)
+      .maybeSingle();
+
+    let studentId;
+    if (!student) {
+      console.log(`Creating student: ${s.name} (${s.code})...`);
+      const { data: newStudent, error: createSErr } = await supabase
         .from('students')
-        .upsert({
-          registration_number: s.registration,
+        .insert({
           name: s.name,
-          birth_date: '2013-01-01', // Placeholder
-          paed: s.paed,
-          school_transport: false,
+          registration_number: s.code,
+          birth_date: '2013-01-01', // Default for 7th grade (~12-13 years old)
           status: 'ATIVO'
-        }, { onConflict: 'registration_number' })
+        })
         .select()
         .single();
-
-      if (sErr) {
-        console.error(`  Erro ${s.name}:`, sErr.message);
+      
+      if (createSErr) {
+        console.error(`Error creating ${s.name}:`, createSErr);
         continue;
       }
-
-      // Check Enrollment
-      const { data: enroll } = await supabase
-        .from('enrollments')
-        .select('id, classroom_id')
-        .eq('student_id', st.id)
-        .is('end_date', null)
-        .maybeSingle();
-
-      if (enroll) {
-        if (enroll.classroom_id !== classroom.id) {
-          await supabase.from('enrollments').update({ classroom_id: classroom.id, enrollment_date: '2026-01-20' }).eq('id', enroll.id);
-          process.stdout.write(`  \u2713 ${s.name} [Movido para 7A]\n`);
-        } else {
-          process.stdout.write(`  \u2713 ${s.name} [J\u00e1 estava no 7A]\n`);
-        }
-      } else {
-        await supabase.from('enrollments').insert({
-          student_id: st.id,
-          classroom_id: classroom.id,
-          enrollment_date: '2026-01-20'
-        });
-        process.stdout.write(`  \u2713 ${s.name} [Matriculado no 7A]\n`);
-      }
+      studentId = newStudent.id;
+    } else {
+      studentId = student.id;
+      // Update name to match official list exactly
+      await supabase.from('students').update({ name: s.name }).eq('id', studentId);
     }
-    console.log('\nFinalizado!');
-  } catch (err) {
-    console.error('FATAL:', err.message);
+
+    // 4. Enroll Student
+    const { error: enrollErr } = await supabase
+      .from('enrollments')
+      .insert({
+        student_id: studentId,
+        classroom_id: classroomId,
+        enrollment_date: '2026-02-10'
+      });
+
+    if (enrollErr) {
+      console.error(`Error enrolling ${s.name}:`, enrollErr);
+    }
   }
+
+  console.log("Update complete! Verifying total...");
+  const { count, error: countErr } = await supabase
+    .from('enrollments')
+    .select('*', { count: 'exact', head: true })
+    .eq('classroom_id', classroomId);
+
+  if (countErr) console.error("Error verifying count:", countErr);
+  else console.log(`Total students enrolled in ${className}: ${count}`);
 }
 
-update();
+update7A().catch(err => console.error("FATAL ERROR:", err));
