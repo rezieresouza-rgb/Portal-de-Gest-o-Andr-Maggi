@@ -65,6 +65,7 @@ interface DetailedStudent {
   TransporteEscolar: string;
   NomeResponsavel: string;
   TelefoneContato: string;
+  gender?: string;
 }
 
 const SecretariatClassroomManager: React.FC = () => {
@@ -95,7 +96,9 @@ const SecretariatClassroomManager: React.FC = () => {
       PAED: 'Não',
       TransporteEscolar: 'Não',
       NomeResponsavel: '',
-      TelefoneContato: ''
+      TelefoneContato: '',
+      status: 'ATIVO',
+      gender: 'MASCULINO'
    });
 
    // Movement States
@@ -257,7 +260,9 @@ const SecretariatClassroomManager: React.FC = () => {
          PAED: (student.paed === true || student.PAED === 'Sim') ? 'Sim' : 'Não',
          TransporteEscolar: (student.school_transport === true || student.TransporteEscolar === 'Sim') ? 'Sim' : 'Não',
          NomeResponsavel: student.guardian_name || student.NomeResponsavel || '',
-         TelefoneContato: student.contact_phone || student.TelefoneContato || ''
+         TelefoneContato: student.contact_phone || student.TelefoneContato || '',
+         status: student.status || 'ATIVO',
+         gender: student.gender || 'MASCULINO'
       };
 
       setStudentForm(normalized);
@@ -271,14 +276,16 @@ const SecretariatClassroomManager: React.FC = () => {
       e.preventDefault();
       try {
          setIsLoading(true);
-         const payload = {
+         const payload: any = {
             name: studentForm.Nome.toUpperCase(),
             registration_number: studentForm.registration_number,
             birth_date: studentForm.birth_date,
             paed: studentForm.PAED === 'Sim',
             school_transport: studentForm.TransporteEscolar === 'Sim',
             guardian_name: studentForm.NomeResponsavel.toUpperCase(),
-            contact_phone: studentForm.TelefoneContato
+            contact_phone: studentForm.TelefoneContato,
+            status: studentForm.status || 'ATIVO',
+            gender: studentForm.gender || 'MASCULINO'
          };
 
          if (isEditingStudent && editingStudentId) {
@@ -288,6 +295,22 @@ const SecretariatClassroomManager: React.FC = () => {
                .eq('id', editingStudentId);
 
             if (error) throw error;
+            
+            // Handle class change
+            if (studentForm.Turma && studentForm.Turma !== 'SEM TURMA') {
+               const targetClass = classrooms.find(c => c.name === studentForm.Turma);
+               if (targetClass) {
+                  await supabase.from('enrollments').delete().eq('student_id', editingStudentId);
+                  await supabase.from('enrollments').insert([{
+                     student_id: editingStudentId,
+                     classroom_id: targetClass.id,
+                     enrollment_date: new Date().toLocaleDateString('sv-SE')
+                  }]);
+               }
+            } else if (studentForm.Turma === 'SEM TURMA') {
+               await supabase.from('enrollments').delete().eq('student_id', editingStudentId);
+            }
+
             alert("Cadastro atualizado com sucesso!");
          } else {
             // New Student creation logic...
@@ -397,7 +420,7 @@ const SecretariatClassroomManager: React.FC = () => {
             description: newMovement.description.toUpperCase() || newMovement.type,
             movement_date: newMovement.date,
             responsible_name: newMovement.responsible_name.toUpperCase(),
-            is_reclassified: newMovement.is_reclassified
+            is_reclassified: newMovement.type === 'RECLASSIFICADO' || newMovement.is_reclassified
          };
 
          if (newMovement.type === 'TRANSFERENCIA') {
@@ -695,9 +718,9 @@ const SecretariatClassroomManager: React.FC = () => {
                                        <button 
                                           onClick={() => openStudentProfile(student)} 
                                           className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                          title="Perfil/Ficha"
+                                          title="Editar Cadastro"
                                        >
-                                          <User size={16} />
+                                          <Edit3 size={16} />
                                        </button>
                                        <button 
                                           onClick={() => openMovementHistory(student)} 
@@ -781,7 +804,18 @@ const SecretariatClassroomManager: React.FC = () => {
                                  />
                               </div>
                            </div>
-                           <div className="grid grid-cols-2 gap-6">
+                           <div className="grid grid-cols-3 gap-6">
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sexo</label>
+                                 <select
+                                    value={studentForm.gender}
+                                    onChange={e => setStudentForm({...studentForm, gender: e.target.value})}
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                 >
+                                    <option value="MASCULINO">MASCULINO</option>
+                                    <option value="FEMININO">FEMININO</option>
+                                 </select>
+                              </div>
                               <div className="space-y-2">
                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">PAED</label>
                                  <select
@@ -838,19 +872,32 @@ const SecretariatClassroomManager: React.FC = () => {
                               </div>
                            </div>
                            
-                           {!isEditingStudent && (
+                           <div className="grid grid-cols-2 gap-6">
                               <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Enturmação Inicial</label>
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{isEditingStudent ? 'Turma Atual' : 'Enturmação Inicial'}</label>
                                  <select
                                     value={studentForm.Turma}
                                     onChange={e => setStudentForm({ ...studentForm, Turma: e.target.value })}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-sm outline-none focus:bg-white"
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
                                  >
-                                    <option value="">Selecione a Turma...</option>
+                                    <option value="SEM TURMA">SEM TURMA</option>
                                     {classrooms.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                  </select>
                               </div>
-                           )}
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Status de Matrícula</label>
+                                 <select
+                                    value={studentForm.status}
+                                    onChange={e => setStudentForm({ ...studentForm, status: e.target.value })}
+                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                 >
+                                    <option value="ATIVO">ATIVO</option>
+                                    <option value="TRANSFERIDO">TRANSFERIDO</option>
+                                    <option value="ABANDONO">ABANDONO</option>
+                                    <option value="FALECIDO">FALECIDO</option>
+                                 </select>
+                              </div>
+                           </div>
                         </div>
                      </div>
 
@@ -887,7 +934,11 @@ const SecretariatClassroomManager: React.FC = () => {
                               <div key={mov.id} className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 flex justify-between items-start hover:border-indigo-200 transition-all">
                                  <div>
                                     <div className="flex items-center gap-3 mb-2">
-                                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${mov.movement_type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${
+                                          mov.movement_type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-700' : 
+                                          mov.movement_type === 'RECLASSIFICADO' ? 'bg-emerald-100 text-emerald-700' :
+                                          'bg-blue-100 text-blue-700'
+                                       }`}>
                                           {mov.movement_type}
                                        </span>
                                        <span className="text-[10px] font-black text-gray-300 font-mono">{formatDateSafe(mov.movement_date)}</span>
@@ -907,10 +958,11 @@ const SecretariatClassroomManager: React.FC = () => {
                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Evento</label>
                            <select 
                               value={newMovement.type}
-                              onChange={e => setNewMovement({...newMovement, type: e.target.value})}
+                              onChange={e => setNewMovement({...newMovement, type: e.target.value, is_reclassified: e.target.value === 'RECLASSIFICADO'})}
                               className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none"
                            >
                               <option value="TRANSFERENCIA">TRANSFERÊNCIA</option>
+                              <option value="RECLASSIFICADO">RECLASSIFICADO</option>
                               <option value="ATESTADO">ATESTADO MÉDICO</option>
                               <option value="ABANDONO">ABANDONO</option>
                               <option value="OUTROS">OUTROS</option>
