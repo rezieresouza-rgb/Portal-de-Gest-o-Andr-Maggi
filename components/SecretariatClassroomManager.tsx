@@ -288,7 +288,11 @@ const SecretariatClassroomManager: React.FC = () => {
             gender: studentForm.gender || 'MASCULINO'
          };
 
-         if (isEditingStudent && editingStudentId) {
+         if (isEditingStudent) {
+            if (!editingStudentId) {
+               throw new Error("Erro técnico: O ID do aluno desapareceu durante a edição. Por favor, feche e abra o perfil novamente.");
+            }
+
             const { error } = await supabase
                .from('students')
                .update(payload)
@@ -313,6 +317,18 @@ const SecretariatClassroomManager: React.FC = () => {
 
             alert("Cadastro atualizado com sucesso!");
          } else {
+            // New Student: Check if registration already exists to avoid technical error
+            const { data: existingStudent } = await supabase
+               .from('students')
+               .select('id')
+               .eq('registration_number', payload.registration_number)
+               .maybeSingle();
+            
+            if (existingStudent) {
+               alert(`Oops! A matrícula ${payload.registration_number} já está em uso por outro aluno.`);
+               return;
+            }
+
             // New Student creation logic...
             const { data: newStudent, error } = await supabase
                .from('students')
