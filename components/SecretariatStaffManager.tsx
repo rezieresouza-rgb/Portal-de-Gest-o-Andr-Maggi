@@ -227,6 +227,50 @@ const SecretariatStaffManager: React.FC = () => {
       }
    };
 
+   // --- AUTO-RECONCILIATION ---
+   useEffect(() => {
+      const reconcileStatus = async () => {
+         if (staff.length === 0 || movementsData.length === 0) return;
+
+         const today = new Date().toLocaleDateString('sv-SE');
+         const toUpdate: string[] = [];
+
+         staff.forEach(member => {
+            if (member.status !== 'EM_ATIVIDADE') {
+               // Encontrar o movimento ativo ou mais recente para este servidor
+               const relevantMovements = movementsData.filter(m => m.staffId === member.id);
+               if (relevantMovements.length > 0) {
+                  const lastMovement = relevantMovements[0]; // movementsData já está ordenado por data desc
+                  if (lastMovement.endDate && lastMovement.endDate < today) {
+                     toUpdate.push(member.id!);
+                  }
+               }
+            }
+         });
+
+         if (toUpdate.length > 0) {
+            console.log("Reconciliando status para:", toUpdate);
+            try {
+               const { error } = await supabase
+                  .from('staff')
+                  .update({ status: 'EM_ATIVIDADE' })
+                  .in('id', toUpdate);
+
+               if (!error) {
+                  setStaff(prev => prev.map(s => toUpdate.includes(s.id!) ? { ...s, status: 'EM_ATIVIDADE' } : s));
+                  // console.log("Status reconciliado com sucesso!");
+               }
+            } catch (err) {
+               console.error("Erro na reconciliação:", err);
+            }
+         }
+      };
+
+      if (!loading) {
+         reconcileStatus();
+      }
+   }, [loading]); // Executa quando o loading termina ou dados mudam
+
    useEffect(() => {
       fetchData();
    }, []);
@@ -445,7 +489,7 @@ const SecretariatStaffManager: React.FC = () => {
          await fetchData(); // Refresh all
          setIsMovementModalOpen(false);
          setSelectedStaff(null);
-         alert("Movimentação registrada com sucesso!");
+         alert(`Servidor ${selectedStaff.name} movimentado com sucesso!\nO registro agora está visível na aba de Licenças/Afastados.`);
 
       } catch (err) {
          console.error(err);
@@ -564,6 +608,15 @@ const SecretariatStaffManager: React.FC = () => {
       });
       setEditingId(null);
    };
+
+   // --- Stats ---
+   const counts = useMemo(() => {
+      return {
+         ativos: staff.filter(s => s.status === 'EM_ATIVIDADE').length,
+         afastados: staff.filter(s => s.status !== 'EM_ATIVIDADE').length,
+         movements: movementsData.length
+      };
+   }, [staff, movementsData]);
 
    const filteredStaff = useMemo(() => {
       return staff.filter(member => {
@@ -704,10 +757,10 @@ const SecretariatStaffManager: React.FC = () => {
          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
             <div className="flex bg-gray-100 p-1.5 rounded-2xl">
                {[
-                  { id: 'ativos', label: 'Quadro Ativo', icon: Users },
-                  { id: 'afastados', label: 'Licenças/Afastados', icon: UserCheck },
-                  { id: 'movements', label: 'Log de Movimentações', icon: History },
-                  { id: 'calendar', label: 'Calendário Ausências', icon: CalendarDays }
+                  { id: 'ativos', label: 'Quadro Ativo', icon: Users, count: counts.ativos },
+                  { id: 'afastados', label: 'Licenças/Afastados', icon: UserCheck, count: counts.afastados },
+                  { id: 'movements', label: 'Histórico RH', icon: History, count: counts.movements },
+                  { id: 'calendar', label: 'Calendário', icon: CalendarDays }
                ].map(t => (
                   <button
                      key={t.id}
@@ -717,6 +770,11 @@ const SecretariatStaffManager: React.FC = () => {
                   >
                      <t.icon size={12} />
                      {t.label}
+                     {t.count !== undefined && (
+                        <span className={`px-1.5 py-0.5 rounded-full text-[8px] ${activeTab === t.id ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'}`}>
+                           {t.count}
+                        </span>
+                     )}
                   </button>
                ))}
             </div>
@@ -856,24 +914,27 @@ const SecretariatStaffManager: React.FC = () => {
                               </div>
                            </div>
 
-                           <div className="flex items-center gap-3 no-print">
+                           <div className="flex items-center gap-2 no-print">
                               <button
                                  onClick={() => { setSelectedStaff(member); setIsMovementModalOpen(true); }}
                                  className="px-5 py-3 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-100 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 shadow-sm"
                               >
                                  <ArrowRightLeft size={14} /> Movimentar
                               </button>
+                              
+                              <div className="w-[1px] h-8 bg-gray-100 mx-1"></div>
+
                               <button
                                  onClick={() => { setForm(member); setEditingId(member.id); setIsModalOpen(true); }}
-                                 className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-indigo-100"
+                                 className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-gray-100"
                                  title="Editar Cadastro"
                               >
                                  <Edit3 size={18} />
                               </button>
                               <button
                                  onClick={() => handleDelete(member.id)}
-                                 className="p-3 bg-gray-50 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-indigo-100"
-                                 title="Excluir Registro"
+                                 className="p-3 bg-red-50/50 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-red-100"
+                                 title="Excluir Registro Permanente"
                               >
                                  <Trash2 size={18} />
                               </button>
