@@ -190,7 +190,7 @@ const SecretariatClassroomManager: React.FC = () => {
    // --- GLOBAL SEARCH ---
    useEffect(() => {
       const delayDebounceFn = setTimeout(() => {
-         if (globalSearchTerm.length >= 3) {
+         if (globalSearchTerm.length >= 2) {
             performGlobalSearch();
          } else {
             setSearchResults([]);
@@ -211,7 +211,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   classrooms (name, shift)
                )
             `)
-            .ilike('name', `%${globalSearchTerm}%`)
+            .or(`name.ilike.%${globalSearchTerm}%,registration_number.ilike.%${globalSearchTerm}%`)
             .limit(10);
 
          if (error) throw error;
@@ -566,30 +566,53 @@ const SecretariatClassroomManager: React.FC = () => {
                         placeholder="Pesquisar aluno em toda a escola..."
                         value={globalSearchTerm}
                         onChange={e => setGlobalSearchTerm(e.target.value)}
-                        className="w-full pl-14 pr-6 py-4 bg-gray-50 border-none rounded-[1.5rem] font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300"
+                        className="w-full pl-14 pr-12 py-4 bg-gray-50 border-none rounded-[1.5rem] font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300"
                      />
+                     {globalSearchTerm && (
+                        <button 
+                           onClick={() => {
+                              setGlobalSearchTerm('');
+                              setSearchResults([]);
+                           }}
+                           className="absolute right-12 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full text-gray-400 transition-all"
+                        >
+                           <X size={14} />
+                        </button>
+                     )}
                      {isSearching && <Loader2 size={16} className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-indigo-400" />}
                   </div>
 
                   {/* RESULTADOS DA BUSCA GLOBAL (POPUP) */}
-                  {searchResults.length > 0 && (
+                  {(searchResults.length > 0 || (globalSearchTerm.length >= 2 && !isSearching)) && globalSearchTerm.length >= 2 && (
                      <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-white rounded-[1.5rem] shadow-2xl border border-gray-100 p-4 z-[200] max-h-[400px] overflow-y-auto animate-in slide-in-from-top-2 duration-300">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-4 mb-3">Resultados Encontrados</p>
-                        <div className="space-y-1">
-                           {searchResults.map(s => (
-                              <button
-                                 key={s.id}
-                                 onClick={() => openStudentProfile(s)}
-                                 className="w-full text-left p-4 hover:bg-indigo-50 rounded-xl transition-all flex items-center justify-between group"
-                              >
-                                 <div>
-                                    <p className="text-sm font-black text-gray-900 group-hover:text-indigo-600 uppercase">{s.Nome}</p>
-                                    <p className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma} • {s.registration_number}</p>
-                                 </div>
-                                 <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-600" />
-                              </button>
-                           ))}
-                        </div>
+                        {searchResults.length > 0 ? (
+                           <>
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-4 mb-3">Resultados Encontrados</p>
+                              <div className="space-y-1">
+                                 {searchResults.map(s => (
+                                    <button
+                                       key={s.id}
+                                       onClick={() => openStudentProfile(s)}
+                                       className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-all text-left group"
+                                    >
+                                       <div>
+                                          <p className="text-sm font-black text-gray-900 group-hover:text-indigo-600 uppercase">{s.Nome}</p>
+                                          <p className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma} • {s.registration_number}</p>
+                                       </div>
+                                       <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-600" />
+                                    </button>
+                                 ))}
+                              </div>
+                           </>
+                        ) : (
+                           <div className="p-6 text-center space-y-2">
+                              <div className="flex justify-center text-gray-200">
+                                 <Search size={32} />
+                              </div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nenhum aluno encontrado</p>
+                              <p className="text-[9px] font-bold text-gray-300">Tente buscar por nome completo ou número de matrícula</p>
+                           </div>
+                        )}
                      </div>
                   )}
                </div>
