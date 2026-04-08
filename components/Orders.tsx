@@ -94,17 +94,17 @@ const Orders: React.FC = () => {
         .select('order_number')
         .ilike('order_number', `${year}%`)
         .order('order_number', { ascending: false })
-        .limit(1);
+        .limit(20); // Buscamos mais registros para evitar erro de ordenação de texto
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const lastOrderNumStr = data[0].order_number.replace(/[^\d]/g, '');
-        const lastNum = parseInt(lastOrderNumStr) || 0;
+        // Encontrar o maior valor numérico real na lista (evitando problemas de ordenação alfabética)
+        const numbers = data.map(o => parseInt(o.order_number.replace(/[^\d]/g, ''))).filter(n => !isNaN(n));
+        const maxNum = Math.max(...numbers, 0);
         
-        // Se o número começar com o ano, incrementamos. Caso contrário, iniciamos do zero no ano atual.
-        if (lastOrderNumStr.startsWith(year)) {
-             setNextOrderNumber((lastNum + 1).toString());
+        if (maxNum > 0) {
+             setNextOrderNumber((maxNum + 1).toString());
         } else {
              setNextOrderNumber(`${year}0001`);
         }
@@ -514,12 +514,14 @@ const Orders: React.FC = () => {
         .select('order_number')
         .ilike('order_number', `${year}%`)
         .order('order_number', { ascending: false })
-        .limit(1);
+        .limit(20);
 
+      // Encontrar o verdadeiro maior número no momento do salvamento
       let orderNumber = nextOrderNumber;
       if (latest && latest.length > 0) {
-         const lastNum = parseInt(latest[0].order_number.replace(/[^\d]/g, '')) || 0;
-         orderNumber = (lastNum + 1).toString();
+         const numbers = latest.map(o => parseInt(o.order_number.replace(/[^\d]/g, ''))).filter(n => !isNaN(n));
+         const maxNum = Math.max(...numbers, 0);
+         orderNumber = (maxNum + 1).toString();
       } else if (!orderNumber) {
          orderNumber = `${year}0001`;
       }
