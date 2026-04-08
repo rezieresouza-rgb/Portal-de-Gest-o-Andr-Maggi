@@ -473,23 +473,10 @@ const SecretariatStaffManager: React.FC = () => {
 
          if (error) throw error;
 
-         // Update Staff Status
-         let newStatus = selectedStaff.status;
-         if (movementForm.type === 'AFASTAMENTO') newStatus = 'AFASTADO';
-         if (movementForm.type === 'FÉRIAS') newStatus = 'FERIAS';
-         if (movementForm.type === 'LICENÇA PRÊMIO') newStatus = 'LICENCA_PREMIO';
-         if (movementForm.type === 'ATESTADO') newStatus = 'LICENCA_MEDICA';
-         if (movementForm.type === 'RETORNO') newStatus = 'EM_ATIVIDADE';
-
-         if (newStatus !== selectedStaff.status) {
-            await supabase.from('staff').update({ status: newStatus }).eq('id', selectedStaff.id);
-            setStaff(prev => prev.map(s => s.id === selectedStaff.id ? { ...s, status: newStatus } : s));
-         }
-
-         await fetchData(); // Refresh all
+         await fetchData(); // Atualiza tudo para refletir o novo registro no histórico
          setIsMovementModalOpen(false);
          setSelectedStaff(null);
-         alert(`Servidor ${selectedStaff.name} movimentado com sucesso!\nO registro agora está visível na aba de Licenças/Afastados.`);
+         alert(`Movimentação registrada com sucesso para ${selectedStaff.name}!\nO servidor permanece no Quadro Ativo e o registro foi salvo no histórico.`);
 
       } catch (err) {
          console.error(err);

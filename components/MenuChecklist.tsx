@@ -93,9 +93,8 @@ const MenuChecklist: React.FC = () => {
         const { data: staffData, error } = await supabase
           .from('staff')
           .select('*')
-          .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRI%')
-          .eq('status', 'EM_ATIVIDADE');
-        
+          .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRI%');
+         
         if (error) throw error;
         if (staffData) setNutricaoStaff(staffData);
       } catch (err) {

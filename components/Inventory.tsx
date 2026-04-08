@@ -153,8 +153,7 @@ const Inventory: React.FC = () => {
       const { data: staffData } = await supabase
         .from('staff')
         .select('*')
-        .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRIÇÃO%')
-        .eq('status', 'EM_ATIVIDADE');
+        .or('role.eq.AEE_NUTRICAO,job_function.ilike.%NUTRIÇÃO%');
       if (staffData) setNutricaoStaff(staffData);
     };
     fetchStaff();

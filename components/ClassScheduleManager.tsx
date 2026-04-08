@@ -108,7 +108,6 @@ const ClassScheduleManager: React.FC = () => {
             .from('staff')
             .select('*')
             .eq('role', 'PROFESSOR')
-            .eq('status', 'EM_ATIVIDADE')
             .order('name');
 
         if (data) setTeachers(data as any);
@@ -184,7 +183,7 @@ const ClassScheduleManager: React.FC = () => {
     const handleGenerateAI = async () => {
         if (!selectedClassId || !selectedClass) return;
         if (teachers.length === 0) {
-            addToast("Aviso: Nenhum professor encontrado no sistema com status 'EM_ATIVIDADE' e função 'PROFESSOR'. A IA não conseguirá atribuir aulas.", 'warning');
+            addToast("Aviso: Nenhum professor encontrado no sistema com função 'PROFESSOR'. A IA não conseguirá atribuir aulas.", 'warning');
         }
         setAiLoading(true);
         try {
@@ -385,7 +384,7 @@ const ClassScheduleManager: React.FC = () => {
                                                         >
                                                             <option value="">- Professor -</option>
                                                             {teachers.map(t => (
-                                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                                                <option key={t.id} value={t.id}>{t.name} {t.status !== 'EM_ATIVIDADE' ? `(${t.status.replace('_', ' ')})` : ''}</option>
                                                             ))}
                                                         </select>
                                                     </div>
@@ -455,7 +454,7 @@ const ClassScheduleManager: React.FC = () => {
                                             >
                                                 <option value="">- Selecione o Professor -</option>
                                                 {teachers.map(t => (
-                                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                                    <option key={t.id} value={t.id}>{t.name} {t.status !== 'EM_ATIVIDADE' ? `(${t.status.replace('_', ' ')})` : ''}</option>
                                                 ))}
                                             </select>
                                         </div>
