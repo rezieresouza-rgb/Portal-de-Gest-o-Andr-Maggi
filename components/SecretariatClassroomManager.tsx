@@ -245,9 +245,17 @@ const SecretariatClassroomManager: React.FC = () => {
    // --- STUDENT ACTIONS ---
 
    const openStudentProfile = (student: any) => {
+      const sid = student.id || student.id_aluno;
+      console.log("Abrindo perfil do aluno ID:", sid);
+      
+      if (!sid) {
+         alert("Erro: O ID do aluno não foi encontrado. Tente atualizar a página.");
+         return;
+      }
+
       // Normalize student data
       const normalized: DetailedStudent = {
-         id: student.id,
+         id: sid,
          Nome: student.name || student.Nome,
          registration_number: student.registration_number || student.CodigoAluno,
          birth_date: student.birth_date || student.DataNascimento,
@@ -265,11 +273,11 @@ const SecretariatClassroomManager: React.FC = () => {
          gender: student.gender || 'MASCULINO'
       };
 
+      setEditingStudentId(sid);
       setStudentForm(normalized);
       setIsEditingStudent(true);
-      setEditingStudentId(student.id);
       setIsStudentModalOpen(true);
-      setGlobalSearchTerm(''); // Limpar busca ao abrir perfil
+      setGlobalSearchTerm('');
    };
 
    const handleSaveStudent = async (e: React.FormEvent) => {
@@ -278,11 +286,11 @@ const SecretariatClassroomManager: React.FC = () => {
          setIsLoading(true);
          const payload: any = {
             name: studentForm.Nome.toUpperCase(),
-            registration_number: studentForm.registration_number,
+            registration_number: String(studentForm.registration_number).trim(),
             birth_date: studentForm.birth_date,
             paed: studentForm.PAED === 'Sim',
             school_transport: studentForm.TransporteEscolar === 'Sim',
-            guardian_name: studentForm.NomeResponsavel.toUpperCase(),
+            guardian_name: (studentForm.NomeResponsavel || '').toUpperCase(),
             contact_phone: studentForm.TelefoneContato,
             status: studentForm.status || 'ATIVO',
             gender: studentForm.gender || 'MASCULINO'
@@ -356,7 +364,8 @@ const SecretariatClassroomManager: React.FC = () => {
          fetchClassrooms();
       } catch (error: any) {
          console.error("Erro ao salvar aluno:", error);
-         alert("Erro ao salvar: " + error.message);
+         const context = isEditingStudent ? `Alteração (ID: ${editingStudentId})` : "Novo Aluno";
+         alert(`Erro ao salvar [${context}]: ${error.message}`);
       } finally {
          setIsLoading(false);
       }
