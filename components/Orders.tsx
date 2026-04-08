@@ -113,9 +113,8 @@ const Orders: React.FC = () => {
       }
     } catch (err) {
       console.error("Erro ao buscar próximo número de pedido:", err);
-      // Fallback seguro em caso de erro para não travar a criação
       const year = new Date().getFullYear().toString();
-      setNextOrderNumber(`${year}${Math.floor(1000 + Math.random() * 9000)}`);
+      setNextOrderNumber(`${year}0001`); // Fallback para o início do ano
     }
   };
 
@@ -506,6 +505,7 @@ const Orders: React.FC = () => {
     }
 
     setIsProcessing(true);
+    let success = false;
     try {
       // Re-fetch next number to be sure
       const year = new Date().getFullYear().toString();
@@ -526,21 +526,42 @@ const Orders: React.FC = () => {
          orderNumber = `${year}0001`;
       }
 
-      // 1. Create Order
-      const { data: orderData, error: orderError } = await supabase.from('orders').insert([{
-        contract_id: selectedContractId || null,
-        order_number: orderNumber,
-        issue_date: orderDate || null,
-        delivery_date: deliveryDate || null,
-        total_value: totalValue,
-        observations: observations.trim(),
-        status: 'EM_PROCESSAMENTO'
-      }]).select().single();
+      // 1. Create Order with Auto-Retry Logic
+      let orderData: any = null;
+      let orderError: any = null;
+      let finalOrderNumber = orderNumber;
+      let attempts = 0;
 
-      if (orderError) throw orderError;
+      while (attempts < 3) {
+        const { data, error } = await supabase.from('orders').insert([{
+          contract_id: selectedContractId || null,
+          order_number: finalOrderNumber,
+          issue_date: orderDate || null,
+          delivery_date: deliveryDate || null,
+          total_value: totalValue,
+          observations: observations.trim(),
+          status: 'EM_PROCESSAMENTO'
+        }]).select().single();
+
+        if (error) {
+          if (error.code === '23505' && attempts < 2) {
+            // Conflict! Fetch NEW max and try again
+            console.log(`Conflito no número ${finalOrderNumber}. Tentando auto-correção...`);
+            const { data: latestItems } = await supabase.from('orders').select('order_number').order('order_number', { ascending: false }).limit(20);
+            const nums = latestItems?.map(o => parseInt(o.order_number.replace(/[^\d]/g, ''))).filter(n => !isNaN(n)) || [];
+            finalOrderNumber = (Math.max(...nums, 0) + 1).toString();
+            attempts++;
+            continue;
+          }
+          throw error;
+        }
+        orderData = data;
+        success = true;
+        break;
+      }
 
       // 2. Create Order Items
-      if (selected.length > 0) {
+      if (orderData && selected.length > 0) {
         const itemsToInsert = selected.map(item => ({
           order_id: orderData.id,
           contract_item_id: item.contractItemId,
@@ -557,7 +578,7 @@ const Orders: React.FC = () => {
       await supabase.from('contract_events').insert([{
         contract_id: selectedContractId,
         type: 'PEDIDO',
-        description: `Emissão da Guia #${orderNumber}`,
+        description: `Emissão da Guia #${finalOrderNumber}`,
         value: totalValue,
         date: new Date().toISOString()
       }]);
@@ -568,7 +589,7 @@ const Orders: React.FC = () => {
         // @ts-ignore
         await window.html2pdf().set({
           margin: [5, 5, 5, 5],
-          filename: `Guia_Pedido_Merenda_${orderNumber}.pdf`,
+          filename: `Guia_Pedido_Merenda_${finalOrderNumber}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
