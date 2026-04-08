@@ -364,6 +364,22 @@ const SecretariatClassroomManager: React.FC = () => {
          fetchClassrooms();
       } catch (error: any) {
          console.error("Erro ao salvar aluno:", error);
+
+         // Handle duplicate registration conflict
+         if (error.code === '23505' || (error.message && error.message.includes('unique constraint'))) {
+            const currentReg = String(studentForm.registration_number).trim();
+            const { data: conflictOwner } = await supabase
+               .from('students')
+               .select('name')
+               .eq('registration_number', currentReg)
+               .maybeSingle();
+            
+            if (conflictOwner) {
+               alert(`CONFLITO DE MATRÍCULA: O número ${currentReg} já pertence ao(à) aluno(a) ${conflictOwner.name.toUpperCase()}.\n\nPara prosseguir, você precisa primeiro corrigir ou excluir o outro cadastro.`);
+               return;
+            }
+         }
+
          const context = isEditingStudent ? `Alteração (ID: ${editingStudentId})` : "Novo Aluno";
          alert(`Erro ao salvar [${context}]: ${error.message}`);
       } finally {
