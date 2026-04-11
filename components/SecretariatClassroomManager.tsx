@@ -175,6 +175,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   status: e.status || e.students?.status || 'ATIVO',
                   Nome: e.students?.name,
                   CodigoAluno: e.students?.registration_number,
+                  Turma: cls.name,
                   PAED: e.students?.paed ? 'Sim' : 'Não',
                   TransporteEscolar: e.students?.school_transport ? 'Sim' : 'Não',
                   NomeResponsavel: e.students?.guardian_name || '',
@@ -220,6 +221,7 @@ const SecretariatClassroomManager: React.FC = () => {
             .select(`
                *,
                enrollments (
+                  status,
                   classrooms (name, shift)
                )
             `)
@@ -230,7 +232,8 @@ const SecretariatClassroomManager: React.FC = () => {
 
          if (data) {
             const mapped: DetailedStudent[] = data.map((s: any) => {
-               const classroom = s.enrollments?.[0]?.classrooms;
+               const activeEnr = s.enrollments?.find((e: any) => e.status === 'ATIVO') || s.enrollments?.[0];
+               const classroom = activeEnr?.classrooms;
                return {
                   ...s,
                   id: s.id,
@@ -981,6 +984,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                  >
                                     <option value="ATIVO">ATIVO</option>
                                     <option value="TRANSFERIDO">TRANSFERIDO</option>
+                                    <option value="RECLASSIFICADO">RECLASSIFICADO</option>
                                     <option value="ABANDONO">ABANDONO</option>
                                     <option value="FALECIDO">FALECIDO</option>
                                  </select>
