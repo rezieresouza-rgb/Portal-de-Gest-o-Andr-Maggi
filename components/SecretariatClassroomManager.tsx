@@ -331,7 +331,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   
                   if (!currentEnrollments?.some(e => e.classroom_id === targetClass.id)) {
                      // Ao envés de deletar a matrícula antiga, marcamos como TRANSFERIDO
-                     await supabase.from('enrollments').update({ status: 'TRANSFERIDO' }).eq('student_id', editingStudentId).neq('classroom_id', targetClass.id);
+                     await supabase.from('enrollments').update({ status: 'TRANSFERIDO DE TURMA' }).eq('student_id', editingStudentId).neq('classroom_id', targetClass.id);
                      await supabase.from('enrollments').insert([{
                         student_id: editingStudentId,
                         classroom_id: targetClass.id,
@@ -347,7 +347,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   }
                }
             } else if (studentForm.Turma === 'SEM TURMA') {
-               await supabase.from('enrollments').update({ status: 'TRANSFERIDO' }).eq('student_id', editingStudentId);
+               await supabase.from('enrollments').update({ status: 'TRANSFERIDO DE TURMA' }).eq('student_id', editingStudentId);
             }
 
             alert("Cadastro atualizado com sucesso!");
@@ -796,8 +796,10 @@ const SecretariatClassroomManager: React.FC = () => {
                                  <td className="px-6 py-4">
                                     <div className="flex">
                                        <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${
-                                          student.status === 'TRANSFERIDO' 
+                                          (student.status || '').startsWith('TRANSFERIDO') 
                                           ? 'bg-amber-100 text-amber-600' 
+                                          : (student.status === 'ABANDONO' || student.status === 'FALECIDO') ? 'bg-red-100 text-red-600'
+                                          : student.status === 'RECLASSIFICADO' ? 'bg-blue-100 text-blue-600'
                                           : 'bg-emerald-50 text-emerald-600'
                                        }`}>
                                           {student.status || 'ATIVO'}
@@ -983,7 +985,9 @@ const SecretariatClassroomManager: React.FC = () => {
                                     className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
                                  >
                                     <option value="ATIVO">ATIVO</option>
-                                    <option value="TRANSFERIDO">TRANSFERIDO</option>
+                                    <option value="TRANSFERIDO">TRANSFERIDO (ANTIGO)</option>
+                                    <option value="TRANSFERIDO DE TURMA">TRANSFERIDO DE TURMA</option>
+                                    <option value="TRANSFERIDO DE ESCOLA">TRANSFERIDO DE ESCOLA</option>
                                     <option value="RECLASSIFICADO">RECLASSIFICADO</option>
                                     <option value="ABANDONO">ABANDONO</option>
                                     <option value="FALECIDO">FALECIDO</option>
