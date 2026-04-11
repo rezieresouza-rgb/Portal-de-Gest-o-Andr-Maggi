@@ -323,10 +323,18 @@ const StudentMovementsManager: React.FC = () => {
         ({ error } = await supabase.from('student_movements').insert([payload]));
         // Atualizar status do aluno apenas em novos registros
         if (!error) {
-          if (form.movement_type === 'TRANSFERENCIA' && form.transfer_subtype === 'EXTERNA') {
-            await supabase.from('students').update({ status: 'TRANSFERIDO' }).eq('id', form.student_id);
+          if (form.is_reclassified) {
+            await supabase.from('students').update({ status: 'RECLASSIFICADO' }).eq('id', form.student_id);
+            // Também atualizar a matrícula ativa para RECLASSIFICADO
+            await supabase.from('enrollments').update({ status: 'RECLASSIFICADO' }).eq('student_id', form.student_id).neq('status', 'ilike', 'TRANSFERIDO%');
+          } else if (form.movement_type === 'TRANSFERENCIA') {
+            const newStatus = form.transfer_subtype === 'INTERNA' ? 'TRANSFERIDO DE TURMA' : 'TRANSFERIDO DE ESCOLA';
+            await supabase.from('students').update({ status: newStatus }).eq('id', form.student_id);
+            if (form.transfer_subtype === 'EXTERNA') {
+              await supabase.from('enrollments').update({ status: 'TRANSFERIDO DE ESCOLA' }).eq('student_id', form.student_id);
+            }
           } else if (form.movement_type === 'ABANDONO') {
-            await supabase.from('students').update({ status: 'EVADIDO' }).eq('id', form.student_id);
+            await supabase.from('students').update({ status: 'ABANDONO' }).eq('id', form.student_id);
           }
           // Notificação
           try {

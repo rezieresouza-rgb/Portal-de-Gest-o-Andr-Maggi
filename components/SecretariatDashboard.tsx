@@ -42,7 +42,7 @@ const SecretariatDashboard: React.FC = () => {
          const { data: activeE } = await supabase
             .from('enrollments')
             .select('student_id')
-            .eq('status', 'ATIVO');
+            .in('status', ['ATIVO', 'RECLASSIFICADO']);
             
          if (activeE) {
             const uniqueStudents = new Set(activeE.map((e: any) => e.student_id));
@@ -84,6 +84,7 @@ const SecretariatDashboard: React.FC = () => {
                students (
                   name,
                   enrollments (
+                     status,
                      classrooms (name)
                   )
                )
@@ -92,14 +93,18 @@ const SecretariatDashboard: React.FC = () => {
             .limit(5);
 
          if (movements) {
-            const mapped: DashboardMovement[] = movements.map((m: any) => ({
-               id: m.id,
-               student_name: m.students?.name || 'ALUNO NÃO IDENTIFICADO',
-               type: m.movement_type,
-               description: m.description,
-               date: m.movement_date,
-               classroom: m.students?.enrollments?.[0]?.classrooms?.name || 'SEM TURMA'
-            }));
+            const mapped: DashboardMovement[] = movements.map((m: any) => {
+               const s = m.students;
+               const activeEnr = s?.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO') || s?.enrollments?.[0];
+               return {
+                  id: m.id,
+                  student_name: s?.name || 'ALUNO NÃO IDENTIFICADO',
+                  type: m.movement_type,
+                  description: m.description,
+                  date: m.movement_date,
+                  classroom: activeEnr?.classrooms?.name || 'SEM TURMA'
+               };
+            });
             setRecentMovements(mapped);
          }
 

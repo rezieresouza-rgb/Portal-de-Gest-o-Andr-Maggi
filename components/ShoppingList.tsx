@@ -79,7 +79,7 @@ const ShoppingList: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       setIsLoading(true);
-      const { data: studentsData } = await supabase.from('students').select('id').eq('status', 'ATIVO');
+      const { data: studentsData } = await supabase.from('students').select('id').in('status', ['ATIVO', 'RECLASSIFICADO']);
       if (studentsData && studentsData.length > 0) {
         setStudentCount(studentsData.length);
       }
