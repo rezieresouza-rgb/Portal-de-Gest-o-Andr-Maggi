@@ -204,6 +204,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
       const { data: enrollments, error: enrollError } = await supabase
         .from('enrollments')
         .select(`
+          status,
           students (
             id,
             name,
@@ -222,6 +223,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
           Nome: e.students.name,
           Turma: className,
           id: e.students.id, // Keep Supabase ID for future use
+          status: e.status || 'ATIVO',
           PAED: e.students.paed ? 'Sim' : 'Não',
           TransporteEscolar: e.students.school_transport ? 'Sim' : 'Não'
         })).sort((a: any, b: any) => a.Nome.localeCompare(b.Nome));
@@ -548,7 +550,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gray-100">
                 {students.map((student, idx) => {
                   const movements = studentMovements[student.id] || [];
-                  const isTransferred = movements.some(m => m.movement_type === 'TRANSFERENCIA');
+                  const isTransferred = (student.status || '').startsWith('TRANSFERIDO') || movements.some(m => m.movement_type === 'TRANSFERENCIA');
                   const hasMedicalCertificate = movements.some(m =>
                     m.movement_type === 'ATESTADO' && m.movement_date === date
                   );
