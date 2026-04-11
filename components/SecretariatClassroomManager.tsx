@@ -327,23 +327,33 @@ const SecretariatClassroomManager: React.FC = () => {
             if (studentForm.Turma && studentForm.Turma !== 'SEM TURMA') {
                const targetClass = classrooms.find(c => c.name === studentForm.Turma);
                if (targetClass) {
-                  const { data: currentEnrollments } = await supabase.from('enrollments').select('id, classroom_id, status').eq('student_id', editingStudentId).neq('status', 'TRANSFERIDO');
+                  // 1. Marcar TODAS as outras matrículas ativas como TRANSFERIDO DE TURMA
+                  await supabase.from('enrollments')
+                     .update({ status: 'TRANSFERIDO DE TURMA' })
+                     .eq('student_id', editingStudentId)
+                     .neq('classroom_id', targetClass.id)
+                     .not('status', 'ilike', 'TRANSFERIDO%');
                   
-                  if (!currentEnrollments?.some(e => e.classroom_id === targetClass.id)) {
-                     // Ao envés de deletar a matrícula antiga, marcamos como TRANSFERIDO
-                     await supabase.from('enrollments').update({ status: 'TRANSFERIDO DE TURMA' }).eq('student_id', editingStudentId).neq('classroom_id', targetClass.id);
+                  // 2. Verificar se já existe uma matrícula para a turma alvo
+                  const { data: existingTargetEnr } = await supabase.from('enrollments')
+                     .select('id, status')
+                     .eq('student_id', editingStudentId)
+                     .eq('classroom_id', targetClass.id)
+                     .maybeSingle();
+                  
+                  if (existingTargetEnr) {
+                     // Atualiza a existente com o status que o usuário escolheu (Ex: ATIVO)
+                     await supabase.from('enrollments')
+                        .update({ status: studentForm.status || 'ATIVO' })
+                        .eq('id', existingTargetEnr.id);
+                  } else {
+                     // Cria uma nova matrícula
                      await supabase.from('enrollments').insert([{
                         student_id: editingStudentId,
                         classroom_id: targetClass.id,
                         enrollment_date: new Date().toLocaleDateString('sv-SE'),
                         status: studentForm.status || 'ATIVO'
                      }]);
-                  } else {
-                     // Se continuou na mesma turma, vamos garantir que o status da matrícula no Banco acompanhou o status que ele editou no Modal!
-                     const currentEnr = currentEnrollments.find(e => e.classroom_id === targetClass.id);
-                     if (currentEnr && currentEnr.status !== studentForm.status) {
-                        await supabase.from('enrollments').update({ status: studentForm.status || 'ATIVO' }).eq('id', currentEnr.id);
-                     }
                   }
                }
             } else if (studentForm.Turma === 'SEM TURMA') {
