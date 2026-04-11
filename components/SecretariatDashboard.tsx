@@ -38,11 +38,18 @@ const SecretariatDashboard: React.FC = () => {
       try {
          setIsLoading(true);
 
-         // 1. Total de Alunos
-         const { count: totalStudents } = await supabase
-            .from('students')
-            .select('*', { count: 'exact', head: true });
-         setStudentCount(totalStudents || 0);
+         // 1. Total de Alunos (Ativos e com turma)
+         const { data: activeE } = await supabase
+            .from('enrollments')
+            .select('student_id')
+            .eq('status', 'ATIVO');
+            
+         if (activeE) {
+            const uniqueStudents = new Set(activeE.map((e: any) => e.student_id));
+            setStudentCount(uniqueStudents.size);
+         } else {
+            setStudentCount(0);
+         }
 
          // 2. Turmas Ativas (com matrícula)
          const { data: enrollments } = await supabase

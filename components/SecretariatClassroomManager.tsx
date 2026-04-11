@@ -135,6 +135,16 @@ const SecretariatClassroomManager: React.FC = () => {
       fetchClassrooms();
    }, []);
 
+   // Sincroniza a modal de turma aberta sempre que a listagem de turmas for atualizada por baixo dos panos
+   useEffect(() => {
+      if (selectedClassDetail) {
+         const updatedClass = classrooms.find(c => c.id === selectedClassDetail.id);
+         if (updatedClass) {
+            setSelectedClassDetail(updatedClass);
+         }
+      }
+   }, [classrooms]);
+
    // --- DATA FETCHING ---
 
    const fetchClassrooms = async () => {
@@ -151,6 +161,7 @@ const SecretariatClassroomManager: React.FC = () => {
             .from('enrollments')
             .select(`
                classroom_id,
+               status,
                students (*)
             `);
 
@@ -161,6 +172,7 @@ const SecretariatClassroomManager: React.FC = () => {
                const classEnrollments = enrollments?.filter((e: any) => e.classroom_id === cls.id) || [];
                const classStudents = classEnrollments.map((e: any) => ({
                   ...e.students,
+                  status: e.status || e.students?.status || 'ATIVO',
                   Nome: e.students?.name,
                   CodigoAluno: e.students?.registration_number,
                   PAED: e.students?.paed ? 'Sim' : 'Não',
@@ -312,15 +324,27 @@ const SecretariatClassroomManager: React.FC = () => {
             if (studentForm.Turma && studentForm.Turma !== 'SEM TURMA') {
                const targetClass = classrooms.find(c => c.name === studentForm.Turma);
                if (targetClass) {
-                  await supabase.from('enrollments').delete().eq('student_id', editingStudentId);
-                  await supabase.from('enrollments').insert([{
-                     student_id: editingStudentId,
-                     classroom_id: targetClass.id,
-                     enrollment_date: new Date().toLocaleDateString('sv-SE')
-                  }]);
+                  const { data: currentEnrollments } = await supabase.from('enrollments').select('id, classroom_id, status').eq('student_id', editingStudentId).neq('status', 'TRANSFERIDO');
+                  
+                  if (!currentEnrollments?.some(e => e.classroom_id === targetClass.id)) {
+                     // Ao envés de deletar a matrícula antiga, marcamos como TRANSFERIDO
+                     await supabase.from('enrollments').update({ status: 'TRANSFERIDO' }).eq('student_id', editingStudentId).neq('classroom_id', targetClass.id);
+                     await supabase.from('enrollments').insert([{
+                        student_id: editingStudentId,
+                        classroom_id: targetClass.id,
+                        enrollment_date: new Date().toLocaleDateString('sv-SE'),
+                        status: studentForm.status || 'ATIVO'
+                     }]);
+                  } else {
+                     // Se continuou na mesma turma, vamos garantir que o status da matrícula no Banco acompanhou o status que ele editou no Modal!
+                     const currentEnr = currentEnrollments.find(e => e.classroom_id === targetClass.id);
+                     if (currentEnr && currentEnr.status !== studentForm.status) {
+                        await supabase.from('enrollments').update({ status: studentForm.status || 'ATIVO' }).eq('id', currentEnr.id);
+                     }
+                  }
                }
             } else if (studentForm.Turma === 'SEM TURMA') {
-               await supabase.from('enrollments').delete().eq('student_id', editingStudentId);
+               await supabase.from('enrollments').update({ status: 'TRANSFERIDO' }).eq('student_id', editingStudentId);
             }
 
             alert("Cadastro atualizado com sucesso!");
