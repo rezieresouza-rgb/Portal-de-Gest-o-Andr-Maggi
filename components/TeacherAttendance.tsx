@@ -333,7 +333,12 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
   };
 
   const toggleAttendance = (id: string, period: number) => {
-    if (!selectedPeriods.includes(period)) return; // Prevents toggling inactive periods
+    if (!selectedPeriods.includes(period)) return; 
+    
+    // Buscar o aluno para checar o status
+    const student = students.find(st => st.CodigoAluno === id);
+    if (student && student.status !== 'ATIVO') return; // Bloqueia se não for ATIVO
+
     setAttendance(prev => ({
       ...prev,
       [id]: {
@@ -346,10 +351,13 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
   const markAll = (status: boolean) => {
     const updated = { ...attendance };
     students.forEach(s => {
-      selectedPeriods.forEach(p => {
-        if (!updated[s.CodigoAluno]) updated[s.CodigoAluno] = {};
-        updated[s.CodigoAluno][p] = status;
-      });
+      // APENAS para alunos ativos
+      if (s.status === 'ATIVO') {
+        selectedPeriods.forEach(p => {
+          if (!updated[s.CodigoAluno]) updated[s.CodigoAluno] = {};
+          updated[s.CodigoAluno][p] = status;
+        });
+      }
     });
     setAttendance(updated);
   };
@@ -550,22 +558,24 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gray-100">
                 {students.map((student, idx) => {
                   const movements = studentMovements[student.id] || [];
-                  const isTransferred = (student.status || '').startsWith('TRANSFERIDO') || movements.some(m => m.movement_type === 'TRANSFERENCIA');
+                  const studentStatus = student.status || '';
+                  // Bloqueia qualquer status que não seja ATIVO (Reclassificado, Transferidos, etc.)
+                  const isBlocked = studentStatus !== 'ATIVO';
                   const hasMedicalCertificate = movements.some(m =>
                     m.movement_type === 'ATESTADO' && m.movement_date === date
                   );
 
                   return (
-                    <div key={student.CodigoAluno} className={`bg-white p-6 flex items-center justify-between hover:bg-gray-50 transition-all group ${isTransferred ? 'opacity-50 grayscale select-none' : ''}`}>
+                    <div key={student.CodigoAluno} className={`bg-white p-6 flex items-center justify-between hover:bg-gray-50 transition-all group ${isBlocked ? 'opacity-50 grayscale select-none' : ''}`}>
                       <div className="flex items-center gap-6">
                         <span className="text-[10px] font-black text-gray-200 group-hover:text-amber-600 transition-colors">#{idx + 1}</span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className={`text-sm font-black uppercase leading-none ${isTransferred ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{student.Nome}</p>
+                            <p className={`text-sm font-black uppercase leading-none ${isBlocked ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{student.Nome}</p>
 
-                            {isTransferred && (
-                              <div className="px-1.5 py-0.5 bg-red-600 text-white rounded text-[7px] font-black uppercase tracking-wider border border-red-700">
-                                Transferido
+                            {isBlocked && (
+                              <div className="px-1.5 py-0.5 bg-gray-600 text-white rounded text-[7px] font-black uppercase tracking-wider border border-gray-700">
+                                {studentStatus}
                               </div>
                             )}
 
@@ -575,7 +585,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                               </div>
                             )}
 
-                            {riskStats[student.CodigoAluno] && !isTransferred && (
+                            {riskStats[student.CodigoAluno] && !isBlocked && (
                               <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[7px] font-black uppercase tracking-wider animate-pulse border border-red-200">
                                 <AlertTriangle size={8} /> Risco Evasão
                               </div>
@@ -605,18 +615,18 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                               <div key={period} className="flex flex-col items-center gap-1">
                                 <span className="text-[8px] font-black text-gray-400 uppercase">{period}ª</span>
                                 <button
-                                  onClick={() => !isTransferred && toggleAttendance(student.CodigoAluno, period)}
-                                  disabled={isTransferred || !isSelected}
+                                  onClick={() => !isBlocked && toggleAttendance(student.CodigoAluno, period)}
+                                  disabled={isBlocked || !isSelected}
                                   className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${!isSelected
                                     ? 'bg-gray-100 text-gray-300 cursor-not-allowed border outline-dashed outline-1 outline-gray-200 outline-offset-1'
-                                    : isTransferred
+                                    : isBlocked
                                       ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                                       : (isPresent
                                         ? 'bg-emerald-50 text-emerald-600 shadow-inner border border-emerald-100'
                                         : 'bg-red-50 text-red-600 shadow-inner border border-red-100')
                                     }`}
                                 >
-                                  {!isSelected || isTransferred ? <X size={20} className="opacity-50" strokeWidth={2} /> : (isPresent ? <Check size={20} strokeWidth={3} /> : <X size={20} strokeWidth={3} />)}
+                                  {!isSelected || isBlocked ? <X size={20} className="opacity-50" strokeWidth={2} /> : (isPresent ? <Check size={20} strokeWidth={3} /> : <X size={20} strokeWidth={3} />)}
                                 </button>
                               </div>
                             );

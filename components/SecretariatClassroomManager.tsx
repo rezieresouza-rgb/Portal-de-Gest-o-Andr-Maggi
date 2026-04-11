@@ -81,6 +81,7 @@ const SecretariatClassroomManager: React.FC = () => {
 
    // Student Registry States
    const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+   const [initialClassroomName, setInitialClassroomName] = useState<string>('');
    const [isEditingStudent, setIsEditingStudent] = useState(false);
    const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
    const [studentForm, setStudentForm] = useState<DetailedStudent>({
@@ -232,7 +233,8 @@ const SecretariatClassroomManager: React.FC = () => {
 
          if (data) {
             const mapped: DetailedStudent[] = data.map((s: any) => {
-               const activeEnr = s.enrollments?.find((e: any) => e.status === 'ATIVO') || s.enrollments?.[0];
+               // Encontra a matrícula que está ATIVO ou RECLASSIFICADO
+               const activeEnr = s.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO') || s.enrollments?.[0];
                const classroom = activeEnr?.classrooms;
                return {
                   ...s,
@@ -290,6 +292,7 @@ const SecretariatClassroomManager: React.FC = () => {
 
       setEditingStudentId(sid);
       setStudentForm(normalized);
+      setInitialClassroomName(normalized.Turma || 'SEM TURMA');
       setIsEditingStudent(true);
       setIsStudentModalOpen(true);
       setGlobalSearchTerm('');
@@ -323,41 +326,56 @@ const SecretariatClassroomManager: React.FC = () => {
 
             if (error) throw error;
             
-            // Handle class change
-            if (studentForm.Turma && studentForm.Turma !== 'SEM TURMA') {
-               const targetClass = classrooms.find(c => c.name === studentForm.Turma);
-               if (targetClass) {
-                  // 1. Marcar TODAS as outras matrículas ativas como TRANSFERIDO DE TURMA
-                  await supabase.from('enrollments')
-                     .update({ status: 'TRANSFERIDO DE TURMA' })
-                     .eq('student_id', editingStudentId)
-                     .neq('classroom_id', targetClass.id)
-                     .not('status', 'ilike', 'TRANSFERIDO%');
-                  
-                  // 2. Verificar se já existe uma matrícula para a turma alvo
-                  const { data: existingTargetEnr } = await supabase.from('enrollments')
-                     .select('id, status')
-                     .eq('student_id', editingStudentId)
-                     .eq('classroom_id', targetClass.id)
-                     .maybeSingle();
-                  
-                  if (existingTargetEnr) {
-                     // Atualiza a existente com o status que o usuário escolheu (Ex: ATIVO)
+            // --- Logica de Sincronização de Matrícula ---
+            if (studentForm.Turma !== initialClassroomName) {
+               console.log("Turma alterada:", initialClassroomName, "->", studentForm.Turma);
+               
+               // 1. Atualizar a matrícula da TURMA ANTERIOR com o status selecionado (Ex: RECLASSIFICADO)
+               if (initialClassroomName !== 'SEM TURMA') {
+                  const oldClass = classrooms.find(c => c.name === initialClassroomName);
+                  if (oldClass) {
                      await supabase.from('enrollments')
                         .update({ status: studentForm.status || 'ATIVO' })
-                        .eq('id', existingTargetEnr.id);
-                  } else {
-                     // Cria uma nova matrícula
-                     await supabase.from('enrollments').insert([{
-                        student_id: editingStudentId,
-                        classroom_id: targetClass.id,
-                        enrollment_date: new Date().toLocaleDateString('sv-SE'),
-                        status: studentForm.status || 'ATIVO'
-                     }]);
+                        .eq('student_id', editingStudentId)
+                        .eq('classroom_id', oldClass.id);
                   }
                }
-            } else if (studentForm.Turma === 'SEM TURMA') {
-               await supabase.from('enrollments').update({ status: 'TRANSFERIDO DE TURMA' }).eq('student_id', editingStudentId);
+               
+               // 2. Criar ou Reativar a matrícula da NOVA TURMA como ATIVO
+               if (studentForm.Turma !== 'SEM TURMA') {
+                  const targetClass = classrooms.find(c => c.name === studentForm.Turma);
+                  if (targetClass) {
+                     const { data: existingTarget } = await supabase.from('enrollments')
+                        .select('id')
+                        .eq('student_id', editingStudentId)
+                        .eq('classroom_id', targetClass.id)
+                        .maybeSingle();
+                     
+                     if (existingTarget) {
+                        await supabase.from('enrollments')
+                           .update({ status: 'ATIVO' })
+                           .eq('id', existingTarget.id);
+                     } else {
+                        await supabase.from('enrollments').insert([{
+                           student_id: editingStudentId,
+                           classroom_id: targetClass.id,
+                           enrollment_date: new Date().toLocaleDateString('sv-SE'),
+                           status: 'ATIVO'
+                        }]);
+                     }
+                  }
+               }
+            } else {
+               // Apenas atualiza o status na turma atual (se houver uma)
+               if (studentForm.Turma !== 'SEM TURMA') {
+                  const currentClass = classrooms.find(c => c.name === studentForm.Turma);
+                  if (currentClass) {
+                     await supabase.from('enrollments')
+                        .update({ status: studentForm.status || 'ATIVO' })
+                        .eq('student_id', editingStudentId)
+                        .eq('classroom_id', currentClass.id);
+                  }
+               }
             }
 
             alert("Cadastro atualizado com sucesso!");
@@ -467,23 +485,56 @@ const SecretariatClassroomManager: React.FC = () => {
       }
    };
 
-   // --- MOVEMENT ACTIONS ---
-
    const openMovementHistory = async (student: DetailedStudent) => {
       setSelectedStudentForMovement(student);
       setIsMovementModalOpen(true);
       
       try {
-         const { data, error } = await supabase
+         // 1. Buscar Movimentações Formais (Atestados, Transferências, etc.)
+         const { data: formalMovs, error: formalErr } = await supabase
             .from('student_movements')
             .select('*')
             .eq('student_id', student.id)
             .order('movement_date', { ascending: false });
 
-         if (error) throw error;
-         setMovements(data || []);
+         if (formalErr) throw formalErr;
+
+         // 2. Buscar Histórico de Matrículas (Turmas por onde passou)
+         const { data: enrollments, error: enrErr } = await supabase
+            .from('enrollments')
+            .select(`
+               id,
+               status,
+               enrollment_date,
+               classrooms (name)
+            `)
+            .eq('student_id', student.id)
+            .order('enrollment_date', { ascending: false });
+
+         if (enrErr) throw enrErr;
+
+         // 3. Unificar e Normalizar em uma Linha do Tempo
+         const unifiedHistory: any[] = [
+            ...(formalMovs || []).map(m => ({
+               id: m.id,
+               date: m.movement_date,
+               type: m.movement_type,
+               description: m.description,
+               school: m.destination_school,
+               origin: 'formal'
+            })),
+            ...(enrollments || []).map(e => ({
+               id: `enr-${e.id}`,
+               date: e.enrollment_date,
+               type: e.status,
+               description: `VÍNCULO NA TURMA: ${(e.classrooms as any)?.name || 'NÃO IDENTIFICADA'}`,
+               origin: 'enrollment'
+            }))
+         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+         setMovements(unifiedHistory);
       } catch (error) {
-         console.error("Erro ao buscar histórico:", error);
+         console.error("Erro ao buscar histórico unificado:", error);
       }
    };
 
@@ -1036,21 +1087,22 @@ const SecretariatClassroomManager: React.FC = () => {
                         </div>
                      ) : (
                         <div className="space-y-4">
-                           {movements.map((mov) => (
+                           {movements.map((mov: any) => (
                               <div key={mov.id} className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 flex justify-between items-start hover:border-indigo-200 transition-all">
                                  <div>
                                     <div className="flex items-center gap-3 mb-2">
                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${
-                                          mov.movement_type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-700' : 
-                                          mov.movement_type === 'RECLASSIFICADO' ? 'bg-emerald-100 text-emerald-700' :
+                                          mov.origin === 'enrollment' ? 'bg-indigo-100 text-indigo-700' :
+                                          mov.type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-700' : 
+                                          mov.type === 'RECLASSIFICADO' ? 'bg-emerald-100 text-emerald-700' :
                                           'bg-blue-100 text-blue-700'
                                        }`}>
-                                          {mov.movement_type}
+                                          {mov.origin === 'enrollment' ? `MATRÍCULA: ${mov.type}` : mov.type}
                                        </span>
-                                       <span className="text-[10px] font-black text-gray-300 font-mono">{formatDateSafe(mov.movement_date)}</span>
+                                       <span className="text-[10px] font-black text-gray-300 font-mono">{formatDateSafe(mov.date)}</span>
                                     </div>
                                     <p className="text-xs font-black text-gray-700 uppercase leading-relaxed">{mov.description}</p>
-                                    {mov.destination_school && <p className="text-[9px] font-bold text-indigo-400 mt-1 uppercase font-mono">Destino: {mov.destination_school}</p>}
+                                    {mov.school && <p className="text-[9px] font-bold text-indigo-400 mt-1 uppercase font-mono">Destino: {mov.school}</p>}
                                  </div>
                               </div>
                            ))}
