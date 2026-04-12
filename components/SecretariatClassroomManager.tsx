@@ -937,152 +937,158 @@ const SecretariatClassroomManager: React.FC = () => {
                      <button onClick={() => setIsStudentModalOpen(false)} className="p-4 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-[1.5rem] transition-all shadow-sm"><X size={28} /></button>
                   </div>
 
-                  <form onSubmit={handleSaveStudent} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-3">
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome Completo</label>
-                              <input
-                                 required
-                                 value={studentForm.Nome}
-                                 onChange={e => setStudentForm({ ...studentForm, Nome: e.target.value.toUpperCase() })}
-                                 className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
-                              />
-                           </div>
-                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <form onSubmit={handleSaveStudent} className="flex flex-col flex-1 overflow-hidden">
+                     {/* Corpo do formulário com rolagem */}
+                     <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                           <div className="space-y-3">
                               <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Matrícula</label>
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome Completo</label>
                                  <input
                                     required
-                                    value={studentForm.registration_number}
-                                    onChange={e => setStudentForm({ ...studentForm, registration_number: e.target.value })}
-                                    className="w-full px-2 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    value={studentForm.Nome}
+                                    onChange={e => setStudentForm({ ...studentForm, Nome: e.target.value.toUpperCase() })}
+                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
                                  />
                               </div>
-                              <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nascimento</label>
-                                 <input
-                                    required
-                                    type="date"
-                                    value={studentForm.birth_date}
-                                    onChange={e => setStudentForm({ ...studentForm, birth_date: e.target.value })}
-                                    className="w-full px-2 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
-                                 />
-                              </div>
-                              <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Data da Matrícula</label>
-                                 <input
-                                    type="date"
-                                    value={studentForm.enrollment_date || ''}
-                                    onChange={e => setStudentForm({ ...studentForm, enrollment_date: e.target.value })}
-                                    className="w-full px-2 py-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
-                                 />
-                              </div>
-                           </div>
-                           <div className="grid grid-cols-3 gap-3">
-                              <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sexo</label>
-                                 <select
-                                    value={studentForm.gender}
-                                    onChange={e => setStudentForm({...studentForm, gender: e.target.value})}
-                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
-                                 >
-                                    <option value="MASCULINO">MASCULINO</option>
-                                    <option value="FEMININO">FEMININO</option>
-                                 </select>
-                              </div>
-                              <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">PAED</label>
-                                 <select
-                                    value={studentForm.PAED}
-                                    onChange={e => setStudentForm({...studentForm, PAED: e.target.value})}
-                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
-                                 >
-                                    <option>Não</option>
-                                    <option>Sim</option>
-                                 </select>
-                              </div>
-                              <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tr. Escolar</label>
-                                 <select
-                                    value={studentForm.TransporteEscolar}
-                                    onChange={e => setStudentForm({...studentForm, TransporteEscolar: e.target.value})}
-                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
-                                 >
-                                    <option>Não</option>
-                                    <option>Sim</option>
-                                 </select>
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className="space-y-3">
-                           <div className="p-8 bg-indigo-900 rounded-[3rem] text-white space-y-3 shadow-2xl relative overflow-hidden">
-                              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />
-                              <h4 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-indigo-300">
-                                 <Building2 size={16} /> Contato do Responsável
-                              </h4>
-                              <div className="space-y-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                  <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest ml-1">Nome do Responsável</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Matrícula</label>
                                     <input
                                        required
-                                       value={studentForm.NomeResponsavel}
-                                       onChange={e => setStudentForm({ ...studentForm, NomeResponsavel: e.target.value.toUpperCase() })}
-                                       className="w-full p-3 bg-white/10 border border-white/10 rounded-xl font-bold text-sm outline-none focus:bg-white/20 transition-all uppercase placeholder:text-indigo-700"
+                                       value={studentForm.registration_number}
+                                       onChange={e => setStudentForm({ ...studentForm, registration_number: e.target.value })}
+                                       className="w-full px-2 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                     />
                                  </div>
                                  <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
-                                    <div className="relative">
-                                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={16} />
-                                       <input
-                                          required
-                                          value={studentForm.TelefoneContato}
-                                          onChange={e => setStudentForm({ ...studentForm, TelefoneContato: e.target.value })}
-                                          className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/20 transition-all"
-                                       />
-                                    </div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nascimento</label>
+                                    <input
+                                       required
+                                       type="date"
+                                       value={studentForm.birth_date}
+                                       onChange={e => setStudentForm({ ...studentForm, birth_date: e.target.value })}
+                                       className="w-full px-2 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    />
+                                 </div>
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Data da Matrícula</label>
+                                    <input
+                                       type="date"
+                                       value={studentForm.enrollment_date || ''}
+                                       onChange={e => setStudentForm({ ...studentForm, enrollment_date: e.target.value })}
+                                       className="w-full px-2 py-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    />
+                                 </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3">
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sexo</label>
+                                    <select
+                                       value={studentForm.gender}
+                                       onChange={e => setStudentForm({...studentForm, gender: e.target.value})}
+                                       className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
+                                    >
+                                       <option value="MASCULINO">MASCULINO</option>
+                                       <option value="FEMININO">FEMININO</option>
+                                    </select>
+                                 </div>
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">PAED</label>
+                                    <select
+                                       value={studentForm.PAED}
+                                       onChange={e => setStudentForm({...studentForm, PAED: e.target.value})}
+                                       className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
+                                    >
+                                       <option>Não</option>
+                                       <option>Sim</option>
+                                    </select>
+                                 </div>
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tr. Escolar</label>
+                                    <select
+                                       value={studentForm.TransporteEscolar}
+                                       onChange={e => setStudentForm({...studentForm, TransporteEscolar: e.target.value})}
+                                       className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
+                                    >
+                                       <option>Não</option>
+                                       <option>Sim</option>
+                                    </select>
                                  </div>
                               </div>
                            </div>
-                           
-                           <div className="grid grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{isEditingStudent ? 'Turma Atual' : 'Enturmação Inicial'}</label>
-                                 <select
-                                    value={studentForm.Turma}
-                                    onChange={e => setStudentForm({ ...studentForm, Turma: e.target.value })}
-                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
-                                 >
-                                    <option value="SEM TURMA">SEM TURMA</option>
-                                    {classrooms.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                                 </select>
+   
+                           <div className="space-y-3">
+                              <div className="p-8 bg-indigo-900 rounded-[3rem] text-white space-y-3 shadow-2xl relative overflow-hidden">
+                                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />
+                                 <h4 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-indigo-300">
+                                    <Building2 size={16} /> Contato do Responsável
+                                 </h4>
+                                 <div className="space-y-4">
+                                    <div className="space-y-2">
+                                       <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest ml-1">Nome do Responsável</label>
+                                       <input
+                                          required
+                                          value={studentForm.NomeResponsavel}
+                                          onChange={e => setStudentForm({ ...studentForm, NomeResponsavel: e.target.value.toUpperCase() })}
+                                          className="w-full p-3 bg-white/10 border border-white/10 rounded-xl font-bold text-sm outline-none focus:bg-white/20 transition-all uppercase placeholder:text-indigo-700"
+                                       />
+                                    </div>
+                                    <div className="space-y-2">
+                                       <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
+                                       <div className="relative">
+                                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={16} />
+                                          <input
+                                             required
+                                             value={studentForm.TelefoneContato}
+                                             onChange={e => setStudentForm({ ...studentForm, TelefoneContato: e.target.value })}
+                                             className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/20 transition-all"
+                                          />
+                                       </div>
+                                    </div>
+                                 </div>
                               </div>
-                              <div className="space-y-2">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Status de Matrícula</label>
-                                 <select
-                                    value={studentForm.status}
-                                    onChange={e => setStudentForm({ ...studentForm, status: e.target.value })}
-                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
-                                 >
-                                    <option value="ATIVO">ATIVO</option>
-                                    <option value="TRANSFERIDO">TRANSFERIDO (ANTIGO)</option>
-                                    <option value="TRANSFERIDO DE TURMA">TRANSFERIDO DE TURMA</option>
-                                    <option value="TRANSFERIDO DE ESCOLA">TRANSFERIDO DE ESCOLA</option>
-                                    <option value="RECLASSIFICADO">RECLASSIFICADO</option>
-                                    <option value="ABANDONO">ABANDONO</option>
-                                    <option value="FALECIDO">FALECIDO</option>
-                                 </select>
+                              
+                              <div className="grid grid-cols-2 gap-6">
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{isEditingStudent ? 'Turma Atual' : 'Enturmação Inicial'}</label>
+                                    <select
+                                       value={studentForm.Turma}
+                                       onChange={e => setStudentForm({ ...studentForm, Turma: e.target.value })}
+                                       className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
+                                    >
+                                       <option value="SEM TURMA">SEM TURMA</option>
+                                       {classrooms.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                    </select>
+                                 </div>
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Status de Matrícula</label>
+                                    <select
+                                       value={studentForm.status}
+                                       onChange={e => setStudentForm({ ...studentForm, status: e.target.value })}
+                                       className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
+                                    >
+                                       <option value="ATIVO">ATIVO</option>
+                                       <option value="TRANSFERIDO">TRANSFERIDO (ANTIGO)</option>
+                                       <option value="TRANSFERIDO DE TURMA">TRANSFERIDO DE TURMA</option>
+                                       <option value="TRANSFERIDO DE ESCOLA">TRANSFERIDO DE ESCOLA</option>
+                                       <option value="RECLASSIFICADO">RECLASSIFICADO</option>
+                                       <option value="ABANDONO">ABANDONO</option>
+                                       <option value="FALECIDO">FALECIDO</option>
+                                    </select>
+                                 </div>
                               </div>
                            </div>
                         </div>
                      </div>
-
-                     <button type="submit" className="w-full py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black uppercase text-sm tracking-widest shadow-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-4">
-                        <Save size={24} />
-                        {isEditingStudent ? 'Atualizar Perfil' : 'Cadastrar na Escola'}
-                     </button>
+   
+                     {/* Rodapé fixo com o botão */}
+                     <div className="p-6 bg-gray-50 border-t border-gray-100 shrink-0">
+                        <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-widest shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-4">
+                           <Save size={24} />
+                           {isEditingStudent ? 'Atualizar Perfil' : 'Cadastrar na Escola'}
+                        </button>
+                     </div>
                   </form>
                </div>
             </div>
