@@ -937,16 +937,16 @@ const SecretariatClassroomManager: React.FC = () => {
                      <button onClick={() => setIsStudentModalOpen(false)} className="p-4 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-[1.5rem] transition-all shadow-sm"><X size={28} /></button>
                   </div>
 
-                  <form onSubmit={handleSaveStudent} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+                  <form onSubmit={handleSaveStudent} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-6">
+                        <div className="space-y-3">
                            <div className="space-y-2">
                               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome Completo</label>
                               <input
                                  required
                                  value={studentForm.Nome}
                                  onChange={e => setStudentForm({ ...studentForm, Nome: e.target.value.toUpperCase() })}
-                                 className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-base outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
+                                 className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
                               />
                            </div>
                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1016,8 +1016,8 @@ const SecretariatClassroomManager: React.FC = () => {
                            </div>
                         </div>
 
-                        <div className="space-y-6">
-                           <div className="p-8 bg-indigo-900 rounded-[3rem] text-white space-y-6 shadow-2xl relative overflow-hidden">
+                        <div className="space-y-3">
+                           <div className="p-8 bg-indigo-900 rounded-[3rem] text-white space-y-3 shadow-2xl relative overflow-hidden">
                               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />
                               <h4 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-indigo-300">
                                  <Building2 size={16} /> Contato do Responsável
@@ -1029,7 +1029,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                        required
                                        value={studentForm.NomeResponsavel}
                                        onChange={e => setStudentForm({ ...studentForm, NomeResponsavel: e.target.value.toUpperCase() })}
-                                       className="w-full p-4 bg-white/10 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/20 transition-all uppercase placeholder:text-indigo-700"
+                                       className="w-full p-3 bg-white/10 border border-white/10 rounded-xl font-bold text-sm outline-none focus:bg-white/20 transition-all uppercase placeholder:text-indigo-700"
                                     />
                                  </div>
                                  <div className="space-y-2">
@@ -1131,7 +1131,7 @@ const SecretariatClassroomManager: React.FC = () => {
                      )}
                   </div>
 
-                  <form onSubmit={handleRegisterMovement} className="pt-8 border-t border-gray-100 shrink-0 space-y-6">
+                  <form onSubmit={handleRegisterMovement} className="pt-8 border-t border-gray-100 shrink-0 space-y-3">
                      <div className="grid grid-cols-2 gap-4">
                         <div>
                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Evento</label>
@@ -1179,7 +1179,7 @@ const SecretariatClassroomManager: React.FC = () => {
                      <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest">Nova Turma</h3>
                      <button onClick={() => setIsCreateClassModalOpen(false)}><X size={24} className="text-gray-300 hover:text-red-500" /></button>
                   </div>
-                  <form onSubmit={handleCreateClass} className="space-y-6">
+                  <form onSubmit={handleCreateClass} className="space-y-3">
                      <div className="space-y-1.5">
                         <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Turma</label>
                         <input required placeholder="EX: 6º ANO A" value={newClass.name} onChange={e => setNewClass({ ...newClass, name: e.target.value.toUpperCase() })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase" />
