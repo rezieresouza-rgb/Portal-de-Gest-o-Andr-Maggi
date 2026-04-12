@@ -8,6 +8,7 @@ export interface Student {
     shift?: string;
     birth_date?: string;
     registration_number?: string;
+    enrollment_date?: string;
     guardian_name?: string;
     contact_phone?: string;
 }
@@ -25,6 +26,7 @@ export const useStudents = () => {
                 .select(`
           *,
           enrollments (
+            enrollment_date,
             classrooms (name, shift)
           )
         `);
@@ -41,6 +43,7 @@ export const useStudents = () => {
                         shift: classroom?.shift || '---',
                         birth_date: s.birth_date,
                         registration_number: s.registration_number,
+                        enrollment_date: s.enrollments?.[0]?.enrollment_date,
                         guardian_name: s.guardian_name,
                         contact_phone: s.contact_phone
                     };

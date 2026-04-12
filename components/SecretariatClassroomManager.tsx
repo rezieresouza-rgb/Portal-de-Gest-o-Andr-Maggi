@@ -52,6 +52,7 @@ interface DetailedStudent {
   Nome: string;
   registration_number: string;
   birth_date: string;
+  enrollment_date?: string;
   paed: boolean;
   school_transport: boolean;
   guardian_name: string;
@@ -60,7 +61,6 @@ interface DetailedStudent {
   Turma: string;
   Turno: string;
   Sequencia?: string;
-  DataMatricula?: string;
   PAED: string;
   TransporteEscolar: string;
   NomeResponsavel: string;
@@ -90,6 +90,7 @@ const SecretariatClassroomManager: React.FC = () => {
       Turno: 'MATUTINO',
       registration_number: '',
       birth_date: '',
+      enrollment_date: '',
       paed: false,
       school_transport: false,
       guardian_name: '',
@@ -163,6 +164,7 @@ const SecretariatClassroomManager: React.FC = () => {
             .select(`
                classroom_id,
                status,
+               enrollment_date,
                students (*)
             `);
 
@@ -174,6 +176,7 @@ const SecretariatClassroomManager: React.FC = () => {
                const classStudents = classEnrollments.map((e: any) => ({
                   ...e.students,
                   status: e.status || e.students?.status || 'ATIVO',
+                  enrollment_date: e.enrollment_date,
                   Nome: e.students?.name,
                   CodigoAluno: e.students?.registration_number,
                   Turma: cls.name,
@@ -223,6 +226,7 @@ const SecretariatClassroomManager: React.FC = () => {
                *,
                enrollments (
                   status,
+                  enrollment_date,
                   classrooms (name, shift)
                )
             `)
@@ -247,7 +251,8 @@ const SecretariatClassroomManager: React.FC = () => {
                   NomeResponsavel: s.guardian_name || '',
                   TelefoneContato: s.contact_phone || '',
                   registration_number: s.registration_number,
-                  birth_date: s.birth_date
+                  birth_date: s.birth_date,
+                  enrollment_date: activeEnr?.enrollment_date
                };
             });
             setSearchResults(mapped);
@@ -287,6 +292,7 @@ const SecretariatClassroomManager: React.FC = () => {
          NomeResponsavel: student.guardian_name || student.NomeResponsavel || '',
          TelefoneContato: student.contact_phone || student.TelefoneContato || '',
          status: student.status || 'ATIVO',
+         enrollment_date: student.enrollment_date || '',
          gender: student.gender || 'MASCULINO'
       };
 
@@ -359,7 +365,7 @@ const SecretariatClassroomManager: React.FC = () => {
                         await supabase.from('enrollments').insert([{
                            student_id: editingStudentId,
                            classroom_id: targetClass.id,
-                           enrollment_date: new Date().toLocaleDateString('sv-SE'),
+                           enrollment_date: studentForm.enrollment_date || new Date().toLocaleDateString('sv-SE'),
                            status: 'ATIVO'
                         }]);
                      }
@@ -408,7 +414,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   await supabase.from('enrollments').insert([{
                      student_id: newStudent.id,
                      classroom_id: targetClass.id,
-                     enrollment_date: new Date().toLocaleDateString('sv-SE')
+                     enrollment_date: studentForm.enrollment_date || new Date().toLocaleDateString('sv-SE')
                   }]);
                }
             }
@@ -717,7 +723,7 @@ const SecretariatClassroomManager: React.FC = () => {
                <button
                   onClick={() => {
                      setIsEditingStudent(false);
-                     setStudentForm({ ...studentForm, Nome: '', registration_number: '', birth_date: '', Turma: '' });
+                     setStudentForm({ ...studentForm, Nome: '', registration_number: '', birth_date: '', enrollment_date: '', Turma: '' });
                      setIsStudentModalOpen(true);
                   }}
                   className="px-6 py-3 bg-gray-50 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-100 transition-all border border-gray-100"
@@ -833,6 +839,7 @@ const SecretariatClassroomManager: React.FC = () => {
                               <th className="px-6 py-4 w-32">Código</th>
                               <th className="px-6 py-4">Nome do Aluno</th>
                               <th className="px-6 py-4 w-28">Status</th>
+                              <th className="px-6 py-4 w-32">Matrícula</th>
                               <th className="px-6 py-4 text-right w-32">Ações</th>
                            </tr>
                         </thead>
@@ -866,6 +873,11 @@ const SecretariatClassroomManager: React.FC = () => {
                                           {student.status || 'ATIVO'}
                                        </span>
                                     </div>
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <span className="text-[10px] font-bold text-gray-500 font-mono">
+                                       {formatDateSafe(student.enrollment_date)}
+                                    </span>
                                  </td>
                                  <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
@@ -937,7 +949,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                  className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-base outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
                               />
                            </div>
-                           <div className="grid grid-cols-2 gap-6">
+                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                               <div className="space-y-2">
                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Matrícula</label>
                                  <input
@@ -955,6 +967,15 @@ const SecretariatClassroomManager: React.FC = () => {
                                     value={studentForm.birth_date}
                                     onChange={e => setStudentForm({ ...studentForm, birth_date: e.target.value })}
                                     className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                 />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Data da Matrícula</label>
+                                 <input
+                                    type="date"
+                                    value={studentForm.enrollment_date || ''}
+                                    onChange={e => setStudentForm({ ...studentForm, enrollment_date: e.target.value })}
+                                    className="w-full p-5 bg-indigo-50 border border-indigo-100 rounded-3xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                  />
                               </div>
                            </div>
