@@ -956,7 +956,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                     required
                                     value={studentForm.registration_number}
                                     onChange={e => setStudentForm({ ...studentForm, registration_number: e.target.value })}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                  />
                               </div>
                               <div className="space-y-2">
@@ -966,7 +966,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                     type="date"
                                     value={studentForm.birth_date}
                                     onChange={e => setStudentForm({ ...studentForm, birth_date: e.target.value })}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                  />
                               </div>
                               <div className="space-y-2">
@@ -975,7 +975,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                     type="date"
                                     value={studentForm.enrollment_date || ''}
                                     onChange={e => setStudentForm({ ...studentForm, enrollment_date: e.target.value })}
-                                    className="w-full p-5 bg-indigo-50 border border-indigo-100 rounded-3xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    className="w-full px-3 py-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                  />
                               </div>
                            </div>
@@ -985,7 +985,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                  <select
                                     value={studentForm.gender}
                                     onChange={e => setStudentForm({...studentForm, gender: e.target.value})}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
                                  >
                                     <option value="MASCULINO">MASCULINO</option>
                                     <option value="FEMININO">FEMININO</option>
@@ -996,7 +996,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                  <select
                                     value={studentForm.PAED}
                                     onChange={e => setStudentForm({...studentForm, PAED: e.target.value})}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
                                  >
                                     <option>Não</option>
                                     <option>Sim</option>
@@ -1007,7 +1007,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                  <select
                                     value={studentForm.TransporteEscolar}
                                     onChange={e => setStudentForm({...studentForm, TransporteEscolar: e.target.value})}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
                                  >
                                     <option>Não</option>
                                     <option>Sim</option>
@@ -1053,7 +1053,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                  <select
                                     value={studentForm.Turma}
                                     onChange={e => setStudentForm({ ...studentForm, Turma: e.target.value })}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
                                  >
                                     <option value="SEM TURMA">SEM TURMA</option>
                                     {classrooms.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -1064,7 +1064,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                  <select
                                     value={studentForm.status}
                                     onChange={e => setStudentForm({ ...studentForm, status: e.target.value })}
-                                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-xs outline-none focus:bg-white"
+                                    className="w-full px-3 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[11px] outline-none focus:bg-white"
                                  >
                                     <option value="ATIVO">ATIVO</option>
                                     <option value="TRANSFERIDO">TRANSFERIDO (ANTIGO)</option>
