@@ -937,7 +937,7 @@ const SecretariatClassroomManager: React.FC = () => {
                      <button onClick={() => setIsStudentModalOpen(false)} className="p-4 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-[1.5rem] transition-all shadow-sm"><X size={28} /></button>
                   </div>
 
-                  <form onSubmit={handleSaveStudent} className="p-12 space-y-8 overflow-y-auto custom-scrollbar">
+                  <form onSubmit={handleSaveStudent} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-6">
                            <div className="space-y-2">
@@ -949,14 +949,14 @@ const SecretariatClassroomManager: React.FC = () => {
                                  className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl font-black text-base outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
                               />
                            </div>
-                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div className="space-y-2">
                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Matrícula</label>
                                  <input
                                     required
                                     value={studentForm.registration_number}
                                     onChange={e => setStudentForm({ ...studentForm, registration_number: e.target.value })}
-                                    className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    className="w-full px-2 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                  />
                               </div>
                               <div className="space-y-2">
@@ -966,7 +966,7 @@ const SecretariatClassroomManager: React.FC = () => {
                                     type="date"
                                     value={studentForm.birth_date}
                                     onChange={e => setStudentForm({ ...studentForm, birth_date: e.target.value })}
-                                    className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    className="w-full px-2 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                  />
                               </div>
                               <div className="space-y-2">
@@ -975,11 +975,11 @@ const SecretariatClassroomManager: React.FC = () => {
                                     type="date"
                                     value={studentForm.enrollment_date || ''}
                                     onChange={e => setStudentForm({ ...studentForm, enrollment_date: e.target.value })}
-                                    className="w-full px-3 py-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                                    className="w-full px-2 py-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
                                  />
                               </div>
                            </div>
-                           <div className="grid grid-cols-3 gap-6">
+                           <div className="grid grid-cols-3 gap-3">
                               <div className="space-y-2">
                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sexo</label>
                                  <select
