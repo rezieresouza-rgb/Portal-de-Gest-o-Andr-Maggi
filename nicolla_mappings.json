@@ -1,0 +1,13 @@
+{
+  "error": null,
+  "mappings": [
+    {
+      "classroom_id": "b514754e-5c4c-4e37-bb4b-aa445428fcf8",
+      "classrooms": {
+        "name": "6º ANO D",
+        "year": "6º ANO",
+        "shift": "VESPERTINO"
+      }
+    }
+  ]
+}

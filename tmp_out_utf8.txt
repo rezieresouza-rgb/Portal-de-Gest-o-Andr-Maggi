@@ -1,0 +1,337 @@
+Searching for YURY LINS DOS SANTOS MOTA:
+[
+  {
+    "registration_number": "2667280",
+    "name": "YURY LINS DOS SANTOS MOTA"
+  }
+]
+
+Searching for MICHEL AZEVEDO PEREIRA:
+[
+  {
+    "registration_number": "2667264",
+    "name": "MICHEL AZEVEDO PEREIRA"
+  }
+]
+
+Searching for MIGUEL AZEVEDO PEREIRA:
+[
+  {
+    "registration_number": "2667299",
+    "name": "MIGUEL AZEVEDO PEREIRA"
+  },
+  {
+    "registration_number": "2683159",
+    "name": "ANTHONY MIGUEL PEREIRA DE SOUZA"
+  }
+]
+
+Searching for KALAN FEITOSA MORAES:
+[]
+
+Searching for JOÃO LUCAS DE SOUZA DA SILVA:
+[
+  {
+    "registration_number": "220014",
+    "name": "JOÃO GABRIEL DA SILVA"
+  },
+  {
+    "registration_number": "2286454",
+    "name": "JOÃO VITOR PEREIRA DA SILVA"
+  },
+  {
+    "registration_number": "2671253",
+    "name": "JOÃO LUIZ MESQUITA SILVA DOS SANTOS"
+  },
+  {
+    "registration_number": "2421264",
+    "name": "JOÃO PEDRO FERMINO DA SILVA"
+  },
+  {
+    "registration_number": "2208914",
+    "name": "JOÃO GABRIEL DA SILVA"
+  },
+  {
+    "registration_number": "2517807",
+    "name": "JOÃO VICTOR DA SILVA ALVES"
+  },
+  {
+    "registration_number": "2667419",
+    "name": "JOÃO LUCAS DE SOUZA DA SILVA"
+  },
+  {
+    "registration_number": "2401054",
+    "name": "JOÃO PEDRO FERMINO DA SILVA"
+  },
+  {
+    "registration_number": "3052584",
+    "name": "JOÃO PEDRO FIRMINO DA SILVA"
+  }
+]
+
+Searching for DAVI LUCAS LIMA RODRIGUES:
+[
+  {
+    "registration_number": "2667873",
+    "name": "DAVI LUCAS LIMA RODRIGUES"
+  }
+]
+
+Searching for WELBER LERRANDRO LOPES APARECIDO:
+[
+  {
+    "registration_number": "2667896",
+    "name": "WELBER LERRANDRO LOPES APARECIDO"
+  },
+  {
+    "registration_number": "2667888",
+    "name": "WELBER LERHANDRO LOPES APARECIDO"
+  },
+  {
+    "registration_number": "2667385",
+    "name": "WELBER LERRANDRO LOPES APARECIDO"
+  }
+]
+
+Searching for LEONEL FELIPE OLIVEIRA DOS SANTOS:
+[
+  {
+    "registration_number": "2667315",
+    "name": "LEONEL FELIPE OLIVEIRA DOS SANTOS"
+  }
+]
+
+Searching for MARIA FERNANDA EQUIDONE MACHADO:
+[
+  {
+    "registration_number": "2667952",
+    "name": "MARIA FERNANDA EQUIDONE MACHADO"
+  },
+  {
+    "registration_number": "2667352",
+    "name": "MARIA FERNANDA EQUILIDONE MACHADO"
+  }
+]
+
+Searching for CRISLANE EDUARDA FARIAS DE ALMEIDA:
+[
+  {
+    "registration_number": "2669227",
+    "name": "CRISLANE EDUARDA FARIAS DE ALMEIDA"
+  }
+]
+
+Searching for CRISLAINE VICTORIA FARIAS DE ALMEIDA:
+[
+  {
+    "registration_number": "2663227",
+    "name": "CRISLAINE EDUARDA FARIAS DE ALMEIDA"
+  }
+]
+
+Searching for ANA CLARA PEREIRA BRITO:
+[
+  {
+    "registration_number": "2668996",
+    "name": "ANA CLARA PEREIRA BRITO"
+  },
+  {
+    "registration_number": "2270899",
+    "name": "ANA CLARA FIEL BRITO"
+  }
+]
+
+Searching for BEPET PANARA METUKTIRE:
+[]
+
+Searching for ENZO ARTHUR DA SILVA SANTOS:
+[
+  {
+    "registration_number": "2682303",
+    "name": "ENZO GONÇALVES DOS SANTOS"
+  },
+  {
+    "registration_number": "2663302",
+    "name": "ENZO ARTHUR DA SILVA SANTOS"
+  }
+]
+
+Searching for EMILY CRISTINA DO NASCIMENTO:
+[
+  {
+    "registration_number": "2663331",
+    "name": "EMILY CRISTINA DO NASCIMENTO"
+  }
+]
+
+Searching for SABRINA VITORIA MATIAS MARTINS:
+[
+  {
+    "registration_number": "2663303",
+    "name": "SABRINA VITORIA MATIAS MARTINS"
+  }
+]
+
+Searching for JOÃO GABRIEL DE OLIVEIRA MARTINS:
+[
+  {
+    "registration_number": "2668897",
+    "name": "JOÃO GABRIEL DE OLIVEIRA MARTINS"
+  },
+  {
+    "registration_number": "2683745",
+    "name": "JOÃO MIGUEL MARTINS NOVAIS"
+  }
+]
+
+Searching for ISADORA CAETANO MATEUS:
+[
+  {
+    "registration_number": "2663319",
+    "name": "ISADORA CAETANO MATEUS"
+  }
+]
+
+Searching for MISAEL LUIZ DA SILVA DIAS:
+[
+  {
+    "registration_number": "2670313",
+    "name": "MISAEL LUIZ DA SILVA DIAS"
+  }
+]
+
+Searching for JOÃO VITOR PEREIRA DA SILVA:
+[
+  {
+    "registration_number": "220014",
+    "name": "JOÃO GABRIEL DA SILVA"
+  },
+  {
+    "registration_number": "2286454",
+    "name": "JOÃO VITOR PEREIRA DA SILVA"
+  },
+  {
+    "registration_number": "2671253",
+    "name": "JOÃO LUIZ MESQUITA SILVA DOS SANTOS"
+  },
+  {
+    "registration_number": "2421264",
+    "name": "JOÃO PEDRO FERMINO DA SILVA"
+  },
+  {
+    "registration_number": "2208914",
+    "name": "JOÃO GABRIEL DA SILVA"
+  },
+  {
+    "registration_number": "2517807",
+    "name": "JOÃO VICTOR DA SILVA ALVES"
+  },
+  {
+    "registration_number": "2667419",
+    "name": "JOÃO LUCAS DE SOUZA DA SILVA"
+  },
+  {
+    "registration_number": "2401054",
+    "name": "JOÃO PEDRO FERMINO DA SILVA"
+  },
+  {
+    "registration_number": "3052584",
+    "name": "JOÃO PEDRO FIRMINO DA SILVA"
+  }
+]
+
+Searching for GUSTAVO HENRIQUE DE PAULA DE LARA:
+[
+  {
+    "registration_number": "2235438",
+    "name": "GUSTAVO HENRIQUE DE PAULA DE LARA"
+  }
+]
+
+Searching for JOÃO OTÁVIO GONSALVES DE LIMA:
+[
+  {
+    "registration_number": "2596601",
+    "name": "JOÃO LUCAS DO NASCIMENTO LIMA"
+  },
+  {
+    "registration_number": "255801",
+    "name": "JOÃO LUCAS DO NASCIMENTO LIMA"
+  }
+]
+
+Searching for GUILHERME SOUZA ALVES:
+[
+  {
+    "registration_number": "2302994",
+    "name": "GUILHERME SOUZA ALVES"
+  }
+]
+
+Searching for PAULA FERNANDA COIMBRA DA SILVA:
+[
+  {
+    "registration_number": "2429260",
+    "name": "PAULA FERNANDA VIEIRA DA SILVA"
+  },
+  {
+    "registration_number": "2237215",
+    "name": "PAULA FERNANDA COIMBRA DA SILVA"
+  }
+]
+
+Searching for MIKAELY TIBURCIO SILVA:
+[
+  {
+    "registration_number": "2325694",
+    "name": "MIKAELY TIBURCIO SILVA"
+  }
+]
+
+Searching for IASMIM RAFAELA AMÂNCIO DE LIMA:
+[]
+
+Searching for FELIPE NUNES DA SILVA:
+[
+  {
+    "registration_number": "2723256",
+    "name": "FELIPE NUNES DA SILVA"
+  },
+  {
+    "registration_number": "2699492",
+    "name": "FELIPE GERMANO BENTO DA SILVA"
+  }
+]
+
+Searching for FERNANDO DJARA TXUCARRAMÃE:
+[
+  {
+    "registration_number": "2397899",
+    "name": "FERNANDO DJARA TXUCARRAMÃE"
+  },
+  {
+    "registration_number": "2317359",
+    "name": "FERNANDO OJARA TXUCARRAMÃE"
+  }
+]
+
+Searching for EMILLY VITÓRIA GOMES DOS SANTOS:
+[
+  {
+    "registration_number": "2347759",
+    "name": "EMILLY VITORIA GOMES DOS SANTOS"
+  },
+  {
+    "registration_number": "2429802",
+    "name": "KEMILLY FERREIRA DOS SANTOS"
+  }
+]
+
+Searching for DAVI CARVALHO SALMENTO:
+[
+  {
+    "registration_number": "2725402",
+    "name": "DAVI CARVALHO SALMENTO"
+  }
+]
+

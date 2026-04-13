@@ -12,6 +12,7 @@ export interface Student {
     adjustment_date?: string;
     guardian_name?: string;
     contact_phone?: string;
+    status?: string;
 }
 
 export const useStudents = () => {
@@ -29,6 +30,7 @@ export const useStudents = () => {
           enrollments (
             enrollment_date,
             adjustment_date,
+            status,
             classrooms (name, shift)
           )
         `);
@@ -37,7 +39,8 @@ export const useStudents = () => {
 
             if (data) {
                 const mappedStudents: Student[] = data.map((s: any) => {
-                    const classroom = s.enrollments?.[0]?.classrooms;
+                    const enrollment = s.enrollments?.[0];
+                    const classroom = enrollment?.classrooms;
                     return {
                         id: s.id,
                         name: s.name,
@@ -45,8 +48,9 @@ export const useStudents = () => {
                         shift: classroom?.shift || '---',
                         birth_date: s.birth_date,
                         registration_number: s.registration_number,
-                        enrollment_date: s.enrollments?.[0]?.enrollment_date,
-                        adjustment_date: s.enrollments?.[0]?.adjustment_date,
+                        enrollment_date: enrollment?.enrollment_date,
+                        adjustment_date: enrollment?.adjustment_date,
+                        status: enrollment?.status || 'INATIVO',
                         guardian_name: s.guardian_name,
                         contact_phone: s.contact_phone
                     };

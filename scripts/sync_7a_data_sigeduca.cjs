@@ -71,10 +71,9 @@ async function sync7A() {
       .upsert({
         student_id: student.id,
         classroom_id: classroomId,
-        year: 2026,
         enrollment_date: s.enrollment,
         status: 'ATIVO'
-      }, { onConflict: 'student_id,year' }); // Primary key is student_id, year
+      }, { onConflict: 'student_id,classroom_id' });
 
     if (enrollError) {
       console.log(`\u274c ERRO MATR\u00cdCULA: ${enrollError.message}`);

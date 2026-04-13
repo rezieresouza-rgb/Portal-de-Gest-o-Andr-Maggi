@@ -36,7 +36,8 @@ const BuscaAtivaStudentList: React.FC = () => {
 
   useEffect(() => {
     if (dbStudents) {
-      setStudents(dbStudents);
+      const active = dbStudents.filter(s => s.status === 'ATIVO' || s.status === 'RECLASSIFICADO');
+      setStudents(active);
     }
   }, [dbStudents]);
 

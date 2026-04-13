@@ -1,0 +1,19 @@
+﻿CLASSROOM LIST:
+ID: 12783886-4a61-4898-ace9-9652bf6e7288 | Name: "6┬║ ANO A" | Year: 6┬║ | Shift: MATUTINO | Students: 30
+ID: 65988e66-36c6-41b6-988c-60892c5c8053 | Name: "6┬║ ANO A" | Year: 2026 | Shift: MATUTINO | Students: 30
+ID: fa5f608e-e82b-4ea8-9651-473c583c6325 | Name: "6┬║ ANO B" | Year: 6┬║ | Shift: VESPERTINO | Students: 29
+ID: b514754e-5c4c-4e37-bb4b-aa445428fcf8 | Name: "6┬║ ANO D" | Year: 6┬║ ANO | Shift: VESPERTINO | Students: 29
+ID: 8aeaeed2-e475-4c54-9245-69228e5fcc52 | Name: "6┬║ ANO E" | Year: 6┬║ ANO | Shift: VESPERTINO | Students: 30
+ID: f308d078-c267-4013-b27d-351352f34396 | Name: "7┬║ ANO A" | Year: 7┬║ | Shift: MATUTINO | Students: 30
+ID: a405733a-d5c0-4dab-8724-5b16a0ad38da | Name: "7┬║ ANO B" | Year: 7┬║ | Shift: VESPERTINO | Students: 29
+ID: 5d24ee68-bb16-4fb1-bc49-f02052fb974e | Name: "7┬║ ANO D" | Year: 6┬║ ANO | Shift: VESPERTINO | Students: 30
+ID: 1da27246-136f-4a69-8707-6dbf590a02d6 | Name: "7┬║ ANO E" | Year: 7┬║ ANO | Shift: VESPERTINO | Students: 30
+ID: 69d73c72-65a3-441e-9bd6-14b6e923309d | Name: "8┬║ ANO A" | Year: 8┬║ | Shift: MATUTINO | Students: 25
+ID: 51adb22f-63ae-4f17-9970-edd91220ad8e | Name: "8┬║ ANO B" | Year: 8┬║ | Shift: VESPERTINO | Students: 28
+ID: e20aaa1c-a24c-4d8c-bcfb-00b795db10b5 | Name: "8┬║ ANO D" | Year: 8┬║ ANO | Shift: VESPERTINO | Students: 30
+ID: 38c288c5-ca89-470a-8094-7ee1d25be13c | Name: "8┬║ ANO E" | Year: 8┬║ ANO | Shift: VESPERTINO | Students: 29
+ID: 2c5e5b7d-111e-48ac-b8f8-3f1abedf7148 | Name: "9┬║ ANO A" | Year: 9┬║ | Shift: MATUTINO | Students: 30
+ID: c4151923-5eba-4ef9-a989-a0d8e66658c5 | Name: "9┬║ ANO B" | Year: 9┬║ | Shift: VESPERTINO | Students: 30
+ID: e77718aa-af6c-4a4e-a243-372df483166a | Name: "9┬║ ANO C" | Year: 9┬║ ANO | Shift: MATUTINO | Students: 31
+ID: 6126c0dd-efbf-478b-9e61-4353af06ae5a | Name: "9┬║ ANO D" | Year: 9┬║ ANO | Shift: VESPERTINO | Students: 30
+ID: dfbffcc2-c598-4bca-bcbc-d8bc4eef22f3 | Name: "9┬║ ANO E" | Year: 9┬║ ANO | Shift: VESPERTINO | Students: 29

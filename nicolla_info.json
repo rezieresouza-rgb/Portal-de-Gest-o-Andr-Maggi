@@ -1,0 +1,25 @@
+{
+  "students": [
+    {
+      "id": "e6c54bcf-4006-4877-ba9f-bb7484fb7a60",
+      "name": "NICOLLA LINDCIA ZILVA",
+      "birth_date": "2014-01-01",
+      "registration_number": "3369930",
+      "address": null,
+      "guardian_name": null,
+      "contact_phone": null,
+      "status": "ATIVO",
+      "created_at": "2026-04-04T18:59:28.689275+00:00",
+      "paed": false,
+      "school_transport": false,
+      "gender": null
+    }
+  ],
+  "rooms": [
+    {
+      "studentName": "NICOLLA LINDCIA ZILVA",
+      "room": null,
+      "note": "No classroom_id"
+    }
+  ]
+}

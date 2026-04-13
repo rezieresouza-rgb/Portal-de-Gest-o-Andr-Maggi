@@ -92,7 +92,12 @@ const BuscaAtivaDashboard: React.FC = () => {
       const criticalList: any[] = [];
       const infrequencyByYear: Record<string, number> = {};
 
-      dbStudents.forEach((s: any) => {
+      // Filter active students only (matching Secretariat logic)
+      const activeStudents = dbStudents.filter((s: any) => 
+        s.status === 'ATIVO' || s.status === 'RECLASSIFICADO'
+      );
+
+      activeStudents.forEach((s: any) => {
         const stat = studentStats[s.registration_number] || studentStats[s.id] || { total: 0, present: 0 };
         const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
 
@@ -125,7 +130,7 @@ const BuscaAtivaDashboard: React.FC = () => {
       }
 
       setStats({
-        totalStudents: dbStudents.length,
+        totalStudents: activeStudents.length,
         criticalCount: critical,
         recoveredCount: recovered,
         ficaiCount: ficai
