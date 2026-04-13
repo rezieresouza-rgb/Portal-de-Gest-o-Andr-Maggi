@@ -757,9 +757,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         .getPublicUrl(filePath);
 
       setBookForm({ ...bookForm, coverUrl: publicUrl });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro no upload da capa:", error);
-      alert("Erro ao enviar a imagem. Verifique se o bucket 'library_covers' existe no seu Supabase.");
+      alert(`Erro ao enviar a imagem: ${error.message || "Erro desconhecido"}\n\nIMPORTANTE: Verifique se o bucket 'library_covers' foi criado no seu Supabase e está configurado como 'Public'.`);
     } finally {
       setUploadingImage(false);
     }

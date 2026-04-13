@@ -39,8 +39,24 @@ export const useStudents = () => {
 
             if (data) {
                 const mappedStudents: Student[] = data.map((s: any) => {
-                    const enrollment = s.enrollments?.[0];
+                    // Sort enrollments by date (latest first) and prioritize 'ATIVO' or 'RECLASSIFICADO'
+                    const sortedEnrollments = [...(s.enrollments || [])].sort((a, b) => {
+                        const dateA = new Date(a.enrollment_date || 0).getTime();
+                        const dateB = new Date(b.enrollment_date || 0).getTime();
+                        
+                        // If one is active and other is not, prioritize active
+                        const isActiveA = (a.status === 'ATIVO' || a.status === 'RECLASSIFICADO');
+                        const isActiveB = (b.status === 'ATIVO' || b.status === 'RECLASSIFICADO');
+                        
+                        if (isActiveA && !isActiveB) return -1;
+                        if (!isActiveA && isActiveB) return 1;
+                        
+                        return dateB - dateA; // Latest first
+                    });
+
+                    const enrollment = sortedEnrollments[0];
                     const classroom = enrollment?.classrooms;
+                    
                     return {
                         id: s.id,
                         name: s.name,
