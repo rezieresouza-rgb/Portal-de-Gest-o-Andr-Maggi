@@ -218,6 +218,13 @@ const BuscaAtivaStudentList: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
+                <button 
+                  onClick={() => setLoggingStudent(s)} 
+                  className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 shadow-sm"
+                  title="Registrar Histórico"
+                >
+                  <MessageSquare size={18} />
+                </button>
                 <button onClick={() => setViewingActions({ id: s.id, name: s.name, class: s.class })} className="px-5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 shadow-sm"><CheckCircle2 size={14} /> Protocolos</button>
                 <button onClick={() => setViewingProfile(s)} className="px-5 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-[10px] font-black uppercase border border-gray-200">Ver Perfil</button>
                 <button onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} className="px-5 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><Scale size={14} /> Encaminhar</button>
@@ -231,6 +238,13 @@ const BuscaAtivaStudentList: React.FC = () => {
       {selectedStudent && <BuscaAtivaReferralModal student={selectedStudent} onClose={() => setSelectedStudent(null)} onSave={handleSaveReferral} />}
       {viewingProfile && <BuscaAtivaStudentProfile student={viewingProfile} referrals={referrals} onClose={() => setViewingProfile(null)} />}
       {viewingActions && <BuscaAtivaActionsModal student={viewingActions} onClose={() => setViewingActions(null)} />}
+      {loggingStudent && (
+        <BuscaAtivaAddLogModal 
+          student={loggingStudent} 
+          onClose={() => setLoggingStudent(null)} 
+          onSuccess={() => fetchData()} 
+        />
+      )}
     </div>
   );
 };
