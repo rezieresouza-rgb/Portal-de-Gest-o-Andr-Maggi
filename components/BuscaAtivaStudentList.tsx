@@ -18,6 +18,7 @@ import { Referral, AttendanceRecord } from '../types';
 import BuscaAtivaReferralModal from './BuscaAtivaReferralModal';
 import BuscaAtivaStudentProfile from './BuscaAtivaStudentProfile';
 import BuscaAtivaActionsModal from './BuscaAtivaActionsModal';
+import BuscaAtivaAddLogModal from './BuscaAtivaAddLogModal';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 
@@ -26,6 +27,7 @@ const BuscaAtivaStudentList: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<{ id: string, name: string, class: string } | null>(null);
   const [viewingProfile, setViewingProfile] = useState<any | null>(null);
   const [viewingActions, setViewingActions] = useState<{ id: string, name: string, class: string } | null>(null);
+  const [loggingStudent, setLoggingStudent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Data Sources
