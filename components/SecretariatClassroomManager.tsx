@@ -53,6 +53,7 @@ interface DetailedStudent {
   registration_number: string;
   birth_date: string;
   enrollment_date?: string;
+  adjustment_date?: string;
   paed: boolean;
   school_transport: boolean;
   guardian_name: string;
@@ -91,6 +92,7 @@ const SecretariatClassroomManager: React.FC = () => {
       registration_number: '',
       birth_date: '',
       enrollment_date: '',
+      adjustment_date: '',
       paed: false,
       school_transport: false,
       guardian_name: '',
@@ -165,6 +167,7 @@ const SecretariatClassroomManager: React.FC = () => {
                classroom_id,
                status,
                enrollment_date,
+               adjustment_date,
                students (*)
             `);
 
@@ -177,6 +180,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   ...e.students,
                   status: e.status || e.students?.status || 'ATIVO',
                   enrollment_date: e.enrollment_date,
+                  adjustment_date: e.adjustment_date,
                   Nome: e.students?.name,
                   CodigoAluno: e.students?.registration_number,
                   Turma: cls.name,
@@ -227,6 +231,7 @@ const SecretariatClassroomManager: React.FC = () => {
                enrollments (
                   status,
                   enrollment_date,
+                  adjustment_date,
                   classrooms (name, shift)
                )
             `)
@@ -252,7 +257,8 @@ const SecretariatClassroomManager: React.FC = () => {
                   TelefoneContato: s.contact_phone || '',
                   registration_number: s.registration_number,
                   birth_date: s.birth_date,
-                  enrollment_date: activeEnr?.enrollment_date
+                  enrollment_date: activeEnr?.enrollment_date,
+                  adjustment_date: activeEnr?.adjustment_date
                };
             });
             setSearchResults(mapped);
@@ -293,6 +299,7 @@ const SecretariatClassroomManager: React.FC = () => {
          TelefoneContato: student.contact_phone || student.TelefoneContato || '',
          status: student.status || 'ATIVO',
          enrollment_date: student.enrollment_date || '',
+         adjustment_date: student.adjustment_date || '',
          gender: student.gender || 'MASCULINO'
       };
 
@@ -341,7 +348,10 @@ const SecretariatClassroomManager: React.FC = () => {
                   const oldClass = classrooms.find(c => c.name === initialClassroomName);
                   if (oldClass) {
                      await supabase.from('enrollments')
-                        .update({ status: studentForm.status || 'ATIVO' })
+                        .update({ 
+                           status: studentForm.status || 'ATIVO',
+                           adjustment_date: studentForm.status !== 'ATIVO' ? studentForm.adjustment_date : null
+                        })
                         .eq('student_id', editingStudentId)
                         .eq('classroom_id', oldClass.id);
                   }
@@ -366,6 +376,7 @@ const SecretariatClassroomManager: React.FC = () => {
                            student_id: editingStudentId,
                            classroom_id: targetClass.id,
                            enrollment_date: studentForm.enrollment_date || new Date().toLocaleDateString('sv-SE'),
+                           adjustment_date: studentForm.status !== 'ATIVO' ? studentForm.adjustment_date : null,
                            status: 'ATIVO'
                         }]);
                      }
@@ -377,7 +388,10 @@ const SecretariatClassroomManager: React.FC = () => {
                   const currentClass = classrooms.find(c => c.name === studentForm.Turma);
                   if (currentClass) {
                      await supabase.from('enrollments')
-                        .update({ status: studentForm.status || 'ATIVO' })
+                        .update({ 
+                           status: studentForm.status || 'ATIVO',
+                           adjustment_date: studentForm.status !== 'ATIVO' ? studentForm.adjustment_date : null
+                        })
                         .eq('student_id', editingStudentId)
                         .eq('classroom_id', currentClass.id);
                   }
@@ -840,6 +854,7 @@ const SecretariatClassroomManager: React.FC = () => {
                               <th className="px-6 py-4">Nome do Aluno</th>
                               <th className="px-6 py-4 w-28">Status</th>
                               <th className="px-6 py-4 w-32">Matrícula</th>
+                              <th className="px-6 py-4 w-32">Ajuste</th>
                               <th className="px-6 py-4 text-right w-32">Ações</th>
                            </tr>
                         </thead>
@@ -877,6 +892,11 @@ const SecretariatClassroomManager: React.FC = () => {
                                  <td className="px-6 py-4">
                                     <span className="text-[10px] font-bold text-gray-500 font-mono">
                                        {formatDateSafe(student.enrollment_date)}
+                                    </span>
+                                 </td>
+                                 <td className="px-6 py-4">
+                                    <span className="text-[10px] font-black text-amber-500 font-mono">
+                                       {formatDateSafe(student.adjustment_date)}
                                     </span>
                                  </td>
                                  <td className="px-6 py-4 text-right">
@@ -1077,6 +1097,18 @@ const SecretariatClassroomManager: React.FC = () => {
                                        <option value="FALECIDO">FALECIDO</option>
                                     </select>
                                  </div>
+                                 {studentForm.status !== 'ATIVO' && (
+                                    <div className="space-y-2 animate-in slide-in-from-left-2 duration-300">
+                                       <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest ml-1">Data de Ajuste</label>
+                                       <input
+                                          type="date"
+                                          required
+                                          value={studentForm.adjustment_date || ''}
+                                          onChange={e => setStudentForm({ ...studentForm, adjustment_date: e.target.value })}
+                                          className="w-full px-2 py-4 bg-amber-50 border border-amber-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-amber-500/5 focus:bg-white transition-all"
+                                       />
+                                    </div>
+                                 )}
                               </div>
                            </div>
                         </div>

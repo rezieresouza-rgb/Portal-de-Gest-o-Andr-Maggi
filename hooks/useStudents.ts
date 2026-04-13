@@ -9,6 +9,7 @@ export interface Student {
     birth_date?: string;
     registration_number?: string;
     enrollment_date?: string;
+    adjustment_date?: string;
     guardian_name?: string;
     contact_phone?: string;
 }
@@ -27,6 +28,7 @@ export const useStudents = () => {
           *,
           enrollments (
             enrollment_date,
+            adjustment_date,
             classrooms (name, shift)
           )
         `);
@@ -44,6 +46,7 @@ export const useStudents = () => {
                         birth_date: s.birth_date,
                         registration_number: s.registration_number,
                         enrollment_date: s.enrollments?.[0]?.enrollment_date,
+                        adjustment_date: s.enrollments?.[0]?.adjustment_date,
                         guardian_name: s.guardian_name,
                         contact_phone: s.contact_phone
                     };
