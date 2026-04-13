@@ -205,6 +205,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
         .from('enrollments')
         .select(`
           status,
+          adjustment_date,
           students (
             id,
             name,
@@ -224,6 +225,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
           Turma: className,
           id: e.students.id, // Keep Supabase ID for future use
           status: e.status || 'ATIVO',
+          adjustment_date: e.adjustment_date,
           PAED: e.students.paed ? 'Sim' : 'Não',
           TransporteEscolar: e.students.school_transport ? 'Sim' : 'Não'
         })).sort((a: any, b: any) => a.Nome.localeCompare(b.Nome));
@@ -559,8 +561,11 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                 {students.map((student, idx) => {
                   const movements = studentMovements[student.id] || [];
                   const studentStatus = student.status || '';
-                  // Bloqueia qualquer status que não seja ATIVO (Reclassificado, Transferidos, etc.)
-                  const isBlocked = studentStatus !== 'ATIVO';
+                  const adjDate = student.adjustment_date;
+                  
+                  // Bloqueia se o status não for ATIVO E (não houver data de ajuste OU a data da aula for >= data de ajuste)
+                  const isBlocked = studentStatus !== 'ATIVO' && (!adjDate || date >= adjDate);
+                  
                   const hasMedicalCertificate = movements.some(m =>
                     m.movement_type === 'ATESTADO' && m.movement_date === date
                   );
