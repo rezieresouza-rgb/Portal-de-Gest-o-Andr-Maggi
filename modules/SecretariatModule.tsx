@@ -25,6 +25,7 @@ import SecretariatBulletinPrinter from '../components/SecretariatBulletinPrinter
 import SecretariatNotificationCenter from '../components/SecretariatNotificationCenter';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import SecretariatAttendanceHistory from '../components/SecretariatAttendanceHistory';
+import SecretariatReports from '../components/SecretariatReports';
 
 interface SecretariatModuleProps {
   user?: any;
@@ -32,7 +33,7 @@ interface SecretariatModuleProps {
 }
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'reports'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
@@ -41,6 +42,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
     { id: 'classes', label: 'Gestão de Turmas', icon: Users },
     { id: 'staff', label: 'Servidores / RH', icon: Briefcase },
     { id: 'bulletins', label: 'Emissão de Boletins', icon: FileText },
+    { id: 'reports', label: 'Relatórios', icon: FileText },
   ];
 
   const toggleFullScreen = () => {
@@ -131,6 +133,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           {activeTab === 'classes' && <SecretariatClassroomManager />}
           {activeTab === 'staff' && <SecretariatStaffManager />}
           {activeTab === 'bulletins' && <SecretariatBulletinPrinter />}
+          {activeTab === 'reports' && <SecretariatReports />}
         </div>
 
         {/* Centro de Notificações Integrado (Flutuante) */}
