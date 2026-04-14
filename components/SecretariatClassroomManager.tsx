@@ -42,6 +42,7 @@ import { extractDetailedStudentList } from '../geminiService';
 
 interface EnhancedClassroom extends Classroom {
    studentCount: number;
+   activeCount: number;
    students: any[];
    salaNum: string;
    room_number?: string;
@@ -189,12 +190,14 @@ const SecretariatClassroomManager: React.FC = () => {
                   NomeResponsavel: e.students?.guardian_name || '',
                   TelefoneContato: e.students?.contact_phone || ''
                })).sort((a, b) => a.Nome.localeCompare(b.Nome));
-
+ 
+               const activeCount = classStudents.filter(s => s.status === 'ATIVO' || s.status === 'RECLASSIFICADO').length;
                let salaNum = cls.room_number || '---';
                
                return {
                   ...cls,
                   studentCount: classStudents.length,
+                  activeCount,
                   students: classStudents,
                   salaNum
                };
@@ -785,10 +788,13 @@ const SecretariatClassroomManager: React.FC = () => {
                      <h3 className="text-3xl font-black text-gray-900 uppercase mb-6 tracking-tighter">{cls.name}</h3>
 
                      <div className="grid grid-cols-2 gap-4 mb-8">
-                        <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 text-center">
-                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1.5">Alunos</p>
-                           <p className={`text-2xl font-black ${cls.studentCount > 0 ? 'text-indigo-600' : 'text-red-400'}`}>{cls.studentCount}</p>
-                        </div>
+                         <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 text-center">
+                            <p className="text-[9px] font-black text-gray-400 uppercase mb-1.5">Alunos Ativos</p>
+                            <div className="flex flex-col items-center">
+                               <p className={`text-2xl font-black ${cls.activeCount > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>{cls.activeCount}</p>
+                               <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">de {cls.studentCount} total</p>
+                            </div>
+                         </div>
                         <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 text-center relative group/sala cursor-pointer" onClick={() => { setEditingRoomId(cls.id); setEditRoomValue(cls.salaNum); }}>
                            <p className="text-[9px] font-black text-gray-400 uppercase mb-1.5">Sala</p>
                            {editingRoomId === cls.id ? (
@@ -836,7 +842,7 @@ const SecretariatClassroomManager: React.FC = () => {
                               </p>
                               <div className="w-1 h-1 bg-gray-200 rounded-full" />
                               <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1.5">
-                                 <Users size={12} /> {selectedClassDetail.studentCount} Alunos Matriculados
+                                 <Users size={12} /> {selectedClassDetail.activeCount} Ativos / {selectedClassDetail.studentCount} Matriculados
                               </p>
                            </div>
                         </div>
