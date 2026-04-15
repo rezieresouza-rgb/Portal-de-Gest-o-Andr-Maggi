@@ -356,7 +356,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
       {/* MODAL DE CRIAÇÃO DE NOVO CASO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-rose-950/40 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[95vh]">
+           <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[95vh]">
               <div className="p-8 bg-rose-50 border-b border-rose-100 flex justify-between items-center shrink-0">
                  <div className="flex items-center gap-5">
                     <div className="p-4 bg-rose-600 text-white rounded-3xl shadow-lg">
@@ -466,13 +466,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
                     <div className="space-y-1.5">
                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Relato do Fato</label>
-                       <textarea 
-                          required
-                          value={newCase.description}
-                          onChange={e => setNewCase({...newCase, description: e.target.value})}
-                          placeholder="Descreva detalhadamente o ocorrido..."
-                          className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-32 resize-none outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all"
-                       />
+                        <textarea 
+                           required
+                           value={newCase.description}
+                           onChange={e => setNewCase({...newCase, description: e.target.value})}
+                           placeholder="Descreva detalhadamente o ocorrido..."
+                           className="w-full p-8 bg-gray-50 border border-gray-100 rounded-[2.5rem] text-base font-medium min-h-[300px] resize-none outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all"
+                        />
                     </div>
 
                     <div className="space-y-4">
@@ -506,8 +506,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
       {/* MODAL DETALHES DO CASO EXISTENTE */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-end bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white h-full w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-right duration-500">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-white rounded-[3.5rem] w-full max-w-5xl max-h-[92vh] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
               <div className="p-8 bg-rose-900 text-white shrink-0">
                  <div className="flex justify-between items-start mb-6">
                     <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={28}/></button>
@@ -526,11 +526,11 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
               <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
-                       <FileText size={14} className="text-rose-600" /> Histórico do Relato
-                    </h4>
-                    <p className="text-sm text-gray-600 leading-relaxed font-medium italic">"{selectedCase.description}"</p>
-                 </div>
+                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                        <FileText size={14} className="text-rose-600" /> Histórico do Relato
+                     </h4>
+                     <p className="text-base text-gray-600 leading-relaxed font-medium bg-gray-50 p-8 rounded-[2rem] border border-gray-100">"{selectedCase.description}"</p>
+                  </div>
 
                   {/* [NOVO] Seção de Devolutiva ao Professor */}
                   <div className="space-y-4 bg-emerald-50/50 p-6 rounded-[2.5rem] border border-emerald-100/50 relative overflow-hidden group">
@@ -546,7 +546,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                         value={selectedCase.feedback || ''}
                         onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
                         placeholder="Escreva aqui a resposta/devolutiva para o professor que realizou este encaminhamento..."
-                        className="w-full p-6 bg-white border border-emerald-100 rounded-[2rem] text-sm font-medium h-32 resize-none outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all"
+                        className="w-full p-8 bg-white border-2 border-emerald-100 rounded-[2.5rem] text-base font-bold min-h-[350px] resize-none outline-none focus:ring-8 focus:ring-emerald-500/5 transition-all shadow-inner focus:border-emerald-500"
                      />
                      
                      <button 
