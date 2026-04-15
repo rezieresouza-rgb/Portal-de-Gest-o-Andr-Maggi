@@ -18,7 +18,8 @@ import {
   ShieldAlert,
   Save,
   UserPlus,
-  PlusCircle
+  PlusCircle,
+  Trash2
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { INITIAL_STUDENTS } from '../constants/initialData';
@@ -196,6 +197,27 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     }
   };
 
+  const handleDeleteCase = async (e: React.MouseEvent, id: string) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("⚠️ Você tem certeza que deseja excluir este caso permanentemente? Esta ação não pode ser desfeita.")) return;
+    
+    try {
+      const { error } = await supabase
+        .from('mediation_cases')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      alert("✅ Caso excluído com sucesso!");
+      await fetchCases();
+      if (selectedCase?.id === id) setSelectedCase(null);
+    } catch (err: any) {
+      console.error("Erro ao excluir caso:", err);
+      alert("❌ Erro ao excluir o caso: " + (err.message || "Erro de conexão"));
+    }
+  };
+
   const getStatusStyle = (status: MediationStatus) => {
     switch (status) {
       case 'ABERTURA': return 'bg-blue-50 text-blue-600 border-blue-100';
@@ -307,8 +329,18 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                        ))}
                     </div>
                  </div>
-                 <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-rose-600 group-hover:text-white rounded-xl transition-all">
-                    <ChevronRight size={24}/>
+                 </div>
+                 <div className="flex flex-col gap-2">
+                    <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-rose-600 group-hover:text-white rounded-xl transition-all">
+                       <ChevronRight size={24}/>
+                    </div>
+                    <button 
+                      onClick={(e) => handleDeleteCase(e, c.id)}
+                      className="p-3 bg-gray-50 text-gray-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
+                      title="Excluir Caso"
+                    >
+                       <Trash2 size={16}/>
+                    </button>
                  </div>
               </div>
            </div>
@@ -642,6 +674,12 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                    className="flex-1 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-violet-700 transition-all min-w-[200px]"
                  >
                    Ver Encaminhamento
+                 </button>
+                 <button 
+                   onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
+                   className="flex-1 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-100 transition-all min-w-[200px]"
+                 >
+                   Excluir Caso
                  </button>
                  <button onClick={() => setSelectedCase(null)} className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all min-w-[200px]">Fechar Aba</button>
               </div>
