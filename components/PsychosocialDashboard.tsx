@@ -17,14 +17,15 @@ import { PsychosocialRole } from '../types';
 
 interface PsychosocialDashboardProps {
   role: PsychosocialRole;
+  onNavigate?: (tab: string, search?: string) => void;
 }
 
-const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role }) => {
+const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role, onNavigate }) => {
   // Simulação de integração com Busca Ativa e Ocorrências
   const integratedAlerts = [
-    { id: 1, type: 'OCORRÊNCIA', student: 'ADRIANO SANTOS', reason: '3 Ocorrências Disciplinares na semana', severity: 'ALTA' },
-    { id: 2, type: 'BUSCA ATIVA', student: 'BRUNO SILVA', reason: 'Evasão escolar - Família não atende', severity: 'CRÍTICA' },
-    { id: 3, type: 'CONFLITO', student: 'ANA & CARLA', reason: 'Possível bullying digital relatado', severity: 'MÉDIA' },
+    { id: 1, type: 'OCORRÊNCIA', student: 'ADRIANO SANTOS', reason: '3 Ocorrências Disciplinares na semana', severity: 'ALTA', targetTab: 'referrals' },
+    { id: 2, type: 'BUSCA ATIVA', student: 'BRUNO SILVA', reason: 'Evasão escolar - Família não atende', severity: 'CRÍTICA', targetTab: 'referrals' },
+    { id: 3, type: 'CONFLITO', student: 'ANA & CARLA', reason: 'Possível bullying digital relatado', severity: 'MÉDIA', targetTab: 'mediation' },
   ];
 
   return (
@@ -32,19 +33,19 @@ const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role }) =
       
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm cursor-pointer hover:border-rose-200 transition-all" onClick={() => onNavigate?.('mediation')}>
            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mediações Ativas</p>
            <p className="text-3xl font-black text-gray-900 mt-1">12</p>
         </div>
-        <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100 shadow-sm">
+        <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100 shadow-sm cursor-pointer hover:bg-rose-100 transition-all" onClick={() => onNavigate?.('referrals')}>
            <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Escutas Pendentes</p>
            <p className="text-3xl font-black text-rose-700 mt-1">5</p>
         </div>
-        <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm">
+        <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm cursor-pointer hover:bg-emerald-100 transition-all" onClick={() => onNavigate?.('campaigns')}>
            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Campanhas Ativas</p>
            <p className="text-3xl font-black text-emerald-700 mt-1">1</p>
         </div>
-        <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 shadow-sm">
+        <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 shadow-sm cursor-pointer hover:bg-amber-100 transition-all" onClick={() => onNavigate?.('agenda')}>
            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Ações em Rede</p>
            <p className="text-3xl font-black text-amber-700 mt-1">4</p>
         </div>
@@ -80,7 +81,10 @@ const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role }) =
                             <p className="text-xs text-gray-500 font-medium mt-0.5">{alert.reason}</p>
                          </div>
                       </div>
-                      <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-rose-600 rounded-xl text-[10px] font-black uppercase hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+                      <button 
+                        onClick={() => onNavigate?.(alert.targetTab, alert.student)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white text-rose-600 rounded-xl text-[10px] font-black uppercase hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                      >
                          Avaliar <ArrowRight size={14} />
                       </button>
                    </div>
@@ -103,7 +107,12 @@ const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role }) =
                  <div className="w-full h-1.5 bg-rose-200 rounded-full overflow-hidden">
                     <div className="h-full bg-rose-600" style={{ width: '75%' }}></div>
                  </div>
-                 <button className="w-full py-2 bg-white text-rose-600 rounded-xl text-[8px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-600 hover:text-white transition-all">Ver Materiais</button>
+                 <button 
+                    onClick={() => onNavigate?.('campaigns')}
+                    className="w-full py-2 bg-white text-rose-600 rounded-xl text-[8px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-600 hover:text-white transition-all"
+                 >
+                    Ver Materiais
+                 </button>
               </div>
            </div>
         </div>
@@ -132,7 +141,10 @@ const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role }) =
                     </div>
                  </div>
               </div>
-              <button className="relative z-10 mt-8 w-full py-4 bg-white text-rose-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-50 transition-all shadow-lg">
+              <button 
+                 onClick={() => onNavigate?.('reports')}
+                 className="relative z-10 mt-8 w-full py-4 bg-white text-rose-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-50 transition-all shadow-lg"
+              >
                  Novo Relatório Mensal
               </button>
            </div>

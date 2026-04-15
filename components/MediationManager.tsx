@@ -27,17 +27,18 @@ import { supabase } from '../supabaseClient';
 interface MediationManagerProps {
   role: PsychosocialRole;
   onTabChange?: (tab: string) => void;
+  initialSearch?: string;
 }
 
 const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
-const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange }) => {
+const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, initialSearch }) => {
   const [cases, setCases] = useState<MediationCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCase, setSelectedCase] = useState<MediationCase | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [studentSearch, setStudentSearch] = useState('');
   
   const [newCase, setNewCase] = useState<Partial<MediationCase>>({

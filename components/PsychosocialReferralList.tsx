@@ -31,13 +31,20 @@ interface PsychosocialReferralListProps {
   user?: any; // Add user prop for teacher context
   onTabChange?: (tab: string) => void;
   filterDestination?: 'BUSCA_ATIVA' | 'MEDIACAO';
+  initialSearch?: string;
 }
 
-const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ role, user, onTabChange, filterDestination }) => {
+const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({ 
+  role, 
+  user, 
+  onTabChange, 
+  filterDestination,
+  initialSearch 
+}) => {
   const [referrals, setReferrals] = useState<PsychosocialReferral[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [loading, setLoading] = useState(false);
 
   // Form State

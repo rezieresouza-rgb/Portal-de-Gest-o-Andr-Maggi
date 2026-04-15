@@ -205,6 +205,7 @@ CREATE TABLE mediation_cases (
     description TEXT,
     involved_parties TEXT[],
     steps JSONB,
+    feedback TEXT, -- [NOVO] Devolutiva da Mediação
     opened_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     closed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

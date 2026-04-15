@@ -44,6 +44,12 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
    * Substituição do localStorage por tabela 'psychosocial_notifications'
    */
   const [notifCount, setNotifCount] = useState(0);
+  const [pendingSearch, setPendingSearch] = useState<string | undefined>(undefined);
+
+  const navigateWithContext = (tab: any, search?: string) => {
+    setPendingSearch(search);
+    setActiveTab(tab);
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -223,12 +229,25 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} />}
+          {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} onNavigate={navigateWithContext} />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
-          {activeTab === 'referrals' && <PsychosocialReferralList role={userRole} filterDestination="MEDIACAO" onTabChange={(tab: any) => setActiveTab(tab)} />}
+          {activeTab === 'referrals' && (
+            <PsychosocialReferralList 
+              role={userRole} 
+              filterDestination="MEDIACAO" 
+              onTabChange={(tab: any) => setActiveTab(tab)} 
+              initialSearch={pendingSearch}
+            />
+          )}
           {activeTab === 'atas' && <PsychosocialMeetingAtaManager />}
           {activeTab === 'violation_notification' && <RightsViolationForm />}
-          {activeTab === 'mediation' && <MediationManager role={userRole} onTabChange={(tab: any) => setActiveTab(tab)} />}
+          {activeTab === 'mediation' && (
+            <MediationManager 
+              role={userRole} 
+              onTabChange={(tab: any) => setActiveTab(tab)} 
+              initialSearch={pendingSearch}
+            />
+          )}
           {activeTab === 'agenda' && <PsychosocialAgenda role={userRole} />}
           {activeTab === 'reports' && <PsychosocialReports role={userRole} />}
           {activeTab === 'campaigns' && <CampaignManager role={userRole} />}
