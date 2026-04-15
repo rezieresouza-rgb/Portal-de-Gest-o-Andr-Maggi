@@ -294,56 +294,56 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
       <div className="grid grid-cols-1 gap-4">
          {filteredCases.map(c => (
-           <div 
-             key={c.id} 
-             onClick={() => setSelectedCase(c)}
-             className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-xl transition-all cursor-pointer group flex flex-col md:flex-row items-center justify-between gap-8"
-           >
-              <div className="flex items-center gap-6 flex-1">
-                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${getStatusStyle(c.status)}`}>
-                   {c.status === 'CONCLUÍDO' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
-                 </div>
-                 <div>
-                    <div className="flex items-center gap-3">
-                       <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{c.studentName}</h4>
-                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${getStatusStyle(c.status)}`}>
-                         {c.status}
-                       </span>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2">
-                       <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12}/> {c.className}</span>
-                       <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Target size={12}/> {c.type}</span>
-                       <span className={`text-[10px] font-black uppercase flex items-center gap-1 ${getSeverityColor(c.severity)}`}>
-                          <AlertTriangle size={12}/> Risco {c.severity}
-                       </span>
-                    </div>
-                 </div>
-              </div>
+            <div 
+              key={c.id} 
+              onClick={() => setSelectedCase(c)}
+              className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-xl transition-all cursor-pointer group flex flex-col md:flex-row items-center justify-between gap-8"
+            >
+               <div className="flex items-center gap-6 flex-1">
+                  <div className={"w-14 h-14 rounded-2xl flex items-center justify-center border-2 " + getStatusStyle(c.status)}>
+                    {c.status === 'CONCLUÍDO' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
+                  </div>
+                  <div>
+                     <div className="flex items-center gap-3">
+                        <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{c.studentName}</h4>
+                        <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
+                          {c.status}
+                        </span>
+                     </div>
+                     <div className="flex items-center gap-4 mt-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12}/> {c.className}</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Target size={12}/> {c.type}</span>
+                        <span className={"text-[10px] font-black uppercase flex items-center gap-1 " + getSeverityColor(c.severity)}>
+                           <AlertTriangle size={12}/> Risco {c.severity}
+                        </span>
+                     </div>
+                  </div>
+               </div>
 
-              <div className="flex items-center gap-6 shrink-0">
-                 <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-400 uppercase">Progresso</p>
-                    <div className="flex items-center gap-1 mt-1">
-                       {c.steps?.map((step, i) => (
-                         <div key={i} className={`h-1.5 w-6 rounded-full ${step.completed ? 'bg-rose-500' : 'bg-gray-100'}`} />
-                       ))}
-                    </div>
-                 </div>
-                 </div>
-                 <div className="flex flex-col gap-2">
-                    <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-rose-600 group-hover:text-white rounded-xl transition-all">
-                       <ChevronRight size={24}/>
-                    </div>
-                    <button 
-                      onClick={(e) => handleDeleteCase(e, c.id)}
-                      className="p-3 bg-gray-50 text-gray-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
-                      title="Excluir Caso"
-                    >
-                       <Trash2 size={16}/>
-                    </button>
-                 </div>
-              </div>
-           </div>
+               <div className="flex items-center gap-6 shrink-0">
+                  <div className="text-right">
+                     <p className="text-[10px] font-black text-gray-400 uppercase">Progresso</p>
+                     <div className="flex items-center gap-1 mt-1">
+                        {c.steps?.map((step, i) => (
+                          <div key={i} className={"h-1.5 w-6 rounded-full " + (step.completed ? 'bg-rose-500' : 'bg-gray-100')} />
+                        ))}
+                     </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                     <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-rose-600 group-hover:text-white rounded-xl transition-all">
+                        <ChevronRight size={24}/>
+                     </div>
+                     <button 
+                       onClick={(e) => handleDeleteCase(e, c.id)}
+                       className="p-3 bg-gray-50 text-gray-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
+                       title="Excluir Caso"
+                     >
+                        <Trash2 size={16}/>
+                     </button>
+                  </div>
+               </div>
+            </div>
          ))}
          {filteredCases.length === 0 && (
            <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
