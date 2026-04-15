@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
    Calendar as CalendarIcon,
    ChevronRight,
@@ -25,6 +25,10 @@ const UnifiedSchoolCalendar: React.FC = () => {
    const [dynamicEventsList, setDynamicEventsList] = useState<any[]>([]);
    const [loading, setLoading] = useState(false);
    const [saving, setSaving] = useState(false);
+   const [uploading, setUploading] = useState<string | null>(null);
+
+   const photoInputRef = useRef<HTMLInputElement>(null);
+   const reportInputRef = useRef<HTMLInputElement>(null);
 
    const monthData = SCHOOL_CALENDAR_2026.meses[currentIdx];
 
@@ -119,11 +123,46 @@ const UnifiedSchoolCalendar: React.FC = () => {
       }
    };
 
-   const updateField = (field: string, value: string) => {
-      setLocalTracker(prev => ({
-         ...prev,
-         [monthData.mes]: { ...prev[monthData.mes], [field]: value }
-      }));
+   const updateField = (field: string, value: any) => {
+      setLocalTracker(prev => {
+         const current = prev[monthData.mes] || {};
+         return {
+            ...prev,
+            [monthData.mes]: { ...current, [field]: value }
+         };
+      });
+   };
+
+   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'photos' | 'reports') => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setUploading(type);
+      try {
+         const fileExt = file.name.split('.').pop();
+         const fileName = `${monthData.mes}_${type}_${Date.now()}.${fileExt}`;
+         const filePath = `calendar/${fileName}`;
+
+         const { error: uploadError } = await supabase.storage
+            .from('school-attachments')
+            .upload(filePath, file);
+
+         if (uploadError) throw uploadError;
+
+         const { data: { publicUrl } } = supabase.storage
+            .from('school-attachments')
+            .getPublicUrl(filePath);
+
+         const currentList = localTracker[monthData.mes]?.[type] || [];
+         updateField(type, [...currentList, publicUrl]);
+         addToast("Arquivo anexado com sucesso!", "success");
+      } catch (err: any) {
+         console.error("Upload error:", err);
+         addToast("Erro ao fazer upload: " + (err.message || "Tente novamente"), "error");
+      } finally {
+         setUploading(null);
+         if (e.target) e.target.value = '';
+      }
    };
 
    const handleSave = async () => {
@@ -146,7 +185,9 @@ const UnifiedSchoolCalendar: React.FC = () => {
          monthName,
          campanha_realizada: currentData.campanha_realizada || '',
          campanha_a_realizar: currentData.campanha_a_realizar || '',
-         observacoes: currentData.observacoes || ''
+         observacoes: currentData.observacoes || '',
+         photos: currentData.photos || [],
+         reports: currentData.reports || []
       };
 
       try {
@@ -351,15 +392,48 @@ const UnifiedSchoolCalendar: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col md:flex-row gap-4 no-print">
-                     <button className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3">
-                        <Camera size={18} /> Fotos do Mês
+                     <input 
+                        type="file" 
+                        ref={photoInputRef} 
+                        onChange={e => handleFileUpload(e, 'photos')} 
+                        accept="image/*" 
+                        className="hidden" 
+                     />
+                     <input 
+                        type="file" 
+                        ref={reportInputRef} 
+                        onChange={e => handleFileUpload(e, 'reports')} 
+                        accept=".pdf,.doc,.docx,.xls,.xlsx" 
+                        className="hidden" 
+                     />
+
+                     <button 
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={uploading === 'photos'}
+                        className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3 relative"
+                     >
+                        {uploading === 'photos' ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />} 
+                        Fotos do Mês
+                        {localTracker[monthData.mes]?.photos?.length > 0 && (
+                           <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[8px] px-2 py-1 rounded-full">{localTracker[monthData.mes].photos.length}</span>
+                        )}
                      </button>
-                     <button className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3">
-                        <FileText size={18} /> Relatórios Anexos
+
+                     <button 
+                        onClick={() => reportInputRef.current?.click()}
+                        disabled={uploading === 'reports'}
+                        className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3 relative"
+                     >
+                        {uploading === 'reports' ? <Loader2 className="animate-spin" size={18} /> : <FileText size={18} />} 
+                        Relatórios Anexos
+                        {localTracker[monthData.mes]?.reports?.length > 0 && (
+                           <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[8px] px-2 py-1 rounded-full">{localTracker[monthData.mes].reports.length}</span>
+                        )}
                      </button>
+
                      <button
                         onClick={handleSave}
-                        disabled={saving}
+                        disabled={saving || !!uploading}
                         className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                      >
                         {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Salvar Monitoramento
