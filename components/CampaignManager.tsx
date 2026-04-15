@@ -38,6 +38,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ role }) => {
   });
 
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDetailTab, setActiveDetailTab] = useState<'info' | 'materials' | 'schedule' | 'feedback' | 'report'>('info');
 
