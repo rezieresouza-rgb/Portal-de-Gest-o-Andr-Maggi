@@ -38,9 +38,12 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ role }) => {
   });
 
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDetailTab, setActiveDetailTab] = useState<'info' | 'materials' | 'schedule' | 'feedback' | 'report'>('info');
+
+  // Novos estados para o formulário de criação
+  const [newName, setNewName] = useState('');
+  const [newTheme, setNewTheme] = useState('CONVIVÊNCIA PACÍFICA E MEDIAÇÃO');
 
   useEffect(() => {
     localStorage.setItem('school_campaigns_v2026', JSON.stringify(campaigns));
@@ -55,9 +58,30 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ role }) => {
 
   const handleCreateCampaign = (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === 'PROFESSOR') return;
-    alert("Funcionalidade de cadastro disponível para gestores.");
+    if (role === 'PROFESSOR') {
+      alert("Professores têm apenas permissão de consulta.");
+      return;
+    }
+
+    const newCampaign: Campaign = {
+      id: `camp-${Date.now()}`,
+      name: newName,
+      theme: newTheme,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 dias de duração padrão
+      status: 'PLANEJAMENTO',
+      responsibleTeam: [role],
+      materials: [],
+      schedule: [],
+      feedbacks: [],
+      relatedCasesIds: [],
+      targetClasses: ['9º Ano A', '9º Ano B', '9º Ano C', '9º Ano D']
+    };
+
+    setCampaigns(prev => [...prev, newCampaign]);
+    setNewName('');
     setIsCreateModalOpen(false);
+    alert("Campanha criada com sucesso e adicionada ao cronograma!");
   };
 
   const getStatusStyle = (status: CampaignStatus) => {
@@ -341,18 +365,29 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ role }) => {
                  <h3 className="text-xl font-black uppercase tracking-tight">Nova Campanha Socioeducativa</h3>
                  <button onClick={() => setIsCreateModalOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
               </div>
-              <form onSubmit={handleCreateCampaign} className="p-8 space-y-6">
-                 <div className="space-y-2">
+               <form onSubmit={handleCreateCampaign} className="p-8 space-y-6">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Título da Campanha</label>
-                    <input type="text" required placeholder="Título oficial ou projeto local..." className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-2 focus:ring-rose-100 transition-all" />
+                    <input 
+                      type="text" 
+                      required 
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Título oficial ou projeto local..." 
+                      className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-2 focus:ring-rose-100 transition-all" 
+                    />
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Eixo Temático</label>
-                    <select className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white transition-all">
-                       <option>SAÚDE MENTAL E BEM-ESTAR</option>
-                       <option>CONVIVÊNCIA PACÍFICA E MEDIAÇÃO</option>
-                       <option>COMBATE ÀS VIOLÊNCIAS</option>
-                       <option>DIREITOS HUMANOS E CIDADANIA</option>
+                    <select 
+                      value={newTheme}
+                      onChange={(e) => setNewTheme(e.target.value)}
+                      className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white transition-all"
+                    >
+                       <option value="SAÚDE MENTAL E BEM-ESTAR">SAÚDE MENTAL E BEM-ESTAR</option>
+                       <option value="CONVIVÊNCIA PACÍFICA E MEDIAÇÃO">CONVIVÊNCIA PACÍFICA E MEDIAÇÃO</option>
+                       <option value="COMBATE ÀS VIOLÊNCIAS">COMBATE ÀS VIOLÊNCIAS</option>
+                       <option value="DIREITOS HUMANOS E CIDADANIA">DIREITOS HUMANOS E CIDADANIA</option>
                     </select>
                  </div>
                  <button type="submit" className="w-full py-5 bg-rose-600 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-2xl hover:bg-rose-700 active:scale-95 transition-all">Salvar no Planejamento</button>
