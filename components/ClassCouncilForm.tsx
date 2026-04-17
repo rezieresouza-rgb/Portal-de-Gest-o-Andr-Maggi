@@ -376,9 +376,20 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
 
       {/* COMPONENTE DE IMPRESSÃO (Oculto na tela) */}
       <div id="ata-conselho" className="hidden print:block print:bg-white print:text-black p-12 min-h-screen bg-white text-black font-sans">
-         <div className="text-center border-b-2 border-black pb-8 mb-10">
+         <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
+            <div className="flex items-center justify-start flex-1">
+               <img src="/logo-escola.png" alt="Escola Logo" className="h-44 w-auto object-contain" />
+            </div>
+            <div className="flex-[2] flex justify-center px-4">
+               <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-44 w-full object-contain" />
+            </div>
+            <div className="flex items-center justify-end flex-1">
+               <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-28 w-auto object-contain" />
+            </div>
+         </div>
+
+         <div className="text-center mb-10">
             <h1 className="text-2xl font-bold uppercase tracking-tighter">Ata de Conselho de Classe</h1>
-            <p className="text-sm font-bold mt-2">ESCOLA ESTADUAL ANDRÉ MAGGI</p>
             <div className="flex justify-center gap-10 mt-4 text-xs font-bold uppercase">
                <span>Turma: {classrooms.find(c => c.id === selectedClassId)?.name}</span>
                <span>Bimestre: {formData.bimestre}</span>
