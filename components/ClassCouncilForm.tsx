@@ -126,39 +126,48 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const element = document.getElementById('ata-conselho');
     if (!element) {
-      addToast("Erro ao gerar PDF: Elemento não encontrado.", "error");
+      addToast("Erro ao localizar área de impressão.", "error");
       return;
     }
+
+    // Small delay to ensure any dynamic content is rendered
+    setLoading(true);
+    addToast("Gerando PDF, aguarde...", "info");
 
     const className = classrooms.find(c => c.id === selectedClassId)?.name || 'Turma';
     const filename = `Ata_Conselho_${className.replace(/\s+/g, '_')}_${formData.bimestre?.replace(/\s+/g, '_')}.pdf`;
 
-    const opt = {
-      margin: [15, 15],
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        letterRendering: true,
-        backgroundColor: '#ffffff'
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
-    // @ts-ignore
-    if (typeof html2pdf !== 'undefined') {
+    try {
       // @ts-ignore
-      html2pdf().set(opt).from(element).save().then(() => {
-        addToast("PDF gerado com sucesso!", "success");
-      });
-    } else {
-      // Fallback para impressão do navegador caso a lib falhe
+      const h2pdf = window.html2pdf;
+      if (!h2pdf) {
+        throw new Error("Biblioteca de PDF não carregada.");
+      }
+
+      const opt = {
+        margin: 10,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          logging: true,
+          letterRendering: true
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await h2pdf().set(opt).from(element).save();
+      addToast("PDF gerado com sucesso!", "success");
+    } catch (error) {
+      console.error("Erro no PDF:", error);
+      addToast("Falha ao gerar PDF. Tentando modo de impressão alternativo...", "warning");
       window.print();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -375,7 +384,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
       </div>
 
       {/* COMPONENTE DE IMPRESSÃO (Oculto na tela, mas visível para o gerador de PDF) */}
-      <div style={{ position: 'fixed', top: '-10000px', left: '-10000px', width: '210mm' }}>
+      <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
         <div id="ata-conselho" className="bg-white text-black p-12 min-h-screen font-sans">
          <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
             <div className="flex items-center justify-start flex-1">
