@@ -127,7 +127,39 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
   };
 
   const handlePrint = () => {
-     window.print();
+    const element = document.getElementById('ata-conselho');
+    if (!element) {
+      addToast("Erro ao gerar PDF: Elemento não encontrado.", "error");
+      return;
+    }
+
+    const className = classrooms.find(c => c.id === selectedClassId)?.name || 'Turma';
+    const filename = `Ata_Conselho_${className.replace(/\s+/g, '_')}_${formData.bimestre?.replace(/\s+/g, '_')}.pdf`;
+
+    const opt = {
+      margin: [15, 15],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true,
+        letterRendering: true,
+        backgroundColor: '#ffffff'
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    // @ts-ignore
+    if (typeof html2pdf !== 'undefined') {
+      // @ts-ignore
+      html2pdf().set(opt).from(element).save().then(() => {
+        addToast("PDF gerado com sucesso!", "success");
+      });
+    } else {
+      // Fallback para impressão do navegador caso a lib falhe
+      window.print();
+    }
   };
 
   return (
@@ -343,7 +375,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
       </div>
 
       {/* COMPONENTE DE IMPRESSÃO (Oculto na tela) */}
-      <div className="hidden print:block print:bg-white print:text-black p-12 min-h-screen">
+      <div id="ata-conselho" className="hidden print:block print:bg-white print:text-black p-12 min-h-screen bg-white text-black font-sans">
          <div className="text-center border-b-2 border-black pb-8 mb-10">
             <h1 className="text-2xl font-bold uppercase tracking-tighter">Ata de Conselho de Classe</h1>
             <p className="text-sm font-bold mt-2">ESCOLA ESTADUAL ANDRÉ MAGGI</p>
