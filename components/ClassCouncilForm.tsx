@@ -170,11 +170,11 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
                   value={selectedClassId}
                   onChange={e => setSelectedClassId(e.target.value)}
                   disabled={!!initialData}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer"
                 >
-                  <option value="">Selecione...</option>
+                  <option value="" className="bg-slate-900 text-white">Selecione...</option>
                   {classrooms.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.shift})</option>
+                    <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name} ({c.shift})</option>
                   ))}
                 </select>
               </div>
@@ -185,13 +185,13 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
                   <select 
                     value={formData.bimestre}
                     onChange={e => setFormData({...formData, bimestre: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer"
                   >
-                    <option>1º BIMESTRE</option>
-                    <option>2º BIMESTRE</option>
-                    <option>3º BIMESTRE</option>
-                    <option>4º BIMESTRE</option>
-                    <option>EXAME FINAL</option>
+                    <option className="bg-slate-900 text-white">1º BIMESTRE</option>
+                    <option className="bg-slate-900 text-white">2º BIMESTRE</option>
+                    <option className="bg-slate-900 text-white">3º BIMESTRE</option>
+                    <option className="bg-slate-900 text-white">4º BIMESTRE</option>
+                    <option className="bg-slate-900 text-white">EXAME FINAL</option>
                   </select>
                 </div>
                 <div>
