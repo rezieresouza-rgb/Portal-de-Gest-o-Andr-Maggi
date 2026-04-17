@@ -36,7 +36,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   useEffect(() => {
     const loadPermissions = () => {
       try {
-        const saved = localStorage.getItem('portal_module_permissions_v2');
+        const saved = localStorage.getItem('portal_module_permissions_v3');
         const parsed = saved ? JSON.parse(saved) : null;
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           setDynamicPermissions(parsed);
@@ -51,14 +51,14 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
         'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'patrimonio', 'special_education'],
         'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado'],
         'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
-        'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
+        'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher'],
         'MANUTENCAO': ['limpeza'],
         'AAE': ['merenda', 'limpeza', 'almoxarifado'],
         'AAE_LIMPEZA': ['limpeza', 'almoxarifado'],
         'AEE_NUTRICAO': ['merenda', 'almoxarifado'],
         'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education']
       };
-      localStorage.setItem('portal_module_permissions_v2', JSON.stringify(defaults));
+      localStorage.setItem('portal_module_permissions_v3', JSON.stringify(defaults));
       setDynamicPermissions(defaults);
     };
 

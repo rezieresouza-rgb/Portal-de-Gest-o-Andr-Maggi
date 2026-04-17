@@ -102,6 +102,14 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [activeContracts, setActiveContracts] = useState<any[]>([]);
 
+  // [NOVO] Estados para Filtros
+  const [filters, setFilters] = useState({
+    search: '',
+    invoice: '',
+    value: '',
+    date: ''
+  });
+
   const getLocalDateString = () => {
     const d = new Date();
     const tzOffset = d.getTimezoneOffset() * 60000;
@@ -262,18 +270,33 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
 
 
-  // Lista consolidada de todas as notas fiscais
+  // [NOVO] Lógica de Filtragem Universal
+  const passesFilter = (tx: Transaction) => {
+    const searchMatch = !filters.search || tx.description.toUpperCase().includes(filters.search.toUpperCase());
+    const invoiceMatch = !filters.invoice || (tx.invoiceNumber && tx.invoiceNumber.toUpperCase().includes(filters.invoice.toUpperCase()));
+    const valueMatch = !filters.value || tx.value.toString().includes(filters.value);
+    const dateMatch = !filters.date || tx.date === filters.date;
+    return searchMatch && invoiceMatch && valueMatch && dateMatch;
+  };
+
+  // Lista consolidada de todas as notas fiscais (com filtro)
   const allInvoices = useMemo(() => {
     const invoices: (Transaction & { fundName: string, fundColor: string })[] = [];
     (Object.values(funds) as FundData[]).forEach(fund => {
       fund.transactions.forEach(tx => {
-        if (tx.invoiceNumber) {
+        if (tx.invoiceNumber && passesFilter(tx)) {
           invoices.push({ ...tx, fundName: fund.name, fundColor: fund.color });
         }
       });
     });
     return invoices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [funds]);
+  }, [funds, filters]);
+
+  // Transações filtradas para a aba ativa
+  const activeFundTransactions = useMemo(() => {
+    if (!funds[activeTab]) return [];
+    return funds[activeTab].transactions.filter(passesFilter);
+  }, [funds, activeTab, filters]);
 
   // Filtro específico para relatório de impostos AF
   const afTaxReport = useMemo(() => {
@@ -1220,17 +1243,61 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                       <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl space-y-6 backdrop-blur-md">
                         <div className="flex justify-between items-center border-b border-white/5 pb-6">
                           <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><ArrowRightLeft className="text-blue-400" size={20} /> Livro Caixa</h3>
-                          <button onClick={() => {
-                            setEditingTx(null);
-                            setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
-                            setIsModalOpen(true);
-                          }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
+                          <div className="flex items-center gap-3">
+                             {/* [NOVO] Barra de Filtros Rápida */}
+                             <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10 no-print">
+                                <div className="relative">
+                                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+                                   <input 
+                                      type="text" 
+                                      placeholder="Fornecedor..." 
+                                      value={filters.search}
+                                      onChange={e => setFilters({...filters, search: e.target.value})}
+                                      className="bg-transparent pl-9 pr-4 py-2 text-[10px] font-bold text-white outline-none w-32 focus:w-48 transition-all"
+                                   />
+                                </div>
+                                <div className="relative border-l border-white/10">
+                                   <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+                                   <input 
+                                      type="text" 
+                                      placeholder="Nota..." 
+                                      value={filters.invoice}
+                                      onChange={e => setFilters({...filters, invoice: e.target.value})}
+                                      className="bg-transparent pl-9 pr-4 py-2 text-[10px] font-bold text-white outline-none w-20 focus:w-32 transition-all"
+                                   />
+                                </div>
+                                <div className="relative border-l border-white/10">
+                                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+                                   <input 
+                                      type="date" 
+                                      value={filters.date}
+                                      onChange={e => setFilters({...filters, date: e.target.value})}
+                                      className="bg-transparent pl-9 pr-4 py-2 text-[10px] font-bold text-white outline-none w-28 invert opacity-50 focus:opacity-100 transition-all"
+                                   />
+                                </div>
+                                {(filters.search || filters.invoice || filters.value || filters.date) && (
+                                   <button 
+                                      onClick={() => setFilters({ search: '', invoice: '', value: '', date: '' })}
+                                      className="p-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
+                                      title="Limpar Filtros"
+                                   >
+                                      <X size={14} />
+                                   </button>
+                                )}
+                             </div>
+
+                             <button onClick={() => {
+                               setEditingTx(null);
+                               setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
+                               setIsModalOpen(true);
+                             }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
+                          </div>
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-[11px] border-collapse">
                             <thead><tr className="text-white/40 border-b border-white/5"><th className="px-6 py-4 font-black uppercase tracking-widest">Data Op.</th><th className="px-6 py-4 font-black uppercase tracking-widest">Descrição / NF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Grupo / AF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-right">Valor</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Docs</th></tr></thead>
                             <tbody className="divide-y divide-white/5">
-                              {funds[activeTab].transactions.map((t) => (
+                              {activeFundTransactions.map((t) => (
                                 <tr key={t.id} className="hover:bg-white/5 transition-colors">
                                   <td className="px-6 py-4 font-bold text-white/50">
                                     {t.date ? t.date.split('-').reverse().join('/') : ''}
@@ -1418,11 +1485,30 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Arquivo Digital de Notas Fiscais</h3>
                           </div>
                           <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
-                              <input type="text" placeholder="Filtrar por NF ou descrição..." className="pl-12 pr-6 py-3 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-blue-500/50 w-64 text-white placeholder-white/20" />
+                            <div className="relative flex items-center bg-white/5 rounded-2xl border border-white/10 px-4">
+                              <Search className="text-white/30" size={16} />
+                              <input 
+                                 type="text" 
+                                 placeholder="Filtrar por NF ou fornecedor..." 
+                                 value={filters.search}
+                                 onChange={e => setFilters({...filters, search: e.target.value})}
+                                 className="pl-4 pr-2 py-3 bg-transparent text-[10px] font-black uppercase outline-none w-64 text-white placeholder-white/20" 
+                              />
+                              {(filters.search || filters.invoice || filters.value || filters.date) && (
+                                 <button onClick={() => setFilters({search: '', invoice: '', value: '', date: ''})} className="text-red-400 hover:text-red-300 ml-2">
+                                    <X size={14} />
+                                 </button>
+                              )}
                             </div>
-                            <button className="p-3 bg-white/5 text-white/40 rounded-2xl hover:bg-white/10 hover:text-white border border-white/5 transition-all"><Filter size={18} /></button>
+                            <div className="flex items-center bg-white/5 rounded-2xl border border-white/10 px-4">
+                               <Calendar className="text-white/30" size={16} />
+                               <input 
+                                  type="date" 
+                                  value={filters.date}
+                                  onChange={e => setFilters({...filters, date: e.target.value})}
+                                  className="bg-transparent pl-4 pr-2 py-3 text-[10px] font-black uppercase outline-none text-white invert opacity-50"
+                               />
+                            </div>
                           </div>
                         </div>
 

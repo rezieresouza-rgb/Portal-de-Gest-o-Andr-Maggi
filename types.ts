@@ -253,7 +253,8 @@ export type PsychosocialRole = 'PSICOSSOCIAL' | 'GESTAO' | 'PROFESSOR';
 export type MediationStatus = 'ABERTURA' | 'PLANEJAMENTO' | 'EXECUÇÃO' | 'CONCLUÍDO';
 export type CaseSeverity = 'BAIXA' | 'MÉDIA' | 'ALTA' | 'CRÍTICA';
 export interface MediationStep { id: string; label: string; completed: boolean; date?: string; }
-export interface MediationCase { id: string; studentId: string; studentName: string; className: string; type: 'CONFLITO' | 'BULLYING' | 'DISCIPLINAR' | 'OUTRO'; severity: CaseSeverity; status: MediationStatus; openedAt: string; description: string; involvedParties: string[]; steps: MediationStep[]; }
+export interface MediationLog { id: string; date: string; professional: string; content: string; }
+export interface MediationCase { id: string; studentId: string; studentName: string; className: string; type: 'CONFLITO' | 'BULLYING' | 'DISCIPLINAR' | 'OUTRO'; severity: CaseSeverity; status: MediationStatus; openedAt: string; closedAt?: string; description: string; involvedParties: string[]; steps: MediationStep[]; logs: MediationLog[]; feedback?: string; originReferralId?: string; }
 export interface PsychosocialAppointment { id: string; studentId: string; studentName: string; date: string; time: string; professionalName: string; type: 'ESCUTA_INDIVIDUAL' | 'CIRCULO_PAZ' | 'REUNIAO_FAMILIAR' | 'VISITA_DOMICILIAR'; notes: string; isConfidential: boolean; }
 export type CampaignStatus = 'PLANEJAMENTO' | 'ATIVO' | 'CONCLUÍDO';
 export interface CampaignMaterial { id: string; name: string; type: 'PDF' | 'VÍDEO' | 'LINK' | 'IMAGEM'; url: string; }

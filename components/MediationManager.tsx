@@ -52,6 +52,14 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
   });
   const [activeTab, setActiveTab] = useState<'ativos' | 'historico'>('ativos');
 
+  // [NOVO] Estados para o Diário de Atendimento
+  const [newLog, setNewLog] = useState({
+    professional: role === 'PSICOSSOCIAL' ? 'EQUIPE PSICOSSOCIAL' : 'MEDIAÇÃO',
+    content: '',
+    date: new Date().toLocaleDateString('sv-SE')
+  });
+  const [isLogLoading, setIsLogLoading] = useState(false);
+
   const masterStudents = useMemo(() => {
     const saved = localStorage.getItem('secretariat_detailed_students_v1');
     return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
@@ -100,7 +108,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
           { id: '4', label: 'Acordo / Finalização', completed: false }
         ],
         originReferralId: c.origin_referral_id,
-        feedback: c.feedback
+        feedback: c.feedback,
+        logs: c.logs || []
       }));
       setCases(formatted);
     } catch (error: any) {
@@ -130,7 +139,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                     opened_at: c.openedAt,
                     description: c.description,
                     involved_parties: c.involvedParties || [],
-                    steps: c.steps
+                    steps: c.steps,
+                    logs: []
                  }]);
               }
               localStorage.removeItem('mediation_cases');
@@ -172,7 +182,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
         opened_at: new Date().toLocaleDateString('sv-SE'),
         description: newCase.description,
         involved_parties: newCase.involvedParties || [],
-        steps: steps
+        steps: steps,
+        logs: []
       };
 
       const { data, error } = await supabase
@@ -215,6 +226,39 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     } catch (err: any) {
       console.error("Erro ao excluir caso:", err);
       alert("❌ Erro ao excluir o caso: " + (err.message || "Erro de conexão"));
+    }
+  };
+
+  const handleSaveLog = async () => {
+    if (!selectedCase || !newLog.content) return alert("Descreva o atendimento antes de salvar.");
+    
+    setIsLogLoading(true);
+    try {
+      const logEntry: MediationLog = {
+        id: `log-${Date.now()}`,
+        date: newLog.date,
+        professional: newLog.professional,
+        content: newLog.content
+      };
+
+      const updatedLogs = [logEntry, ...(selectedCase.logs || [])];
+
+      const { error } = await supabase
+        .from('mediation_cases')
+        .update({ logs: updatedLogs })
+        .eq('id', selectedCase.id);
+
+      if (error) throw error;
+
+      setSelectedCase({ ...selectedCase, logs: updatedLogs });
+      setNewLog({ ...newLog, content: '' });
+      await fetchCases();
+      alert("Atendimento registrado no diário!");
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao salvar log: " + err.message);
+    } finally {
+      setIsLogLoading(false);
     }
   };
 
