@@ -68,7 +68,10 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
         .eq('classroom_id', selectedClassId);
 
       if (data) {
-        const studentList = data.map((e: any) => e.students);
+        const studentList = data
+          .map((e: any) => e.students)
+          .sort((a: any, b: any) => a.name.localeCompare(b.name, 'pt-BR'));
+        
         setStudents(studentList);
         
         // Se for um novo conselho, inicializar as observações
