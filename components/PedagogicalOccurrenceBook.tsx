@@ -36,6 +36,7 @@ const PedagogicalOccurrenceBook: React.FC = () => {
 
    const [selectedOccId, setSelectedOccId] = useState<string | null>(null);
    const [searchTerm, setSearchTerm] = useState('');
+   const [filterProf, setFilterProf] = useState('');
    const [filterCat, setFilterCat] = useState<OccurrenceCategory | 'TODOS'>('TODOS');
 
    const fetchOccurrences = async () => {
@@ -73,9 +74,10 @@ const PedagogicalOccurrenceBook: React.FC = () => {
          const matchSearch = o.involvedStudents.toLowerCase().includes(searchTerm.toLowerCase()) ||
             o.className.toLowerCase().includes(searchTerm.toLowerCase());
          const matchCat = filterCat === 'TODOS' || o.category === filterCat;
-         return matchSearch && matchCat;
+         const matchProf = !filterProf || o.responsible.toLowerCase().includes(filterProf.toLowerCase());
+         return matchSearch && matchCat && matchProf;
       }).sort((a, b) => b.timestamp - a.timestamp);
-   }, [occurrences, searchTerm, filterCat]);
+   }, [occurrences, searchTerm, filterCat, filterProf]);
 
    const handleDelete = async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
@@ -185,6 +187,16 @@ const PedagogicalOccurrenceBook: React.FC = () => {
                      placeholder="Aluno ou Turma..."
                      value={searchTerm}
                      onChange={e => setSearchTerm(e.target.value)}
+                     className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-violet-500/50"
+                  />
+               </div>
+               <div className="relative flex-1 md:w-48">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                  <input
+                     type="text"
+                     placeholder="Professor..."
+                     value={filterProf}
+                     onChange={e => setFilterProf(e.target.value)}
                      className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-violet-500/50"
                   />
                </div>
