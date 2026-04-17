@@ -49,6 +49,7 @@ import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import PsychosocialReferralList from '../components/PsychosocialReferralList';
 import ClassScheduleManager from '../components/ClassScheduleManager';
 import SchoolProjectManager from '../components/SchoolProjectManager';
+import ClassCouncilManager from '../components/ClassCouncilManager';
 
 import { User as UserType } from '../types';
 
@@ -59,7 +60,7 @@ interface PedagogicalModuleProps {
 
 const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) => {
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules' | 'class_council'>('dashboard');
 
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [externalAssessments, setExternalAssessments] = useState<Assessment[]>([]);
@@ -330,6 +331,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     { id: 'plans', label: 'Validar Roteiros', icon: FileCheck },
     { id: 'occurrences', label: 'Livro de Ocorrência', icon: BookOpen },
     { id: 'observations', label: 'Observação de Aula', icon: Eye },
+    { id: 'class_council', label: 'Conselho de Classe', icon: Users },
     { id: 'projects', label: 'Projetos da Escola', icon: Rocket },
     { id: 'ia_insights', label: 'IA Estratégica', icon: BrainCircuit },
   ];
@@ -675,6 +677,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         return <PedagogicalOccurrenceBook />;
       case 'projects':
         return <SchoolProjectManager />;
+      case 'class_council':
+        return <ClassCouncilManager />;
       case 'ia_insights':
         return (
           <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">

@@ -105,6 +105,29 @@ export interface BirthdayPerson { id: string; name: string; role: string; day: n
 export type OccurrenceCategory = 'INDISCIPLINA' | 'CONFLITO' | 'ATRASO' | 'VIOLÊNCIA' | 'DESCUMPRIMENTO_REGRAS' | 'OUTRO';
 export interface PedagogicalOccurrence { id: string; date: string; time: string; involvedStudents: string; className: string; location: string; report: string; responsible: string; category: OccurrenceCategory; attachments: string[]; status: 'REGISTRADO' | 'ATA_GERADA' | 'ARQUIVADO'; timestamp: number; }
 export interface OccurrenceAta { id: string; occurrenceId: string; formalText: string; summary: string; involvedParties: string; suggestedReferrals: string[]; date: string; }
+export interface ClassCouncilStudentObservation {
+  studentId: string;
+  studentName: string;
+  pedagogicalProgress: 'SATISFATORIO' | 'PARCIAL' | 'INSATISFATORIO';
+  behavioralStatus: 'BOM' | 'REGULAR' | 'CRITICO';
+  notes: string;
+  recommendations: string;
+}
+
+export interface ClassCouncil {
+  id: string;
+  classroomId: string;
+  className?: string;
+  bimestre: string;
+  date: string;
+  generalDiagnosis: string;
+  studentObservations: ClassCouncilStudentObservation[];
+  decisions: string;
+  attendanceTeachers: string[];
+  status: 'RASCUNHO' | 'FINALIZADO';
+  timestamp: number;
+}
+
 export interface PsychosocialReferral { id: string; schoolUnit: string; studentName: string; studentAge: string; className: string; teacherName: string; previousStrategies: string; observedAspects: { learning: string[]; behavioral: string[]; emotional: string[]; }; report: string; status: 'PENDENTE' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO'; date: string; timestamp: number; priority: 'BAIXA' | 'MEDIA' | 'ALTA'; reason: string; feedback?: string; attachments?: string[]; attendanceFrequency?: string; adoptedProcedures?: string[]; referralDestination?: 'BUSCA_ATIVA' | 'MEDIACAO'; mediationProcedures?: string[]; }
 
 export interface PsychosocialMeetingAta {
