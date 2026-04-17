@@ -374,8 +374,9 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
         </div>
       </div>
 
-      {/* COMPONENTE DE IMPRESSÃO (Oculto na tela) */}
-      <div id="ata-conselho" className="hidden print:block print:bg-white print:text-black p-12 min-h-screen bg-white text-black font-sans">
+      {/* COMPONENTE DE IMPRESSÃO (Oculto na tela, mas visível para o gerador de PDF) */}
+      <div style={{ position: 'fixed', top: '-10000px', left: '-10000px', width: '210mm' }}>
+        <div id="ata-conselho" className="bg-white text-black p-12 min-h-screen font-sans">
          <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
             <div className="flex items-center justify-start flex-1">
                <img src="/logo-escola.png" alt="Escola Logo" className="h-44 w-auto object-contain" />
@@ -443,6 +444,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
                   <p className="text-[10px] uppercase font-bold">Direção Escolar</p>
                </div>
             </div>
+         </div>
          </div>
       </div>
 
