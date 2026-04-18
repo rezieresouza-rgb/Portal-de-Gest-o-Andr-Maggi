@@ -352,51 +352,50 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                   {loadingActions ? (
                     <div className="py-20 text-center text-gray-400"><Loader2 className="animate-spin mx-auto mb-2" /> Carregando protocolo...</div>
                   ) : (
-                    ACTION_ITEMS.map((item) => {
+                  <div className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-sm">
+                    {ACTION_ITEMS.map((item, index) => {
                       const status = actionsStatus[item.id] || { status: 'PENDENTE', notes: '', completed_at: null };
                       const isDone = status.status === 'CONCLUIDO';
 
                       return (
-                        <div key={item.id} className={`p-6 rounded-[2rem] border transition-all duration-300 ${isDone ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100 shadow-sm'}`}>
-                          <div className="flex items-start gap-4">
-                            <button
-                              onClick={() => handleToggleAction(item.id)}
-                              className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center transition-all ${isDone ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-gray-100 text-gray-300 hover:bg-emerald-100 hover:text-emerald-500'}`}
-                            >
-                              {isDone ? <CheckCircle2 size={18} strokeWidth={3} /> : <Circle size={18} />}
-                            </button>
+                        <div 
+                          key={item.id} 
+                          className={`p-4 flex items-center gap-4 transition-all ${
+                            index !== ACTION_ITEMS.length - 1 ? 'border-b border-gray-50' : ''
+                          } ${isDone ? 'bg-emerald-50/30' : 'hover:bg-gray-50'}`}
+                        >
+                          <button
+                            onClick={() => handleToggleAction(item.id)}
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${
+                              isDone ? 'bg-emerald-600 text-white shadow-sm' : 'bg-gray-100 text-gray-300 border border-gray-200'
+                            }`}
+                          >
+                            {isDone ? <CheckCircle2 size={12} strokeWidth={3} /> : <Circle size={12} />}
+                          </button>
 
-                            <div className="flex-1">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h4 className={`text-sm font-black uppercase tracking-tight ${isDone ? 'text-emerald-900' : 'text-gray-900'}`}>{item.label}</h4>
-                                  <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-tight">{item.description}</p>
-                                </div>
-                                <div className={`p-2 rounded-xl ${isDone ? 'bg-white text-emerald-600' : 'bg-gray-50 text-gray-400'}`}>
-                                  <item.icon size={16} />
-                                </div>
-                              </div>
-
-                              <div className="mt-4 pt-4 border-t border-gray-100/50">
-                                <textarea
-                                  placeholder="Observações sobre esta ação..."
-                                  value={status.notes}
-                                  onChange={(e) => setActionsStatus(prev => ({ ...prev, [item.id]: { ...prev[item.id], notes: e.target.value } }))}
-                                  onBlur={(e) => handleSaveNotes(item.id, e.target.value)}
-                                  className={`w-full p-3 rounded-xl text-xs font-medium outline-none transition-all resize-none ${isDone ? 'bg-white border border-emerald-100 text-emerald-800 placeholder:text-emerald-300' : 'bg-gray-50 border border-transparent text-gray-700 placeholder:text-gray-300 focus:bg-white focus:border-emerald-200'}`}
-                                  rows={2}
-                                />
-                                {status.completed_at && (
-                                  <p className="text-[9px] text-emerald-600/60 font-black uppercase mt-2 text-right italic">
-                                    Concluído em: {new Date(status.completed_at).toLocaleDateString('pt-BR')}
-                                  </p>
-                                )}
-                              </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h5 className={`text-[11px] font-black uppercase tracking-tight truncate ${isDone ? 'text-emerald-900' : 'text-gray-700'}`}>
+                                {item.label}
+                              </h5>
+                              {isDone && status.completed_at && (
+                                <span className="text-[8px] font-bold text-emerald-500 bg-emerald-100/50 px-1.5 py-0.5 rounded italic">
+                                  {new Date(status.completed_at).toLocaleDateString('pt-BR')}
+                                </span>
+                              )}
                             </div>
+                            <p className="text-[9px] text-gray-400 font-bold truncate tracking-tight uppercase opacity-60">
+                              {item.description}
+                            </p>
+                          </div>
+
+                          <div className={`p-2 rounded-lg ${isDone ? 'text-emerald-500' : 'text-gray-300'}`}>
+                            <item.icon size={14} />
                           </div>
                         </div>
                       );
-                    })
+                    })}
+                  </div>
                   )}
                 </div>
               </div>
@@ -423,8 +422,13 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
       {showAddLog && (
         <BuscaAtivaAddLogModal 
           student={student} 
+          protocolItems={ACTION_ITEMS}
+          actionsStatus={actionsStatus}
           onClose={() => setShowAddLog(false)} 
-          onSuccess={fetchMonitoringLogs}
+          onSuccess={() => {
+            fetchMonitoringLogs();
+            fetchActions();
+          }}
         />
       )}
     </div>
