@@ -51,7 +51,8 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         type: 'TELEFONE',
         description: '',
         contact_person: '',
-        severity: 'NORMAL'
+        severity: 'NORMAL',
+        responsible_name: 'Angela'
     });
 
     const toggleProtocolItem = (id: string) => {
@@ -79,7 +80,8 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                     severity: formData.severity,
                     description: `[${formData.type}] ${formData.description}${formData.contact_person ? ` (Contato: ${formData.contact_person})` : ''}`,
                     status: 'REGISTRADO',
-                    location: formData.contact_person || 'Escola'
+                    location: formData.contact_person || 'Escola',
+                    responsible_name: formData.responsible_name
                 }]);
 
             if (logError) throw logError;
@@ -200,6 +202,26 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                             onChange={e => setFormData({...formData, contact_person: e.target.value})}
                             className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all"
                         />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidor Responsável</label>
+                        <div className="grid grid-cols-2 gap-2">
+                             {['Angela', 'Zenir'].map(name => (
+                                <button
+                                    key={name}
+                                    type="button"
+                                    onClick={() => setFormData({...formData, responsible_name: name})}
+                                    className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                        formData.responsible_name === name 
+                                            ? 'bg-gray-900 border-gray-900 text-white shadow-lg' 
+                                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'
+                                    }`}
+                                >
+                                    {name}
+                                </button>
+                             ))}
+                        </div>
                     </div>
 
                     <div className="space-y-1.5 bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100/50">
