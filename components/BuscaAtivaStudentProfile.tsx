@@ -339,7 +339,8 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                       </button>
                    </div>
                  )}
-              </div>
+               </div>
+             </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex justify-between items-center px-2">

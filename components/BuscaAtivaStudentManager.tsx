@@ -281,4 +281,4 @@ const BuscaAtivaStudentManager: React.FC = () => {
   );
 };
 
-export default BuscaAtivaStudentList;
+export default BuscaAtivaStudentManager;
