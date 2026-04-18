@@ -52,7 +52,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
       status: 'PENDENTE',
       date: new Date().toLocaleDateString('sv-SE'),
       timestamp: Date.now(),
-      referralDestination: 'BUSCA_ATIVA',
+      referralDestination: 'MEDIACAO',
       mediationProcedures: []
    });
 
@@ -238,20 +238,27 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
                   <Target size={18} strokeWidth={3} />
                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">Para onde deseja encaminhar este aluno?</span>
                </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button 
-                     type="button"
-                     onClick={() => setFormData({ ...formData, referralDestination: 'BUSCA_ATIVA' })}
-                     className={`py-5 px-8 rounded-2xl font-black uppercase text-xs tracking-widest transition-all flex items-center justify-center gap-4 ${formData.referralDestination === 'BUSCA_ATIVA' ? 'bg-emerald-600 text-white shadow-2xl shadow-emerald-200 scale-[1.02]' : 'bg-white text-emerald-600 border-2 border-emerald-50 hover:bg-emerald-50'}`}
-                  >
-                     <PhoneCall size={20} /> Busca Ativa Escolar
-                  </button>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button 
                      type="button"
                      onClick={() => setFormData({ ...formData, referralDestination: 'MEDIACAO' })}
                      className={`py-5 px-8 rounded-2xl font-black uppercase text-xs tracking-widest transition-all flex items-center justify-center gap-4 ${formData.referralDestination === 'MEDIACAO' ? 'bg-rose-600 text-white shadow-2xl shadow-rose-200 scale-[1.02]' : 'bg-white text-rose-600 border-2 border-rose-50 hover:bg-rose-50'}`}
                   >
                      <Scale size={20} /> Mediação de Conflitos
+                  </button>
+                  <button 
+                     type="button"
+                     onClick={() => setFormData({ ...formData, referralDestination: 'CONSELHO_TUTELAR' })}
+                     className={`py-5 px-8 rounded-2xl font-black uppercase text-xs tracking-widest transition-all flex items-center justify-center gap-4 ${formData.referralDestination === 'CONSELHO_TUTELAR' ? 'bg-orange-600 text-white shadow-2xl shadow-orange-200 scale-[1.02]' : 'bg-white text-orange-600 border-2 border-orange-50 hover:bg-orange-50'}`}
+                  >
+                     <ShieldCheck size={20} /> Conselho Tutelar
+                  </button>
+                  <button 
+                     type="button"
+                     onClick={() => setFormData({ ...formData, referralDestination: 'ASSISTENCIA_SOCIAL' })}
+                     className={`py-5 px-8 rounded-2xl font-black uppercase text-xs tracking-widest transition-all flex items-center justify-center gap-4 ${formData.referralDestination === 'ASSISTENCIA_SOCIAL' ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-200 scale-[1.02]' : 'bg-white text-indigo-600 border-2 border-indigo-50 hover:bg-indigo-50'}`}
+                  >
+                     <Users size={20} /> Assistência Social
                   </button>
                </div>
                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center italic">
@@ -482,7 +489,14 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
          <div className="hidden">
             <div ref={printRef} className="p-16 space-y-12 text-gray-900 font-sans border-[1px] border-gray-200 bg-white min-h-[297mm]">
                <div className="text-center border-b-2 border-black pb-8 space-y-2">
-                  <h1 className="text-2xl font-black uppercase">Encaminhamento: {formData.referralDestination === 'BUSCA_ATIVA' ? 'Busca Ativa Escolar' : 'Mediação de Conflitos'}</h1>
+                  <h1 className="text-2xl font-black uppercase">
+                     Encaminhamento: {
+                        formData.referralDestination === 'MEDIACAO' ? 'Mediação de Conflitos' :
+                        formData.referralDestination === 'CONSELHO_TUTELAR' ? 'Conselho Tutelar' :
+                        formData.referralDestination === 'ASSISTENCIA_SOCIAL' ? 'Assistência Social (CRAS/CREAS)' :
+                        'Busca Ativa Escolar'
+                     }
+                  </h1>
                   <p className="text-sm font-bold uppercase">{formData.schoolUnit}</p>
                   <p className="text-[10px] text-gray-500">Estado de Mato Grosso - Secretaria de Estado de Educação</p>
                </div>

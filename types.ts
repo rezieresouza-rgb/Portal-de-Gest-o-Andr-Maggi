@@ -128,7 +128,7 @@ export interface ClassCouncil {
   timestamp: number;
 }
 
-export interface PsychosocialReferral { id: string; schoolUnit: string; studentName: string; studentAge: string; className: string; teacherName: string; previousStrategies: string; observedAspects: { learning: string[]; behavioral: string[]; emotional: string[]; }; report: string; status: 'PENDENTE' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO'; date: string; timestamp: number; priority: 'BAIXA' | 'MEDIA' | 'ALTA'; reason: string; feedback?: string; attachments?: string[]; attendanceFrequency?: string; adoptedProcedures?: string[]; referralDestination?: 'BUSCA_ATIVA' | 'MEDIACAO'; mediationProcedures?: string[]; }
+export interface PsychosocialReferral { id: string; schoolUnit: string; studentName: string; studentAge: string; className: string; teacherName: string; previousStrategies: string; observedAspects: { learning: string[]; behavioral: string[]; emotional: string[]; }; report: string; status: 'PENDENTE' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO'; date: string; timestamp: number; priority: 'BAIXA' | 'MEDIA' | 'ALTA'; reason: string; feedback?: string; attachments?: string[]; attendanceFrequency?: string; adopted_procedures?: string[]; referralDestination?: 'BUSCA_ATIVA' | 'MEDIACAO' | 'CONSELHO_TUTELAR' | 'ASSISTENCIA_SOCIAL'; mediationProcedures?: string[]; }
 
 export interface PsychosocialMeetingAta {
   id: string;
