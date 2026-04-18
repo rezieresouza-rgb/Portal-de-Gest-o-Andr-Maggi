@@ -45,6 +45,7 @@ const ACTION_TYPES = [
 export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsStatus, onClose, onSuccess }: BuscaAtivaAddLogModalProps) {
     const [loading, setLoading] = useState(false);
     const [selectedProtocolItems, setSelectedProtocolItems] = useState<string[]>([]);
+    const [activeProtocolId, setActiveProtocolId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         date: new Date().toLocaleDateString('sv-SE'),
         time: new Date().toLocaleTimeString('pt-BR', { hour12: false }).substring(0, 5),
@@ -57,9 +58,14 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
     });
 
     const toggleProtocolItem = (id: string) => {
-        setSelectedProtocolItems(prev => 
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-        );
+        const isSelected = selectedProtocolItems.includes(id);
+        if (isSelected) {
+            setSelectedProtocolItems(prev => prev.filter(i => i !== id));
+            if (activeProtocolId === id) setActiveProtocolId(null);
+        } else {
+            setSelectedProtocolItems(prev => [...prev, id]);
+            setActiveProtocolId(id);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -126,24 +132,110 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         }
     };
 
+    const renderContactDetails = () => (
+        <div className="space-y-6 mt-6 pt-6 border-t border-emerald-50/50 animate-in slide-in-from-top-4 fade-in duration-500">
+            <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Meio de Contato</label>
+                <div className="grid grid-cols-3 gap-2">
+                    {ACTION_TYPES.map(type => (
+                        <button
+                            key={type.id}
+                            type="button"
+                            onClick={() => setFormData({...formData, type: type.id})}
+                            className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all ${formData.type === type.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white border-emerald-100/50 text-emerald-800/40 hover:bg-emerald-50'}`}
+                        >
+                            <type.icon size={18} />
+                            <span className="text-[8px] font-black uppercase text-center leading-none">{type.label}</span>
+                        </button>
+                    ))}
+                </div>
+                
+                {formData.type === 'OUTRO' && (
+                    <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
+                        <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1">Descreva a Intervenção</label>
+                        <textarea
+                            required
+                            placeholder="Detalhe o que foi feito..."
+                            value={formData.other_description}
+                            onChange={e => setFormData({...formData, other_description: e.target.value})}
+                            className="w-full mt-1.5 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all min-h-[80px] resize-none"
+                        />
+                    </div>
+                )}
+            </div>
+
+            <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Pessoa Contatada</label>
+                <input 
+                    type="text" 
+                    placeholder="Ex: Mãe (Dona Maria)"
+                    value={formData.contact_person}
+                    onChange={e => setFormData({...formData, contact_person: e.target.value})}
+                    className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold text-emerald-900 outline-none focus:bg-white focus:border-emerald-500 transition-all"
+                />
+            </div>
+
+            <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Servidor Responsável</label>
+                <div className="grid grid-cols-2 gap-2">
+                    {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
+                        <button
+                            key={name}
+                            type="button"
+                            onClick={() => setFormData({...formData, responsible_name: name})}
+                            className={`py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all border leading-tight ${
+                                formData.responsible_name === name 
+                                    ? 'bg-emerald-900 border-emerald-900 text-white shadow-lg' 
+                                    : 'bg-emerald-50/20 border-emerald-100/50 text-emerald-800/40 hover:border-emerald-200'
+                            }`}
+                        >
+                            {name}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Observações do Atendimento</label>
+                <textarea 
+                    required
+                    placeholder="Descreva o que foi conversado ou o resultado da visita..."
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full p-4 bg-emerald-50/20 border border-emerald-100/50 rounded-2xl text-xs font-medium text-emerald-900 outline-none focus:bg-white focus:border-emerald-500 transition-all resize-none"
+                />
+            </div>
+
+            <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+            >
+                {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                Salvar Acompanhamento
+            </button>
+        </div>
+    );
+
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl border border-emerald-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[95vh]">
                 
                 {/* HEADER */}
-                <div className="px-8 pt-8 pb-4 flex justify-between items-start shrink-0">
+                <div className="px-8 pt-8 pb-4 flex justify-between items-start shrink-0 border-b border-gray-50 bg-gray-50/50">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-600/20">
                             <MessageSquare size={24} />
                         </div>
                         <div>
                             <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Registrar Acompanhamento</h3>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">
                                 {student.name}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 bg-gray-50 text-gray-400 hover:text-red-500 rounded-xl transition-all">
+                    <button onClick={onClose} className="p-2 bg-white text-gray-400 hover:text-red-500 rounded-xl transition-all shadow-sm">
                         <X size={20} />
                     </button>
                 </div>
@@ -160,7 +252,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                                 required
                                 value={formData.date}
                                 onChange={e => setFormData({...formData, date: e.target.value})}
-                                className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black outline-none focus:bg-white focus:border-emerald-500 transition-all"
+                                className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black outline-none focus:bg-white focus:border-emerald-500 transition-all shadow-sm cursor-pointer"
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -172,7 +264,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                                 required
                                 value={formData.time}
                                 onChange={e => setFormData({...formData, time: e.target.value})}
-                                className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black outline-none focus:bg-white focus:border-emerald-500 transition-all"
+                                className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black outline-none focus:bg-white focus:border-emerald-500 transition-all shadow-sm cursor-pointer"
                             />
                         </div>
                     </div>
@@ -181,125 +273,66 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                         <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1 flex items-center gap-1.5 mb-3">
                            <ShieldAlert size={12} /> Selecione as Ações do Protocolo (Art. 23)
                         </label>
-                        <div className="grid grid-cols-1 gap-2">
+                        <div className="grid grid-cols-1 gap-3">
                             {protocolItems.map(item => {
                                 const isAlreadyDone = actionsStatus[item.id]?.status === 'CONCLUIDO';
                                 const isSelected = selectedProtocolItems.includes(item.id);
+                                const isActive = activeProtocolId === item.id;
                                 
                                 return (
-                                    <button
-                                        key={item.id}
-                                        type="button"
-                                        disabled={isAlreadyDone}
-                                        onClick={() => toggleProtocolItem(item.id)}
-                                        className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${
-                                            isAlreadyDone ? 'bg-gray-100 border-transparent opacity-60' :
-                                            isSelected ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 
-                                            'bg-white border-gray-100 text-gray-500 hover:border-emerald-200'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3 text-left">
-                                            <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-white/20' : 'bg-gray-50'}`}>
-                                                <item.icon size={14} />
+                                    <div key={item.id} className="contents">
+                                        <button
+                                            type="button"
+                                            disabled={isAlreadyDone}
+                                            onClick={() => toggleProtocolItem(item.id)}
+                                            className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${
+                                                isAlreadyDone ? 'bg-gray-100 border-transparent opacity-60' :
+                                                isSelected ? (isActive ? 'bg-emerald-600 border-emerald-600 text-white shadow-xl shadow-emerald-600/30 -translate-y-1 scale-[1.02]' : 'bg-emerald-50 border-emerald-200 text-emerald-700') : 
+                                                'bg-white border-gray-100 text-gray-500 hover:border-emerald-200 hover:bg-emerald-50/50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3 text-left">
+                                                <div className={`p-1.5 rounded-lg ${isSelected ? (isActive ? 'bg-white/20' : 'bg-emerald-100') : 'bg-gray-50'}`}>
+                                                    <item.icon size={14} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-tight leading-tight">{item.label}</p>
+                                                    {isAlreadyDone ? (
+                                                        <p className="text-[8px] font-bold uppercase text-emerald-600 mt-0.5">Já concluído</p>
+                                                    ) : isSelected && !isActive && (
+                                                        <p className="text-[8px] font-bold uppercase text-emerald-500 mt-0.5">Selecionado</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-tight">{item.label}</p>
-                                                {isAlreadyDone && <p className="text-[8px] font-bold uppercase text-emerald-600">Já concluído</p>}
-                                            </div>
-                                        </div>
-                                        {isSelected && <Save size={14} className="animate-bounce" />}
-                                    </button>
+                                            {isSelected && (
+                                                <div className={`transition-all duration-300 ${isActive ? 'rotate-0' : 'rotate-180 opacity-40'}`}>
+                                                     <Save size={14} className={isActive ? 'animate-bounce' : ''} />
+                                                </div>
+                                            )}
+                                        </button>
+                                        {isActive && isSelected && renderContactDetails()}
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {selectedProtocolItems.length > 0 ? (
-                        <div className="space-y-6 animate-in slide-in-from-top-4 fade-in duration-500">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Meio de Contato</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {ACTION_TYPES.map(type => (
-                                        <button
-                                            key={type.id}
-                                            type="button"
-                                            onClick={() => setFormData({...formData, type: type.id})}
-                                            className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all ${formData.type === type.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white border-gray-100 text-gray-400 hover:bg-emerald-50'}`}
-                                        >
-                                            <type.icon size={18} />
-                                            <span className="text-[8px] font-black uppercase text-center leading-none">{type.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                
-                                {formData.type === 'OUTRO' && (
-                                    <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
-                                        <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1">Descreva a Intervenção</label>
-                                        <textarea
-                                            required
-                                            placeholder="Detalhe o que foi feito..."
-                                            value={formData.other_description}
-                                            onChange={e => setFormData({...formData, other_description: e.target.value})}
-                                            className="w-full mt-1.5 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all min-h-[80px] resize-none"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pessoa Contatada</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="Ex: Mãe (Dona Maria)"
-                                    value={formData.contact_person}
-                                    onChange={e => setFormData({...formData, contact_person: e.target.value})}
-                                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidor Responsável</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
-                                        <button
-                                            key={name}
-                                            type="button"
-                                            onClick={() => setFormData({...formData, responsible_name: name})}
-                                            className={`py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all border leading-tight ${
-                                                formData.responsible_name === name 
-                                                    ? 'bg-gray-900 border-gray-900 text-white shadow-lg' 
-                                                    : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'
-                                            }`}
-                                        >
-                                            {name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observações do Atendimento</label>
-                                <textarea 
-                                    required
-                                    placeholder="Descreva o que foi conversado ou o resultado da visita..."
-                                    rows={4}
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:border-emerald-500 transition-all resize-none"
-                                />
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-emerald-100 rounded-[2rem] bg-emerald-50/10">
+                    {!activeProtocolId && (
+                        <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-emerald-100 rounded-[2rem] bg-emerald-50/10 animate-in fade-in duration-500">
                             <div className="p-4 bg-emerald-50 text-emerald-500 rounded-full">
                                 <AlertTriangle size={32} />
                             </div>
                             <div>
                                 <p className="text-xs font-black text-emerald-900 uppercase tracking-tight">Selecione uma ação do protocolo</p>
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Para liberar os detalhes do contato</p>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Para abrir os campos de preenchimento</p>
                             </div>
                         </div>
                     )}
+                </form>
+            </div>
+        </div>
+    );
+}
 
                     <button
                         type="submit"
