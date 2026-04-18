@@ -200,8 +200,8 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
   const protocolProgress = Math.round((actionsArray.filter(a => a.status === 'CONCLUIDO').length / ACTION_ITEMS.length) * 100) || 0;
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-center justify-end bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white h-full w-full max-w-2xl shadow-2xl border-l border-white/20 overflow-hidden flex flex-col animate-in slide-in-from-right duration-500">
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300 p-4">
+      <div className="bg-white w-full max-w-2xl max-h-[90vh] shadow-2xl rounded-[3rem] overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
         
         {/* HEADER PERFIL */}
         <div className="p-8 bg-emerald-900 text-white shrink-0 relative overflow-hidden">
