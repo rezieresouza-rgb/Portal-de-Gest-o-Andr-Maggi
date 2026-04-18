@@ -22,7 +22,7 @@ import BuscaAtivaAddLogModal from './BuscaAtivaAddLogModal';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 
-const BuscaAtivaStudentList: React.FC = () => {
+const BuscaAtivaStudentManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<{ id: string, name: string, class: string } | null>(null);
   const [viewingProfile, setViewingProfile] = useState<any | null>(null);

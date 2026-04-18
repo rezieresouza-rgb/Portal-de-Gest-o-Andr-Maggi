@@ -20,7 +20,7 @@ import {
   Settings2
 } from 'lucide-react';
 import BuscaAtivaDashboard from '../components/BuscaAtivaDashboard';
-import BuscaAtivaStudentList from '../components/BuscaAtivaStudentList';
+import BuscaAtivaStudentList from '../components/BuscaAtivaStudentManager';
 import BuscaAtivaFICAI from '../components/BuscaAtivaFICAI';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import BuscaAtivaAttendanceHistory from '../components/BuscaAtivaAttendanceHistory';
@@ -98,9 +98,9 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           </div>
 
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 px-4 py-2 bg-red-50 text-red-600 rounded-full border border-red-100">
-              <AlertTriangle size={14} className="animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest">8 Alertas Críticos</span>
+            <div className="flex items-center gap-3 px-4 py-2 bg-emerald-600 text-white rounded-full border border-emerald-500 shadow-lg">
+              <ShieldCheck size={14} className="animate-bounce" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Acompanhamento Ativo - V3</span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-sm">BA</div>
           </div>
