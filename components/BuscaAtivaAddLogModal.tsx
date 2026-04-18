@@ -52,7 +52,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         description: '',
         contact_person: '',
         severity: 'NORMAL',
-        responsible_name: 'Angela'
+        responsible_name: 'ANGELA MARIA TRAMARIN'
     });
 
     const toggleProtocolItem = (id: string) => {
@@ -207,12 +207,12 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidor Responsável</label>
                         <div className="grid grid-cols-2 gap-2">
-                             {['Angela', 'Zenir'].map(name => (
+                             {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
                                 <button
                                     key={name}
                                     type="button"
                                     onClick={() => setFormData({...formData, responsible_name: name})}
-                                    className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                    className={`py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all border leading-tight ${
                                         formData.responsible_name === name 
                                             ? 'bg-gray-900 border-gray-900 text-white shadow-lg' 
                                             : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'
