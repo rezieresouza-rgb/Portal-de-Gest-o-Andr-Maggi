@@ -18,7 +18,6 @@ import {
 import { Referral, AttendanceRecord } from '../types';
 import BuscaAtivaReferralModal from './BuscaAtivaReferralModal';
 import BuscaAtivaStudentProfile from './BuscaAtivaStudentProfile';
-import BuscaAtivaActionsModal from './BuscaAtivaActionsModal';
 import BuscaAtivaAddLogModal from './BuscaAtivaAddLogModal';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
@@ -27,8 +26,6 @@ const BuscaAtivaStudentList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<{ id: string, name: string, class: string } | null>(null);
   const [viewingProfile, setViewingProfile] = useState<any | null>(null);
-  const [viewingActions, setViewingActions] = useState<{ id: string, name: string, class: string } | null>(null);
-  const [loggingStudent, setLoggingStudent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Data Sources
@@ -266,12 +263,11 @@ const BuscaAtivaStudentList: React.FC = () => {
               <div className="flex items-center gap-3 shrink-0">
                 <button 
                   onClick={() => setViewingProfile(s)} 
-                  className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase border border-gray-800 hover:bg-black transition-all shadow-lg flex items-center gap-2"
+                  className="px-6 py-3 bg-gray-900 text-white rounded-2xl text-[11px] font-black uppercase border border-gray-800 hover:bg-black transition-all shadow-lg flex items-center gap-2"
                 >
-                  <History size={14} /> Acompanhamento
+                  <History size={16} /> Acompanhamento
                 </button>
-                <button onClick={() => setViewingActions({ id: s.id, name: s.name, class: s.class })} className="px-5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 shadow-sm"><CheckCircle2 size={14} /> Protocolos</button>
-                <button onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} className="px-5 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><Scale size={14} /> Encaminhar</button>
+                <button onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} className="px-6 py-3 bg-emerald-50 text-emerald-700 rounded-2xl text-[11px] font-black uppercase flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><Scale size={16} /> Encaminhar</button>
               </div>
             </div>
           );
@@ -280,14 +276,6 @@ const BuscaAtivaStudentList: React.FC = () => {
 
       {selectedStudent && <BuscaAtivaReferralModal student={selectedStudent} onClose={() => setSelectedStudent(null)} onSave={handleSaveReferral} />}
       {viewingProfile && <BuscaAtivaStudentProfile student={viewingProfile} referrals={referrals} onClose={() => setViewingProfile(null)} />}
-      {viewingActions && <BuscaAtivaActionsModal student={viewingActions} onClose={() => setViewingActions(null)} />}
-      {loggingStudent && (
-        <BuscaAtivaAddLogModal 
-          student={loggingStudent} 
-          onClose={() => setLoggingStudent(null)} 
-          onSuccess={() => fetchData()} 
-        />
-      )}
     </div>
   );
 };

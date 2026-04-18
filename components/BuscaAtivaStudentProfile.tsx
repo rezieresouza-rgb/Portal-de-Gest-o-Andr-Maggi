@@ -16,11 +16,36 @@ import {
   Scale,
   Plus,
   Clock,
-  Loader2
+  Loader2,
+  ShieldAlert,
+  Circle,
+  Send,
+  Users
 } from 'lucide-react';
 import { Referral } from '../types';
 import { supabase } from '../supabaseClient';
 import BuscaAtivaAddLogModal from './BuscaAtivaAddLogModal';
+
+interface ActionItem {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+  required: boolean;
+}
+
+const ACTION_ITEMS: ActionItem[] = [
+  { id: 'COMUNICADO_PAIS', label: 'Comunicar Pais/Responsáveis', description: 'Contato imediato sobre ausência (Lei 10.509/2017)', icon: Phone, required: true },
+  { id: 'ALERTA_SISTEMA', label: 'Analisar Alertas do Sistema', description: 'Verificar justificativas e padrão de faltas', icon: AlertTriangle, required: true },
+  { id: 'VISITA_TURMA', label: 'Visita à Turma', description: 'Obter informações com colegas e professores', icon: Users, required: true },
+  { id: 'CONTATO_DIARIO', label: 'Contatos Diários Alternados', description: 'Telefone, WhatsApp, E-mail (tentativas documentadas)', icon: MessageSquare, required: true },
+  { id: 'ELABORAR_RELATORIO', label: 'Elaborar Relatório de Ações', description: 'Registro detalhado no Sistema de Prevenção', icon: FileText, required: true },
+  { id: 'REDE_PROTECAO', label: 'Acionar Rede de Proteção', description: 'CRAS, CREAS, Saúde (quando necessário)', icon: ShieldAlert, required: false },
+  { id: 'FICAI_ONLINE', label: 'Registrar na FICAI Online', description: 'Para alunos com >10% de faltas injustificadas', icon: FileText, required: true },
+  { id: 'NOTIFICAR_CONSELHO', label: 'Notificar Conselho Tutelar', description: 'Envio da FICAI com documentação exigida', icon: Send, required: true },
+  { id: 'ACOMPANHAR_DEVOLUTIVA', label: 'Acompanhar Devolutiva', description: 'Monitorar retorno do Conselho Tutelar', icon: Calendar, required: true },
+  { id: 'INTERVENCAO_METODOLOGIA', label: 'Intervenção Metodológica', description: 'Orientar e executar ações de reintegração', icon: CheckCircle2, required: true },
+];
 
 interface BuscaAtivaStudentProfileProps {
   student: any;
@@ -29,13 +54,17 @@ interface BuscaAtivaStudentProfileProps {
 }
 
 const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ student, referrals, onClose }) => {
+  const [activeView, setActiveView] = useState<'history' | 'protocol'>('history');
   const [monitoringLogs, setMonitoringLogs] = useState<any[]>([]);
+  const [actionsStatus, setActionsStatus] = useState<Record<string, { status: string, notes: string, completed_at: string | null }>>({});
   const [loadingLogs, setLoadingLogs] = useState(true);
+  const [loadingActions, setLoadingActions] = useState(true);
   const [showAddLog, setShowAddLog] = useState(false);
   const studentReferrals = referrals.filter(r => r.studentId === student.id);
 
   useEffect(() => {
     fetchMonitoringLogs();
+    fetchActions();
 
     const channel = supabase
       .channel(`student-monitoring-${student.id}`)
@@ -46,6 +75,14 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
         filter: `student_id=eq.${student.id}` 
       }, () => {
         fetchMonitoringLogs();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'active_search_actions', 
+        filter: `student_id=eq.${student.id}` 
+      }, () => {
+        fetchActions();
       })
       .subscribe();
 
@@ -73,6 +110,94 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
       setLoadingLogs(false);
     }
   };
+
+  const fetchActions = async () => {
+    setLoadingActions(true);
+    try {
+      const { data, error } = await supabase
+        .from('active_search_actions')
+        .select('*')
+        .eq('student_id', student.id);
+
+      if (error) throw error;
+
+      const statusMap: any = {};
+      if (data) {
+        data.forEach((action: any) => {
+          statusMap[action.action_type] = {
+            status: action.status,
+            notes: action.notes || '',
+            completed_at: action.completed_at
+          };
+        });
+      }
+      setActionsStatus(statusMap);
+    } catch (error) {
+      console.error("Erro ao buscar ações:", error);
+    } finally {
+      setLoadingActions(false);
+    }
+  };
+
+  const handleToggleAction = async (actionId: string) => {
+    const current = actionsStatus[actionId] || { status: 'PENDENTE', notes: '', completed_at: null };
+    const newStatus = current.status === 'CONCLUIDO' ? 'PENDENTE' : 'CONCLUIDO';
+    const completedAt = newStatus === 'CONCLUIDO' ? new Date().toISOString() : null;
+
+    setActionsStatus(prev => ({
+      ...prev,
+      [actionId]: { ...current, status: newStatus, completed_at: completedAt }
+    }));
+
+    try {
+      const { data: existing } = await supabase
+        .from('active_search_actions')
+        .select('id')
+        .eq('student_id', student.id)
+        .eq('action_type', actionId)
+        .single();
+
+      if (existing) {
+        await supabase
+          .from('active_search_actions')
+          .update({ status: newStatus, completed_at: completedAt })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('active_search_actions')
+          .insert([{ student_id: student.id, action_type: actionId, status: newStatus, completed_at: completedAt }]);
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar ação:", error);
+    }
+  };
+
+  const handleSaveNotes = async (actionId: string, notes: string) => {
+    try {
+      const { data: existing } = await supabase
+        .from('active_search_actions')
+        .select('id')
+        .eq('student_id', student.id)
+        .eq('action_type', actionId)
+        .single();
+
+      if (existing) {
+        await supabase.from('active_search_actions').update({ notes }).eq('id', existing.id);
+      } else {
+        await supabase.from('active_search_actions').insert([{ student_id: student.id, action_type: actionId, status: 'PENDENTE', notes }]);
+      }
+
+      setActionsStatus(prev => ({
+        ...prev,
+        [actionId]: { ...prev[actionId], notes }
+      }));
+    } catch (error) {
+      console.error("Erro ao salvar nota:", error);
+    }
+  };
+
+  const actionsArray = Object.values(actionsStatus) as { status: string, notes: string, completed_at: string | null }[];
+  const protocolProgress = Math.round((actionsArray.filter(a => a.status === 'CONCLUIDO').length / ACTION_ITEMS.length) * 100) || 0;
 
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-end bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -112,13 +237,36 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                  </div>
               </div>
               <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total de Registros</p>
-                 <p className="text-3xl font-black text-gray-900">{monitoringLogs.length + studentReferrals.length}</p>
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Evolução de Protocolo</p>
+                 <div className="flex items-center gap-3">
+                    <p className={`text-3xl font-black ${protocolProgress === 100 ? 'text-emerald-600' : 'text-gray-900'}`}>
+                       {protocolProgress}%
+                    </p>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                       <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${protocolProgress}%` }}></div>
+                    </div>
+                 </div>
               </div>
            </div>
 
-           {/* LINHA DO TEMPO DE BUSCA ATIVA */}
-           <div className="space-y-4">
+           {/* TAB BAR */}
+           <div className="flex p-1 bg-white border border-gray-100 rounded-2xl shadow-sm">
+             <button 
+               onClick={() => setActiveView('history')}
+               className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'history' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+             >
+               <History size={14} /> Diário de Bordo
+             </button>
+             <button 
+               onClick={() => setActiveView('protocol')}
+               className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'protocol' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+             >
+               <ShieldAlert size={14} /> Plano de Ação
+             </button>
+           </div>
+
+           {activeView === 'history' ? (
+             <div className="space-y-4">
               <div className="flex justify-between items-center px-2">
                 <h4 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
                   <History size={16} className="text-emerald-600" /> Diário de Acompanhamento
@@ -192,7 +340,67 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                    </div>
                  )}
               </div>
-           </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center px-2">
+                  <h4 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldAlert size={16} className="text-emerald-600" /> Checklist do Protocolo (Art. 23)
+                  </h4>
+                </div>
+                
+                <div className="space-y-4 pb-8">
+                  {loadingActions ? (
+                    <div className="py-20 text-center text-gray-400"><Loader2 className="animate-spin mx-auto mb-2" /> Carregando protocolo...</div>
+                  ) : (
+                    ACTION_ITEMS.map((item) => {
+                      const status = actionsStatus[item.id] || { status: 'PENDENTE', notes: '', completed_at: null };
+                      const isDone = status.status === 'CONCLUIDO';
+
+                      return (
+                        <div key={item.id} className={`p-6 rounded-[2rem] border transition-all duration-300 ${isDone ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100 shadow-sm'}`}>
+                          <div className="flex items-start gap-4">
+                            <button
+                              onClick={() => handleToggleAction(item.id)}
+                              className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center transition-all ${isDone ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-gray-100 text-gray-300 hover:bg-emerald-100 hover:text-emerald-500'}`}
+                            >
+                              {isDone ? <CheckCircle2 size={18} strokeWidth={3} /> : <Circle size={18} />}
+                            </button>
+
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className={`text-sm font-black uppercase tracking-tight ${isDone ? 'text-emerald-900' : 'text-gray-900'}`}>{item.label}</h4>
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-tight">{item.description}</p>
+                                </div>
+                                <div className={`p-2 rounded-xl ${isDone ? 'bg-white text-emerald-600' : 'bg-gray-50 text-gray-400'}`}>
+                                  <item.icon size={16} />
+                                </div>
+                              </div>
+
+                              <div className="mt-4 pt-4 border-t border-gray-100/50">
+                                <textarea
+                                  placeholder="Observações sobre esta ação..."
+                                  value={status.notes}
+                                  onChange={(e) => setActionsStatus(prev => ({ ...prev, [item.id]: { ...prev[item.id], notes: e.target.value } }))}
+                                  onBlur={(e) => handleSaveNotes(item.id, e.target.value)}
+                                  className={`w-full p-3 rounded-xl text-xs font-medium outline-none transition-all resize-none ${isDone ? 'bg-white border border-emerald-100 text-emerald-800 placeholder:text-emerald-300' : 'bg-gray-50 border border-transparent text-gray-700 placeholder:text-gray-300 focus:bg-white focus:border-emerald-200'}`}
+                                  rows={2}
+                                />
+                                {status.completed_at && (
+                                  <p className="text-[9px] text-emerald-600/60 font-black uppercase mt-2 text-right italic">
+                                    Concluído em: {new Date(status.completed_at).toLocaleDateString('pt-BR')}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
 
            {/* ALERTA FICAI */}
            {student.attendance < 90 && (
