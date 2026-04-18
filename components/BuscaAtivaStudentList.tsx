@@ -237,9 +237,10 @@ const BuscaAtivaStudentList: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{s.name}</h4>
                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${getStatusColor(s.status)}`}>{s.status}</span>
+// Build trigger: V3 - Force redeploy to remove 'Protocolos' button
                     <div className={`flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded-full border italic tracking-widest ${
                       s.totalInterventions > 0 
-                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                        ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' 
                         : 'bg-gray-50 text-gray-400 border-gray-100'
                     }`}>
                       <MessageSquare size={10} /> {s.totalInterventions > 0 ? `${s.totalInterventions} REGISTROS NO HISTÓRICO` : 'NENHUM REGISTRO NO HISTÓRICO'}

@@ -24,7 +24,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
-import BuscaAtivaActionsModal from './BuscaAtivaActionsModal';
+import BuscaAtivaStudentProfile from './BuscaAtivaStudentProfile';
+import { History } from 'lucide-react';
 
 const BuscaAtivaDashboard: React.FC = () => {
   const { students: dbStudents, loading: studentsLoading } = useStudents();
@@ -37,7 +38,7 @@ const BuscaAtivaDashboard: React.FC = () => {
 
   const [chartData, setChartData] = useState<{ name: string, faltas: number }[]>([]);
   const [criticalCases, setCriticalCases] = useState<any[]>([]);
-  const [selectedActionStudent, setSelectedActionStudent] = useState<{ id: string, name: string, class: string } | null>(null);
+  const [viewingProfile, setViewingProfile] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
 
   // Initialize and subscribe to changes
@@ -275,11 +276,11 @@ const BuscaAtivaDashboard: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); setSelectedActionStudent(c); }}
-                    className="p-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                    title="Abrir Protocolos"
+                    onClick={(e) => { e.stopPropagation(); setViewingProfile(c); }}
+                    className="p-2 bg-gray-900 text-white border border-gray-800 rounded-lg hover:bg-black transition-all shadow-sm"
+                    title="Ver Acompanhamento"
                   >
-                    <CheckCircle2 size={16} />
+                    <History size={16} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleForwardToMediation(c); }}
@@ -320,7 +321,7 @@ const BuscaAtivaDashboard: React.FC = () => {
         </div>
       </div>
 
-      {selectedActionStudent && <BuscaAtivaActionsModal student={selectedActionStudent} onClose={() => setSelectedActionStudent(null)} />}
+      {viewingProfile && <BuscaAtivaStudentProfile student={viewingProfile} onClose={() => setViewingProfile(null)} />}
 
     </div>
   );
