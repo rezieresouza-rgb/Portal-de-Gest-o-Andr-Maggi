@@ -269,24 +269,24 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                         </div>
                     </div>
 
-                    <div className="space-y-1.5 bg-emerald-50/20 p-6 rounded-[2rem] border border-emerald-100/30">
+                    <div className="space-y-3 bg-emerald-50/20 p-6 rounded-[2rem] border border-emerald-100/30">
                         <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1 flex items-center gap-1.5 mb-3">
                            <ShieldAlert size={12} /> Selecione as Ações do Protocolo (Art. 23)
                         </label>
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="space-y-3">
                             {protocolItems.map(item => {
                                 const isAlreadyDone = actionsStatus[item.id]?.status === 'CONCLUIDO';
                                 const isSelected = selectedProtocolItems.includes(item.id);
                                 const isActive = activeProtocolId === item.id;
                                 
                                 return (
-                                    <div key={item.id} className="contents">
+                                    <div key={item.id} className="space-y-2">
                                         <button
                                             type="button"
                                             disabled={isAlreadyDone}
                                             onClick={() => toggleProtocolItem(item.id)}
                                             className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${
-                                                isAlreadyDone ? 'bg-gray-100 border-transparent opacity-60' :
+                                                isAlreadyDone ? 'bg-gray-100 border-transparent opacity-60 text-gray-400' :
                                                 isSelected ? (isActive ? 'bg-emerald-600 border-emerald-600 text-white shadow-xl shadow-emerald-600/30 -translate-y-1 scale-[1.02]' : 'bg-emerald-50 border-emerald-200 text-emerald-700') : 
                                                 'bg-white border-gray-100 text-gray-500 hover:border-emerald-200 hover:bg-emerald-50/50'
                                             }`}
@@ -310,7 +310,12 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                                                 </div>
                                             )}
                                         </button>
-                                        {isActive && isSelected && renderContactDetails()}
+                                        
+                                        {isActive && isSelected && (
+                                            <div className="px-2 pb-2">
+                                                {renderContactDetails()}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -328,20 +333,17 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                             </div>
                         </div>
                     )}
-                </form>
-            </div>
-        </div>
-    );
-}
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                        Salvar Acompanhamento
-                    </button>
+                    {activeProtocolId && (
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                        >
+                            {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                            Salvar Acompanhamento
+                        </button>
+                    )}
                 </form>
             </div>
         </div>
