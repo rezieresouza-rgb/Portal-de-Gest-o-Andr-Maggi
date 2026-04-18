@@ -12,7 +12,8 @@ import {
   User,
   MessageSquare,
   Scale,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-react';
 import { Referral, AttendanceRecord } from '../types';
 import BuscaAtivaReferralModal from './BuscaAtivaReferralModal';
@@ -35,6 +36,7 @@ const BuscaAtivaStudentList: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [attendanceStats, setAttendanceStats] = useState<Record<string, { total: number, present: number }>>({});
   const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [monitoringLogs, setMonitoringLogs] = useState<any[]>([]);
 
   useEffect(() => {
     if (dbStudents) {
@@ -47,7 +49,7 @@ const BuscaAtivaStudentList: React.FC = () => {
   const fetchData = async () => {
     // We already have student loading from useStudents, so we focus on attendance/referrals
     // Use a local loading state to avoid flickering if needed, but the main list is handled by dbStudents
-    await Promise.all([fetchAttendance(), fetchReferrals()]);
+    await Promise.all([fetchAttendance(), fetchReferrals(), fetchMonitoringLogs()]);
     setLoading(false);
   };
 
@@ -64,6 +66,10 @@ const BuscaAtivaStudentList: React.FC = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'class_attendance_students' }, () => {
         console.log('Attendance changed, updating list stats...');
         fetchAttendance();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'occurrences', filter: "category=eq.BUSCA_ATIVA" }, () => {
+        console.log('Monitoring logs changed, updating list...');
+        fetchMonitoringLogs();
       })
       .subscribe();
 
@@ -113,6 +119,16 @@ const BuscaAtivaStudentList: React.FC = () => {
     }
   };
 
+  const fetchMonitoringLogs = async () => {
+    const { data } = await supabase
+      .from('occurrences')
+      .select('*')
+      .eq('category', 'BUSCA_ATIVA')
+      .order('date', { ascending: false });
+
+    if (data) setMonitoringLogs(data);
+  };
+
   // Process Student List
   const studentData = useMemo(() => {
     const processed = students.map(s => {
@@ -127,14 +143,27 @@ const BuscaAtivaStudentList: React.FC = () => {
       if (attendancePercent <= 85) status = 'CRÍTICO';
       else if (attendancePercent <= 90) status = 'ALERTA';
 
+      // Aggregate Interventions
+      const studentReferrals = referrals.filter(r => r.studentId === s.id);
+      const studentLogs = monitoringLogs.filter(log => log.student_id === s.id);
+      
+      const allActions = [
+        ...studentReferrals.map(r => ({ date: r.date, type: r.type })),
+        ...studentLogs.map(l => ({ date: l.date, type: 'CONTATO' }))
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      const lastInt = allActions.length > 0 ? allActions[0] : null;
+
       return {
         ...s,
         attendance: Math.round(attendancePercent),
         status,
-        // Ensure properties match expected format
         name: s.name,
         class: s.class,
-        id: s.id
+        id: s.id,
+        totalInterventions: allActions.length,
+        lastInterventionDate: lastInt?.date,
+        lastInterventionType: lastInt?.type
       };
     });
 
@@ -211,11 +240,20 @@ const BuscaAtivaStudentList: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{s.name}</h4>
                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${getStatusColor(s.status)}`}>{s.status}</span>
-                    {studentReferrals.length > 0 && <div className="flex items-center gap-1 text-[8px] font-black bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full border border-violet-100"><MessageSquare size={10} /> {studentReferrals.length} Intervenções</div>}
+                    {s.totalInterventions > 0 && (
+                      <div className="flex items-center gap-1 text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100 italic tracking-widest">
+                        <MessageSquare size={10} /> {s.totalInterventions} REGISTROS NO HISTÓRICO
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-4 mt-2">
                     <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12} /> {s.class} ({s.shift || 'MATUTINO'})</span>
                     <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12} /> Código: {s.id}</span>
+                    {s.lastInterventionDate && (
+                      <span className="text-[10px] font-black text-emerald-600 uppercase flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                        <Clock size={10} /> Último: {new Date(s.lastInterventionDate + 'T12:00:00').toLocaleDateString('pt-BR')} ({s.lastInterventionType})
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
