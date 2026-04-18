@@ -265,16 +265,13 @@ const BuscaAtivaStudentList: React.FC = () => {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <button 
-                  onClick={() => setLoggingStudent(s)} 
-                  className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 shadow-sm"
-                  title="Registrar Histórico"
+                  onClick={() => setViewingProfile(s)} 
+                  className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase border border-gray-800 hover:bg-black transition-all shadow-lg flex items-center gap-2"
                 >
-                  <MessageSquare size={18} />
+                  <History size={14} /> Acompanhamento
                 </button>
                 <button onClick={() => setViewingActions({ id: s.id, name: s.name, class: s.class })} className="px-5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 shadow-sm"><CheckCircle2 size={14} /> Protocolos</button>
-                <button onClick={() => setViewingProfile(s)} className="px-5 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-[10px] font-black uppercase border border-gray-200">Ver Perfil</button>
                 <button onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} className="px-5 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><Scale size={14} /> Encaminhar</button>
-                <button className="p-3 bg-gray-50 text-gray-400 hover:text-emerald-600 rounded-xl transition-all"><ChevronRight size={20} /></button>
               </div>
             </div>
           );
