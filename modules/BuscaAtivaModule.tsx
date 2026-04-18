@@ -23,7 +23,6 @@ import BuscaAtivaDashboard from '../components/BuscaAtivaDashboard';
 import BuscaAtivaStudentList from '../components/BuscaAtivaStudentList';
 import BuscaAtivaFICAI from '../components/BuscaAtivaFICAI';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
-import PsychosocialReferralList from '../components/PsychosocialReferralList';
 import BuscaAtivaAttendanceHistory from '../components/BuscaAtivaAttendanceHistory';
 import BuscaAtivaContactChannels from '../components/BuscaAtivaContactChannels';
 
@@ -39,7 +38,6 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
     { id: 'calendar', label: 'Estratégia 2026', icon: CalendarDays },
     { id: 'attendance', label: 'Conferência de Chamadas', icon: History },
     { id: 'students', label: 'Monitoramento Alunos', icon: Users },
-    { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
     { id: 'channels', label: 'Canais de Contato', icon: Settings2 },
     { id: 'ficai', label: 'Gerador FICAi', icon: FileText },
   ];
@@ -114,7 +112,6 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'attendance' && <BuscaAtivaAttendanceHistory />}
           {activeTab === 'channels' && <BuscaAtivaContactChannels />}
-          {activeTab === 'referrals' && <PsychosocialReferralList role="PSICOSSOCIAL" filterDestination="BUSCA_ATIVA" />}
           {activeTab === 'ficai' && <BuscaAtivaFICAI />}
         </div>
       </main>
