@@ -52,7 +52,8 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         description: '',
         contact_person: '',
         severity: 'NORMAL',
-        responsible_name: 'ANGELA MARIA TRAMARIN'
+        responsible_name: 'ANGELA MARIA TRAMARIN',
+        other_description: ''
     });
 
     const toggleProtocolItem = (id: string) => {
@@ -78,7 +79,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                     time: formData.time,
                     category: 'BUSCA_ATIVA',
                     severity: formData.severity,
-                    description: `[${formData.type}] ${formData.description}${formData.contact_person ? ` (Contato: ${formData.contact_person})` : ''}`,
+                    description: `[${formData.type}] ${formData.type === 'OUTRO' ? formData.other_description : formData.description}${formData.contact_person ? ` (Contato: ${formData.contact_person})` : ''}`,
                     status: 'REGISTRADO',
                     location: formData.contact_person || 'Escola',
                     responsible_name: formData.responsible_name
@@ -191,6 +192,19 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                                 </button>
                             ))}
                         </div>
+                        
+                        {formData.type === 'OUTRO' && (
+                            <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
+                                <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1">Descreva a Intervenção</label>
+                                <textarea
+                                    required
+                                    placeholder="Detalhe o que foi feito..."
+                                    value={formData.other_description}
+                                    onChange={e => setFormData({...formData, other_description: e.target.value})}
+                                    className="w-full mt-1.5 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all min-h-[80px] resize-none"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-1.5">
