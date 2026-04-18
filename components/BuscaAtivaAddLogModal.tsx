@@ -9,7 +9,8 @@ import {
     Home,
     AlertTriangle,
     Calendar,
-    Clock
+    Clock,
+    ShieldAlert
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
