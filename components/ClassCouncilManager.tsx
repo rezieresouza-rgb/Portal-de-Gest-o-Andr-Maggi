@@ -11,7 +11,9 @@ import {
   Filter,
   Trash2,
   CheckCircle2,
-  Clock
+  Clock,
+  Printer,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './Toast';
@@ -26,6 +28,8 @@ const ClassCouncilManager: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBimestre, setFilterBimestre] = useState('TODOS');
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printingCouncil, setPrintingCouncil] = useState<ClassCouncil | null>(null);
 
   const fetchCouncils = async () => {
     const { data, error } = await supabase
@@ -106,6 +110,39 @@ const ClassCouncilManager: React.FC = () => {
         addToast("Registro excluído.", "success");
       }
     }
+  };
+
+  const handlePrintCouncil = async (council: ClassCouncil, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPrintingCouncil(council);
+    setIsPrinting(true);
+    addToast("Gerando PDF...", "info");
+
+    setTimeout(async () => {
+      const element = document.getElementById('ata-conselho-externo');
+      if (element) {
+        try {
+          // @ts-ignore
+          const h2pdf = window.html2pdf;
+          const filename = `Ata_Conselho_${council.className?.replace(/\s+/g, '_')}_${council.bimestre.replace(/\s+/g, '_')}.pdf`;
+          
+          await h2pdf().set({
+            margin: 10,
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }).from(element).save();
+          
+          addToast("PDF gerado com sucesso!", "success");
+        } catch (err) {
+          console.error("Erro ao gerar PDF:", err);
+          addToast("Erro ao gerar PDF.", "error");
+        }
+      }
+      setIsPrinting(false);
+      setPrintingCouncil(null);
+    }, 500);
   };
 
   const filteredCouncils = councils.filter(c => {
@@ -208,6 +245,14 @@ const ClassCouncilManager: React.FC = () => {
                 </p>
               </div>
               <button 
+                onClick={(e) => handlePrintCouncil(council, e)}
+                disabled={isPrinting}
+                className="p-3.5 text-white/20 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all border border-transparent hover:border-blue-400/20"
+                title="Imprimir Ata"
+              >
+                {isPrinting && printingCouncil?.id === council.id ? <Loader2 size={20} className="animate-spin" /> : <Printer size={20} />}
+              </button>
+              <button 
                 onClick={(e) => handleDelete(council.id, e)}
                 className="p-3.5 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all border border-transparent hover:border-red-400/20"
                 title="Excluir Registro"
@@ -227,6 +272,81 @@ const ClassCouncilManager: React.FC = () => {
         )}
       </div>
 
+      {/* ÁREA DE IMPRESSÃO OCULTA PARA O HISTÓRICO */}
+      {printingCouncil && (
+        <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
+          <div id="ata-conselho-externo" className="bg-white text-black p-12 min-h-screen font-sans">
+            <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
+              <div className="flex items-center justify-start flex-1">
+                <img src="/logo-escola.png" alt="Escola Logo" className="h-44 w-auto object-contain" />
+              </div>
+              <div className="flex-[2] flex justify-center px-4">
+                <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-44 w-full object-contain" />
+              </div>
+              <div className="flex items-center justify-end flex-1">
+                <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-28 w-auto object-contain" />
+              </div>
+            </div>
+
+            <div className="text-center mb-10">
+              <h1 className="text-2xl font-bold uppercase tracking-tighter">Ata de Conselho de Classe</h1>
+              <div className="flex justify-center gap-10 mt-4 text-xs font-bold uppercase">
+                <span>Turma: {printingCouncil.className}</span>
+                <span>Bimestre: {printingCouncil.bimestre}</span>
+                <span>Data: {new Date(printingCouncil.date).toLocaleDateString('pt-BR')}</span>
+              </div>
+            </div>
+
+            <div className="space-y-10">
+              <section>
+                <h2 className="text-lg font-bold border-b border-black mb-3 uppercase tracking-tight">1. Diagnóstico Geral da Turma</h2>
+                <p className="text-sm leading-relaxed text-justify">{printingCouncil.generalDiagnosis || 'Nenhuma observação registrada.'}</p>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-bold border-b border-black mb-3 uppercase tracking-tight">2. Deliberações e Ações Pedagógicas</h2>
+                <p className="text-sm leading-relaxed text-justify">{printingCouncil.decisions || 'Nenhuma decisão registrada.'}</p>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-bold border-b border-black mb-6 uppercase tracking-tight">3. Análise Individual dos Estudantes</h2>
+                <table className="w-full border-collapse border border-black text-[10px]">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-black px-3 py-2 text-left w-1/4">ESTUDANTE</th>
+                      <th className="border border-black px-2 py-2 text-center">DESEMPENHO</th>
+                      <th className="border border-black px-2 py-2 text-center">COMPORT.</th>
+                      <th className="border border-black px-3 py-2 text-left">OBSERVAÇÕES / RECOMENDAÇÕES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {printingCouncil.studentObservations?.map((obs, idx) => (
+                      <tr key={idx}>
+                        <td className="border border-black px-3 py-2 font-bold uppercase">{obs.studentName}</td>
+                        <td className="border border-black px-2 py-2 text-center">{obs.pedagogicalProgress}</td>
+                        <td className="border border-black px-2 py-2 text-center">{obs.behavioralStatus}</td>
+                        <td className="border border-black px-3 py-2">
+                          {obs.notes && <p><strong>Obs:</strong> {obs.notes}</p>}
+                          {obs.recommendations && <p><strong>Intervenção:</strong> {obs.recommendations}</p>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+
+              <div className="mt-20 pt-10 grid grid-cols-2 gap-20 px-10">
+                <div className="text-center border-t border-black pt-4">
+                  <p className="text-[10px] uppercase font-bold">Coordenação Pedagógica</p>
+                </div>
+                <div className="text-center border-t border-black pt-4">
+                  <p className="text-[10px] uppercase font-bold">Direção Escolar</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
