@@ -78,10 +78,10 @@ export default function BuscaAtivaAddLogModal({ student, onClose, onSuccess }: B
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl border border-emerald-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl border border-emerald-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[95vh]">
                 
                 {/* HEADER */}
-                <div className="px-8 pt-8 pb-4 flex justify-between items-start">
+                <div className="px-8 pt-8 pb-4 flex justify-between items-start shrink-0">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-600/20">
                             <MessageSquare size={24} />
@@ -98,7 +98,7 @@ export default function BuscaAtivaAddLogModal({ student, onClose, onSuccess }: B
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
