@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
-  ChevronRight,
   Phone,
   MapPin,
   AlertCircle,
@@ -13,7 +12,8 @@ import {
   MessageSquare,
   Scale,
   Loader2,
-  Clock
+  Clock,
+  History
 } from 'lucide-react';
 import { Referral, AttendanceRecord } from '../types';
 import BuscaAtivaReferralModal from './BuscaAtivaReferralModal';
