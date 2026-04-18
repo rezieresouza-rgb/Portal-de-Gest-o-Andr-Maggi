@@ -177,72 +177,11 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Meio de Contato</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {ACTION_TYPES.map(type => (
-                                <button
-                                    key={type.id}
-                                    type="button"
-                                    onClick={() => setFormData({...formData, type: type.id})}
-                                    className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all ${formData.type === type.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white border-gray-100 text-gray-400 hover:bg-emerald-50'}`}
-                                >
-                                    <type.icon size={18} />
-                                    <span className="text-[8px] font-black uppercase text-center leading-none">{type.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                        
-                        {formData.type === 'OUTRO' && (
-                            <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
-                                <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1">Descreva a Intervenção</label>
-                                <textarea
-                                    required
-                                    placeholder="Detalhe o que foi feito..."
-                                    value={formData.other_description}
-                                    onChange={e => setFormData({...formData, other_description: e.target.value})}
-                                    className="w-full mt-1.5 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all min-h-[80px] resize-none"
-                                />
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pessoa Contatada</label>
-                        <input 
-                            type="text" 
-                            placeholder="Ex: Mãe (Dona Maria)"
-                            value={formData.contact_person}
-                            onChange={e => setFormData({...formData, contact_person: e.target.value})}
-                            className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidor Responsável</label>
-                        <div className="grid grid-cols-2 gap-2">
-                             {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
-                                <button
-                                    key={name}
-                                    type="button"
-                                    onClick={() => setFormData({...formData, responsible_name: name})}
-                                    className={`py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all border leading-tight ${
-                                        formData.responsible_name === name 
-                                            ? 'bg-gray-900 border-gray-900 text-white shadow-lg' 
-                                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'
-                                    }`}
-                                >
-                                    {name}
-                                </button>
-                             ))}
-                        </div>
-                    </div>
-
-                    <div className="space-y-1.5 bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100/50">
+                    <div className="space-y-1.5 bg-emerald-50/20 p-6 rounded-[2rem] border border-emerald-100/30">
                         <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1 flex items-center gap-1.5 mb-3">
-                           <ShieldAlert size={12} /> Vincular Ações do Protocolo (Art. 23)
+                           <ShieldAlert size={12} /> Selecione as Ações do Protocolo (Art. 23)
                         </label>
-                        <div className="space-y-2">
+                        <div className="grid grid-cols-1 gap-2">
                             {protocolItems.map(item => {
                                 const isAlreadyDone = actionsStatus[item.id]?.status === 'CONCLUIDO';
                                 const isSelected = selectedProtocolItems.includes(item.id);
@@ -275,17 +214,92 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observações do Atendimento</label>
-                        <textarea 
-                            required
-                            placeholder="Descreva o que foi conversado ou o resultado da visita..."
-                            rows={4}
-                            value={formData.description}
-                            onChange={(e) => setFormData({...formData, description: e.target.value})}
-                            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:border-emerald-500 transition-all resize-none"
-                        />
-                    </div>
+                    {selectedProtocolItems.length > 0 ? (
+                        <div className="space-y-6 animate-in slide-in-from-top-4 fade-in duration-500">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Meio de Contato</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {ACTION_TYPES.map(type => (
+                                        <button
+                                            key={type.id}
+                                            type="button"
+                                            onClick={() => setFormData({...formData, type: type.id})}
+                                            className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all ${formData.type === type.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white border-gray-100 text-gray-400 hover:bg-emerald-50'}`}
+                                        >
+                                            <type.icon size={18} />
+                                            <span className="text-[8px] font-black uppercase text-center leading-none">{type.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                {formData.type === 'OUTRO' && (
+                                    <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
+                                        <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1">Descreva a Intervenção</label>
+                                        <textarea
+                                            required
+                                            placeholder="Detalhe o que foi feito..."
+                                            value={formData.other_description}
+                                            onChange={e => setFormData({...formData, other_description: e.target.value})}
+                                            className="w-full mt-1.5 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all min-h-[80px] resize-none"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pessoa Contatada</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ex: Mãe (Dona Maria)"
+                                    value={formData.contact_person}
+                                    onChange={e => setFormData({...formData, contact_person: e.target.value})}
+                                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidor Responsável</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
+                                        <button
+                                            key={name}
+                                            type="button"
+                                            onClick={() => setFormData({...formData, responsible_name: name})}
+                                            className={`py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all border leading-tight ${
+                                                formData.responsible_name === name 
+                                                    ? 'bg-gray-900 border-gray-900 text-white shadow-lg' 
+                                                    : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'
+                                            }`}
+                                        >
+                                            {name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observações do Atendimento</label>
+                                <textarea 
+                                    required
+                                    placeholder="Descreva o que foi conversado ou o resultado da visita..."
+                                    rows={4}
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:border-emerald-500 transition-all resize-none"
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-emerald-100 rounded-[2rem] bg-emerald-50/10">
+                            <div className="p-4 bg-emerald-50 text-emerald-500 rounded-full">
+                                <AlertTriangle size={32} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-emerald-900 uppercase tracking-tight">Selecione uma ação do protocolo</p>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Para liberar os detalhes do contato</p>
+                            </div>
+                        </div>
+                    )}
 
                     <button
                         type="submit"
