@@ -135,11 +135,28 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
 
             <div className="space-y-1.5">
                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Técnico / Responsável</label>
+               <div className="grid grid-cols-2 gap-2 mb-2">
+                  {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, responsible: name })}
+                      className={`py-3 px-4 rounded-xl border-2 text-[9px] font-black uppercase transition-all ${
+                        formData.responsible === name 
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' 
+                          : 'border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-200'
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  ))}
+               </div>
                <input 
                   type="text" 
                   value={formData.responsible}
                   onChange={e => setFormData({...formData, responsible: e.target.value.toUpperCase()})}
-                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none"
+                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
+                  placeholder="OU DIGITE O NOME DO RESPONSÁVEL"
                />
             </div>
 
