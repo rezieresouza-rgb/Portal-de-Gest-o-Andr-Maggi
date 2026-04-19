@@ -32,6 +32,7 @@ interface BuscaAtivaAddLogModalProps {
     actionsStatus: Record<string, { status: string, notes: string, completed_at: string | null }>;
     onClose: () => void;
     onSuccess: () => void;
+    editData?: any;
 }
 
 const ACTION_TYPES = [
@@ -42,11 +43,36 @@ const ACTION_TYPES = [
     { id: 'OUTRO', label: 'Outra Intervenção', icon: AlertTriangle },
 ];
 
-export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsStatus, onClose, onSuccess }: BuscaAtivaAddLogModalProps) {
+export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsStatus, onClose, onSuccess, editData }: BuscaAtivaAddLogModalProps) {
     const [loading, setLoading] = useState(false);
     const [selectedProtocolItems, setSelectedProtocolItems] = useState<string[]>([]);
     const [activeProtocolId, setActiveProtocolId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
+
+    const deconstructDescription = (desc: string) => {
+        const match = desc.match(/^\[(.*?)\] (.*?)(?: \(Contato: (.*)\))?$/);
+        if (match) {
+            const type = match[1];
+            const text = match[2];
+            const contact = match[3] || '';
+            const isKnownType = ACTION_TYPES.some(t => t.id === type);
+            
+            return {
+                type: isKnownType ? type : 'OUTRO',
+                description: isKnownType && type !== 'OUTRO' ? text : '',
+                other_description: !isKnownType || type === 'OUTRO' ? text : '',
+                contact_person: contact
+            };
+        }
+        return { type: 'OUTRO', description: '', other_description: desc, contact_person: '' };
+    };
+
+    const initialFormData = editData ? {
+        date: editData.date,
+        time: editData.time?.substring(0, 5) || '00:00',
+        severity: editData.severity || 'NORMAL',
+        responsible_name: editData.responsible_name || 'ANGELA MARIA TRAMARIN',
+        ...deconstructDescription(editData.description || '')
+    } : {
         date: new Date().toLocaleDateString('sv-SE'),
         time: new Date().toLocaleTimeString('pt-BR', { hour12: false }).substring(0, 5),
         type: 'TELEFONE',
@@ -55,7 +81,9 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         severity: 'NORMAL',
         responsible_name: 'ANGELA MARIA TRAMARIN',
         other_description: ''
-    });
+    };
+
+    const [formData, setFormData] = useState(initialFormData);
 
     const toggleProtocolItem = (id: string) => {
         const isSelected = selectedProtocolItems.includes(id);
@@ -73,23 +101,36 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         setLoading(true);
 
         try {
-            // 1. Save Log Entry
-            const { error: logError } = await supabase
-                .from('occurrences')
-                .insert([{
-                    student_id: student.id,
-                    student_name: student.name,
-                    classroom_name: student.class,
-                    classroom_id: student.classroom_id,
-                    date: formData.date,
-                    time: formData.time,
-                    category: 'BUSCA_ATIVA',
-                    severity: formData.severity,
-                    description: `[${formData.type}] ${formData.type === 'OUTRO' ? formData.other_description : formData.description}${formData.contact_person ? ` (Contato: ${formData.contact_person})` : ''}`,
-                    status: 'REGISTRADO',
-                    location: formData.contact_person || 'Escola',
-                    responsible_name: formData.responsible_name
-                }]);
+            // 1. Save or Update Log Entry
+            const description = `[${formData.type}] ${formData.type === 'OUTRO' ? formData.other_description : formData.description}${formData.contact_person ? ` (Contato: ${formData.contact_person})` : ''}`;
+            const logData = {
+                student_id: student.id,
+                student_name: student.name,
+                classroom_name: student.class,
+                classroom_id: student.classroom_id,
+                date: formData.date,
+                time: formData.time,
+                category: 'BUSCA_ATIVA',
+                severity: formData.severity,
+                description,
+                status: 'REGISTRADO',
+                location: formData.contact_person || 'Escola',
+                responsible_name: formData.responsible_name
+            };
+
+            let logError;
+            if (editData?.id) {
+                const { error } = await supabase
+                    .from('occurrences')
+                    .update(logData)
+                    .eq('id', editData.id);
+                logError = error;
+            } else {
+                const { error } = await supabase
+                    .from('occurrences')
+                    .insert([logData]);
+                logError = error;
+            }
 
             if (logError) throw logError;
 
@@ -213,7 +254,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                 className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
             >
                 {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                Salvar Acompanhamento
+                {editData ? 'Salvar Alterações' : 'Salvar Acompanhamento'}
             </button>
         </div>
     );
@@ -229,7 +270,9 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                             <MessageSquare size={24} />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Registrar Acompanhamento</h3>
+                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">
+                                {editData ? 'Editar Acompanhamento' : 'Registrar Acompanhamento'}
+                            </h3>
                             <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">
                                 {student.name}
                             </p>
@@ -341,7 +384,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                             className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
                             {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                            Salvar Acompanhamento
+                            {editData ? 'Salvar Alterações' : 'Salvar Acompanhamento'}
                         </button>
                     )}
                 </form>

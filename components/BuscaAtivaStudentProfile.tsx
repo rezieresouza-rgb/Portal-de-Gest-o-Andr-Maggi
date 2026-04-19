@@ -20,7 +20,9 @@ import {
   ShieldAlert,
   Circle,
   Send,
-  Users
+  Users,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { Referral } from '../types';
 import { supabase } from '../supabaseClient';
@@ -60,6 +62,10 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
   const [loadingLogs, setLoadingLogs] = useState(true);
   const [loadingActions, setLoadingActions] = useState(true);
   const [showAddLog, setShowAddLog] = useState(false);
+  const [editingLog, setEditingLog] = useState<any>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  
   const studentReferrals = referrals.filter(r => r.studentId === student.id);
 
   useEffect(() => {
@@ -136,6 +142,27 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
       console.error("Erro ao buscar ações:", error);
     } finally {
       setLoadingActions(false);
+    }
+  };
+
+  const handleDeleteLog = async () => {
+    if (!deleteConfirmId) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('occurrences')
+        .delete()
+        .eq('id', deleteConfirmId);
+
+      if (error) throw error;
+      
+      fetchMonitoringLogs();
+      setDeleteConfirmId(null);
+    } catch (error) {
+      console.error("Erro ao excluir log:", error);
+      alert("Erro ao excluir registro.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -289,14 +316,17 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                       time: log.time, 
                       type: 'BUSCA ATIVA', 
                       content: log.description, 
-                      responsible: log.responsible_name || 'Equipe' 
+                      responsible: log.responsible_name || 'Equipe',
+                      isOccurrence: true,
+                      original: log
                    })), ...studentReferrals.map(ref => ({
                       id: ref.id,
                       date: ref.date,
                       time: '00:00',
                       type: ref.type,
                       content: `Motivo: ${ref.reason}`,
-                      responsible: ref.responsible
+                      responsible: ref.responsible,
+                      isOccurrence: false
                    }))]
                    .sort((a, b) => {
                       const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
@@ -315,10 +345,33 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                                   {item.type}
                                 </span>
                              </div>
-                             <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
-                                <Calendar size={10} /> {new Date(item.date).toLocaleDateString('pt-BR')}
-                                {item.time && <><Clock size={10} className="ml-1" /> {item.time.substring(0, 5)}</>}
-                             </div>
+                              <div className="flex items-center gap-3">
+                                 {item.isOccurrence && (
+                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all mr-2">
+                                      <button 
+                                        onClick={() => {
+                                          setEditingLog(item.original);
+                                          setShowAddLog(true);
+                                        }}
+                                        className="p-1.5 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-lg transition-all"
+                                        title="Editar"
+                                      >
+                                        <Pencil size={12} />
+                                      </button>
+                                      <button 
+                                        onClick={() => setDeleteConfirmId(item.id)}
+                                        className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-all"
+                                        title="Excluir"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                   </div>
+                                 )}
+                                 <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
+                                    <Calendar size={10} /> {new Date(item.date).toLocaleDateString('pt-BR')}
+                                    {item.time && <><Clock size={10} className="ml-1" /> {item.time.substring(0, 5)}</>}
+                                 </div>
+                              </div>
                           </div>
                           <p className="text-xs font-bold text-gray-700 leading-relaxed whitespace-pre-wrap">{item.content}</p>
                           <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mt-3 pt-3 border-t border-gray-50">
@@ -425,12 +478,50 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
           student={student} 
           protocolItems={ACTION_ITEMS}
           actionsStatus={actionsStatus}
-          onClose={() => setShowAddLog(false)} 
+          editData={editingLog}
+          onClose={() => {
+            setShowAddLog(false);
+            setEditingLog(null);
+          }} 
           onSuccess={() => {
             fetchMonitoringLogs();
             fetchActions();
           }}
         />
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-emerald-950/60 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-8 text-center space-y-4">
+                 <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Trash2 size={40} />
+                 </div>
+                 <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Tem certeza?</h3>
+                 <p className="text-xs text-gray-500 font-bold leading-relaxed px-4">
+                   Esta ação não pode ser desfeita. O registro será removido permanentemente do histórico.
+                 </p>
+                 <div className="grid grid-cols-2 gap-3 pt-4">
+                    <button 
+                      onClick={() => setDeleteConfirmId(null)}
+                      disabled={deleting}
+                      className="py-3 px-6 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={handleDeleteLog}
+                      disabled={deleting}
+                      className="py-3 px-6 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-red-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      Excluir
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
     </div>
   );
