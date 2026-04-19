@@ -347,7 +347,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                              </div>
                               <div className="flex items-center gap-3">
                                  {item.isOccurrence && (
-                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all mr-2">
+                                   <div className="flex items-center gap-1 mr-2">
                                       <button 
                                         onClick={() => {
                                           setEditingLog(item.original);
