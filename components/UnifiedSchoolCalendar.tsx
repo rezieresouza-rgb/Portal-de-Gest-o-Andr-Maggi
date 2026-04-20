@@ -242,13 +242,21 @@ const UnifiedSchoolCalendar: React.FC = () => {
 
          {/* HEADER DE NAVEGAÇÃO MENSAL */}
          <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl flex items-center justify-between no-print">
-            <button
-               onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))}
-               disabled={currentIdx === 0}
-               className="p-4 bg-gray-50 text-gray-400 hover:text-indigo-600 disabled:opacity-30 rounded-2xl transition-all shadow-sm border border-gray-100 hover:bg-white"
-            >
-               <ChevronLeft size={28} />
-            </button>
+            <div className="flex items-center gap-3 no-print">
+               <button
+                  onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))}
+                  disabled={currentIdx === 0}
+                  className="p-4 bg-gray-50 text-gray-400 hover:text-indigo-600 disabled:opacity-30 rounded-2xl transition-all shadow-sm border border-gray-100 hover:bg-white"
+               >
+                  <ChevronLeft size={28} />
+               </button>
+               <button
+                  onClick={() => window.print()}
+                  className="p-4 bg-white text-indigo-600 border border-indigo-100 rounded-2xl hover:bg-indigo-50 transition-all flex items-center gap-2 font-black uppercase text-[10px] tracking-widest shadow-sm"
+               >
+                  <FileText size={18} /> Imprimir Relatório
+               </button>
+            </div>
             <div className="text-center space-y-1">
                <h2 className="text-4xl font-black text-indigo-950 uppercase tracking-tighter leading-none">{monthData.mes} 2026</h2>
                <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-[0.3em]">{SCHOOL_CALENDAR_2026.unidade_escolar}</p>
@@ -256,7 +264,7 @@ const UnifiedSchoolCalendar: React.FC = () => {
             <button
                onClick={() => setCurrentIdx(prev => Math.min(SCHOOL_CALENDAR_2026.meses.length - 1, prev + 1))}
                disabled={currentIdx === SCHOOL_CALENDAR_2026.meses.length - 1}
-               className="p-4 bg-gray-50 text-gray-400 hover:text-indigo-600 disabled:opacity-30 rounded-2xl transition-all shadow-sm border border-gray-100 hover:bg-white"
+               className="p-4 bg-gray-50 text-gray-400 hover:text-indigo-600 disabled:opacity-30 rounded-2xl transition-all shadow-sm border border-gray-100 hover:bg-white no-print"
             >
                <ChevronRight size={28} />
             </button>
@@ -413,7 +421,7 @@ const UnifiedSchoolCalendar: React.FC = () => {
                         className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3 relative"
                      >
                         {uploading === 'photos' ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />} 
-                        Fotos do Mês
+                        Anexar Fotos
                         {localTracker[monthData.mes]?.photos?.length > 0 && (
                            <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[8px] px-2 py-1 rounded-full">{localTracker[monthData.mes].photos.length}</span>
                         )}
@@ -425,7 +433,7 @@ const UnifiedSchoolCalendar: React.FC = () => {
                         className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3 relative"
                      >
                         {uploading === 'reports' ? <Loader2 className="animate-spin" size={18} /> : <FileText size={18} />} 
-                        Relatórios Anexos
+                        Anexar Documentos
                         {localTracker[monthData.mes]?.reports?.length > 0 && (
                            <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[8px] px-2 py-1 rounded-full">{localTracker[monthData.mes].reports.length}</span>
                         )}
@@ -436,9 +444,49 @@ const UnifiedSchoolCalendar: React.FC = () => {
                         disabled={saving || !!uploading}
                         className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                      >
-                        {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Salvar Monitoramento
+                        {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Salvar Registro
                      </button>
                   </div>
+
+                  {/* GALERIA DE FOTOS E ANEXOS SALVOS */}
+                  {(localTracker[monthData.mes]?.photos?.length > 0 || localTracker[monthData.mes]?.reports?.length > 0) && (
+                     <div className="space-y-6 pt-6 border-t border-gray-50">
+                        {localTracker[monthData.mes]?.photos?.length > 0 && (
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Galeria do Mês</label>
+                              <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+                                 {localTracker[monthData.mes].photos.map((url: string, i: number) => (
+                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="group relative aspect-square rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                       <img src={url} alt={`Foto ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                       <div className="absolute inset-0 bg-indigo-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                          <Camera size={16} className="text-white" />
+                                       </div>
+                                    </a>
+                                 ))}
+                              </div>
+                           </div>
+                        )}
+
+                        {localTracker[monthData.mes]?.reports?.length > 0 && (
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Documentos e Relatórios</label>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                 {localTracker[monthData.mes].reports.map((url: string, i: number) => {
+                                    const fileName = url.split('/').pop()?.split('_').slice(2).join('_') || `Relatorio_${i}`;
+                                    return (
+                                       <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-white hover:border-indigo-200 hover:shadow-sm transition-all group">
+                                          <div className="p-2 bg-white text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                             <FileText size={16} />
+                                          </div>
+                                          <span className="text-[10px] font-bold text-gray-600 truncate flex-1">{fileName}</span>
+                                       </a>
+                                    );
+                                 })}
+                              </div>
+                           </div>
+                        )}
+                     </div>
+                  )}
                </div>
 
                <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 p-8 rounded-[3rem] text-white flex items-center justify-between shadow-2xl relative overflow-hidden">
