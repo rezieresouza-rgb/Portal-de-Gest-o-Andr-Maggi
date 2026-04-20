@@ -9,7 +9,6 @@ import {
   UserPlus,
   PhoneCall,
   AlertTriangle,
-  ShieldCheck,
   Maximize2,
   Clock,
   History,
@@ -18,7 +17,9 @@ import {
   CalendarDays,
   FileSpreadsheet,
   Settings2,
-  FileBarChart
+  FileBarChart,
+  ShieldAlert,
+  ShieldCheck
 } from 'lucide-react';
 import BuscaAtivaDashboard from '../components/BuscaAtivaDashboard';
 import BuscaAtivaStudentList from '../components/BuscaAtivaStudentManager';

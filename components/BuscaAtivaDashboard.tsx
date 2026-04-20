@@ -317,7 +317,7 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
           </div>
           <div className="space-y-4">
             {criticalCases.length > 0 ? criticalCases.map((c, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-100 transition-all group cursor-pointer" onClick={() => setSelectedActionStudent(c)}>
+              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-100 transition-all group cursor-pointer" onClick={() => setViewingProfile(c)}>
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-12 rounded-xl bg-red-100 text-red-600 flex flex-col items-center justify-center font-black">
                     <span className="text-sm leading-none">{c.absences}</span>
