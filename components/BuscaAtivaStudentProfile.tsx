@@ -58,6 +58,7 @@ interface BuscaAtivaStudentProfileProps {
 const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ student, referrals = [], onClose }) => {
   const [activeView, setActiveView] = useState<'history' | 'protocol'>('history');
   const [monitoringLogs, setMonitoringLogs] = useState<any[]>([]);
+  const [mediationFeedbacks, setMediationFeedbacks] = useState<any[]>([]);
   const [actionsStatus, setActionsStatus] = useState<Record<string, { status: string, notes: string, completed_at: string | null }>>({});
   const [loadingLogs, setLoadingLogs] = useState(true);
   const [loadingActions, setLoadingActions] = useState(true);
@@ -71,6 +72,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
   useEffect(() => {
     fetchMonitoringLogs();
     fetchActions();
+    fetchMediationFeedbacks();
 
     const channel = supabase
       .channel(`student-monitoring-${student.id}`)
@@ -90,12 +92,33 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
       }, () => {
         fetchActions();
       })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'mediation_cases'
+      }, () => {
+        fetchMediationFeedbacks();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [student.id]);
+
+  const fetchMediationFeedbacks = async () => {
+    try {
+      const { data } = await supabase
+        .from('mediation_cases')
+        .select('id, feedback, opened_at, description, status, type')
+        .eq('student_name', student.name)
+        .not('feedback', 'is', null)
+        .neq('feedback', '');
+      setMediationFeedbacks(data || []);
+    } catch (e) {
+      console.error('Erro ao buscar devolutivas da mediação:', e);
+    }
+  };
 
   const fetchMonitoringLogs = async () => {
     setLoadingLogs(true);
@@ -309,7 +332,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
               <div className="space-y-4 relative before:absolute before:left-6 before:top-2 before:bottom-2 before:w-0.5 before:bg-emerald-100">
                  {loadingLogs ? (
                    <div className="py-12 text-center ml-12"><Loader2 className="animate-spin mx-auto text-emerald-600" /></div>
-                 ) : monitoringLogs.length > 0 || studentReferrals.length > 0 ? (
+                 ) : monitoringLogs.length > 0 || studentReferrals.length > 0 || mediationFeedbacks.length > 0 ? (
                    [...monitoringLogs.map(log => ({ 
                       id: log.id, 
                       date: log.date, 
@@ -318,7 +341,8 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                       content: log.description, 
                       responsible: log.responsible_name || 'Equipe',
                       isOccurrence: true,
-                      original: log
+                      original: log,
+                      isMediationFeedback: false
                    })), ...studentReferrals.map(ref => ({
                       id: ref.id,
                       date: ref.date,
@@ -327,7 +351,18 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                       content: `Motivo: ${ref.reason}`,
                       responsible: ref.responsible,
                       isOccurrence: false,
-                      original: ref
+                      original: ref,
+                      isMediationFeedback: false
+                   })), ...mediationFeedbacks.map(fb => ({
+                      id: `med-${fb.id}`,
+                      date: fb.opened_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+                      time: '23:59',
+                      type: 'DEVOLUTIVA DA MEDIAÇÃO',
+                      content: fb.feedback,
+                      responsible: 'Equipe de Mediação',
+                      isOccurrence: false,
+                      original: null,
+                      isMediationFeedback: true
                    }))]
                    .sort((a, b) => {
                       const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
@@ -336,13 +371,19 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                    })
                    .map((item) => (
                     <div key={item.id} className="relative pl-12">
-                       <div className="absolute left-4 top-1 w-4 h-4 rounded-full bg-emerald-500 border-4 border-white shadow-sm z-10"></div>
-                       <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:border-emerald-200 transition-all group">
+                       <div className={`absolute left-4 top-1 w-4 h-4 rounded-full border-4 border-white shadow-sm z-10 ${item.isMediationFeedback ? 'bg-green-600' : 'bg-emerald-500'}`}></div>
+                       <div className={`p-5 rounded-[2rem] border shadow-sm transition-all group ${
+                          item.isMediationFeedback 
+                            ? 'bg-emerald-50 border-emerald-200 hover:border-emerald-400' 
+                            : 'bg-white border-gray-100 hover:border-emerald-200'
+                        }`}>
                           <div className="flex justify-between items-start mb-2">
                              <div className="flex items-center gap-2">
                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase border ${
-                                  item.type === 'BUSCA ATIVA' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-violet-50 text-violet-600 border-violet-100'
-                                }`}>
+                                   item.isMediationFeedback
+                                     ? 'bg-emerald-600 text-white border-emerald-700'
+                                     : item.type === 'BUSCA ATIVA' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-violet-50 text-violet-600 border-violet-100'
+                                 }`}>
                                   {item.type}
                                 </span>
                              </div>
@@ -376,15 +417,22 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                           </div>
                           <p className="text-xs font-bold text-gray-700 leading-relaxed whitespace-pre-wrap">{item.content}</p>
                           
-                          {/* [NOVO] Devolutiva da Mediação */}
-                          {!item.isOccurrence && (item.original as any)?.feedback && (
+                          {/* Destaque especial para devolutivas da mediação */}
+                          {item.isMediationFeedback && (
+                            <div className="mt-3 flex items-center gap-2 text-[8px] font-black text-emerald-600 uppercase tracking-widest">
+                              <CheckCircle2 size={10} /> Devolutiva oficial registrada pela equipe de mediação
+                            </div>
+                          )}
+
+                          {/* [LEGADO] Devolutiva inline via referral */}
+                          {!item.isOccurrence && !item.isMediationFeedback && (item.original as any)?.feedback && (
                             <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in slide-in-from-top-2 duration-300">
                                <div className="flex items-center gap-2 mb-2 text-emerald-700">
                                   <CheckCircle2 size={14} strokeWidth={3} />
                                   <span className="text-[9px] font-black uppercase tracking-widest">Devolutiva da Mediação</span>
                                </div>
                                <p className="text-[11px] font-bold text-emerald-800 leading-relaxed italic">
-                                  "{ (item.original as any)?.feedback }"
+                                  {(item.original as any)?.feedback}
                                 </p>
                             </div>
                           )}
