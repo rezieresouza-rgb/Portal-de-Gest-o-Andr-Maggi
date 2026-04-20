@@ -132,14 +132,7 @@ const BuscaAtivaFICAI: React.FC = () => {
                   </select>
                )}
             </div>
-            <button
-               onClick={handlePrint}
-               disabled={!selectedStudentId || isGenerating}
-               className="px-10 py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 shrink-0 disabled:opacity-50"
-            >
-               {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Printer size={18} />}
-               Gerar e Baixar FICAi
-            </button>
+
          </div>
 
          {selectedStudentId && student && (

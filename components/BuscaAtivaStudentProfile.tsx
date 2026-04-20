@@ -577,9 +577,6 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                  <p className="text-xs text-red-700 font-medium leading-relaxed">
                     O aluno atingiu o patamar crítico de faltas. É obrigatória a abertura de <strong>FICAi</strong> e o encaminhamento imediato ao Conselho Tutelar.
                  </p>
-                 <button className="w-full py-3 bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-700 transition-all shadow-lg flex items-center justify-center gap-2">
-                    <Scale size={14}/> Abrir FICAi Agora
-                 </button>
               </div>
            )}
         </div>
