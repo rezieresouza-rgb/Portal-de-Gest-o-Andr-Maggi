@@ -290,7 +290,6 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
           { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
           { id: '4', label: 'Acordo / Finalização', completed: false }
         ],
-        logs: []
       }]);
 
       if (mediationError) {

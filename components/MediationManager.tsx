@@ -140,7 +140,6 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                     description: c.description,
                     involved_parties: c.involvedParties || [],
                     steps: c.steps,
-                    logs: []
                  }]);
               }
               localStorage.removeItem('mediation_cases');
@@ -183,7 +182,6 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
         description: newCase.description,
         involved_parties: newCase.involvedParties || [],
         steps: steps,
-        logs: []
       };
 
       const { data, error } = await supabase
