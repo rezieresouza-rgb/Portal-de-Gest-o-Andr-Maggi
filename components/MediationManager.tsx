@@ -138,7 +138,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                     status: c.status,
                     opened_at: c.openedAt,
                     description: c.description,
-                    involved_parties: c.involvedParties || [],
+                    involved_parties: c.involved_parties || [],
                     steps: c.steps,
                  }]);
               }
@@ -180,7 +180,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
         status: 'ABERTURA',
         opened_at: new Date().toLocaleDateString('sv-SE'),
         description: newCase.description,
-        involved_parties: newCase.involvedParties || [],
+        involved_parties: newCase.involved_parties || [],
         steps: steps,
       };
 
@@ -612,53 +612,55 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
       {selectedCase && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
            <div className="bg-white rounded-[3.5rem] w-full max-w-5xl max-h-[92vh] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-              <div className="p-8 bg-rose-900 text-white shrink-0">
-                 <div className="flex justify-between items-start mb-6">
-                    <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={28}/></button>
-                    <span className="px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}</span>
+              <div className="p-4 bg-rose-900 text-white shrink-0 shadow-lg">
+                 <div className="flex justify-between items-center mb-3">
+                    <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
+                    <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}</span>
                  </div>
-                 <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl font-black">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl font-black">
                        {(selectedCase.studentName || '?')[0]}
                     </div>
                     <div>
-                       <h3 className="text-2xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
-                       <p className="text-rose-300 font-bold uppercase text-[10px] tracking-widest mt-2">{selectedCase.className} • Caso {selectedCase.type}</p>
+                       <h3 className="text-xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
+                       <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest mt-1.5">{selectedCase.className} • Caso {selectedCase.type}</p>
                     </div>
                  </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
-                 <div className="space-y-4">
-                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
-                        <FileText size={14} className="text-rose-600" /> Histórico do Relato
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-gray-50/30">
+                 <div className="space-y-3 bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
+                     <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-1.5">
+                        <FileText size={12} className="text-rose-600" /> Relato Original
                      </h4>
-                     <p className="text-base text-gray-600 leading-relaxed font-medium bg-gray-50 p-8 rounded-[2rem] border border-gray-100">"{selectedCase.description}"</p>
+                     <p className="text-sm text-gray-600 leading-relaxed font-medium capitalize">
+                        {selectedCase.description}
+                     </p>
                   </div>
 
                   {/* [NOVO] Seção de Devolutiva ao Professor */}
-                  <div className="space-y-4 bg-emerald-50/50 p-6 rounded-[2.5rem] border border-emerald-100/50 relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 p-8 opacity-5 text-emerald-900">
-                        <MessageSquare size={80} strokeWidth={1} />
-                     </div>
-                     
-                     <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                        <CheckCircle2 size={14} /> Devolutiva ao Professor(a)
-                     </h4>
-                     
-                     <textarea 
-                        value={selectedCase?.feedback || ''}
-                        onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
-                        placeholder="Escreva aqui a resposta/devolutiva para o professor que realizou este encaminhamento..."
-                        className="w-full p-8 bg-white border-2 border-emerald-100 rounded-[2.5rem] text-base font-bold min-h-[350px] resize-none outline-none focus:ring-8 focus:ring-emerald-500/5 transition-all shadow-inner focus:border-emerald-500"
-                     />
-                  </div>
+                  <div className="space-y-3 bg-white p-5 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group shadow-sm">
+                      <div className="absolute top-0 right-0 p-4 opacity-5 text-emerald-900 pointer-events-none">
+                         <MessageSquare size={120} strokeWidth={1} />
+                      </div>
+                      
+                      <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 mb-1">
+                         <CheckCircle2 size={12} /> Campo de Registro / Devolutiva Principal
+                      </h4>
+                      
+                      <textarea 
+                         value={selectedCase?.feedback || ''}
+                         onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
+                         placeholder="Escreva aqui a resposta/devolutiva detalhada..."
+                         className="w-full p-6 bg-white border-2 border-emerald-100 rounded-[1.5rem] text-sm font-bold min-h-[480px] resize-none outline-none focus:ring-8 focus:ring-emerald-500/5 transition-all shadow-inner focus:border-emerald-500"
+                      />
+                   </div>
 
-                 <div className="space-y-6">
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
-                       <History size={14} className="text-rose-600" /> Etapas do Processo de Mediação
-                    </h4>
-                    <div className="space-y-4">
+                  <div className="space-y-3 bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
+                     <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-1.5">
+                        <History size={12} className="text-rose-600" /> Etapas do Processo
+                     </h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                        {selectedCase.steps?.map((step, idx) => (
                          <div key={idx} className={`p-5 rounded-3xl border-2 transition-all flex items-center justify-between ${step.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-dashed border-gray-200'}`}>
                             <div className="flex items-center gap-4">
@@ -696,21 +698,21 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                             )}
                          </div>
                        ))}
-                    </div>
-                 </div>
+                     </div>
+                  </div>
 
-                 <div className="p-8 bg-rose-50 rounded-[2.5rem] border border-rose-100 space-y-4">
-                    <div className="flex items-center gap-3 text-rose-600">
-                       <MessageCircle size={20} />
-                       <h4 className="text-[10px] font-black uppercase tracking-widest">Partes Envolvidas</h4>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                       {selectedCase.involvedParties?.map((p, i) => (
-                         <span key={i} className="px-3 py-1 bg-white border border-rose-100 rounded-lg text-[10px] font-bold text-rose-800 uppercase">{p}</span>
-                       ))}
-                       {selectedCase.involvedParties?.length === 0 && <span className="text-gray-400 text-[10px] italic">Nenhuma parte extra registrada</span>}
-                    </div>
-                 </div>
+                  <div className="p-4 bg-rose-50 rounded-[2rem] border border-rose-100 space-y-3">
+                     <div className="flex items-center gap-3 text-rose-600">
+                        <MessageCircle size={16} />
+                        <h4 className="text-[9px] font-black uppercase tracking-widest">Partes Envolvidas</h4>
+                     </div>
+                     <div className="flex flex-wrap gap-2">
+                        {selectedCase.involvedParties?.map((p, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-white border border-rose-100 rounded text-[9px] font-bold text-rose-800 uppercase">{p}</span>
+                        ))}
+                        {selectedCase.involvedParties?.length === 0 && <span className="text-gray-400 text-[9px] italic">Nenhuma registrada</span>}
+                     </div>
+                  </div>
               </div>
 
               <div className="p-8 bg-white border-t border-gray-50 flex flex-wrap gap-4">
