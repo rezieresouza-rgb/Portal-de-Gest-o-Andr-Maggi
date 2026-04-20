@@ -18,11 +18,12 @@ import { Referral, ReferralType, ReferralPriority } from '../types';
 interface BuscaAtivaReferralModalProps {
   student: { id: string, name: string, class: string };
   studentHistory?: any[];
+  absences?: number;
   onClose: () => void;
   onSave: (referral: Omit<Referral, 'id'>) => void;
 }
 
-const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ student, studentHistory, onClose, onSave }) => {
+const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ student, studentHistory, absences, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     type: 'EVASÃO_INFREQUÊNCIA' as ReferralType,
     priority: 'MÉDIA' as ReferralPriority,
@@ -76,8 +77,20 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
              <div className="absolute top-0 right-0 p-6 opacity-10"><User size={80} /></div>
              <div className="relative z-10">
                 <p className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-1">Aluno Selecionado</p>
-                <h4 className="text-xl font-black uppercase leading-tight">{student.name}</h4>
-                <p className="text-xs font-bold text-emerald-300/70 uppercase mt-1">{student.class}</p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="text-xl font-black uppercase leading-tight">{student.name}</h4>
+                    <p className="text-xs font-bold text-emerald-300/70 uppercase mt-1">{student.class}</p>
+                  </div>
+                  {absences !== undefined && (
+                    <div className={`px-5 py-4 rounded-3xl flex flex-col items-center justify-center border-2 border-white/10 shadow-2xl transition-all ${
+                      absences > 15 ? 'bg-red-500/90 text-white' : 'bg-white/10 text-white'
+                    }`}>
+                      <span className="text-2xl font-black leading-none">{absences}</span>
+                      <span className="text-[7px] font-black uppercase tracking-tighter mt-1 opacity-80">Faltas no Ano</span>
+                    </div>
+                  )}
+                </div>
              </div>
           </div>
 

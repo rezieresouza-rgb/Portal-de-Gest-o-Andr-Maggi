@@ -151,17 +151,18 @@ const BuscaAtivaStudentManager: React.FC = () => {
 
       const lastInt = allActions.length > 0 ? allActions[0] : null;
 
-      return {
-        ...s,
-        attendance: Math.round(attendancePercent),
-        status,
-        name: s.name,
-        class: s.class,
-        id: s.id,
-        totalInterventions: allActions.length,
-        lastInterventionDate: lastInt?.date,
-        lastInterventionType: lastInt?.type
-      };
+        return {
+          ...s,
+          attendance: Math.round(attendancePercent),
+          absences: totalDays - presentDays,
+          status,
+          name: s.name,
+          class: s.class,
+          id: s.id,
+          totalInterventions: allActions.length,
+          lastInterventionDate: lastInt?.date,
+          lastInterventionType: lastInt?.type
+        };
     });
 
     // Sort by lowest attendance first, then alphabetically
@@ -218,6 +219,8 @@ const BuscaAtivaStudentManager: React.FC = () => {
         .filter(log => log.student_id === student.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+      const studentInfo = studentData.find(s => s.id === student.id);
+
       const historySummary = studentLogs.map(log => 
         `• ${new Date(log.date + 'T12:00:00').toLocaleDateString('pt-BR')}: ${log.description}`
       ).join('\n');
@@ -225,6 +228,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
       const fullDescription = `[ENCAMINHAMENTO BUSCA ATIVA]
 TIPO: ${newReferral.type}
 URGÊNCIA: ${newReferral.priority}
+FALTAS NO ANO: ${studentInfo?.absences || 0}
 RELATO: ${newReferral.reason}
 
 --- HISTÓRICO DE ACOMPANHAMENTO ---
@@ -345,6 +349,7 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
       {selectedStudent && (
         <BuscaAtivaReferralModal 
           student={selectedStudent} 
+          absences={studentData.find(s => s.id === selectedStudent.id)?.absences || 0}
           studentHistory={monitoringLogs.filter(log => log.student_id === selectedStudent.id)}
           onClose={() => setSelectedStudent(null)} 
           onSave={handleSaveReferral} 
