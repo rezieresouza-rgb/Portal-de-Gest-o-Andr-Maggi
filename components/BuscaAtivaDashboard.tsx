@@ -38,6 +38,7 @@ const BuscaAtivaDashboard: React.FC = () => {
 
   const [chartData, setChartData] = useState<{ name: string, faltas: number }[]>([]);
   const [criticalCases, setCriticalCases] = useState<any[]>([]);
+  const [todayAbsentees, setTodayAbsentees] = useState<any[]>([]);
   const [viewingProfile, setViewingProfile] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
   const [referrals, setReferrals] = useState<any[]>([]);
@@ -69,10 +70,9 @@ const BuscaAtivaDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     setIsProcessing(true);
     try {
-      // 1. Fetch Attendance (all records for simplification, but could be optimized)
       const { data: attendanceData } = await supabase
         .from('class_attendance_students')
-        .select('student_id, is_present, class_attendance_records(classroom_name)');
+        .select('student_id, student_name, is_present, class_attendance_records(classroom_name, date)');
 
       // 2. Fetch Referrals
       const { data: referralsData } = await supabase
@@ -81,14 +81,29 @@ const BuscaAtivaDashboard: React.FC = () => {
 
       // Process Attendance Stats
       const studentStats: Record<string, { total: number, present: number }> = {};
+      const today = new Date().toLocaleDateString('sv-SE');
+      const dailyAbsences: Record<string, any> = {};
+
       if (attendanceData) {
         attendanceData.forEach(r => {
           const sid = r.student_id;
           if (!studentStats[sid]) studentStats[sid] = { total: 0, present: 0 };
           studentStats[sid].total++;
           if (r.is_present) studentStats[sid].present++;
+
+          // Check if absent today
+          const recordDate = (r.class_attendance_records as any)?.date;
+          if (!r.is_present && recordDate === today) {
+            dailyAbsences[sid] = {
+              id: sid,
+              name: r.student_name,
+              class: (r.class_attendance_records as any)?.classroom_name
+            };
+          }
         });
       }
+
+      setTodayAbsentees(Object.values(dailyAbsences));
 
       let critical = 0;
       const criticalList: any[] = [];
@@ -233,7 +248,7 @@ const BuscaAtivaDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* GRÁFICO DE INFREQUÊNCIA */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
           <div className="flex justify-between items-center mb-8">
@@ -254,6 +269,37 @@ const BuscaAtivaDashboard: React.FC = () => {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ALUNOS FALTOSOS HOJE */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+              <Users className="text-amber-500" /> Faltosos Hoje
+            </h3>
+            <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase">Frequência</span>
+          </div>
+          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            {todayAbsentees.length > 0 ? todayAbsentees.map((s, i) => (
+              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-amber-100 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-black text-xs uppercase">
+                    {s.name ? s.name[0] : '?'}
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-gray-900 uppercase leading-tight">{s.name}</p>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase">{s.class}</p>
+                  </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
+              </div>
+            )) : (
+              <div className="py-12 text-center">
+                <CheckCircle2 size={32} className="mx-auto text-emerald-200 mb-3" />
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Tudo em ordem hoje</p>
+              </div>
+            )}
           </div>
         </div>
 
