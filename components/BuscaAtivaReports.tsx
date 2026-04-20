@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
+import DocumentHeader from './DocumentHeader';
 
 interface ReportData {
   absenteeRanking: { student_name: string; class: string; count: number; score: number }[];
@@ -117,6 +118,10 @@ const BuscaAtivaReports: React.FC = () => {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   useEffect(() => {
     if (dateRange.start && dateRange.end) {
       fetchReportData();
@@ -127,7 +132,7 @@ const BuscaAtivaReports: React.FC = () => {
     <div className="space-y-10 pb-20 animate-in fade-in duration-700">
       
       {/* PROFESSIONAL FILTERS */}
-      <div className="bg-white/80 backdrop-blur-md p-8 rounded-[3rem] border border-gray-100 shadow-xl flex flex-col lg:flex-row items-end gap-6">
+      <div className="bg-white/80 backdrop-blur-md p-8 rounded-[3rem] border border-gray-100 shadow-xl flex flex-col lg:flex-row items-end gap-6 no-print">
         <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
@@ -170,10 +175,14 @@ const BuscaAtivaReports: React.FC = () => {
         </div>
         
         <div className="flex gap-3">
-          <button className="p-4 bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all shadow-sm" title="Imprimir Relatório">
+          <button 
+            onClick={handlePrint}
+            className="p-4 bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all shadow-sm no-print" 
+            title="Imprimir Relatório"
+          >
             <Printer size={24} />
           </button>
-          <button className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 transition-all flex items-center gap-2">
+          <button className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 transition-all flex items-center gap-2 no-print">
             <Download size={18} /> Exportar PDF
           </button>
         </div>
@@ -400,9 +409,78 @@ const BuscaAtivaReports: React.FC = () => {
       )}
 
       {loading && (
-        <div className="py-40 text-center">
+        <div className="py-40 text-center no-print">
           <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Processando Inteligência de Dados...</p>
+        </div>
+      )}
+
+      {/* PRINT-ONLY CONTENT */}
+      {data && (
+        <div className="hidden print:block p-10 bg-white min-h-screen text-black">
+          <DocumentHeader />
+          
+          <div className="text-center mb-10 border-b-2 border-black pb-4">
+            <h2 className="text-2xl font-black uppercase tracking-tighter">Relatório de Inteligência - Busca Ativa</h2>
+            <p className="text-sm font-bold mt-2">
+              Período: {new Date(dateRange.start).toLocaleDateString('pt-BR')} até {new Date(dateRange.end).toLocaleDateString('pt-BR')}
+            </p>
+            <p className="text-xs mt-1 uppercase">Turma: {selectedClass}</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="border-2 border-black p-4 text-center">
+              <p className="text-[10px] font-black uppercase">Total de Ausências</p>
+              <p className="text-3xl font-black">{data.totals.totalAbsences}</p>
+            </div>
+            <div className="border-2 border-black p-4 text-center">
+              <p className="text-[10px] font-black uppercase">Alertas Resolvidos</p>
+              <p className="text-3xl font-black">{data.totals.resolvedAlerts}</p>
+            </div>
+            <div className="border-2 border-black p-4 text-center">
+              <p className="text-[10px] font-black uppercase">Protocolos Pendentes</p>
+              <p className="text-3xl font-black">{data.totals.pendingProtocols}</p>
+            </div>
+          </div>
+
+          <div className="mb-10">
+            <h3 className="text-lg font-black uppercase border-b-2 border-black mb-4">Ranking de Absenteísmo</h3>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-black">
+                  <th className="py-2 text-left">Aluno</th>
+                  <th className="py-2 text-left">Turma</th>
+                  <th className="py-2 text-center">Faltas</th>
+                  <th className="py-2 text-right">Risco</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.absenteeRanking.map((s, i) => (
+                  <tr key={i} className="border-b border-gray-200">
+                    <td className="py-2 font-bold uppercase">{s.student_name}</td>
+                    <td className="py-2 uppercase">{s.class}</td>
+                    <td className="py-2 text-center font-black">{s.count}</td>
+                    <td className="py-2 text-right uppercase text-[10px]">
+                      {s.count >= 5 ? 'Crítico' : s.count >= 3 ? 'Alerta' : 'Estável'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-20 flex justify-between gap-10">
+            <div className="flex-1 text-center border-t border-black pt-4">
+              <p className="text-[10px] font-black uppercase">Assinatura do Coordenador</p>
+            </div>
+            <div className="flex-1 text-center border-t border-black pt-4">
+              <p className="text-[10px] font-black uppercase">Assinatura da Direção</p>
+            </div>
+          </div>
+
+          <div className="mt-10 text-right">
+            <p className="text-[8px] italic">Documento emitido em {new Date().toLocaleString('pt-BR')} via Portal AM-v2</p>
+          </div>
         </div>
       )}
 
