@@ -42,13 +42,14 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [studentSearch, setStudentSearch] = useState('');
   
-  const [newCase, setNewCase] = useState<Partial<MediationCase>>({
+  const [newCase, setNewCase] = useState<Partial<MediationCase> & { originType?: string }>({
     type: 'CONFLITO',
     severity: 'MÉDIA',
     description: '',
     involvedParties: [],
     studentName: '',
-    className: ''
+    className: '',
+    originType: 'Demanda Espontânea (Aluno)'
   });
   const [activeTab, setActiveTab] = useState<'ativos' | 'historico'>('ativos');
 
@@ -187,8 +188,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
       { id: 'G', label: 'Acordo / Finalização', completed: false }
     ];
 
-    try {
-      console.log('Iniciando salvamento do caso...', newCase);
+      const originPrefix = newCase.originType ? `[Origem: ${newCase.originType}] ` : '[Origem: Demanda Espontânea (Aluno)] ';
+
       const payload = {
         student_id: newCase.studentId && newCase.studentId !== 'N/A' ? newCase.studentId : null,
         student_name: newCase.studentName,
@@ -197,7 +198,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
         severity: newCase.severity,
         status: 'ABERTURA',
         opened_at: new Date().toLocaleDateString('sv-SE'),
-        description: newCase.description,
+        description: originPrefix + newCase.description,
         involved_parties: newCase.involved_parties || [],
         steps: steps,
       };
@@ -215,7 +216,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
       console.log('Caso salvo com sucesso:', data);
       await fetchCases();
       setIsModalOpen(false);
-      setNewCase({ type: 'CONFLITO', severity: 'MÉDIA', description: '', involvedParties: [], studentName: '', className: '' });
+      setNewCase({ type: 'CONFLITO', severity: 'MÉDIA', description: '', involvedParties: [], studentName: '', className: '', originType: 'Demanda Espontânea (Aluno)' });
       setStudentSearch('');
       alert("Novo caso de mediação aberto e registrado no histórico!");
     } catch (error: any) {
@@ -421,15 +422,27 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                         <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
                           {c.status}
                         </span>
-                        {c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-widest shadow-sm">
-                            Fonte: Busca Ativa
-                          </span>
-                        ) : (c.originReferralId || c.description?.includes('[Vínculo Direto]') || c.description?.includes('[Origem: Encaminhamento Psicossocial]')) && c.involvedParties?.[0] && c.involvedParties[0] !== 'EQUIPE MULTI' ? (
-                          <span className="max-w-[120px] truncate px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 text-[7px] font-black uppercase tracking-widest shadow-sm" title={c.involvedParties[0]}>
-                            Fonte: {c.involvedParties[0].split(' ')[0]}
-                          </span>
-                        ) : null}
+                        {(() => {
+                           if (c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]')) {
+                             return <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-widest shadow-sm">Fonte: Busca Ativa</span>;
+                           }
+                           const originMatch = c.description?.match(/\[Origem:\s*([^\]]+)\]/i);
+                           let sourceText = '';
+                           if (originMatch) {
+                              if (originMatch[1].includes('Encaminhamento Psicossocial')) {
+                                sourceText = c.involvedParties?.[0] || 'Encaminhamento';
+                              } else {
+                                sourceText = originMatch[1];
+                              }
+                           } else if ((c.originReferralId || c.description?.includes('[Vínculo Direto]')) && c.involvedParties?.[0]) {
+                              sourceText = c.involvedParties[0];
+                           }
+                           
+                           if (sourceText && sourceText !== 'EQUIPE MULTI') {
+                              return <span className="max-w-[120px] truncate px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 text-[7px] font-black uppercase tracking-widest shadow-sm" title={sourceText}>Fonte: {sourceText.split(' ')[0]}</span>;
+                           }
+                           return null;
+                        })()}
                         {c.status === 'CONCLUÍDO' && c.closedAt === today && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
                             Concluído Hoje
@@ -567,8 +580,22 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div className="space-y-1.5">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       <div className="space-y-1.5 md:col-span-1">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Origem da Demanda</label>
+                          <select 
+                             value={newCase.originType || 'Demanda Espontânea (Aluno)'} 
+                             onChange={e => setNewCase({...newCase, originType: e.target.value as any})}
+                             className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white"
+                          >
+                             <option value="Demanda Espontânea (Aluno)">Demanda Espontânea (Aluno)</option>
+                             <option value="Procura da Família">Procura da Família</option>
+                             <option value="Encaminhamento Coordenação">Encaminhamento Coordenação</option>
+                             <option value="Conselho Tutelar">Conselho Tutelar</option>
+                             <option value="Outro">Outro</option>
+                          </select>
+                       </div>
+                       <div className="space-y-1.5 md:col-span-1">
                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo do Conflito</label>
                           <select 
                              value={newCase.type} 
@@ -578,7 +605,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                              {CASE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
                        </div>
-                       <div className="space-y-1.5">
+                       <div className="space-y-1.5 md:col-span-1">
                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Severidade Inicial</label>
                           <select 
                              value={newCase.severity} 
