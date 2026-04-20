@@ -715,12 +715,12 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                   </div>
               </div>
 
-              <div className="p-8 bg-white border-t border-gray-50 flex flex-wrap gap-4">
+              <div className="p-4 bg-white border-t border-gray-50 flex flex-wrap gap-3">
                   <button 
                     onClick={handleSaveFeedback}
-                    className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all min-w-[200px] flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-emerald-700 transition-all min-w-[140px] flex items-center justify-center gap-2"
                   >
-                    <Save size={16} /> Salvar Devolutiva
+                    <Save size={14} /> Salvar Devolutiva
                   </button>
                   <button 
                     onClick={async () => {
@@ -750,7 +750,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                          alert("Erro ao encerrar caso.");
                       }
                     }}
-                    className="flex-1 py-4 bg-gray-100 text-gray-700 border border-gray-200 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all min-w-[200px]"
+                    className="flex-1 py-2.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all min-w-[140px]"
                   >
                     Encerrar com Acordo
                   </button>
@@ -758,17 +758,17 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                     onClick={() => {
                       if (onTabChange) onTabChange('referrals');
                     }}
-                    className="flex-1 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-violet-700 transition-all min-w-[200px]"
+                    className="flex-1 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-violet-700 transition-all min-w-[140px]"
                   >
                     Ver Encaminhamento
                   </button>
                   <button 
                     onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
-                    className="flex-1 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-100 transition-all min-w-[200px]"
+                    className="flex-1 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-100 transition-all min-w-[140px]"
                   >
                     Excluir Caso
                   </button>
-                  <button onClick={() => setSelectedCase(null)} className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all min-w-[200px]">Fechar Aba</button>
+                  <button onClick={() => setSelectedCase(null)} className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all min-w-[140px]">Fechar Aba</button>
                </div>
            </div>
         </div>
