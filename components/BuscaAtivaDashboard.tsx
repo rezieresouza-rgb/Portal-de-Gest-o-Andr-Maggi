@@ -103,8 +103,8 @@ const BuscaAtivaDashboard: React.FC = () => {
         const stat = studentStats[s.registration_number] || studentStats[s.id] || { total: 0, present: 0 };
         const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
 
-        // Threshold for risk (e.g., <= 85% attendance)
-        if (percent <= 85) { 
+        // Threshold for risk (e.g., < 90% attendance = > 10% absences)
+        if (percent < 90) { 
           critical++;
           criticalList.push({
             id: s.id,
@@ -120,7 +120,7 @@ const BuscaAtivaDashboard: React.FC = () => {
         const year = turmParts.length >= 2 ? turmParts[0] + ' ' + turmParts[1] : s.class;
         
         if (!infrequencyByYear[year]) infrequencyByYear[year] = 0;
-        if (percent < 85) infrequencyByYear[year]++;
+        if (percent < 90) infrequencyByYear[year]++;
       });
 
       // Process referrals
@@ -220,7 +220,7 @@ const BuscaAtivaDashboard: React.FC = () => {
           <p className="text-3xl font-black text-gray-900 mt-1">{stats.totalStudents}</p>
         </div>
         <div className="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm">
-          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Infrequentes (&lt;15%)</p>
+          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Infrequentes (&gt;10%)</p>
           <p className="text-3xl font-black text-red-700 mt-1">{stats.criticalCount}</p>
         </div>
         <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm">
