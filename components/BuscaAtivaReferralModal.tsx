@@ -29,7 +29,7 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
     priority: 'MÉDIA' as ReferralPriority,
     reason: '',
     status: 'ABERTO' as 'ABERTO' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO',
-    responsible: 'COORDENADOR ANDRÉ',
+    responsible: '',
     notes: '',
     date: new Date().toLocaleDateString('sv-SE')
   });
