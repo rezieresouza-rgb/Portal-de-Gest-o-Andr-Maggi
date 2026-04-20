@@ -39,7 +39,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
     { id: 'attendance', label: 'Conferência de Chamadas', icon: History },
     { id: 'students', label: 'Monitoramento Alunos', icon: Users },
     { id: 'channels', label: 'Canais de Contato', icon: Settings2 },
-    { id: 'ficai', label: 'Gerador FICAi', icon: FileText },
+
   ];
 
   return (
@@ -112,7 +112,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'attendance' && <BuscaAtivaAttendanceHistory />}
           {activeTab === 'channels' && <BuscaAtivaContactChannels />}
-          {activeTab === 'ficai' && <BuscaAtivaFICAI />}
+
         </div>
       </main>
     </div>
