@@ -178,28 +178,70 @@ const BuscaAtivaStudentManager: React.FC = () => {
   const handleSaveReferral = async (newReferral: Omit<Referral, 'id'>) => {
     // Find student info
     const student = students.find(s => s.id === newReferral.studentId);
+    if (!student) return alert("Aluno não encontrado.");
 
     try {
-      const { error } = await supabase.from('referrals').insert([{
-        student_code: newReferral.studentId, // Using student_code as our ID reference
-        student_name: student?.name,
-        class_name: student?.class,
-        date: newReferral.date || new Date().toISOString(),
+      setLoading(true);
+      const now = new Date();
+      const currentDate = now.toLocaleDateString('sv-SE');
+      const currentTime = now.toLocaleTimeString('pt-BR', { hour12: false, hour: '2-digit', minute: '2-digit' });
+
+      // 1. Salvar no controle de encaminhamentos (Busca Ativa)
+      const { error: refError } = await supabase.from('referrals').insert([{
+        student_code: newReferral.studentId,
+        student_name: student.name,
+        class_name: student.class,
+        date: newReferral.date || currentDate,
         type: newReferral.type,
         reason: newReferral.reason,
         status: newReferral.status,
         responsible: newReferral.responsible,
-        // notes: newReferral.notes // if we added it to types
       }]);
 
-      if (error) throw error;
+      if (refError) throw refError;
 
-      alert("Intervenção de Busca Ativa registrada!");
+      // 2. Registrar no Diário de Acompanhamento (History)
+      const { error: logError } = await supabase.from('occurrences').insert([{
+        student_id: student.id,
+        date: newReferral.date || currentDate,
+        time: currentTime,
+        description: `[ENCAMINHAMENTO: ${newReferral.type}] ${newReferral.reason} (Resp: ${newReferral.responsible})`,
+        category: 'BUSCA_ATIVA',
+        responsible_name: newReferral.responsible
+      }]);
+
+      if (logError) console.error("Erro ao registrar no histórico:", logError);
+
+      // 3. Abrir Caso no Módulo de Mediação
+      const { error: mediationError } = await supabase.from('mediation_cases').insert([{
+        student_id: student.id,
+        student_name: student.name,
+        class_name: student.class,
+        type: 'OUTRO',
+        severity: 'MÉDIA',
+        status: 'ABERTURA',
+        opened_at: newReferral.date || currentDate,
+        description: `[Origem: Busca Ativa] Tipo: ${newReferral.type}. Relato: ${newReferral.reason}`,
+        involved_parties: [newReferral.responsible],
+        steps: [
+          { id: '1', label: 'Análise de Busca Ativa', completed: true, date: currentDate },
+          { id: '2', label: 'Escuta das Partes', completed: false },
+          { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
+          { id: '4', label: 'Acordo / Finalização', completed: false }
+        ],
+        logs: []
+      }]);
+
+      if (mediationError) console.error("Erro ao abrir caso na Mediação:", mediationError);
+
+      alert("Encaminhamento realizado! Caso aberto na Mediação e registrado no histórico.");
       setSelectedStudent(null);
-      fetchReferrals(); // Refresh
+      await Promise.all([fetchReferrals(), fetchMonitoringLogs()]);
     } catch (e) {
       console.error(e);
-      alert("Erro ao registrar intervenção.");
+      alert("Erro ao registrar encaminhamento.");
+    } finally {
+      setLoading(false);
     }
   };
 
