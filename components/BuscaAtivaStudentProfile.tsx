@@ -376,14 +376,14 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                           <p className="text-xs font-bold text-gray-700 leading-relaxed whitespace-pre-wrap">{item.content}</p>
                           
                           {/* [NOVO] Devolutiva da Mediação */}
-                          {!item.isOccurrence && (item.original as any).feedback && (
+                          {!item.isOccurrence && (item.original as any)?.feedback && (
                             <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in slide-in-from-top-2 duration-300">
                                <div className="flex items-center gap-2 mb-2 text-emerald-700">
                                   <CheckCircle2 size={14} strokeWidth={3} />
                                   <span className="text-[9px] font-black uppercase tracking-widest">Devolutiva da Mediação</span>
                                </div>
                                <p className="text-[11px] font-bold text-emerald-800 leading-relaxed italic">
-                                  "{ (item.original as any).feedback }"
+                                  "{ (item.original as any)?.feedback }"
                                 </p>
                             </div>
                           )}
