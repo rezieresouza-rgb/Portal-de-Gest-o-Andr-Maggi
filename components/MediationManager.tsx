@@ -425,7 +425,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                           <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-widest shadow-sm">
                             Fonte: Busca Ativa
                           </span>
-                        ) : (c.originReferralId || c.description?.includes('[Vínculo Direto]')) && c.involvedParties?.[0] && c.involvedParties[0] !== 'EQUIPE MULTI' ? (
+                        ) : (c.originReferralId || c.description?.includes('[Vínculo Direto]') || c.description?.includes('[Origem: Encaminhamento Psicossocial]')) && c.involvedParties?.[0] && c.involvedParties[0] !== 'EQUIPE MULTI' ? (
                           <span className="max-w-[120px] truncate px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 text-[7px] font-black uppercase tracking-widest shadow-sm" title={c.involvedParties[0]}>
                             Fonte: {c.involvedParties[0].split(' ')[0]}
                           </span>
@@ -651,7 +651,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-100 border border-emerald-500/30 text-[7px] font-black uppercase tracking-widest leading-none shrink-0">
                                Fonte: Busca Ativa
                              </span>
-                           ) : (selectedCase.originReferralId || selectedCase.description?.includes('[Vínculo Direto]')) && selectedCase.involvedParties?.[0] && selectedCase.involvedParties[0] !== 'EQUIPE MULTI' ? (
+                           ) : (selectedCase.originReferralId || selectedCase.description?.includes('[Vínculo Direto]') || selectedCase.description?.includes('[Origem: Encaminhamento Psicossocial]')) && selectedCase.involvedParties?.[0] && selectedCase.involvedParties[0] !== 'EQUIPE MULTI' ? (
                              <span className="max-w-[140px] truncate px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-100 border border-indigo-500/40 text-[7px] font-black uppercase tracking-widest leading-none shrink-0" title={selectedCase.involvedParties[0]}>
                                Fonte: Prof(a). {selectedCase.involvedParties[0].split(' ')[0]}
                              </span>
