@@ -188,6 +188,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
       { id: 'G', label: 'Acordo / Finalização', completed: false }
     ];
 
+    try {
       const originPrefix = newCase.originType ? `[Origem: ${newCase.originType}] ` : '[Origem: Demanda Espontânea (Aluno)] ';
 
       const payload = {
