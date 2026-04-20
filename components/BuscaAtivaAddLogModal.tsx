@@ -10,7 +10,8 @@ import {
     AlertTriangle,
     Calendar,
     Clock,
-    ShieldAlert
+    ShieldAlert,
+    CheckCircle2
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
@@ -408,11 +409,10 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                                     <div key={item.id} className="space-y-2">
                                         <button
                                             type="button"
-                                            disabled={isAlreadyDone}
                                             onClick={() => toggleProtocolItem(item.id)}
                                             className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${
-                                                isAlreadyDone ? 'bg-gray-100 border-transparent opacity-60 text-gray-400' :
                                                 isSelected ? (isActive ? 'bg-emerald-600 border-emerald-600 text-white shadow-xl shadow-emerald-600/30 -translate-y-1 scale-[1.02]' : 'bg-emerald-50 border-emerald-200 text-emerald-700') : 
+                                                isAlreadyDone ? 'bg-emerald-50/50 border-emerald-100 text-emerald-700/60 hover:border-emerald-300' :
                                                 'bg-white border-gray-100 text-gray-500 hover:border-emerald-200 hover:bg-emerald-50/50'
                                             }`}
                                         >
@@ -423,7 +423,9 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase tracking-tight leading-tight">{item.label}</p>
                                                     {isAlreadyDone ? (
-                                                        <p className="text-[8px] font-bold uppercase text-emerald-600 mt-0.5">Já concluído</p>
+                                                        <p className="text-[8px] font-black uppercase text-emerald-600 mt-0.5 flex items-center gap-1">
+                                                            <CheckCircle2 size={8} /> {isSelected ? 'Reiterando Ação' : 'Já realizada'}
+                                                        </p>
                                                     ) : isSelected && !isActive && (
                                                         <p className="text-[8px] font-bold uppercase text-emerald-500 mt-0.5">Selecionado</p>
                                                     )}
