@@ -279,6 +279,53 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     }
   };
 
+  const handleSaveFeedback = async () => {
+    const feedbackValue = selectedCase?.feedback?.trim();
+    if (!feedbackValue) {
+       alert('Por favor, escreva a devolutiva antes de salvar.');
+       return false;
+    }
+    try {
+       console.log('Salvando devolutiva para caso ID:', selectedCase.id, '| Texto:', feedbackValue);
+       // 1. Salva no caso de mediação
+       const { data: updatedData, error: medError } = await supabase
+          .from('mediation_cases')
+          .update({ feedback: feedbackValue })
+          .eq('id', selectedCase.id)
+          .select();
+       
+       if (medError) throw medError;
+       console.log('Devolutiva salva com sucesso:', updatedData);
+
+       // 2. Se houver vínculo, salva no encaminhamento original
+       if (selectedCase.originReferralId) {
+          const { error: refError } = await supabase
+             .from('psychosocial_referrals')
+             .update({ feedback: feedbackValue })
+             .eq('id', selectedCase.originReferralId);
+          
+          if (refError) console.error("Erro ao sincronizar com encaminhamento:", refError);
+       }
+
+       // 3. Também salva em todos os psychosocial_referrals vinculados ao mesmo aluno, se existirem
+       const { error: psyErr } = await supabase
+          .from('psychosocial_referrals')
+          .update({ feedback: feedbackValue })
+          .ilike('student_name', selectedCase.studentName || '');
+       
+       if (psyErr) console.warn('Aviso ao atualizar psychosocial_referrals:', psyErr.message);
+
+       alert("Devolutiva salva com sucesso!");
+       setSelectedCase({ ...selectedCase, feedback: feedbackValue });
+       await fetchCases();
+       return true;
+    } catch (err: any) {
+       console.error('Erro ao salvar devolutiva:', err);
+       alert("Erro ao salvar devolutiva: " + (err.message || JSON.stringify(err)));
+       return false;
+    }
+  };
+
   const today = new Date().toLocaleDateString('sv-SE');
 
   const filteredCases = cases.filter(c => {
@@ -605,56 +652,6 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                         placeholder="Escreva aqui a resposta/devolutiva para o professor que realizou este encaminhamento..."
                         className="w-full p-8 bg-white border-2 border-emerald-100 rounded-[2.5rem] text-base font-bold min-h-[350px] resize-none outline-none focus:ring-8 focus:ring-emerald-500/5 transition-all shadow-inner focus:border-emerald-500"
                      />
-                     
-                     <button 
-                        onClick={async () => {
-                           const feedbackValue = selectedCase?.feedback?.trim();
-                           if (!feedbackValue) {
-                              alert('Por favor, escreva a devolutiva antes de salvar.');
-                              return;
-                           }
-                           try {
-                              console.log('Salvando devolutiva para caso ID:', selectedCase.id, '| Texto:', feedbackValue);
-                              // 1. Salva no caso de mediação
-                              const { data: updatedData, error: medError } = await supabase
-                                 .from('mediation_cases')
-                                 .update({ feedback: feedbackValue })
-                                 .eq('id', selectedCase.id)
-                                 .select();
-                              
-                              if (medError) throw medError;
-                              console.log('Devolutiva salva com sucesso:', updatedData);
-
-                              // 2. Se houver vínculo, salva no encaminhamento original
-                              if (selectedCase.originReferralId) {
-                                 const { error: refError } = await supabase
-                                    .from('psychosocial_referrals')
-                                    .update({ feedback: feedbackValue })
-                                    .eq('id', selectedCase.originReferralId);
-                                 
-                                 if (refError) console.error("Erro ao sincronizar com encaminhamento:", refError);
-                              }
-
-                              // 3. Também salva em todos os psychosocial_referrals vinculados ao mesmo aluno, se existirem
-                              const { error: psyErr } = await supabase
-                                 .from('psychosocial_referrals')
-                                 .update({ feedback: feedbackValue })
-                                 .ilike('student_name', selectedCase.studentName || '');
-                              
-                              if (psyErr) console.warn('Aviso ao atualizar psychosocial_referrals:', psyErr.message);
-
-                              alert("Devolutiva salva com sucesso!");
-                              setSelectedCase({ ...selectedCase, feedback: feedbackValue });
-                              await fetchCases();
-                           } catch (err: any) {
-                              console.error('Erro ao salvar devolutiva:', err);
-                              alert("Erro ao salvar devolutiva: " + (err.message || JSON.stringify(err)));
-                           }
-                        }}
-                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2"
-                     >
-                        <Save size={16} /> Salvar e Enviar p/ Professor Area
-                     </button>
                   </div>
 
                  <div className="space-y-6">
@@ -717,45 +714,60 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
               </div>
 
               <div className="p-8 bg-white border-t border-gray-50 flex flex-wrap gap-4">
-                 <button 
-                   onClick={async () => {
-                     if (!window.confirm("Deseja encerrar este caso com acordo?")) return;
-                     try {
-                        const { error } = await supabase
-                          .from('mediation_cases')
-                          .update({ 
-                            status: 'CONCLUÍDO', 
-                            closed_at: new Date().toLocaleDateString('sv-SE') 
-                          })
-                          .eq('id', selectedCase.id);
-                        if (error) throw error;
-                        await fetchCases();
-                        // setSelectedCase(null); 
-                        alert("Caso encerrado com sucesso! Ele continuará visível na aba Ativos hoje.");
-                     } catch (err) {
-                        alert("Erro ao encerrar caso.");
-                     }
-                   }}
-                   className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all min-w-[200px]"
-                 >
-                   Encerrar com Acordo
-                 </button>
-                 <button 
-                   onClick={() => {
-                     if (onTabChange) onTabChange('referrals');
-                   }}
-                   className="flex-1 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-violet-700 transition-all min-w-[200px]"
-                 >
-                   Ver Encaminhamento
-                 </button>
-                 <button 
-                   onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
-                   className="flex-1 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-100 transition-all min-w-[200px]"
-                 >
-                   Excluir Caso
-                 </button>
-                 <button onClick={() => setSelectedCase(null)} className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all min-w-[200px]">Fechar Aba</button>
-              </div>
+                  <button 
+                    onClick={handleSaveFeedback}
+                    className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-emerald-700 transition-all min-w-[200px] flex items-center justify-center gap-2"
+                  >
+                    <Save size={16} /> Salvar Devolutiva
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      if (!window.confirm("Deseja encerrar este caso com acordo?")) return;
+                      try {
+                         // Primeiro salva a devolutiva se houver algo escrito
+                         if (selectedCase?.feedback?.trim()) {
+                            const { error: medError } = await supabase
+                               .from('mediation_cases')
+                               .update({ feedback: selectedCase.feedback.trim() })
+                               .eq('id', selectedCase.id);
+                            if (medError) console.error("Erro ao salvar devolutiva no encerramento:", medError);
+                         }
+
+                         const { error } = await supabase
+                           .from('mediation_cases')
+                           .update({ 
+                             status: 'CONCLUÍDO', 
+                             closed_at: new Date().toLocaleDateString('sv-SE') 
+                           })
+                           .eq('id', selectedCase.id);
+                         if (error) throw error;
+                         await fetchCases();
+                         // setSelectedCase(null); 
+                         alert("Caso encerrado com sucesso! Ele continuará visível na aba Ativos hoje.");
+                      } catch (err) {
+                         alert("Erro ao encerrar caso.");
+                      }
+                    }}
+                    className="flex-1 py-4 bg-gray-100 text-gray-700 border border-gray-200 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all min-w-[200px]"
+                  >
+                    Encerrar com Acordo
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (onTabChange) onTabChange('referrals');
+                    }}
+                    className="flex-1 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-violet-700 transition-all min-w-[200px]"
+                  >
+                    Ver Encaminhamento
+                  </button>
+                  <button 
+                    onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
+                    className="flex-1 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-100 transition-all min-w-[200px]"
+                  >
+                    Excluir Caso
+                  </button>
+                  <button onClick={() => setSelectedCase(null)} className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all min-w-[200px]">Fechar Aba</button>
+               </div>
            </div>
         </div>
       )}
