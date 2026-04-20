@@ -27,7 +27,11 @@ import { useStudents } from '../hooks/useStudents';
 import BuscaAtivaStudentProfile from './BuscaAtivaStudentProfile';
 import { History } from 'lucide-react';
 
-const BuscaAtivaDashboard: React.FC = () => {
+interface BuscaAtivaDashboardProps {
+  onNavigate: (tab: 'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports') => void;
+}
+
+const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate }) => {
   const { students: dbStudents, loading: studentsLoading } = useStudents();
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -345,7 +349,12 @@ const BuscaAtivaDashboard: React.FC = () => {
               <p className="text-center py-8 text-gray-300 font-bold uppercase text-xs">Nenhum caso crítico detectado</p>
             )}
           </div>
-          <button className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all">Ver Painel Completo de Risco</button>
+          <button 
+            onClick={() => onNavigate('reports')}
+            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all"
+          >
+            Ver Painel Completo de Risco
+          </button>
         </div>
       </div>
 
