@@ -279,12 +279,17 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     }
   };
 
+  const today = new Date().toLocaleDateString('sv-SE');
+
   const filteredCases = cases.filter(c => {
     const matchesSearch = 
       (c.studentName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
       (c.className || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    if (activeTab === 'ativos') return matchesSearch && c.status !== 'CONCLUÍDO';
+    if (activeTab === 'ativos') {
+      // Casos não concluídos OU concluídos hoje (para não "sumirem" na hora)
+      return matchesSearch && (c.status !== 'CONCLUÍDO' || c.closedAt === today);
+    }
     return matchesSearch && c.status === 'CONCLUÍDO';
   });
 
@@ -354,6 +359,11 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                         {c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-widest shadow-sm">
                             Fonte: Busca Ativa
+                          </span>
+                        )}
+                        {c.status === 'CONCLUÍDO' && c.closed_at === today && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
+                            Concluído Hoje
                           </span>
                         )}
                      </div>
@@ -704,8 +714,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                           .eq('id', selectedCase.id);
                         if (error) throw error;
                         await fetchCases();
-                        setSelectedCase(null);
-                        alert("Caso encerrado com sucesso!");
+                        // setSelectedCase(null); 
+                        alert("Caso encerrado com sucesso! Ele continuará visível na aba Ativos hoje.");
                      } catch (err) {
                         alert("Erro ao encerrar caso.");
                      }
