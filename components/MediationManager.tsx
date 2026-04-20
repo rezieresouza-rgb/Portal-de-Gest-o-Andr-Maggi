@@ -89,7 +89,26 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
         return dateB.localeCompare(dateA);
       });
 
-      const formatted: MediationCase[] = sortedData.map(c => ({
+      const formatted: MediationCase[] = sortedData.map(c => {
+        const existingSteps = c.steps || [];
+        const baseSteps = [
+          { id: 'A', label: 'Acolhimento Inicial', completed: true, date: c.opened_at },
+          { id: 'B', label: 'Escuta das Partes', completed: false },
+          { id: 'C', label: 'Comunicação com Pais e/ou Responsáveis', completed: false },
+          { id: 'D', label: 'Reunião com os Responsáveis', completed: false },
+          { id: 'E', label: 'Círculo de Mediação / Paz', completed: false },
+          { id: 'F', label: 'Encaminhamento à Rede', completed: false },
+          { id: 'G', label: 'Acordo / Finalização', completed: false }
+        ];
+        
+        // Preserva o status das etapas existentes e adiciona as novas
+        const mergedSteps = baseSteps.map(baseStep => {
+           const existing = existingSteps.find((s: any) => s.label === baseStep.label);
+           return existing ? existing : baseStep;
+        });
+
+        // Retorna o formatado
+        return {
         id: c.id,
         studentId: c.student_id,
         studentName: c.student_name || 'Estudante não identificado',
@@ -101,16 +120,12 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
         closedAt: c.closed_at,
         description: c.description || '',
         involvedParties: c.involved_parties || [],
-        steps: c.steps || [
-          { id: '1', label: 'Acolhimento Inicial', completed: true, date: c.opened_at },
-          { id: '2', label: 'Escuta das Partes', completed: false },
-          { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
-          { id: '4', label: 'Acordo / Finalização', completed: false }
-        ],
+        steps: mergedSteps,
         originReferralId: c.origin_referral_id,
         feedback: c?.feedback,
         logs: c.logs || []
-      }));
+      };
+      });
       setCases(formatted);
     } catch (error: any) {
       console.error("Erro ao buscar casos de mediação:", error);
@@ -163,10 +178,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     }
 
     const steps = [
-      { id: '1', label: 'Acolhimento Inicial', completed: true, date: new Date().toLocaleDateString('sv-SE') },
-      { id: '2', label: 'Escuta das Partes', completed: false },
-      { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
-      { id: '4', label: 'Acordo / Finalização', completed: false }
+      { id: 'A', label: 'Acolhimento Inicial', completed: true, date: new Date().toLocaleDateString('sv-SE') },
+      { id: 'B', label: 'Escuta das Partes', completed: false },
+      { id: 'C', label: 'Comunicação com Pais e/ou Responsáveis', completed: false },
+      { id: 'D', label: 'Reunião com os Responsáveis', completed: false },
+      { id: 'E', label: 'Círculo de Mediação / Paz', completed: false },
+      { id: 'F', label: 'Encaminhamento à Rede', completed: false },
+      { id: 'G', label: 'Acordo / Finalização', completed: false }
     ];
 
     try {
