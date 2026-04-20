@@ -374,7 +374,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                             Fonte: Busca Ativa
                           </span>
                         )}
-                        {c.status === 'CONCLUÍDO' && c.closed_at === today && (
+                        {c.status === 'CONCLUÍDO' && c.closedAt === today && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
                             Concluído Hoje
                           </span>
