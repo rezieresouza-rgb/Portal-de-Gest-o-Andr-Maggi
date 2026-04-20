@@ -66,6 +66,8 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
   const [editingLog, setEditingLog] = useState<any>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteReferralConfirmId, setDeleteReferralConfirmId] = useState<string | null>(null);
+  const [deletingReferral, setDeletingReferral] = useState(false);
   
   const studentReferrals = referrals.filter(r => r.studentId === student.id);
 
@@ -186,6 +188,28 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
       alert("Erro ao excluir registro.");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDeleteReferral = async () => {
+    if (!deleteReferralConfirmId) return;
+    setDeletingReferral(true);
+    try {
+      const { error } = await supabase
+        .from('referrals')
+        .delete()
+        .eq('id', deleteReferralConfirmId);
+
+      if (error) throw error;
+      
+      setDeleteReferralConfirmId(null);
+      // Trigger parent to refresh referrals if needed
+      window.dispatchEvent(new Event('referral-deleted'));
+    } catch (error) {
+      console.error('Erro ao excluir encaminhamento:', error);
+      alert('Erro ao excluir encaminhamento.');
+    } finally {
+      setDeletingReferral(false);
     }
   };
 
@@ -409,6 +433,17 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                                       </button>
                                    </div>
                                  )}
+                                 {!item.isOccurrence && !item.isMediationFeedback && (
+                                   <div className="flex items-center gap-1 mr-2">
+                                      <button 
+                                        onClick={() => setDeleteReferralConfirmId(item.id)}
+                                        className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-all"
+                                        title="Excluir encaminhamento"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                   </div>
+                                 )}
                                  <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
                                     <Calendar size={10} /> {new Date(item.date).toLocaleDateString('pt-BR')}
                                     {item.time && <><Clock size={10} className="ml-1" /> {item.time.substring(0, 5)}</>}
@@ -579,6 +614,40 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                       className="py-3 px-6 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-red-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      Excluir
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DE ENCAMINHAMENTO */}
+      {deleteReferralConfirmId && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-emerald-950/60 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-8 text-center space-y-4">
+                 <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Trash2 size={40} />
+                 </div>
+                 <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Excluir Encaminhamento?</h3>
+                 <p className="text-xs text-gray-500 font-bold leading-relaxed px-4">
+                   Esta ação não pode ser desfeita. O encaminhamento será removido permanentemente.
+                 </p>
+                 <div className="grid grid-cols-2 gap-3 pt-4">
+                    <button 
+                      onClick={() => setDeleteReferralConfirmId(null)}
+                      disabled={deletingReferral}
+                      className="py-3 px-6 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={handleDeleteReferral}
+                      disabled={deletingReferral}
+                      className="py-3 px-6 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-red-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {deletingReferral ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                       Excluir
                     </button>
                  </div>
