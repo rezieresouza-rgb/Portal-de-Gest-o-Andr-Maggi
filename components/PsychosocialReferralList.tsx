@@ -219,7 +219,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
       observations: '',
       student_age: '',
       school_unit: 'Unidade Escolar',
-      teacher_name: 'COORDENAÇÃO',
+      teacher_name: user?.name || 'EQUIPE MULTI',
       previous_strategies: '',
       attendance_frequency: '',
       adopted_procedures: [],
