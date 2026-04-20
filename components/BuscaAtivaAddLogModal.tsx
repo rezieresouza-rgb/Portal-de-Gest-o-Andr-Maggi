@@ -66,12 +66,27 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         return { type: 'OUTRO', description: '', other_description: desc, contact_person: '' };
     };
 
+    const getFormGroup = (id: string | null) => {
+        if (!id) return 'OTHER';
+        if (['COMUNICADO_PAIS', 'CONTATO_DIARIO'].includes(id)) return 'COMMUNICATION';
+        if (['ALERTA_SISTEMA', 'VISITA_TURMA'].includes(id)) return 'INVESTIGATION';
+        if (['FICAI_ONLINE', 'NOTIFICAR_CONSELHO', 'ELABORAR_RELATORIO'].includes(id)) return 'INSTITUTIONAL';
+        if (['REDE_PROTECAO', 'ACOMPANHAR_DEVOLUTIVA', 'INTERVENCAO_METODOLOGIA'].includes(id)) return 'SUPPORT';
+        return 'OTHER';
+    };
+
     const initialFormData = editData ? {
         date: editData.date,
         time: editData.time?.substring(0, 5) || '00:00',
         severity: editData.severity || 'NORMAL',
         responsible_name: editData.responsible_name || 'ANGELA MARIA TRAMARIN',
-        ...deconstructDescription(editData.description || '')
+        ...deconstructDescription(editData.description || ''),
+        outcome: 'SUCESSO',
+        consulted_staff: '',
+        protocol_number: '',
+        institution: '',
+        entity_name: '',
+        contact_at_entity: ''
     } : {
         date: new Date().toLocaleDateString('sv-SE'),
         time: new Date().toLocaleTimeString('pt-BR', { hour12: false }).substring(0, 5),
@@ -80,7 +95,13 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         contact_person: '',
         severity: 'NORMAL',
         responsible_name: 'ANGELA MARIA TRAMARIN',
-        other_description: ''
+        other_description: '',
+        outcome: 'SUCESSO',
+        consulted_staff: '',
+        protocol_number: '',
+        institution: '',
+        entity_name: '',
+        contact_at_entity: ''
     };
 
     const [formData, setFormData] = useState(initialFormData);
@@ -102,7 +123,26 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
 
         try {
             // 1. Save or Update Log Entry
-            const description = `[${formData.type}] ${formData.type === 'OUTRO' ? formData.other_description : formData.description}${formData.contact_person ? ` (Contato: ${formData.contact_person})` : ''}`;
+            const group = getFormGroup(activeProtocolId);
+            let finalDescription = '';
+
+            switch (group) {
+                case 'COMMUNICATION':
+                    finalDescription = `[${formData.type}] ${formData.description} (Contato: ${formData.contact_person}, Resultado: ${formData.outcome})`;
+                    break;
+                case 'INVESTIGATION':
+                    finalDescription = `[INVESTIGAÇÃO] ${formData.description} (Equipe Consultada: ${formData.consulted_staff})`;
+                    break;
+                case 'INSTITUTIONAL':
+                    finalDescription = `[DOCUMENTAÇÃO] ${formData.description} (Protocolo: ${formData.protocol_number}, Instituição: ${formData.institution})`;
+                    break;
+                case 'SUPPORT':
+                    finalDescription = `[REDE APOIO] ${formData.description} (Entidade: ${formData.entity_name}, Contato: ${formData.contact_at_entity})`;
+                    break;
+                default:
+                    finalDescription = `[${formData.type}] ${formData.type === 'OUTRO' ? formData.other_description : formData.description}${formData.contact_person ? ` (Contato: ${formData.contact_person})` : ''}`;
+            }
+
             const logData = {
                 student_id: student.id,
                 student_name: student.name,
@@ -112,9 +152,9 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                 time: formData.time,
                 category: 'BUSCA_ATIVA',
                 severity: formData.severity,
-                description,
+                description: finalDescription,
                 status: 'REGISTRADO',
-                location: formData.contact_person || 'Escola',
+                location: formData.contact_person || formData.institution || formData.entity_name || 'Escola',
                 responsible_name: formData.responsible_name
             };
 
@@ -173,91 +213,133 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         }
     };
 
-    const renderContactDetails = () => (
-        <div className="space-y-6 mt-6 pt-6 border-t border-emerald-50/50 animate-in slide-in-from-top-4 fade-in duration-500">
-            <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Meio de Contato</label>
-                <div className="grid grid-cols-3 gap-2">
-                    {ACTION_TYPES.map(type => (
-                        <button
-                            key={type.id}
-                            type="button"
-                            onClick={() => setFormData({...formData, type: type.id})}
-                            className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all ${formData.type === type.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white border-emerald-100/50 text-emerald-800/40 hover:bg-emerald-50'}`}
-                        >
-                            <type.icon size={18} />
-                            <span className="text-[8px] font-black uppercase text-center leading-none">{type.label}</span>
-                        </button>
-                    ))}
-                </div>
+    const renderActionForm = () => {
+        const group = getFormGroup(activeProtocolId);
+
+        return (
+            <div className="space-y-6 mt-6 pt-6 border-t border-emerald-50/50 animate-in slide-in-from-top-4 fade-in duration-500">
                 
-                {formData.type === 'OUTRO' && (
-                    <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
-                        <label className="text-[10px] font-black text-emerald-800 uppercase tracking-widest ml-1">Descreva a Intervenção</label>
-                        <textarea
-                            required
-                            placeholder="Detalhe o que foi feito..."
-                            value={formData.other_description}
-                            onChange={e => setFormData({...formData, other_description: e.target.value})}
-                            className="w-full mt-1.5 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all min-h-[80px] resize-none"
-                        />
+                {/* CAMPOS ESPECÍFICOS POR GRUPO */}
+                {group === 'COMMUNICATION' && (
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Meio de Contato</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {ACTION_TYPES.map(type => (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        onClick={() => setFormData({...formData, type: type.id})}
+                                        className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all ${formData.type === type.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white border-emerald-100/50 text-emerald-800/40 hover:bg-emerald-50'}`}
+                                    >
+                                        <type.icon size={18} />
+                                        <span className="text-[8px] font-black uppercase text-center leading-none">{type.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Pessoa Contatada</label>
+                                <input type="text" placeholder="Ex: Pai, Mãe..." value={formData.contact_person} onChange={e => setFormData({...formData, contact_person: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Resultado do Contato</label>
+                                <select value={formData.outcome} onChange={e => setFormData({...formData, outcome: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500">
+                                    <option value="SUCESSO">Sucesso no Contato</option>
+                                    <option value="SEM_RESPOSTA">Sem Resposta</option>
+                                    <option value="OCUPADO">Sinal Ocupado / Recusado</option>
+                                    <option value="INEXISTENTE">Número Inexistente</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 )}
-            </div>
 
-            <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Pessoa Contatada</label>
-                <input 
-                    type="text" 
-                    placeholder="Ex: Mãe (Dona Maria)"
-                    value={formData.contact_person}
-                    onChange={e => setFormData({...formData, contact_person: e.target.value})}
-                    className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold text-emerald-900 outline-none focus:bg-white focus:border-emerald-500 transition-all"
-                />
-            </div>
+                {group === 'INVESTIGATION' && (
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Profissionais Consultados</label>
+                            <input type="text" placeholder="Ex: Professora Maria, Coord. Paulo..." value={formData.consulted_staff} onChange={e => setFormData({...formData, consulted_staff: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
+                        </div>
+                    </div>
+                )}
 
-            <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Servidor Responsável</label>
-                <div className="grid grid-cols-2 gap-2">
-                    {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
-                        <button
-                            key={name}
-                            type="button"
-                            onClick={() => setFormData({...formData, responsible_name: name})}
-                            className={`py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all border leading-tight ${
-                                formData.responsible_name === name 
-                                    ? 'bg-emerald-900 border-emerald-900 text-white shadow-lg' 
-                                    : 'bg-emerald-50/20 border-emerald-100/50 text-emerald-800/40 hover:border-emerald-200'
-                            }`}
-                        >
-                            {name}
-                        </button>
-                    ))}
+                {group === 'INSTITUTIONAL' && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Nº do Protocolo / Ofício</label>
+                                <input type="text" placeholder="Ex: 123/2026" value={formData.protocol_number} onChange={e => setFormData({...formData, protocol_number: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Instituição de Destino</label>
+                                <input type="text" placeholder="Ex: Conselho Tutelar Colíder" value={formData.institution} onChange={e => setFormData({...formData, institution: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {group === 'SUPPORT' && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Entidade / Órgão</label>
+                                <input type="text" placeholder="Ex: CRAS, CREAS, Saúde..." value={formData.entity_name} onChange={e => setFormData({...formData, entity_name: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Profissional de Referência</label>
+                                <input type="text" placeholder="Ex: Assistente Social Ana" value={formData.contact_at_entity} onChange={e => setFormData({...formData, contact_at_entity: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* CAMPO DE RESPONSÁVEL (COMUM A TODOS) */}
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Servidor Responsável</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {['ANGELA MARIA TRAMARIN', 'ZENIR RODRIGUES GERALDO'].map(name => (
+                            <button
+                                key={name}
+                                type="button"
+                                onClick={() => setFormData({...formData, responsible_name: name})}
+                                className={`py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all border leading-tight ${
+                                    formData.responsible_name === name 
+                                        ? 'bg-emerald-900 border-emerald-900 text-white shadow-lg' 
+                                        : 'bg-emerald-50/20 border-emerald-100/50 text-emerald-800/40 hover:border-emerald-200'
+                                }`}
+                            >
+                                {name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Observações do Atendimento</label>
-                <textarea 
-                    required
-                    placeholder="Descreva o que foi conversado ou o resultado da visita..."
-                    rows={4}
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full p-4 bg-emerald-50/20 border border-emerald-100/50 rounded-2xl text-xs font-medium text-emerald-900 outline-none focus:bg-white focus:border-emerald-500 transition-all resize-none"
-                />
-            </div>
+                {/* CAMPO DE OBSERVAÇÕES (COMUM A TODOS) */}
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Observações / Detalhes da Ação</label>
+                    <textarea 
+                        required
+                        placeholder={group === 'INVESTIGATION' ? "O que foi relatado pelos professores?" : "Descreva os detalhes desta ação..."}
+                        rows={4}
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        className="w-full p-4 bg-emerald-50/20 border border-emerald-100/50 rounded-2xl text-xs font-medium text-emerald-900 outline-none focus:bg-white focus:border-emerald-500 transition-all resize-none"
+                    />
+                </div>
 
-            <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-            >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                {editData ? 'Salvar Alterações' : 'Salvar Acompanhamento'}
-            </button>
-        </div>
-    );
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                    {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                    {editData ? 'Salvar Alterações' : 'Salvar Acompanhamento'}
+                </button>
+            </div>
+        );
+    };
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -356,7 +438,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                                         
                                         {isActive && isSelected && (
                                             <div className="px-2 pb-2">
-                                                {renderContactDetails()}
+                                                {renderActionForm()}
                                             </div>
                                         )}
                                     </div>
