@@ -421,11 +421,15 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                         <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
                           {c.status}
                         </span>
-                        {c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') && (
+                        {c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') ? (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-widest shadow-sm">
                             Fonte: Busca Ativa
                           </span>
-                        )}
+                        ) : (c.originReferralId || c.description?.includes('[Vínculo Direto]')) && c.involvedParties?.[0] && c.involvedParties[0] !== 'EQUIPE MULTI' ? (
+                          <span className="max-w-[120px] truncate px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 text-[7px] font-black uppercase tracking-widest shadow-sm" title={c.involvedParties[0]}>
+                            Fonte: {c.involvedParties[0].split(' ')[0]}
+                          </span>
+                        ) : null}
                         {c.status === 'CONCLUÍDO' && c.closedAt === today && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
                             Concluído Hoje
@@ -641,7 +645,18 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                     </div>
                     <div>
                        <h3 className="text-xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
-                       <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest mt-1.5">{selectedCase.className} • Caso {selectedCase.type}</p>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                           <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest leading-none shrink-0">{selectedCase.className} • Caso {selectedCase.type}</p>
+                           {selectedCase.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') ? (
+                             <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-100 border border-emerald-500/30 text-[7px] font-black uppercase tracking-widest leading-none shrink-0">
+                               Fonte: Busca Ativa
+                             </span>
+                           ) : (selectedCase.originReferralId || selectedCase.description?.includes('[Vínculo Direto]')) && selectedCase.involvedParties?.[0] && selectedCase.involvedParties[0] !== 'EQUIPE MULTI' ? (
+                             <span className="max-w-[140px] truncate px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-100 border border-indigo-500/40 text-[7px] font-black uppercase tracking-widest leading-none shrink-0" title={selectedCase.involvedParties[0]}>
+                               Fonte: Prof(a). {selectedCase.involvedParties[0].split(' ')[0]}
+                             </span>
+                           ) : null}
+                        </div>
                     </div>
                  </div>
               </div>
