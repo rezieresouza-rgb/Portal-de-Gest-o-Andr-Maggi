@@ -13,7 +13,7 @@ import {
   Users as UsersIcon,
   Scale
 } from 'lucide-react';
-import { Referral, ReferralType } from '../types';
+import { Referral, ReferralType, ReferralPriority } from '../types';
 
 interface BuscaAtivaReferralModalProps {
   student: { id: string, name: string, class: string };
@@ -24,7 +24,8 @@ interface BuscaAtivaReferralModalProps {
 
 const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ student, studentHistory, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    type: 'PEDAGÓGICO' as ReferralType,
+    type: 'EVASÃO_INFREQUÊNCIA' as ReferralType,
+    priority: 'MÉDIA' as ReferralPriority,
     reason: '',
     status: 'ABERTO' as 'ABERTO' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO',
     responsible: 'COORDENADOR ANDRÉ',
@@ -43,10 +44,13 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
   };
 
   const types = [
-    { id: 'PEDAGÓGICO', icon: GraduationCap, color: 'bg-blue-50 text-blue-600 border-blue-100' },
-    { id: 'PSICOLÓGICO', icon: HeartPulse, color: 'bg-pink-50 text-pink-600 border-pink-100' },
-    { id: 'SOCIAL', icon: UsersIcon, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 'CONSELHO_TUTELAR', icon: Scale, color: 'bg-red-50 text-red-600 border-red-100' },
+    { id: 'EVASÃO_INFREQUÊNCIA', icon: GraduationCap, label: 'Evasão / Infrequência' },
+    { id: 'CONFLITO_FAMILIAR', icon: HeartPulse, label: 'Conflito Familiar' },
+    { id: 'VULNERABILIDADE_SOCIAL', icon: UsersIcon, label: 'Vulnerabilidade Social' },
+    { id: 'SAÚDE_MENTAL', icon: ShieldAlert, label: 'Saúde Mental / Emocional' },
+    { id: 'BULLYING_CONFLITO', icon: MessageSquare, label: 'Bullying / Conflitos' },
+    { id: 'REDE_DE_PROTEÇÃO', icon: Scale, label: 'Rede de Proteção (CT)' },
+    { id: 'OUTRO', icon: Tag, label: 'Outro' },
   ];
 
   return (
@@ -100,7 +104,7 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Selecione o Tipo de Encaminhamento</label>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Selecione o Motivo do Encaminhamento</label>
               <div className="grid grid-cols-2 gap-3">
                 {types.map(t => (
                   <button
@@ -108,13 +112,36 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
                     type="button"
                     onClick={() => setFormData({...formData, type: t.id as ReferralType})}
                     className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ${
-                      formData.type === t.id ? 'border-emerald-500 bg-emerald-50' : 'border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-200'
+                      formData.type === t.id ? 'border-emerald-500 bg-emerald-50 shadow-sm' : 'border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-200'
                     }`}
                   >
-                    <t.icon size={20} className={formData.type === t.id ? 'text-emerald-600' : 'text-gray-300'} />
-                    <span className={`text-[10px] font-black uppercase ${formData.type === t.id ? 'text-emerald-700' : 'text-gray-400'}`}>
-                      {t.id.replace('_', ' ')}
+                    <t.icon size={18} className={formData.type === t.id ? 'text-emerald-600' : 'text-gray-300'} />
+                    <span className={`text-[9px] font-black uppercase text-left leading-tight ${formData.type === t.id ? 'text-emerald-700' : 'text-gray-400'}`}>
+                      {t.label}
                     </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nível de Urgência (Gravidade)</label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: 'BAIXA', color: 'bg-slate-100 text-slate-500', active: 'bg-slate-600 text-white shadow-slate-200' },
+                  { id: 'MÉDIA', color: 'bg-blue-100 text-blue-500', active: 'bg-blue-600 text-white shadow-blue-200' },
+                  { id: 'ALTA', color: 'bg-amber-100 text-amber-600', active: 'bg-amber-600 text-white shadow-amber-200' },
+                  { id: 'URGENTE', color: 'bg-red-100 text-red-600', active: 'bg-red-600 text-white shadow-red-200' },
+                ].map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setFormData({...formData, priority: p.id as ReferralPriority})}
+                    className={`py-3 rounded-xl text-[9px] font-black uppercase transition-all border-b-4 ${
+                      formData.priority === p.id ? `${p.active} border-black/10 scale-105` : `${p.color} border-transparent opacity-60 hover:opacity-100`
+                    }`}
+                  >
+                    {p.id}
                   </button>
                 ))}
               </div>

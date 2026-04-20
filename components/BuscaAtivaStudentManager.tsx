@@ -193,6 +193,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
         class_name: student.class,
         date: newReferral.date || currentDate,
         type: newReferral.type,
+        priority: newReferral.priority || 'MÉDIA',
         reason: newReferral.reason,
         status: newReferral.status,
         responsible: newReferral.responsible,
@@ -205,7 +206,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
         student_id: student.id,
         date: newReferral.date || currentDate,
         time: currentTime,
-        description: `[ENCAMINHAMENTO: ${newReferral.type}] ${newReferral.reason} (Resp: ${newReferral.responsible})`,
+        description: `[ENCAMINHAMENTO: ${newReferral.type}] ${newReferral.reason} (Prioridade: ${newReferral.priority}) (Resp: ${newReferral.responsible})`,
         category: 'BUSCA_ATIVA',
         responsible_name: newReferral.responsible
       }]);
@@ -223,18 +224,27 @@ const BuscaAtivaStudentManager: React.FC = () => {
 
       const fullDescription = `[ENCAMINHAMENTO BUSCA ATIVA]
 TIPO: ${newReferral.type}
+URGÊNCIA: ${newReferral.priority}
 RELATO: ${newReferral.reason}
 
 --- HISTÓRICO DE ACOMPANHAMENTO ---
 ${historySummary || 'Nenhum registro anterior no sistema.'}`;
 
-      // 4. Abrir Caso no Módulo de Mediação com o histórico completo
+      // 4. Mapear Gravidade para a Mediação
+      const severityMap: Record<string, string> = {
+        'URGENTE': 'CRÍTICA',
+        'ALTA': 'ALTA',
+        'MÉDIA': 'MÉDIA',
+        'BAIXA': 'BAIXA'
+      };
+
+      // 5. Abrir Caso no Módulo de Mediação com o histórico completo
       const { error: mediationError } = await supabase.from('mediation_cases').insert([{
         student_id: student.id,
         student_name: student.name,
         class_name: student.class,
         type: 'OUTRO',
-        severity: 'MÉDIA',
+        severity: severityMap[newReferral.priority || 'MÉDIA'] as any,
         status: 'ABERTURA',
         opened_at: newReferral.date || currentDate,
         description: fullDescription,

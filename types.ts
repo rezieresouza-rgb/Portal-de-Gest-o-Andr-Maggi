@@ -270,8 +270,30 @@ export interface MaterialEntry { id: string; supplier: string; materialId: strin
 export type MaintenanceArea = 'ESTRUTURAL' | 'HIDRÁULICA' | 'ELÉTRICA' | 'INCÊNDIO' | 'MOBILIÁRIO' | 'ACESSIBILIDADE' | 'OUTROS';
 export type MaintenanceFrequency = 'DIÁRIA' | 'SEMANAL' | 'MENSAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL' | 'BIENAL' | 'QUINQUENAL';
 export interface MaintenanceTask { id: string; area: MaintenanceArea; title: string; description: string; frequency: MaintenanceFrequency; dueDate: string; status: 'PENDENTE' | 'EM_EXECUCAO' | 'CONCLUIDO' | 'ALERTA' | 'ATRASADO'; lastPerformed?: string; }
-export type ReferralType = 'PEDAGÓGICO' | 'PSICOLÓGICO' | 'SOCIAL' | 'CONSELHO_TUTELAR';
-export interface Referral { id: string; studentId: string; studentName: string; type: ReferralType; reason: string; status: 'ABERTO' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO'; responsible: string; notes?: string; date: string; }
+export type ReferralType = 
+  | 'EVASÃO_INFREQUÊNCIA' 
+  | 'CONFLITO_FAMILIAR' 
+  | 'VULNERABILIDADE_SOCIAL' 
+  | 'SAÚDE_MENTAL' 
+  | 'BULLYING_CONFLITO' 
+  | 'REDE_DE_PROTEÇÃO' 
+  | 'PEDAGÓGICO' 
+  | 'OUTRO';
+
+export type ReferralPriority = 'BAIXA' | 'MÉDIA' | 'ALTA' | 'URGENTE';
+
+export interface Referral { 
+  id: string; 
+  studentId: string; 
+  studentName: string; 
+  type: ReferralType; 
+  priority: ReferralPriority;
+  reason: string; 
+  status: 'ABERTO' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO'; 
+  responsible: string; 
+  notes?: string; 
+  date: string; 
+}
 export type PsychosocialRole = 'PSICOSSOCIAL' | 'GESTAO' | 'PROFESSOR';
 export type MediationStatus = 'ABERTURA' | 'PLANEJAMENTO' | 'EXECUÇÃO' | 'CONCLUÍDO';
 export type CaseSeverity = 'BAIXA' | 'MÉDIA' | 'ALTA' | 'CRÍTICA';
