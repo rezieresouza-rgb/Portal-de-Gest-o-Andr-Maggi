@@ -608,31 +608,47 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                      
                      <button 
                         onClick={async () => {
+                           const feedbackValue = selectedCase?.feedback?.trim();
+                           if (!feedbackValue) {
+                              alert('Por favor, escreva a devolutiva antes de salvar.');
+                              return;
+                           }
                            try {
-                              console.log('Salvando devolutiva...');
+                              console.log('Salvando devolutiva para caso ID:', selectedCase.id, '| Texto:', feedbackValue);
                               // 1. Salva no caso de mediação
-                              const { error: medError } = await supabase
+                              const { data: updatedData, error: medError } = await supabase
                                  .from('mediation_cases')
-                                 .update({ feedback: selectedCase?.feedback })
-                                 .eq('id', selectedCase.id);
+                                 .update({ feedback: feedbackValue })
+                                 .eq('id', selectedCase.id)
+                                 .select();
                               
                               if (medError) throw medError;
+                              console.log('Devolutiva salva com sucesso:', updatedData);
 
                               // 2. Se houver vínculo, salva no encaminhamento original
                               if (selectedCase.originReferralId) {
                                  const { error: refError } = await supabase
                                     .from('psychosocial_referrals')
-                                    .update({ feedback: selectedCase?.feedback })
+                                    .update({ feedback: feedbackValue })
                                     .eq('id', selectedCase.originReferralId);
                                  
                                  if (refError) console.error("Erro ao sincronizar com encaminhamento:", refError);
                               }
 
-                              alert("Devolutiva salva e enviada ao Professor Area!");
+                              // 3. Também salva em todos os psychosocial_referrals vinculados ao mesmo aluno, se existirem
+                              const { error: psyErr } = await supabase
+                                 .from('psychosocial_referrals')
+                                 .update({ feedback: feedbackValue })
+                                 .ilike('student_name', selectedCase.studentName || '');
+                              
+                              if (psyErr) console.warn('Aviso ao atualizar psychosocial_referrals:', psyErr.message);
+
+                              alert("Devolutiva salva com sucesso!");
+                              setSelectedCase({ ...selectedCase, feedback: feedbackValue });
                               await fetchCases();
                            } catch (err: any) {
-                              console.error(err);
-                              alert("Erro ao salvar devolutiva: " + err.message);
+                              console.error('Erro ao salvar devolutiva:', err);
+                              alert("Erro ao salvar devolutiva: " + (err.message || JSON.stringify(err)));
                            }
                         }}
                         className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2"
