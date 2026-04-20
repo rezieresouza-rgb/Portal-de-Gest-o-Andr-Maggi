@@ -691,29 +691,67 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50/30">
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                    {/* LADO ESQUERDO: Relato e Envolvidos */}
-                    <div className="flex flex-col gap-6 h-full">
-                       <div className="flex-1 bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col min-h-[300px]">
-                           <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2 mb-4 shrink-0">
-                              <FileText size={12} className="text-rose-600" /> Relato Original
-                           </h4>
-                           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                              <p className="text-sm text-gray-600 leading-relaxed font-medium capitalize whitespace-pre-wrap">
-                                 {selectedCase.description}
-                              </p>
-                           </div>
+                    {/* LADO ESQUERDO: Relato e Diário de Atendimento (Linha do Tempo) */}
+                    <div className="flex flex-col gap-6 h-full min-h-0 overflow-hidden">
+                        {/* Relato Original */}
+                        <div className="h-[200px] bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col shrink-0">
+                            <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2 mb-3 shrink-0">
+                               <FileText size={12} className="text-rose-600" /> Relato Original
+                            </h4>
+                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                               <p className="text-sm text-gray-600 leading-relaxed font-medium capitalize whitespace-pre-wrap">
+                                  {selectedCase.description}
+                               </p>
+                            </div>
                         </div>
 
-                        <div className="p-5 bg-rose-50 rounded-[2rem] border border-rose-100 shrink-0">
-                           <div className="flex items-center gap-3 text-rose-600 mb-3">
-                              <MessageCircle size={16} />
-                              <h4 className="text-[9px] font-black uppercase tracking-widest">Partes Envolvidas</h4>
+                        {/* Diário de Atendimento (Linha do Tempo) */}
+                        <div className="flex-1 bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col min-h-0 overflow-hidden">
+                           <h4 className="text-[9px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2 mb-4 shrink-0">
+                              <History size={14} /> Diário de Atendimento / Linha do Tempo
+                           </h4>
+
+                           {/* Input de Novo Registro */}
+                           <div className="bg-rose-50/50 p-4 rounded-[1.5rem] border border-rose-100 mb-4 shrink-0">
+                              <textarea 
+                                 value={newLog.content}
+                                 onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
+                                 placeholder="Descreva a ação realizada hoje..."
+                                 className="w-full p-3 bg-white border border-rose-200 rounded-xl text-xs font-medium resize-none outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[60px]"
+                              />
+                              <div className="flex justify-between items-center mt-2">
+                                 <p className="text-[8px] font-black text-rose-400 uppercase">{newLog.professional}</p>
+                                 <button 
+                                    onClick={handleSaveLog}
+                                    disabled={isLogLoading || !newLog.content.trim()}
+                                    className="px-4 py-1.5 bg-rose-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-rose-700 transition-all disabled:opacity-50"
+                                 >
+                                    {isLogLoading ? 'Salvando...' : 'Registrar Ação'}
+                                 </button>
+                              </div>
                            </div>
-                           <div className="flex flex-wrap gap-2">
-                              {selectedCase.involvedParties?.map((p, i) => (
-                                <span key={i} className="px-2 py-1 bg-white border border-rose-100 rounded-lg text-[9px] font-bold text-rose-800 uppercase shadow-sm">{p}</span>
-                              ))}
-                              {selectedCase.involvedParties?.length === 0 && <span className="text-gray-400 text-[9px] italic">Nenhuma registrada</span>}
+
+                           {/* Lista da Linha do Tempo */}
+                           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                              {selectedCase.logs && selectedCase.logs.length > 0 ? (
+                                selectedCase.logs.map((log, idx) => (
+                                 <div key={log.id || idx} className="relative pl-6 pb-2 border-l-2 border-rose-100 last:border-0 last:pb-0">
+                                    <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-rose-500 shadow-sm" />
+                                    <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group hover:bg-white transition-all hover:shadow-md">
+                                       <div className="flex justify-between items-center mb-1.5">
+                                          <p className="text-[10px] font-black text-rose-600 uppercase tracking-tighter">{log.professional}</p>
+                                          <p className="text-[8px] font-bold text-gray-400">{new Date(log.date).toLocaleDateString('pt-BR')}</p>
+                                       </div>
+                                       <p className="text-xs text-gray-700 leading-relaxed font-medium">{log.content}</p>
+                                    </div>
+                                 </div>
+                                ))
+                              ) : (
+                                <div className="py-10 text-center opacity-40">
+                                   <Clock size={32} className="mx-auto mb-2" />
+                                   <p className="text-[9px] font-black uppercase">Nenhum registro no diário</p>
+                                </div>
+                              )}
                            </div>
                         </div>
                     </div>
@@ -771,7 +809,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                            </div>
                            
                            <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 mb-2 shrink-0">
-                              <CheckCircle2 size={12} /> Campo de Registro / Devolutiva Principal
+                              <CheckCircle2 size={12} /> Acordo Final / Devolutiva de Resolução
                            </h4>
                            
                            <textarea 
