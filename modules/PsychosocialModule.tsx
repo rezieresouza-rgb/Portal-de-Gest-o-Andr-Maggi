@@ -125,10 +125,9 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Monitor de Saúde', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário 2026', icon: CalendarCheck },
-    { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
+    { id: 'mediation', label: 'Atendimentos e Protocolos', icon: Scale },
     { id: 'atas', label: 'Atas de Reunião', icon: FileText },
     { id: 'violation_notification', label: 'Notificação de Violência', icon: ShieldAlert },
-    { id: 'mediation', label: 'Mediação de Conflitos', icon: Scale },
     { id: 'campaigns', label: 'Campanhas Escolares', icon: Megaphone },
     { id: 'agenda', label: 'Agenda Psicossocial', icon: Calendar },
     { id: 'reports', label: 'Indicadores e Relatórios', icon: History },
@@ -150,7 +149,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
               key={item.id}
               onClick={() => {
                 setActiveTab(item.id as any);
-                if (item.id === 'referrals') clearNotifications();
+                if (item.id === 'mediation') clearNotifications();
               }}
               className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
                 ? 'bg-rose-800 text-white shadow-lg'
@@ -161,7 +160,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
                 <item.icon size={18} />
                 {item.label}
               </div>
-              {item.id === 'referrals' && notifCount > 0 && (
+              {item.id === 'mediation' && notifCount > 0 && (
                 <span className="bg-white text-rose-800 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse">
                   {notifCount}
                 </span>
@@ -210,11 +209,11 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
           <div className="flex items-center gap-6">
             {notifCount > 0 ? (
               <button
-                onClick={() => { setActiveTab('referrals'); clearNotifications(); }}
+                onClick={() => { setActiveTab('mediation'); clearNotifications(); }}
                 className="flex items-center gap-3 px-4 py-2 bg-rose-50 text-rose-600 rounded-full border border-rose-100 hover:bg-rose-100 transition-colors"
               >
                 <AlertCircle size={14} className="animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest">{notifCount} Novos Encaminhamentos</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">{notifCount} Novos Protocolos</span>
               </button>
             ) : (
               <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 text-gray-400 rounded-full border border-gray-100">
@@ -231,14 +230,6 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} onNavigate={navigateWithContext} />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
-          {activeTab === 'referrals' && (
-            <PsychosocialReferralList 
-              role={userRole} 
-              filterDestination="MEDIACAO" 
-              onTabChange={(tab: any) => setActiveTab(tab)} 
-              initialSearch={pendingSearch}
-            />
-          )}
           {activeTab === 'atas' && <PsychosocialMeetingAtaManager />}
           {activeTab === 'violation_notification' && <RightsViolationForm />}
           {activeTab === 'mediation' && (

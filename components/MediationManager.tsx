@@ -661,91 +661,100 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                  </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-gray-50/30">
-                 <div className="space-y-3 bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
-                     <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-1.5">
-                        <FileText size={12} className="text-rose-600" /> Relato Original
-                     </h4>
-                     <p className="text-sm text-gray-600 leading-relaxed font-medium capitalize">
-                        {selectedCase.description}
-                     </p>
-                  </div>
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50/30">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                    {/* LADO ESQUERDO: Relato e Envolvidos */}
+                    <div className="flex flex-col gap-6 h-full">
+                       <div className="flex-1 bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col min-h-[300px]">
+                           <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2 mb-4 shrink-0">
+                              <FileText size={12} className="text-rose-600" /> Relato Original
+                           </h4>
+                           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                              <p className="text-sm text-gray-600 leading-relaxed font-medium capitalize whitespace-pre-wrap">
+                                 {selectedCase.description}
+                              </p>
+                           </div>
+                        </div>
 
-                  {/* [NOVO] Seção de Devolutiva ao Professor */}
-                  <div className="space-y-3 bg-white p-5 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group shadow-sm">
-                      <div className="absolute top-0 right-0 p-4 opacity-5 text-emerald-900 pointer-events-none">
-                         <MessageSquare size={120} strokeWidth={1} />
-                      </div>
-                      
-                      <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 mb-1">
-                         <CheckCircle2 size={12} /> Campo de Registro / Devolutiva Principal
-                      </h4>
-                      
-                      <textarea 
-                         value={selectedCase?.feedback || ''}
-                         onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
-                         placeholder="Escreva aqui a resposta/devolutiva detalhada..."
-                         className="w-full p-6 bg-white border-2 border-emerald-100 rounded-[1.5rem] text-sm font-bold min-h-[480px] resize-none outline-none focus:ring-8 focus:ring-emerald-500/5 transition-all shadow-inner focus:border-emerald-500"
-                      />
-                   </div>
+                        <div className="p-5 bg-rose-50 rounded-[2rem] border border-rose-100 shrink-0">
+                           <div className="flex items-center gap-3 text-rose-600 mb-3">
+                              <MessageCircle size={16} />
+                              <h4 className="text-[9px] font-black uppercase tracking-widest">Partes Envolvidas</h4>
+                           </div>
+                           <div className="flex flex-wrap gap-2">
+                              {selectedCase.involvedParties?.map((p, i) => (
+                                <span key={i} className="px-2 py-1 bg-white border border-rose-100 rounded-lg text-[9px] font-bold text-rose-800 uppercase shadow-sm">{p}</span>
+                              ))}
+                              {selectedCase.involvedParties?.length === 0 && <span className="text-gray-400 text-[9px] italic">Nenhuma registrada</span>}
+                           </div>
+                        </div>
+                    </div>
 
-                  <div className="space-y-3 bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
-                     <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-1.5">
-                        <History size={12} className="text-rose-600" /> Etapas do Processo
-                     </h4>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                       {selectedCase.steps?.map((step, idx) => (
-                         <div key={idx} className={`p-5 rounded-3xl border-2 transition-all flex items-center justify-between ${step.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-dashed border-gray-200'}`}>
-                            <div className="flex items-center gap-4">
-                               <div className={`p-2 rounded-lg ${step.completed ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-300'}`}>
-                                  {step.completed ? <CheckCircle2 size={16}/> : <Clock size={16}/>}
+                    {/* LADO DIREITO: Etapas e Devolutiva */}
+                    <div className="flex flex-col gap-6 h-full">
+                       <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm shrink-0">
+                           <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2 mb-3">
+                              <History size={12} className="text-rose-600" /> Etapas do Processo
+                           </h4>
+                           <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                             {selectedCase.steps?.map((step, idx) => (
+                               <div key={idx} className={`p-3 rounded-2xl border-2 transition-all flex items-center justify-between ${step.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-dashed border-gray-200'}`}>
+                                  <div className="flex items-center gap-3">
+                                     <div className={`p-1.5 rounded-lg ${step.completed ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-300'}`}>
+                                        {step.completed ? <CheckCircle2 size={14}/> : <Clock size={14}/>}
+                                     </div>
+                                     <div>
+                                        <p className={`text-[10px] font-black uppercase leading-none ${step.completed ? 'text-emerald-700' : 'text-gray-400'}`}>{step.label}</p>
+                                        {step.date && <p className="text-[8px] font-bold text-emerald-600 mt-1">{new Date(step.date).toLocaleDateString('pt-BR')}</p>}
+                                     </div>
+                                  </div>
+                                  {!step.completed && (
+                                     <button 
+                                       onClick={async (e) => {
+                                         e.stopPropagation();
+                                         const updatedSteps = selectedCase.steps.map((s, i) => 
+                                           i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
+                                         );
+                                         try {
+                                           const { error } = await supabase
+                                             .from('mediation_cases')
+                                             .update({ steps: updatedSteps })
+                                             .eq('id', selectedCase.id);
+                                           if (error) throw error;
+                                           await fetchCases();
+                                           setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                         } catch (err) {
+                                           alert("Erro ao atualizar etapa.");
+                                         }
+                                       }}
+                                       className="px-3 py-1 bg-gray-900 text-white rounded-lg text-[8px] font-black uppercase hover:bg-rose-600 transition-all"
+                                     >
+                                       Registrar
+                                     </button>
+                                  )}
                                </div>
-                               <div>
-                                  <p className={`text-xs font-black uppercase ${step.completed ? 'text-emerald-700' : 'text-gray-400'}`}>{step.label}</p>
-                                  {step.date && <p className="text-[9px] font-bold text-emerald-600 mt-0.5">{new Date(step.date).toLocaleDateString('pt-BR')}</p>}
-                               </div>
-                            </div>
-                            {!step.completed && (
-                               <button 
-                                 onClick={async (e) => {
-                                   e.stopPropagation();
-                                   const updatedSteps = selectedCase.steps.map((s, i) => 
-                                     i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
-                                   );
-                                   try {
-                                     const { error } = await supabase
-                                       .from('mediation_cases')
-                                       .update({ steps: updatedSteps })
-                                       .eq('id', selectedCase.id);
-                                     if (error) throw error;
-                                     await fetchCases();
-                                     setSelectedCase({ ...selectedCase, steps: updatedSteps });
-                                   } catch (err) {
-                                     alert("Erro ao atualizar etapa.");
-                                   }
-                                 }}
-                                 className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-[9px] font-black uppercase hover:bg-rose-600 transition-all"
-                               >
-                                 Registrar
-                               </button>
-                            )}
-                         </div>
-                       ))}
-                     </div>
-                  </div>
+                             ))}
+                           </div>
+                       </div>
 
-                  <div className="p-4 bg-rose-50 rounded-[2rem] border border-rose-100 space-y-3">
-                     <div className="flex items-center gap-3 text-rose-600">
-                        <MessageCircle size={16} />
-                        <h4 className="text-[9px] font-black uppercase tracking-widest">Partes Envolvidas</h4>
-                     </div>
-                     <div className="flex flex-wrap gap-2">
-                        {selectedCase.involvedParties?.map((p, i) => (
-                          <span key={i} className="px-2 py-0.5 bg-white border border-rose-100 rounded text-[9px] font-bold text-rose-800 uppercase">{p}</span>
-                        ))}
-                        {selectedCase.involvedParties?.length === 0 && <span className="text-gray-400 text-[9px] italic">Nenhuma registrada</span>}
-                     </div>
-                  </div>
+                       <div className="flex-1 bg-white p-5 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group shadow-sm flex flex-col min-h-[200px]">
+                           <div className="absolute top-0 right-0 p-4 opacity-5 text-emerald-900 pointer-events-none">
+                              <MessageSquare size={100} strokeWidth={1} />
+                           </div>
+                           
+                           <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 mb-2 shrink-0">
+                              <CheckCircle2 size={12} /> Campo de Registro / Devolutiva Principal
+                           </h4>
+                           
+                           <textarea 
+                              value={selectedCase?.feedback || ''}
+                              onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
+                              placeholder="Escreva aqui a resposta/devolutiva detalhada..."
+                              className="w-full flex-1 p-5 bg-emerald-50/30 border-2 border-emerald-100 rounded-[1.5rem] text-sm font-bold resize-none outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-inner focus:border-emerald-400"
+                           />
+                        </div>
+                    </div>
+                 </div>
               </div>
 
               <div className="p-4 bg-white border-t border-gray-50 flex flex-wrap gap-3">
@@ -787,14 +796,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                   >
                     Encerrar com Acordo
                   </button>
-                  <button 
-                    onClick={() => {
-                      if (onTabChange) onTabChange('referrals');
-                    }}
-                    className="flex-1 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-violet-700 transition-all min-w-[140px]"
-                  >
-                    Ver Encaminhamento
-                  </button>
+
                   <button 
                     onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
                     className="flex-1 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-100 transition-all min-w-[140px]"
