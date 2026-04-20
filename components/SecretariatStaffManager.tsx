@@ -250,33 +250,49 @@ const SecretariatStaffManager: React.FC = () => {
          if (staff.length === 0 || movementsData.length === 0) return;
 
          const today = new Date().toLocaleDateString('sv-SE');
-         const toUpdate: string[] = [];
+         const statusUpdates: { id: string, status: string }[] = [];
 
          staff.forEach(member => {
-            if (member.status !== 'EM_ATIVIDADE') {
-               // Encontrar o movimento ativo ou mais recente para este servidor
-               const relevantMovements = movementsData.filter(m => m.staffId === member.id);
-               if (relevantMovements.length > 0) {
-                  const lastMovement = relevantMovements[0]; // movementsData já está ordenado por data desc
-                  if (lastMovement.endDate && lastMovement.endDate < today) {
-                     toUpdate.push(member.id!);
-                  }
+            // Find the active movement for today
+            const activeMovement = movementsData.find(m => 
+               m.staffId === member.id && 
+               m.startDate <= today && 
+               (!m.endDate || m.endDate >= today) &&
+               m.type !== 'RETORNO'
+            );
+
+            if (activeMovement) {
+               // Should be inactive. Determine specific status.
+               let targetStatus = 'AFASTADO';
+               if (activeMovement.type === 'FÉRIAS') targetStatus = 'FERIAS';
+               else if (activeMovement.type === 'LICENÇA PRÊMIO') targetStatus = 'LICENCA_PREMIO';
+               else if (activeMovement.type === 'ATESTADO') targetStatus = 'LICENCA_MEDICA';
+               
+               if (member.status !== targetStatus) {
+                  statusUpdates.push({ id: member.id!, status: targetStatus });
+               }
+            } else {
+               // No active movement today. Should be active unless manually set to something else (transfer/desligado)
+               if (member.status !== 'EM_ATIVIDADE' && !['TRANSFERIDO', 'DESLIGADO', 'AFASTADO'].includes(member.status)) {
+                  statusUpdates.push({ id: member.id!, status: 'EM_ATIVIDADE' });
                }
             }
          });
 
-         if (toUpdate.length > 0) {
-            console.log("Reconciliando status para:", toUpdate);
+         if (statusUpdates.length > 0) {
+            console.log("Reconciliando status para:", statusUpdates);
             try {
-               const { error } = await supabase
-                  .from('staff')
-                  .update({ status: 'EM_ATIVIDADE' })
-                  .in('id', toUpdate);
-
-               if (!error) {
-                  setStaff(prev => prev.map(s => toUpdate.includes(s.id!) ? { ...s, status: 'EM_ATIVIDADE' } : s));
-                  // console.log("Status reconciliado com sucesso!");
+               for (const update of statusUpdates) {
+                  await supabase
+                     .from('staff')
+                     .update({ status: update.status })
+                     .eq('id', update.id);
                }
+               
+               setStaff(prev => prev.map(s => {
+                  const update = statusUpdates.find(u => u.id === s.id);
+                  return update ? { ...s, status: update.status as any } : s;
+               }));
             } catch (err) {
                console.error("Erro na reconciliação:", err);
             }
@@ -286,7 +302,7 @@ const SecretariatStaffManager: React.FC = () => {
       if (!loading) {
          reconcileStatus();
       }
-   }, [loading]); // Executa quando o loading termina ou dados mudam
+   }, [loading, movementsData]);
 
    useEffect(() => {
       fetchData();
