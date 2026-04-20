@@ -12,7 +12,8 @@ import {
    Info,
    Flag,
    CalendarDays,
-   Loader2
+   Loader2,
+   Printer
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
@@ -240,7 +241,7 @@ const UnifiedSchoolCalendar: React.FC = () => {
    return (
       <div className="space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
 
-         {/* HEADER DE NAVEGAÇÃO MENSAL */}
+         {/* HEADER DE NAVEGAÇÃO MENSAL (HIDDEN ON PRINT) */}
          <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl flex items-center justify-between no-print">
             <div className="flex items-center gap-3 no-print">
                <button
@@ -254,7 +255,7 @@ const UnifiedSchoolCalendar: React.FC = () => {
                   onClick={() => window.print()}
                   className="p-4 bg-white text-indigo-600 border border-indigo-100 rounded-2xl hover:bg-indigo-50 transition-all flex items-center gap-2 font-black uppercase text-[10px] tracking-widest shadow-sm"
                >
-                  <FileText size={18} /> Imprimir Relatório
+                  <Printer size={18} /> Imprimir Relatório Oficial
                </button>
             </div>
             <div className="text-center space-y-1">
@@ -504,6 +505,123 @@ const UnifiedSchoolCalendar: React.FC = () => {
                </div>
             </div>
          </div>
+
+         {/* TEMPLATE DE IMPRESSÃO OFICIAL (VISÍVEL APENAS NA IMPRESSÃO) */}
+         <div className="hidden print:block bg-white text-black p-12 min-h-screen font-serif">
+            {/* CABEÇALHO OFICIAL */}
+            <div className="flex items-start justify-between border-b-2 border-black pb-8 mb-10">
+               <div className="flex gap-6 items-center">
+                  <div className="w-20 h-20 border-2 border-black flex items-center justify-center p-2">
+                     <span className="text-[8px] font-bold text-center leading-tight">BRASÃO DO ESTADO DE MATO GROSSO</span>
+                  </div>
+                  <div className="space-y-0.5">
+                     <h3 className="text-sm font-black uppercase">Governo do Estado de Mato Grosso</h3>
+                     <h4 className="text-xs font-bold uppercase">Secretaria de Estado de Educação</h4>
+                     <p className="text-[10px] uppercase">{SCHOOL_CALENDAR_2026.unidade_escolar}</p>
+                     <p className="text-[10px] uppercase font-bold">{SCHOOL_CALENDAR_2026.municipio}</p>
+                  </div>
+               </div>
+               <div className="text-right">
+                  <p className="text-[10px] font-black uppercase tracking-widest">Relatório Mensal</p>
+                  <p className="text-lg font-black">{monthData.mes} / 2026</p>
+               </div>
+            </div>
+
+            {/* SEÇÃO I: EVENTOS DO CALENDÁRIO */}
+            <div className="mb-8">
+               <h5 className="text-[10px] font-black bg-gray-100 p-2 uppercase tracking-widest border-l-4 border-black mb-4">I. Eventos e Atividades do Calendário Escolar</h5>
+               <div className="grid grid-cols-2 gap-4">
+                  {monthData.eventos.map((ev, i) => (
+                     <div key={i} className="flex gap-3 text-[10px] items-baseline border-b border-gray-100 pb-1">
+                        <span className="font-black min-w-[30px]">Dia {ev.dia}:</span>
+                        <span className="text-gray-700">{ev.tipo}</span>
+                     </div>
+                  ))}
+               </div>
+               {monthData.orientativo && (
+                  <div className="mt-4 p-3 border border-dotted border-gray-300">
+                     <p className="text-[10px] font-black uppercase tracking-tight text-gray-500 mb-1">Tema Orientativo:</p>
+                     <p className="text-[11px] font-bold italic">"{monthData.orientativo}"</p>
+                  </div>
+               )}
+            </div>
+
+            {/* SEÇÃO II: MONITORAMENTO DA GESTÃO */}
+            <div className="space-y-6 mb-10">
+               <h5 className="text-[10px] font-black bg-gray-100 p-2 uppercase tracking-widest border-l-4 border-black mb-4">II. Monitoramento e Acompanhamento Pedagógico</h5>
+               
+               <div className="space-y-2">
+                  <h6 className="text-[9px] font-black uppercase text-gray-500">Campanhas e Ações Realizadas:</h6>
+                  <div className="p-4 border border-gray-200 rounded min-h-[80px] text-xs leading-relaxed whitespace-pre-wrap">
+                     {localTracker[monthData.mes]?.campanha_realizada || "Nenhuma ação registrada para este período."}
+                  </div>
+               </div>
+
+               <div className="space-y-2">
+                  <h6 className="text-[9px] font-black uppercase text-gray-500">Planejamento para o Próximo Período:</h6>
+                  <div className="p-4 border border-gray-200 rounded min-h-[60px] text-xs leading-relaxed whitespace-pre-wrap">
+                     {localTracker[monthData.mes]?.campanha_a_realizar || "Sem planejamento registrado."}
+                  </div>
+               </div>
+
+               <div className="space-y-2">
+                  <h6 className="text-[9px] font-black uppercase text-gray-500">Observações de Gestão:</h6>
+                  <div className="p-4 border border-gray-200 rounded min-h-[60px] text-xs leading-relaxed whitespace-pre-wrap">
+                     {localTracker[monthData.mes]?.observacoes || "Nenhuma observação relevante."}
+                  </div>
+               </div>
+            </div>
+
+            {/* SEÇÃO III: EVIDÊNCIAS FOTOGRÁFICAS */}
+            {localTracker[monthData.mes]?.photos?.length > 0 && (
+               <div className="mb-10 break-inside-avoid">
+                  <h5 className="text-[10px] font-black bg-gray-100 p-2 uppercase tracking-widest border-l-4 border-black mb-4">III. Registro de Evidências (Fotos)</h5>
+                  <div className="grid grid-cols-2 gap-4">
+                     {localTracker[monthData.mes].photos.slice(0, 4).map((url: string, i: number) => (
+                        <div key={i} className="border border-gray-100 p-1 bg-white">
+                           <img src={url} alt="Evidência" className="w-full h-40 object-cover" />
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
+
+            {/* SEÇÃO IV: ASSINATURAS */}
+            <div className="mt-20 grid grid-cols-2 gap-12 text-center">
+               <div className="space-y-2">
+                  <div className="border-t border-black pt-2">
+                     <p className="text-[10px] font-bold uppercase">Coordenação Pedagógica</p>
+                     <p className="text-[8px] text-gray-500">Responsável pelo Preenchimento</p>
+                  </div>
+               </div>
+               <div className="space-y-2">
+                  <div className="border-t border-black pt-2">
+                     <p className="text-[10px] font-bold uppercase">Direção Escolar</p>
+                     <p className="text-[8px] text-gray-500">Visto da Unidade Escolar</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* ESTILO PARA IMPRESSÃO */}
+         <style>{`
+            @media print {
+               @page { size: A4; margin: 0; }
+               body * { visibility: hidden; }
+               .print\\:block, .print\\:block * { visibility: visible; }
+               .print\\:block { 
+                  position: absolute; 
+                  left: 0; 
+                  top: 0; 
+                  width: 100%; 
+                  display: block !important;
+                  background: white !important;
+                  color: black !important;
+               }
+               .no-print { display: none !important; }
+               #sidebar, header, nav, button, input, textarea { display: none !important; }
+            }
+         `}</style>
       </div>
    );
 };
