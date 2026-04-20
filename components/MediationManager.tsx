@@ -494,8 +494,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
       {/* MODAL DE CRIAÇÃO DE NOVO CASO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-rose-950/40 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white rounded-[3.5rem] w-full max-w-4xl shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[95vh]">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white animate-in fade-in duration-300">
+           <div className="bg-white w-full h-full shadow-2xl overflow-hidden flex flex-col">
               <div className="p-8 bg-rose-50 border-b border-rose-100 flex justify-between items-center shrink-0">
                  <div className="flex items-center gap-5">
                     <div className="p-4 bg-rose-600 text-white rounded-3xl shadow-lg">
@@ -659,8 +659,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
       {/* MODAL DETALHES DO CASO EXISTENTE */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white rounded-[3.5rem] w-full max-w-5xl max-h-[92vh] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-white w-full h-full shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
               <div className="p-4 bg-rose-900 text-white shrink-0 shadow-lg">
                  <div className="flex justify-between items-center mb-3">
                     <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
