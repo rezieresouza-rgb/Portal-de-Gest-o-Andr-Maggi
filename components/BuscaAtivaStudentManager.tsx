@@ -181,6 +181,14 @@ const BuscaAtivaStudentManager: React.FC = () => {
     const student = students.find(s => s.id === newReferral.studentId);
     if (!student) return alert("Aluno não encontrado.");
 
+    // Mapeamento de prioridade para severidade da mediação
+    const severityMap: Record<string, string> = {
+      'URGENTE': 'CRÍTICA',
+      'ALTA': 'ALTA',
+      'MÉDIA': 'MÉDIA',
+      'BAIXA': 'BAIXA'
+    };
+
     try {
       setLoading(true);
       const now = new Date();
@@ -188,33 +196,64 @@ const BuscaAtivaStudentManager: React.FC = () => {
       const currentTime = now.toLocaleTimeString('pt-BR', { hour12: false, hour: '2-digit', minute: '2-digit' });
 
       // 1. Salvar no controle de encaminhamentos (Busca Ativa)
+      console.log("Tentando salvar em 'referrals'...");
       const { error: refError } = await supabase.from('referrals').insert([{
         student_code: newReferral.studentId,
         student_name: student.name,
         class_name: student.class,
         date: newReferral.date || currentDate,
         type: newReferral.type,
-        priority: newReferral.priority || 'MÉDIA',
         reason: newReferral.reason,
         status: newReferral.status,
         responsible: newReferral.responsible,
       }]);
 
-      if (refError) throw refError;
+      if (refError) {
+        console.error("Erro na tabela 'referrals':", refError);
+        // Não jogamos erro aqui ainda para tentar salvar na tabela secundária
+      }
+
+      // [NOVO] 1.1 Dual-write: Salvar em psychosocial_referrals para redundância
+      console.log("Tentando salvar em 'psychosocial_referrals'...");
+      const { error: psychoError } = await supabase.from('psychosocial_referrals').insert([{
+        student_name: student.name,
+        class_name: student.class,
+        teacher_name: `BUSCA ATIVA (${newReferral.responsible})`,
+        school_unit: 'ESCOLA ANDRÉ MAGGI',
+        date: newReferral.date || currentDate,
+        report: `[VIA BUSCA ATIVA] ${newReferral.reason}`,
+        priority: newReferral.priority || 'MEDIA',
+        status: 'AGUARDANDO_TRIAGEM'
+      }]);
+
+      if (psychoError) {
+        console.error("Erro na tabela 'psychosocial_referrals':", psychoError);
+      }
+
+      if (refError && psychoError) {
+        throw new Error(`Falha em ambas as tabelas (Referrals: ${refError.message} | Psycho: ${psychoError.message})`);
+      }
 
       // 2. Registrar no Diário de Acompanhamento (History)
       const { error: logError } = await supabase.from('occurrences').insert([{
         student_id: student.id,
+        student_name: student.name,
+        classroom_name: student.class,
         date: newReferral.date || currentDate,
         time: currentTime,
         description: `[ENCAMINHAMENTO: ${newReferral.type}] ${newReferral.reason} (Prioridade: ${newReferral.priority}) (Resp: ${newReferral.responsible})`,
         category: 'BUSCA_ATIVA',
-        responsible_name: newReferral.responsible
+        severity: severityMap[newReferral.priority || 'MÉDIA'] as any,
+        responsible_name: newReferral.responsible,
+        status: 'REGISTRADO'
       }]);
 
-      if (logError) console.error("Erro ao registrar no histórico:", logError);
+      if (logError) {
+        console.error("Erro na tabela 'occurrences':", logError);
+      }
 
       // 3. Preparar histórico completo para enviar à Mediação
+      // ... (histórico mantido igual)
       const studentLogs = monitoringLogs
         .filter(log => log.student_id === student.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -233,14 +272,6 @@ RELATO: ${newReferral.reason}
 
 --- HISTÓRICO DE ACOMPANHAMENTO ---
 ${historySummary || 'Nenhum registro anterior no sistema.'}`;
-
-      // 4. Mapear Gravidade para a Mediação
-      const severityMap: Record<string, string> = {
-        'URGENTE': 'CRÍTICA',
-        'ALTA': 'ALTA',
-        'MÉDIA': 'MÉDIA',
-        'BAIXA': 'BAIXA'
-      };
 
       // 5. Abrir Caso no Módulo de Mediação com o histórico completo
       const { error: mediationError } = await supabase.from('mediation_cases').insert([{
@@ -262,14 +293,29 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
         logs: []
       }]);
 
-      if (mediationError) console.error("Erro ao abrir caso na Mediação:", mediationError);
+      if (mediationError) {
+        console.error("Erro na tabela 'mediation_cases':", mediationError);
+        // Diferente das tabelas de log, erro aqui é crítico para o fluxo
+        throw new Error(`Mediação: ${mediationError.message}`);
+      }
 
-      alert("Encaminhamento realizado! Caso aberto na Mediação com histórico completo e registrado no diário de bordo.");
+      // 6. Gerar Notificação para a equipe técnica
+      const { error: notifyError } = await supabase.from('psychosocial_notifications').insert([{
+        title: 'Encaminhamento: Busca Ativa',
+        message: `O aluno ${student.name} foi encaminhado para a Mediação pela Busca Ativa (Motivo: ${newReferral.type}).`,
+        is_read: false
+      }]);
+
+      if (notifyError) {
+        console.error("Erro na tabela 'psychosocial_notifications':", notifyError);
+      }
+
+      alert("Encaminhamento realizado com sucesso!");
       setSelectedStudent(null);
       await Promise.all([fetchReferrals(), fetchMonitoringLogs()]);
-    } catch (e) {
-      console.error(e);
-      alert("Erro ao registrar encaminhamento.");
+    } catch (e: any) {
+      console.error("Erro geral no salvamento:", e);
+      alert(`[FALHA TÉCNICA] ${e.message || 'Erro desconhecido. Verifique o console do navegador.'}`);
     } finally {
       setLoading(false);
     }
@@ -309,6 +355,7 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
                   <div className="flex items-center gap-3">
                     <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{s.name}</h4>
                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${getStatusColor(s.status)}`}>{s.status}</span>
+                    <span className="text-[9px] text-gray-300 font-bold uppercase tracking-widest border border-gray-100 px-1.5 py-0.5 rounded">v1.2.1-DEBUG</span>
                     <div className={`flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded-full border italic tracking-widest ${
                       s.totalInterventions > 0 
                         ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' 

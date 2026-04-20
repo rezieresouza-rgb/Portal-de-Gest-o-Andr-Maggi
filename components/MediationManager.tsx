@@ -348,11 +348,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                     {c.status === 'CONCLUÍDO' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
                   </div>
                   <div>
-                     <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3">
                         <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{c.studentName}</h4>
                         <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
                           {c.status}
                         </span>
+                        {c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-widest shadow-sm">
+                            Fonte: Busca Ativa
+                          </span>
+                        )}
                      </div>
                      <div className="flex items-center gap-4 mt-2">
                         <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12}/> {c.className}</span>
