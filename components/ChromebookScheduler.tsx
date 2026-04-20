@@ -28,7 +28,7 @@ const STATIONS = [
   "Estação 02 (sala 22)", 
   "Estação 03 (sala 22)", 
   "Estação 04 (biblioteca)", 
-  "Estação 05 (biblioteca)"
+  "Estação 05 biblioteca/armário"
 ];
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];

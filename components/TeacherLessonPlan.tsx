@@ -78,6 +78,16 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     coordinationFeedback: ''
   });
 
+  // Helper to update form state safely
+  const updateForm = (updates: Partial<typeof form> | ((prev: typeof form) => typeof form)) => {
+    setForm(prev => {
+      if (typeof updates === 'function') {
+        return updates(prev);
+      }
+      return { ...prev, ...updates };
+    });
+  };
+
   const [dbSkills, setDbSkills] = useState<PedagogicalSkill[]>([]);
   const [rowSkillSearch, setRowSkillSearch] = useState<{ [key: number]: string }>({});
   const [focusedRowIdx, setFocusedRowIdx] = useState<number | null>(null);
@@ -190,28 +200,34 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
 
       const structuredData = await parseLessonPlanWithAI(rawText);
       if (structuredData) {
-        setForm(prev => ({
-          ...prev,
-          bimestre: structuredData.bimestre || prev.bimestre,
-          subject: structuredData.subject || prev.subject,
-          className: structuredData.className || prev.className,
-          weeklyClasses: structuredData.weeklyClasses || prev.weeklyClasses,
-          themes: structuredData.themes || prev.themes,
-          observations: structuredData.observations || prev.observations,
-          rows: structuredData.rows && structuredData.rows.length > 0 
-            ? structuredData.rows.map((r: any) => ({
-                weekOrDate: r.weekOrDate || '',
-                theme: r.theme || '',
-                materialPage: r.materialPage || '',
-                skillsText: r.skillsText || '',
-                content: r.content || '',
-                activities: r.activities || '',
-                methodology: r.methodology || '',
-                duration: r.duration || '',
-                evaluation: r.evaluation || ''
-              }))
-            : prev.rows
-        }));
+        const newRows = structuredData.rows && structuredData.rows.length > 0 
+          ? structuredData.rows.map((r: any) => ({
+              weekOrDate: r.weekOrDate || '',
+              theme: r.theme || '',
+              materialPage: r.materialPage || '',
+              skillsText: r.skillsText || '',
+              content: r.content || '',
+              activities: r.activities || '',
+              methodology: r.methodology || '',
+              duration: r.duration || '',
+              evaluation: r.evaluation || ''
+            }))
+          : form.rows;
+
+        updateForm({
+          bimestre: structuredData.bimestre || form.bimestre,
+          subject: (structuredData.subject || form.subject || '').toUpperCase(),
+          className: structuredData.className || form.className,
+          weeklyClasses: structuredData.weeklyClasses || form.weeklyClasses,
+          themes: structuredData.themes || form.themes,
+          observations: structuredData.observations || form.observations,
+          rows: newRows,
+          status: 'RASCUNHO'
+        });
+        
+        // After import, try to sync skills from text
+        setTimeout(() => syncSkillsFromRows(), 1000);
+
         setActiveId(null);
         setViewMode('form');
         alert("Documento importado e processado com sucesso!");
@@ -306,43 +322,78 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     }
   }, [form.subject, form.className, form.classNames]);
 
+  const syncSkillsFromRows = async () => {
+    // Extract all skill codes from row text (e.g. EF06MA01)
+    const allText = form.rows.map(r => r.skillsText).join(' ');
+    const codes = allText.match(/[A-Z0-9-]{6,15}/g) || [];
+    const uniqueCodes = [...new Set(codes.map(c => c.trim()))];
+    
+    if (uniqueCodes.length === 0) return;
+
+    // Fetch details for these codes
+    const { data, error } = await supabase
+      .from('bncc_skills')
+      .select('code, description')
+      .in('code', uniqueCodes);
+    
+    if (!error && data) {
+      const foundSkills: PedagogicalSkill[] = data.map(s => ({
+        code: s.code,
+        description: s.description
+      }));
+
+      updateForm(prev => {
+        const currentCodes = new Set([...prev.skills, ...prev.recompositionSkills].map(s => s.code));
+        const newSkills = [...prev.skills];
+        const newRecomp = [...prev.recompositionSkills];
+
+        foundSkills.forEach(s => {
+          if (!currentCodes.has(s.code)) {
+            const isRecomp = s.code.includes('EF01') || s.code.includes('EF02') || s.code.includes('EF03') || s.code.includes('EF04') || s.code.includes('EF05');
+            if (isRecomp) newRecomp.push(s);
+            else newSkills.push(s);
+          }
+        });
+
+        return { ...prev, skills: newSkills, recompositionSkills: newRecomp };
+      });
+    }
+  };
+
   const addRow = () => {
-    setForm(prev => {
-      const nextWeekNum = prev.rows.length + 1;
-      return {
-        ...prev,
-        rows: [...prev.rows, {
-          weekOrDate: `De __ a __ de __ de __`,
-          theme: '',
-          materialPage: '',
-          skillsText: '',
-          content: '',
-          activities: '',
-          methodology: '',
-          duration: '',
-          evaluation: ''
-        }]
-      };
-    });
+    updateForm(prev => ({
+      ...prev,
+      rows: [...prev.rows, {
+        weekOrDate: `De __ a __ de __ de __`,
+        theme: '',
+        materialPage: '',
+        skillsText: '',
+        content: '',
+        activities: '',
+        methodology: '',
+        duration: '',
+        evaluation: ''
+      }]
+    }));
   };
 
   const removeRow = (index: number) => {
-    setForm(prev => ({
+    updateForm(prev => ({
       ...prev,
       rows: prev.rows.filter((_, i) => i !== index)
     }));
   };
 
-  const updateRow = (index: number, field: keyof LessonPlanRow, value: string) => {
-    setForm(prev => {
+  const updateRow = (idx: number, field: keyof LessonPlanRow, value: string) => {
+    updateForm(prev => {
       const newRows = [...prev.rows];
-      newRows[index] = { ...newRows[index], [field]: value };
+      newRows[idx] = { ...newRows[idx], [field]: value };
       return { ...prev, rows: newRows };
     });
   };
 
   const appendSkillToRow = (idx: number, skill: PedagogicalSkill) => {
-    setForm(prevForm => {
+    updateForm(prevForm => {
       const row = prevForm.rows[idx];
 
       const knowledgeObject = skill.knowledgeObject;
@@ -662,14 +713,18 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
           <div className="md:col-span-1 space-y-1.5">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bimestre</label>
-            <select value={form.bimestre} onChange={e => setForm({ ...form, bimestre: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none">
+            <select value={form.bimestre} onChange={e => updateForm({ bimestre: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none">
               {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => <option key={b}>{b}</option>)}
             </select>
           </div>
           <div className="md:col-span-2 space-y-1.5">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Componente Curricular</label>
-            <select value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none">
-              <option value="">Selecione a disciplina...</option>
+            <select 
+              value={form.subject} 
+              onChange={e => updateForm({ subject: e.target.value })}
+              className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:border-amber-400 transition-all text-gray-900"
+            >
+              <option value="">Selecione a Disciplina...</option>
               {CURRICULAR_COMPONENTS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -686,7 +741,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                       const newClasses = form.classNames.includes(g)
                         ? form.classNames.filter(c => c !== g)
                         : [...form.classNames, g];
-                      setForm({ ...form, classNames: newClasses, className: newClasses[0] || '' });
+                      updateForm({ classNames: newClasses, className: newClasses[0] || '' });
                     }}
                   />
                   <span className="text-[10px] font-black uppercase tracking-tight">{g}</span>
@@ -896,7 +951,12 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         <div className="space-y-6">
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observações e links sugeridos</label>
-            <textarea value={form.observations} onChange={e => setForm({ ...form, observations: e.target.value })} className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-24 resize-none outline-none focus:bg-white transition-all" placeholder="Adicione observações adicionais relativas a este roteiro..." />
+            <textarea 
+              value={form.observations} 
+              onChange={e => updateForm({ observations: e.target.value })} 
+              className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-24 resize-none outline-none focus:bg-white transition-all" 
+              placeholder="Adicione observações adicionais relativas a este roteiro..." 
+            />
           </div>
         </div>
 

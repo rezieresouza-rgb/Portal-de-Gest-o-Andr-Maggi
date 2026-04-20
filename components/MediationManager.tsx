@@ -852,15 +852,14 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                            .eq('id', selectedCase.id);
                          if (error) throw error;
                          await fetchCases();
-                         // setSelectedCase(null); 
                          alert("Caso encerrado com sucesso! Ele continuará visível na aba Ativos hoje.");
                       } catch (err) {
                          alert("Erro ao encerrar caso.");
                       }
                     }}
-                    className="flex-1 py-2.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all min-w-[140px]"
+                    className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-rose-700 transition-all min-w-[140px] flex items-center justify-center gap-2"
                   >
-                    Encerrar com Acordo
+                    <ShieldCheck size={14} /> Encerrar com Acordo
                   </button>
 
                   <button 
