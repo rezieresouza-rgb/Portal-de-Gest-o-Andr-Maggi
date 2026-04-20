@@ -332,7 +332,14 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
         }) : <div className="py-24 text-center"><AlertCircle size={48} className="mx-auto mb-4 text-gray-100" /><p className="text-gray-300 font-black uppercase text-xs">Nenhum aluno encontrado.</p></div>}
       </div>
 
-      {selectedStudent && <BuscaAtivaReferralModal student={selectedStudent} onClose={() => setSelectedStudent(null)} onSave={handleSaveReferral} />}
+      {selectedStudent && (
+        <BuscaAtivaReferralModal 
+          student={selectedStudent} 
+          history={monitoringLogs.filter(log => log.student_id === selectedStudent.id)}
+          onClose={() => setSelectedStudent(null)} 
+          onSave={handleSaveReferral} 
+        />
+      )}
       {viewingProfile && <BuscaAtivaStudentProfile student={viewingProfile} referrals={referrals} onClose={() => setViewingProfile(null)} />}
     </div>
   );

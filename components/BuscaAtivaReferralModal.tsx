@@ -17,6 +17,7 @@ import { Referral, ReferralType } from '../types';
 
 interface BuscaAtivaReferralModalProps {
   student: { id: string, name: string, class: string };
+  history?: any[];
   onClose: () => void;
   onSave: (referral: Omit<Referral, 'id'>) => void;
 }
@@ -67,7 +68,7 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
         </div>
 
         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-          <div className="mb-8 p-6 bg-emerald-900 rounded-[2rem] text-white relative overflow-hidden">
+          <div className="mb-8 p-6 bg-emerald-900 rounded-[2rem] text-white relative overflow-hidden shrink-0">
              <div className="absolute top-0 right-0 p-6 opacity-10"><User size={80} /></div>
              <div className="relative z-10">
                 <p className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-1">Aluno Selecionado</p>
@@ -75,6 +76,27 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
                 <p className="text-xs font-bold text-emerald-300/70 uppercase mt-1">{student.class}</p>
              </div>
           </div>
+
+          {/* Seção de Histórico para consulta rápida */}
+          {history && history.length > 0 && (
+            <div className="mb-8 space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                <MessageSquare size={12} /> Histórico de Acompanhamento (Consulta)
+              </label>
+              <div className="bg-gray-50 rounded-[2rem] p-4 space-y-3 max-h-48 overflow-y-auto border border-gray-100 shadow-inner custom-scrollbar">
+                {history.map((log: any, idx: number) => (
+                  <div key={idx} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-emerald-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                        {new Date(log.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 font-medium leading-relaxed italic">"{log.description}"</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
