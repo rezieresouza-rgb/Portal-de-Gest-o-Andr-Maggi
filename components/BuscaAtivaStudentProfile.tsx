@@ -110,13 +110,27 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
 
   const fetchMediationFeedbacks = async () => {
     try {
-      const { data } = await supabase
+      // Tenta buscar pelo nome (case-insensitive) OU pelo student_id
+      const { data: byName } = await supabase
         .from('mediation_cases')
         .select('id, feedback, opened_at, description, status, type')
-        .eq('student_name', student.name)
+        .ilike('student_name', student.name.trim())
         .not('feedback', 'is', null)
         .neq('feedback', '');
-      setMediationFeedbacks(data || []);
+
+      const { data: byId } = await supabase
+        .from('mediation_cases')
+        .select('id, feedback, opened_at, description, status, type')
+        .eq('student_id', student.id)
+        .not('feedback', 'is', null)
+        .neq('feedback', '');
+
+      // Mescla os resultados sem duplicatas
+      const combined = [...(byName || []), ...(byId || [])];
+      const unique = combined.filter((item, index, self) =>
+        index === self.findIndex(i => i.id === item.id)
+      );
+      setMediationFeedbacks(unique);
     } catch (e) {
       console.error('Erro ao buscar devolutivas da mediação:', e);
     }
