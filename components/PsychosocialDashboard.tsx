@@ -21,12 +21,8 @@ interface PsychosocialDashboardProps {
 }
 
 const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role, onNavigate }) => {
-  // Simulação de integração com Busca Ativa e Ocorrências
-  const integratedAlerts = [
-    { id: 1, type: 'OCORRÊNCIA', student: 'ADRIANO SANTOS', reason: '3 Ocorrências Disciplinares na semana', severity: 'ALTA', targetTab: 'referrals' },
-    { id: 2, type: 'BUSCA ATIVA', student: 'BRUNO SILVA', reason: 'Evasão escolar - Família não atende', severity: 'CRÍTICA', targetTab: 'referrals' },
-    { id: 3, type: 'CONFLITO', student: 'ANA & CARLA', reason: 'Possível bullying digital relatado', severity: 'MÉDIA', targetTab: 'mediation' },
-  ];
+  // Simulação temporariamente esvaziada a pedido do usuário
+  const integratedAlerts: any[] = [];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -89,6 +85,13 @@ const PsychosocialDashboard: React.FC<PsychosocialDashboardProps> = ({ role, onN
                       </button>
                    </div>
                  ))}
+                 
+                 {integratedAlerts.length === 0 && (
+                    <div className="text-center p-8 bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
+                       <ShieldAlert size={32} className="mx-auto text-gray-300 mb-3" />
+                       <p className="text-sm font-medium text-gray-400">Nenhum sinal de alerta detectado pelo sistema no momento.</p>
+                    </div>
+                 )}
               </div>
            </div>
 
