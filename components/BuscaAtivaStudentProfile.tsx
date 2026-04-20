@@ -51,11 +51,11 @@ const ACTION_ITEMS: ActionItem[] = [
 
 interface BuscaAtivaStudentProfileProps {
   student: any;
-  referrals: Referral[];
+  referrals?: Referral[];
   onClose: () => void;
 }
 
-const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ student, referrals, onClose }) => {
+const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ student, referrals = [], onClose }) => {
   const [activeView, setActiveView] = useState<'history' | 'protocol'>('history');
   const [monitoringLogs, setMonitoringLogs] = useState<any[]>([]);
   const [actionsStatus, setActionsStatus] = useState<Record<string, { status: string, notes: string, completed_at: string | null }>>({});
@@ -326,7 +326,8 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                       type: ref.type,
                       content: `Motivo: ${ref.reason}`,
                       responsible: ref.responsible,
-                      isOccurrence: false
+                      isOccurrence: false,
+                      original: ref
                    }))]
                    .sort((a, b) => {
                       const dateA = new Date(`${a.date}T${a.time || '00:00'}`);

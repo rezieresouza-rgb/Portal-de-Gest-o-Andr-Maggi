@@ -40,6 +40,7 @@ const BuscaAtivaDashboard: React.FC = () => {
   const [criticalCases, setCriticalCases] = useState<any[]>([]);
   const [viewingProfile, setViewingProfile] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
+  const [referrals, setReferrals] = useState<any[]>([]);
 
   // Initialize and subscribe to changes
   useEffect(() => {
@@ -128,6 +129,9 @@ const BuscaAtivaDashboard: React.FC = () => {
       if (referralsData) {
         recovered = referralsData.filter(r => r.status === 'CONCLUÍDO').length;
         ficai = referralsData.filter(r => r.type === 'CONSELHO_TUTELAR' && r.status !== 'CONCLUÍDO').length;
+        setReferrals(referralsData);
+      } else {
+        setReferrals([]);
       }
 
       setStats({
@@ -321,7 +325,7 @@ const BuscaAtivaDashboard: React.FC = () => {
         </div>
       </div>
 
-      {viewingProfile && <BuscaAtivaStudentProfile student={viewingProfile} onClose={() => setViewingProfile(null)} />}
+      {viewingProfile && <BuscaAtivaStudentProfile student={viewingProfile} referrals={referrals} onClose={() => setViewingProfile(null)} />}
 
     </div>
   );
