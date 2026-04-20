@@ -47,11 +47,8 @@ const BuscaAtivaReports: React.FC = () => {
   const fetchReportData = async () => {
     setLoading(true);
     try {
-      // Simulate/Fetch aggregated data
-      // In a real scenario, this would be complex SQL queries or RPCs
-      
       // 1. Get absences from class_attendance_students
-      const { data: absences, error: absError } = await supabase
+      let query = supabase
         .from('class_attendance_students')
         .select(`
           student_name,
@@ -65,11 +62,16 @@ const BuscaAtivaReports: React.FC = () => {
         .gte('class_attendance_records.date', dateRange.start)
         .lte('class_attendance_records.date', dateRange.end);
 
+      if (selectedClass !== 'TODAS') {
+        query = query.eq('class_attendance_records.classroom_name', selectedClass);
+      }
+
+      const { data: absences, error: absError } = await query;
+
       if (absError) throw absError;
 
       // 2. Aggregate Data
       const rankingMap: Record<string, { count: number, class: string }> = {};
-      const classMap: Record<string, { count: number, total: number }> = {};
       
       absences?.forEach(a => {
         rankingMap[a.student_name] = {
@@ -83,10 +85,9 @@ const BuscaAtivaReports: React.FC = () => {
           student_name: name,
           class: val.class,
           count: val.count,
-          score: Math.min(val.count * 10, 100) // Simple score
+          score: Math.min(val.count * 10, 100)
         }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
+        .sort((a, b) => b.count - a.count);
 
       setData({
         absenteeRanking: sortedRanking,
@@ -217,7 +218,7 @@ const BuscaAtivaReports: React.FC = () => {
               <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
                 <div>
                   <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
-                    <UserX size={20} className="text-red-500" /> Ranking de Absenteísmo
+                    <UserX size={20} className="text-red-500" /> Top 10 Absenteísmo
                   </h4>
                   <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Alunos com maior volume de faltas</p>
                 </div>
@@ -225,7 +226,7 @@ const BuscaAtivaReports: React.FC = () => {
               </div>
               
               <div className="p-8 space-y-6">
-                {data.absenteeRanking.map((student, idx) => (
+                {data.absenteeRanking.slice(0, 10).map((student, idx) => (
                   <div key={idx} className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-400 text-xs shrink-0">
                       #{idx + 1}
@@ -311,7 +312,82 @@ const BuscaAtivaReports: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
 
+          {/* TABELA ANALÍTICA COMPLETA */}
+          <div className="bg-white rounded-[3rem] border border-gray-100 shadow-xl overflow-hidden mt-10">
+            <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+              <div>
+                <h4 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center gap-3">
+                  <FileBarChart size={24} className="text-emerald-600" /> Relatório Detalhado: Aluno vs Turma
+                </h4>
+                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-widest">Ranking completo do maior ao menor número de faltas</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-2xl text-[9px] font-black uppercase border border-emerald-100">
+                  {data.absenteeRanking.length} Registros Encontrados
+                </span>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50 border-b border-gray-100">
+                    <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Aluno</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Turma</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Faltas no Período</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nível de Risco</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {data.absenteeRanking.map((student, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
+                      <td className="px-8 py-5">
+                        <p className="text-sm font-black text-gray-800 uppercase group-hover:text-emerald-600 transition-colors">{student.student_name}</p>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase">
+                          {student.class}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-center">
+                        <span className={`text-sm font-black ${student.count >= 5 ? 'text-red-600' : 'text-amber-600'}`}>
+                          {student.count}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-1.5 w-24 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full transition-all duration-1000 ${student.count >= 5 ? 'bg-red-500' : student.count >= 3 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${student.score}%` }}
+                            ></div>
+                          </div>
+                          <span className={`text-[9px] font-black uppercase ${
+                            student.count >= 5 ? 'text-red-600' : student.count >= 3 ? 'text-amber-600' : 'text-emerald-600'
+                          }`}>
+                            {student.count >= 5 ? 'Crítico' : student.count >= 3 ? 'Alerta' : 'Estável'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        <button className="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                          <ArrowRight size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="p-8 bg-gray-50 border-t border-gray-100 text-center">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest italic">
+                * Relatório gerado em {new Date().toLocaleDateString('pt-BR')} - Sistema de Gestão AM-v2
+              </p>
+            </div>
           </div>
         </>
       )}
