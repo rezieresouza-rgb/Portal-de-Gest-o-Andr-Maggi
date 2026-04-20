@@ -17,7 +17,8 @@ import {
   Search,
   CalendarDays,
   FileSpreadsheet,
-  Settings2
+  Settings2,
+  FileBarChart
 } from 'lucide-react';
 import BuscaAtivaDashboard from '../components/BuscaAtivaDashboard';
 import BuscaAtivaStudentList from '../components/BuscaAtivaStudentManager';
@@ -25,21 +26,22 @@ import BuscaAtivaFICAI from '../components/BuscaAtivaFICAI';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import BuscaAtivaAttendanceHistory from '../components/BuscaAtivaAttendanceHistory';
 import BuscaAtivaContactChannels from '../components/BuscaAtivaContactChannels';
+import BuscaAtivaReports from '../components/BuscaAtivaReports';
 
 interface BuscaAtivaModuleProps {
   onExit: () => void;
 }
 
 const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
     { id: 'calendar', label: 'Estratégia 2026', icon: CalendarDays },
     { id: 'attendance', label: 'Conferência de Chamadas', icon: History },
     { id: 'students', label: 'Monitoramento Alunos', icon: Users },
+    { id: 'reports', label: 'Relatórios & Inteligência', icon: FileBarChart },
     { id: 'channels', label: 'Canais de Contato', icon: Settings2 },
-
   ];
 
   return (
@@ -111,6 +113,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'attendance' && <BuscaAtivaAttendanceHistory />}
+          {activeTab === 'reports' && <BuscaAtivaReports />}
           {activeTab === 'channels' && <BuscaAtivaContactChannels />}
 
         </div>
