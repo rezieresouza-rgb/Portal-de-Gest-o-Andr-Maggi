@@ -293,6 +293,8 @@ export interface Referral {
   responsible: string; 
   notes?: string; 
   date: string; 
+  feedback?: string;
+  origin_case_id?: string;
 }
 export type PsychosocialRole = 'PSICOSSOCIAL' | 'GESTAO' | 'PROFESSOR';
 export type MediationStatus = 'ABERTURA' | 'PLANEJAMENTO' | 'EXECUÇÃO' | 'CONCLUÍDO';

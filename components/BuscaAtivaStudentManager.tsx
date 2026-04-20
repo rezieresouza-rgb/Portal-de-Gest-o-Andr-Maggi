@@ -110,7 +110,8 @@ const BuscaAtivaStudentManager: React.FC = () => {
         type: r.type,
         reason: r.reason,
         status: r.status,
-        responsible: r.responsible
+        responsible: r.responsible,
+        feedback: r.feedback
       }));
       setReferrals(mapped);
     }
@@ -213,9 +214,9 @@ const BuscaAtivaStudentManager: React.FC = () => {
         // Não jogamos erro aqui ainda para tentar salvar na tabela secundária
       }
 
-      // [NOVO] 1.1 Dual-write: Salvar em psychosocial_referrals para redundância
+      // [NOVO] 1.1 Dual-write: Salvar em psychosocial_referrals e obter ID para vínculo
       console.log("Tentando salvar em 'psychosocial_referrals'...");
-      const { error: psychoError } = await supabase.from('psychosocial_referrals').insert([{
+      const { data: psychoData, error: psychoError } = await supabase.from('psychosocial_referrals').insert([{
         student_name: student.name,
         class_name: student.class,
         teacher_name: `BUSCA ATIVA (${newReferral.responsible})`,
@@ -224,7 +225,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
         report: `[VIA BUSCA ATIVA] ${newReferral.reason}`,
         priority: newReferral.priority || 'MEDIA',
         status: 'AGUARDANDO_TRIAGEM'
-      }]);
+      }]).select('id').single();
 
       if (psychoError) {
         console.error("Erro na tabela 'psychosocial_referrals':", psychoError);
@@ -233,6 +234,8 @@ const BuscaAtivaStudentManager: React.FC = () => {
       if (refError && psychoError) {
         throw new Error(`Falha em ambas as tabelas (Referrals: ${refError.message} | Psycho: ${psychoError.message})`);
       }
+
+      const linkedReferralId = psychoData?.id;
 
       // 2. Registrar no Diário de Acompanhamento (History)
       const { error: logError } = await supabase.from('occurrences').insert([{
@@ -279,11 +282,12 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
         student_name: student.name,
         class_name: student.class,
         type: 'OUTRO',
-        severity: severityMap[newReferral.priority || 'MÉDIA'] as any,
+        severity: severityMap[newReferral.priority || 'MEDIA'] as any,
         status: 'ABERTURA',
         opened_at: newReferral.date || currentDate,
         description: fullDescription,
         involved_parties: [newReferral.responsible],
+        origin_referral_id: linkedReferralId,
         steps: [
           { id: '1', label: 'Análise de Busca Ativa', completed: true, date: currentDate },
           { id: '2', label: 'Escuta das Partes', completed: false },
