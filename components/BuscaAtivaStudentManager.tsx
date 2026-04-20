@@ -335,7 +335,7 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
       {selectedStudent && (
         <BuscaAtivaReferralModal 
           student={selectedStudent} 
-          history={monitoringLogs.filter(log => log.student_id === selectedStudent.id)}
+          studentHistory={monitoringLogs.filter(log => log.student_id === selectedStudent.id)}
           onClose={() => setSelectedStudent(null)} 
           onSave={handleSaveReferral} 
         />

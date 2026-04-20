@@ -17,12 +17,12 @@ import { Referral, ReferralType } from '../types';
 
 interface BuscaAtivaReferralModalProps {
   student: { id: string, name: string, class: string };
-  history?: any[];
+  studentHistory?: any[];
   onClose: () => void;
   onSave: (referral: Omit<Referral, 'id'>) => void;
 }
 
-const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ student, onClose, onSave }) => {
+const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ student, studentHistory, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     type: 'PEDAGÓGICO' as ReferralType,
     reason: '',
@@ -78,13 +78,13 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
           </div>
 
           {/* Seção de Histórico para consulta rápida */}
-          {history && history.length > 0 && (
+          {studentHistory && studentHistory.length > 0 && (
             <div className="mb-8 space-y-3">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                 <MessageSquare size={12} /> Histórico de Acompanhamento (Consulta)
               </label>
               <div className="bg-gray-50 rounded-[2rem] p-4 space-y-3 max-h-48 overflow-y-auto border border-gray-100 shadow-inner custom-scrollbar">
-                {history.map((log: any, idx: number) => (
+                {studentHistory.map((log: any, idx: number) => (
                   <div key={idx} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-emerald-200">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
