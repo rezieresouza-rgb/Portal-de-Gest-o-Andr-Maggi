@@ -50,7 +50,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     studentName: '',
     className: ''
   });
-  const [activeTab, setActiveTab] = useState<'ativos' | 'historico'>('ativos');
+  const [activeTab, setActiveTab] = useState<'ativos' | 'respondidos' | 'historico'>('ativos');
 
   // [NOVO] Estados para o Diário de Atendimento
   const [newLog, setNewLog] = useState({
@@ -290,10 +290,17 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
       // Casos não concluídos OU concluídos hoje (para não "sumirem" na hora)
       return matchesSearch && (c.status !== 'CONCLUÍDO' || c.closedAt === today);
     }
+    
+    if (activeTab === 'respondidos') {
+      // Somente o que já tem devolutiva E não está encerrado
+      return matchesSearch && (c.feedback && c.feedback.trim() !== '') && c.status !== 'CONCLUÍDO';
+    }
+
     return matchesSearch && c.status === 'CONCLUÍDO';
   });
 
   const activeCount = cases.filter(c => c.status !== 'CONCLUÍDO').length;
+  const respondedCount = cases.filter(c => (c.feedback && c.feedback.trim() !== '') && c.status !== 'CONCLUÍDO').length;
   const historyCount = cases.filter(c => c.status === 'CONCLUÍDO').length;
 
   return (
@@ -312,6 +319,12 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                     className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${activeTab === 'ativos' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
                   >
                     Ativos ({activeCount})
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('respondidos')}
+                    className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${activeTab === 'respondidos' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                  >
+                    Respondidos ({respondedCount})
                   </button>
                   <button 
                     onClick={() => setActiveTab('historico')}
