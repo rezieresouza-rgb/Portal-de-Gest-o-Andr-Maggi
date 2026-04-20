@@ -96,23 +96,31 @@ const BuscaAtivaStudentManager: React.FC = () => {
   };
 
   const fetchReferrals = async () => {
-    const { data } = await supabase
+    const { data: refData } = await supabase
       .from('referrals')
       .select('*')
       .order('date', { ascending: false });
 
-    if (data) {
-      const mapped: Referral[] = data.map(r => ({
-        id: r.id,
-        studentId: r.student_code || r.student_id, // Fallback
-        studentName: r.student_name || 'Desconhecido',
-        date: r.date,
-        type: r.type,
-        reason: r.reason,
-        status: r.status,
-        responsible: r.responsible,
-        feedback: r?.feedback
-      }));
+    const { data: psychoData } = await supabase
+      .from('psychosocial_referrals')
+      .select('student_name, date, report, feedback')
+      .not('feedback', 'is', null);
+
+    if (refData) {
+      const mapped: Referral[] = refData.map(r => {
+        const pRef = psychoData?.find(p => p.student_name === r.student_name && p.report.includes(r.reason));
+        return {
+          id: r.id,
+          studentId: r.student_code || r.student_id, // Fallback
+          studentName: r.student_name || 'Desconhecido',
+          date: r.date,
+          type: r.type,
+          reason: r.reason,
+          status: r.status,
+          responsible: r.responsible,
+          feedback: r?.feedback || pRef?.feedback
+        };
+      });
       setReferrals(mapped);
     }
   };
