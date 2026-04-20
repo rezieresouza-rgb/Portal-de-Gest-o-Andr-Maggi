@@ -84,6 +84,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         ...deconstructDescription(editData.description || ''),
         outcome: 'SUCESSO',
         consulted_staff: '',
+        used_systems: [] as string[],
         protocol_number: '',
         institution: '',
         entity_name: '',
@@ -99,6 +100,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
         other_description: '',
         outcome: 'SUCESSO',
         consulted_staff: '',
+        used_systems: [] as string[],
         protocol_number: '',
         institution: '',
         entity_name: '',
@@ -132,7 +134,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                     finalDescription = `[${formData.type}] ${formData.description} (Contato: ${formData.contact_person}, Resultado: ${formData.outcome})`;
                     break;
                 case 'INVESTIGATION':
-                    finalDescription = `[INVESTIGAÇÃO] ${formData.description} (Equipe Consultada: ${formData.consulted_staff})`;
+                    finalDescription = `[INVESTIGAÇÃO] ${formData.description}${formData.consulted_staff ? ` (Equipe Consultada: ${formData.consulted_staff})` : ''}${formData.used_systems.length > 0 ? ` (Sistemas Consultados: ${formData.used_systems.join(', ')})` : ''}`;
                     break;
                 case 'INSTITUTIONAL':
                     finalDescription = `[DOCUMENTAÇÃO] ${formData.description} (Protocolo: ${formData.protocol_number}, Instituição: ${formData.institution})`;
@@ -259,10 +261,43 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
 
                 {group === 'INVESTIGATION' && (
                     <div className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Profissionais Consultados</label>
-                            <input type="text" placeholder="Ex: Professora Maria, Coord. Paulo..." value={formData.consulted_staff} onChange={e => setFormData({...formData, consulted_staff: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
-                        </div>
+                        {activeProtocolId === 'ALERTA_SISTEMA' ? (
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Sistemas Consultados</label>
+                                <div className="space-y-2">
+                                    {['Painel busca ativa', 'Painel prevenção ao abandono e evasão'].map(system => {
+                                        const isChecked = formData.used_systems.includes(system);
+                                        return (
+                                            <button
+                                                key={system}
+                                                type="button"
+                                                onClick={() => {
+                                                    const newSystems = isChecked 
+                                                        ? formData.used_systems.filter(s => s !== system)
+                                                        : [...formData.used_systems, system];
+                                                    setFormData({...formData, used_systems: newSystems});
+                                                }}
+                                                className={`w-full p-3 rounded-xl border-2 text-[10px] font-black uppercase tracking-tight transition-all flex items-center gap-3 ${
+                                                    isChecked 
+                                                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' 
+                                                        : 'bg-white border-emerald-50 text-emerald-800/40 hover:border-emerald-200'
+                                                }`}
+                                            >
+                                                <div className={`w-4 h-4 rounded flex items-center justify-center border-2 ${isChecked ? 'bg-white border-white text-emerald-600' : 'border-emerald-100'}`}>
+                                                    {isChecked && <CheckCircle2 size={12} />}
+                                                </div>
+                                                {system}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest ml-1">Profissionais Consultados</label>
+                                <input type="text" placeholder="Ex: Professora Maria, Coord. Paulo..." value={formData.consulted_staff} onChange={e => setFormData({...formData, consulted_staff: e.target.value})} className="w-full p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-emerald-500" />
+                            </div>
+                        )}
                     </div>
                 )}
 
