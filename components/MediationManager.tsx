@@ -108,7 +108,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
           { id: '4', label: 'Acordo / Finalização', completed: false }
         ],
         originReferralId: c.origin_referral_id,
-        feedback: c.feedback,
+        feedback: c?.feedback,
         logs: c.logs || []
       }));
       setCases(formatted);
@@ -600,7 +600,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                      </h4>
                      
                      <textarea 
-                        value={selectedCase.feedback || ''}
+                        value={selectedCase?.feedback || ''}
                         onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
                         placeholder="Escreva aqui a resposta/devolutiva para o professor que realizou este encaminhamento..."
                         className="w-full p-8 bg-white border-2 border-emerald-100 rounded-[2.5rem] text-base font-bold min-h-[350px] resize-none outline-none focus:ring-8 focus:ring-emerald-500/5 transition-all shadow-inner focus:border-emerald-500"
@@ -613,7 +613,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                               // 1. Salva no caso de mediação
                               const { error: medError } = await supabase
                                  .from('mediation_cases')
-                                 .update({ feedback: selectedCase.feedback })
+                                 .update({ feedback: selectedCase?.feedback })
                                  .eq('id', selectedCase.id);
                               
                               if (medError) throw medError;
@@ -622,7 +622,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                               if (selectedCase.originReferralId) {
                                  const { error: refError } = await supabase
                                     .from('psychosocial_referrals')
-                                    .update({ feedback: selectedCase.feedback })
+                                    .update({ feedback: selectedCase?.feedback })
                                     .eq('id', selectedCase.originReferralId);
                                  
                                  if (refError) console.error("Erro ao sincronizar com encaminhamento:", refError);

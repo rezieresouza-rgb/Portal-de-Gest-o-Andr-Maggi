@@ -111,7 +111,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
         reason: r.reason,
         status: r.status,
         responsible: r.responsible,
-        feedback: r.feedback
+        feedback: r?.feedback
       }));
       setReferrals(mapped);
     }

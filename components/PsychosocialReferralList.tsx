@@ -103,7 +103,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           observations: typeof r.observations === 'string' ? r.observations : JSON.stringify(r.observations), // Handle varying formats if any
           timestamp: new Date(r.created_at).getTime(),
           reason: r.reason || r.report || 'Sem motivo especificado', // Fallback
-          feedback: r.feedback, // [NOVO] Campo de devolutiva da mediação
+          feedback: r?.feedback, // [NOVO] Campo de devolutiva da mediação
           referralDestination: r.referral_destination,
           mediationProcedures: r.mediation_procedures || []
         }));
@@ -381,13 +381,13 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                 </div>
 
                 {/* [NOVO] Devolutiva da Mediação */}
-                {ref.feedback && (
+                {ref?.feedback && (
                   <div className="bg-emerald-50 p-4 rounded-[2rem] border border-emerald-100 animate-in fade-in slide-in-from-top-2 duration-700 shadow-sm shadow-emerald-100/50">
                     <p className="text-[10px] font-black text-emerald-600 uppercase mb-2 tracking-widest flex items-center gap-2">
                        <CheckCircle2 size={12} strokeWidth={3} /> Devolutiva da Mediação
                     </p>
                     <p className="text-[11px] text-emerald-800 font-bold leading-relaxed">
-                      {ref.feedback}
+                      {ref?.feedback}
                     </p>
                   </div>
                 )}
