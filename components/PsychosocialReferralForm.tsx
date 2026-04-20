@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { PsychosocialReferral } from '../types';
 import { useStudents } from '../hooks/useStudents';
-import { Search, Plus, Target, PhoneCall, Scale } from 'lucide-react';
+import { Search, Plus, Target, PhoneCall, Scale, HeartHandshake } from 'lucide-react';
 
 interface PsychosocialReferralFormProps {
    onCancel: () => void;

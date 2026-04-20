@@ -13,7 +13,13 @@ import {
    Flag,
    CalendarDays,
    Loader2,
-   Printer
+   Printer,
+   Save,
+   CheckCircle2,
+   Trash2,
+   FileText,
+   History,
+   Clock
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
@@ -22,7 +28,14 @@ import { supabase } from '../supabaseClient';
 const UnifiedSchoolCalendar: React.FC = () => {
    const [currentIdx, setCurrentIdx] = useState(() => new Date().getMonth());
    const { addToast } = useToast();
-   const [localTracker, setLocalTracker] = useState<Record<string, any>>({});
+   const [monthlyLogs, setMonthlyLogs] = useState<any[]>([]);
+   const [loadingLogs, setLoadingLogs] = useState(false);
+   const [newLog, setNewLog] = useState({
+      content: '',
+      category: 'REALIZADO' as 'REALIZADO' | 'PLANEJADO' | 'OBSERVACAO',
+      photos: [] as string[],
+      reports: [] as string[]
+   });
    const [dynamicEventsList, setDynamicEventsList] = useState<any[]>([]);
    const [loading, setLoading] = useState(false);
    const [saving, setSaving] = useState(false);
@@ -38,100 +51,28 @@ const UnifiedSchoolCalendar: React.FC = () => {
    }, []);
 
    const fetchTracker = async () => {
-      setLoading(true);
+      setLoadingLogs(true);
       try {
-         // 1. Fetch Calendar Tracking
-         const { data: trackingData } = await supabase
+         const dateStr = `2026-${String(currentIdx + 1).padStart(2, '0')}-01`;
+         
+         const { data, error } = await supabase
             .from('calendar_tracking')
             .select('*')
-            .eq('event_type', 'MONTHLY_REPORT');
+            .eq('date', dateStr)
+            .order('created_at', { ascending: false });
 
-         if (trackingData) {
-            const tracker: Record<string, any> = {};
-            trackingData.forEach(row => {
-               try {
-                  const json = row.description ? JSON.parse(row.description) : {};
-                  if (json.monthName) {
-                     tracker[json.monthName] = json;
-                  }
-               } catch (e) {
-                  console.error("Error parsing calendar tracking", e);
-               }
-            });
-            setLocalTracker(tracker);
-         }
-
-         // 2. Fetch Dynamic Events
-         const { data: assessData } = await supabase.from('assessments').select('date, subject, type, description');
-         const { data: projData } = await supabase.from('pedagogical_projects').select('name, date_start, date_end, status');
-         const { data: eventData } = await supabase.from('school_events').select('title, date, type'); // Assuming table exists
-
-         const dynamicEvents: any[] = [];
-
-         if (assessData) {
-            assessData.forEach(a => {
-               dynamicEvents.push({
-                  date: new Date(a.date),
-                  tipo: 'AVALIAÇÃO',
-                  categoria: 'PEDAGOGICO',
-                  descricao: `${a.subject} - ${a.type}`
-               });
-            });
-         }
-
-         if (projData) {
-            projData.forEach(p => {
-               if (p.date_start) {
-                  dynamicEvents.push({
-                     date: new Date(p.date_start),
-                     tipo: 'PROJETO',
-                     categoria: 'PEDAGOGICO',
-                     descricao: `Início: ${p.name}`
-                  });
-               }
-               if (p.date_end) {
-                  dynamicEvents.push({
-                     date: new Date(p.date_end),
-                     tipo: 'PROJETO',
-                     categoria: 'PEDAGOGICO',
-                     descricao: `Fim: ${p.name}`
-                  });
-               }
-            });
-         }
-
-         if (eventData) {
-            eventData.forEach(e => {
-               dynamicEvents.push({
-                  date: new Date(e.date),
-                  tipo: 'EVENTO',
-                  categoria: e.type === 'FESTIVO' ? 'FERIAS' : 'ADMINISTRATIVO', // Simplified mapping
-                  descricao: e.title
-               });
-            });
-         }
-
-         // Helper to merge events into monthData in rendering or state
-         // For now, let's just log them or store in a state if we want to display them
-         // But the requirement is to "Update Agenda Data Source".
-         // The current UI iterates `monthData.eventos`. We should probably update `monthData` or use a local state for events.
-         setDynamicEventsList(dynamicEvents);
-
-      } catch (error) {
-         console.error("Error fetching data:", error);
+         if (error) throw error;
+         
+         setMonthlyLogs(data || []);
+      } catch (e) {
+         console.error("Erro ao carregar monitoramento:", e);
       } finally {
-         setLoading(false);
+         setLoadingLogs(false);
       }
    };
 
    const updateField = (field: string, value: any) => {
-      setLocalTracker(prev => {
-         const current = prev[monthData.mes] || {};
-         return {
-            ...prev,
-            [monthData.mes]: { ...current, [field]: value }
-         };
-      });
+      // Not used anymore in timeline mode, but kept as stub
    };
 
    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'photos' | 'reports') => {
@@ -154,8 +95,11 @@ const UnifiedSchoolCalendar: React.FC = () => {
             .from('school-attachments')
             .getPublicUrl(filePath);
 
-         const currentList = localTracker[monthData.mes]?.[type] || [];
-         updateField(type, [...currentList, publicUrl]);
+         setNewLog(prev => ({
+            ...prev,
+            [type]: [...prev[type], publicUrl]
+         }));
+         
          addToast("Arquivo anexado com sucesso!", "success");
       } catch (err: any) {
          console.error("Upload error:", err);
@@ -167,66 +111,60 @@ const UnifiedSchoolCalendar: React.FC = () => {
    };
 
    const handleSave = async () => {
+      if (!newLog.content.trim()) {
+         addToast("Por favor, descreva a ação realizada.", "warning");
+         return;
+      }
+
       setSaving(true);
-      const monthName = monthData.mes;
-      const currentData = localTracker[monthName] || {};
-
-      // Validar se tem algo para salvar
-      // if (!currentData.campanha_realizada && !currentData.campanha_a_realizar && !currentData.observacoes) return;
-
-      // We store keyed by the first date of that month in 2026 to fit the 'date' column type
-      // We need to map Month Name to a Date.
-      // SCHOOL_CALENDAR_2026 doesn't strictly have dates for months, but we can assume index or just use a fixed year.
-      // Index currentIdx matches month (0=Jan).
-      const year = 2026;
-      const monthIndex = SCHOOL_CALENDAR_2026.meses.findIndex(m => m.mes === monthName); // Or just currentIdx
-      const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`;
-
-      const payload = {
-         monthName,
-         campanha_realizada: currentData.campanha_realizada || '',
-         campanha_a_realizar: currentData.campanha_a_realizar || '',
-         observacoes: currentData.observacoes || '',
-         photos: currentData.photos || [],
-         reports: currentData.reports || []
-      };
+      const dateStr = `2026-${String(currentIdx + 1).padStart(2, '0')}-01`;
 
       try {
-         // Check if exists
-         const { data: existing } = await supabase
+         const { error } = await supabase
             .from('calendar_tracking')
-            .select('id')
-            .eq('event_type', 'MONTHLY_REPORT')
-            .eq('date', dateStr)
-            .single();
+            .insert([{
+               event_type: 'MONTHLY_ACTION',
+               date: dateStr,
+               description: JSON.stringify({
+                  category: newLog.category,
+                  content: newLog.content,
+                  photos: newLog.photos,
+                  reports: newLog.reports
+               }),
+               created_by: 'COORDENAÇÃO'
+            }]);
 
-         if (existing) {
-            const { error } = await supabase
-               .from('calendar_tracking')
-               .update({
-                  description: JSON.stringify(payload)
-               })
-               .eq('id', existing.id);
-            if (error) throw error;
-         } else {
-            const { error } = await supabase
-               .from('calendar_tracking')
-               .insert([{
-                  event_type: 'MONTHLY_REPORT',
-                  date: dateStr,
-                  description: JSON.stringify(payload),
-                  created_by: 'PROF. CRISTIANO'
-               }]);
-            if (error) throw error;
-         }
-         addToast("Monitoramento salvo com sucesso!", "success");
+         if (error) throw error;
+
+         addToast("Registro salvo com sucesso!", "success");
+         setNewLog({ content: '', category: 'REALIZADO', photos: [], reports: [] });
+         fetchTracker();
       } catch (e) {
          console.error(e);
-         addToast("Erro ao salvar monitoramento.", "error");
+         addToast("Erro ao salvar registro.", "error");
       } finally {
          setSaving(false);
       }
    };
+
+   const handleDeleteLog = async (id: string) => {
+      if (!confirm("Tem certeza que deseja excluir este registro?")) return;
+
+      try {
+         const { error } = await supabase
+            .from('calendar_tracking')
+            .delete()
+            .eq('id', id);
+
+         if (error) throw error;
+         addToast("Registro excluído.", "success");
+         fetchTracker();
+      } catch (e) {
+         addToast("Erro ao excluir.", "error");
+      }
+   };
+
+
 
    const getEventCategoryColor = (categoria: string) => {
       switch (categoria) {
@@ -368,140 +306,140 @@ const UnifiedSchoolCalendar: React.FC = () => {
                   {loading ? (
                      <div className="py-24 flex justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
                   ) : (
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Campanhas Realizadas</label>
-                           <textarea
-                              value={localTracker[monthData.mes]?.campanha_realizada || ''}
-                              onChange={e => updateField('campanha_realizada', e.target.value)}
-                              placeholder="Quais ações foram concluídas neste mês?"
-                              className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl text-sm font-medium h-32 text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all custom-scrollbar resize-none"
-                           />
+                     <>
+                        <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-xl space-y-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[5rem] -mr-10 -mt-10 opacity-50"></div>
+                        
+                        <div className="relative">
+                           <h3 className="text-xl font-black text-indigo-950 uppercase tracking-tighter">Novo Registro</h3>
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Monitoramento e Gestão Mensal</p>
                         </div>
-                        <div className="space-y-2">
-                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Planejamento Próximo Mês</label>
-                           <textarea
-                              value={localTracker[monthData.mes]?.campanha_a_realizar || ''}
-                              onChange={e => updateField('campanha_a_realizar', e.target.value)}
-                              placeholder="O que está previsto para o futuro?"
-                              className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl text-sm font-medium h-32 text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all custom-scrollbar resize-none"
-                           />
-                        </div>
-                     </div>
-                  )}
 
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observações da Gestão</label>
-                     <textarea
-                        value={localTracker[monthData.mes]?.observacoes || ''}
-                        onChange={e => updateField('observacoes', e.target.value)}
-                        placeholder="Relate ocorrências fora do calendário, sucessos ou dificuldades..."
-                        className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl text-sm font-medium h-24 text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all custom-scrollbar resize-none"
-                     />
-                  </div>
+                        <div className="space-y-6 relative">
+                           <div className="grid grid-cols-3 gap-2">
+                              {(['REALIZADO', 'PLANEJADO', 'OBSERVACAO'] as const).map(cat => (
+                                 <button
+                                    key={cat}
+                                    onClick={() => setNewLog(prev => ({ ...prev, category: cat }))}
+                                    className={`py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border ${
+                                       newLog.category === cat 
+                                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' 
+                                          : 'bg-white text-gray-400 border-gray-100 hover:border-indigo-200'
+                                    }`}
+                                 >
+                                    {cat === 'REALIZADO' ? 'Ação Feita' : cat === 'PLANEJADO' ? 'Planejado' : 'Obs.'}
+                                 </button>
+                              ))}
+                           </div>
 
-                  <div className="flex flex-col md:flex-row gap-4 no-print">
-                     <input 
-                        type="file" 
-                        ref={photoInputRef} 
-                        onChange={e => handleFileUpload(e, 'photos')} 
-                        accept="image/*" 
-                        className="hidden" 
-                     />
-                     <input 
-                        type="file" 
-                        ref={reportInputRef} 
-                        onChange={e => handleFileUpload(e, 'reports')} 
-                        accept=".pdf,.doc,.docx,.xls,.xlsx" 
-                        className="hidden" 
-                     />
-
-                     <button 
-                        onClick={() => photoInputRef.current?.click()}
-                        disabled={uploading === 'photos'}
-                        className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3 relative"
-                     >
-                        {uploading === 'photos' ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />} 
-                        Anexar Fotos
-                        {localTracker[monthData.mes]?.photos?.length > 0 && (
-                           <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[8px] px-2 py-1 rounded-full">{localTracker[monthData.mes].photos.length}</span>
-                        )}
-                     </button>
-
-                     <button 
-                        onClick={() => reportInputRef.current?.click()}
-                        disabled={uploading === 'reports'}
-                        className="flex-1 py-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-indigo-600 transition-all flex items-center justify-center gap-3 relative"
-                     >
-                        {uploading === 'reports' ? <Loader2 className="animate-spin" size={18} /> : <FileText size={18} />} 
-                        Anexar Documentos
-                        {localTracker[monthData.mes]?.reports?.length > 0 && (
-                           <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[8px] px-2 py-1 rounded-full">{localTracker[monthData.mes].reports.length}</span>
-                        )}
-                     </button>
-
-                     <button
-                        onClick={handleSave}
-                        disabled={saving || !!uploading}
-                        className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                     >
-                        {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Salvar Registro
-                     </button>
-                  </div>
-
-                  {/* GALERIA DE FOTOS E ANEXOS SALVOS */}
-                  {(localTracker[monthData.mes]?.photos?.length > 0 || localTracker[monthData.mes]?.reports?.length > 0) && (
-                     <div className="space-y-6 pt-6 border-t border-gray-50">
-                        {localTracker[monthData.mes]?.photos?.length > 0 && (
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Galeria do Mês</label>
-                              <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-                                 {localTracker[monthData.mes].photos.map((url: string, i: number) => (
-                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="group relative aspect-square rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                                       <img src={url} alt={`Foto ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                       <div className="absolute inset-0 bg-indigo-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                          <Camera size={16} className="text-white" />
-                                       </div>
-                                    </a>
-                                 ))}
+                           <div className="relative">
+                              <textarea
+                                 value={newLog.content}
+                                 onChange={e => setNewLog(prev => ({ ...prev, content: e.target.value }))}
+                                 placeholder={`Descreva aqui o ${newLog.category.toLowerCase()}...`}
+                                 className="w-full h-32 bg-gray-50 border border-gray-100 rounded-2xl p-5 text-xs text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all placeholder:text-gray-300 resize-none"
+                              />
+                              <div className="absolute bottom-4 right-4 flex gap-2">
+                                 {newLog.photos.length > 0 && <span className="bg-indigo-600 text-white text-[8px] px-2 py-1 rounded-full font-black animate-bounce">{newLog.photos.length} Fotos</span>}
+                                 {newLog.reports.length > 0 && <span className="bg-emerald-600 text-white text-[8px] px-2 py-1 rounded-full font-black animate-bounce">{newLog.reports.length} Doc</span>}
                               </div>
                            </div>
-                        )}
 
-                        {localTracker[monthData.mes]?.reports?.length > 0 && (
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Documentos e Relatórios</label>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                 {localTracker[monthData.mes].reports.map((url: string, i: number) => {
-                                    const fileName = url.split('/').pop()?.split('_').slice(2).join('_') || `Relatorio_${i}`;
+                           <div className="flex gap-3">
+                              <input type="file" ref={photoInputRef} onChange={e => handleFileUpload(e, 'photos')} accept="image/*" className="hidden" />
+                              <input type="file" ref={reportInputRef} onChange={e => handleFileUpload(e, 'reports')} accept=".pdf,.doc,.docx" className="hidden" />
+                              
+                              <button 
+                                 onClick={() => photoInputRef.current?.click()}
+                                 className="flex-1 py-3 bg-gray-50 text-gray-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
+                              >
+                                 <Camera size={14} /> Fotos
+                              </button>
+                              <button 
+                                 onClick={() => reportInputRef.current?.click()}
+                                 className="flex-1 py-3 bg-gray-50 text-gray-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
+                              >
+                                 <FileText size={14} /> Doc
+                              </button>
+                              <button
+                                 onClick={handleSave}
+                                 disabled={saving || uploading !== null}
+                                 className="flex-[2] py-3 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                              >
+                                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Registrar
+                              </button>
+                           </div>
+                        </div>
+
+                        {/* TIMELINE DE REGISTROS MENSAL */}
+                        <div className="pt-10 border-t border-gray-50 space-y-6">
+                           <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                              <History size={14} /> Histórico {monthData.mes}
+                           </h4>
+                           
+                           {loadingLogs ? (
+                              <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-400" /></div>
+                           ) : monthlyLogs.length === 0 ? (
+                              <div className="text-center py-10">
+                                 <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Nenhum registro ainda</p>
+                              </div>
+                           ) : (
+                              <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-0 before:w-0.5 before:bg-gray-50">
+                                 {monthlyLogs.map((log) => {
+                                    const data = JSON.parse(log.description);
+                                    const date = new Date(log.created_at).toLocaleDateString('pt-BR');
                                     return (
-                                       <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-white hover:border-indigo-200 hover:shadow-sm transition-all group">
-                                          <div className="p-2 bg-white text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                             <FileText size={16} />
+                                       <div key={log.id} className="relative pl-8 group">
+                                          <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-2 border-white shadow-sm flex items-center justify-center z-10 ${
+                                             data.category === 'REALIZADO' ? 'bg-indigo-600' : data.category === 'PLANEJADO' ? 'bg-amber-500' : 'bg-gray-400'
+                                          }`}>
+                                             {data.category === 'REALIZADO' ? <CheckCircle2 size={12} className="text-white" /> : <Clock size={12} className="text-white" />}
                                           </div>
-                                          <span className="text-[10px] font-bold text-gray-600 truncate flex-1">{fileName}</span>
-                                       </a>
+                                          <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group-hover:border-indigo-100">
+                                             <div className="flex justify-between items-start mb-2">
+                                                <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">{date}</span>
+                                                <button onClick={() => handleDeleteLog(log.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={12} /></button>
+                                             </div>
+                                             <p className="text-xs text-gray-700 leading-relaxed font-medium mb-3 whitespace-pre-wrap">{data.content}</p>
+                                             
+                                             {(data.photos?.length > 0 || data.reports?.length > 0) && (
+                                                <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100/50">
+                                                   {data.photos?.map((url: string, i: number) => (
+                                                      <a key={i} href={url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg border border-white shadow-sm overflow-hidden">
+                                                         <img src={url} className="w-full h-full object-cover" alt="" />
+                                                      </a>
+                                                   ))}
+                                                   {data.reports?.map((url: string, i: number) => (
+                                                      <a key={i} href={url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center text-gray-500">
+                                                         <FileText size={12} />
+                                                      </a>
+                                                   ))}
+                                                </div>
+                                             )}
+                                          </div>
+                                       </div>
                                     );
                                  })}
                               </div>
-                           </div>
-                        )}
+                           )}
+                        </div>
                      </div>
-                  )}
-               </div>
 
-               <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 p-8 rounded-[3rem] text-white flex items-center justify-between shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-10"><Sparkles size={80} /></div>
-                  <div className="flex items-center gap-6 relative z-10">
-                     <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
-                        <CalendarDays size={32} className="text-white" />
+                     <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 p-8 rounded-[3rem] text-white flex items-center justify-between shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10"><Sparkles size={80} /></div>
+                        <div className="flex items-center gap-6 relative z-10">
+                           <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
+                              <CalendarDays size={32} className="text-white" />
+                           </div>
+                           <div>
+                              <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-1">Status Sincronismo</p>
+                              <h4 className="text-sm font-black uppercase text-white">Calendário v2026.4 Ativo</h4>
+                              <p className="text-white/60 text-[10px] font-medium leading-relaxed mt-1">Este calendário é compartilhado entre Secretaria, Professores e Equipe Psicossocial.</p>
+                           </div>
+                        </div>
                      </div>
-                     <div>
-                        <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-1">Status Sincronismo</p>
-                        <h4 className="text-sm font-black uppercase text-white">Calendário v2026.4 Ativo</h4>
-                        <p className="text-white/60 text-[10px] font-medium leading-relaxed mt-1">Este calendário é compartilhado entre Secretaria, Professores e Equipe Psicossocial.</p>
-                     </div>
-                  </div>
+                  </>
+                  )}
                </div>
             </div>
          </div>
@@ -544,38 +482,71 @@ const UnifiedSchoolCalendar: React.FC = () => {
                )}
             </div>
 
-            {/* SEÇÃO II: MONITORAMENTO DA GESTÃO */}
-            <div className="space-y-6 mb-10">
-               <h5 className="text-[10px] font-black bg-gray-100 p-2 uppercase tracking-widest border-l-4 border-black mb-4">II. Monitoramento e Acompanhamento Pedagógico</h5>
+            {/* SEÇÃO II: MONITORAMENTO DA GESTÃO (AGRUPADO) */}
+            <div className="space-y-8 mb-10">
+               <h5 className="text-[10px] font-black bg-gray-100 p-2 uppercase tracking-widest border-l-4 border-black mb-6">II. Monitoramento e Acompanhamento das Ações</h5>
                
-               <div className="space-y-2">
-                  <h6 className="text-[9px] font-black uppercase text-gray-500">Campanhas e Ações Realizadas:</h6>
-                  <div className="p-4 border border-gray-200 rounded min-h-[80px] text-xs leading-relaxed whitespace-pre-wrap">
-                     {localTracker[monthData.mes]?.campanha_realizada || "Nenhuma ação registrada para este período."}
+               {/* CATEGORIA: REALIZADO */}
+               <div className="space-y-4">
+                  <h6 className="text-[9px] font-black uppercase text-indigo-600 border-b border-indigo-50 pb-1">Ações de Gestão Realizadas:</h6>
+                  <div className="space-y-3">
+                     {monthlyLogs.filter(l => JSON.parse(l.description).category === 'REALIZADO').length > 0 ? (
+                        monthlyLogs.filter(l => JSON.parse(l.description).category === 'REALIZADO').map((log, i) => {
+                           const data = JSON.parse(log.description);
+                           return (
+                              <div key={i} className="pl-4 border-l-2 border-gray-100 py-1">
+                                 <p className="text-[10px] font-bold text-gray-400 mb-1">Registro em {new Date(log.created_at).toLocaleDateString('pt-BR')}</p>
+                                 <p className="text-xs text-gray-700 leading-relaxed font-medium">{data.content}</p>
+                              </div>
+                           )
+                        })
+                     ) : <p className="text-[10px] italic text-gray-400">Nenhum registro encontrado nesta categoria.</p>}
                   </div>
                </div>
 
-               <div className="space-y-2">
-                  <h6 className="text-[9px] font-black uppercase text-gray-500">Planejamento para o Próximo Período:</h6>
-                  <div className="p-4 border border-gray-200 rounded min-h-[60px] text-xs leading-relaxed whitespace-pre-wrap">
-                     {localTracker[monthData.mes]?.campanha_a_realizar || "Sem planejamento registrado."}
+               {/* CATEGORIA: PLANEJADO */}
+               <div className="space-y-4">
+                  <h6 className="text-[9px] font-black uppercase text-amber-600 border-b border-amber-50 pb-1">Planejamento para o Próximo Período:</h6>
+                  <div className="space-y-3">
+                     {monthlyLogs.filter(l => JSON.parse(l.description).category === 'PLANEJADO').length > 0 ? (
+                        monthlyLogs.filter(l => JSON.parse(l.description).category === 'PLANEJADO').map((log, i) => {
+                           const data = JSON.parse(log.description);
+                           return (
+                              <div key={i} className="pl-4 border-l-2 border-gray-100 py-1">
+                                 <p className="text-[10px] font-bold text-gray-400 mb-1">Registro em {new Date(log.created_at).toLocaleDateString('pt-BR')}</p>
+                                 <p className="text-xs text-gray-700 leading-relaxed font-medium">{data.content}</p>
+                              </div>
+                           )
+                        })
+                     ) : <p className="text-[10px] italic text-gray-400">Sem planejamento registrado.</p>}
                   </div>
                </div>
 
-               <div className="space-y-2">
-                  <h6 className="text-[9px] font-black uppercase text-gray-500">Observações de Gestão:</h6>
-                  <div className="p-4 border border-gray-200 rounded min-h-[60px] text-xs leading-relaxed whitespace-pre-wrap">
-                     {localTracker[monthData.mes]?.observacoes || "Nenhuma observação relevante."}
+               {/* CATEGORIA: OBSERVACAO */}
+               <div className="space-y-4">
+                  <h6 className="text-[9px] font-black uppercase text-gray-600 border-b border-gray-50 pb-1">Observações de Frequência e Rendimento:</h6>
+                  <div className="space-y-3">
+                     {monthlyLogs.filter(l => JSON.parse(l.description).category === 'OBSERVACAO').length > 0 ? (
+                        monthlyLogs.filter(l => JSON.parse(l.description).category === 'OBSERVACAO').map((log, i) => {
+                           const data = JSON.parse(log.description);
+                           return (
+                              <div key={i} className="pl-4 border-l-2 border-gray-100 py-1">
+                                 <p className="text-[10px] font-black text-gray-400 mb-1">Obs. registrada em {new Date(log.created_at).toLocaleDateString('pt-BR')}</p>
+                                 <p className="text-xs text-gray-700 leading-relaxed font-medium italic">{data.content}</p>
+                              </div>
+                           )
+                        })
+                     ) : <p className="text-[10px] italic text-gray-400">Nenhuma observação relevante.</p>}
                   </div>
                </div>
             </div>
 
-            {/* SEÇÃO III: EVIDÊNCIAS FOTOGRÁFICAS */}
-            {localTracker[monthData.mes]?.photos?.length > 0 && (
+            {/* SEÇÃO III: EVIDÊNCIAS FOTOGRÁFICAS (AGRUPADAS) */}
+            {monthlyLogs.some(l => JSON.parse(l.description).photos?.length > 0) && (
                <div className="mb-10 break-inside-avoid">
-                  <h5 className="text-[10px] font-black bg-gray-100 p-2 uppercase tracking-widest border-l-4 border-black mb-4">III. Registro de Evidências (Fotos)</h5>
-                  <div className="grid grid-cols-2 gap-4">
-                     {localTracker[monthData.mes].photos.slice(0, 4).map((url: string, i: number) => (
+                  <h5 className="text-[10px] font-black bg-gray-100 p-2 uppercase tracking-widest border-l-4 border-black mb-6">III. Registro de Evidências Fotográficas do Monitoramento</h5>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                     {monthlyLogs.flatMap(l => JSON.parse(l.description).photos || []).map((url: string, i: number) => (
                         <div key={i} className="border border-gray-100 p-1 bg-white">
                            <img src={url} alt="Evidência" className="w-full h-40 object-cover" />
                         </div>
