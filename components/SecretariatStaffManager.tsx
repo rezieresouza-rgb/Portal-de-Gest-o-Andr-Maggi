@@ -134,7 +134,9 @@ const SecretariatStaffManager: React.FC = () => {
       endDate: '',
       durationDays: 0,
       substituteId: '',
+      substituteIds: [],
       substituteName: '',
+      substituteNames: [],
       reason: '',
       notes: '',
       responsible: 'GESTOR ANDRÉ',
@@ -207,12 +209,27 @@ const SecretariatStaffManager: React.FC = () => {
          // Enrich Movements with Names
          const finalMovs = mappedMovs.map(m => {
             const s = mappedStaff.find(st => st.id === m.staffId);
-            const sub = mappedStaff.find(st => st.id === m.substituteId);
+            
+            // Try to parse multiple substitutes from notes
+            let subIds = m.substituteId ? [m.substituteId] : [];
+            if (m.notes?.includes('[SUBS:')) {
+               const match = m.notes.match(/\[SUBS:(.*?)\]/);
+               if (match && match[1]) {
+                  subIds = match[1].split(',').filter(id => id.trim());
+               }
+            }
+
+            const substitutes = subIds.map(id => mappedStaff.find(st => st.id === id)).filter(Boolean);
+            const subNames = substitutes.map(st => st!.name);
+
             return {
                ...m,
                staffName: s?.name || 'DESCONHECIDO',
                staffRole: s?.role || '',
-               substituteName: sub?.name || (m.substituteId ? 'EXTERNO' : '')
+               substituteId: subIds[0] || '',
+               substituteIds: subIds,
+               substituteName: subNames.join(', ') || (m.substituteId ? 'EXTERNO' : ''),
+               substituteNames: subNames
             };
          });
 
@@ -458,25 +475,41 @@ const SecretariatStaffManager: React.FC = () => {
       if (!selectedStaff || !movementForm.type || !movementForm.startDate) return;
 
       try {
+         // Se houver múltiplos substitutos, o primeiro vai para o campo padrão (compatibilidade)
+         // e a lista completa vai para o notes formatado
+         const primarySubId = movementForm.substituteIds && movementForm.substituteIds.length > 0 
+            ? movementForm.substituteIds[0] 
+            : (movementForm.substituteId || null);
+         
+         let finalNotes = (movementForm.notes || "").toUpperCase();
+         if (movementForm.substituteIds && movementForm.substituteIds.length > 0) {
+            const subTag = `[SUBS:${movementForm.substituteIds.join(',')}]`;
+            if (finalNotes.includes('[SUBS:')) {
+               finalNotes = finalNotes.replace(/\[SUBS:.*?\]/, subTag);
+            } else {
+               finalNotes = subTag + " " + finalNotes;
+            }
+         }
+
          const { data, error } = await supabase.from('staff_movements').insert([{
             staff_id: selectedStaff.id,
             type: movementForm.type,
             start_date: movementForm.startDate,
             end_date: movementForm.endDate,
             duration_days: movementForm.durationDays,
-            substitute_id: movementForm.substituteId || null,
+            substitute_id: primarySubId,
             reason: movementForm.reason?.toUpperCase(),
-            notes: movementForm.notes?.toUpperCase(),
+            notes: finalNotes,
             responsible: movementForm.responsible,
             attachment_url: movementForm.attachmentUrl
          }]).select().single();
 
          if (error) throw error;
 
-         await fetchData(); // Atualiza tudo para refletir o novo registro no histórico
+         await fetchData(); 
          setIsMovementModalOpen(false);
          setSelectedStaff(null);
-         alert(`Movimentação registrada com sucesso para ${selectedStaff.name}!\nO servidor permanece no Quadro Ativo e o registro foi salvo no histórico.`);
+         alert(`Movimentação registrada com sucesso para ${selectedStaff.name}!`);
 
       } catch (err) {
          console.error(err);
@@ -1226,18 +1259,33 @@ const SecretariatStaffManager: React.FC = () => {
                               </select>
                            </div>
 
-                           <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidor Substituto (Opcional)</label>
-                              <select
-                                 value={movementForm.substituteId || ''}
-                                 onChange={e => setMovementForm({ ...movementForm, substituteId: e.target.value })}
-                                 className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white"
-                              >
-                                 <option value="">Nenhum / Selecione...</option>
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidores Substitutos (Selecione um ou mais)</label>
+                              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 max-h-[200px] overflow-y-auto custom-scrollbar space-y-2">
                                  {staff.filter(s => s.status === 'EM_ATIVIDADE' && s.id !== selectedStaff.id).map(s => (
-                                    <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                                    <label key={s.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-xl transition-all cursor-pointer group">
+                                       <input 
+                                          type="checkbox"
+                                          checked={movementForm.substituteIds?.includes(s.id!) || false}
+                                          onChange={(e) => {
+                                             const ids = movementForm.substituteIds || [];
+                                             const newIds = e.target.checked 
+                                                ? [...ids, s.id!]
+                                                : ids.filter(id => id !== s.id);
+                                             setMovementForm({ ...movementForm, substituteIds: newIds });
+                                          }}
+                                          className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                                       />
+                                       <div>
+                                          <p className="text-[10px] font-black uppercase text-gray-700 group-hover:text-amber-600">{s.name}</p>
+                                          <p className="text-[8px] font-bold text-gray-400 uppercase">{s.role} • {s.jobFunction}</p>
+                                       </div>
+                                    </label>
                                  ))}
-                              </select>
+                                 {staff.filter(s => s.status === 'EM_ATIVIDADE' && s.id !== selectedStaff.id).length === 0 && (
+                                    <p className="text-[10px] text-gray-400 italic text-center py-4">Nenhum servidor ativo disponível.</p>
+                                 )}
+                              </div>
                            </div>
                         </div>
 

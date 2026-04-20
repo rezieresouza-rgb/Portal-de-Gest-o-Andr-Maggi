@@ -57,10 +57,12 @@ export interface StaffMovement {
   startDate: string;
   endDate?: string;
   durationDays?: number;
-  substituteId?: string; // New
+  substituteId?: string;
+  substituteIds?: string[]; // Multiple substitutes
   substituteName?: string;
+  substituteNames?: string[]; // Multiple substitute names
   reason?: string;
-  attachmentUrl?: string; // New
+  attachmentUrl?: string;
   notes?: string;
   responsible?: string;
   timestamp?: number;
