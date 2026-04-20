@@ -511,9 +511,7 @@ const UnifiedSchoolCalendar: React.FC = () => {
             {/* CABEÇALHO OFICIAL */}
             <div className="flex items-start justify-between border-b-2 border-black pb-8 mb-10">
                <div className="flex gap-6 items-center">
-                  <div className="w-20 h-20 border-2 border-black flex items-center justify-center p-2">
-                     <span className="text-[8px] font-bold text-center leading-tight">BRASÃO DO ESTADO DE MATO GROSSO</span>
-                  </div>
+                  <img src="/brasao_mt.png" alt="Brasão MT" className="w-20 h-20 object-contain" />
                   <div className="space-y-0.5">
                      <h3 className="text-sm font-black uppercase">Governo do Estado de Mato Grosso</h3>
                      <h4 className="text-xs font-bold uppercase">Secretaria de Estado de Educação</h4>
