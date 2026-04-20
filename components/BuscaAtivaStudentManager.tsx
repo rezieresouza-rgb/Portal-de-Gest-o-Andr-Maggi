@@ -212,7 +212,23 @@ const BuscaAtivaStudentManager: React.FC = () => {
 
       if (logError) console.error("Erro ao registrar no histórico:", logError);
 
-      // 3. Abrir Caso no Módulo de Mediação
+      // 3. Preparar histórico completo para enviar à Mediação
+      const studentLogs = monitoringLogs
+        .filter(log => log.student_id === student.id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      const historySummary = studentLogs.map(log => 
+        `• ${new Date(log.date + 'T12:00:00').toLocaleDateString('pt-BR')}: ${log.description}`
+      ).join('\n');
+
+      const fullDescription = `[ENCAMINHAMENTO BUSCA ATIVA]
+TIPO: ${newReferral.type}
+RELATO: ${newReferral.reason}
+
+--- HISTÓRICO DE ACOMPANHAMENTO ---
+${historySummary || 'Nenhum registro anterior no sistema.'}`;
+
+      // 4. Abrir Caso no Módulo de Mediação com o histórico completo
       const { error: mediationError } = await supabase.from('mediation_cases').insert([{
         student_id: student.id,
         student_name: student.name,
@@ -221,7 +237,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
         severity: 'MÉDIA',
         status: 'ABERTURA',
         opened_at: newReferral.date || currentDate,
-        description: `[Origem: Busca Ativa] Tipo: ${newReferral.type}. Relato: ${newReferral.reason}`,
+        description: fullDescription,
         involved_parties: [newReferral.responsible],
         steps: [
           { id: '1', label: 'Análise de Busca Ativa', completed: true, date: currentDate },
@@ -234,7 +250,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
 
       if (mediationError) console.error("Erro ao abrir caso na Mediação:", mediationError);
 
-      alert("Encaminhamento realizado! Caso aberto na Mediação e registrado no histórico.");
+      alert("Encaminhamento realizado! Caso aberto na Mediação com histórico completo e registrado no diário de bordo.");
       setSelectedStudent(null);
       await Promise.all([fetchReferrals(), fetchMonitoringLogs()]);
     } catch (e) {
