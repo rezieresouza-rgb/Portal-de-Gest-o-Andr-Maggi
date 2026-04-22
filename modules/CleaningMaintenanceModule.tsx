@@ -204,40 +204,42 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cleaning_tasks' }, fetchData)
       .subscribe();
 
-    const loadStaffFromSecretariat = () => {
-      const savedStaff = localStorage.getItem('secretariat_staff_v4');
-      if (savedStaff) {
-        const parsed: StaffMember[] = JSON.parse(savedStaff);
+    const loadStaffFromSecretariat = async () => {
+      try {
+        const { data: staffData, error } = await supabase
+          .from('staff')
+          .select('*');
+          
+        if (error) throw error;
+        
+        if (staffData) {
+          const supportStaff = staffData
+            .filter(s => {
+              const isSupportType = s.server_type?.toUpperCase() === 'APOIO';
+              const isCleaningRole = s.role === 'AAE_LIMPEZA' || s.role === 'AEE_NUTRICAO' || s.role === 'MANUTENCAO';
+              const isActive = s.status === 'EM_ATIVIDADE';
+              return (isSupportType || isCleaningRole) && isActive;
+            })
+            .map(s => ({
+              id: s.id,
+              name: s.name,
+              shift: s.shift === 'INTEGRAL' ? 'MATUTINO' : s.shift,
+              scope: s.job_function,
+              isFixed: true,
+              registration: s.registration
+            }));
 
-        // Filtro aprimorado: Busca por serverType "Apoio" ou cargos específicos de operacional
-        const supportStaff = parsed
-          .filter(s => {
-            const isSupportType = s.serverType?.toUpperCase() === 'APOIO';
-            const isCleaningRole = s.role === 'AAE_LIMPEZA' || s.role === 'AEE_NUTRICAO';
-            const isActive = s.status === 'EM_ATIVIDADE';
-            return (isSupportType || isCleaningRole) && isActive;
-          })
-          .map(s => ({
-            id: s.id,
-            name: s.name,
-            shift: s.shift === 'INTEGRAL' ? 'MATUTINO' : s.shift,
-            scope: s.jobFunction,
-            isFixed: true,
-            registration: s.registration
-          }));
-
-        setEmployees(supportStaff as any);
+          setEmployees(supportStaff as any);
+        }
+      } catch (err) {
+        console.error("Error loading staff from Supabase:", err);
       }
     };
 
     loadStaffFromSecretariat();
-    window.addEventListener('storage', loadStaffFromSecretariat);
-    const interval = setInterval(loadStaffFromSecretariat, 2000);
-
+    
     return () => {
       channels.unsubscribe();
-      window.removeEventListener('storage', loadStaffFromSecretariat);
-      clearInterval(interval);
     };
   }, []);
 
