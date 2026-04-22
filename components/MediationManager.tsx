@@ -19,7 +19,8 @@ import {
   Save,
   UserPlus,
   PlusCircle,
-  Trash2
+  Trash2,
+  ShieldCheck
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { INITIAL_STUDENTS } from '../constants/initialData';

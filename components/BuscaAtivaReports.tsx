@@ -52,8 +52,12 @@ const BuscaAtivaReports: React.FC = () => {
       let query = supabase
         .from('class_attendance_students')
         .select(`
+          student_id,
           student_name,
           is_present,
+          students (
+            contact_phone
+          ),
           class_attendance_records!inner (
             date,
             classroom_name
@@ -77,16 +81,18 @@ const BuscaAtivaReports: React.FC = () => {
       absences?.forEach(a => {
         rankingMap[a.student_name] = {
           count: (rankingMap[a.student_name]?.count || 0) + 1,
-          class: a.class_attendance_records.classroom_name
+          class: a.class_attendance_records.classroom_name,
+          contact_phone: (a as any).students?.contact_phone
         };
       });
 
       const sortedRanking = Object.entries(rankingMap)
         .map(([name, val]) => ({
           student_name: name,
-          class: val.class,
-          count: val.count,
-          score: Math.min(val.count * 10, 100)
+          class: (val as any).class,
+          count: (val as any).count,
+          score: Math.min((val as any).count * 10, 100),
+          contact_phone: (val as any).contact_phone
         }))
         .sort((a, b) => b.count - a.count);
 
@@ -120,6 +126,23 @@ const BuscaAtivaReports: React.FC = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+  
+  const handleWhatsAppAlert = (student: any) => {
+    const phone = student.contact_phone || '';
+    if (!phone) {
+      alert("Telefone do responsável não cadastrado para este aluno.");
+      return;
+    }
+    
+    // Clean phone number (remove non-digits)
+    const cleanPhone = phone.replace(/\D/g, '');
+    const finalPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    
+    const message = `Olá! Somos da Escola André Maggi. Notamos que o aluno *${student.student_name || student.name}* (${student.class}) teve uma frequência de *${student.count || student.absences} faltas* recentemente. Gostaríamos de saber se está tudo bem e reforçar a importância da presença escolar. Podemos ajudar em algo?`;
+    
+    const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
   useEffect(() => {
@@ -385,6 +408,17 @@ const BuscaAtivaReports: React.FC = () => {
                         <button className="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
                           <ArrowRight size={18} />
                         </button>
+                      </td>
+                      <td className="px-6 py-4 text-center no-print">
+                        <div className="flex justify-center gap-2">
+                          <button 
+                            onClick={() => handleWhatsAppAlert(item)}
+                            className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                            title="Aviso WhatsApp"
+                          >
+                            <MessageSquare size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

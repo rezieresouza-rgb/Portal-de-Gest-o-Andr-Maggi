@@ -130,7 +130,8 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
             name: s.name,
             class: s.class,
             absences: `${Math.round(100 - percent)}%`,
-            status: 'Faltoso'
+            status: 'Faltoso',
+            contact_phone: s.contact_phone
           });
         }
 
@@ -178,6 +179,9 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
     }
   };
 
+    }
+  };
+
   const handleForwardToMediation = async (student: any) => {
     if (!window.confirm(`Deseja encaminhar ${student.name} para a Equipe de Mediação devido à infrequência crítica?`)) return;
 
@@ -218,6 +222,23 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
         is_read: false
       }]);
     }
+  };
+
+  const handleWhatsAppAlert = (student: any) => {
+    const phone = student.contact_phone || '';
+    if (!phone) {
+      alert("Telefone do responsável não cadastrado para este aluno.");
+      return;
+    }
+    
+    // Clean phone number (remove non-digits)
+    const cleanPhone = phone.replace(/\D/g, '');
+    const finalPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    
+    const message = `Olá! Somos da Escola André Maggi. Notamos que o aluno *${student.name}* (${student.class}) teve uma frequência de *${student.absences} de faltas* recentemente. Gostaríamos de saber se está tudo bem e reforçar a importância da presença escolar. Podemos ajudar em algo?`;
+    
+    const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
   if (studentsLoading || (isProcessing && chartData.length === 0)) {
@@ -335,6 +356,13 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
                     title="Ver Acompanhamento"
                   >
                     <History size={16} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleWhatsAppAlert(c); }}
+                    className="p-2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                    title="Aviso WhatsApp"
+                  >
+                    <MessageSquare size={16} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleForwardToMediation(c); }}
