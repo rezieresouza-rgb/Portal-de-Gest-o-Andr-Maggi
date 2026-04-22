@@ -179,9 +179,6 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
     }
   };
 
-    }
-  };
-
   const handleForwardToMediation = async (student: any) => {
     if (!window.confirm(`Deseja encaminhar ${student.name} para a Equipe de Mediação devido à infrequência crítica?`)) return;
 
