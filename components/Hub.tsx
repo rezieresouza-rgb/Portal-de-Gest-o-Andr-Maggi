@@ -99,11 +99,18 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     const isDanubia = user.name?.toUpperCase().includes('DANUBIA') || 
                       user.name?.toUpperCase().includes('DANÚBIA') ||
                       user.login?.toUpperCase().includes('DANUBIA');
+                      
+    const isVeraLucia = user.name?.toUpperCase().includes('VERA LUCIA ARQUINO') || 
+                        user.name?.toUpperCase().includes('VERA LÚCIA ARQUINO');
 
     if (mod.adminOnly && !isAdmin) return false;
     if (isAdmin) return true;
 
     if (isDanubia && ['teacher', 'scheduling'].includes(mod.id)) {
+      return true;
+    }
+    
+    if (isVeraLucia && ['library', 'scheduling'].includes(mod.id)) {
       return true;
     }
 
