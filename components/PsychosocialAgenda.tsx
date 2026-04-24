@@ -23,7 +23,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { PsychosocialRole, PsychosocialAppointment } from '../types';
-import { INITIAL_STUDENTS } from '../constants/initialData';
+import { useStudents } from '../hooks/useStudents';
 
 const APPOINTMENT_TYPES = [
   { id: 'ESCUTA_INDIVIDUAL', label: 'Escuta Individual' },
@@ -33,6 +33,7 @@ const APPOINTMENT_TYPES = [
 ];
 
 const PsychosocialAgenda: React.FC<{ role: PsychosocialRole }> = ({ role }) => {
+  const { students: dbStudents } = useStudents();
   const [appointments, setAppointments] = useState<PsychosocialAppointment[]>(() => {
     const saved = localStorage.getItem('psychosocial_appointments_v1');
     return saved ? JSON.parse(saved) : [];
@@ -52,9 +53,13 @@ const PsychosocialAgenda: React.FC<{ role: PsychosocialRole }> = ({ role }) => {
   });
 
   const masterStudents = useMemo(() => {
-    const saved = localStorage.getItem('secretariat_detailed_students_v1');
-    return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
-  }, []);
+    return dbStudents.map(s => ({
+      ...s,
+      Nome: s.name,
+      CodigoAluno: s.registration_number,
+      Turma: s.class
+    }));
+  }, [dbStudents]);
 
   const filteredStudents = useMemo(() => {
     if (studentSearch.length < 3) return [];

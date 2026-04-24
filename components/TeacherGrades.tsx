@@ -4,6 +4,7 @@ import { GraduationCap, Award, Search, CheckCircle2, AlertTriangle, Loader2, Shi
 import { INITIAL_STUDENTS, SCHOOL_CLASSES } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { User as UserType } from '../types';
+import { useStudents } from '../hooks/useStudents';
 
 const BIMESTRES = ['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'];
 const CLASSES = SCHOOL_CLASSES;
@@ -22,32 +23,46 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
    const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
    const [isSaving, setIsSaving] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
+   const { students: allDbStudents, loading: loadingStudents } = useStudents();
 
    const [students, setStudents] = useState<any[]>([]);
    const [grades, setGrades] = useState<Record<string, number>>({});
    const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
 
    useEffect(() => {
-      // Load Students (Mock for now, as full student migration is pending)
-      const saved = localStorage.getItem('secretariat_detailed_students_v1');
-      const allStudents = saved ? JSON.parse(saved) : INITIAL_STUDENTS;
+      if (selectedClass && !loadingStudents) {
+         // Filter from DB students
+         const filtered = allDbStudents.filter((s: any) =>
+            s.class.toUpperCase() === selectedClass.toUpperCase() && (s.status === 'ATIVO' || s.status === 'RECLASSIFICADO')
+         ).map(s => ({
+            ...s,
+            CodigoAluno: s.registration_number, // Map to legacy property name
+            Nome: s.name // Map to legacy property name
+         }));
 
-      if (selectedClass) {
-         const filtered = allStudents.filter((s: any) =>
-            s.Turma.toUpperCase() === selectedClass.toUpperCase()
-         ).sort((a: any, b: any) => (a.Nome || "").localeCompare(b.Nome || ""));
-         setStudents(filtered);
-
-         // Load Grades if exists
-         if (filtered.length > 0) {
-            fetchGrades(selectedClass, selectedSubject, selectedBimestre, filtered);
+         // Fallback to initial data if DB is empty for this class (for dev/migration phase)
+         if (filtered.length === 0 && allDbStudents.length === 0) {
+            const saved = localStorage.getItem('secretariat_detailed_students_v1');
+            const allStudents = saved ? JSON.parse(saved) : INITIAL_STUDENTS;
+            const fallbackFiltered = allStudents.filter((s: any) =>
+               s.Turma.toUpperCase() === selectedClass.toUpperCase()
+            ).sort((a: any, b: any) => (a.Nome || "").localeCompare(b.Nome || ""));
+            setStudents(fallbackFiltered);
+            if (fallbackFiltered.length > 0) {
+               fetchGrades(selectedClass, selectedSubject, selectedBimestre, fallbackFiltered);
+            }
+         } else {
+            setStudents(filtered);
+            if (filtered.length > 0) {
+               fetchGrades(selectedClass, selectedSubject, selectedBimestre, filtered);
+            }
          }
-      } else {
+      } else if (!selectedClass) {
          setStudents([]);
          setGrades({});
          setCurrentAssessmentId(null);
       }
-   }, [selectedClass, selectedSubject, selectedBimestre]);
+   }, [selectedClass, selectedSubject, selectedBimestre, allDbStudents, loadingStudents]);
 
    const fetchGrades = async (className: string, subject: string, bimestre: string, studentList: any[]) => {
       setIsLoading(true);

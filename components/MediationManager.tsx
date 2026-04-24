@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useStudents } from '../hooks/useStudents';
 import { 
   Scale, 
   Plus, 
@@ -36,6 +37,7 @@ const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
 const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, initialSearch }) => {
+  const { students: dbStudents } = useStudents();
   const [cases, setCases] = useState<MediationCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,9 +65,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
   const [isLogLoading, setIsLogLoading] = useState(false);
 
   const masterStudents = useMemo(() => {
-    const saved = localStorage.getItem('secretariat_detailed_students_v1');
-    return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
-  }, []);
+    return dbStudents.map(s => ({
+      ...s,
+      Nome: s.name,
+      CodigoAluno: s.registration_number,
+      Turma: s.class
+    }));
+  }, [dbStudents]);
 
   const filteredStudents = useMemo(() => {
     if (studentSearch.length < 3) return [];

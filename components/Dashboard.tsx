@@ -14,16 +14,12 @@ import {
 } from 'recharts';
 import { TrendingUp, AlertCircle, Wallet, ShieldCheck, Package, AlertTriangle, ArrowRight, CheckCircle2, GraduationCap } from 'lucide-react';
 import { Contract } from '../types';
-import { INITIAL_CONTRACTS, INITIAL_STUDENTS } from '../constants/initialData';
+import { INITIAL_CONTRACTS } from '../constants/initialData';
+import { useStudents } from '../hooks/useStudents';
 
 const Dashboard: React.FC = () => {
-  const [studentCount, setStudentCount] = useState(0);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('secretariat_detailed_students_v1');
-    const students = saved ? JSON.parse(saved) : INITIAL_STUDENTS;
-    setStudentCount(students.length);
-  }, []);
+  const { students } = useStudents();
+  const studentCount = students.length;
 
   // Carrega contratos para visão financeira
   const contracts: Contract[] = useMemo(() => {

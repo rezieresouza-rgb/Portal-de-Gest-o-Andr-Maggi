@@ -11,17 +11,22 @@ import {
   TrendingUp,
   MapPin
 } from 'lucide-react';
-import { INITIAL_STUDENTS } from '../constants/initialData';
+import { useStudents } from '../hooks/useStudents';
 
 const MerendaStudentCensus: React.FC = () => {
-  const [students, setStudents] = useState<any[]>([]);
+  const { students: dbStudents, loading } = useStudents();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('TODAS');
 
-  useEffect(() => {
-    const saved = localStorage.getItem('secretariat_detailed_students_v1');
-    setStudents(saved ? JSON.parse(saved) : INITIAL_STUDENTS);
-  }, []);
+  const students = useMemo(() => {
+    return dbStudents.map(s => ({
+      ...s,
+      CodigoAluno: s.registration_number,
+      Nome: s.name,
+      Turma: s.class,
+      Turno: s.shift
+    }));
+  }, [dbStudents]);
 
   const classes = useMemo(() => {
     const unique = Array.from(new Set(students.map(s => s.Turma))).filter(Boolean);
