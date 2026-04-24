@@ -40,22 +40,9 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
             Nome: s.name // Map to legacy property name
          }));
 
-         // Fallback to initial data if DB is empty for this class (for dev/migration phase)
-         if (filtered.length === 0 && allDbStudents.length === 0) {
-            const saved = localStorage.getItem('secretariat_detailed_students_v1');
-            const allStudents = saved ? JSON.parse(saved) : INITIAL_STUDENTS;
-            const fallbackFiltered = allStudents.filter((s: any) =>
-               s.Turma.toUpperCase() === selectedClass.toUpperCase()
-            ).sort((a: any, b: any) => (a.Nome || "").localeCompare(b.Nome || ""));
-            setStudents(fallbackFiltered);
-            if (fallbackFiltered.length > 0) {
-               fetchGrades(selectedClass, selectedSubject, selectedBimestre, fallbackFiltered);
-            }
-         } else {
-            setStudents(filtered);
-            if (filtered.length > 0) {
-               fetchGrades(selectedClass, selectedSubject, selectedBimestre, filtered);
-            }
+         setStudents(filtered);
+         if (filtered.length > 0) {
+            fetchGrades(selectedClass, selectedSubject, selectedBimestre, filtered);
          }
       } else if (!selectedClass) {
          setStudents([]);
@@ -278,7 +265,10 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
                      <div className="p-2 md:p-3 bg-indigo-50 text-indigo-600 rounded-xl shadow-sm">
                         <FileEdit size={18} md:size={20} />
                      </div>
-                     <h3 className="text-sm md:text-lg font-black text-gray-900 uppercase tracking-tight">Notas — <span className="text-indigo-600">{selectedSubject}</span></h3>
+                     <h3 className="text-sm md:text-lg font-black text-gray-900 uppercase tracking-tight">
+                        Notas — <span className="text-indigo-600">{selectedSubject}</span>
+                        <span className="ml-2 text-xs text-gray-400 font-bold">({students.length} Estudantes)</span>
+                     </h3>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-xl border border-gray-100 shadow-sm">
                      <ShieldCheck size={14} md:size={16} className="text-indigo-400" />
