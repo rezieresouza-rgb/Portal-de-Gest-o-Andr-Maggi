@@ -140,7 +140,8 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
     const { data } = await supabase
       .from('users')
       .select('*')
-      .eq('role', 'PROFESSOR');
+      .eq('role', 'PROFESSOR')
+      .order('name');
 
     if (data) {
       setStaffList(data.map(u => ({

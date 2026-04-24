@@ -194,8 +194,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       }
 
       // Limit results to avoid massive dropdowns, but allow more if we're viewing a whole class
-      return filtered.slice(0, searchClass && !searchTerm ? 50 : 6);
-   }, [searchTerm, masterStudents, form.className]);
+    return filtered
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+      .slice(0, searchClass && !searchTerm ? 50 : 6);
+  }, [searchTerm, masterStudents, form.className]);
 
    const handleSelectStudent = (student: any) => {
       // Avoid duplicates

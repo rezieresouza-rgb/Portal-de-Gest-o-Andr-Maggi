@@ -76,7 +76,7 @@ const BuscaAtivaFICAI: React.FC = () => {
          }
       });
 
-      setStudentsAtRisk(atRisk);
+      setStudentsAtRisk(atRisk.sort((a, b) => (a.name || "").localeCompare(b.name || "")));
       setLoading(false);
    };
 

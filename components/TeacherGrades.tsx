@@ -35,7 +35,7 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
       if (selectedClass) {
          const filtered = allStudents.filter((s: any) =>
             s.Turma.toUpperCase() === selectedClass.toUpperCase()
-         );
+         ).sort((a: any, b: any) => (a.Nome || "").localeCompare(b.Nome || ""));
          setStudents(filtered);
 
          // Load Grades if exists

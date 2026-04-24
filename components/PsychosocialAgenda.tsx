@@ -58,9 +58,10 @@ const PsychosocialAgenda: React.FC<{ role: PsychosocialRole }> = ({ role }) => {
 
   const filteredStudents = useMemo(() => {
     if (studentSearch.length < 3) return [];
-    return masterStudents.filter((s: any) => 
-      s.Nome.toLowerCase().includes(studentSearch.toLowerCase())
-    ).slice(0, 5);
+    return masterStudents
+      .filter((s: any) => s.Nome.toLowerCase().includes(studentSearch.toLowerCase()))
+      .sort((a: any, b: any) => (a.Nome || "").localeCompare(b.Nome || ""))
+      .slice(0, 5);
   }, [studentSearch, masterStudents]);
 
   useEffect(() => {
