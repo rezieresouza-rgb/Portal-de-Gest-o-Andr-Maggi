@@ -7,7 +7,7 @@ import {
   TrendingUp, 
   ArrowRight, 
   Calendar,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   Scale,
   Brain,
   ShieldAlert,

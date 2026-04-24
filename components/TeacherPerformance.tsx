@@ -22,7 +22,7 @@ import {
    Calendar,
    Sparkles,
    TrendingDown,
-   MessageSquare,
+   MessageSquare as MessageSquareIcon,
    Loader2
 } from 'lucide-react';
 import { AttendanceRecord, ClassroomOccurrence, User as UserType } from '../types';
@@ -326,7 +326,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-3 mb-6">
                      <div className="p-2.5 bg-violet-50 rounded-xl">
-                        <MessageSquare size={20} className="text-violet-600" />
+                        <MessageSquareIcon size={20} className="text-violet-600" />
                      </div>
                      <h3 className="text-lg font-black uppercase tracking-tight text-gray-900">Feedbacks Recentes</h3>
                   </div>

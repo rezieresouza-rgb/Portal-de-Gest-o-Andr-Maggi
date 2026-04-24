@@ -10,7 +10,7 @@ import {
    Calendar,
    RotateCcw,
    Truck,
-   MessageSquare,
+   MessageSquare as MessageSquareIcon,
    ShieldCheck,
    ChevronRight,
    ArrowRightLeft,

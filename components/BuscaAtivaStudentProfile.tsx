@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   TrendingDown,
   ArrowRight,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   Scale,
   Plus,
   Clock,
@@ -40,7 +40,7 @@ const ACTION_ITEMS: ActionItem[] = [
   { id: 'COMUNICADO_PAIS', label: 'Comunicar Pais/Responsáveis', description: 'Contato imediato sobre ausência (Lei 10.509/2017)', icon: Phone, required: true },
   { id: 'ALERTA_SISTEMA', label: 'Analisar Alertas do Sistema', description: 'Verificar justificativas e padrão de faltas', icon: AlertTriangle, required: true },
   { id: 'VISITA_TURMA', label: 'Visita à Turma', description: 'Obter informações com colegas e professores', icon: Users, required: true },
-  { id: 'CONTATO_DIARIO', label: 'Contatos Diários Alternados', description: 'Telefone, WhatsApp, E-mail (tentativas documentadas)', icon: MessageSquare, required: true },
+  { id: 'CONTATO_DIARIO', label: 'Contatos Diários Alternados', description: 'Telefone, WhatsApp, E-mail (tentativas documentadas)', icon: MessageSquareIcon, required: true },
   { id: 'ELABORAR_RELATORIO', label: 'Elaborar Relatório de Ações', description: 'Registro detalhado no Sistema de Prevenção', icon: FileText, required: true },
   { id: 'REDE_PROTECAO', label: 'Acionar Rede de Proteção', description: 'CRAS, CREAS, Saúde (quando necessário)', icon: ShieldAlert, required: false },
   { id: 'FICAI_ONLINE', label: 'Registrar na FICAI Online', description: 'Para alunos com >10% de faltas injustificadas', icon: FileText, required: true },
@@ -494,7 +494,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                   ))
                  ) : (
                    <div className="py-12 text-center bg-white rounded-[2rem] border-2 border-dashed border-gray-100 ml-12 mr-2">
-                      <MessageSquare size={32} className="mx-auto mb-2 text-gray-200" />
+                      <MessageSquareIcon size={32} className="mx-auto mb-2 text-gray-200" />
                       <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest">Sem registros anteriores</p>
                       <button 
                         onClick={() => setShowAddLog(true)}

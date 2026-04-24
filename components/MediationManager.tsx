@@ -6,7 +6,7 @@ import {
   ChevronRight, 
   CheckCircle2, 
   Clock, 
-  MessageSquare, 
+  MessageSquare as MessageSquareIcon, 
   MessageCircle,
   User, 
   X,
@@ -488,7 +488,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
          ))}
          {filteredCases.length === 0 && (
            <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
-              <Scale size={48} className="mx-auto mb-4 text-gray-100" />
+                        <Scale size={48} className="mx-auto mb-4 text-gray-100" />
               <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Nenhum caso de mediação registrado</p>
            </div>
          )}
@@ -806,7 +806,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
 
                        <div className="flex-1 bg-white p-5 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group shadow-sm flex flex-col min-h-[200px]">
                            <div className="absolute top-0 right-0 p-4 opacity-5 text-emerald-900 pointer-events-none">
-                              <MessageSquare size={100} strokeWidth={1} />
+                               <MessageSquareIcon size={100} strokeWidth={1} />
                            </div>
                            
                            <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 mb-2 shrink-0">

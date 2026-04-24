@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
    AlertCircle,
-   MessageSquare,
+   MessageSquare as MessageSquareIcon,
    Save,
    CheckCircle2,
    ShieldAlert,
@@ -447,7 +447,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      </div>
                   )) : (
                      <div className="py-24 text-center">
-                        <MessageSquare size={48} className="mx-auto mb-4 text-gray-100" />
+                        <MessageSquareIcon size={48} className="mx-auto mb-4 text-gray-100" />
                         <p className="text-gray-300 font-black uppercase text-xs tracking-widest">
                            { (filterClass || filterStudent || filterType) 
                               ? 'Nenhum registro corresponde aos filtros selecionados' 
@@ -653,7 +653,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
                      <div className="space-y-3">
                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
-                           <MessageSquare size={14} className="text-red-600" /> Relato Narrativo do Professor
+                           <MessageSquareIcon size={14} className="text-red-600" /> Relato Narrativo do Professor
                         </h4>
                         <div className="p-6 bg-red-50/30 border border-red-100 rounded-[2rem] text-sm font-medium leading-relaxed text-gray-800 italic">
                            "{viewingOccurrence.description}"

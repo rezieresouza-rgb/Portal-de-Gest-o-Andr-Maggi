@@ -12,7 +12,7 @@ import {
   FileText,
   UserCheck,
   Brain,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   ArrowRight,
   PlusCircle,
   Hash
@@ -354,7 +354,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="relative">
-                          <MessageSquare className="absolute left-3 top-3 text-white/20" size={14} />
+                          <MessageSquareIcon className="absolute left-3 top-3 text-white/20" size={14} />
                           <input 
                             type="text"
                             value={obs.notes}

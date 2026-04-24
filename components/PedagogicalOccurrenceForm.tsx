@@ -7,7 +7,7 @@ import {
    User,
    Clock,
    MapPin,
-   MessageSquare,
+   MessageSquare as MessageSquareIcon,
    Tag,
    Plus,
    Camera,
@@ -191,7 +191,7 @@ const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ o
                <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Relato Descritivo dos Fatos</label>
                   <div className="relative">
-                     <MessageSquare className="absolute left-6 top-6 text-gray-300" size={20} />
+                     <MessageSquareIcon className="absolute left-6 top-6 text-gray-300" size={20} />
                      <textarea
                         required
                         value={form.report}

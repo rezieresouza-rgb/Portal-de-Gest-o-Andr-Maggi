@@ -8,7 +8,7 @@ import {
    CheckCircle2,
    Loader2,
    X,
-   MessageSquare,
+   MessageSquare as MessageSquareIcon,
    History
 } from 'lucide-react';
 import { PedagogicalOccurrence, OccurrenceAta } from '../types';
@@ -125,7 +125,7 @@ const PedagogicalOccurrenceAta: React.FC<PedagogicalOccurrenceAtaProps> = ({ occ
 
                <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                     <MessageSquare size={14} className="text-violet-600" /> Relato Original do Registro
+                     <MessageSquareIcon size={14} className="text-violet-600" /> Relato Original do Registro
                   </h4>
                   <p className="text-sm text-gray-700 leading-relaxed font-medium bg-gray-50 p-8 rounded-[2.5rem] italic border border-gray-100">
                      "{occurrence.report}"

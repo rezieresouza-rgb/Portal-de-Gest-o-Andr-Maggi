@@ -12,7 +12,7 @@ import {
   Maximize2,
   Clock,
   History,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   Search,
   CalendarDays,
   FileSpreadsheet,

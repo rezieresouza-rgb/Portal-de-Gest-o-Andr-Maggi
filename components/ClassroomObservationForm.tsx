@@ -9,7 +9,7 @@ import {
   User,
   BookOpen,
   Calendar,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   Star,
   CheckCircle2,
   Trash2,

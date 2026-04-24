@@ -9,7 +9,7 @@ import {
   Filter,
   UserCircle,
   User,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   Scale,
   Loader2,
   Clock,
@@ -372,7 +372,7 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
                         ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' 
                         : 'bg-gray-50 text-gray-400 border-gray-100'
                     }`}>
-                      <MessageSquare size={10} /> {s.totalInterventions > 0 ? `${s.totalInterventions} REGISTROS NO HISTÓRICO` : 'NENHUM REGISTRO NO HISTÓRICO'}
+                      <MessageSquareIcon size={10} /> {s.totalInterventions > 0 ? `${s.totalInterventions} REGISTROS NO HISTÓRICO` : 'NENHUM REGISTRO NO HISTÓRICO'}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 mt-2">

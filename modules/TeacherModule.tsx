@@ -15,7 +15,7 @@ import {
   GraduationCap as GradeIcon,
   Package,
   Bell,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   CalendarCheck,
   FileSpreadsheet,
   Menu,

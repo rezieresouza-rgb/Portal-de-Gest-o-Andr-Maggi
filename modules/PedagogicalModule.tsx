@@ -14,7 +14,7 @@ import {
   Plus,
   Trash2,
   ChevronRight,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   CheckCircle2,
   Loader2,
   FileText,
@@ -577,7 +577,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
 
                     <div className="bg-violet-900/20 p-8 rounded-[2.5rem] border border-violet-500/20 flex flex-col gap-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-violet-600 text-white rounded-lg shadow-md"><MessageSquare size={18} /></div>
+                        <div className="p-2 bg-violet-600 text-white rounded-lg shadow-md"><MessageSquareIcon size={18} /></div>
                         <h4 className="text-xs font-black text-violet-300 uppercase tracking-widest">Feedback da Coordenação</h4>
                       </div>
                       <textarea

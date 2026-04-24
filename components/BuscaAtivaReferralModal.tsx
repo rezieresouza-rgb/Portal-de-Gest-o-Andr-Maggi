@@ -4,7 +4,7 @@ import {
   X, 
   Send, 
   User, 
-  MessageSquare, 
+  MessageSquare as MessageSquareIcon, 
   Tag, 
   Calendar,
   ShieldAlert,
@@ -49,7 +49,7 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
     { id: 'CONFLITO_FAMILIAR', icon: HeartPulse, label: 'Conflito Familiar' },
     { id: 'VULNERABILIDADE_SOCIAL', icon: UsersIcon, label: 'Vulnerabilidade Social' },
     { id: 'SAÚDE_MENTAL', icon: ShieldAlert, label: 'Saúde Mental / Emocional' },
-    { id: 'BULLYING_CONFLITO', icon: MessageSquare, label: 'Bullying / Conflitos' },
+    { id: 'BULLYING_CONFLITO', icon: MessageSquareIcon, label: 'Bullying / Conflitos' },
     { id: 'REDE_DE_PROTEÇÃO', icon: Scale, label: 'Rede de Proteção (CT)' },
     { id: 'OUTRO', icon: Tag, label: 'Outro' },
   ];
@@ -98,7 +98,7 @@ const BuscaAtivaReferralModal: React.FC<BuscaAtivaReferralModalProps> = ({ stude
           {studentHistory && studentHistory.length > 0 && (
             <div className="mb-8 space-y-3">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                <MessageSquare size={12} /> Histórico de Acompanhamento (Consulta)
+                <MessageSquareIcon size={12} /> Histórico de Acompanhamento (Consulta)
               </label>
               <div className="bg-gray-50 rounded-[2rem] p-4 space-y-3 max-h-48 overflow-y-auto border border-gray-100 shadow-inner custom-scrollbar">
                 {studentHistory.map((log: any, idx: number) => (

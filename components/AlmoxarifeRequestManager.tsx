@@ -9,7 +9,7 @@ import {
   Calendar,
   Package,
   Truck,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   History,
   Search,
   ChevronRight,
@@ -170,7 +170,7 @@ const AlmoxarifeRequestManager: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-start gap-3 p-4 bg-orange-500/10 rounded-2xl border border-orange-500/10">
-                <MessageSquare size={16} className="text-orange-400 mt-1 shrink-0" />
+                <MessageSquareIcon size={16} className="text-orange-400 mt-1 shrink-0" />
                 <div><p className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Observações</p>
                   <p className="text-xs text-white/80 font-medium italic mt-1">"{req.reason}"</p></div>
               </div>

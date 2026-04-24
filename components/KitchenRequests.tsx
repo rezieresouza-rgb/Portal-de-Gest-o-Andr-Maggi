@@ -22,7 +22,7 @@ import {
   AlertTriangle,
   XCircle,
   PlusCircle,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   Check,
   X
 } from 'lucide-react';
@@ -577,7 +577,7 @@ const KitchenRequests: React.FC = () => {
                         <PlusCircle size={10} /> Item Manual
                       </div>
                     )}
-                    {req.managerNotes && <MessageSquare size={16} className="text-emerald-500" />}
+                    {req.managerNotes && <MessageSquareIcon size={16} className="text-emerald-500" />}
                     <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
                       <ChevronRight size={20} />
                     </div>

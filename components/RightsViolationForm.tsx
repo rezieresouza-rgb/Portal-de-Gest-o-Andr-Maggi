@@ -23,7 +23,7 @@ import {
   Users,
   Send,
   AlertTriangle,
-  MessageSquare
+  MessageSquare as MessageSquareIcon
 } from 'lucide-react';
 import { RightsViolationNotification } from '../types';
 
@@ -307,7 +307,7 @@ const RightsViolationForm: React.FC = () => {
               {/* SEÇÃO: OBSERVAÇÕES */}
               <div className="space-y-4">
                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <MessageSquare size={14} className="text-rose-600" /> Informações Complementares e Observações
+                    <MessageSquareIcon size={14} className="text-rose-600" /> Informações Complementares e Observações
                  </h4>
                  {/* FIX: Updated property name to match complementary_info in types.ts */}
                  <textarea 

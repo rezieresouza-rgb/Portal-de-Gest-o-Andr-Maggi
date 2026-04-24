@@ -17,7 +17,7 @@ import {
   Lock,
   CalendarDays,
   User,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   AlertCircle,
   // Added missing Trash2 icon import
   Trash2

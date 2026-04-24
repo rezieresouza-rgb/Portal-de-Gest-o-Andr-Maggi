@@ -4,7 +4,7 @@ import {
     Save, 
     Loader2, 
     Phone, 
-    MessageSquare, 
+    MessageSquare as MessageSquareIcon, 
     Users, 
     Home,
     AlertTriangle,
@@ -38,7 +38,7 @@ interface BuscaAtivaAddLogModalProps {
 
 const ACTION_TYPES = [
     { id: 'TELEFONE', label: 'Contato Telefônico', icon: Phone },
-    { id: 'WHATSAPP', label: 'Mensagem WhatsApp', icon: MessageSquare },
+    { id: 'WHATSAPP', label: 'Mensagem WhatsApp', icon: MessageSquareIcon },
     { id: 'VISITA', label: 'Visita Domiciliar', icon: Home },
     { id: 'REUNIAO', label: 'Reunião Presencial', icon: Users },
     { id: 'OUTRO', label: 'Outra Intervenção', icon: AlertTriangle },
@@ -385,7 +385,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
                 <div className="px-8 pt-8 pb-4 flex justify-between items-start shrink-0 border-b border-gray-50 bg-gray-50/50">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-600/20">
-                            <MessageSquare size={24} />
+                            <MessageSquareIcon size={24} />
                         </div>
                         <div>
                             <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">

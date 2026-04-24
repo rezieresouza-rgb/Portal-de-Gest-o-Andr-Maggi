@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import {
-    MessageSquare,
+    MessageSquare as MessageSquareIcon,
     Settings2,
     History,
     Save,
@@ -153,7 +153,7 @@ const BuscaAtivaContactChannels: React.FC = () => {
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             {/* HEADER PANEL */}
             <div className="bg-emerald-950 p-10 rounded-[3.5rem] text-white flex flex-col md:flex-row items-center justify-between shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><MessageSquare size={180} /></div>
+                <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><MessageSquareIcon size={180} /></div>
                 <div className="relative z-10 space-y-4">
                     <div className="flex items-center gap-4">
                         <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-md">

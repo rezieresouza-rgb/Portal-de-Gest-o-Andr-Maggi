@@ -20,12 +20,22 @@ import {
   MessageCircle,
   FileCheck,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Clock,
+  MessageSquare as MessageSquareIcon,
+  History,
+  TrendingUp,
+  LayoutDashboard,
+  Search,
+  Plus,
+  Filter,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 import BuscaAtivaStudentProfile from './BuscaAtivaStudentProfile';
-import { History } from 'lucide-react';
+
 
 interface BuscaAtivaDashboardProps {
   onNavigate: (tab: 'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports') => void;
@@ -359,7 +369,7 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
                     className="p-2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
                     title="Aviso WhatsApp"
                   >
-                    <MessageSquare size={16} />
+                    <MessageSquareIcon size={16} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleForwardToMediation(c); }}

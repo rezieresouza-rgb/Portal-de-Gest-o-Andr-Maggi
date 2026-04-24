@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, X, Calculator, BookOpen, PenTool, MessageSquare, SpellCheck, Star, TrendingUp } from 'lucide-react';
+import { Save, X, Calculator, BookOpen, PenTool, MessageSquare as MessageSquareIcon, SpellCheck, Star, TrendingUp } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 interface LearningAssessmentFormProps {
@@ -130,7 +130,7 @@ const LearningAssessmentForm: React.FC<LearningAssessmentFormProps> = ({ onClose
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                             {renderScoreInput('Leitura', 'reading_score', <BookOpen size={14} />)}
                             {renderScoreInput('Escrita', 'writing_score', <PenTool size={14} />)}
-                            {renderScoreInput('Compreensão', 'comprehension_score', <MessageSquare size={14} />)}
+                            {renderScoreInput('Compreensão', 'comprehension_score', <MessageSquareIcon size={14} />)}
                             {renderScoreInput('Ortografia', 'spelling_score', <SpellCheck size={14} />)}
                             {renderScoreInput('Produção', 'production_score', <PenTool size={14} />)}
                         </div>

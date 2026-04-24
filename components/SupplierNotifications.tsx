@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   Printer,
   Download,
   X,

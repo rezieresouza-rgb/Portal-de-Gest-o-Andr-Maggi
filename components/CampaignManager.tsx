@@ -14,7 +14,7 @@ import {
   CheckCircle2, 
   Clock, 
   Upload,
-  MessageSquare,
+  MessageSquare as MessageSquareIcon,
   BarChart3,
   Sparkles,
   ArrowRight,
@@ -212,7 +212,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ role }) => {
                    { id: 'info', label: 'Estratégia', icon: FileText },
                    { id: 'materials', label: 'Base Legal e Materiais', icon: Upload },
                    { id: 'schedule', label: 'Agenda Local', icon: Calendar },
-                   { id: 'feedback', label: 'Relatos e Impacto', icon: MessageSquare },
+                   { id: 'feedback', label: 'Relatos e Impacto', icon: MessageSquareIcon },
                  ].map(tab => (
                    <button
                      key={tab.id}
@@ -342,7 +342,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ role }) => {
                  {activeDetailTab === 'feedback' && (
                    <div className="space-y-8 animate-in fade-in duration-300">
                       <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[3rem]">
-                         <MessageSquare size={48} className="mx-auto mb-4 text-gray-100" />
+                         <MessageSquareIcon size={48} className="mx-auto mb-4 text-gray-100" />
                          <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Os relatos e feedbacks serão habilitados após o início da vigência em 2026.</p>
                       </div>
                    </div>

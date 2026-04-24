@@ -14,7 +14,9 @@ import {
   ChevronDown,
   UserX,
   Clock,
-  ArrowRight
+  ArrowRight,
+  MessageSquare as MessageSquareIcon,
+  LayoutDashboard
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
@@ -412,11 +414,11 @@ const BuscaAtivaReports: React.FC = () => {
                       <td className="px-6 py-4 text-center no-print">
                         <div className="flex justify-center gap-2">
                           <button 
-                            onClick={() => handleWhatsAppAlert(item)}
+                            onClick={() => handleWhatsAppAlert(student)}
                             className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
                             title="Aviso WhatsApp"
                           >
-                            <MessageSquare size={14} />
+                            <MessageSquareIcon size={14} />
                           </button>
                         </div>
                       </td>

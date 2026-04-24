@@ -4,7 +4,7 @@ import {
   Calendar, 
   BookOpen, 
   ShieldCheck, 
-  MessageSquare, 
+  MessageSquare as MessageSquareIcon, 
   Camera, 
   FileText, 
   Save, 
