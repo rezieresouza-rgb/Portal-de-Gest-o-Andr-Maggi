@@ -814,6 +814,38 @@ const Contracts: React.FC = () => {
     }
   };
 
+  const handleDeleteStatement = async (statement: any) => {
+    if (!window.confirm(`ATENÇÃO: Você tem certeza que deseja excluir o Extrato ${statement.statement_number}?\nAs guias associadas a ele voltarão a ficar disponíveis para um novo extrato.`)) {
+      return;
+    }
+    try {
+      setIsLoadingStatements(true);
+      const { error: guidesUpdateError } = await supabase
+        .from('payment_guides')
+        .update({ statement_id: null })
+        .eq('statement_id', statement.id);
+      
+      if (guidesUpdateError) throw guidesUpdateError;
+
+      const { error: delError } = await supabase
+        .from('consumption_statements')
+        .delete()
+        .eq('id', statement.id);
+      
+      if (delError) throw delError;
+
+      alert("Extrato excluído com sucesso!");
+      if (selectedContractId) {
+        fetchStatements(selectedContractId);
+        fetchPaymentGuides(selectedContractId);
+      }
+    } catch (error: any) {
+      alert("Erro ao excluir extrato: " + error.message);
+    } finally {
+      setIsLoadingStatements(false);
+    }
+  };
+
   const handleViewPastStatement = async (statement: any) => {
     try {
       setIsLoadingStatements(true);
@@ -1692,6 +1724,13 @@ const Contracts: React.FC = () => {
                                 title="Visualizar Extrato"
                               >
                                 <FileSearch size={14} /> Ver Extrato
+                              </button>
+                              <button
+                                onClick={() => handleDeleteStatement(statement)}
+                                className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                title="Excluir Extrato"
+                              >
+                                <Trash2 size={14} />
                               </button>
                             </div>
                           </td>
