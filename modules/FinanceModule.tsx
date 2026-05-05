@@ -110,10 +110,26 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     date: ''
   });
 
+  // UI Helper for Date Pickers (YYYY-MM-DD)
   const getLocalDateString = () => {
     const d = new Date();
     const tzOffset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+  };
+
+  // DB Helper to avoid Timezone Shifts (noon-offset)
+  const toISODateString = (dateInput?: string | Date) => {
+    let dateStr = '';
+    if (!dateInput) {
+      dateStr = getLocalDateString();
+    } else if (typeof dateInput === 'string') {
+      dateStr = dateInput.split('T')[0];
+    } else {
+      const d = dateInput as Date;
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      dateStr = new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+    }
+    return `${dateStr}T12:00:00.000Z`;
   };
 
   const getLocalTimeString = () => {
@@ -453,7 +469,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
       const txPayload = {
         fund_id: currentFund.dbId,
-        date: newTx.date,
+        date: toISODateString(newTx.date),
         description: newTx.description.toUpperCase(),
         invoice_number: newTx.invoiceNumber.toUpperCase(),
         invoice_date: newTx.invoiceDate || null,
@@ -678,7 +694,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
                       {isModalOpen && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all duration-300">
-                          <div className="bg-gray-900/90 rounded-[3.5rem] w-full max-w-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200 max-h-[95vh] overflow-hidden flex flex-col border border-white/10">
+                          <div className="bg-gray-900/90 rounded-[3.5rem] w-full max-w-3xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200 max-h-[95vh] overflow-hidden flex flex-col border border-white/10">
 
                             {/* MODAL HEADER */}
                             <div className="px-10 pt-10 pb-6 flex justify-between items-start shrink-0">
@@ -824,7 +840,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Valor Bruto (R$)</label>
                                       <div className="relative">

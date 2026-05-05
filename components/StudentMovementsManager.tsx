@@ -41,6 +41,7 @@ interface Movement {
   return_date?: string;
   transfer_subtype?: 'INTERNA' | 'EXTERNA';
   is_reclassified?: boolean;
+  adjustment_date?: string;
   created_at?: string;
   // Joined
   students?: { name: string; registration_number: string };
@@ -130,7 +131,9 @@ interface NewMovementForm {
   // Geral
   responsible_name: string;
   transfer_subtype: 'INTERNA' | 'EXTERNA';
+  transfer_subtype: 'INTERNA' | 'EXTERNA';
   is_reclassified: boolean;
+  adjustment_date: string;
 }
 
 const emptyForm: NewMovementForm = {
@@ -146,7 +149,8 @@ const emptyForm: NewMovementForm = {
   return_date: '',
   responsible_name: '',
   transfer_subtype: 'EXTERNA',
-  is_reclassified: false
+  is_reclassified: false,
+  adjustment_date: new Date().toLocaleDateString('sv-SE')
 };
 
 const StudentMovementsManager: React.FC = () => {
@@ -223,7 +227,8 @@ const StudentMovementsManager: React.FC = () => {
       return_date: m.return_date?.split('T')[0] || '',
       responsible_name: m.responsible_name || '',
       transfer_subtype: m.transfer_subtype || 'EXTERNA',
-      is_reclassified: !!m.is_reclassified
+      is_reclassified: !!m.is_reclassified,
+      adjustment_date: m.adjustment_date || m.movement_date?.split('T')[0] || ''
     });
     setIsModalOpen(true);
     setShowStudentDropdown(false);
@@ -289,6 +294,7 @@ const StudentMovementsManager: React.FC = () => {
         description: form.description.toUpperCase() || form.movement_type,
         responsible_name: form.responsible_name.toUpperCase() || null,
         is_reclassified: form.is_reclassified,
+        adjustment_date: form.is_reclassified ? form.adjustment_date : null
       };
 
       if (form.movement_type === 'TRANSFERENCIA') {
@@ -324,9 +330,15 @@ const StudentMovementsManager: React.FC = () => {
         // Atualizar status do aluno apenas em novos registros
         if (!error) {
           if (form.is_reclassified) {
-            await supabase.from('students').update({ status: 'RECLASSIFICADO' }).eq('id', form.student_id);
+            await supabase.from('students').update({ 
+              status: 'RECLASSIFICADO',
+              adjustment_date: form.adjustment_date 
+            }).eq('id', form.student_id);
             // Também atualizar a matrícula ativa para RECLASSIFICADO
-            await supabase.from('enrollments').update({ status: 'RECLASSIFICADO' }).eq('student_id', form.student_id).neq('status', 'ilike', 'TRANSFERIDO%');
+            await supabase.from('enrollments').update({ 
+              status: 'RECLASSIFICADO',
+              adjustment_date: form.adjustment_date
+            }).eq('student_id', form.student_id).neq('status', 'ilike', 'TRANSFERIDO%');
           } else if (form.movement_type === 'TRANSFERENCIA') {
             const newStatus = form.transfer_subtype === 'INTERNA' ? 'TRANSFERIDO DE TURMA' : 'TRANSFERIDO DE ESCOLA';
             await supabase.from('students').update({ status: newStatus }).eq('id', form.student_id);
@@ -673,18 +685,32 @@ const StudentMovementsManager: React.FC = () => {
                 </div>
               </div>
 
-              {/* Reclassificação */}
-              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-2xl border border-purple-100">
-                <input
-                  type="checkbox"
-                  id="is_reclassified"
-                  checked={form.is_reclassified}
-                  onChange={e => setForm(prev => ({ ...prev, is_reclassified: e.target.checked }))}
-                  className="w-5 h-5 rounded-lg border-2 border-purple-200 text-purple-600 focus:ring-purple-500"
-                />
-                <label htmlFor="is_reclassified" className="text-xs font-black text-purple-700 uppercase cursor-pointer">
-                  Aluno Reclassificado
-                </label>
+              <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100 space-y-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="is_reclassified"
+                    checked={form.is_reclassified}
+                    onChange={e => setForm(prev => ({ ...prev, is_reclassified: e.target.checked }))}
+                    className="w-5 h-5 rounded-lg border-2 border-purple-200 text-purple-600 focus:ring-purple-500"
+                  />
+                  <label htmlFor="is_reclassified" className="text-xs font-black text-purple-700 uppercase cursor-pointer">
+                    Aluno Reclassificado
+                  </label>
+                </div>
+
+                {form.is_reclassified && (
+                  <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-300">
+                    <label className="text-[10px] font-black text-purple-400 uppercase ml-1">Data da Reclassificação *</label>
+                    <input
+                      type="date"
+                      required={form.is_reclassified}
+                      value={form.adjustment_date}
+                      onChange={e => setForm(prev => ({ ...prev, adjustment_date: e.target.value }))}
+                      className="w-full p-4 bg-white rounded-xl font-bold text-sm outline-none border border-purple-200"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* ---- Campos específicos por tipo ---- */}

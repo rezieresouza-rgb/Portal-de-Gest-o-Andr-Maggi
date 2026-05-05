@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GraduationCap, Award, Search, CheckCircle2, AlertTriangle, Loader2, ShieldCheck, FileEdit } from 'lucide-react';
-import { INITIAL_STUDENTS, SCHOOL_CLASSES } from '../constants/initialData';
+import { SCHOOL_CLASSES } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { User as UserType } from '../types';
 import { useStudents } from '../hooks/useStudents';

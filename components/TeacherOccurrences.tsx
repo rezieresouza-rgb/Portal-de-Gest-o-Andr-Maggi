@@ -22,7 +22,7 @@ import {
    ShieldCheck as ShieldCheckIcon
 } from 'lucide-react';
 import { ClassroomOccurrence, CaseSeverity } from '../types';
-import { INITIAL_STUDENTS, SCHOOL_CLASSES } from '../constants/initialData';
+import { SCHOOL_CLASSES } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 

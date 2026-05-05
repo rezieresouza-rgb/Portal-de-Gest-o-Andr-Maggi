@@ -1,89 +1,140 @@
-
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
 
-const envPath = path.join('c:', 'Users', 'rezie', 'Downloads', 'portal-de-gestão-andré-maggi', '.env.local');
-const envContent = fs.readFileSync(envPath, 'utf8');
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
-const getEnvVar = (name) => {
-    const match = envContent.match(new RegExp(`${name}=(.*)`));
-    return match ? match[1].trim() : null;
-};
+const classroomId = '51adb22f-63ae-4f17-9970-edd91220ad8e'; // 8º ANO B
 
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+async function update() {
+  console.log("Starting 8º Ano B Student List Update...");
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+  // 1. Correct Registration Numbers
+  const regUpdates = [
+    { id: '9c095220-ccaa-451f-87b2-467084a7b239', reg: '2138684', name: 'KARLLOS MIGUEL PONCIO GOMES' },
+    { id: 'c228c6b4-8291-4360-a85b-00a2182965ae', reg: '2528587', name: 'LAURA BEATRYZ JUNQUEIRA PASCOAL' },
+    { id: 'cf155184-1065-4fa9-b6f0-1a1acb203db4', reg: '2137588', name: 'LUCAS ALEXSSANDRO PEREIRA DE ASSIS' },
+    { id: '29ee62bb-c585-4c30-8df7-29ded6e0a743', reg: '2031895', name: 'PABLO DA SILVA OLIVEIRA' },
+    { id: '6f4871b1-83e0-44cc-9092-41da2cadcaf5', reg: '2183584', name: 'PATRICK RYAN FERREIRA DOS SANTOS' },
+    { id: '8815319f-0f67-4205-b41b-a218426f3459', reg: '2138548', name: 'THALLYS NEVES DE OLIVEIRA' },
+    { id: '12f3de3c-bf00-4c00-acd1-9378fc2239ba', reg: '2523838', name: 'VINICIUS COSER DE JESUS' }
+  ];
 
-const CLASSROOM_ID = '51adb22f-63ae-4fa8-bcff-1875d9e5ae6d'; // 8º ANO B
+  for (const item of regUpdates) {
+    const { error } = await supabase.from('students').update({ registration_number: item.reg }).eq('id', item.id);
+    if (error) console.error(`Error updating ${item.name}:`, error);
+    else console.log(`Updated registration for ${item.name} to ${item.reg}`);
+  }
 
-const studentsData = [
-  {"registration_number": "2235168", "name": "ALEX EMANUEL PAIXÃO SILVA", "status": "TRANSFERIDO DA ESCOLA"},
-  {"registration_number": "2270899", "name": "ANA CLARA FIEL BRITO", "status": "MATRICULADO"},
-  {"registration_number": "2165814", "name": "DERICK ENRIQUE GUIMARÃES AUGUSTO", "status": "MATRICULADO"},
-  {"registration_number": "2197774", "name": "EMANOEL DUARTE VIANA", "status": "MATRICULADO"},
-  {"registration_number": "2559835", "name": "FABIELLI VITÓRIA GONÇALVES COTTEVIQUE", "status": "MATRICULADO"},
-  {"registration_number": "1977800", "name": "FELIPE PEREIRA VIEIRA", "status": "MATRICULADO"},
-  {"registration_number": "2384196", "name": "FERNANDA LOPES PEREIRA", "status": "MATRICULADO"},
-  {"registration_number": "2135818", "name": "IZAQUE SOARES CARON", "status": "MATRICULADO"},
-  {"registration_number": "2151648", "name": "KAMILI DA SILVA SOUZA", "status": "MATRICULADO"},
-  {"registration_number": "2135654", "name": "KARLLOS MIGUEL PONCIO GOMES", "status": "MATRICULADO"},
-  {"registration_number": "2533132", "name": "KETILYN VITÓRIA TEIXEIRA RODRIGUES", "status": "MATRICULADO"},
-  {"registration_number": "2533357", "name": "LAURA BEATRYZ JUNQUEIRA PASCOAL", "status": "MATRICULADO"},
-  {"registration_number": "2137180", "name": "LETYCIA MARIA PAÇOS DA SILVA", "status": "MATRICULADO"},
-  {"registration_number": "2137088", "name": "LUCAS ALEXSSANDRO PEREIRA DE ASSIS", "status": "MATRICULADO"},
-  {"registration_number": "2137425", "name": "LUIZ ANTONIO PINTO DE FREITAS", "status": "MATRICULADO"},
-  {"registration_number": "2483273", "name": "LUIZA EMANUELLY MARQUES ALMEIDA", "status": "TRANSFERIDO DA TURMA"},
-  {"registration_number": "2522831", "name": "MAIKEL COUTLEM DO NASCIMENTO MENDES", "status": "MATRICULADO"},
-  {"registration_number": "2137454", "name": "MATEUS CAMARGO RODRIGUES", "status": "TRANSFERIDO DA ESCOLA"},
-  {"registration_number": "2137142", "name": "NATHALIA NASCIMENTO MARANHÃO", "status": "MATRICULADO"},
-  {"registration_number": "2331985", "name": "PABLO DA SILVA OLIVEIRA", "status": "MATRICULADO"},
-  {"registration_number": "2153584", "name": "PATRICK RYAN FERREIRA DOS SANTOS", "status": "MATRICULADO"},
-  {"registration_number": "2522433", "name": "PAULO VITHOR DE SOUZA LIMA", "status": "MATRICULADO"},
-  {"registration_number": "2534578", "name": "PEDRO MYGUELL SILVA BRITO", "status": "MATRICULADO"},
-  {"registration_number": "2135648", "name": "THALLYSON NEVES DE OLIVEIRA", "status": "MATRICULADO"},
-  {"registration_number": "2522836", "name": "VINICIUS COSER DE JESUS", "status": "MATRICULADO"},
-  {"registration_number": "2551757", "name": "LUAN BARBOSA MOREIRA", "status": "MATRICULADO"},
-  {"registration_number": "2545854", "name": "MARIANA LEAL", "status": "MATRICULADO"},
-  {"registration_number": "2511057", "name": "ARTHUR MANOEL GONÇALVES BRANCO", "status": "MATRICULADO"}
-];
+  // 2. Add Missing Student: Ágata Martins Damacena
+  console.log("Adding Ágata Martins Damacena...");
+  const { data: newStudent, error: addError } = await supabase.from('students').insert([{
+    name: 'ÁGATA MARTINS DAMACENA',
+    registration_number: '2200565',
+    status: 'ATIVO',
+    address: 'NÃO INFORMADO',
+    guardian_name: 'NÃO INFORMADO',
+    contact_phone: 'NÃO INFORMADO'
+  }]).select().single();
+
+  if (addError) {
+    console.error("Error adding Ágata:", addError);
+  } else {
+    console.log("Ágata added with ID:", newStudent.id);
+    const { error: enrError } = await supabase.from('enrollments').insert([{
+      student_id: newStudent.id,
+      classroom_id: classroomId,
+      status: 'ATIVO',
+      enrollment_date: '2026-04-14'
+    }]);
+    if (enrError) console.error("Error enrolling Ágata:", enrError);
+    else console.log("Ágata enrolled in 8B");
+  }
+
+  // 3. Move Student: Luiz Fernando Alves de Godoi
+  console.log("Moving Luiz Fernando Alves de Godoi to 8B...");
+  // First, find his current enrollment and close it? Or just move it.
+  // The system usually allows only one active enrollment.
+  const luizId = '8311b942-ebdb-4e1c-b748-090d8a585f3c';
+  const { error: moveError } = await supabase.from('enrollments').update({
+    classroom_id: classroomId,
+    enrollment_date: '2026-04-24'
+  }).eq('student_id', luizId);
+
+  if (moveError) console.error("Error moving Luiz Fernando:", moveError);
+  else console.log("Luiz Fernando moved to 8B");
+
+  // 4. Update Enrollment Dates for Natali and Arthur
+  const dateUpdates = [
+    { id: '9bbe8b1f-65a7-46a7-a251-599a0b74298e', date: '2026-03-19', name: 'NATALI VITORIA NOVAIS' },
+    { id: '344849e7-495c-43f0-8efd-107062400e99', date: '2026-02-02', name: 'ARTHUR MANOEL GONÇALVES BRANCO' }
+  ];
+  // Wait, I need Arthur's ID. Let me find it first.
+}
+
+async function findArthur() {
+    const { data } = await supabase.from('students').select('id').eq('registration_number', '2519067').single();
+    return data ? data.id : null;
+}
 
 async function run() {
-  try {
-    console.log(`Upserting ${studentsData.length} students...`);
-    const { data: upsertedStudents, error: upsertError } = await supabase
-      .from('students')
-      .upsert(studentsData, { onConflict: 'registration_number' })
-      .select('id, registration_number, name, status');
+    const arthurId = await findArthur();
+    if (arthurId) {
+        console.log("Found Arthur ID:", arthurId);
+        // Start the update with Arthur ID
+        await executeUpdate(arthurId);
+    } else {
+        console.error("Could not find Arthur!");
+    }
+}
 
-    if (upsertError) throw upsertError;
-    console.log('Students upserted successfully.');
+async function executeUpdate(arthurId) {
+  // 1. Correct Registration Numbers (Same as above)
+  const regUpdates = [
+    { id: '9c095220-ccaa-451f-87b2-467084a7b239', reg: '2138684', name: 'KARLLOS MIGUEL PONCIO GOMES' },
+    { id: 'c228c6b4-8291-4360-a85b-00a2182965ae', reg: '2528587', name: 'LAURA BEATRYZ JUNQUEIRA PASCOAL' },
+    { id: 'cf155184-1065-4fa9-b6f0-1a1acb203db4', reg: '2137588', name: 'LUCAS ALEXSSANDRO PEREIRA DE ASSIS' },
+    { id: '29ee62bb-c585-4c30-8df7-29ded6e0a743', reg: '2031895', name: 'PABLO DA SILVA OLIVEIRA' },
+    { id: '6f4871b1-83e0-44cc-9092-41da2cadcaf5', reg: '2183584', name: 'PATRICK RYAN FERREIRA DOS SANTOS' },
+    { id: '8815319f-0f67-4205-b41b-a218426f3459', reg: '2138548', name: 'THALLYS NEVES DE OLIVEIRA' },
+    { id: '12f3de3c-bf00-4c00-acd1-9378fc2239ba', reg: '2523838', name: 'VINICIUS COSER DE JESUS' }
+  ];
 
-    // Delete existing enrollments for this class
-    await supabase.from('enrollments').delete().eq('classroom_id', CLASSROOM_ID);
-
-    // Filter students with status "MATRICULADO"
-    const activeStudentIds = upsertedStudents
-      .filter(s => s.status === 'MATRICULADO')
-      .map(s => s.id);
-
-    const enrollmentsToInsert = activeStudentIds.map(sid => ({
-      classroom_id: CLASSROOM_ID,
-      student_id: sid
-    }));
-
-    const { error: enrollError } = await supabase.from('enrollments').insert(enrollmentsToInsert);
-    if (enrollError) throw enrollError;
-
-    // Update PAED status
-    await supabase.from('students').update({ paed: true }).in('registration_number', ['2165814', '1977800']);
-
-    console.log(`Update complete! ${activeStudentIds.length} students enrolled in 8º ANO B.`);
-
-  } catch (err) {
-    console.error('Erro:', err.message);
+  for (const item of regUpdates) {
+    await supabase.from('students').update({ registration_number: item.reg }).eq('id', item.id);
   }
+
+  // 2. Add Ágata
+  const { data: newStudent } = await supabase.from('students').insert([{
+    name: 'ÁGATA MARTINS DAMACENA',
+    registration_number: '2200565',
+    status: 'ATIVO',
+    address: 'NÃO INFORMADO',
+    guardian_name: 'NÃO INFORMADO',
+    contact_phone: 'NÃO INFORMADO'
+  }]).select().single();
+
+  if (newStudent) {
+    await supabase.from('enrollments').insert([{
+      student_id: newStudent.id,
+      classroom_id: classroomId,
+      status: 'ATIVO',
+      enrollment_date: '2026-04-14'
+    }]);
+  }
+
+  // 3. Move Luiz Fernando
+  const luizId = '8311b942-ebdb-4e1c-b748-090d8a585f3c';
+  await supabase.from('enrollments').update({
+    classroom_id: classroomId,
+    enrollment_date: '2026-04-24'
+  }).eq('student_id', luizId);
+
+  // 4. Update dates
+  await supabase.from('enrollments').update({ enrollment_date: '2026-03-19' }).eq('student_id', '9bbe8b1f-65a7-46a7-a251-599a0b74298e');
+  await supabase.from('enrollments').update({ enrollment_date: '2026-02-02' }).eq('student_id', arthurId);
+
+  console.log("Update completed successfully!");
 }
 
 run();

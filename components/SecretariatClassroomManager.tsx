@@ -122,7 +122,8 @@ const SecretariatClassroomManager: React.FC = () => {
       return_date: '',
       responsible_name: '',
       transfer_subtype: 'EXTERNA' as 'INTERNA' | 'EXTERNA',
-      is_reclassified: false
+      is_reclassified: false,
+      adjustment_date: new Date().toLocaleDateString('sv-SE')
    });
 
    // New Class States
@@ -582,6 +583,19 @@ const SecretariatClassroomManager: React.FC = () => {
 
          const { error } = await supabase.from('student_movements').insert([payload]);
          if (error) throw error;
+
+         // Update Status and Adjustment Date in Enrollments
+         if (newMovement.type === 'RECLASSIFICADO' || newMovement.is_reclassified) {
+            await supabase.from('students').update({ 
+               status: 'RECLASSIFICADO',
+               adjustment_date: newMovement.adjustment_date 
+            }).eq('id', selectedStudentForMovement.id);
+
+            await supabase.from('enrollments').update({ 
+               status: 'RECLASSIFICADO',
+               adjustment_date: newMovement.adjustment_date 
+            }).eq('student_id', selectedStudentForMovement.id).neq('status', 'ilike', 'TRANSFERIDO%');
+         }
 
          // Update Status
          if (newMovement.type === 'TRANSFERENCIA' && newMovement.transfer_subtype === 'EXTERNA') {

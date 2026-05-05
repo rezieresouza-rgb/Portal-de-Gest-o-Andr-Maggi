@@ -226,11 +226,26 @@ const Contracts: React.FC = () => {
   const [editReceiptDate, setEditReceiptDate] = useState<string>('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-  // Fix timezone issue by formatting the local date properly YYYY-MM-DD
+  // UI Helper for Date Pickers (YYYY-MM-DD)
   const getLocalDateString = () => {
     const d = new Date();
     const tzOffset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+  };
+
+  // DB Helper to avoid Timezone Shifts (noon-offset)
+  const toISODateString = (dateInput?: string | Date) => {
+    let dateStr = '';
+    if (!dateInput) {
+      dateStr = getLocalDateString();
+    } else if (typeof dateInput === 'string') {
+      dateStr = dateInput.split('T')[0];
+    } else {
+      const d = dateInput as Date;
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      dateStr = new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+    }
+    return `${dateStr}T12:00:00.000Z`;
   };
   const [receiptDate, setReceiptDate] = useState<string>(getLocalDateString());
 
@@ -298,13 +313,13 @@ const Contracts: React.FC = () => {
           gross_value: statement.total_value,
           net_value: statement.total_value,
           tax_value: 0,
-          date: paymentModal.paymentDate,
+          date: toISODateString(paymentModal.paymentDate),
           description: `PAGAMENTO: ${contract?.suppliers?.name || 'FORNECEDOR'} (NF ${paymentModal.invoiceNumber})`,
           type: 'EXPENSE',
           category: 'Alimentação',
           tx_group: 'CUSTEIO',
           fund_id: '4f4f3469-6f96-419b-8994-3e9196b05322', // ID fixo da Merenda
-          created_at: new Date().toISOString()
+          created_at: toISODateString()
         });
 
       if (transError) console.error("Erro ao criar transação financeira:", transError.message);
@@ -485,14 +500,7 @@ const Contracts: React.FC = () => {
 
   const addExecutionEvent = async (contractId: string, type: ExecutionEvent['type'], description: string, value?: number, customDateStr?: string) => {
     try {
-      // Use custom date or current local time
-      let eventDateISO = new Date().toISOString();
-      if (customDateStr) {
-        // Create date at noon local time to avoid timezone shifts
-        const [year, month, day] = customDateStr.split('-');
-        const dateObj = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0);
-        eventDateISO = dateObj.toISOString();
-      }
+      const eventDateISO = toISODateString(customDateStr);
 
       const { data, error } = await supabase.from('contract_events').insert({
         contract_id: contractId,
@@ -1020,7 +1028,7 @@ const Contracts: React.FC = () => {
           guide_number: guideNumber,
           total_value: totalValue,
           status: 'GERADA',
-          issue_date: receiptDate
+          issue_date: toISODateString(receiptDate)
         })
         .select()
         .single();
@@ -1192,7 +1200,7 @@ const Contracts: React.FC = () => {
         .from('payment_guides')
         .update({
           total_value: newTotalValue,
-          issue_date: editReceiptDate
+          issue_date: toISODateString(editReceiptDate)
         })
         .eq('id', editGuideModal.id);
 

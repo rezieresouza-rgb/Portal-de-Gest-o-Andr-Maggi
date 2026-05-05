@@ -12,16 +12,19 @@ import {
    AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { INITIAL_STUDENTS } from '../constants/initialData';
+import { useStudents } from '../hooks/useStudents';
 
 const BuscaAtivaFICAI: React.FC = () => {
    const [selectedStudentId, setSelectedStudentId] = useState<string>('');
    const [isGenerating, setIsGenerating] = useState(false);
    const [studentsAtRisk, setStudentsAtRisk] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
+   const { students: allDbStudents, loading: loadingStudents } = useStudents();
 
    useEffect(() => {
-      fetchRiskStudents();
+      if (!loadingStudents) {
+         fetchRiskStudents();
+      }
 
       // Subscribe to real-time attendance changes
       const channel = supabase
@@ -39,7 +42,7 @@ const BuscaAtivaFICAI: React.FC = () => {
       return () => {
          supabase.removeChannel(channel);
       };
-   }, []);
+   }, [loadingStudents, allDbStudents]);
 
    const fetchRiskStudents = async () => {
       setLoading(true);
@@ -59,19 +62,19 @@ const BuscaAtivaFICAI: React.FC = () => {
       }
 
       const atRisk: any[] = [];
-      INITIAL_STUDENTS.forEach(s => {
-         const studentId = s.CodigoAluno;
+      allDbStudents.forEach(s => {
+         const studentId = s.registration_number || s.id;
          const stat = stats[studentId] || { total: 0, present: 0 };
          const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
 
-         if (percent < 90) { // Limit for FICAI usually < 85% or 5 consecutive, let's show all Warning/Critical
+         if (percent < 90) { // Limit for FICAI usually < 85% or 5 consecutive
             atRisk.push({
                id: studentId,
-               name: s.Nome,
-               class: s.Turma,
+               name: s.name,
+               class: s.class,
                absences: stat.total - stat.present,
-               guardian: 'NÃO INFORMADO',
-               phone: 'NÃO INFORMADO'
+               guardian: s.guardian_name || 'NÃO INFORMADO',
+               phone: s.contact_phone || 'NÃO INFORMADO'
             });
          }
       });
