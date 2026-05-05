@@ -263,6 +263,7 @@ const Contracts: React.FC = () => {
   const [showExtractDateModal, setShowExtractDateModal] = useState(false);
   const [extractStartDate, setExtractStartDate] = useState("");
   const [extractEndDate, setExtractEndDate] = useState("");
+  const [extractGuideNumbers, setExtractGuideNumbers] = useState("");
   const [paymentModal, setPaymentModal] = useState<{ statementId: string, paymentDate: string, invoiceNumber: string } | null>(null);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
   const [selectedGuideIds, setSelectedGuideIds] = useState<Set<string>>(new Set());
@@ -697,18 +698,30 @@ const Contracts: React.FC = () => {
 
     setExtractStartDate(defaultStart);
     setExtractEndDate(defaultEnd);
+    setExtractGuideNumbers('');
     setSelectedGuideIds(new Set());
     setShowExtractDateModal(true);
   };
 
   const guidesInPeriod = useMemo(() => {
     if (!selectedContract) return [];
+    
+    const specificGuides = extractGuideNumbers
+      .split(',')
+      .map(s => s.trim().toUpperCase())
+      .filter(s => s.length > 0);
+
     return paymentGuides.filter(g => {
       if (g.contract_id !== selectedContract.id || g.statement_id) return false;
+      
+      if (specificGuides.length > 0) {
+         return specificGuides.includes((g.guide_number || '').toUpperCase());
+      }
+
       if (!g.issue_date) return true;
       return g.issue_date >= extractStartDate && g.issue_date <= extractEndDate;
     });
-  }, [paymentGuides, selectedContract, extractStartDate, extractEndDate]);
+  }, [paymentGuides, selectedContract, extractStartDate, extractEndDate, extractGuideNumbers]);
 
   const handleGenerateExtract = async () => {
     if (!selectedContract) return;
@@ -2152,6 +2165,18 @@ const Contracts: React.FC = () => {
                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fim</label>
                <input type="date" value={extractEndDate} onChange={(e) => setExtractEndDate(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none" />
              </div>
+           </div>
+
+           <div className="flex items-center gap-4 my-2">
+             <div className="h-px bg-gray-100 flex-1"></div>
+             <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">OU</span>
+             <div className="h-px bg-gray-100 flex-1"></div>
+           </div>
+
+           <div className="space-y-1">
+             <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest ml-1">Filtrar por Guias (Opcional)</label>
+             <input type="text" placeholder="Ex: PAG-2026-3942, PAG-2026-1029" value={extractGuideNumbers} onChange={(e) => setExtractGuideNumbers(e.target.value)} className="w-full p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none placeholder:text-indigo-200" />
+             <p className="text-[9px] font-bold text-gray-400 ml-1">Separe por vírgula para agrupar várias guias específicas num mesmo extrato.</p>
            </div>
            <button onClick={handleGenerateExtract} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex justify-center items-center gap-3">
               <TrendingUp size={18} /> Gerar Prévia do Extrato
