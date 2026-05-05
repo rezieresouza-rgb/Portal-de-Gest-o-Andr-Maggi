@@ -868,7 +868,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/time:text-blue-500 transition-colors">
                                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                         </div>
-                                        <input type="time" value={newTx.time} onChange={(e) => setNewTx({ ...newTx, time: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
+                                        <input type="time" step="1" value={newTx.time} onChange={(e) => setNewTx({ ...newTx, time: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
                                       </div>
                                     </div>
                                   </div>
