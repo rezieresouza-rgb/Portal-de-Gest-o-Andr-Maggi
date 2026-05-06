@@ -39,7 +39,9 @@ import {
   UserCheck,
   Maximize2,
   Database,
-  Trash2 // Added Trash2 icon
+  Trash2,
+  FileSearch,
+  Printer
 } from 'lucide-react';
 import { extractInvoiceInfo } from '../geminiService';
 import { supabase } from '../supabaseClient';
@@ -54,7 +56,7 @@ const DEFAULT_FUNDS = [
   { name: 'pdde_qualidade', full_name: 'PDDE Qualidade (FEDERAL)', budget_year: new Date().getFullYear().toString() },
 ];
 
-type SubModuleType = 'dashboard' | 'ru' | 'merenda' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget';
+type SubModuleType = 'dashboard' | 'ru' | 'merenda' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget' | 'transaction_reports';
 
 interface Transaction {
   id: string;
@@ -108,6 +110,14 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     invoice: '',
     value: '',
     date: ''
+  });
+
+  const [reportFilters, setReportFilters] = useState({
+    fund: 'all',
+    type: 'ALL',
+    group: 'ALL',
+    startDate: '',
+    endDate: ''
   });
 
   // UI Helper for Date Pickers (YYYY-MM-DD)
@@ -613,11 +623,19 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
             <button
               onClick={() => setActiveTab('reports')}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'reports'
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all mb-2 ${activeTab === 'reports'
                 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
             >
               <FileText size={18} /> Prestação de Contas
+            </button>
+            <button
+              onClick={() => setActiveTab('transaction_reports')}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'transaction_reports'
+                ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
+                : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >
+              <FileSearch size={18} /> Relatório de Lançamentos
             </button>
           </nav>
 
@@ -1616,6 +1634,148 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                           </table>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'transaction_reports' && (
+                    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+                       <div className="bg-white/5 backdrop-blur-md p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-8">
+                         <div className="flex justify-between items-center border-b border-white/5 pb-6">
+                           <div className="flex items-center gap-3">
+                             <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20"><FileSearch size={20} /></div>
+                             <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Relatório de Lançamentos</h3>
+                           </div>
+                           <button onClick={() => window.print()} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2 no-print">
+                              <Printer size={16} /> Imprimir Relatório
+                           </button>
+                         </div>
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 no-print">
+                            <select 
+                               value={reportFilters.fund} 
+                               onChange={e => setReportFilters({...reportFilters, fund: e.target.value})}
+                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                            >
+                               <option className="bg-gray-900" value="all">Todas as Fontes</option>
+                               {Object.values(funds).map(f => (
+                                 <option className="bg-gray-900" key={f.id} value={f.id}>{f.name}</option>
+                               ))}
+                            </select>
+                            
+                            <select 
+                               value={reportFilters.type} 
+                               onChange={e => setReportFilters({...reportFilters, type: e.target.value})}
+                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                            >
+                               <option className="bg-gray-900" value="ALL">Todas as Moviment.</option>
+                               <option className="bg-gray-900" value="ENTRY">Apenas Entradas</option>
+                               <option className="bg-gray-900" value="EXPENSE">Apenas Saídas</option>
+                            </select>
+
+                            <select 
+                               value={reportFilters.group} 
+                               onChange={e => setReportFilters({...reportFilters, group: e.target.value})}
+                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                            >
+                               <option className="bg-gray-900" value="ALL">Custeio & Capital</option>
+                               <option className="bg-gray-900" value="CUSTEIO">Apenas Custeio</option>
+                               <option className="bg-gray-900" value="CAPITAL">Apenas Capital</option>
+                            </select>
+
+                            <input 
+                               type="date" 
+                               value={reportFilters.startDate}
+                               onChange={e => setReportFilters({...reportFilters, startDate: e.target.value})}
+                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none invert opacity-80"
+                               title="Data Inicial"
+                            />
+                            <input 
+                               type="date" 
+                               value={reportFilters.endDate}
+                               onChange={e => setReportFilters({...reportFilters, endDate: e.target.value})}
+                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none invert opacity-80"
+                               title="Data Final"
+                            />
+                         </div>
+
+                         <div className="overflow-x-auto bg-white/5 p-4 rounded-3xl border border-white/10 print:bg-transparent print:border-none print:p-0">
+                           <table className="w-full text-left text-[11px] border-collapse print:text-black">
+                             <thead>
+                               <tr className="text-white/40 border-b border-white/5 print:text-black print:border-black">
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Data</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Fonte</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Descrição</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest">NF</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Tipo</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest text-right">Valor</th>
+                               </tr>
+                             </thead>
+                             <tbody className="divide-y divide-white/5 print:divide-gray-300">
+                               {(() => {
+                                 let filtered = Object.values(funds).flatMap(f => f.transactions.map(t => ({...t, fundName: f.name})));
+                                 
+                                 if (reportFilters.fund !== 'all') {
+                                    filtered = filtered.filter(t => t.fundName === funds[reportFilters.fund as SubModuleType].name);
+                                 }
+                                 if (reportFilters.type !== 'ALL') {
+                                    filtered = filtered.filter(t => t.type === reportFilters.type);
+                                 }
+                                 if (reportFilters.group !== 'ALL') {
+                                    filtered = filtered.filter(t => t.group === reportFilters.group);
+                                 }
+                                 if (reportFilters.startDate) {
+                                    filtered = filtered.filter(t => t.date >= reportFilters.startDate);
+                                 }
+                                 if (reportFilters.endDate) {
+                                    filtered = filtered.filter(t => t.date <= reportFilters.endDate);
+                                 }
+                                 
+                                 filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+                                 const totalEntries = filtered.filter(t => t.type === 'ENTRY').reduce((acc, t) => acc + t.value, 0);
+                                 const totalExpenses = filtered.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.value, 0);
+
+                                 if (filtered.length === 0) {
+                                    return <tr><td colSpan={6} className="py-10 text-center text-white/30 print:text-gray-500 text-xs font-bold uppercase tracking-widest">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>;
+                                 }
+
+                                 return (
+                                    <>
+                                       {filtered.map(t => (
+                                          <tr key={t.id} className="hover:bg-white/5 transition-all print:hover:bg-transparent">
+                                            <td className="px-4 py-3 font-bold text-white/70 print:text-black">{new Date(t.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                                            <td className="px-4 py-3 font-bold text-white/70 uppercase print:text-black text-[9px]">{t.fundName}</td>
+                                            <td className="px-4 py-3 font-black text-white uppercase print:text-black max-w-[200px] truncate" title={t.description}>{t.description}</td>
+                                            <td className="px-4 py-3 font-bold text-white/50 print:text-black">{t.invoiceNumber || '-'}</td>
+                                            <td className="px-4 py-3">
+                                               <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${t.type === 'ENTRY' ? 'bg-blue-500/20 text-blue-400 print:bg-transparent print:text-black print:border print:border-black' : 'bg-red-500/20 text-red-400 print:bg-transparent print:text-black print:border print:border-black'}`}>
+                                                  {t.type === 'ENTRY' ? 'Entrada' : 'Saída'} - {t.group}
+                                               </span>
+                                            </td>
+                                            <td className={`px-4 py-3 font-black text-right ${t.type === 'ENTRY' ? 'text-blue-400 print:text-black' : 'text-red-400 print:text-black'}`}>
+                                               {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </td>
+                                          </tr>
+                                       ))}
+                                       <tr className="bg-white/10 print:bg-gray-100 border-t-2 border-white/20 print:border-black">
+                                          <td colSpan={5} className="px-4 py-4 text-right font-black text-white print:text-black uppercase tracking-widest text-xs">Total Entradas</td>
+                                          <td className="px-4 py-4 text-right font-black text-blue-400 print:text-black text-sm">R$ {totalEntries.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                       </tr>
+                                       <tr className="bg-white/10 print:bg-gray-100 border-t border-white/5 print:border-gray-300">
+                                          <td colSpan={5} className="px-4 py-4 text-right font-black text-white print:text-black uppercase tracking-widest text-xs">Total Saídas</td>
+                                          <td className="px-4 py-4 text-right font-black text-red-400 print:text-black text-sm">R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                       </tr>
+                                       <tr className="bg-blue-600 print:bg-black">
+                                          <td colSpan={5} className="px-4 py-4 text-right font-black text-white print:text-white uppercase tracking-widest text-sm">Saldo no Período</td>
+                                          <td className="px-4 py-4 text-right font-black text-white print:text-white text-lg">R$ {(totalEntries - totalExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                       </tr>
+                                    </>
+                                 );
+                               })()}
+                             </tbody>
+                           </table>
+                         </div>
+                       </div>
                     </div>
                   )}
 
