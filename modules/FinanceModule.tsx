@@ -820,8 +820,18 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                           value={newTx.description}
                                           onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
                                           placeholder={newTx.type === 'ENTRY' ? "Ex: Repasse FNDE Mês 05..." : "Ex: SILVA COMERCIO - Contrato 028/2026"}
-                                          className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
+                                          className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
                                         />
+                                        {newTx.description && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setNewTx({ ...newTx, description: '' })}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-all"
+                                            title="Limpar fornecedor para escolher outro"
+                                          >
+                                            <X size={16} />
+                                          </button>
+                                        )}
                                         {activeTab === 'merenda' && newTx.type === 'EXPENSE' && activeContracts.length > 0 && (
                                           <datalist id="contracts-list">
                                             {activeContracts.map(c => (
