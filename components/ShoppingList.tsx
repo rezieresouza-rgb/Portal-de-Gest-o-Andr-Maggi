@@ -79,9 +79,14 @@ const ShoppingList: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       setIsLoading(true);
-      const { data: studentsData } = await supabase.from('students').select('id').in('status', ['ATIVO', 'RECLASSIFICADO']);
-      if (studentsData && studentsData.length > 0) {
-        setStudentCount(studentsData.length);
+      const { data: activeE } = await supabase
+        .from('enrollments')
+        .select('student_id')
+        .in('status', ['ATIVO', 'RECLASSIFICADO']);
+      
+      if (activeE && activeE.length > 0) {
+        const uniqueStudents = new Set(activeE.map((e: any) => e.student_id));
+        setStudentCount(uniqueStudents.size);
       }
 
       const { data: contractsData } = await supabase
