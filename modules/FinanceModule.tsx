@@ -51,13 +51,12 @@ import BudgetModule from './BudgetModule';
 
 const DEFAULT_FUNDS = [
   { name: 'ru', full_name: 'Recurso Único (ESTADUAL)', budget_year: new Date().getFullYear().toString() },
-  { name: 'merenda_estadual', full_name: 'Alimentação Escolar (ESTADUAL)', budget_year: new Date().getFullYear().toString() },
-  { name: 'merenda_federal', full_name: 'Alimentação Escolar (FEDERAL - PNAE)', budget_year: new Date().getFullYear().toString() },
+  { name: 'merenda', full_name: 'Alimentação Escolar (FEDERAL/ESTADUAL)', budget_year: new Date().getFullYear().toString() },
   { name: 'pdde_basico', full_name: 'PDDE Básico (FEDERAL)', budget_year: new Date().getFullYear().toString() },
   { name: 'pdde_qualidade', full_name: 'PDDE Qualidade (FEDERAL)', budget_year: new Date().getFullYear().toString() },
 ];
 
-type SubModuleType = 'dashboard' | 'ru' | 'merenda_estadual' | 'merenda_federal' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget' | 'transaction_reports';
+type SubModuleType = 'dashboard' | 'ru' | 'merenda' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget' | 'transaction_reports';
 
 interface Transaction {
   id: string;
@@ -177,8 +176,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   // Mapeamento de cores e ícones estáticos (o banco só guarda Nome e Ano)
   const fundConfig: Record<string, { color: string, icon: any }> = {
     'ru': { color: 'blue', icon: Coins },
-    'merenda_estadual': { color: 'blue', icon: Apple },
-    'merenda_federal': { color: 'emerald', icon: Apple },
+    'merenda': { color: 'emerald', icon: Apple },
     'pdde_basico': { color: 'amber', icon: Building },
     'pdde_qualidade': { color: 'purple', icon: GraduationCap }
   };
@@ -345,15 +343,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
   const getAvailableCategories = (group: string, fundId: string, type: 'ENTRY' | 'EXPENSE') => {
     if (type === 'ENTRY') {
-      if (fundId === 'merenda_federal') return ['Repasse Federal', 'Rendimento de Aplicação', 'Saldo Exercício Anterior'];
-      if (fundId === 'merenda_estadual') return ['Repasse Estadual', 'Rendimento de Aplicação', 'Saldo Exercício Anterior'];
       return ['Repasse Federal', 'Repasse Estadual', 'Rendimento de Aplicação', 'Saldo Exercício Anterior'];
     }
     if (group === 'CAPITAL') {
       return ['Equipamentos e Material Permanente', 'Mobiliário Escolar', 'Equipamentos de Informática', 'Utensílios de Cozinha (Bens Permanentes)', 'Eletrodomésticos', 'Máquinas e Equipamentos'];
     }
     const commonCusteio = ['Material de Consumo', 'Serviços de Terceiros - Pessoa Jurídica', 'Serviços de Terceiros - Pessoa Física', 'Pequenos Reparos e Manutenção Predial', 'Material Pedagógico e Esportivo', 'Material de Expediente', 'Material de Limpeza e Higiene'];
-    if (fundId === 'merenda_federal' || fundId === 'merenda_estadual') return ['Aquisição de Gêneros Alimentícios', 'Gás de Cozinha', 'Material de Higiene (Cozinha)', ...commonCusteio];
+    if (fundId === 'merenda') return ['Aquisição de Gêneros Alimentícios', 'Gás de Cozinha', 'Material de Higiene (Cozinha)', ...commonCusteio];
     if (fundId === 'pdde_qualidade') return ['Material de Apoio Pedagógico', 'Conectividade e Internet', 'Capacitação e Formação', ...commonCusteio];
     if (fundId === 'ru') return ['Manutenção de Ar Condicionado', 'Pequenas Reformas', ...commonCusteio];
     return commonCusteio;
@@ -419,7 +415,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   }, [funds]);
 
   const stats = useMemo(() => {
-    const validFunds = ['ru', 'merenda_federal', 'merenda_estadual', 'pdde_basico', 'pdde_qualidade'];
+    const validFunds = ['ru', 'merenda', 'pdde_basico', 'pdde_qualidade'];
     if (validFunds.includes(activeTab)) return getFundStats(funds[activeTab]);
     return null;
   }, [funds, activeTab]);
@@ -488,15 +484,15 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         invoice_number: newTx.invoiceNumber.toUpperCase(),
         invoice_date: newTx.invoiceDate || null,
         type: newTx.type,
-        tx_group: ((activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') && newTx.type === 'ENTRY') ? 'CUSTEIO' : newTx.group,
+        tx_group: (activeTab === 'merenda' && newTx.type === 'ENTRY') ? 'CUSTEIO' : newTx.group,
         gross_value: rawValue,
         tax_value: taxValue,
         net_value: netValue,
         category: newTx.category,
         integrated_action: activeTab === 'pdde_qualidade' ? newTx.integratedAction : null,
-        funding_source: activeTab === 'merenda_federal' ? 'FEDERAL' : activeTab === 'merenda_estadual' ? 'ESTADUAL' : (activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') ? newTx.fundingSource : null,
-        is_family_agriculture: (activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') ? newTx.isFamilyAgriculture : false,
-        is_individual_producer: (activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') ? newTx.isIndividualProducer : false,
+        funding_source: activeTab === 'merenda' ? newTx.fundingSource : null,
+        is_family_agriculture: activeTab === 'merenda' ? newTx.isFamilyAgriculture : false,
+        is_individual_producer: activeTab === 'merenda' ? newTx.isIndividualProducer : false,
         time: newTx.time || null,
         ...(receiptUrl ? { receipt_url: receiptUrl } : {})
       };
@@ -516,7 +512,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       setIsModalOpen(false);
       setTempFile(null);
       setEditingTx(null);
-      setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
+      setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: activeTab === 'merenda' ? 'FEDERAL' : '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
       fetchFinancialData();
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
@@ -608,8 +604,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
               <div className="space-y-1">
                 {[
                   { id: 'ru', label: 'R.U (Recurso Único)', icon: Coins },
-                  { id: 'merenda_estadual', label: 'Alimentação Estadual', icon: Apple },
-                  { id: 'merenda_federal', label: 'Alimentação Federal', icon: Apple },
+                  { id: 'merenda', label: 'Alimentação Escolar', icon: Apple },
                   { id: 'pdde_basico', label: 'PDDE Básico', icon: Building },
                   { id: 'pdde_qualidade', label: 'PDDE Qualidade', icon: GraduationCap },
                 ].map(item => (
@@ -666,7 +661,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                 <Maximize2 size={18} className="group-hover:text-blue-400" />
                 <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Expandir</span>
               </button>
-              {(activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') && stats && (
+              {activeTab === 'merenda' && stats && (
                 <div className="flex items-center gap-4 bg-emerald-900/20 px-4 py-2 rounded-2xl border border-emerald-500/20 animate-in slide-in-from-right-4 backdrop-blur-md">
                   <div className="text-right">
                     <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest leading-none">Meta 45% (PNAE)</p>
@@ -733,7 +728,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </p>
                                 </div>
                               </div>
-                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
+                              <button onClick={() => { setIsModalOpen(false); setEditingTx(null); setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: activeTab === 'merenda' ? 'FEDERAL' : '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() }); }} className="p-3 bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all duration-200">
                                 <X size={24} />
                               </button>
                             </div>
@@ -811,12 +806,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </div>
 
                                   <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">{(activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') ? 'Origem do Recurso' : 'Natureza'}</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">{activeTab === 'merenda' ? 'Origem do Recurso' : 'Natureza'}</label>
                                     <div className="flex bg-gray-100 p-1.5 rounded-[1.5rem] shadow-inner">
-                                      {activeTab === 'merenda_federal' ? (
-                                        <button type="button" disabled className="flex-1 py-3 rounded-2xl text-[10px] font-black uppercase bg-emerald-600 text-white shadow-md">Federal</button>
-                                      ) : activeTab === 'merenda_estadual' ? (
-                                        <button type="button" disabled className="flex-1 py-3 rounded-2xl text-[10px] font-black uppercase bg-blue-600 text-white shadow-md">Estadual</button>
+                                      {activeTab === 'merenda' ? (
+                                        <>
+                                          <button type="button" onClick={() => setNewTx({ ...newTx, fundingSource: 'FEDERAL' })} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase transition-all duration-300 ${newTx.fundingSource === 'FEDERAL' ? 'bg-emerald-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>Federal</button>
+                                          <button type="button" onClick={() => setNewTx({ ...newTx, fundingSource: 'ESTADUAL' })} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase transition-all duration-300 ${newTx.fundingSource === 'ESTADUAL' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>Estadual</button>
+                                        </>
                                       ) : (
                                         <>
                                           <button type="button" onClick={() => setNewTx({ ...newTx, group: 'CUSTEIO' })} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase transition-all duration-300 ${newTx.group === 'CUSTEIO' ? 'bg-white text-blue-600 shadow-md ring-1 ring-black/5' : 'text-gray-400 hover:text-gray-600'}`}>Custeio</button>
@@ -838,7 +834,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                         <input
                                           type="text"
                                           required
-                                          list={((activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') && newTx.type === 'EXPENSE') ? "contracts-list" : undefined}
+                                          list={(activeTab === 'merenda' && newTx.type === 'EXPENSE') ? "contracts-list" : undefined}
                                           value={newTx.description}
                                           onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
                                           placeholder={newTx.type === 'ENTRY' ? "Ex: Repasse FNDE Mês 05..." : "Ex: SILVA COMERCIO - Contrato 028/2026"}
@@ -854,7 +850,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                             <X size={16} />
                                           </button>
                                         )}
-                                        {(activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') && newTx.type === 'EXPENSE' && activeContracts.length > 0 && (
+                                        {activeTab === 'merenda' && newTx.type === 'EXPENSE' && activeContracts.length > 0 && (
                                           <datalist id="contracts-list">
                                             {activeContracts.map(c => (
                                               <option key={c.id} value={`${c.suppliers?.name} - Contrato ${c.number}`} />
@@ -941,7 +937,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </div>
                                 )}
 
-                                {(activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') && newTx.type === 'EXPENSE' && (
+                                {activeTab === 'merenda' && newTx.type === 'EXPENSE' && (
                                   <div className="bg-emerald-50/50 p-8 rounded-[2.5rem] border border-emerald-100 space-y-6 animate-in slide-in-from-top-4">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-3">
@@ -1189,7 +1185,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                               })}
                             </div>
                           </div>
-                        ) : (activeTab === 'merenda_federal' || activeTab === 'merenda_estadual') ? (
+                        ) : activeTab === 'merenda' ? (
                           <div className="flex gap-6 overflow-x-auto pb-2 custom-scrollbar flex-1">
                             <div className="bg-emerald-900/20 p-6 rounded-[2rem] border border-emerald-500/20 backdrop-blur-md flex-1 text-center flex flex-col justify-center min-w-[150px]">
                               <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1 flex items-center justify-center gap-2"><Building size={12} /> Saldo Federal</p>
@@ -1336,7 +1332,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
                              <button onClick={() => {
                                setEditingTx(null);
-                               setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
+                               setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: activeTab === 'merenda' ? 'FEDERAL' : '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
                                setIsModalOpen(true);
                              }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
                           </div>

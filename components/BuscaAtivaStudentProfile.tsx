@@ -59,6 +59,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
   const [activeView, setActiveView] = useState<'history' | 'protocol'>('history');
   const [monitoringLogs, setMonitoringLogs] = useState<any[]>([]);
   const [mediationFeedbacks, setMediationFeedbacks] = useState<any[]>([]);
+  const [rawActions, setRawActions] = useState<any[]>([]);
   const [actionsStatus, setActionsStatus] = useState<Record<string, { status: string, notes: string, completed_at: string | null }>>({});
   const [loadingLogs, setLoadingLogs] = useState(true);
   const [loadingActions, setLoadingActions] = useState(true);
@@ -74,7 +75,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
   useEffect(() => {
     fetchMonitoringLogs();
     fetchActions();
-    fetchMediationFeedbacks();
+    fetchMediationData();
 
     const channel = supabase
       .channel(`student-monitoring-${student.id}`)
@@ -99,7 +100,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
         schema: 'public', 
         table: 'mediation_cases'
       }, () => {
-        fetchMediationFeedbacks();
+        fetchMediationData();
       })
       .subscribe();
 
@@ -108,22 +109,18 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
     };
   }, [student.id]);
 
-  const fetchMediationFeedbacks = async () => {
+  const fetchMediationData = async () => {
     try {
       // Tenta buscar pelo nome (case-insensitive) OU pelo student_id
       const { data: byName } = await supabase
         .from('mediation_cases')
-        .select('id, feedback, opened_at, description, status, type')
-        .ilike('student_name', student.name.trim())
-        .not('feedback', 'is', null)
-        .neq('feedback', '');
+        .select('id, feedback, opened_at, description, status, type, logs')
+        .ilike('student_name', student.name.trim());
 
       const { data: byId } = await supabase
         .from('mediation_cases')
-        .select('id, feedback, opened_at, description, status, type')
-        .eq('student_id', student.id)
-        .not('feedback', 'is', null)
-        .neq('feedback', '');
+        .select('id, feedback, opened_at, description, status, type, logs')
+        .eq('student_id', student.id);
 
       // Mescla os resultados sem duplicatas
       const combined = [...(byName || []), ...(byId || [])];
@@ -132,7 +129,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
       );
       setMediationFeedbacks(unique);
     } catch (e) {
-      console.error('Erro ao buscar devolutivas da mediação:', e);
+      console.error('Erro ao buscar dados da mediação:', e);
     }
   };
 
@@ -143,7 +140,6 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
         .from('occurrences')
         .select('*')
         .eq('student_id', student.id)
-        .eq('category', 'BUSCA_ATIVA')
         .order('date', { ascending: false })
         .order('time', { ascending: false });
 
@@ -166,6 +162,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
 
       if (error) throw error;
 
+      setRawActions(data || []);
       const statusMap: any = {};
       if (data) {
         data.forEach((action: any) => {
@@ -370,17 +367,18 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
               <div className="space-y-4 relative before:absolute before:left-6 before:top-2 before:bottom-2 before:w-0.5 before:bg-emerald-100">
                  {loadingLogs ? (
                    <div className="py-12 text-center ml-12"><Loader2 className="animate-spin mx-auto text-emerald-600" /></div>
-                 ) : monitoringLogs.length > 0 || studentReferrals.length > 0 || mediationFeedbacks.length > 0 ? (
-                   [...monitoringLogs.map(log => ({ 
+                 ) : monitoringLogs.length > 0 || studentReferrals.length > 0 || mediationFeedbacks.length > 0 || rawActions.some(a => a.status === 'CONCLUIDO') ? (
+                    [...monitoringLogs.map(log => ({ 
                       id: log.id, 
                       date: log.date, 
                       time: log.time, 
-                      type: 'BUSCA ATIVA', 
+                      type: log.category || 'BUSCA ATIVA', 
                       content: log.description, 
                       responsible: log.responsible_name || 'Equipe',
                       isOccurrence: true,
                       original: log,
-                      isMediationFeedback: false
+                      isMediationFeedback: false,
+                      isProtocolAction: false
                    })), ...studentReferrals.map(ref => ({
                       id: ref.id,
                       date: ref.date,
@@ -390,17 +388,73 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                       responsible: ref.responsible,
                       isOccurrence: false,
                       original: ref,
-                      isMediationFeedback: false
-                   })), ...mediationFeedbacks.map(fb => ({
-                      id: `med-${fb.id}`,
-                      date: fb.opened_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-                      time: '23:59',
-                      type: 'DEVOLUTIVA DA MEDIAÇÃO',
-                      content: fb.feedback,
-                      responsible: 'Equipe de Mediação',
+                      isMediationFeedback: false,
+                      isProtocolAction: false
+                   })), ...mediationFeedbacks.flatMap(fb => {
+                      const items = [];
+                      
+                      // 1. Relato Original
+                      if (fb.description) {
+                        items.push({
+                          id: `med-desc-${fb.id}`,
+                          date: fb.opened_at || fb.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+                          time: '00:00',
+                          type: 'MEDIAÇÃO (RELATO)',
+                          content: fb.description,
+                          responsible: 'Abertura de Caso',
+                          isOccurrence: false,
+                          original: null,
+                          isMediationFeedback: false,
+                          isProtocolAction: false
+                        });
+                      }
+
+                      // 2. Logs de Atendimento
+                      if (fb.logs && Array.isArray(fb.logs)) {
+                        fb.logs.forEach((log: any, idx: number) => {
+                          items.push({
+                            id: `med-log-${fb.id}-${idx}`,
+                            date: log.date || fb.opened_at,
+                            time: '12:00',
+                            type: 'MEDIAÇÃO (ATENDIMENTO)',
+                            content: log.content,
+                            responsible: log.professional || 'Equipe Mediação',
+                            isOccurrence: false,
+                            original: null,
+                            isMediationFeedback: false,
+                            isProtocolAction: false
+                          });
+                        });
+                      }
+
+                      // 3. Devolutiva Final
+                      if (fb.feedback) {
+                        items.push({
+                          id: `med-fb-${fb.id}`,
+                          date: fb.opened_at || new Date().toISOString().split('T')[0],
+                          time: '23:59',
+                          type: 'DEVOLUTIVA DA MEDIAÇÃO',
+                          content: fb.feedback,
+                          responsible: 'Equipe de Mediação',
+                          isOccurrence: false,
+                          original: null,
+                          isMediationFeedback: true,
+                          isProtocolAction: false
+                        });
+                      }
+                      
+                      return items;
+                   }), ...rawActions.filter(a => a.status === 'CONCLUIDO').map(a => ({
+                      id: `action-${a.id}`,
+                      date: a.completed_at?.split('T')[0] || a.created_at?.split('T')[0],
+                      time: a.completed_at?.split('T')[1]?.substring(0, 5) || '00:00',
+                      type: 'PROTOCOLO',
+                      content: `${ACTION_ITEMS.find(i => i.id === a.action_type)?.label}${a.notes ? `: ${a.notes}` : ''}`,
+                      responsible: 'Equipe Busca Ativa',
                       isOccurrence: false,
-                      original: null,
-                      isMediationFeedback: true
+                      original: a,
+                      isMediationFeedback: false,
+                      isProtocolAction: true
                    }))]
                    .sort((a, b) => {
                       const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
@@ -409,7 +463,7 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                    })
                    .map((item) => (
                     <div key={item.id} className="relative pl-12">
-                       <div className={`absolute left-4 top-1 w-4 h-4 rounded-full border-4 border-white shadow-sm z-10 ${item.isMediationFeedback ? 'bg-green-600' : 'bg-emerald-500'}`}></div>
+                       <div className={`absolute left-4 top-1 w-4 h-4 rounded-full border-4 border-white shadow-sm z-10 ${item.isMediationFeedback ? 'bg-green-600' : item.isProtocolAction ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
                        <div className={`p-5 rounded-[2rem] border shadow-sm transition-all group ${
                           item.isMediationFeedback 
                             ? 'bg-emerald-50 border-emerald-200 hover:border-emerald-400' 
@@ -417,13 +471,13 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                         }`}>
                           <div className="flex justify-between items-start mb-2">
                              <div className="flex items-center gap-2">
-                                <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase border ${
-                                   item.isMediationFeedback
-                                     ? 'bg-emerald-600 text-white border-emerald-700'
-                                     : item.type === 'BUSCA ATIVA' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-violet-50 text-violet-600 border-violet-100'
-                                 }`}>
-                                  {item.type}
-                                </span>
+                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase border ${
+                                    item.isMediationFeedback
+                                      ? 'bg-emerald-600 text-white border-emerald-700'
+                                      : item.isProtocolAction ? 'bg-blue-50 text-blue-600 border-blue-100' : item.type === 'BUSCA ATIVA' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-violet-50 text-violet-600 border-violet-100'
+                                  }`}>
+                                   {item.type}
+                                 </span>
                              </div>
                               <div className="flex items-center gap-3">
                                  {item.isOccurrence && (
@@ -553,6 +607,17 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
                             <p className="text-[9px] text-gray-400 font-bold truncate tracking-tight uppercase opacity-60">
                               {item.description}
                             </p>
+                            {isDone && (
+                              <div className="mt-2 animate-in slide-in-from-top-1 duration-300">
+                                <input 
+                                  type="text"
+                                  placeholder="Adicionar tratativa/observação..."
+                                  defaultValue={status.notes}
+                                  onBlur={(e) => handleSaveNotes(item.id, e.target.value)}
+                                  className="w-full bg-emerald-50/50 border border-emerald-100 rounded-lg p-2 text-[10px] font-bold text-emerald-800 outline-none focus:bg-white focus:border-emerald-500 transition-all"
+                                />
+                              </div>
+                            )}
                           </div>
 
                           <div className={`p-2 rounded-lg ${isDone ? 'text-emerald-500' : 'text-gray-300'}`}>
