@@ -216,6 +216,7 @@ const Contracts: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showBatchDeliveryModal, setShowBatchDeliveryModal] = useState(false);
   const [batchDeliveryData, setBatchDeliveryData] = useState<Record<string, number>>({});
+  const [orderNumber, setOrderNumber] = useState('');
   const [isSavingBatch, setIsSavingBatch] = useState(false);
   const [generatedGuidePdf, setGeneratedGuidePdf] = useState<{ guide: any, items: any[] } | null>(null);
 
@@ -224,6 +225,7 @@ const Contracts: React.FC = () => {
   const [editBatchDeliveryData, setEditBatchDeliveryData] = useState<Record<string, number>>({});
   const [originalBatchDeliveryData, setOriginalBatchDeliveryData] = useState<Record<string, number>>({});
   const [editReceiptDate, setEditReceiptDate] = useState<string>('');
+  const [editOrderNumber, setEditOrderNumber] = useState<string>('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // UI Helper for Date Pickers (YYYY-MM-DD)
@@ -1071,6 +1073,7 @@ const Contracts: React.FC = () => {
         .insert({
           contract_id: selectedContractId,
           guide_number: guideNumber,
+          order_number: orderNumber || null,
           total_value: totalValue,
           status: 'GERADA',
           issue_date: toISODateString(receiptDate)
@@ -1138,6 +1141,7 @@ const Contracts: React.FC = () => {
       alert("Guia de Recebimento gerada com sucesso!");
       setShowBatchDeliveryModal(false);
       setBatchDeliveryData({});
+      setOrderNumber('');
       setReceiptDate(getLocalDateString());
 
       // Refresh guides list
@@ -1168,6 +1172,7 @@ const Contracts: React.FC = () => {
       setOriginalBatchDeliveryData(itemsMap);
       setEditBatchDeliveryData({ ...itemsMap });
       setEditReceiptDate(guide.issue_date || getLocalDateString());
+      setEditOrderNumber(guide.order_number || '');
       setEditGuideModal(guide);
     } catch (err: any) {
       console.error(err);
@@ -1245,7 +1250,8 @@ const Contracts: React.FC = () => {
         .from('payment_guides')
         .update({
           total_value: newTotalValue,
-          issue_date: toISODateString(editReceiptDate)
+          issue_date: toISODateString(editReceiptDate),
+          order_number: editOrderNumber || null
         })
         .eq('id', editGuideModal.id);
 
@@ -1588,6 +1594,7 @@ const Contracts: React.FC = () => {
                     <thead>
                       <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
                         <th className="px-6 py-4">Nº da Guia</th>
+                        <th className="px-6 py-4">Nº do Pedido</th>
                         <th className="px-6 py-4">Data de Emissão</th>
                         <th className="px-6 py-4">Data do Recebimento</th>
                         <th className="px-6 py-4">Status / Extrato</th>
@@ -1600,6 +1607,9 @@ const Contracts: React.FC = () => {
                         <tr key={guide.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="px-6 py-5">
                             <p className="font-black text-gray-900 text-xs uppercase">{guide.guide_number}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-gray-600 text-xs uppercase">{guide.order_number || '-'}</p>
                           </td>
                           <td className="px-6 py-5">
                             <p className="font-bold text-gray-500 text-xs">{new Date(guide.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
@@ -2080,6 +2090,9 @@ const Contracts: React.FC = () => {
               <div className="text-right">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Guia de Recebimento</p>
                 <h1 className="text-3xl font-black text-gray-900">{generatedGuidePdf.guide.guide_number}</h1>
+                {generatedGuidePdf.guide.order_number && (
+                  <p className="text-[11px] font-black text-gray-900 uppercase mt-1">Pedido: {generatedGuidePdf.guide.order_number}</p>
+                )}
                 <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Emissão: {new Date(generatedGuidePdf.guide.created_at).toLocaleDateString('pt-BR')}</p>
                 <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Recebimento: {new Date(generatedGuidePdf.guide.issue_date + "T12:00:00").toLocaleDateString('pt-BR')}</p>
               </div>
@@ -2389,12 +2402,21 @@ const Contracts: React.FC = () => {
           <button onClick={() => setShowBatchDeliveryModal(false)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-12 bg-gray-50 text-gray-900">
-          <div className="mb-8 p-6 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
-            <div>
-              <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Data do Recebimento</h4>
-              <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Informe a data real da entrega</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="p-6 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
+              <div>
+                <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Data do Recebimento</h4>
+                <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Informe a data real da entrega</p>
+              </div>
+              <input type="date" required value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} className="p-3 bg-gray-50 border border-emerald-100 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-emerald-500 transition-all shadow-inner" />
             </div>
-            <input type="date" required value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} className="p-3 bg-gray-50 border border-emerald-100 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-emerald-500 transition-all shadow-inner" />
+            <div className="p-6 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
+              <div className="flex-1">
+                <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Número do Pedido</h4>
+                <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Vincule a ordem de compra</p>
+              </div>
+              <input type="text" placeholder="Ex: 123/2026" value={orderNumber} onChange={(e) => setOrderNumber(e.target.value.toUpperCase())} className="p-3 bg-gray-50 border border-emerald-100 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-emerald-500 transition-all shadow-inner w-40 text-center" />
+            </div>
           </div>
           <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
             <table className="w-full text-left border-collapse">
@@ -2452,12 +2474,21 @@ const Contracts: React.FC = () => {
           <button onClick={() => setEditGuideModal(null)} className="text-gray-300 hover:text-red-500 transition-colors"><X size={28} /></button>
         </div>
         <form onSubmit={handleSaveEditGuide} className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar text-sm">
-          <div className="mb-2 px-6 py-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
-            <div>
-              <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Data do Recebimento</h4>
-              <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Corrija a data se necessário</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+            <div className="px-6 py-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
+              <div>
+                <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Data do Recebimento</h4>
+                <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Corrija a data se necessário</p>
+              </div>
+              <input type="date" required value={editReceiptDate} onChange={(e) => setEditReceiptDate(e.target.value)} className="p-3 bg-gray-50 border border-blue-200 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" />
             </div>
-            <input type="date" required value={editReceiptDate} onChange={(e) => setEditReceiptDate(e.target.value)} className="p-3 bg-gray-50 border border-blue-200 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" />
+            <div className="px-6 py-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm">
+              <div className="flex-1">
+                <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Número do Pedido</h4>
+                <p className="text-xs font-black text-gray-900 uppercase mt-0.5">Ajuste o vínculo do pedido</p>
+              </div>
+              <input type="text" placeholder="Ex: 123/2026" value={editOrderNumber} onChange={(e) => setEditOrderNumber(e.target.value.toUpperCase())} className="p-3 bg-gray-50 border border-blue-200 rounded-xl font-black text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner w-40 text-center" />
+            </div>
           </div>
           <div className="overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm mt-6">
             <table className="w-full text-left border-collapse">
