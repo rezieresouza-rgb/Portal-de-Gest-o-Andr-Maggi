@@ -118,6 +118,13 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return false;
     }
 
+    const isCelioOrLucileia = user.name?.toUpperCase().includes('CELIO RICARDO') || 
+                              user.name?.toUpperCase().includes('LUCILEIA');
+
+    if (isCelioOrLucileia && mod.id === 'secretariat') {
+      return true;
+    }
+
     // Prioriza a Função para permissões dinâmicas, fallback para Role
     const permissionKey = user.jobFunction || user.role;
     const rolePermissions = dynamicPermissions[permissionKey] || [];
