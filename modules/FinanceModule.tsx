@@ -1356,6 +1356,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </td>
                                   <td className="px-6 py-4 text-center space-y-1">
                                     <span className={`px-2 py-0.5 rounded font-black text-[7px] uppercase border ${t.group === 'CAPITAL' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' : 'bg-blue-500/10 text-blue-300 border-blue-500/20'}`}>{t.group}</span>
+                                    {t.fundingSource && <span className={`px-2 py-0.5 rounded font-black text-[7px] uppercase border ml-1 ${t.fundingSource === 'FEDERAL' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'}`}>{t.fundingSource}</span>}
                                     {t.isFamilyAgriculture && <span className={`px-2 py-0.5 rounded font-black text-[7px] uppercase border ml-1 ${t.isIndividualProducer ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'}`}>{t.isIndividualProducer ? '[AF-IND]' : '[AF-COOP]'}</span>}
                                   </td>
                                   <td className="px-6 py-4 text-right font-black"><span className={t.type === 'ENTRY' ? 'text-emerald-400' : 'text-red-400'}>R$ {(t.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></td>
@@ -1600,6 +1601,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                           inv.fundColor === 'emerald' ? 'bg-emerald-500' : 'bg-amber-500'
                                         } shadow-sm shadow-white/10`}></div>
                                       <span className="text-[10px] font-black text-white/50 uppercase">{inv.fundName}</span>
+                                      {inv.fundingSource && <span className="text-[8px] bg-white/10 text-white/70 px-1.5 py-0.5 rounded font-black border border-white/5">{inv.fundingSource}</span>}
                                     </div>
                                   </td>
                                   <td className="px-8 py-6 text-right">
@@ -1747,10 +1749,15 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                             <td className="px-4 py-3 font-bold text-white/70 uppercase print:text-black text-[9px]">{t.fundName}</td>
                                             <td className="px-4 py-3 font-black text-white uppercase print:text-black max-w-[200px] truncate" title={t.description}>{t.description}</td>
                                             <td className="px-4 py-3 font-bold text-white/50 print:text-black">{t.invoiceNumber || '-'}</td>
-                                            <td className="px-4 py-3">
-                                               <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${t.type === 'ENTRY' ? 'bg-blue-500/20 text-blue-400 print:bg-transparent print:text-black print:border print:border-black' : 'bg-red-500/20 text-red-400 print:bg-transparent print:text-black print:border print:border-black'}`}>
+                                            <td className="px-4 py-3 space-y-1">
+                                               <span className={`px-2 py-1 rounded text-[8px] font-black uppercase inline-block ${t.type === 'ENTRY' ? 'bg-blue-500/20 text-blue-400 print:bg-transparent print:text-black print:border print:border-black' : 'bg-red-500/20 text-red-400 print:bg-transparent print:text-black print:border print:border-black'}`}>
                                                   {t.type === 'ENTRY' ? 'Entrada' : 'Saída'} - {t.group}
                                                </span>
+                                               {t.fundingSource && (
+                                                  <span className="px-2 py-1 rounded text-[8px] font-black uppercase inline-block ml-1 bg-gray-500/20 text-gray-300 print:bg-transparent print:text-black print:border print:border-gray-500">
+                                                     {t.fundingSource}
+                                                  </span>
+                                               )}
                                             </td>
                                             <td className={`px-4 py-3 font-black text-right ${t.type === 'ENTRY' ? 'text-blue-400 print:text-black' : 'text-red-400 print:text-black'}`}>
                                                {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
