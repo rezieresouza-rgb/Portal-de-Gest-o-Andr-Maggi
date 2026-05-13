@@ -361,7 +361,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   }
                }
                
-               // 2. Criar ou Reativar a matrícula da NOVA TURMA como ATIVO
+               // 2. Criar ou Reativar a matrícula da NOVA TURMA
                if (studentForm.Turma !== 'SEM TURMA') {
                   const targetClass = classrooms.find(c => c.name === studentForm.Turma);
                   if (targetClass) {
@@ -371,9 +371,17 @@ const SecretariatClassroomManager: React.FC = () => {
                         .eq('classroom_id', targetClass.id)
                         .maybeSingle();
                      
+                     const targetPayload: any = {
+                        status: studentForm.status || 'ATIVO',
+                        adjustment_date: studentForm.status !== 'ATIVO' ? studentForm.adjustment_date : null
+                     };
+                     if (studentForm.enrollment_date) {
+                        targetPayload.enrollment_date = studentForm.enrollment_date;
+                     }
+
                      if (existingTarget) {
                         await supabase.from('enrollments')
-                           .update({ status: 'ATIVO' })
+                           .update(targetPayload)
                            .eq('id', existingTarget.id);
                      } else {
                         await supabase.from('enrollments').insert([{
@@ -381,21 +389,25 @@ const SecretariatClassroomManager: React.FC = () => {
                            classroom_id: targetClass.id,
                            enrollment_date: studentForm.enrollment_date || new Date().toLocaleDateString('sv-SE'),
                            adjustment_date: studentForm.status !== 'ATIVO' ? studentForm.adjustment_date : null,
-                           status: 'ATIVO'
+                           status: studentForm.status || 'ATIVO'
                         }]);
                      }
                   }
                }
             } else {
-               // Apenas atualiza o status na turma atual (se houver uma)
+               // Apenas atualiza a matrícula na turma atual (se houver uma)
                if (studentForm.Turma !== 'SEM TURMA') {
                   const currentClass = classrooms.find(c => c.name === studentForm.Turma);
                   if (currentClass) {
+                     const updatePayload: any = { 
+                        status: studentForm.status || 'ATIVO',
+                        adjustment_date: studentForm.status !== 'ATIVO' ? studentForm.adjustment_date : null
+                     };
+                     if (studentForm.enrollment_date) {
+                        updatePayload.enrollment_date = studentForm.enrollment_date;
+                     }
                      await supabase.from('enrollments')
-                        .update({ 
-                           status: studentForm.status || 'ATIVO',
-                           adjustment_date: studentForm.status !== 'ATIVO' ? studentForm.adjustment_date : null
-                        })
+                        .update(updatePayload)
                         .eq('student_id', editingStudentId)
                         .eq('classroom_id', currentClass.id);
                   }
