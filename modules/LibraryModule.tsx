@@ -259,31 +259,51 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
   const [selectedBookForLoan, setSelectedBookForLoan] = useState<Book | null>(null);
 
-  // Carrega base da secretaria para importação
-  const loadSchoolPeople = () => {
-    const savedStudents = localStorage.getItem('secretariat_detailed_students_v1');
-    const students = savedStudents ? JSON.parse(savedStudents) : INITIAL_STUDENTS;
+  // Carrega base da secretaria para importação em tempo real do Supabase
+  const loadSchoolPeople = async () => {
+    try {
+      // 1. Buscar alunos ativos com suas respectivas turmas
+      const { data: enrolls } = await supabase
+        .from('enrollments')
+        .select(`
+          status,
+          students (
+            registration_number,
+            name
+          ),
+          classrooms (
+            name
+          )
+        `)
+        .eq('status', 'ATIVO');
 
-    const savedStaff = localStorage.getItem('secretariat_staff_v4');
-    const staff = savedStaff ? JSON.parse(savedStaff) : [];
-
-    const combined = [
-      ...students.map((s: any) => ({
-        id: s.CodigoAluno,
-        name: s.Nome,
+      const mappedStudents = (enrolls || []).map((e: any) => ({
+        id: e.students?.registration_number || '',
+        name: e.students?.name || '',
         type: 'ALUNO',
-        sub: s.Turma,
-        reg: s.CodigoAluno
-      })),
-      ...staff.map((s: StaffMember) => ({
+        sub: e.classrooms?.name || '',
+        reg: e.students?.registration_number || ''
+      })).filter((s: any) => s.name);
+
+      // 2. Buscar servidores ativos
+      const { data: staffData } = await supabase
+        .from('staff')
+        .select('id, name, job_function, registration')
+        .eq('status', 'EM_ATIVIDADE');
+
+      const mappedStaff = (staffData || []).map((s: any) => ({
         id: s.id,
-        name: s.name,
+        name: s.name || '',
         type: 'SERVIDOR',
-        sub: s.jobFunction,
-        reg: s.registration
-      }))
-    ];
-    setGlobalSchoolPeople(combined);
+        sub: s.job_function || '',
+        reg: s.registration || ''
+      })).filter((s: any) => s.name);
+
+      const combined = [...mappedStudents, ...mappedStaff].sort((a: any, b: any) => a.name.localeCompare(b.name));
+      setGlobalSchoolPeople(combined);
+    } catch (err) {
+      console.error("Erro ao carregar pessoas da escola do Supabase:", err);
+    }
   };
 
   useEffect(() => {
