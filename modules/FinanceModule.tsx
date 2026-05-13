@@ -362,6 +362,18 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     }
   }, [newTx.group, newTx.type, activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 'merenda' && newTx.type === 'ENTRY') {
+      if (newTx.description.toUpperCase().startsWith('RENDIMENTO')) {
+        setNewTx(prev => ({ ...prev, category: 'Rendimento de Aplicação' }));
+      } else if (newTx.fundingSource === 'FEDERAL') {
+        setNewTx(prev => ({ ...prev, category: 'Repasse Federal' }));
+      } else if (newTx.fundingSource === 'ESTADUAL') {
+        setNewTx(prev => ({ ...prev, category: 'Repasse Estadual' }));
+      }
+    }
+  }, [activeTab, newTx.type, newTx.fundingSource, newTx.description]);
+
   const getFundStats = (fund: FundData) => {
     if (!fund) return null;
     const entries = fund.transactions.filter(t => t.type === 'ENTRY').reduce((acc, t) => acc + t.value, 0);
