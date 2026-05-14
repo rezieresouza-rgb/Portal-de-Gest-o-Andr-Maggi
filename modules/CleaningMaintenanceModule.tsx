@@ -334,8 +334,8 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
         <div className="p-6"><button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest leading-none"><ArrowLeft size={16} className="shrink-0" /> <span className="truncate">Voltar ao Hub</span></button></div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 w-full gap-2">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
             <div className="p-2 bg-orange-50 text-orange-600 rounded-lg shrink-0"><Brush size={20} /></div>
             <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Zeladoria & Conservação Escolar</h2>
@@ -354,7 +354,7 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar min-w-0 w-full">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar min-w-0">
           {activeTab === 'protocol_official' && <CleaningOfficialManual />}
           {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
 

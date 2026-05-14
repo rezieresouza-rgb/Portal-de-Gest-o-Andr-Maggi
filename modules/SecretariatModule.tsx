@@ -94,8 +94,8 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 no-print min-w-0 w-full gap-2">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 no-print min-w-0 gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
               <Landmark size={20} />
@@ -106,7 +106,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0 max-w-[60%] justify-end">
             <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors shrink-0">
               <Maximize2 size={18} />
             </button>
@@ -114,10 +114,10 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
               <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div>
               <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Base Ativa</span>
             </div>
-            <div className="flex items-center gap-2 md:gap-3 shrink-0">
-              <div className="text-right hidden sm:block min-w-0">
-                <p className="text-xs font-black text-gray-900 truncate max-w-[120px] md:max-w-none">{user?.name || 'Secretário André'}</p>
-                <p className="text-[9px] text-indigo-600 font-black uppercase tracking-widest truncate">{user?.role || 'Administrador'}</p>
+            <div className="flex items-center gap-2 md:gap-3 shrink-0 min-w-0">
+              <div className="text-right hidden sm:block min-w-0 flex-1">
+                <p className="text-xs font-black text-gray-900 truncate max-w-[100px] md:max-w-[140px]">{user?.name || 'Secretário André'}</p>
+                <p className="text-[9px] text-indigo-600 font-black uppercase tracking-widest truncate max-w-[100px] md:max-w-[140px]">{user?.role || 'Administrador'}</p>
               </div>
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white font-black text-xs md:text-sm uppercase shrink-0">
                 {user?.name ? user.name.substring(0, 2) : 'SA'}
@@ -126,7 +126,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar min-w-0">
           {activeTab === 'dashboard' && <SecretariatDashboard />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
