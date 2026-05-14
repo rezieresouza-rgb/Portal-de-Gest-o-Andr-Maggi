@@ -144,76 +144,76 @@ const SecretariatDashboard: React.FC = () => {
    }
 
    return (
-      <div className="space-y-8 animate-in fade-in duration-700 pb-20">
+      <div className="space-y-8 animate-in fade-in duration-700 pb-20 w-full min-w-0">
          {/* KPI Cards Reais */}
-         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
-               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Alunos Matriculados</p>
+         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full min-w-0">
+            <div className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between min-w-0">
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">Alunos Matriculados</p>
                <div className="flex items-end justify-between mt-1">
-                  <p className="text-3xl font-black text-gray-900">{studentCount}</p>
-                  <GraduationCap size={24} className="text-indigo-200" />
+                  <p className="text-2xl md:text-3xl font-black text-gray-900 truncate">{studentCount}</p>
+                  <GraduationCap size={24} className="text-indigo-200 shrink-0" />
                </div>
             </div>
-            <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-sm flex flex-col justify-between">
-               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Turmas com Alunos</p>
+            <div className="bg-indigo-50 p-5 md:p-6 rounded-3xl border border-indigo-100 shadow-sm flex flex-col justify-between min-w-0">
+               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest truncate">Turmas com Alunos</p>
                <div className="flex items-end justify-between mt-1">
-                  <p className="text-3xl font-black text-indigo-700">{classCount}</p>
-                  <Users size={24} className="text-indigo-300" />
+                  <p className="text-2xl md:text-3xl font-black text-indigo-700 truncate">{classCount}</p>
+                  <Users size={24} className="text-indigo-300 shrink-0" />
                </div>
             </div>
-            <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm flex flex-col justify-between">
-               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Servidores Ativos</p>
+            <div className="bg-emerald-50 p-5 md:p-6 rounded-3xl border border-emerald-100 shadow-sm flex flex-col justify-between min-w-0">
+               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest truncate">Servidores Ativos</p>
                <div className="flex items-end justify-between mt-1">
-                  <p className="text-3xl font-black text-emerald-700">{staffCount}</p>
-                  <Briefcase size={24} className="text-emerald-300" />
+                  <p className="text-2xl md:text-3xl font-black text-emerald-700 truncate">{staffCount}</p>
+                  <Briefcase size={24} className="text-emerald-300 shrink-0" />
                </div>
             </div>
-            <div className={`p-6 rounded-3xl border shadow-sm flex flex-col justify-between ${pendingDocsCount > 0 ? 'bg-amber-50 border-amber-100' : 'bg-gray-50 border-gray-100'}`}>
-               <p className={`text-[10px] font-black uppercase tracking-widest ${pendingDocsCount > 0 ? 'text-amber-600' : 'text-gray-400'}`}>Pendências Cadastrais</p>
+            <div className={`p-5 md:p-6 rounded-3xl border shadow-sm flex flex-col justify-between min-w-0 ${pendingDocsCount > 0 ? 'bg-amber-50 border-amber-100' : 'bg-gray-50 border-gray-100'}`}>
+               <p className={`text-[10px] font-black uppercase tracking-widest truncate ${pendingDocsCount > 0 ? 'text-amber-600' : 'text-gray-400'}`}>Pendências Cadastrais</p>
                <div className="flex items-end justify-between mt-1">
-                  <p className={`text-3xl font-black ${pendingDocsCount > 0 ? 'text-amber-700' : 'text-gray-400'}`}>{pendingDocsCount}</p>
-                  <AlertCircle size={24} className={pendingDocsCount > 0 ? 'text-amber-300' : 'text-gray-200'} />
+                  <p className={`text-2xl md:text-3xl font-black truncate ${pendingDocsCount > 0 ? 'text-amber-700' : 'text-gray-400'}`}>{pendingDocsCount}</p>
+                  <AlertCircle size={24} className={pendingDocsCount > 0 ? 'text-amber-300 shrink-0' : 'text-gray-200 shrink-0'} />
                </div>
             </div>
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 w-full min-w-0">
             {/* Atividades Recentes Reais */}
-            <div className="lg:col-span-2 space-y-6">
-               <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm min-h-[400px]">
-                  <div className="flex items-center justify-between mb-8">
-                     <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
-                        <HistoryIcon className="text-indigo-600" /> Movimentações Recentes
+            <div className="lg:col-span-2 space-y-6 min-w-0 w-full">
+               <div className="bg-white p-4 sm:p-8 rounded-[2.5rem] border border-gray-100 shadow-sm min-h-[400px] min-w-0 w-full">
+                  <div className="flex items-center justify-between mb-6">
+                     <h3 className="text-base sm:text-xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-2 truncate">
+                        <HistoryIcon className="text-indigo-600 shrink-0" /> <span className="truncate">Movimentações Recentes</span>
                      </h3>
-                     <button onClick={fetchDashboardData} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-all"><Clock size={16} /></button>
+                     <button onClick={fetchDashboardData} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-all shrink-0"><Clock size={16} /></button>
                   </div>
 
                   {recentMovements.length === 0 ? (
                      <div className="flex flex-col items-center justify-center py-20 text-gray-300">
                         <AlertCircle size={40} className="mb-2 opacity-20" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Nenhuma movimentação este mês</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-center">Nenhuma movimentação este mês</p>
                      </div>
                   ) : (
-                     <div className="space-y-4">
+                     <div className="space-y-4 min-w-0 w-full">
                         {recentMovements.map((item) => (
-                           <div key={item.id} className="flex items-center justify-between p-5 bg-gray-50 rounded-[2rem] border border-transparent hover:border-indigo-200 transition-all group">
-                              <div className="flex items-center gap-6">
-                                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm font-black text-xs">
+                           <div key={item.id} className="flex items-center justify-between p-3 sm:p-5 bg-gray-50 rounded-[2rem] border border-transparent hover:border-indigo-200 transition-all group gap-2 min-w-0 w-full">
+                              <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1">
+                                 <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm font-black text-xs">
                                     {item.student_name[0]}
                                  </div>
-                                 <div className="max-w-[250px]">
-                                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight truncate">{item.student_name}</p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                       <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${
+                                 <div className="min-w-0 flex-1">
+                                    <p className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-tight truncate">{item.student_name}</p>
+                                    <div className="flex items-center gap-1 sm:gap-2 mt-0.5 truncate">
+                                       <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 ${
                                           item.type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'
                                        }`}>{item.type}</span>
-                                       <span className="text-[9px] text-gray-400 font-bold uppercase truncate">{item.classroom}</span>
+                                       <span className="text-[8px] sm:text-[9px] text-gray-400 font-bold uppercase truncate">{item.classroom}</span>
                                     </div>
                                  </div>
                               </div>
-                              <div className="text-right flex items-center gap-4">
-                                 <p className="text-[10px] font-black text-gray-300 uppercase font-mono">{formatDate(item.date)}</p>
-                                 <div className="p-2 bg-white text-gray-200 rounded-xl"><ArrowRight size={18} /></div>
+                              <div className="text-right flex items-center gap-2 sm:gap-4 shrink-0">
+                                 <p className="text-[9px] sm:text-[10px] font-black text-gray-300 uppercase font-mono">{formatDate(item.date)}</p>
+                                 <div className="p-1.5 sm:p-2 bg-white text-gray-200 rounded-xl hidden xs:block"><ArrowRight size={16} /></div>
                               </div>
                            </div>
                         ))}
@@ -223,26 +223,26 @@ const SecretariatDashboard: React.FC = () => {
             </div>
 
             {/* Simulação de Comunicação com Área do Professor */}
-            <div className="space-y-6">
-               <div className="bg-indigo-900 p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden h-full flex flex-col justify-between">
-                  <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12"><Bell size={140} /></div>
-                  <div className="relative z-10 space-y-6">
-                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-sm">
+            <div className="space-y-6 min-w-0 w-full">
+               <div className="bg-indigo-900 p-6 sm:p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden h-full flex flex-col justify-between min-w-0 w-full">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12 pointer-events-none"><Bell size={140} /></div>
+                  <div className="relative z-10 space-y-6 min-w-0">
+                     <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-sm shrink-0">
                            <FileCheck size={20} className="text-indigo-300" />
                         </div>
-                        <h3 className="text-lg font-black uppercase tracking-widest">Push Área do Professor</h3>
+                        <h3 className="text-base sm:text-lg font-black uppercase tracking-widest truncate">Push Área do Professor</h3>
                      </div>
-                     <p className="text-indigo-100/80 text-sm leading-relaxed font-medium">
+                     <p className="text-indigo-100/80 text-xs sm:text-sm leading-relaxed font-medium">
                         {alertsSent
                            ? <strong>Sincronização de Enturmação: OK. Todos os dados foram disparados.</strong>
                            : <>A enturmação atual está <strong>sincronizada</strong> com os Diários Digitais. Não há alertas pendentes.</>
                         }
                      </p>
                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-black uppercase text-indigo-300">
-                           <span>{isSendingAlerts ? 'Processando...' : 'Status do Sync'}</span>
-                           <span>{alertsSent ? 'CONCLUÍDO' : (isSendingAlerts ? '60%' : 'ESTÁVEL')}</span>
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase text-indigo-300 truncate">
+                           <span className="truncate">{isSendingAlerts ? 'Processando...' : 'Status do Sync'}</span>
+                           <span className="shrink-0">{alertsSent ? 'CONCLUÍDO' : (isSendingAlerts ? '60%' : 'ESTÁVEL')}</span>
                         </div>
                         <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                            <div className={`h-full transition-all duration-1000 ${alertsSent ? 'bg-emerald-500 w-full' : (isSendingAlerts ? 'bg-amber-500 w-[60%]' : 'bg-indigo-400 w-full opacity-30')}`}></div>
@@ -257,8 +257,8 @@ const SecretariatDashboard: React.FC = () => {
                         : (isSendingAlerts ? 'bg-indigo-100 text-indigo-400' : 'bg-white text-indigo-950 hover:bg-indigo-50')
                         }`}
                   >
-                     {isSendingAlerts ? 'Sincronizando...' : (alertsSent ? 'Sincronizado' : 'Sincronizar Diários')}
-                     {!isSendingAlerts && !alertsSent && <TrendingUp size={14} />}
+                     <span className="truncate">{isSendingAlerts ? 'Sincronizando...' : (alertsSent ? 'Sincronizado' : 'Sincronizar Diários')}</span>
+                     {!isSendingAlerts && !alertsSent && <TrendingUp size={14} className="shrink-0" />}
                   </button>
                </div>
             </div>

@@ -51,9 +51,9 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
       {/* Sidebar */}
-      <aside className="w-64 bg-indigo-950 text-white flex flex-col no-print transition-all duration-300">
+      <aside className="w-64 shrink-0 bg-indigo-950 text-white flex flex-col no-print transition-all duration-300">
         <div className="p-6">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-indigo-500 p-1.5 rounded-lg shadow-lg">🏢</span>
@@ -94,39 +94,39 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0 no-print">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 no-print min-w-0 w-full gap-2">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
               <Landmark size={20} />
             </div>
-            <div>
-              <h2 className="text-sm font-black text-gray-900 uppercase">Módulo Administrativo Escolar</h2>
-              <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest leading-none mt-1">André Antônio Maggi</p>
+            <div className="min-w-0">
+              <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Módulo Administrativo Escolar</h2>
+              <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest leading-none mt-1 truncate">André Antônio Maggi</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors">
+          <div className="flex items-center gap-2 md:gap-6 shrink-0">
+            <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors shrink-0">
               <Maximize2 size={18} />
             </button>
-            <div className="hidden lg:flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100">
+            <div className="hidden lg:flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 shrink-0">
               <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div>
               <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Base Ativa</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs font-black text-gray-900">{user?.name || 'Secretário André'}</p>
-                <p className="text-[9px] text-indigo-600 font-black uppercase tracking-widest">{user?.role || 'Administrador'}</p>
+            <div className="flex items-center gap-2 md:gap-3 shrink-0">
+              <div className="text-right hidden sm:block min-w-0">
+                <p className="text-xs font-black text-gray-900 truncate max-w-[120px] md:max-w-none">{user?.name || 'Secretário André'}</p>
+                <p className="text-[9px] text-indigo-600 font-black uppercase tracking-widest truncate">{user?.role || 'Administrador'}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white font-black text-sm uppercase">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white font-black text-xs md:text-sm uppercase shrink-0">
                 {user?.name ? user.name.substring(0, 2) : 'SA'}
               </div>
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
           {activeTab === 'dashboard' && <SecretariatDashboard />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
