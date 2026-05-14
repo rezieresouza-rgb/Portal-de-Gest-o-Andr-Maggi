@@ -113,7 +113,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
    };
 
    return (
-      <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-10 md:pb-20 max-w-7xl mx-auto">
+      <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-10 md:pb-20 max-w-7xl mx-auto w-full min-w-0 px-3 sm:px-0">
 
          {/* HEADER DE BOAS-VINDAS */}
          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 border-b border-white/10 pb-6 md:pb-8">
@@ -175,11 +175,11 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
             </div>
          )}
 
-         <div className="flex flex-col lg:flex-row gap-8 items-start">
+         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start w-full min-w-0">
 
-            {/* ESQUERDA: SIDEBAR MÓDULOS (LARGURA 3/12) */}
+            {/* ESQUERDA: SIDEBAR MÓDULOS */}
             {visibleBlocks.modules && (
-               <aside className="w-full lg:w-1/4 shrink-0 space-y-6">
+               <aside className="w-full lg:w-64 xl:w-72 shrink-0 space-y-6">
                   <div className="flex items-center gap-3 mb-2 px-2">
                      <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg backdrop-blur-sm">
                         <LayoutDashboard size={20} />
@@ -192,22 +192,22 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                         <button
                            key={module.id}
                            onClick={() => onModuleSelect(module.id)}
-                           className="w-full bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 shadow-lg hover:bg-white/10 hover:border-white/20 transition-all flex flex-col lg:flex-row items-center lg:items-center lg:gap-4 group backdrop-blur-sm text-center lg:text-left"
+                           className="w-full bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 shadow-lg hover:bg-white/10 hover:border-white/20 transition-all flex flex-col lg:flex-row items-center lg:items-center lg:gap-4 group backdrop-blur-sm text-center lg:text-left min-w-0 overflow-hidden"
                         >
-                           <div className={`p-2.5 md:p-3 rounded-xl bg-${module.statusColor}-500/20 text-${module.statusColor}-400 group-hover:bg-${module.statusColor}-500 group-hover:text-white transition-all mb-2 lg:mb-0`}>
+                           <div className={`p-2.5 md:p-3 rounded-xl bg-${module.statusColor}-500/20 text-${module.statusColor}-400 group-hover:bg-${module.statusColor}-500 group-hover:text-white transition-all mb-2 lg:mb-0 shrink-0`}>
                               {module.icon}
                            </div>
 
-                           <div className="flex-1">
-                              <h3 className="text-[10px] md:text-sm font-black text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
+                           <div className="flex-1 min-w-0 w-full">
+                              <h3 className="text-[10px] md:text-sm font-black text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors truncate">
                                  {module.title}
                               </h3>
-                              <p className="hidden md:block text-[9px] text-white/60 font-bold uppercase mt-1">
+                              <p className="hidden md:block text-[9px] text-white/60 font-bold uppercase mt-1 truncate">
                                  {module.status}
                               </p>
                            </div>
 
-                           <div className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400">
+                           <div className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400 shrink-0 hidden lg:block">
                               <ChevronRight size={20} />
                            </div>
                         </button>
@@ -223,11 +223,11 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                </aside>
             )}
 
-            {/* DIREITA: CONTEÚDO PRINCIPAL (LARGURA 9/12) */}
-            <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+            {/* DIREITA: CONTEÚDO PRINCIPAL */}
+            <main className="flex-1 flex flex-col xl:flex-row gap-6 lg:gap-8 w-full min-w-0">
 
-               {/* COLUNA ESQUERDA: RECADOS E INDICADORES (LARGURA 8) */}
-               <div className="lg:col-span-8 space-y-8">
+               {/* COLUNA ESQUERDA: RECADOS E INDICADORES */}
+               <div className="flex-1 min-w-0 space-y-6 lg:space-y-8 w-full">
 
 
 
@@ -297,8 +297,8 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                   </div>
                </div>
 
-               {/* COLUNA DIREITA: AGENDA, ANIVERSARIANTES (LARGURA 4) */}
-               <div className="lg:col-span-4 space-y-8">
+               {/* COLUNA DIREITA: AGENDA, ANIVERSARIANTES */}
+               <div className="w-full xl:w-80 shrink-0 space-y-6 lg:space-y-8">
 
                   {/* AGENDA COMPACTA */}
                   {visibleBlocks.agenda && (

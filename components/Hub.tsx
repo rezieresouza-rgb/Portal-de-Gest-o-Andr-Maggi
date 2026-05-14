@@ -171,7 +171,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-gray-900 font-sans relative w-full overflow-x-hidden">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-20 fixed"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-indigo-950 to-black fixed opacity-90"></div>
@@ -179,7 +179,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
       </div>
 
-      <div className="relative z-10 flex min-h-screen">
+      <div className="relative z-10 flex min-h-screen w-full min-w-0">
         {/* SIDEBAR NAVEGAÇÃO HUB (Glass) - Escondido em mobile, visível em lg */}
         <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-24 bg-white/5 backdrop-blur-xl border-r border-white/10 flex-col items-center py-10 gap-8 no-print z-50">
           <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-black border border-white/20">AM-v2</div>
@@ -215,8 +215,8 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
           </div>
         </aside>
 
-        <main className="lg:pl-24 flex-1 min-h-screen p-4 md:p-8 lg:p-12 overflow-x-hidden">
-          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <main className="lg:pl-24 flex-1 min-h-screen p-3 md:p-8 lg:p-12 overflow-x-hidden w-full min-w-0">
+          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 w-full">
             <WelcomeDashboard
               user={user}
               onLogout={onLogout}
