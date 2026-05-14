@@ -356,18 +356,18 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
         ) : filtered.length > 0 ? filtered.map(s => {
           const studentReferrals = referrals.filter(r => r.studentId === s.id);
           return (
-            <div key={s.id} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col lg:flex-row items-center justify-between gap-6 group">
-              <div className="flex items-center gap-6 flex-1">
-                <div className={`w-16 h-16 rounded-[1.5rem] flex flex-col items-center justify-center font-black ${s.attendance < 85 ? 'bg-red-50 text-red-600' : s.attendance < 90 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                  <span className="text-xl leading-none">{s.attendance}%</span>
+            <div key={s.id} className="bg-white p-5 sm:p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 sm:gap-6 group w-full overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 flex-1 min-w-0 w-full">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.5rem] flex flex-col items-center justify-center font-black shrink-0 ${s.attendance < 85 ? 'bg-red-50 text-red-600' : s.attendance < 90 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                  <span className="text-lg sm:text-xl leading-none">{s.attendance}%</span>
                   <span className="text-[7px] uppercase tracking-tighter mt-1">Presença</span>
                 </div>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{s.name}</h4>
-                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${getStatusColor(s.status)}`}>{s.status}</span>
-                    <span className="text-[9px] text-gray-300 font-bold uppercase tracking-widest border border-gray-100 px-1.5 py-0.5 rounded">v1.2.1-DEBUG</span>
-                    <div className={`flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded-full border italic tracking-widest ${
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <h4 className="text-base sm:text-lg font-black text-gray-900 uppercase leading-tight break-words">{s.name}</h4>
+                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border shrink-0 ${getStatusColor(s.status)}`}>{s.status}</span>
+                    <span className="text-[8px] sm:text-[9px] text-gray-300 font-bold uppercase tracking-widest border border-gray-100 px-1.5 py-0.5 rounded shrink-0">v1.2.1-DEBUG</span>
+                    <div className={`flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded-full border italic tracking-widest shrink-0 ${
                       s.totalInterventions > 0 
                         ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' 
                         : 'bg-gray-50 text-gray-400 border-gray-100'
@@ -375,7 +375,7 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
                       <MessageSquareIcon size={10} /> {s.totalInterventions > 0 ? `${s.totalInterventions} REGISTROS NO HISTÓRICO` : 'NENHUM REGISTRO NO HISTÓRICO'}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 mt-2">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
                     <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12} /> {s.class} ({s.shift || 'MATUTINO'})</span>
                     <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12} /> Código: {s.id}</span>
                     {s.lastInterventionDate ? (
@@ -390,14 +390,14 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 w-full xl:w-auto justify-end mt-2 xl:mt-0">
                 <button 
                   onClick={() => setViewingProfile(s)} 
-                  className="px-6 py-3 bg-gray-900 text-white rounded-2xl text-[11px] font-black uppercase border border-gray-800 hover:bg-black transition-all shadow-lg flex items-center gap-2"
+                  className="px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-900 text-white rounded-2xl text-[11px] font-black uppercase border border-gray-800 hover:bg-black transition-all shadow-lg flex items-center gap-2 flex-1 sm:flex-initial justify-center"
                 >
                   <History size={16} /> Acompanhamento
                 </button>
-                <button onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} className="px-6 py-3 bg-emerald-50 text-emerald-700 rounded-2xl text-[11px] font-black uppercase flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><Scale size={16} /> Encaminhar</button>
+                <button onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} className="px-5 sm:px-6 py-2.5 sm:py-3 bg-emerald-50 text-emerald-700 rounded-2xl text-[11px] font-black uppercase flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex-1 sm:flex-initial justify-center"><Scale size={16} /> Encaminhar</button>
               </div>
             </div>
           );
