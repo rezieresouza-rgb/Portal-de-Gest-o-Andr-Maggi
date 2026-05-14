@@ -207,15 +207,15 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full min-w-0">
             {/* Header / Filters */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 w-full min-w-0">
+                <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto min-w-0">
                     {['ALL', 'DIARIA', 'SEMANAL', 'MENSAL', 'BIMESTRAL'].map(freq => (
                         <button
                             key={freq}
                             onClick={() => setFilterFrequency(freq)}
-                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${filterFrequency === freq
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all shrink-0 ${filterFrequency === freq
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
                                     : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
                                 }`}
@@ -224,16 +224,16 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         </button>
                     ))}
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4 shrink-0 min-w-0">
                     <button
                         onClick={generateWeeklyReport}
-                        className="px-6 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-lg"
+                        className="px-3 sm:px-6 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-lg shrink-0 min-w-0"
                     >
-                        <Printer size={16} /> Imprimir Relatório
+                        <Printer size={16} className="shrink-0" /> <span className="truncate">Imprimir Relatório</span>
                     </button>
-                    <div className="text-right hidden md:block">
-                        <p className="text-[10px] font-black uppercase text-gray-400">Total de Tarefas</p>
-                        <p className="text-2xl font-black text-gray-900 leading-none">{tasks.length}</p>
+                    <div className="text-right shrink-0">
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase text-gray-400">Total de Tarefas</p>
+                        <p className="text-xl sm:text-2xl font-black text-gray-900 leading-none">{tasks.length}</p>
                     </div>
                 </div>
             </div>
@@ -246,35 +246,35 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     <p className="text-gray-400 font-bold uppercase text-xs">Nenhuma tarefa encontrada</p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 w-full min-w-0">
                     {Object.keys(groupedTasks).sort().map(block => (
-                        <div key={block} className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
+                        <div key={block} className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm w-full min-w-0">
 
                             {/* BLOCK HEADER */}
                             <button
                                 onClick={() => toggleBlock(block)}
-                                className="w-full flex items-center justify-between p-6 bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                                className="w-full flex items-center justify-between p-4 sm:p-6 bg-gray-50/50 hover:bg-gray-50 transition-colors min-w-0 gap-2"
                             >
-                                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
-                                    {block.includes('Bloco I') ? <span className="w-2 h-8 bg-indigo-500 rounded-full"></span> :
-                                        block.includes('Bloco II') ? <span className="w-2 h-8 bg-emerald-500 rounded-full"></span> :
-                                            <span className="w-2 h-8 bg-amber-500 rounded-full"></span>}
-                                    {block}
+                                <h3 className="text-sm sm:text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2 sm:gap-3 truncate">
+                                    {block.includes('Bloco I') ? <span className="w-1.5 sm:w-2 h-6 sm:h-8 bg-indigo-500 rounded-full shrink-0"></span> :
+                                        block.includes('Bloco II') ? <span className="w-1.5 sm:w-2 h-6 sm:h-8 bg-emerald-500 rounded-full shrink-0"></span> :
+                                            <span className="w-1.5 sm:w-2 h-6 sm:h-8 bg-amber-500 rounded-full shrink-0"></span>}
+                                    <span className="truncate">{block}</span>
                                 </h3>
-                                {expandedBlocks[block] ? <ChevronDown className="text-gray-400" /> : <ChevronRight className="text-gray-400" />}
+                                {expandedBlocks[block] ? <ChevronDown className="text-gray-400 shrink-0" /> : <ChevronRight className="text-gray-400 shrink-0" />}
                             </button>
 
                             {/* AREAS LIST */}
                             {expandedBlocks[block] && (
-                                <div className="divide-y divide-gray-100">
+                                <div className="divide-y divide-gray-100 min-w-0 w-full">
                                     {Object.keys(groupedTasks[block]).sort().map(area => {
                                         const responsible = getAreaResponsible(block, area);
                                         return (
-                                            <div key={area} className="p-6">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <h4 className="text-sm font-black text-gray-700 uppercase flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                                                        {area}
+                                            <div key={area} className="p-4 sm:p-6 min-w-0 w-full">
+                                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 min-w-0 w-full">
+                                                    <h4 className="text-xs sm:text-sm font-black text-gray-700 uppercase flex items-center gap-2 truncate">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0"></div>
+                                                        <span className="truncate">{area}</span>
                                                     </h4>
                                                     <button
                                                         onClick={() => {
@@ -282,32 +282,34 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                             setSelectedEmployeeName(responsible || '');
                                                             setIsAssignModalOpen(true);
                                                         }}
-                                                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-[9px] font-black uppercase tracking-wide"
+                                                        className="flex items-center self-start sm:self-auto gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-[9px] font-black uppercase tracking-wide shrink-0 max-w-full truncate"
                                                     >
-                                                        <UserPlus size={12} />
-                                                        {responsible ? responsible : 'Definir Responsável'}
+                                                        <UserPlus size={12} className="shrink-0" />
+                                                        <span className="truncate">{responsible ? responsible : 'Definir Responsável'}</span>
                                                     </button>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 min-w-0 w-full">
                                                     {groupedTasks[block][area].map(task => (
-                                                        <div key={task.id} className={`p-4 rounded-xl border transition-all ${task.status === 'CONCLUIDO' ? 'bg-emerald-50/30 border-emerald-100' :
+                                                        <div key={task.id} className={`p-4 rounded-xl border transition-all flex flex-col justify-between min-w-0 w-full ${task.status === 'CONCLUIDO' ? 'bg-emerald-50/30 border-emerald-100' :
                                                                 task.status === 'ATRASADO' ? 'bg-red-50/30 border-red-100' :
                                                                     'bg-white border-gray-100 hover:border-indigo-100 hover:shadow-sm'
                                                             }`}>
-                                                            <div className="flex justify-between items-start mb-2">
-                                                                <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider ${getFrequencyColor(task.frequency)}`}>
-                                                                    {getFrequencyLabel(task.frequency)}
-                                                                </span>
-                                                                {task.status === 'ATRASADO' && (
-                                                                    <span className="text-red-500"><AlertTriangle size={12} /></span>
-                                                                )}
+                                                            <div className="min-w-0 w-full">
+                                                                <div className="flex justify-between items-start mb-2 gap-1 min-w-0">
+                                                                    <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider truncate max-w-full ${getFrequencyColor(task.frequency)}`}>
+                                                                        {getFrequencyLabel(task.frequency)}
+                                                                    </span>
+                                                                    {task.status === 'ATRASADO' && (
+                                                                        <span className="text-red-500 shrink-0"><AlertTriangle size={12} /></span>
+                                                                    )}
+                                                                </div>
+
+                                                                <p className="text-xs font-bold text-gray-700 mb-3 line-clamp-2 break-words">{task.task_description}</p>
                                                             </div>
 
-                                                            <p className="text-xs font-bold text-gray-700 mb-3 line-clamp-2">{task.task_description}</p>
-
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="text-[9px] text-gray-400 font-medium">
+                                                            <div className="flex items-center justify-between gap-1 pt-2 mt-auto border-t border-gray-50/50 min-w-0">
+                                                                <div className="text-[9px] text-gray-400 font-medium truncate">
                                                                     {task.last_executed_at
                                                                         ? `Última: ${new Date(task.last_executed_at).toLocaleDateString('pt-BR')}`
                                                                         : 'Nunca executado'}
@@ -316,13 +318,13 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                                 <button
                                                                     onClick={() => handleMarkAsDone(task)}
                                                                     disabled={task.status === 'CONCLUIDO'}
-                                                                    className={`p-2 rounded-full transition-all ${task.status === 'CONCLUIDO'
+                                                                    className={`p-1.5 sm:p-2 rounded-full transition-all shrink-0 ${task.status === 'CONCLUIDO'
                                                                             ? 'bg-emerald-100 text-emerald-600 cursor-default'
                                                                             : 'bg-gray-100 text-gray-400 hover:bg-indigo-600 hover:text-white'
                                                                         }`}
                                                                     title={task.status === 'CONCLUIDO' ? 'Concluído' : 'Marcar como Feito'}
                                                                 >
-                                                                    <CheckCircle2 size={16} />
+                                                                    <CheckCircle2 size={14} className="shrink-0" />
                                                                 </button>
                                                             </div>
                                                         </div>

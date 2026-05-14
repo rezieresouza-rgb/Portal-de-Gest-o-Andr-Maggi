@@ -310,8 +310,8 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
 
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-      <aside className="w-64 bg-orange-950 text-white flex flex-col no-print">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
+      <aside className="w-64 shrink-0 bg-orange-950 text-white flex flex-col no-print min-w-0">
         <div className="p-6">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <div className="bg-white/20 p-1.5 rounded-lg">🧹</div>
@@ -319,42 +319,42 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
           </h1>
         </div>
         <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          <button onClick={() => setActiveTab('protocol_official')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'protocol_official' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><BookOpen size={18} /> Protocolo Manual</button>
-          <button onClick={() => setActiveTab('preventive_plan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'preventive_plan' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><ShieldCheck size={18} /> Plano Preventivo (SEDUC)</button>
+          <button onClick={() => setActiveTab('protocol_official')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'protocol_official' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><BookOpen size={18} className="shrink-0" /> <span className="truncate">Protocolo Manual</span></button>
+          <button onClick={() => setActiveTab('preventive_plan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'preventive_plan' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><ShieldCheck size={18} className="shrink-0" /> <span className="truncate">Plano SEDUC</span></button>
 
-          <button onClick={() => setActiveTab('scheduler')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'scheduler' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Calendar size={18} /> Cronograma (Blocos)</button>
-          <button onClick={() => setActiveTab('team')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Users size={18} /> Equipe de Apoio</button>
-          <button onClick={() => setActiveTab('predial')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'predial' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Hammer size={18} /> Manutenção Predial</button>
-          <button onClick={() => setActiveTab('kitchen')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><CookingPot size={18} /> Higiene Cozinha</button>
-          <button onClick={() => setActiveTab('materials')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'materials' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Droplets size={18} /> Insumos Limpeza</button>
-          <button onClick={() => setActiveTab('ppe')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ppe' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><HardHat size={18} /> Controle EPIs</button>
+          <button onClick={() => setActiveTab('scheduler')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'scheduler' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Calendar size={18} className="shrink-0" /> <span className="truncate">Cronograma (Blocos)</span></button>
+          <button onClick={() => setActiveTab('team')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Users size={18} className="shrink-0" /> <span className="truncate">Equipe de Apoio</span></button>
+          <button onClick={() => setActiveTab('predial')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'predial' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Hammer size={18} className="shrink-0" /> <span className="truncate">Manutenção Predial</span></button>
+          <button onClick={() => setActiveTab('kitchen')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><CookingPot size={18} className="shrink-0" /> <span className="truncate">Higiene Cozinha</span></button>
+          <button onClick={() => setActiveTab('materials')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'materials' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Droplets size={18} className="shrink-0" /> <span className="truncate">Insumos Limpeza</span></button>
+          <button onClick={() => setActiveTab('ppe')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ppe' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><HardHat size={18} className="shrink-0" /> <span className="truncate">Controle EPIs</span></button>
 
-          <button onClick={() => setIsConfigModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold text-orange-200 hover:bg-orange-800/50 mt-10 border-t border-orange-800 pt-10"><Settings2 size={18} /> Configurar Ambientes</button>
+          <button onClick={() => setIsConfigModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold text-orange-200 hover:bg-orange-800/50 mt-10 border-t border-orange-800 pt-10"><Settings2 size={18} className="shrink-0" /> <span className="truncate">Configurar Ambientes</span></button>
         </nav>
-        <div className="p-6"><button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest leading-none"><ArrowLeft size={16} /> Voltar ao Hub</button></div>
+        <div className="p-6"><button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest leading-none"><ArrowLeft size={16} className="shrink-0" /> <span className="truncate">Voltar ao Hub</span></button></div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><Brush size={20} /></div>
-            <h2 className="text-sm font-black text-gray-900 uppercase">Zeladoria & Conservação Escolar</h2>
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 w-full gap-2">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <div className="p-2 bg-orange-50 text-orange-600 rounded-lg shrink-0"><Brush size={20} /></div>
+            <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Zeladoria & Conservação Escolar</h2>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative no-print">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">
+            <div className="relative no-print min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
               <input
                 type="text"
                 placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-orange-500/5 w-64"
+                className="pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-orange-500/5 w-28 sm:w-48 md:w-64 min-w-0"
               />
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
           {activeTab === 'protocol_official' && <CleaningOfficialManual />}
           {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
 
@@ -363,34 +363,34 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
 
 
           {activeTab === 'team' && (
-            <div className="space-y-8 animate-in fade-in duration-500">
-              <div className="bg-blue-900 p-8 rounded-[2.5rem] text-white flex items-center justify-between shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><Users size={140} /></div>
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-black uppercase tracking-tighter">Equipe Operacional Integrada</h3>
-                  <p className="text-blue-200 text-sm mt-1">Servidores de Apoio sincronizados com a base de dados da Secretaria.</p>
+            <div className="space-y-8 animate-in fade-in duration-500 w-full min-w-0">
+              <div className="bg-blue-900 p-6 sm:p-8 rounded-[2.5rem] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-xl relative overflow-hidden gap-4 min-w-0 w-full">
+                <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12 pointer-events-none"><Users size={140} /></div>
+                <div className="relative z-10 min-w-0 flex-1">
+                  <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tighter truncate">Equipe Operacional Integrada</h3>
+                  <p className="text-blue-200 text-xs sm:text-sm mt-1 truncate">Servidores de Apoio sincronizados com a base de dados da Secretaria.</p>
                 </div>
-                <div className="bg-white/10 px-6 py-4 rounded-2xl border border-white/10 backdrop-blur-md">
+                <div className="bg-white/10 px-6 py-4 rounded-2xl border border-white/10 backdrop-blur-md shrink-0">
                   <p className="text-[10px] font-black text-blue-300 uppercase">Servidores em Atividade</p>
                   <p className="text-2xl font-black">{employees.length}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full min-w-0">
                 {employees.map(emp => (
-                  <div key={emp.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-orange-200 transition-all flex flex-col group">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center font-black text-lg group-hover:bg-orange-600 group-hover:text-white transition-all shadow-inner">
+                  <div key={emp.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-orange-200 transition-all flex flex-col group min-w-0 w-full">
+                    <div className="flex items-center gap-4 mb-4 min-w-0">
+                      <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center font-black text-lg group-hover:bg-orange-600 group-hover:text-white transition-all shadow-inner shrink-0">
                         {emp.name[0]}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-black text-gray-900 uppercase truncate">{emp.name}</p>
-                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{emp.shift} | {emp.scope}</p>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest truncate">{emp.shift} | {emp.scope}</p>
                       </div>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2">
-                      <p className="text-[8px] font-black text-gray-400 uppercase leading-none">Matrícula: {(emp as any).registration || '---'}</p>
-                      <p className="text-[10px] font-bold text-gray-700 uppercase">
+                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2 min-w-0">
+                      <p className="text-[8px] font-black text-gray-400 uppercase leading-none truncate">Matrícula: {(emp as any).registration || '---'}</p>
+                      <p className="text-[10px] font-bold text-gray-700 uppercase truncate">
                         {tasks.filter(t => t.assignedEmployeeId === emp.id).length} tarefas vinculadas
                       </p>
                     </div>
