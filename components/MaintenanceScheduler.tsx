@@ -209,13 +209,13 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     return (
         <div className="space-y-6 w-full min-w-0">
             {/* Header / Filters */}
-            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 w-full min-w-0">
-                <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto min-w-0">
+            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 w-full min-w-0">
+                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 w-full lg:flex-1 min-w-0 custom-scrollbar">
                     {['ALL', 'DIARIA', 'SEMANAL', 'MENSAL', 'BIMESTRAL'].map(freq => (
                         <button
                             key={freq}
                             onClick={() => setFilterFrequency(freq)}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all shrink-0 ${filterFrequency === freq
+                            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider border transition-all shrink-0 ${filterFrequency === freq
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
                                     : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
                                 }`}
@@ -224,16 +224,16 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         </button>
                     ))}
                 </div>
-                <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4 shrink-0 min-w-0">
+                <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-4 shrink-0 min-w-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
                     <button
                         onClick={generateWeeklyReport}
-                        className="px-3 sm:px-6 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-lg shrink-0 min-w-0"
+                        className="px-3 sm:px-5 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-1.5 shadow-lg shrink-0"
                     >
-                        <Printer size={16} className="shrink-0" /> <span className="truncate">Imprimir Relatório</span>
+                        <Printer size={14} className="shrink-0" /> <span className="truncate">Imprimir Relatório</span>
                     </button>
-                    <div className="text-right shrink-0">
-                        <p className="text-[9px] sm:text-[10px] font-black uppercase text-gray-400">Total de Tarefas</p>
-                        <p className="text-xl sm:text-2xl font-black text-gray-900 leading-none">{tasks.length}</p>
+                    <div className="text-right shrink-0 border-l border-gray-200 pl-3 sm:pl-4">
+                        <p className="text-[8px] sm:text-[9px] font-black uppercase text-gray-400 tracking-tighter">Total de Tarefas</p>
+                        <p className="text-lg sm:text-xl font-black text-gray-900 leading-none">{tasks.length}</p>
                     </div>
                 </div>
             </div>
@@ -289,7 +289,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                     </button>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 min-w-0 w-full">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 min-w-0 w-full">
                                                     {groupedTasks[block][area].map(task => (
                                                         <div key={task.id} className={`p-4 rounded-xl border transition-all flex flex-col justify-between min-w-0 w-full ${task.status === 'CONCLUIDO' ? 'bg-emerald-50/30 border-emerald-100' :
                                                                 task.status === 'ATRASADO' ? 'bg-red-50/30 border-red-100' :
