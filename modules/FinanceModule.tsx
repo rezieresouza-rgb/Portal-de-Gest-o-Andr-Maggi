@@ -664,10 +664,10 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
               <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10 shrink-0"><Wallet size={20} /></div>
               <h2 className="text-xs md:text-sm font-black text-white/80 uppercase tracking-widest truncate">{user.name}</h2>
             </div>
-            <div className="flex items-center gap-2 md:gap-6 shrink-0">
+            <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">
               <button
                 onClick={toggleFullScreen}
-                className="p-2.5 text-white/40 hover:bg-white/10 hover:text-white rounded-xl transition-all group flex items-center gap-2"
+                className="p-2.5 text-white/40 hover:bg-white/10 hover:text-white rounded-xl transition-all group flex items-center gap-2 shrink-0"
                 title="Alternar Tela Cheia"
               >
                 <Maximize2 size={18} className="group-hover:text-blue-400" />

@@ -83,18 +83,18 @@ const Dashboard: React.FC = () => {
   const COLORS = ['#10b981', '#3b82f6'];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-tight">Painel de Controle Estratégico</h2>
-            <div className="flex items-center gap-1 text-[10px] font-black bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg uppercase">
-               <ShieldCheck size={12} /> Monitoramento Ativo
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20 w-full min-w-0">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full min-w-0">
+        <div className="min-w-0 flex-1 w-full">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 uppercase tracking-tight truncate">Painel de Controle Estratégico</h2>
+            <div className="flex items-center gap-1 text-[10px] font-black bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg uppercase shrink-0">
+               <ShieldCheck size={12} className="shrink-0" /> Monitoramento Ativo
             </div>
           </div>
-          <p className="text-gray-500 font-medium">Sincronizado com {studentCount} alunos beneficiários da Secretaria</p>
+          <p className="text-gray-500 font-medium text-xs sm:text-sm truncate mt-1">Sincronizado com {studentCount} alunos beneficiários da Secretaria</p>
         </div>
-        <div className="hidden md:block text-right">
+        <div className="text-left md:text-right shrink-0">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Atualização</p>
           <p className="text-xs font-bold text-gray-900">{new Date().toLocaleString('pt-BR')}</p>
         </div>
@@ -102,39 +102,39 @@ const Dashboard: React.FC = () => {
 
       {/* CENTRAL DE ALERTAS DE ESTOQUE FÍSICO */}
       {inventoryAlerts.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-top-4 duration-500">
-          <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-red-600 text-white rounded-2xl animate-pulse">
+        <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-top-4 duration-500 w-full min-w-0">
+          <div className="bg-red-50 border border-red-100 p-4 sm:p-6 rounded-[2rem] shadow-sm min-w-0 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-3 bg-red-600 text-white rounded-2xl animate-pulse shrink-0">
                   <AlertTriangle size={24} />
                 </div>
-                <div>
-                  <h3 className="text-lg font-black text-red-900 uppercase tracking-tight">Alertas de Reposição Imediata</h3>
-                  <p className="text-red-700 text-xs font-medium uppercase tracking-tighter">Estoque físico abaixo do mínimo de segurança</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm sm:text-lg font-black text-red-900 uppercase tracking-tight truncate">Alertas de Reposição Imediata</h3>
+                  <p className="text-red-700 text-[10px] sm:text-xs font-medium uppercase tracking-tighter truncate">Estoque físico abaixo do mínimo de segurança</p>
                 </div>
               </div>
-              <span className="bg-red-200 text-red-800 text-[10px] font-black px-3 py-1 rounded-full uppercase">
+              <span className="bg-red-200 text-red-800 text-[10px] font-black px-3 py-1 rounded-full uppercase shrink-0 self-start sm:self-center">
                 {inventoryAlerts.length} Itens em Risco
               </span>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full min-w-0">
               {inventoryAlerts.map((item: any) => {
                 const current = item.previousBalance + item.entries - item.outputs;
                 const deficit = item.min - current;
                 return (
-                  <div key={item.id} className="bg-white p-4 rounded-2xl border border-red-200 shadow-sm flex items-center justify-between group hover:border-red-400 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-red-50 text-red-500 rounded-lg">
+                  <div key={item.id} className="bg-white p-4 rounded-2xl border border-red-200 shadow-sm flex items-center justify-between group hover:border-red-400 transition-all min-w-0 gap-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="p-2 bg-red-50 text-red-500 rounded-lg shrink-0">
                         <Package size={18} />
                       </div>
-                      <div>
-                        <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.name}</p>
-                        <p className="text-[9px] text-red-500 font-bold uppercase mt-0.5">Faltam: {deficit.toLocaleString('pt-BR')} {item.unit}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-black text-gray-900 uppercase leading-tight truncate">{item.name}</p>
+                        <p className="text-[9px] text-red-500 font-bold uppercase mt-0.5 truncate">Faltam: {deficit.toLocaleString('pt-BR')} {item.unit}</p>
                       </div>
                     </div>
-                    <button className="p-2 text-gray-300 group-hover:text-red-600 transition-colors">
+                    <button className="p-2 text-gray-300 group-hover:text-red-600 transition-colors shrink-0">
                       <ArrowRight size={16} />
                     </button>
                   </div>
@@ -146,61 +146,69 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-              <Wallet size={24} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 w-full min-w-0">
+        <div className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg shrink-0">
+                <Wallet size={24} />
+              </div>
+              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full uppercase shrink-0">Global</span>
             </div>
-            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full uppercase">Global</span>
+            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest truncate">Orçamento Rede</h3>
           </div>
-          <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Orçamento Rede</h3>
-          <p className="text-2xl font-black mt-1 text-gray-900">R$ {stats.globalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <p className="text-xl md:text-2xl font-black mt-1 text-gray-900 truncate">R$ {stats.globalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <GraduationCap size={24} />
+        <div className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-blue-100 text-blue-600 rounded-lg shrink-0">
+                <GraduationCap size={24} />
+              </div>
+              <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-full uppercase shrink-0">Sincronizado</span>
             </div>
-            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-full uppercase">Sincronizado</span>
+            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest truncate">Beneficiários</h3>
           </div>
-          <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Beneficiários</h3>
-          <p className="text-2xl font-black mt-1 text-blue-700">{studentCount} Alunos</p>
+          <p className="text-xl md:text-2xl font-black mt-1 text-blue-700 truncate">{studentCount} Alunos</p>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
-              <AlertCircle size={24} />
+        <div className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-amber-100 text-amber-600 rounded-lg shrink-0">
+                <AlertCircle size={24} />
+              </div>
+              <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-full uppercase shrink-0">Alerta</span>
             </div>
-            <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-full uppercase">Alerta</span>
+            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest truncate">Contratos Próx. Fim</h3>
           </div>
-          <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Contratos Próx. Fim</h3>
-          <p className="text-2xl font-black mt-1 text-gray-900">3 Unidades</p>
+          <p className="text-xl md:text-2xl font-black mt-1 text-gray-900 truncate">3 Unidades</p>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
-              <CheckCircle2 size={24} />
+        <div className="bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-purple-100 text-purple-600 rounded-lg shrink-0">
+                <CheckCircle2 size={24} />
+              </div>
+              <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-full uppercase shrink-0">Saúde FÍSICA</span>
             </div>
-            <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-full uppercase">Saúde FÍSICA</span>
+            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest truncate">Abastecimento</h3>
           </div>
-          <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Abastecimento</h3>
-          <p className={`text-2xl font-black mt-1 ${inventoryAlerts.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+          <p className={`text-xl md:text-2xl font-black mt-1 truncate ${inventoryAlerts.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
             {inventoryAlerts.length > 0 ? 'Atenção' : 'Excelente'}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold text-gray-800 uppercase tracking-tight">Execução Financeira Global</h3>
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pregão + Agricultura Familiar</div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 w-full min-w-0">
+        <div className="bg-white p-5 sm:p-8 rounded-3xl border border-gray-100 shadow-sm min-w-0 w-full">
+          <div className="flex items-center justify-between mb-6 gap-2 min-w-0">
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 uppercase tracking-tight truncate">Execução Financeira Global</h3>
+            <div className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0 hidden xs:block">Pregão + Agr. Familiar</div>
           </div>
-          <div className="h-80">
+          <div className="h-80 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -217,20 +225,20 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold text-gray-800 uppercase tracking-tight">Riscos de Desabastecimento</h3>
-            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl"><AlertCircle size={20} /></span>
+        <div className="bg-white p-5 sm:p-8 rounded-3xl border border-gray-100 shadow-sm min-w-0 w-full">
+          <div className="flex items-center justify-between mb-6 gap-2 min-w-0">
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 uppercase tracking-tight truncate">Riscos de Desabastecimento</h3>
+            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl shrink-0"><AlertCircle size={20} /></span>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-6 w-full min-w-0">
             {stats.criticalContractItems.length > 0 ? stats.criticalContractItems.map((item, i) => (
-              <div key={i}>
-                <div className="flex justify-between items-end mb-2">
-                  <div>
-                    <p className="text-xs font-black text-gray-900 uppercase leading-tight">{item.label}</p>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Saldo Contrato: {item.remaining}</p>
+              <div key={i} className="min-w-0 w-full">
+                <div className="flex justify-between items-end mb-2 gap-2 min-w-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-black text-gray-900 uppercase leading-tight truncate">{item.label}</p>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5 truncate">Saldo Contrato: {item.remaining}</p>
                   </div>
-                  <span className={`text-[10px] font-black ${item.consumed >= 90 ? 'text-red-500' : 'text-emerald-600'}`}>
+                  <span className={`text-[10px] font-black shrink-0 ${item.consumed >= 90 ? 'text-red-500' : 'text-emerald-600'}`}>
                     {item.consumed.toFixed(0)}% Utilizado
                   </span>
                 </div>
@@ -244,12 +252,12 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             )) : (
-              <div className="text-center py-12">
-                <div className="inline-flex p-4 bg-emerald-50 text-emerald-600 rounded-full mb-4">
+              <div className="text-center py-12 min-w-0 w-full">
+                <div className="inline-flex p-4 bg-emerald-50 text-emerald-600 rounded-full mb-4 shrink-0">
                   <CheckCircle2 size={32} />
                 </div>
-                <p className="text-gray-900 font-black uppercase text-xs tracking-widest">Execução sob controle</p>
-                <p className="text-gray-400 text-[10px] font-bold mt-1">Nenhum contrato atingiu o limite crítico de 70%.</p>
+                <p className="text-gray-900 font-black uppercase text-xs tracking-widest truncate">Execução sob controle</p>
+                <p className="text-gray-400 text-[10px] font-bold mt-1 truncate">Nenhum contrato atingiu o limite crítico de 70%.</p>
               </div>
             )}
           </div>

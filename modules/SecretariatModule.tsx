@@ -106,7 +106,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-6 shrink-0">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">
             <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors shrink-0">
               <Maximize2 size={18} />
             </button>

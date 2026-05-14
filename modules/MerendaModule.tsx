@@ -157,22 +157,23 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-6 shrink-0">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">
             <button
               onClick={toggleFullScreen}
-              className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group flex items-center gap-2"
+              className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group flex items-center gap-2 shrink-0"
               title="Alternar Tela Cheia"
             >
               <Maximize2 size={18} className="group-hover:text-emerald-600" />
               <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Expandir</span>
             </button>
-            <div className="hidden lg:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+            <div className="hidden lg:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shrink-0">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
               <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Base de Dados Merenda</span>
             </div>
-            <button className="relative p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors">
+            <button className="relative p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors shrink-0">
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
             <div className="flex items-center gap-2 md:gap-3 shrink-0">
               <div className="text-right hidden sm:block min-w-0">
                 <p className="text-xs font-black text-gray-900 truncate max-w-[120px] md:max-w-none">{user.name}</p>
