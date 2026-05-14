@@ -245,8 +245,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ onExit }) =
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-      <aside className="w-64 bg-blue-950 text-white flex flex-col no-print">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
+      <aside className="w-64 shrink-0 bg-blue-950 text-white flex flex-col no-print">
         <div className="p-6">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-blue-600 p-1.5 rounded-lg shadow-lg">📋</span>
@@ -271,41 +271,41 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ onExit }) =
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><ShieldCheck size={20} /></div>
-            <div>
-              <h2 className="text-sm font-black text-gray-900 uppercase">Inventário de Bens Móveis</h2>
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 w-full gap-2">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0"><ShieldCheck size={20} /></div>
+            <div className="min-w-0">
+              <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Inventário de Bens Móveis</h2>
               {locationFilter && (
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 uppercase">Local: {locationFilter}</span>
-                  <button onClick={() => setLocationFilter(null)} className="text-[10px] text-gray-400 hover:text-red-500 font-bold uppercase underline">Remover Filtro</button>
+                <div className="flex items-center gap-2 mt-1 truncate">
+                  <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 uppercase truncate">Local: {locationFilter}</span>
+                  <button onClick={() => setLocationFilter(null)} className="text-[10px] text-gray-400 hover:text-red-500 font-bold uppercase underline shrink-0">Remover Filtro</button>
                 </div>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+            <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
               <input
                 type="text"
                 placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 w-64"
+                className="pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 w-32 md:w-48 lg:w-64"
               />
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg transition-all flex items-center gap-2"
+              className="px-3 md:px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg transition-all flex items-center gap-1 md:gap-2 shrink-0"
             >
-              <Plus size={16} /> Cadastrar Bem
+              <Plus size={16} /> <span className="hidden md:inline">Cadastrar Bem</span><span className="md:hidden">Novo</span>
             </button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
           <div className="space-y-6">
 
             {activeTab === 'ambientes' ? (

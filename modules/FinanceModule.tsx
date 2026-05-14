@@ -583,8 +583,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
       </div>
 
-      <div className="relative z-10 flex h-screen">
-        <aside className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col no-print">
+      <div className="relative z-10 flex h-screen w-full min-w-0">
+        <aside className="w-64 shrink-0 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col no-print">
           <div className="p-6">
             <h1 className="text-xl font-bold flex items-center gap-2">
               <span className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">💰</span>
@@ -658,13 +658,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-10 shrink-0 backdrop-blur-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10"><Wallet size={20} /></div>
-              <h2 className="text-sm font-black text-white/80 uppercase tracking-widest">{user.name}</h2>
+        <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
+          <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-4 md:px-8 shrink-0 backdrop-blur-sm min-w-0 w-full gap-2">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+              <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10 shrink-0"><Wallet size={20} /></div>
+              <h2 className="text-xs md:text-sm font-black text-white/80 uppercase tracking-widest truncate">{user.name}</h2>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 md:gap-6 shrink-0">
               <button
                 onClick={toggleFullScreen}
                 className="p-2.5 text-white/40 hover:bg-white/10 hover:text-white rounded-xl transition-all group flex items-center gap-2"
@@ -674,12 +674,12 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                 <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Expandir</span>
               </button>
               {activeTab === 'merenda' && stats && (
-                <div className="flex items-center gap-4 bg-emerald-900/20 px-4 py-2 rounded-2xl border border-emerald-500/20 animate-in slide-in-from-right-4 backdrop-blur-md">
+                <div className="flex items-center gap-2 md:gap-4 bg-emerald-900/20 px-2 md:px-4 py-2 rounded-2xl border border-emerald-500/20 animate-in slide-in-from-right-4 backdrop-blur-md shrink-0">
                   <div className="text-right">
-                    <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest leading-none">Meta 45% (PNAE)</p>
-                    <p className={`text-sm font-black ${stats.afGoalPercent >= 45 ? 'text-emerald-400' : 'text-red-400'}`}>{stats.afGoalPercent.toFixed(1)}%</p>
+                    <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest leading-none hidden sm:block">Meta 45% (PNAE)</p>
+                    <p className={`text-xs md:text-sm font-black ${stats.afGoalPercent >= 45 ? 'text-emerald-400' : 'text-red-400'}`}>{stats.afGoalPercent.toFixed(1)}%</p>
                   </div>
-                  <div className="w-24 bg-white/10 h-2 rounded-full overflow-hidden">
+                  <div className="w-12 md:w-24 bg-white/10 h-2 rounded-full overflow-hidden shrink-0">
                     <div className={`h-full transition-all duration-1000 ${stats.afGoalPercent >= 45 ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} style={{ width: `${Math.min(stats.afGoalPercent * 2.22, 100)}%` }} />
                   </div>
                 </div>
@@ -687,7 +687,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
             <div className="max-w-7xl mx-auto space-y-6">
 
               {isLoading ? (

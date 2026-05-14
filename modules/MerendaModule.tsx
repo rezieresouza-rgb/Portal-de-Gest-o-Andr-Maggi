@@ -97,9 +97,9 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
       {/* Sidebar */}
-      <aside className="w-64 bg-emerald-900 text-white flex flex-col transition-all duration-300 no-print">
+      <aside className="w-64 shrink-0 bg-emerald-900 text-white flex flex-col transition-all duration-300 no-print">
         <div className="p-6">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-emerald-500 p-1.5 rounded-lg shadow-lg shadow-emerald-500/20">🍎</span>
@@ -141,23 +141,23 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0 no-print">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 no-print min-w-0 w-full gap-2">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
               <LayoutDashboard size={20} />
             </div>
-            <div className="flex flex-col">
-              <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-none">Módulo: Alimentação Escolar</h2>
+            <div className="flex flex-col min-w-0">
+              <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase tracking-tight leading-none truncate">Módulo: Alimentação Escolar</h2>
               {isLocked && (
-                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
-                  <Lock size={8} strokeWidth={3} /> Blindagem de Dados Ativa
+                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1 truncate">
+                  <Lock size={8} strokeWidth={3} className="shrink-0" /> <span className="truncate">Blindagem Ativa</span>
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 md:gap-6 shrink-0">
             <button
               onClick={toggleFullScreen}
               className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group flex items-center gap-2"
