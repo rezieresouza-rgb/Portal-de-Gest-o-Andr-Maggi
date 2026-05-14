@@ -51,11 +51,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         cleanLogin = isCpfMatch;
       }
 
-      // 2. Buscar usuário no Supabase
+      // 2. Buscar usuário no Supabase (suportando perdas de zero à esquerda do Excel)
+      const cleanNoZeros = cleanLogin.replace(/^0+/, '');
       const { data: user, error: dbError } = await supabase
         .from('users')
         .select('*')
-        .or(`login.eq.${cleanLogin},email.eq.${cleanLogin},cpf.eq.${cleanLogin}`)
+        .or(`login.eq.${cleanLogin},email.eq.${cleanLogin},cpf.eq.${cleanLogin},login.eq.${cleanNoZeros},cpf.eq.${cleanNoZeros}`)
         .single();
 
       if (dbError && dbError.code !== 'PGRST116') {
