@@ -366,18 +366,18 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ onExit }) =
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
-                    {activeTab === 'inventory' ? 'Inventário de Bens Móveis Ativos' : 'Relatório de Itens Móveis Inservíveis'}
-                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-lg">{filteredAssets.length} Registros</span>
+              <div className="space-y-6 min-w-0 w-full">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0 w-full">
+                  <h3 className="text-base sm:text-xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-2 min-w-0 flex-1 truncate">
+                    <span className="truncate">{activeTab === 'inventory' ? 'Inventário de Bens Móveis Ativos' : 'Relatório de Itens Móveis Inservíveis'}</span>
+                    <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-lg shrink-0">{filteredAssets.length} Registros</span>
                   </h3>
-                  <button onClick={() => handleExportPDF('inventory-list', activeTab === 'inventory' ? 'Inventario_Ativo' : 'Relatorio_Inserviveis')} className="px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-gray-50 transition-all">
+                  <button onClick={() => handleExportPDF('inventory-list', activeTab === 'inventory' ? 'Inventario_Ativo' : 'Relatorio_Inserviveis')} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-gray-50 transition-all shrink-0">
                     <FileDown size={14} /> Exportar para PDF
                   </button>
                 </div>
 
-                <div id="inventory-list" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div id="inventory-list" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 min-w-0 w-full">
                   {filteredAssets.filter(a => activeTab === 'inventory' ? !a.isUnserviceable : a.isUnserviceable).map(asset => {
                     const isPessimo = asset.condition === 'PÉSSIMO';
                     return (

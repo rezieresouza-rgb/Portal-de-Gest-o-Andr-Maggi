@@ -173,20 +173,19 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
             <button className="relative p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors">
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs font-black text-gray-900">{user.name}</p>
-                <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest">{user.role}</p>
+            <div className="flex items-center gap-2 md:gap-3 shrink-0">
+              <div className="text-right hidden sm:block min-w-0">
+                <p className="text-xs font-black text-gray-900 truncate max-w-[120px] md:max-w-none">{user.name}</p>
+                <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest truncate">{user.role}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-sm">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-xs md:text-sm shrink-0">
                 {user.name.substring(0, 2)}
               </div>
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
           {renderContent()}
         </div>
       </main>
