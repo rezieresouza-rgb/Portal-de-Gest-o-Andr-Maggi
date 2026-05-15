@@ -23,6 +23,17 @@ const SecretariatBulletinPrinter: React.FC = () => {
    const [isLoading, setIsLoading] = useState(false);
    const [availableClassrooms, setAvailableClassrooms] = useState<any[]>([]);
    const [students, setStudents] = useState<any[]>([]);
+   const [absences, setAbsences] = useState<Record<string, number>>(() => {
+      try {
+         return JSON.parse(localStorage.getItem('bulletin_absences_v1') || '{}');
+      } catch {
+         return {};
+      }
+   });
+
+   useEffect(() => {
+      localStorage.setItem('bulletin_absences_v1', JSON.stringify(absences));
+   }, [absences]);
 
    // Carregar turmas do Supabase
    const fetchClassrooms = async () => {
@@ -208,8 +219,9 @@ const SecretariatBulletinPrinter: React.FC = () => {
                      {activeBimestres.map(bim => (
                         <th key={bim} className="p-1 text-center uppercase font-black w-10 border-l border-black">{bim.split(' ')[0]}</th>
                      ))}
-                     <th className="p-1 text-center uppercase font-black w-12 border-l border-black bg-indigo-50/50">Média</th>
-                     <th className="p-1 text-center uppercase font-black w-16 border-l border-black">Freq. (%)</th>
+                     <th className="p-1 text-center uppercase font-black w-10 border-l border-black bg-indigo-50/50">Média</th>
+                     <th className="p-1 text-center uppercase font-black w-10 border-l border-black bg-orange-50">Faltas</th>
+                     <th className="p-1 text-center uppercase font-black w-12 border-l border-black">Freq. (%)</th>
                      <th className="p-1 text-center uppercase font-black w-16 border-l border-black">Situação</th>
                   </tr>
                </thead>
@@ -219,6 +231,9 @@ const SecretariatBulletinPrinter: React.FC = () => {
                      const average = gradesArray.length > 0
                         ? gradesArray.reduce((a, b) => a + b, 0) / gradesArray.length
                         : 0;
+                     
+                     const absenceKey = `${student.id}_${subj}`;
+                     const subjAbsences = absences[absenceKey] || 0;
 
                      return (
                         <tr key={subj} className="border-b border-gray-200">
@@ -230,6 +245,16 @@ const SecretariatBulletinPrinter: React.FC = () => {
                            ))}
                            <td className="p-1 text-center font-black border-l border-black bg-indigo-50/50">
                               {average.toFixed(1)}
+                           </td>
+                           <td className="p-0 text-center font-black border-l border-black bg-orange-50/50">
+                              <input 
+                                type="number" 
+                                min="0"
+                                value={subjAbsences === 0 ? '' : subjAbsences}
+                                onChange={e => setAbsences({...absences, [absenceKey]: parseInt(e.target.value) || 0})}
+                                placeholder="-"
+                                className="w-full text-center bg-transparent border-none outline-none font-black text-[7px] p-1 print:appearance-none print:p-0 no-spinners"
+                              />
                            </td>
                            <td className="p-1 text-center font-bold border-l border-black">{student.frequency}%</td>
                            <td className="p-1 text-center border-l border-black">
@@ -345,6 +370,14 @@ const SecretariatBulletinPrinter: React.FC = () => {
          </div>
 
          <style>{`
+         .no-spinners::-webkit-outer-spin-button,
+         .no-spinners::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+         }
+         .no-spinners {
+            -moz-appearance: textfield;
+         }
         @media print {
           @page { size: A4; margin: 0; }
           .no-print { display: none !important; }
