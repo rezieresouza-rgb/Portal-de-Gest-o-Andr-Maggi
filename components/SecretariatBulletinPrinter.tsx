@@ -112,9 +112,13 @@ const SecretariatBulletinPrinter: React.FC = () => {
          const { data: attendanceData } = await supabase
             .from('class_attendance_students')
             .select(`
-          is_present,
-          student_id
-        `)
+               is_present,
+               student_id,
+               class_attendance_records!inner (
+                  subject,
+                  date
+               )
+            `)
             .in('student_id', studentCodes);
 
          // Mapear dados para o formato do BulletinCard (CUMULATIVO)
@@ -125,9 +129,19 @@ const SecretariatBulletinPrinter: React.FC = () => {
 
             // Estrutura: { 'Matemática': { '1º BIMESTRE': 8.5, '2º BIMESTRE': 7.0 }, ... }
             const studentGrades: Record<string, Record<string, number>> = {};
+            const studentAbsencesBySubject: Record<string, number> = {};
 
             subjects.forEach(subj => {
                studentGrades[subj] = {};
+               
+               // Calcular faltas (ausências) extraídas do diário do professor na disciplina
+               const subjAtt = attendanceData?.filter((a: any) => 
+                  a.student_id === student.registration_number && 
+                  a.class_attendance_records?.subject === subj
+               ) || [];
+               const absencesCount = subjAtt.filter((a: any) => !a.is_present).length;
+               studentAbsencesBySubject[subj] = absencesCount;
+
                activeBimestres.forEach(bim => {
                   const ass = assessments?.find(a => a.subject === subj && a.bimestre === bim);
                   if (ass) {
@@ -149,7 +163,8 @@ const SecretariatBulletinPrinter: React.FC = () => {
                id: student.id,
                name: student.name,
                grades: studentGrades,
-               frequency: frequency
+               frequency: frequency,
+               absencesBySubject: studentAbsencesBySubject
             };
          });
 
@@ -233,7 +248,9 @@ const SecretariatBulletinPrinter: React.FC = () => {
                         : 0;
                      
                      const absenceKey = `${student.id}_${subj}`;
-                     const subjAbsences = absences[absenceKey] || 0;
+                     const dbAbsences = student.absencesBySubject?.[subj] || 0;
+                     const manualOverride = absences[absenceKey];
+                     const displayAbsences = manualOverride !== undefined ? manualOverride : dbAbsences;
 
                      return (
                         <tr key={subj} className="border-b border-gray-200">
@@ -250,9 +267,9 @@ const SecretariatBulletinPrinter: React.FC = () => {
                               <input 
                                 type="number" 
                                 min="0"
-                                value={subjAbsences === 0 ? '' : subjAbsences}
+                                value={displayAbsences === 0 ? '' : displayAbsences}
                                 onChange={e => setAbsences({...absences, [absenceKey]: parseInt(e.target.value) || 0})}
-                                placeholder="-"
+                                placeholder="0"
                                 className="w-full text-center bg-transparent border-none outline-none font-black text-[7px] p-1 print:appearance-none print:p-0 no-spinners"
                               />
                            </td>
