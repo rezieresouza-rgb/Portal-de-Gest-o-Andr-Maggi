@@ -19,7 +19,8 @@ import {
   ClipboardList,
   QrCode,
   Download,
-  Maximize
+  Maximize,
+  Edit2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Asset, AssetCondition } from '../types';
@@ -38,6 +39,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [showHistoryModal, setShowHistoryModal] = useState<Asset | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -131,55 +133,110 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     }
   };
 
+  const handleStartEdit = (asset: Asset) => {
+    setEditingAssetId(asset.id);
+    setForm({
+      description: asset.description,
+      location: asset.location,
+      heritageNumber: asset.heritageNumber,
+      condition: asset.condition,
+      photo: asset.photo || '',
+      acquisitionDocument: asset.acquisitionDocument || '',
+      acquisitionYear: asset.acquisitionYear || '',
+    });
+    setImagePreview(asset.photo || null);
+    setIsModalOpen(true);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (assets.some(a => a.heritageNumber === form.heritageNumber)) {
+    if (!editingAssetId && assets.some(a => a.heritageNumber === form.heritageNumber)) {
       return alert("Erro: Número de patrimônio já cadastrado.");
+    }
+    if (editingAssetId && assets.some(a => a.heritageNumber === form.heritageNumber && a.id !== editingAssetId)) {
+      return alert("Erro: Número de patrimônio já cadastrado em outro bem.");
     }
 
     const isPessimo = form.condition === 'PÉSSIMO';
 
     try {
-      // 1. Insert Asset
-      const { data: newAsset, error: assetError } = await supabase
-        .from('assets')
-        .insert([{
-          description: form.description.toUpperCase(),
-          location: form.location.toUpperCase(),
-          heritage_number: form.heritageNumber,
-          condition: form.condition,
-          is_unserviceable: isPessimo,
-          photo: form.photo,
-          unserviceable_data: isPessimo ? {
+      if (editingAssetId) {
+        // 1. Update Asset
+        const { error: assetError } = await supabase
+          .from('assets')
+          .update({
+            description: form.description.toUpperCase(),
+            location: form.location.toUpperCase(),
+            heritage_number: form.heritageNumber,
+            condition: form.condition,
+            is_unserviceable: isPessimo,
+            photo: form.photo,
+            unserviceable_data: isPessimo ? {
+              date: new Date().toISOString().split('T')[0],
+              ...unserviceableForm
+            } : null,
+            acquisition_document: form.acquisitionDocument?.toUpperCase() || null,
+            acquisition_year: form.acquisitionYear || null
+          })
+          .eq('id', editingAssetId);
+
+        if (assetError) throw assetError;
+
+        // 2. Insert History for Update
+        const { error: historyError } = await supabase
+          .from('asset_history')
+          .insert([{
+            asset_id: editingAssetId,
             date: new Date().toISOString().split('T')[0],
-            ...unserviceableForm
-          } : null,
-          acquisition_document: form.acquisitionDocument?.toUpperCase() || null,
-          acquisition_year: form.acquisitionYear || null
-        }])
-        .select()
-        .single();
+            action: 'ATUALIZAÇÃO DE CADASTRO',
+            responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR',
+            notes: `Cadastro atualizado no inventário. Estado: ${form.condition}`
+          }]);
 
-      if (assetError) throw assetError;
+        if (historyError) throw historyError;
 
-      // 2. Insert History
-      const { error: historyError } = await supabase
-        .from('asset_history')
-        .insert([{
-          asset_id: newAsset.id,
-          date: new Date().toISOString().split('T')[0],
-          action: isPessimo ? 'CADASTRO COMO INSERVÍVEL' : 'CADASTRO INICIAL',
-          responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR',
-          notes: isPessimo ? `Motivo: ${unserviceableForm.reason}` : 'Inclusão manual no inventário'
-        }]);
+      } else {
+        // 1. Insert Asset
+        const { data: newAsset, error: assetError } = await supabase
+          .from('assets')
+          .insert([{
+            description: form.description.toUpperCase(),
+            location: form.location.toUpperCase(),
+            heritage_number: form.heritageNumber,
+            condition: form.condition,
+            is_unserviceable: isPessimo,
+            photo: form.photo,
+            unserviceable_data: isPessimo ? {
+              date: new Date().toISOString().split('T')[0],
+              ...unserviceableForm
+            } : null,
+            acquisition_document: form.acquisitionDocument?.toUpperCase() || null,
+            acquisition_year: form.acquisitionYear || null
+          }])
+          .select()
+          .single();
 
-      if (historyError) throw historyError;
+        if (assetError) throw assetError;
+
+        // 2. Insert History for Creation
+        const { error: historyError } = await supabase
+          .from('asset_history')
+          .insert([{
+            asset_id: newAsset.id,
+            date: new Date().toISOString().split('T')[0],
+            action: isPessimo ? 'CADASTRO COMO INSERVÍVEL' : 'CADASTRO INICIAL',
+            responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR',
+            notes: isPessimo ? `Motivo: ${unserviceableForm.reason}` : 'Inclusão manual no inventário'
+          }]);
+
+        if (historyError) throw historyError;
+      }
 
       await fetchAssets();
       setIsModalOpen(false);
       resetForm();
-      alert("Bem patrimonial salvo com sucesso!");
+      alert(editingAssetId ? "Bem patrimonial atualizado com sucesso!" : "Bem patrimonial salvo com sucesso!");
 
     } catch (error) {
       console.error("Erro ao salvar bem:", error);
@@ -189,6 +246,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
   const resetForm = () => {
     setForm({ description: '', location: '', heritageNumber: '', condition: 'BOM', photo: '', acquisitionDocument: '', acquisitionYear: '' });
+    setEditingAssetId(null);
     setUnserviceableForm({ reason: '', responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR' });
     setImagePreview(null);
   };
@@ -408,6 +466,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               )}
                             </div>
                             <div className="flex gap-2">
+                              <button onClick={() => handleStartEdit(asset)} className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-lg transition-all" title="Editar"><Edit2 size={16} /></button>
                               <button onClick={() => setShowHistoryModal(asset)} className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-lg transition-all" title="Histórico"><History size={16} /></button>
                               <button onClick={() => deleteAsset(asset.id)} className="p-2 bg-gray-50 text-gray-400 hover:text-red-500 rounded-lg transition-all" title="Excluir"><Trash2 size={16} /></button>
                             </div>
@@ -458,8 +517,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg"><Monitor size={24} /></div>
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Novo Bem Móvel</h3>
-                  <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">Cadastro de Patrimônio</p>
+                  <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">{editingAssetId ? 'Editar Bem Móvel' : 'Novo Bem Móvel'}</h3>
+                  <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">{editingAssetId ? 'Atualização de Patrimônio' : 'Cadastro de Patrimônio'}</p>
                 </div>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:text-red-500 transition-colors"><X size={24} /></button>
@@ -601,7 +660,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                 </div>
 
                 <div className="pt-4 flex gap-4">
-                  <button type="submit" className="flex-1 py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-blue-700 transition-all">Salvar no Inventário</button>
+                  <button type="submit" className="flex-1 py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-blue-700 transition-all">{editingAssetId ? 'Salvar Alterações' : 'Salvar no Inventário'}</button>
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-10 py-5 bg-gray-100 text-gray-500 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all">Cancelar</button>
                 </div>
               </form>
