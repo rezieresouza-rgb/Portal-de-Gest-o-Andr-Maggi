@@ -40,6 +40,7 @@ const PedagogicalOccurrenceBook: React.FC = () => {
    const [filterProf, setFilterProf] = useState('');
    const [filterCat, setFilterCat] = useState<OccurrenceCategory | 'TODOS'>('TODOS');
    const [filterSeverity, setFilterSeverity] = useState<string>('TODOS');
+   const [isExportingPDF, setIsExportingPDF] = useState(false);
 
    const fetchOccurrences = async () => {
       const { data } = await supabase.from('occurrences').select('*').order('date', { ascending: false });
@@ -169,6 +170,27 @@ const PedagogicalOccurrenceBook: React.FC = () => {
       );
    }
 
+   const handleExportPDF = async () => {
+      setIsExportingPDF(true);
+      const element = document.getElementById('print-report-area');
+      if (!element) return setIsExportingPDF(false);
+
+      try {
+         // @ts-ignore
+         await window.html2pdf().set({
+            margin: [10, 10, 10, 10],
+            filename: `Relatorio_Ocorrencias_${new Date().getTime()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+         }).from(element).save();
+      } catch (err) {
+         console.error(err);
+      } finally {
+         setIsExportingPDF(false);
+      }
+   };
+
    if (view === 'report') {
       return (
          <div className="bg-white text-black p-8 rounded-2xl min-h-screen">
@@ -176,12 +198,13 @@ const PedagogicalOccurrenceBook: React.FC = () => {
                <button onClick={() => setView('list')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 transition-colors rounded-xl text-xs font-black uppercase text-gray-700">
                   <ArrowLeft size={16} /> Voltar
                </button>
-               <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl text-xs font-black uppercase shadow-lg">
-                  <Printer size={16} /> Imprimir Relatório
+               <button onClick={handleExportPDF} disabled={isExportingPDF} className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl text-xs font-black uppercase shadow-lg">
+                  {isExportingPDF ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />} 
+                  {isExportingPDF ? 'Gerando PDF...' : 'Baixar PDF'}
                </button>
             </div>
             
-            <div className="print-area">
+            <div id="print-report-area" className="print-area bg-white p-8">
                <div className="text-center mb-8 border-b-2 border-black pb-4">
                   <h2 className="text-2xl font-black uppercase tracking-tight">Relatório de Ocorrências Pedagógicas</h2>
                   <p className="text-sm font-bold text-gray-600 mt-1">Total de registros no filtro atual: {filtered.length}</p>
@@ -230,10 +253,18 @@ const PedagogicalOccurrenceBook: React.FC = () => {
 
             <style>{`
                @media print {
-                  body { background: white !important; -webkit-print-color-adjust: exact; }
-                  .no-print { display: none !important; }
-                  .print-area { display: block !important; width: 100%; }
-                  @page { size: landscape; margin: 15mm; }
+                  body * { visibility: hidden; }
+                  .print-area, .print-area * { visibility: visible; }
+                  .print-area {
+                     position: absolute;
+                     left: 0;
+                     top: 0;
+                     width: 100%;
+                     margin: 0;
+                     padding: 0;
+                  }
+                  body { background: white !important; -webkit-print-color-adjust: exact; margin: 0; }
+                  @page { size: landscape; margin: 10mm; }
                }
             `}</style>
          </div>
