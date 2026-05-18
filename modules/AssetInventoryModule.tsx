@@ -46,6 +46,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     heritageNumber: '',
     condition: 'BOM',
     photo: '',
+    acquisitionDocument: '',
+    acquisitionYear: '',
   });
 
   const [unserviceableForm, setUnserviceableForm] = useState({
@@ -88,6 +90,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           isUnserviceable: a.is_unserviceable,
           photo: a.photo,
           unserviceableData: a.unserviceable_data,
+          acquisitionDocument: a.acquisition_document,
+          acquisitionYear: a.acquisition_year,
           history: historyData?.filter(h => h.asset_id === a.id).map(h => ({
             id: h.id,
             date: h.date,
@@ -150,7 +154,9 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           unserviceable_data: isPessimo ? {
             date: new Date().toISOString().split('T')[0],
             ...unserviceableForm
-          } : null
+          } : null,
+          acquisition_document: form.acquisitionDocument?.toUpperCase() || null,
+          acquisition_year: form.acquisitionYear || null
         }])
         .select()
         .single();
@@ -182,7 +188,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   };
 
   const resetForm = () => {
-    setForm({ description: '', location: '', heritageNumber: '', condition: 'BOM', photo: '' });
+    setForm({ description: '', location: '', heritageNumber: '', condition: 'BOM', photo: '', acquisitionDocument: '', acquisitionYear: '' });
     setUnserviceableForm({ reason: '', responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR' });
     setImagePreview(null);
   };
@@ -419,6 +425,15 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
                             <MapPin size={12} className="text-blue-500" /> {asset.location}
                           </div>
+
+                          {asset.acquisitionDocument && (
+                            <div className="mt-2 text-[9px] font-black text-gray-500 uppercase tracking-tight bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex items-center gap-1.5">
+                              <span>📄 Doc: {asset.acquisitionDocument}</span>
+                              {asset.acquisitionYear && (
+                                <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[8px] font-black shrink-0">{asset.acquisitionYear}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
@@ -504,6 +519,28 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         onChange={e => setForm({ ...form, heritageNumber: e.target.value })}
                         className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-lg outline-none focus:bg-white transition-all"
                       />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nº Termo / Nota Fiscal</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: TERMO 12/2026 ou NF 345"
+                          value={form.acquisitionDocument}
+                          onChange={e => setForm({ ...form, acquisitionDocument: e.target.value })}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-xs outline-none focus:bg-white transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ano</label>
+                        <input
+                          type="number"
+                          placeholder="Ex: 2026"
+                          value={form.acquisitionYear}
+                          onChange={e => setForm({ ...form, acquisitionYear: e.target.value })}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-xs outline-none focus:bg-white transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

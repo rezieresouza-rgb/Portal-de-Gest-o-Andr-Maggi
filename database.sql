@@ -246,6 +246,8 @@ CREATE TABLE assets (
     is_unserviceable BOOLEAN DEFAULT FALSE,
     photo TEXT,
     unserviceable_data JSONB,
+    acquisition_document VARCHAR(255),
+    acquisition_year VARCHAR(4),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

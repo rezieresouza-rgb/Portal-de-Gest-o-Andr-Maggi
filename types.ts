@@ -224,7 +224,7 @@ export interface PedagogicalMaterialRequest { id: string; date: string; teacherN
 export interface EquipmentBooking { id: string; equipmentId: string; equipmentName: string; date: string; shift: Shift; teacherName: string; className: string; status: 'SOLICITADO' | 'RETIRADO' | 'DEVOLVIDO' | 'RECUSADO' | 'LIBERADO'; timestamp: number; returnTimestamp?: number; studentList?: string; }
 export interface AssetHistory { id: string; date: string; action: string; responsible: string; notes: string; }
 export type AssetCondition = 'EXCELENTE' | 'BOM' | 'REGULAR' | 'PÉSSIMO';
-export interface Asset { id: string; description: string; location: string; heritageNumber: string; condition: AssetCondition; photo?: string; isUnserviceable: boolean; unserviceableData?: { date: string; reason: string; responsible: string; }; history: AssetHistory[]; timestamp: number; }
+export interface Asset { id: string; description: string; location: string; heritageNumber: string; condition: AssetCondition; photo?: string; isUnserviceable: boolean; unserviceableData?: { date: string; reason: string; responsible: string; }; history: AssetHistory[]; timestamp: number; acquisitionDocument?: string; acquisitionYear?: string; }
 export interface TechnicalSheetIngredient { description: string; perCapitaLiquido: number; }
 export interface TechnicalSheet { preparationName: string; ingredients: TechnicalSheetIngredient[]; }
 export interface ShoppingListItem {
