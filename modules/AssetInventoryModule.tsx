@@ -118,6 +118,25 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   useEffect(() => {
     fetchAssets();
     const sub = supabase.channel('assets_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, fetchAssets).subscribe();
+
+    // Ler filtros de QR Code passados pela URL/App
+    try {
+      const qrLoc = localStorage.getItem('qr_location_filter');
+      const qrPat = localStorage.getItem('qr_patrimonio_filter');
+      if (qrLoc) {
+        setLocationFilter(qrLoc);
+        setActiveTab('inventory');
+        localStorage.removeItem('qr_location_filter');
+      }
+      if (qrPat) {
+        setSearchTerm(qrPat);
+        setActiveTab('inventory');
+        localStorage.removeItem('qr_patrimonio_filter');
+      }
+    } catch (e) {
+      console.error("Erro ao carregar filtros do QR Code:", e);
+    }
+
     return () => { sub.unsubscribe(); };
   }, []);
 
@@ -425,7 +444,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <div className="p-4 bg-gray-50 rounded-[2.5rem] border border-gray-100 mb-6 group-hover:scale-105 transition-transform duration-300">
                           <QRCodeSVG
                             id={`qr-${loc}`}
-                            value={`portal-gestao://patrimonio/local/${encodeURIComponent(loc)}`}
+                            value={`${window.location.origin}/?location=${encodeURIComponent(loc)}`}
                             size={160}
                             level="H"
                             includeMargin={true}
@@ -650,9 +669,20 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Secretaria de Estado de Educação de Mato Grosso</p>
                         <p className="text-[10px] text-gray-400 font-bold uppercase">Relatório Oficial de Inventário de Bens Móveis</p>
                       </div>
-                      <div className="text-right space-y-1 text-xs font-bold text-gray-600">
-                        <p>Emitido em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
-                        <p>Responsável: {user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</p>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right space-y-1 text-xs font-bold text-gray-600">
+                          <p>Emitido em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+                          <p>Responsável: {user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</p>
+                        </div>
+                        <div className="flex flex-col items-center gap-1 bg-gray-50 p-2 rounded-xl border border-gray-200 shrink-0">
+                          <QRCodeSVG
+                            value={`${window.location.origin}/?location=${encodeURIComponent(reportLocation || 'TODOS')}`}
+                            size={64}
+                            level="H"
+                            includeMargin={true}
+                          />
+                          <span className="text-[7px] font-black text-gray-500 uppercase tracking-tighter">Inventário Digital</span>
+                        </div>
                       </div>
                     </div>
 

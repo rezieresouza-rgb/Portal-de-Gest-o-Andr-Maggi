@@ -94,6 +94,28 @@ const App: React.FC = () => {
     };
   }, [user, logout]);
 
+  // Escuta query parameters para ler redirecionamentos de QR Code
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const queryLocation = params.get('location');
+      const queryPatrimonio = params.get('patrimonio');
+      if (queryLocation || queryPatrimonio) {
+        if (queryLocation) {
+          localStorage.setItem('qr_location_filter', queryLocation);
+        }
+        if (queryPatrimonio) {
+          localStorage.setItem('qr_patrimonio_filter', queryPatrimonio);
+        }
+        setActiveModule('patrimonio');
+        // Limpar parâmetros da URL para manter a barra limpa
+        window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+      }
+    } catch (e) {
+      console.error("Erro ao ler QR Code da URL:", e);
+    }
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('active_portal_module', activeModule);
   }, [activeModule]);
