@@ -390,7 +390,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
          <div className="print-area hidden">
             <div className="bulletin-print-layout">
                {Array.from({ length: Math.ceil(students.length / 2) }).map((_, pageIdx) => (
-                  <div key={pageIdx} className="print-page h-[290mm] flex flex-col p-[10mm] space-y-[8mm] justify-start bg-white">
+                  <div key={pageIdx} className="print-page flex flex-col justify-start bg-white">
                      <BulletinCard student={students[pageIdx * 2]} />
                      {students[pageIdx * 2 + 1] && (
                         <BulletinCard student={students[pageIdx * 2 + 1]} />
@@ -409,30 +409,79 @@ const SecretariatBulletinPrinter: React.FC = () => {
          .no-spinners {
             -moz-appearance: textfield;
          }
-        @media print {
-          @page { size: A4; margin: 0; }
-          .no-print { display: none !important; }
-          .print-area { display: block !important; }
+         @media print {
+           @page { 
+             size: A4; 
+             margin: 0; 
+           }
+           
+           /* Reset high-level layout containers for clean printing */
+           html, body, #root, .flex.h-screen, main, header, aside, .overflow-y-auto {
+             height: auto !important;
+             min-height: 0 !important;
+             max-height: none !important;
+             overflow: visible !important;
+             margin: 0 !important;
+             padding: 0 !important;
+             border: none !important;
+             box-shadow: none !important;
+             display: block !important;
+             position: static !important;
+             background: white !important;
+           }
+
+           body {
+             -webkit-print-color-adjust: exact !important;
+             print-color-adjust: exact !important;
+           }
+
+           .no-print { 
+             display: none !important; 
+           }
+           
+           .print-area { 
+             display: block !important; 
+             position: absolute !important;
+             top: 0 !important;
+             left: 0 !important;
+             width: 210mm !important;
+             margin: 0 !important;
+             padding: 0 !important;
+             background: white !important;
+             z-index: 99999 !important;
+           }
+           
            .print-page { 
-             page-break-after: always; 
-             box-sizing: border-box;
-             width: 210mm;
-             height: 290mm;
-             margin: 0 auto;
+             page-break-after: always !important; 
+             page-break-inside: avoid !important;
+             break-after: page !important;
+             box-sizing: border-box !important;
+             width: 210mm !important;
+             height: 297mm !important; /* Exact A4 height */
+             padding: 15mm 15mm !important;
+             margin: 0 auto !important;
              background: white !important;
              overflow: hidden !important;
+             display: flex !important;
+             flex-direction: column !important;
+             justify-content: flex-start !important;
+             gap: 10mm !important;
            }
+           
            .bulletin-card {
-             height: calc(50% - 15mm) !important; 
-             border: 1px solid black !important;
+             height: 125mm !important; /* Balanced height to perfectly fit two per page */
+             border: 1.5px solid black !important;
              margin: 0 !important;
              box-shadow: none !important;
              overflow: hidden !important;
-             display: flex;
-             flex-direction: column;
+             display: flex !important;
+             flex-direction: column !important;
+             justify-content: space-between !important;
+             padding: 5mm !important;
+             box-sizing: border-box !important;
+             background: white !important;
            }
-          body { background: white !important; }
-        }
+         }
       `}</style>
 
       </div>
