@@ -122,7 +122,20 @@ const SecretariatBulletinPrinter: React.FC = () => {
             .in('student_id', studentCodes);
 
          // Mapear dados para o formato do BulletinCard (CUMULATIVO)
-         const subjects = Array.from(new Set(assessments?.map(a => a.subject) || []));
+         const baseSubjects = [
+            'LÍNGUA PORTUGUESA',
+            'MATEMÁTICA',
+            'CIÊNCIAS',
+            'HISTÓRIA',
+            'GEOGRAFIA',
+            'LÍNGUA INGLESA',
+            'EDUCAÇÃO FÍSICA',
+            'ARTE',
+            'ENSINO RELIGIOSO',
+            'PROJETO DE VIDA'
+         ];
+         const assessmentSubjects = assessments?.map(a => a.subject) || [];
+         const subjects = Array.from(new Set([...baseSubjects, ...assessmentSubjects]));
 
          const mappedStudents = enrollments.map((e: any) => {
             const student = e.students;
@@ -135,10 +148,11 @@ const SecretariatBulletinPrinter: React.FC = () => {
                studentGrades[subj] = {};
                
                // Calcular faltas (ausências) extraídas do diário do professor na disciplina
-               const subjAtt = attendanceData?.filter((a: any) => 
-                  a.student_id === student.registration_number && 
-                  a.class_attendance_records?.subject === subj
-               ) || [];
+               const subjAtt = attendanceData?.filter((a: any) => {
+                  if (a.student_id !== student.registration_number) return false;
+                  const recSubj = a.class_attendance_records?.subject || '';
+                  return recSubj === subj || recSubj.startsWith(subj + ' -');
+               }) || [];
                const absencesCount = subjAtt.filter((a: any) => !a.is_present).length;
                studentAbsencesBySubject[subj] = absencesCount;
 
