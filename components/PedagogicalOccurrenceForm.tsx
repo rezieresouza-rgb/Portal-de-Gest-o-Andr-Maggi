@@ -173,6 +173,7 @@ const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ o
 
                {/* SEÇÃO 2: CATEGORIA E RESPONSÁVEL */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-1.5">
                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Categoria do Fato</label>
                      <div className="relative">
                         <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
