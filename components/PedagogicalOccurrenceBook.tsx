@@ -21,7 +21,8 @@ import {
    ArrowLeft,
    Loader2,
    Send,
-   X
+   X,
+   Printer
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { PedagogicalOccurrence, OccurrenceCategory } from '../types';
@@ -30,7 +31,7 @@ import PedagogicalOccurrenceAta from './PedagogicalOccurrenceAta';
 import { supabase } from '../supabaseClient';
 
 const PedagogicalOccurrenceBook: React.FC = () => {
-   const [view, setView] = useState<'list' | 'form' | 'ata'>('list');
+   const [view, setView] = useState<'list' | 'form' | 'ata' | 'report'>('list');
    const { addToast } = useToast();
    const [occurrences, setOccurrences] = useState<PedagogicalOccurrence[]>([]);
 
@@ -165,6 +166,76 @@ const PedagogicalOccurrenceBook: React.FC = () => {
       );
    }
 
+   if (view === 'report') {
+      return (
+         <div className="bg-white text-black p-8 rounded-2xl min-h-screen">
+            <div className="flex justify-between items-center mb-8 no-print">
+               <button onClick={() => setView('list')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 transition-colors rounded-xl text-xs font-black uppercase text-gray-700">
+                  <ArrowLeft size={16} /> Voltar
+               </button>
+               <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl text-xs font-black uppercase shadow-lg">
+                  <Printer size={16} /> Imprimir Relatório
+               </button>
+            </div>
+            
+            <div className="print-area">
+               <div className="text-center mb-8 border-b-2 border-black pb-4">
+                  <h2 className="text-2xl font-black uppercase tracking-tight">Relatório de Ocorrências Pedagógicas</h2>
+                  <p className="text-sm font-bold text-gray-600 mt-1">Total de registros no filtro atual: {filtered.length}</p>
+                  <p className="text-xs text-gray-500 uppercase mt-2">
+                     Filtro Ativo: {searchTerm ? `[Busca: ${searchTerm}]` : '[Sem busca]'} | Categoria: {filterCat} | Professor: {filterProf || 'Todos'}
+                  </p>
+               </div>
+
+               <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                     <tr className="border-b-2 border-black bg-gray-50">
+                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300">Data/Hora</th>
+                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300">Aluno(s) / Turma</th>
+                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300">Categoria / Local</th>
+                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300 w-1/3">Descrição do Registro</th>
+                        <th className="py-2 px-2 font-black uppercase">Registrado Por</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     {filtered.map(occ => (
+                        <tr key={occ.id} className="border-b border-gray-300 break-inside-avoid">
+                           <td className="py-3 px-2 whitespace-nowrap align-top border-r border-gray-300">
+                              <strong>{new Date(occ.date).toLocaleDateString('pt-BR')}</strong> <br/>
+                              <span className="text-gray-500">{occ.time}</span>
+                           </td>
+                           <td className="py-3 px-2 align-top border-r border-gray-300">
+                              <strong className="uppercase">{occ.involvedStudents}</strong><br/>
+                              <span className="text-gray-600">{occ.className}</span>
+                           </td>
+                           <td className="py-3 px-2 align-top border-r border-gray-300">
+                              <span className="font-bold">{occ.category.replace('_', ' ')}</span><br/>
+                              <span className="text-gray-600">{occ.location}</span>
+                           </td>
+                           <td className="py-3 px-2 align-top border-r border-gray-300 text-[10px] text-gray-800">
+                              {occ.report}
+                           </td>
+                           <td className="py-3 px-2 align-top font-medium uppercase text-[10px]">
+                              {occ.responsible}
+                           </td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+            </div>
+
+            <style>{`
+               @media print {
+                  body { background: white !important; -webkit-print-color-adjust: exact; }
+                  .no-print { display: none !important; }
+                  .print-area { display: block !important; width: 100%; }
+                  @page { size: landscape; margin: 15mm; }
+               }
+            `}</style>
+         </div>
+      );
+   }
+
    return (
       <div className="space-y-6 animate-in fade-in duration-500 pb-20">
 
@@ -200,6 +271,12 @@ const PedagogicalOccurrenceBook: React.FC = () => {
                      className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-violet-500/50"
                   />
                </div>
+               <button
+                  onClick={() => setView('report')}
+                  className="px-6 py-3 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-white/10 active:scale-95 transition-all flex items-center gap-2 shrink-0 border border-white/10"
+               >
+                  <Printer size={16} /> Relatório
+               </button>
                <button
                   onClick={() => { setSelectedOccId(null); setView('form'); }}
                   className="px-6 py-3 bg-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-violet-700 active:scale-95 transition-all flex items-center gap-2 shrink-0 border border-white/10"
