@@ -33,13 +33,19 @@ interface AssetInventoryModuleProps {
 import { supabase } from '../supabaseClient';
 
 const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes' | 'relatorios'>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState<Asset | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
+
+  // Filtros do Submódulo de Relatório
+  const [reportLocation, setReportLocation] = useState('');
+  const [reportCondition, setReportCondition] = useState('');
+  const [reportYear, setReportYear] = useState('');
+  const [reportSearch, setReportSearch] = useState('');
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -275,6 +281,21 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     });
   }, [assets, searchTerm, locationFilter]);
 
+  const reportAssets = useMemo(() => {
+    return assets.filter(a => {
+      const matchSearch = reportSearch ? (
+        a.description.toLowerCase().includes(reportSearch.toLowerCase()) ||
+        a.heritageNumber.includes(reportSearch)
+      ) : true;
+      const matchLocation = reportLocation ? a.location === reportLocation : true;
+      const matchCondition = reportCondition ? (
+        reportCondition === 'PÉSSIMO' ? a.isUnserviceable : (a.condition === reportCondition && !a.isUnserviceable)
+      ) : true;
+      const matchYear = reportYear ? a.acquisitionYear === reportYear : true;
+      return matchSearch && matchLocation && matchCondition && matchYear;
+    });
+  }, [assets, reportSearch, reportLocation, reportCondition, reportYear]);
+
   const getConditionColor = (cond: AssetCondition) => {
     switch (cond) {
       case 'EXCELENTE': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
@@ -336,6 +357,9 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           </button>
           <button onClick={() => setActiveTab('history')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <History size={18} /> Baixas e Inservíveis
+          </button>
+          <button onClick={() => setActiveTab('relatorios')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'relatorios' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+            <ClipboardList size={18} /> Emissão de Relatório
           </button>
         </nav>
         <div className="p-6 border-t border-blue-800">
@@ -437,6 +461,263 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            ) : activeTab === 'relatorios' ? (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Emissão de Relatório Patrimonial</h3>
+                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Gere relatórios customizados com filtros avançados</p>
+                  </div>
+                  <button
+                    onClick={() => handleExportPDF('report-print-container', `Relatorio_Patrimonial`)}
+                    className="px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center gap-2 transition-all shrink-0"
+                  >
+                    <FileDown size={16} /> Emitir Relatório (PDF)
+                  </button>
+                </div>
+
+                {/* KPI Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="bg-white p-6 rounded-[2rem] border border-gray-100/80 shadow-sm flex flex-col justify-between">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Itens</span>
+                    <span className="text-3xl font-black text-gray-900 mt-2">{reportAssets.length}</span>
+                  </div>
+                  <div className="bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100/50 shadow-sm flex flex-col justify-between">
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Excelente</span>
+                    <span className="text-3xl font-black text-emerald-700 mt-2">
+                      {reportAssets.filter(a => a.condition === 'EXCELENTE' && !a.isUnserviceable).length}
+                    </span>
+                  </div>
+                  <div className="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100/50 shadow-sm flex flex-col justify-between">
+                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Bom</span>
+                    <span className="text-3xl font-black text-blue-700 mt-2">
+                      {reportAssets.filter(a => a.condition === 'BOM' && !a.isUnserviceable).length}
+                    </span>
+                  </div>
+                  <div className="bg-amber-50/50 p-6 rounded-[2rem] border border-amber-100/50 shadow-sm flex flex-col justify-between">
+                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Regular</span>
+                    <span className="text-3xl font-black text-amber-700 mt-2">
+                      {reportAssets.filter(a => a.condition === 'REGULAR' && !a.isUnserviceable).length}
+                    </span>
+                  </div>
+                  <div className="bg-red-50/50 p-6 rounded-[2rem] border border-red-100/50 shadow-sm flex flex-col justify-between">
+                    <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Inservíveis</span>
+                    <span className="text-3xl font-black text-red-700 mt-2">
+                      {reportAssets.filter(a => a.isUnserviceable).length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filters Panel */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100/80 shadow-sm space-y-6">
+                  <div className="flex items-center gap-2 pb-4 border-b border-gray-50">
+                    <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
+                    <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Painel de Filtros</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Buscar por Patrimônio / Descrição</label>
+                      <input
+                        type="text"
+                        value={reportSearch}
+                        onChange={e => setReportSearch(e.target.value)}
+                        placeholder="Ex: CADEIRA ou 12345"
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Ambiente / Local</label>
+                      <select
+                        value={reportLocation}
+                        onChange={e => setReportLocation(e.target.value)}
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                      >
+                        <option value="">TODOS OS AMBIENTES</option>
+                        {uniqueLocations.map(loc => (
+                          <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Estado de Conservação</label>
+                      <select
+                        value={reportCondition}
+                        onChange={e => setReportCondition(e.target.value)}
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                      >
+                        <option value="">TODOS OS ESTADOS</option>
+                        <option value="EXCELENTE">EXCELENTE</option>
+                        <option value="BOM">BOM</option>
+                        <option value="REGULAR">REGULAR</option>
+                        <option value="PÉSSIMO">INSERVÍVEL (PÉSSIMO)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Ano de Aquisição</label>
+                      <select
+                        value={reportYear}
+                        onChange={e => setReportYear(e.target.value)}
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                      >
+                        <option value="">TODOS OS ANOS</option>
+                        {Array.from(new Set(assets.map(a => a.acquisitionYear).filter(Boolean))).sort().map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      onClick={() => {
+                        setReportSearch('');
+                        setReportLocation('');
+                        setReportCondition('');
+                        setReportYear('');
+                      }}
+                      className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                    >
+                      Limpar Filtros
+                    </button>
+                  </div>
+                </div>
+
+                {/* Report Preview Table */}
+                <div className="bg-white rounded-[2.5rem] border border-gray-100/80 shadow-sm overflow-hidden">
+                  <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
+                      <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Prévia do Relatório</h4>
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-3 py-1 rounded-xl">
+                      {reportAssets.length} registros correspondentes
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-100">
+                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nº Patrimônio</th>
+                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Descrição</th>
+                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ambiente</th>
+                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
+                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Doc. Aquisição</th>
+                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ano</th>
+                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Data Cadastro</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 font-bold text-xs text-gray-700">
+                        {reportAssets.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="p-10 text-center text-gray-400 uppercase font-black tracking-widest">
+                              Nenhum bem móvel encontrado com os filtros aplicados.
+                            </td>
+                          </tr>
+                        ) : (
+                          reportAssets.map(asset => (
+                            <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
+                              <td className="p-6 font-black text-gray-900">PAT: {asset.heritageNumber}</td>
+                              <td className="p-6 uppercase">{asset.description}</td>
+                              <td className="p-6 uppercase">{asset.location}</td>
+                              <td className="p-6">
+                                <span className={`px-2 py-1 rounded text-[8px] font-black border ${getConditionColor(asset.condition)}`}>
+                                  {asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}
+                                </span>
+                              </td>
+                              <td className="p-6 uppercase">{asset.acquisitionDocument || '-'}</td>
+                              <td className="p-6">{asset.acquisitionYear || '-'}</td>
+                              <td className="p-6 text-gray-400">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Printable container hidden visually but read by html2pdf */}
+                <div className="hidden">
+                  <div id="report-print-container" className="p-10 bg-white text-black font-sans space-y-8" style={{ width: '297mm' }}>
+                    {/* Header */}
+                    <div className="border-b-4 border-blue-900 pb-6 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Escola Estadual André Antonio Maggi</h1>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Secretaria de Estado de Educação de Mato Grosso</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase">Relatório Oficial de Inventário de Bens Móveis</p>
+                      </div>
+                      <div className="text-right space-y-1 text-xs font-bold text-gray-600">
+                        <p>Emitido em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+                        <p>Responsável: {user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</p>
+                      </div>
+                    </div>
+
+                    {/* Filter Summary */}
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-4 gap-4 text-[10px] font-black text-gray-500 uppercase">
+                      <div>
+                        <span>Local:</span>
+                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportLocation || 'TODOS OS AMBIENTES'}</p>
+                      </div>
+                      <div>
+                        <span>Estado:</span>
+                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportCondition || 'TODOS OS ESTADOS'}</p>
+                      </div>
+                      <div>
+                        <span>Ano Aquisição:</span>
+                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportYear || 'TODOS OS ANOS'}</p>
+                      </div>
+                      <div>
+                        <span>Registros:</span>
+                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportAssets.length} itens encontrados</p>
+                      </div>
+                    </div>
+
+                    {/* Table */}
+                    <table className="w-full text-left border-collapse text-[10px]">
+                      <thead>
+                        <tr className="bg-blue-900 text-white font-bold border border-blue-900">
+                          <th className="p-3 border-r border-blue-800">Nº PATRIMÔNIO</th>
+                          <th className="p-3 border-r border-blue-800">DESCRIÇÃO DO BEM</th>
+                          <th className="p-3 border-r border-blue-800">AMBIENTE</th>
+                          <th className="p-3 border-r border-blue-800">ESTADO</th>
+                          <th className="p-3 border-r border-blue-800">DOCUMENTO</th>
+                          <th className="p-3 border-r border-blue-800">ANO</th>
+                          <th className="p-3">DATA CADASTRO</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 border border-gray-200 font-bold text-gray-800 uppercase">
+                        {reportAssets.map(asset => (
+                          <tr key={asset.id} className="hover:bg-gray-50">
+                            <td className="p-3 border-r border-gray-200 font-black">PAT: {asset.heritageNumber}</td>
+                            <td className="p-3 border-r border-gray-200">{asset.description}</td>
+                            <td className="p-3 border-r border-gray-200">{asset.location}</td>
+                            <td className="p-3 border-r border-gray-200">{asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}</td>
+                            <td className="p-3 border-r border-gray-200">{asset.acquisitionDocument || '-'}</td>
+                            <td className="p-3 border-r border-gray-200">{asset.acquisitionYear || '-'}</td>
+                            <td className="p-3">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Signatures */}
+                    <div className="pt-16 grid grid-cols-2 gap-16 text-center text-xs font-black uppercase text-gray-700 tracking-wider">
+                      <div className="space-y-1">
+                        <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                        <p>{user?.name ? user.name.toUpperCase() : 'GESTOR DE PATRIMÔNIO'}</p>
+                        <p className="text-[10px] text-gray-400">Responsável pelo Inventário</p>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                        <p>DIRETORIA ESCOLAR</p>
+                        <p className="text-[10px] text-gray-400">Assinatura e Carimbo</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
