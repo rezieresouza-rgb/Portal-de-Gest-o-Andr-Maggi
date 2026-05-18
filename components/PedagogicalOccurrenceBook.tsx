@@ -39,6 +39,7 @@ const PedagogicalOccurrenceBook: React.FC = () => {
    const [searchTerm, setSearchTerm] = useState('');
    const [filterProf, setFilterProf] = useState('');
    const [filterCat, setFilterCat] = useState<OccurrenceCategory | 'TODOS'>('TODOS');
+   const [filterSeverity, setFilterSeverity] = useState<string>('TODOS');
 
    const fetchOccurrences = async () => {
       const { data } = await supabase.from('occurrences').select('*').order('date', { ascending: false });
@@ -75,10 +76,11 @@ const PedagogicalOccurrenceBook: React.FC = () => {
          const matchSearch = o.involvedStudents.toLowerCase().includes(searchTerm.toLowerCase()) ||
             o.className.toLowerCase().includes(searchTerm.toLowerCase());
          const matchCat = filterCat === 'TODOS' || o.category === filterCat;
+         const matchSev = filterSeverity === 'TODOS' || o.severity === filterSeverity;
          const matchProf = !filterProf || o.responsible.toLowerCase().includes(filterProf.toLowerCase());
-         return matchSearch && matchCat && matchProf;
+         return matchSearch && matchCat && matchSev && matchProf;
       }).sort((a, b) => b.timestamp - a.timestamp);
-   }, [occurrences, searchTerm, filterCat, filterProf]);
+   }, [occurrences, searchTerm, filterCat, filterSeverity, filterProf]);
 
    const handleDelete = async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
@@ -104,6 +106,7 @@ const PedagogicalOccurrenceBook: React.FC = () => {
             description: occ.report,
             responsible_name: occ.responsible,
             category: occ.category,
+            severity: occ.severity || 'LEVE',
             attachments: occ.attachments,
             status: occ.status
          };
@@ -183,7 +186,7 @@ const PedagogicalOccurrenceBook: React.FC = () => {
                   <h2 className="text-2xl font-black uppercase tracking-tight">Relatório de Ocorrências Pedagógicas</h2>
                   <p className="text-sm font-bold text-gray-600 mt-1">Total de registros no filtro atual: {filtered.length}</p>
                   <p className="text-xs text-gray-500 uppercase mt-2">
-                     Filtro Ativo: {searchTerm ? `[Busca: ${searchTerm}]` : '[Sem busca]'} | Categoria: {filterCat} | Professor: {filterProf || 'Todos'}
+                     Filtro Ativo: {searchTerm ? `[Busca: ${searchTerm}]` : '[Sem busca]'} | Categoria: {filterCat} | Gravidade: {filterSeverity} | Professor: {filterProf || 'Todos'}
                   </p>
                </div>
 
@@ -210,7 +213,8 @@ const PedagogicalOccurrenceBook: React.FC = () => {
                            </td>
                            <td className="py-3 px-2 align-top border-r border-gray-300">
                               <span className="font-bold">{occ.category.replace('_', ' ')}</span><br/>
-                              <span className="text-gray-600">{occ.location}</span>
+                              <span className="text-[9px] bg-gray-200 px-1 py-0.5 rounded text-gray-800 uppercase font-black">{occ.severity}</span><br/>
+                              <span className="text-gray-600 mt-1 block">{occ.location}</span>
                            </td>
                            <td className="py-3 px-2 align-top border-r border-gray-300 text-[10px] text-gray-800">
                               {occ.report}
@@ -286,23 +290,38 @@ const PedagogicalOccurrenceBook: React.FC = () => {
             </div>
          </div>
 
-         {/* FILTROS DE CATEGORIA */}
-         <div className="flex gap-2 overflow-x-auto pb-2 no-print custom-scrollbar">
-            <button
-               onClick={() => setFilterCat('TODOS')}
-               className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterCat === 'TODOS' ? 'bg-violet-600 text-white border-violet-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
-            >
-               Tudo
-            </button>
-            {categories.map(cat => (
+         {/* FILTROS DE CATEGORIA E GRAVIDADE */}
+         <div className="flex flex-col gap-3 pb-2 no-print custom-scrollbar">
+            <div className="flex gap-2 overflow-x-auto">
+               <span className="text-[10px] text-white/50 font-black uppercase my-auto mr-2 min-w-max">Categoria:</span>
                <button
-                  key={cat}
-                  onClick={() => setFilterCat(cat)}
-                  className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterCat === cat ? 'bg-violet-600 text-white border-violet-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
+                  onClick={() => setFilterCat('TODOS')}
+                  className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterCat === 'TODOS' ? 'bg-violet-600 text-white border-violet-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
                >
-                  {cat.replace('_', ' ')}
+                  Tudo
                </button>
-            ))}
+               {categories.map(cat => (
+                  <button
+                     key={cat}
+                     onClick={() => setFilterCat(cat)}
+                     className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterCat === cat ? 'bg-violet-600 text-white border-violet-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
+                  >
+                     {cat.replace('_', ' ')}
+                  </button>
+               ))}
+            </div>
+            <div className="flex gap-2 overflow-x-auto">
+               <span className="text-[10px] text-white/50 font-black uppercase my-auto mr-2 min-w-max">Classificação (Fato):</span>
+               {['TODOS', 'LEVE', 'MÉDIA', 'GRAVE', 'GRAVÍSSIMA'].map(sev => (
+                  <button
+                     key={sev}
+                     onClick={() => setFilterSeverity(sev)}
+                     className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterSeverity === sev ? 'bg-amber-600 text-white border-amber-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
+                  >
+                     {sev}
+                  </button>
+               ))}
+            </div>
          </div>
 
          {/* LISTAGEM */}
@@ -323,6 +342,7 @@ const PedagogicalOccurrenceBook: React.FC = () => {
                            <h4 className="text-lg font-black text-white uppercase leading-none">{occ.involvedStudents}</h4>
                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${occ.category === 'VIOLÊNCIA' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-white/40 border-white/10'
                               }`}>{occ.category.replace('_', ' ')}</span>
+                           <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border bg-amber-500/10 text-amber-400 border-amber-500/20`}>{occ.severity}</span>
                         </div>
                         <div className="flex items-center gap-4 mt-2">
                            <span className="text-[10px] font-bold text-white/40 uppercase flex items-center gap-1"><Clock size={12} /> {new Date(occ.date).toLocaleDateString('pt-BR')} às {occ.time}</span>

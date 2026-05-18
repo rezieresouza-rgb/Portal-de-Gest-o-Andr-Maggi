@@ -35,6 +35,7 @@ const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ o
       report: '',
       responsible: 'COORDENADOR ANDRÉ',
       category: 'INDISCIPLINA',
+      severity: 'LEVE',
       attachments: [],
       status: 'REGISTRADO',
       timestamp: Date.now()
@@ -172,8 +173,7 @@ const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ o
 
                {/* SEÇÃO 2: CATEGORIA E RESPONSÁVEL */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Classificação do Fato</label>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Categoria do Fato</label>
                      <div className="relative">
                         <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                         <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white">
@@ -182,6 +182,15 @@ const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ o
                      </div>
                   </div>
                   <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Classificação (Gravidade)</label>
+                     <div className="relative">
+                        <AlertTriangle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                        <select value={form.severity || 'LEVE'} onChange={e => setForm({ ...form, severity: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white">
+                           {['LEVE', 'MÉDIA', 'GRAVE', 'GRAVÍSSIMA'].map(sev => <option key={sev} value={sev}>{sev}</option>)}
+                        </select>
+                     </div>
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Servidor Responsável pelo Registro</label>
                      <input disabled type="text" value={form.responsible} className="w-full p-4 bg-gray-100 border border-gray-100 rounded-2xl font-black text-xs text-gray-500 outline-none" />
                   </div>

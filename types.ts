@@ -105,7 +105,7 @@ export interface SchoolEvent { id: string; title: string; date: string; type: 'R
 export interface SchoolCelebration { id: string; title: string; day: number; month: number; category: string; iconType: 'PROFESSOR' | 'MERENDEIRA' | 'ZELADOR' | 'SECRETARIA' | 'GESTAO' | 'PSICOSSOCIAL' | 'GERAL' | 'COORDENADOR' | 'BIBLIOTECA' | 'MOTORISTA' | 'TI' | 'VIGILANTE' | 'ORIENTADOR'; }
 export interface BirthdayPerson { id: string; name: string; role: string; day: number; month: number; }
 export type OccurrenceCategory = 'INDISCIPLINA' | 'CONFLITO' | 'ATRASO' | 'VIOLÊNCIA' | 'DESCUMPRIMENTO_REGRAS' | 'OUTRO';
-export interface PedagogicalOccurrence { id: string; date: string; time: string; involvedStudents: string; className: string; location: string; report: string; responsible: string; category: OccurrenceCategory; attachments: string[]; status: 'REGISTRADO' | 'ATA_GERADA' | 'ARQUIVADO'; timestamp: number; }
+export interface PedagogicalOccurrence { id: string; date: string; time: string; involvedStudents: string; className: string; location: string; report: string; responsible: string; category: OccurrenceCategory; severity?: string; attachments: string[]; status: 'REGISTRADO' | 'ATA_GERADA' | 'ARQUIVADO'; timestamp: number; }
 export interface OccurrenceAta { id: string; occurrenceId: string; formalText: string; summary: string; involvedParties: string; suggestedReferrals: string[]; date: string; }
 export interface ClassCouncilStudentObservation {
   studentId: string;
