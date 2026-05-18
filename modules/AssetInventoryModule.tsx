@@ -25,12 +25,13 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Asset, AssetCondition } from '../types';
 
 interface AssetInventoryModuleProps {
+  user?: any;
   onExit: () => void;
 }
 
 import { supabase } from '../supabaseClient';
 
-const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ onExit }) => {
+const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes'>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,8 +50,17 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ onExit }) =
 
   const [unserviceableForm, setUnserviceableForm] = useState({
     reason: '',
-    responsible: 'GESTOR ANDRÉ'
+    responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR'
   });
+
+  useEffect(() => {
+    if (user?.name) {
+      setUnserviceableForm(prev => ({
+        ...prev,
+        responsible: `GESTOR ${user.name.toUpperCase()}`
+      }));
+    }
+  }, [user]);
 
   const fetchAssets = async () => {
     try {
@@ -154,7 +164,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ onExit }) =
           asset_id: newAsset.id,
           date: new Date().toISOString().split('T')[0],
           action: isPessimo ? 'CADASTRO COMO INSERVÍVEL' : 'CADASTRO INICIAL',
-          responsible: 'GESTOR ANDRÉ',
+          responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR',
           notes: isPessimo ? `Motivo: ${unserviceableForm.reason}` : 'Inclusão manual no inventário'
         }]);
 
@@ -173,7 +183,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ onExit }) =
 
   const resetForm = () => {
     setForm({ description: '', location: '', heritageNumber: '', condition: 'BOM', photo: '' });
-    setUnserviceableForm({ reason: '', responsible: 'GESTOR ANDRÉ' });
+    setUnserviceableForm({ reason: '', responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR' });
     setImagePreview(null);
   };
 

@@ -87,7 +87,11 @@ export const mapFunctionToRole = (job: string): UserRole => {
    return 'AAE';
 };
 
-const SecretariatStaffManager: React.FC = () => {
+interface SecretariatStaffManagerProps {
+   user?: any;
+}
+
+const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user }) => {
    const [staff, setStaff] = useState<StaffMember[]>([]);
    const [movementsData, setMovementsData] = useState<StaffMovement[]>([]);
    const [loading, setLoading] = useState(true);
@@ -139,7 +143,7 @@ const SecretariatStaffManager: React.FC = () => {
       substituteNames: [],
       reason: '',
       notes: '',
-      responsible: 'GESTOR ANDRÉ',
+      responsible: user?.name ? user.name.toUpperCase() : 'GESTOR',
       attachmentUrl: ''
    });
 

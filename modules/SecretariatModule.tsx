@@ -131,7 +131,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
           {activeTab === 'classes' && <SecretariatClassroomManager />}
-          {activeTab === 'staff' && <SecretariatStaffManager />}
+          {activeTab === 'staff' && <SecretariatStaffManager user={user} />}
           {activeTab === 'bulletins' && <SecretariatBulletinPrinter />}
           {activeTab === 'reports' && <SecretariatReports />}
         </div>

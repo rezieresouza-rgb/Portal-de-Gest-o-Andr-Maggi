@@ -22,9 +22,10 @@ interface PedagogicalOccurrenceFormProps {
    onCancel: () => void;
    onSave: (occ: PedagogicalOccurrence) => void;
    initialData?: PedagogicalOccurrence;
+   user?: any;
 }
 
-const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ onCancel, onSave, initialData }) => {
+const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ onCancel, onSave, initialData, user }) => {
    const [form, setForm] = useState<PedagogicalOccurrence>(initialData || {
       id: `occ-${Date.now()}`,
       date: new Date().toLocaleDateString('sv-SE'),
@@ -33,7 +34,7 @@ const PedagogicalOccurrenceForm: React.FC<PedagogicalOccurrenceFormProps> = ({ o
       className: '',
       location: '',
       report: '',
-      responsible: 'COORDENADOR ANDRÉ',
+      responsible: user?.name ? user.name.toUpperCase() : 'COORDENAÇÃO',
       category: 'INDISCIPLINA',
       severity: 'LEVE',
       attachments: [],

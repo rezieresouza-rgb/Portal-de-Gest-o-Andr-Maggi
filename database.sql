@@ -235,3 +235,31 @@ CREATE INDEX idx_active_search_student ON active_search_actions(student_id);
 -- COMENTÁRIO TÉCNICO:
 -- A tabela `contract_items` deve ser atualizada via TRIGGER ou Service sempre que um `order_item` for inserido.
 -- A retenção de 1.5% da Lei 15.226/25 está mapeada na tabela `transactions` como `tax_value`.
+
+-- 9. MÓDULO PATRIMÔNIO (BENS MÓVEIS)
+CREATE TABLE assets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    description TEXT NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    heritage_number VARCHAR(100) UNIQUE NOT NULL,
+    condition VARCHAR(50) DEFAULT 'BOM',
+    is_unserviceable BOOLEAN DEFAULT FALSE,
+    photo TEXT,
+    unserviceable_data JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE asset_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    asset_id UUID REFERENCES assets(id) ON DELETE CASCADE,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    action VARCHAR(100) NOT NULL,
+    responsible VARCHAR(255) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_assets_heritage ON assets(heritage_number);
+CREATE INDEX idx_assets_location ON assets(location);
+CREATE INDEX idx_asset_history_asset_id ON asset_history(asset_id);
+

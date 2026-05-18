@@ -30,7 +30,11 @@ import PedagogicalOccurrenceForm from './PedagogicalOccurrenceForm';
 import PedagogicalOccurrenceAta from './PedagogicalOccurrenceAta';
 import { supabase } from '../supabaseClient';
 
-const PedagogicalOccurrenceBook: React.FC = () => {
+interface PedagogicalOccurrenceBookProps {
+   user?: any;
+}
+
+const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ user }) => {
    const [view, setView] = useState<'list' | 'form' | 'ata' | 'report'>('list');
    const { addToast } = useToast();
    const [occurrences, setOccurrences] = useState<PedagogicalOccurrence[]>([]);
@@ -145,8 +149,11 @@ const PedagogicalOccurrenceBook: React.FC = () => {
    if (view === 'form') {
       return (
          <PedagogicalOccurrenceForm
+            user={user}
             onCancel={() => setView('list')}
-            onSave={handleSaveOccurrence}
+            onSave={(occ) => {
+               handleSaveOccurrence(occ);
+            }}
             initialData={occurrences.find(o => o.id === selectedOccId)}
          />
       );

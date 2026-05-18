@@ -44,7 +44,11 @@ const DIRECTOR_DATA = {
   cpf: "024.375.561-92"
 };
 
-const SupplierNotifications: React.FC = () => {
+interface SupplierNotificationsProps {
+  user?: any;
+}
+
+const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) => {
   const [activeView, setActiveView] = useState<'occurrences' | 'suppliers'>('occurrences');
 
   // Carrega ocorrências
@@ -104,7 +108,7 @@ const SupplierNotifications: React.FC = () => {
     issueDate: new Date().toLocaleDateString('sv-SE'),
     orderDate: new Date().toLocaleDateString('sv-SE'),
     deadlineDate: new Date().toLocaleDateString('sv-SE'),
-    responsible: 'Gestor André',
+    responsible: user?.name || 'Gestor',
     orderNumber: ''
   });
 
@@ -154,7 +158,7 @@ const SupplierNotifications: React.FC = () => {
       issueDate: new Date().toLocaleDateString('sv-SE'),
       orderDate: new Date().toLocaleDateString('sv-SE'),
       deadlineDate: new Date().toLocaleDateString('sv-SE'),
-      responsible: 'Gestor André',
+      responsible: user?.name || 'Gestor',
       orderNumber: ''
     });
     setImagePreview(null);

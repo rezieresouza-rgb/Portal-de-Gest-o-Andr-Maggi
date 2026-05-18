@@ -108,6 +108,12 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  const dynamicInitialState = useMemo(() => ({
+    ...INITIAL_STATE,
+    observador: user?.name ? user.name.toUpperCase() : 'COORDENAÇÃO',
+    cargo: user?.jobFunction || user?.role || 'Coordenador Pedagógico'
+  }), [user]);
+
   // Alias viewMode to view for backwards compatibility if needed, but going forward use viewMode
   const view = viewMode;
   const setView = setViewMode;
@@ -160,7 +166,7 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
     fetchStaff();
   }, []);
 
-  const [form, setForm] = useState<Omit<ObservationData, 'id' | 'timestamp'> & { criteria_scores?: any }>(INITIAL_STATE);
+  const [form, setForm] = useState<Omit<ObservationData, 'id' | 'timestamp'> & { criteria_scores?: any }>(dynamicInitialState);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   const handleSave = async (e: React.FormEvent | boolean) => {
@@ -310,7 +316,7 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
               <h3 className="text-xl font-black text-white uppercase tracking-tight">Observações de Aula</h3>
               <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mt-1">Acompanhamento e Mentoria Docente</p>
             </div>
-            <button onClick={() => { setForm(INITIAL_STATE); setViewMode('form'); }} className="px-8 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20">
+            <button onClick={() => { setForm(dynamicInitialState); setViewMode('form'); }} className="px-8 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20">
               <Plus size={18} /> Nova Observação
             </button>
           </div>

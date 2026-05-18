@@ -674,7 +674,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       case 'observations':
         return <ClassroomObservationForm user={user} />;
       case 'occurrences':
-        return <PedagogicalOccurrenceBook />;
+        return <PedagogicalOccurrenceBook user={user} />;
       case 'projects':
         return <SchoolProjectManager />;
       case 'class_council':
@@ -779,10 +779,12 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
               </button>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-xs font-black text-white">Coordenador André</p>
-                  <p className="text-[9px] text-violet-400 font-black uppercase tracking-widest">Gestão de Ensino</p>
+                  <p className="text-xs font-black text-white">{user.name || 'Coordenador'}</p>
+                  <p className="text-[9px] text-violet-400 font-black uppercase tracking-widest">{user.jobFunction || user.role}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-violet-500/20 border border-white/10">CA</div>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-violet-500/20 border border-white/10">
+                  {user.name ? user.name.substring(0, 2).toUpperCase() : 'CO'}
+                </div>
               </div>
             </div>
           </header>

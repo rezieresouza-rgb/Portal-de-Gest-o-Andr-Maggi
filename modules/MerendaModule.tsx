@@ -90,7 +90,7 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
       case 'kitchenRequests': return <KitchenRequests />;
       case 'shoppingList': return <ShoppingList />;
       case 'menuAudit': return <MenuContractAudit />;
-      case 'supplierNotifications': return <SupplierNotifications />;
+      case 'supplierNotifications': return <SupplierNotifications user={user} />;
       case 'settings': return <Settings />;
       default: return <Dashboard />;
     }
