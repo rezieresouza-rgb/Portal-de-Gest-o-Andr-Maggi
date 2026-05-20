@@ -490,6 +490,39 @@ const Orders: React.FC = () => {
     }
   };
 
+  const handleDeleteOrder = async (id: string, orderNumber: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o pedido #${orderNumber}? Esta ação removerá permanentemente todos os seus itens e não poderá ser desfeita.`)) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // 1. Delete order items first to avoid foreign key constraints
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', id);
+
+      if (itemsError) throw itemsError;
+
+      // 2. Delete the order
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', id);
+
+      if (orderError) throw orderError;
+
+      alert(`Pedido #${orderNumber} excluído com sucesso!`);
+      await fetchData();
+    } catch (error: any) {
+      console.error("Erro ao excluir pedido:", error);
+      alert("Erro ao excluir pedido: " + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleFinalizeAndDownload = async () => {
     const selected = localItems.filter(item => item.selected && item.requestedQuantity > 0);
     if (selected.length === 0) return alert("Selecione os produtos e informe as quantidades.");
@@ -928,29 +961,42 @@ const Orders: React.FC = () => {
                       <CalendarDays size={12} className="text-emerald-600" /> Emissão: {formatDateDisplay(order.issueDate)}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-2 shrink-0">
                     <p className="text-xl font-black text-gray-900">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.items.length} itens</p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditOrder(order);
-                      }}
-                      className="mt-2 px-4 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1"
-                    >
-                      <FileText size={12} /> Editar
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadPdf(order);
-                      }}
-                      disabled={isProcessing}
-                      className="mt-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1"
-                    >
-                      {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
-                      Imprimir
-                    </button>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{order.items.length} itens</p>
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditOrder(order);
+                        }}
+                        className="px-4 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1"
+                      >
+                        <FileText size={12} /> Editar
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadPdf(order);
+                        }}
+                        disabled={isProcessing}
+                        className="px-4 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1"
+                      >
+                        {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
+                        Imprimir
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteOrder(order.id, order.orderNumber);
+                        }}
+                        disabled={isProcessing}
+                        className="px-4 py-1.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1"
+                      >
+                        {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                        Excluir
+                      </button>
+                    </div>
                   </div>
                   <ChevronRight size={24} className="text-gray-300 group-hover:text-emerald-500 transition-all" />
                 </div>
