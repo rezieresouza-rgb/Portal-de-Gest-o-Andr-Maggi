@@ -107,7 +107,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const [newOccurrence, setNewOccurrence] = useState({
     type: 'DEMERIT' as 'MERIT' | 'DEMERIT',
-    category: 'Conversa paralela em forma',
+    category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
     date: new Date().toISOString().split('T')[0],
     observations: ''
   });
@@ -222,15 +222,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           studentId: s.CodigoAluno,
           studentName: s.Nome,
           className: s.Turma,
-          score: idx % 15 === 0 ? 9.5 : (idx % 25 === 0 ? 8.8 : 10.0), // Give a few students some custom initial scores
+          score: idx % 15 === 0 ? 9.8 : (idx % 25 === 0 ? 9.6 : 10.0), // Give a few students some custom initial scores
           isClassLeader: idx === 5 || idx === 35 || idx === 85,
           isCivicHighlight: idx === 12 || idx === 92,
           occurrences: idx % 15 === 0 ? [
             {
               id: `occ-${idx}-1`,
               type: 'DEMERIT',
-              category: 'Conversa paralela em forma',
-              points: 0.5,
+              category: '8. Conversar ou se mexer quando estiver em forma',
+              points: 0.2,
               date: new Date(Date.now() - 120 * 60 * 60 * 1000).toISOString().split('T')[0],
               observations: 'Conversa reiterada durante o hasteamento da bandeira.',
               responsible: 'Monitor Silva'
@@ -239,7 +239,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             {
               id: `occ-${idx}-1`,
               type: 'DEMERIT',
-              category: 'Atraso para a formatura',
+              category: '4. Chegar atrasado a EECM para o início das aulas, instrução, treinamento, formatura ou atividade escolar',
               points: 0.2,
               date: new Date(Date.now() - 96 * 60 * 60 * 1000).toISOString().split('T')[0],
               observations: 'Apresentou-se após o início da chamada geral.',
@@ -248,10 +248,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             {
               id: `occ-${idx}-2`,
               type: 'DEMERIT',
-              category: 'Uniforme desalinhado',
-              points: 1.0,
+              category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
+              points: 0.2,
               date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              observations: 'Farda sem passar, sapato desalinhado.',
+              observations: 'Apresentou-se com farda amassada e sapato desalinhado.',
               responsible: 'Monitor Silva'
             }
           ] : [])
@@ -365,27 +365,102 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   ];
 
   const demeritOptions = [
-    // Leve
-    { category: 'Atraso para a formatura', severity: 'LEVE', points: 0.2 },
-    { category: 'Conversa paralela em forma', severity: 'LEVE', points: 0.2 },
-    { category: 'Uniforme desalinhado / amassado', severity: 'LEVE', points: 0.2 },
-    { category: 'Deixar material jogado / desorganizado', severity: 'LEVE', points: 0.2 },
-    { category: 'Adorno proibido em forma', severity: 'LEVE', points: 0.2 },
-    // Média
-    { category: 'Desrespeito leve aos colegas', severity: 'MÉDIA', points: 0.5 },
-    { category: 'Mascar chiclete ou comer em forma', severity: 'MÉDIA', points: 0.5 },
-    { category: 'Uso indevido de celular/aparelho eletrônico', severity: 'MÉDIA', points: 0.5 },
-    { category: 'Faltar com a verdade com superior', severity: 'MÉDIA', points: 0.5 },
-    // Grave
-    { category: 'Desrespeito à autoridade escolar/docente', severity: 'GRAVE', points: 1.0 },
-    { category: 'Linguagem obscena / insubordinação', severity: 'GRAVE', points: 1.0 },
-    { category: 'Briga / empurrões / vias de fato', severity: 'GRAVE', points: 1.0 },
-    { category: 'Danos ao patrimônio (depredação/pichação)', severity: 'GRAVE', points: 1.0 },
-    // Gravíssima
-    { category: 'Agressão física deliberada', severity: 'GRAVÍSSIMA', points: 2.0 },
-    { category: 'Evasão do recinto escolar sem permissão', severity: 'GRAVÍSSIMA', points: 2.0 },
-    { category: 'Prática de bullying grave', severity: 'GRAVÍSSIMA', points: 2.0 },
-    { category: 'Ato contra a moral cívico-militar', severity: 'GRAVÍSSIMA', points: 2.0 }
+    // Faltas Leves (1 a 26) - 0.2 pts
+    { category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme', severity: 'LEVE', points: 0.2 },
+    { category: '2. Apresentar-se com barba ou bigode sem fazer', severity: 'LEVE', points: 0.2 },
+    { category: '3. Comparecer à EECM com cabelo em desalinho ou fora do padrão estabelecido pelas diretrizes dos Uniformes', severity: 'LEVE', points: 0.2 },
+    { category: '4. Chegar atrasado a EECM para o início das aulas, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
+    { category: '5. Comparecer a EECM sem levar o material necessário', severity: 'LEVE', points: 0.2 },
+    { category: '6. Adentrar ou permanecer em qualquer dependência da EECM, sem autorização', severity: 'LEVE', points: 0.2 },
+    { category: '7. Consumir alimentos, balas, doces líquidos ou mascar chicletes durante a aula, instrução, treinamento, formatura, atividade escolar, e nas dependências da EECM, salvo quando devidamente autorizado', severity: 'LEVE', points: 0.2 },
+    { category: '8. Conversar ou se mexer quando estiver em forma', severity: 'LEVE', points: 0.2 },
+    { category: '9. Deixar de entregar à Monitoria, Secretaria ou à Coordenação, qualquer objeto que não lhe pertença que tenha encontrado na EECM', severity: 'LEVE', points: 0.2 },
+    { category: '10. Deixar de retribuir cumprimentos ou de prestar sinais de respeito regulamentares, previstos no Manual do Aluno', severity: 'LEVE', points: 0.2 },
+    { category: '11. Deixar material escolar, objetos ou peças de uniforme em locais inapropriados dentro ou fora da unidade escolar', severity: 'LEVE', points: 0.2 },
+    { category: '12. Descartar papéis, restos de comida, embalagens ou qualquer objeto no chão ou fora de locais apropriados', severity: 'LEVE', points: 0.2 },
+    { category: '13. Dobrar qualquer peça de uniforme para diminuir seu tamanho, desfigurando sua originalidade', severity: 'LEVE', points: 0.2 },
+    { category: '14. Debruçar-se sobre a carteira e dormir durante o horário das aulas ou instruções', severity: 'LEVE', points: 0.2 },
+    { category: '15. Executar movimentos de ordem unida de forma displicente ou desatenciosa', severity: 'LEVE', points: 0.2 },
+    { category: '16. Fazer ou provocar excessivo barulho em qualquer dependência da EECM, durante o horário de aula', severity: 'LEVE', points: 0.2 },
+    { category: '17. Não levar ao conhecimento de autoridade competente falta ou irregularidade que presenciar ou de que tiver ciência', severity: 'LEVE', points: 0.2 },
+    { category: '18. Perturbar o estudo do(s) colega(s), com ruídos ou brincadeiras', severity: 'LEVE', points: 0.2 },
+    { category: '19. Utilizar-se, na sala, de qualquer publicação estranha a sua atividade escolar, salvo quando autorizado', severity: 'LEVE', points: 0.2 },
+    { category: '20. Retardar ou contribuir para o atraso da execução de qualquer atividade sem justo motivo', severity: 'LEVE', points: 0.2 },
+    { category: '21. Sentar-se no chão, atentando contra a postura e compostura, estando uniformizado, exceto quando em aula de educação Física', severity: 'LEVE', points: 0.2 },
+    { category: '22. Utilizar qualquer tipo de jogo, brinquedo, figurinhas, coleções no interior da EECM', severity: 'LEVE', points: 0.2 },
+    { category: '23. Usar, a aluna, piercings, brinco fora do padrão estabelecido, mais de um brinco em cada orelha, alargador ou similares, quando uniformizado, durante a aula, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
+    { category: '24. Usar, o aluno, piercings, brinco, alargador ou similares, quando uniformizado, durante a aula, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
+    { category: '25. Usar, quando uniformizado, boné, capuz ou outros adornos, durante a atividade escolar', severity: 'LEVE', points: 0.2 },
+    { category: '26. Ficar na sala de aula durante os intervalos e as formaturas diárias', severity: 'LEVE', points: 0.2 },
+
+    // Faltas Médias (27 a 62) - 0.5 pts
+    { category: '27. Atrasar ou deixar de atender ao chamado da Diretoria, coordenação, Oficial de Gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores no exercício de sua função', severity: 'MÉDIA', points: 0.5 },
+    { category: '28. Deixar de comparecer a qualquer atividade extraclasse para a qual tenha sido designado, exceto quando devidamente justificado', severity: 'MÉDIA', points: 0.5 },
+    { category: '29. Deixar de comparecer às atividades escolares, formaturas, ou delas se ausentar, sem autorização', severity: 'MÉDIA', points: 0.5 },
+    { category: '30. Deixar de cumprir ou esquivar-se de medidas disciplinares impostas pelo Gestor Educacional-Militar', severity: 'MÉDIA', points: 0.5 },
+    { category: '31. Deixar de devolver à EECM, dentro do prazo estipulado, documentos devidamente assinados pelo seu responsável', severity: 'MÉDIA', points: 0.5 },
+    { category: '32. Deixar de devolver, no prazo fixado, livros da biblioteca ou outros materiais pertencentes às EECM', severity: 'MÉDIA', points: 0.5 },
+    { category: '33. Deixar de entregar ao pai ou responsável, documento que lhe foi encaminhado pela EECM', severity: 'MÉDIA', points: 0.5 },
+    { category: '34. Deixar de executar tarefas atribuídas da Diretoria, coordenação, Oficial de Gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores no exercício de sua função', severity: 'MÉDIA', points: 0.5 },
+    { category: '35. Deixar de zelar por sua apresentação pessoal', severity: 'MÉDIA', points: 0.5 },
+    { category: '36. Dirigir memoriais ou petições a qualquer autoridade, sobre assuntos da alçada da Diretoria e do Oficial de Gestão Educacional-Militar', severity: 'MÉDIA', points: 0.5 },
+    { category: '37. Entrar ou sair da EECM por locais não permitidos', severity: 'MÉDIA', points: 0.5 },
+    { category: '38. Espalhar boatos ou notícias tendenciosas por qualquer meio', severity: 'MÉDIA', points: 0.5 },
+    { category: '39. Tocar a sirene, sem ordem para tal', severity: 'MÉDIA', points: 0.5 },
+    { category: '40. Fumar dentro ou nas imediações da EECM ou quando uniformizado', severity: 'MÉDIA', points: 0.5 },
+    { category: '41. Ingressar ou sair da EECM sem estar com o uniforme regulamentar, bem como trocar de roupa (trajes civis) dentro da EECM ou em suas mediações', severity: 'MÉDIA', points: 0.5 },
+    { category: '42. Ler ou distribuir, dentro da EECM, publicações estampas ou jornais que atentem contra a disciplina, a moral e a ordem pública', severity: 'MÉDIA', points: 0.5 },
+    { category: '43. Manter contato físico que denote envolvimento de cunho amoroso (namoro, beijos, etc.) quando devidamente uniformizado, dentro da EECM ou fora dele', severity: 'MÉDIA', points: 0.5 },
+    { category: '44. Não zelar pelo nome da Instituição que representa, deixando de portar-se adequadamente em qualquer ambiente, quando uniformizado ou em atividades relacionadas a EECM', severity: 'MÉDIA', points: 0.5 },
+    { category: '45. Negar-se a colaborar ou participar nos eventos, formaturas, solenidades, desfiles oficiais da EECM', severity: 'MÉDIA', points: 0.5 },
+    { category: '46. Ofender a moral de colegas ou de qualquer membro da Comunidade Escolar por atos, gestos ou palavras', severity: 'MÉDIA', points: 0.5 },
+    { category: '47. Portar-se de forma inconveniente em sala de aula ou outro local de instrução/recreação, bem como transportes de uso coletivo', severity: 'MÉDIA', points: 0.5 },
+    { category: '48. Portar-se de maneira desrespeitosa ou inconveniente nos eventos sociais ou esportivos, promovidos ou com a participação da EECM ou fora dela', severity: 'MÉDIA', points: 0.5 },
+    { category: '49. Proferir palavras de baixo calão, incompatíveis com as normas da boa educação, ou grafá-las em qualquer lugar', severity: 'MÉDIA', points: 0.5 },
+    { category: '50. Propor ou aceitar transação pecuniária de qualquer natureza, no interior da EECM, sem a devida autorização', severity: 'MÉDIA', points: 0.5 },
+    { category: '51. Provocar ou disseminar a discórdia entre colegas', severity: 'MÉDIA', points: 0.5 },
+    { category: '52. Publicar ou contribuir para que sejam publicadas mensagens, fotos, vídeos ou qualquer outro documento, na Internet ou qualquer outro meio de comunicação, que possam expor a integrante da EECM', severity: 'MÉDIA', points: 0.5 },
+    { category: '53. Retirar ou tentar retirar objeto, de qualquer dependência da EECM, ou mesmo deles servir-se, sem ordem do responsável e/ou do proprietário', severity: 'MÉDIA', points: 0.5 },
+    { category: '54. Sair de forma sem autorização', severity: 'MÉDIA', points: 0.5 },
+    { category: '55. Sair, entrar ou permanecer na sala de aula sem permissão', severity: 'MÉDIA', points: 0.5 },
+    { category: '56. Ser retirado, por mau comportamento, de sala de aula ou qualquer ambiente em que esteja sendo realizada atividade', severity: 'MÉDIA', points: 0.5 },
+    { category: '57. Simular doença para esquivar-se ao atendimento de obrigações e de atividades escolares', severity: 'MÉDIA', points: 0.5 },
+    { category: '58. Tomar parte em jogos de azar ou em apostas na unidade escolar ou fora dela, uniformizados ou não', severity: 'MÉDIA', points: 0.5 },
+    { category: '59. Usar as instalações ou equipamentos esportivos do EECM, sem uniformes adequados, ou sem autorização', severity: 'MÉDIA', points: 0.5 },
+    { category: '60. Usar o uniforme ou o nome do EECM em ambiente inapropriado', severity: 'MÉDIA', points: 0.5 },
+    { category: '61. Utilizar, sem autorização, telefones celulares ou quaisquer aparelhos eletrônicos ou não, durante as atividades escolares', severity: 'MÉDIA', points: 0.5 },
+    { category: '62. Usar indevidamente distintivos ou insígnias', severity: 'MÉDIA', points: 0.5 },
+
+    // Faltas Graves (63 a 91) - 1.0 pts
+    { category: '63. Assinar pelo responsável, documento que deva ser entregue à unidade escolar', severity: 'GRAVE', points: 1.0 },
+    { category: '64. Causar danos ao patrimônio da unidade escolar', severity: 'GRAVE', points: 1.0 },
+    { category: '65. Causar ou contribuir para a ocorrência de acidentes de qualquer natureza', severity: 'GRAVE', points: 1.0 },
+    { category: '66. Comunicar-se com outro aluno ou utilizar-se de qualquer meio não permitido durante qualquer instrumento de avaliação', severity: 'GRAVE', points: 1.0 },
+    { category: '67. Denegrir o nome da EECM e/ou de qualquer de seus membros através de procedimentos desrespeitosos, seja por palavras, gestos, meio virtual ou outros', severity: 'GRAVE', points: 1.0 },
+    { category: '68. Desrespeitar, desobedecer ou desafiar a Diretoria, coordenação, Oficial de gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores unidade escolar', severity: 'GRAVE', points: 1.0 },
+    { category: '69. Divulgar, ou concorrer para que isso aconteça, qualquer imagem ou matéria que induza a apologia às drogas, à violência e/ou pornografia', severity: 'GRAVE', points: 1.0 },
+    { category: '70. Entrar na unidade escolar, ou dela se ausentar, sem autorização', severity: 'GRAVE', points: 1.0 },
+    { category: '71. Extraviar documentos que estejam sob sua responsabilidade', severity: 'GRAVE', points: 1.0 },
+    { category: '72. Faltar com a verdade e/ou utilizar-se do anonimato para a prática de qualquer falta disciplinar', severity: 'GRAVE', points: 1.0 },
+    { category: '73. Fazer uso, portar, distribuir, estar sob ação ou induzir outrem ao uso de bebida alcoólica, entorpecentes, tóxicos ou produtos alucinógenos, no interior da EECM, em suas imediações estando ou não uniformizado', severity: 'GRAVE', points: 1.0 },
+    { category: '74. Hastear ou arriar bandeiras e estandartes, sem autorização', severity: 'GRAVE', points: 1.0 },
+    { category: '75. Instigar colegas a cometer faltas disciplinares e/ou ações delituosas que comprometam o bom nome da EECM', severity: 'GRAVE', points: 1.0 },
+    { category: '76. Manter contato físico com denotação libidinosa no ambiente da EECM ou fora dela', severity: 'GRAVE', points: 1.0 },
+    { category: '77. Obter ou fazer uso de imagens, vídeos, áudios ou de qualquer tipo de publicação difamatória contra qualquer membro da Comunidade Escolar', severity: 'GRAVE', points: 1.0 },
+    { category: '78. Ofender membros da Comunidade Escolar com a prática de Bullying e Cyberbullying', severity: 'GRAVE', points: 1.0 },
+    { category: '79. Pichar ou causar qualquer poluição visual ou sonora dentro e nas proximidades da EECM', severity: 'GRAVE', points: 1.0 },
+    { category: '80. Portar objetos que ameacem a segurança individual e/ou da coletividade', severity: 'GRAVE', points: 1.0 },
+    { category: '81. Praticar atos contrários ao culto e ao respeito aos símbolos nacionais', severity: 'GRAVE', points: 1.0 },
+    { category: '82. Promover ou tomar parte de qualquer manifestação coletiva que venha a macular o nome da EECM e/ou que prejudique o bom andamento das aulas e/ou avaliações', severity: 'GRAVE', points: 1.0 },
+    { category: '83. Promover trote de qualquer natureza', severity: 'GRAVE', points: 1.0 },
+    { category: '84. Promover, incitar ou envolver-se em rixa, inclusive luta corporal, dentro ou fora da EECM, estando ou não uniformizado', severity: 'GRAVE', points: 1.0 },
+    { category: '85. Provocar ou tomar parte, uniformizado ou estando na EECM, em manifestações de natureza política', severity: 'GRAVE', points: 1.0 },
+    { category: '86. Rasurar, violar ou alterar documento ou o conteúdo dos mesmos', severity: 'GRAVE', points: 1.0 },
+    { category: '87. Representar a EECM e/ou por ela tomar compromisso, sem estar para isso autorizado', severity: 'GRAVE', points: 1.0 },
+    { category: '88. Ter em seu poder, introduzir, ler ou distribuir, dentro da EECM, cartazes, jornais ou publicações que atentem contra a disciplina e/ou o moral ou de cunho político-partidário', severity: 'GRAVE', points: 1.0 },
+    { category: '89. Utilizar ou subtrair indevidamente objetos ou valores alheios', severity: 'GRAVE', points: 1.0 },
+    { category: '90. Utilizar-se de processos fraudulentos na realização de trabalhos pedagógicos', severity: 'GRAVE', points: 1.0 },
+    { category: '91. Utilizar-se indevidamente e/ou causar avariar e/ou destruição do patrimônio pertencente a EECM', severity: 'GRAVE', points: 1.0 }
   ];
 
   // Behavior Categories depending on score
@@ -484,7 +559,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     // Reset Form
     setNewOccurrence({
       type: 'DEMERIT',
-      category: 'Conversa paralela em forma',
+      category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
       date: new Date().toISOString().split('T')[0],
       observations: ''
     });
