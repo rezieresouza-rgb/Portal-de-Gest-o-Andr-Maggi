@@ -48,15 +48,15 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
       // Permissões Padrão Iniciais
       const defaults = {
-        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'patrimonio', 'special_education'],
-        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado'],
-        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
+        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'patrimonio', 'special_education', 'civico_militar'],
+        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar'],
+        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar'],
         'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher'],
         'MANUTENCAO': ['limpeza'],
         'AAE': ['merenda', 'limpeza', 'almoxarifado'],
         'AAE_LIMPEZA': ['limpeza', 'almoxarifado'],
         'AEE_NUTRICAO': ['merenda', 'almoxarifado'],
-        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education']
+        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar']
       };
       localStorage.setItem('portal_module_permissions_v3', JSON.stringify(defaults));
       setDynamicPermissions(defaults);
@@ -81,6 +81,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     { id: 'limpeza', title: 'Manutenção', status: 'Operacional', statusColor: 'emerald', icon: <Hammer size={20} /> },
     { id: 'patrimonio', title: 'Patrimônio', status: 'Auditado', statusColor: 'blue', icon: <ShieldCheck size={20} /> },
     { id: 'special_education', title: 'Sala de Recursos e APA', status: 'AEE', statusColor: 'pink', icon: <UserIcon size={20} /> },
+    { id: 'civico_militar', title: 'Cívico-Militar', status: 'Rotina OK', statusColor: 'blue', icon: <ShieldCheck size={20} /> },
     { id: 'settings', title: 'Configurações', status: 'Administração', statusColor: 'indigo', icon: <Settings size={20} />, adminOnly: true },
   ];
 
