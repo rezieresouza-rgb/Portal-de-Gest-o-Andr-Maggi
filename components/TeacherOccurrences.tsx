@@ -22,7 +22,7 @@ import {
    ShieldCheck as ShieldCheckIcon
 } from 'lucide-react';
 import { ClassroomOccurrence, CaseSeverity } from '../types';
-import { SCHOOL_CLASSES } from '../constants/initialData';
+import { SCHOOL_CLASSES, INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 
@@ -219,6 +219,192 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       setSelectedStudents(prev => prev.filter(s => s.name !== name));
    };
 
+    const syncOccurrenceToCivicoMilitar = (
+      studentName: string,
+      className: string,
+      teacherName: string,
+      type: string,
+      severity: string,
+      description: string,
+      date: string,
+      occurrenceId: string,
+      isDelete: boolean = false,
+      isUpdate: boolean = false
+   ) => {
+      try {
+         const savedScores = localStorage.getItem('civico_militar_student_scores_v1');
+         let studentStates: any[] = [];
+         if (savedScores) {
+            studentStates = JSON.parse(savedScores);
+         } else {
+            // Initialize states for all INITIAL_STUDENTS
+            studentStates = INITIAL_STUDENTS.map((s, idx) => ({
+               studentId: s.CodigoAluno,
+               studentName: s.Nome,
+               className: s.Turma,
+               score: idx % 15 === 0 ? 9.8 : (idx % 25 === 0 ? 9.6 : 10.0),
+               isClassLeader: idx === 5 || idx === 35 || idx === 85,
+               isCivicHighlight: idx === 12 || idx === 92,
+               occurrences: idx % 15 === 0 ? [
+                  {
+                     id: `occ-${idx}-1`,
+                     type: 'DEMERIT',
+                     category: '8. Conversar ou se mexer quando estiver em forma',
+                     points: 0.2,
+                     date: new Date(Date.now() - 120 * 60 * 60 * 1000).toISOString().split('T')[0],
+                     observations: 'Conversa reiterada durante o hasteamento da bandeira.',
+                     responsible: 'Monitor Silva'
+                  }
+               ] : (idx % 25 === 0 ? [
+                  {
+                     id: `occ-${idx}-1`,
+                     type: 'DEMERIT',
+                     category: '4. Chegar atrasado a EECM para o início das aulas, instrução, treinamento, formatura ou atividade escolar',
+                     points: 0.2,
+                     date: new Date(Date.now() - 96 * 60 * 60 * 1000).toISOString().split('T')[0],
+                     observations: 'Apresentou-se após o início da chamada geral.',
+                     responsible: 'Monitor Silva'
+                  },
+                  {
+                     id: `occ-${idx}-2`,
+                     type: 'DEMERIT',
+                     category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
+                     points: 0.2,
+                     date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                     observations: 'Apresentou-se com farda amassada e sapato desalinhado.',
+                     responsible: 'Monitor Silva'
+                  }
+               ] : [])
+            }));
+         }
+
+         // Determine points and behavior type
+         let points = 0.2;
+         const isMerit = type === 'ELOGIO';
+         if (isMerit) {
+            points = 0.3; // Merit default
+         } else {
+            switch (severity) {
+               case 'CRÍTICA':
+                  points = 2.0; // Gravíssima
+                  break;
+               case 'ALTA':
+                  points = 1.0; // Grave
+                  break;
+               case 'MÉDIA':
+                  points = 0.5; // Média
+                  break;
+               case 'BAIXA':
+               default:
+                  points = 0.2; // Leve
+                  break;
+            }
+         }
+
+         // Find student (case-insensitive name & class matching)
+         const normalizedName = studentName.trim().toUpperCase();
+         const normalizedClass = className.trim().toUpperCase();
+
+         const studentIdx = studentStates.findIndex(
+            s => s.studentName.trim().toUpperCase() === normalizedName &&
+                 s.className.trim().toUpperCase() === normalizedClass
+         );
+
+         if (studentIdx !== -1) {
+            const student = studentStates[studentIdx];
+            let occurrences = [...(student.occurrences || [])];
+
+            if (isDelete) {
+               // Find if this occurrence exists
+               const targetOcc = occurrences.find(o => o.id === occurrenceId);
+               if (targetOcc) {
+                  // Remove occurrence and reverse points from score
+                  occurrences = occurrences.filter(o => o.id !== occurrenceId);
+                  let newScore = student.score;
+                  if (targetOcc.type === 'MERIT') {
+                     newScore = Math.max(0, parseFloat((newScore - targetOcc.points).toFixed(2)));
+                  } else {
+                     newScore = Math.min(10, parseFloat((newScore + targetOcc.points).toFixed(2)));
+                  }
+                  studentStates[studentIdx] = {
+                     ...student,
+                     score: newScore,
+                     occurrences
+                  };
+               }
+            } else if (isUpdate) {
+               // Find existing occurrence
+               const occIndex = occurrences.findIndex(o => o.id === occurrenceId);
+               if (occIndex !== -1) {
+                  const oldOcc = occurrences[occIndex];
+                  
+                  // Revert old occurrence points first
+                  let tempScore = student.score;
+                  if (oldOcc.type === 'MERIT') {
+                     tempScore = Math.max(0, parseFloat((tempScore - oldOcc.points).toFixed(2)));
+                  } else {
+                     tempScore = Math.min(10, parseFloat((tempScore + oldOcc.points).toFixed(2)));
+                  }
+
+                  // Apply new occurrence points
+                  if (isMerit) {
+                     tempScore = Math.min(10, parseFloat((tempScore + points).toFixed(2)));
+                  } else {
+                     tempScore = Math.max(0, parseFloat((tempScore - points).toFixed(2)));
+                  }
+
+                  // Update occurrence
+                  occurrences[occIndex] = {
+                     ...oldOcc,
+                     type: isMerit ? 'MERIT' : 'DEMERIT',
+                     category: `[DOCENTE] Ocorrência: ${type} (${severity})`,
+                     points,
+                     date,
+                     observations: description,
+                     responsible: teacherName
+                  };
+
+                  studentStates[studentIdx] = {
+                     ...student,
+                     score: tempScore,
+                     occurrences
+                  };
+               }
+            } else {
+               // Create new occurrence
+               const newOcc = {
+                  id: occurrenceId,
+                  type: isMerit ? 'MERIT' : 'DEMERIT',
+                  category: `[DOCENTE] Ocorrência: ${type} (${severity})`,
+                  points,
+                  date,
+                  observations: description,
+                  responsible: teacherName
+               };
+
+               occurrences = [newOcc, ...occurrences];
+
+               let newScore = student.score;
+               if (isMerit) {
+                  newScore = Math.min(10, parseFloat((newScore + points).toFixed(2)));
+               } else {
+                  newScore = Math.max(0, parseFloat((newScore - points).toFixed(2)));
+               }
+
+               studentStates[studentIdx] = {
+                  ...student,
+                  score: newScore,
+                  occurrences
+                };
+            }
+
+            localStorage.setItem('civico_militar_student_scores_v1', JSON.stringify(studentStates));
+         }
+      } catch (err) {
+         console.error('Error syncing occurrence to cívico-militar:', err);
+      }
+   };
+
    const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
 
@@ -242,8 +428,21 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                severity: form.severity,
                description: form.description
             };
-            const { error } = await supabase.from('occurrences').update(payload).eq('id', editingOccurrenceId);
+            const { error } = await supabase.from('occurrences').update(payload).eq('id', editingOccurrenceId).select();
             if (error) throw error;
+
+            syncOccurrenceToCivicoMilitar(
+               student.name,
+               student.class,
+               form.teacherName,
+               form.type,
+               form.severity,
+               form.description,
+               form.date,
+               editingOccurrenceId,
+               false,
+               true // isUpdate
+            );
          } else {
             // Creating: one occurrence per selected student
             for (const student of selectedStudents) {
@@ -259,8 +458,22 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   status: 'REGISTRADO',
                   location: 'SALA DE AULA'
                };
-               const { error } = await supabase.from('occurrences').insert([payload]);
+               const { data, error } = await supabase.from('occurrences').insert([payload]).select();
                if (error) throw error;
+
+               const createdOcc = data && data[0];
+               if (createdOcc && createdOcc.id) {
+                  syncOccurrenceToCivicoMilitar(
+                     student.name,
+                     student.class,
+                     form.teacherName,
+                     form.type,
+                     form.severity,
+                     form.description,
+                     form.date,
+                     createdOcc.id
+                  );
+               }
 
                // Forward to Psychosocial if requested
                if (form.forwardToPsychosocial) {
@@ -311,10 +524,23 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
    const deleteOccurrence = async (id: string) => {
       if (window.confirm("Deseja remover este registro do seu histórico?")) {
+         const targetOcc = recentOccurrences.find(occ => occ.id === id);
          const { error } = await supabase.from('occurrences').delete().eq('id', id);
          if (error) {
             console.error(error);
             alert("Erro ao excluir ocurrencia");
+         } else if (targetOcc) {
+            syncOccurrenceToCivicoMilitar(
+               targetOcc.studentName,
+               targetOcc.className,
+               targetOcc.teacherName,
+               targetOcc.type,
+               targetOcc.severity,
+               targetOcc.description,
+               targetOcc.date,
+               id,
+               true // isDelete
+            );
          }
       }
    };
