@@ -86,11 +86,25 @@ interface CivicRoutineRecord {
 }
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos'>('dashboard');
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('ALL');
+
+  // Documentações States
+  const [docSearchTerm, setDocSearchTerm] = useState('');
+  const [selectedStudentForDoc, setSelectedStudentForDoc] = useState<any | null>(null);
+  const [selectedDocTemplate, setSelectedDocTemplate] = useState('termo_ciencia');
+  const [docFields, setDocFields] = useState({
+    responsibleName: '',
+    responsibleRg: '',
+    responsibleCpf: '',
+    responsibleAddress: '',
+    city: 'Colíder - MT',
+    date: new Date().toISOString().split('T')[0],
+  });
+  const [docHistory, setDocHistory] = useState<any[]>([]);
 
   // Modals
   const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
@@ -262,6 +276,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     } catch (e) {
       console.error(e);
     }
+
+    // D. Document History
+    try {
+      const savedDocs = localStorage.getItem('civico_militar_documentos_v1');
+      if (savedDocs) {
+        setDocHistory(JSON.parse(savedDocs));
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }, []);
 
   // Sync state to local storage when state changes
@@ -283,6 +307,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       const updated = list.find(s => s.studentId === selectedStudentState.studentId);
       if (updated) setSelectedStudentState(updated);
     }
+  };
+
+  const saveDocHistoryToStorage = (list: any[]) => {
+    localStorage.setItem('civico_militar_documentos_v1', JSON.stringify(list));
+    setDocHistory(list);
   };
 
   // 2. Computed Statistics
@@ -343,6 +372,37 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       return matchesSearch && matchesClass;
     });
   }, [studentStates, searchTerm, selectedClass]);
+
+  // Filtered Students for document auto-complete
+  const docFilteredStudents = useMemo(() => {
+    if (!docSearchTerm.trim()) return [];
+    return INITIAL_STUDENTS.filter(s =>
+      s.Nome.toLowerCase().includes(docSearchTerm.toLowerCase()) ||
+      s.CodigoAluno.includes(docSearchTerm)
+    ).slice(0, 5);
+  }, [docSearchTerm]);
+
+  // Date formatter helper
+  const formatDocDate = (dateStr: string) => {
+    if (!dateStr) return '___ de ____________ de ______';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        const day = date.getDate();
+        const monthNames = [
+          'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+          'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+        ];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} de ${month} de ${year}`;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return '___ de ____________ de ______';
+  };
 
   // Highlighted Students for Honor Roll
   const honorRollStudents = useMemo(() => {
@@ -668,6 +728,72 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
   };
 
+  // Documentações Handlers
+  const handlePrintDocument = () => {
+    if (!selectedStudentForDoc) {
+      alert('Por favor, selecione um aluno antes de gerar o documento.');
+      return;
+    }
+    if (!docFields.responsibleName) {
+      alert('Por favor, preencha o nome do responsável.');
+      return;
+    }
+
+    const newDocRecord = {
+      id: `doc-${Date.now()}`,
+      studentId: selectedStudentForDoc.CodigoAluno,
+      studentName: selectedStudentForDoc.Nome,
+      className: selectedStudentForDoc.Turma,
+      shiftName: selectedStudentForDoc.Turno,
+      template: selectedDocTemplate,
+      templateLabel: selectedDocTemplate === 'termo_ciencia' ? 'Termo de Ciência e Concordância' : 'Outro Documento',
+      date: docFields.date,
+      fields: { ...docFields },
+      timestamp: Date.now()
+    };
+
+    const updatedHistory = [newDocRecord, ...docHistory];
+    saveDocHistoryToStorage(updatedHistory);
+
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
+  const handleDeleteDocFromHistory = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Deseja excluir permanentemente este documento do histórico?')) {
+      const updated = docHistory.filter(d => d.id !== id);
+      saveDocHistoryToStorage(updated);
+    }
+  };
+
+  const handleClearDocForm = () => {
+    setSelectedStudentForDoc(null);
+    setDocSearchTerm('');
+    setDocFields({
+      responsibleName: '',
+      responsibleRg: '',
+      responsibleCpf: '',
+      responsibleAddress: '',
+      city: 'Colíder - MT',
+      date: new Date().toISOString().split('T')[0],
+    });
+  };
+
+  const handleLoadDocFromHistory = (record: any) => {
+    setSelectedDocTemplate(record.template);
+    const student = INITIAL_STUDENTS.find(s => s.CodigoAluno === record.studentId) || {
+      Nome: record.studentName,
+      Turma: record.className,
+      Turno: record.shiftName,
+      CodigoAluno: record.studentId
+    };
+    setSelectedStudentForDoc(student);
+    setDocSearchTerm(student.Nome);
+    setDocFields(record.fields);
+  };
+
   return (
     <div className="flex h-screen bg-gray-900 text-white overflow-hidden font-sans">
       {/* Sidebar do Módulo */}
@@ -729,6 +855,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           >
             <Award size={18} /> Quadro de Honra
           </button>
+          <button
+            onClick={() => setActiveTab('documentos')}
+            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'documentos'
+              ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
+              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+              }`}
+          >
+            <FileText size={18} /> Documentações
+          </button>
         </nav>
 
         {/* Info Card */}
@@ -760,6 +895,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               {activeTab === 'inspecao' && <UserCheck size={22} />}
               {activeTab === 'comportamento' && <TrendingUp size={22} />}
               {activeTab === 'honra' && <Award size={22} />}
+              {activeTab === 'documentos' && <FileText size={22} />}
             </div>
             <div>
               <h2 className="text-lg font-black text-white uppercase tracking-tight">
@@ -768,6 +904,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'inspecao' && 'Inspeção de Uniformes e Padrões'}
                 {activeTab === 'comportamento' && 'Gestão de Conduta e Atitude'}
                 {activeTab === 'honra' && 'Quadro de Honra e Destaques'}
+                {activeTab === 'documentos' && 'Preenchimento de Documentos'}
               </h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                 {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares'}
@@ -775,6 +912,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'inspecao' && 'Apresentação Pessoal e Fardamento'}
                 {activeTab === 'comportamento' && 'Histórico de Méritos e Deméritos'}
                 {activeTab === 'honra' && 'Líderes de Turma e Destaques de Atitude'}
+                {activeTab === 'documentos' && 'Emissão e Impressão de Fichas Oficiais'}
               </p>
             </div>
           </div>
@@ -1464,6 +1602,406 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* TAB 6: DOCUMENTOS */}
+          {activeTab === 'documentos' && (
+            <div className="space-y-10">
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
+                
+                {/* CONFIGURAÇÃO / FORMULÁRIO */}
+                <div className="xl:col-span-5 bg-slate-950 p-8 rounded-[2rem] border border-slate-800 space-y-6 no-print">
+                  <div>
+                    <h3 className="text-base font-black text-white uppercase tracking-tight">Preenchimento da Ficha</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Preencha os campos para atualizar o documento</p>
+                  </div>
+
+                  {/* Modelo */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Modelo do Documento</label>
+                    <select
+                      value={selectedDocTemplate}
+                      onChange={e => setSelectedDocTemplate(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white uppercase"
+                    >
+                      <option value="termo_ciencia">Termo de Ciência e Concordância</option>
+                    </select>
+                  </div>
+
+                  {/* Busca do Aluno */}
+                  <div className="space-y-2 relative">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Buscar Aluno</label>
+                    {selectedStudentForDoc ? (
+                      <div className="flex items-center justify-between bg-blue-600/10 border border-blue-500/30 rounded-xl px-4 py-3">
+                        <div className="text-xs">
+                          <p className="font-black text-blue-400 uppercase">{selectedStudentForDoc.Nome}</p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">{selectedStudentForDoc.Turma} • {selectedStudentForDoc.Turno}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedStudentForDoc(null);
+                            setDocSearchTerm('');
+                          }}
+                          className="text-slate-400 hover:text-white text-sm font-bold bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                          title="Remover seleção"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                          <input
+                            type="text"
+                            placeholder="Digite o nome ou código do aluno..."
+                            value={docSearchTerm}
+                            onChange={e => setDocSearchTerm(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white placeholder-slate-600"
+                          />
+                        </div>
+                        {docFilteredStudents.length > 0 && (
+                          <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-850">
+                            {docFilteredStudents.map(student => (
+                              <button
+                                key={student.CodigoAluno}
+                                onClick={() => {
+                                  setSelectedStudentForDoc(student);
+                                  setDocSearchTerm(student.Nome);
+                                }}
+                                className="w-full text-left p-3 hover:bg-blue-600/10 text-xs text-white uppercase font-bold transition-colors flex justify-between items-center"
+                              >
+                                <div>
+                                  <p>{student.Nome}</p>
+                                  <p className="text-[9px] text-slate-500 font-medium normal-case">{student.Turma} • {student.Turno} • Código: {student.CodigoAluno}</p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Dados do Responsável */}
+                  <div className="border-t border-slate-850 pt-5 space-y-4">
+                    <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Dados do Responsável</h4>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase">Nome Completo</label>
+                      <input
+                        type="text"
+                        value={docFields.responsibleName}
+                        onChange={e => setDocFields(prev => ({ ...prev, responsibleName: e.target.value }))}
+                        placeholder="Nome do pai, mãe ou responsável legal"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Identidade / RG</label>
+                        <input
+                          type="text"
+                          value={docFields.responsibleRg}
+                          onChange={e => setDocFields(prev => ({ ...prev, responsibleRg: e.target.value }))}
+                          placeholder="Digite o RG"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">CPF</label>
+                        <input
+                          type="text"
+                          value={docFields.responsibleCpf}
+                          onChange={e => setDocFields(prev => ({ ...prev, responsibleCpf: e.target.value }))}
+                          placeholder="Digite o CPF"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase">Endereço Completo</label>
+                      <input
+                        type="text"
+                        value={docFields.responsibleAddress}
+                        onChange={e => setDocFields(prev => ({ ...prev, responsibleAddress: e.target.value }))}
+                        placeholder="Rua, número, bairro, cidade"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Detalhes Gerais */}
+                  <div className="border-t border-slate-850 pt-5 grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase">Cidade / UF</label>
+                      <input
+                        type="text"
+                        value={docFields.city}
+                        onChange={e => setDocFields(prev => ({ ...prev, city: e.target.value }))}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase">Data</label>
+                      <input
+                        type="date"
+                        value={docFields.date}
+                        onChange={e => setDocFields(prev => ({ ...prev, date: e.target.value }))}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="pt-4 flex gap-4">
+                    <button
+                      onClick={handlePrintDocument}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <FileText size={16} /> Imprimir / Salvar PDF
+                    </button>
+                    <button
+                      onClick={handleClearDocForm}
+                      className="px-4 py-4 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-slate-800"
+                      title="Limpar formulário"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                </div>
+
+                {/* PRÉ-VISUALIZAÇÃO DO DOCUMENTO (SIMULAÇÃO A4) */}
+                <div className="xl:col-span-7 flex justify-center overflow-x-auto">
+                  <div 
+                    id="document-print-area" 
+                    className="w-[210mm] min-h-[297mm] p-[20mm] bg-white text-black shadow-2xl relative overflow-hidden select-none mx-auto border border-gray-200 print:border-none print:shadow-none print:p-0 print:m-0 print:w-full print:h-auto"
+                    style={{ fontFamily: 'Arial, sans-serif' }}
+                  >
+                    
+                    {/* Estilo para ocultar decorações em tela cheia na hora de imprimir */}
+                    <style>{`
+                      @media print {
+                        body * {
+                          visibility: hidden !important;
+                        }
+                        #document-print-area, #document-print-area * {
+                          visibility: visible !important;
+                        }
+                        #document-print-area {
+                          position: absolute !important;
+                          left: 0 !important;
+                          top: 0 !important;
+                          width: 210mm !important;
+                          height: 297mm !important;
+                          background: white !important;
+                          color: black !important;
+                          padding: 20mm !important;
+                          margin: 0 !important;
+                          box-shadow: none !important;
+                          border: none !important;
+                        }
+                        .print-decorations {
+                          display: none !important;
+                        }
+                      }
+                    `}</style>
+
+                    {/* Molduras/Decorações Coloridas - Identidade MT (Escondidas na impressão para economizar tinta) */}
+                    {/* Top Right Decoration (Wave with Dot Grid) */}
+                    <svg className="print-decorations absolute right-0 top-0 w-[240px] h-[150px] opacity-75 pointer-events-none" viewBox="0 0 240 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M 240,0 L 80,0 C 110,40 150,70 240,90 Z" fill="#0f264c" opacity="0.85" />
+                      <path d="M 240,0 L 120,0 C 150,50 180,90 240,120 Z" fill="#06b6d4" opacity="0.25" />
+                      <path d="M 240,0 L 160,0 C 180,30 200,60 240,80 Z" fill="#818cf8" opacity="0.2" />
+                      <defs>
+                        <pattern id="dot-grid-white" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+                          <circle cx="2" cy="2" r="0.75" fill="#ffffff" opacity="0.6" />
+                        </pattern>
+                      </defs>
+                      <path d="M 240,0 L 80,0 C 110,40 150,70 240,90 Z" fill="url(#dot-grid-white)" />
+                    </svg>
+
+                    {/* Middle Left Yellow Circle */}
+                    <svg className="print-decorations absolute left-0 top-[180px] w-[30px] h-[60px] opacity-60 pointer-events-none" viewBox="0 0 30 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M 0,5 C 18,5 30,18 30,30 C 30,42 18,55 0,55 Z" fill="#f59e0b" />
+                    </svg>
+
+                    {/* Bottom Left Light Blue Wave */}
+                    <svg className="print-decorations absolute left-0 bottom-0 w-[140px] h-[170px] opacity-60 pointer-events-none" viewBox="0 0 140 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M 0,170 L 0,70 C 35,80 70,110 110,170 Z" fill="#06b6d4" opacity="0.25" />
+                      <path d="M 0,170 L 0,100 C 25,110 50,130 80,170 Z" fill="#22d3ee" opacity="0.35" />
+                    </svg>
+
+                    {/* Bottom Right Tan/Yellow/Orange Wave */}
+                    <svg className="print-decorations absolute right-0 bottom-0 w-[180px] h-[140px] opacity-50 pointer-events-none" viewBox="0 0 180 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M 180,140 L 70,140 C 95,115 130,90 180,80 Z" fill="#f59e0b" opacity="0.25" />
+                      <path d="M 180,140 L 110,140 C 125,128 150,105 180,95 Z" fill="#d97706" opacity="0.2" />
+                    </svg>
+
+                    {/* Logo/Número 42 no topo direito */}
+                    <div className="absolute right-[20mm] top-[15mm] flex flex-col items-center text-center pointer-events-none w-[120px]">
+                      <span className="text-[12px] font-black text-[#0f264c] leading-tight">42</span>
+                      <span className="text-[8px] font-black text-[#0f264c] leading-tight tracking-wider uppercase">Escola Estadual</span>
+                      <span className="text-[8px] font-black text-[#0f264c] leading-tight tracking-wider uppercase mb-1.5">Cívico-Militar</span>
+                      
+                      {/* High-fidelity Vector Shield Crest Logo */}
+                      <svg width="60" height="75" viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-sm">
+                        <path d="M 5,5 Q 30,2.5 55,5 C 55,38 48,58 30,71 C 12,58 5,38 5,5 Z" fill="#ffffff" />
+                        <path d="M 5,5 Q 30,2.5 30,2.5 L 30,36 L 5,36 Z" fill="#ffffff" />
+                        <path d="M 30,2.5 Q 42.5,3.75 55,5 L 55,36 L 30,36 Z" fill="#f0f7ff" />
+                        <path d="M 5,36 C 5,45 10,58 30,71 C 50,58 55,45 55,36 Z" fill="#0f264c" />
+                        <line x1="30" y1="2.5" x2="30" y2="36" stroke="#0f264c" stroke-width="2" />
+                        <line x1="5" y1="36" x2="55" y2="36" stroke="#0f264c" stroke-width="2" />
+                        <path d="M 5,5 Q 30,2.5 55,5 C 55,38 48,58 30,71 C 12,58 5,38 5,5 Z" stroke="#0f264c" stroke-width="2.5" stroke-linejoin="round" />
+                        
+                        {/* Book (Top-Left) */}
+                        <g transform="translate(10, 11) scale(0.65)" stroke="#0f264c" stroke-width="2" stroke-linejoin="round" fill="none">
+                          <path d="M2 18C6 14 12 14 16 17C20 14 26 14 30 18V4C26 0 20 0 16 3C12 0 6 0 2 4V18Z" />
+                          <path d="M16 3V17" />
+                        </g>
+                        
+                        {/* Handshake (Top-Right) */}
+                        <g transform="translate(34, 12) scale(0.55)" fill="#0f264c">
+                          <path d="M1 9.5a2 2 0 0 1 2-2h4l4.5 4.5-1.5 1.5L6 9.5H3v1.5L6 14l-1.5 1.5L1 11V9.5z"/>
+                          <path d="M19 11.5a2 2 0 0 1-2 2h-4L8.5 9l1.5-1.5 4 4h3v-1.5L14 7l1.5-1.5 3.5 3v3z"/>
+                        </g>
+                        
+                        {/* Crossed Swords (Bottom) */}
+                        <g transform="translate(19, 41) scale(0.75)" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none">
+                          <path d="M 3,21 L 21,3" />
+                          <path d="M 4,16 L 8,20" stroke-width="3" />
+                          <path d="M 4,20 L 2,22" stroke-width="2.5" />
+                          <path d="M 21,21 L 3,3" />
+                          <path d="M 20,16 L 16,20" stroke-width="3" />
+                          <path d="M 20,20 L 22,22" stroke-width="2.5" />
+                        </g>
+                        
+                        {/* Stars (Bottom) */}
+                        <g fill="#ffffff">
+                          <path d="M 30,59.5 L 31,61.5 L 33,61.5 L 31.5,62.5 L 32,64.5 L 30,63.5 L 28,64.5 L 28.5,62.5 L 27,61.5 L 29,61.5 Z" />
+                          <path d="M 20,55.5 L 21,57.5 L 23,57.5 L 21.5,58.5 L 22,60.5 L 20,59.5 L 18,60.5 L 18.5,58.5 L 17,57.5 L 19,57.5 Z" />
+                          <path d="M 40,55.5 L 41,57.5 L 43,57.5 L 41.5,58.5 L 42,60.5 L 40,59.5 L 38,60.5 L 38.5,58.5 L 37,57.5 L 39,57.5 Z" />
+                        </g>
+                      </svg>
+                    </div>
+
+                    {/* Cabeçalho do Documento */}
+                    <div className="text-center pr-32 pl-4 mb-6">
+                      <p className="text-[11px] font-black text-black uppercase tracking-wider mb-1">Anexo I</p>
+                      <p className="text-[11px] font-black text-black uppercase leading-tight">Estado de Mato Grosso</p>
+                      <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">Secretaria de Estado de Educação</p>
+                      <p className="text-[9px] font-black text-black uppercase leading-tight mt-0.5">Superintendência de Escolas Militares e Cívico-Militares</p>
+                      <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">Escola Estadual Cívico-Militar</p>
+                      <div className="border-b border-black w-full my-4"></div>
+                    </div>
+
+                    {/* Título do Termo */}
+                    <div className="text-center my-10">
+                      <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Termo de Ciência e Concordância</h2>
+                    </div>
+
+                    {/* Texto do Documento */}
+                    <div className="text-sm text-gray-900 leading-[1.8] space-y-6 text-justify" style={{ textIndent: '2.5cm' }}>
+                      <p>
+                        Eu, <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleName || '___________________________________________________'}</span> (nome completo), 
+                        portador do documento de Identidade nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleRg || '________________________'}</span>, 
+                        CPF nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleCpf || '____________________'}</span>, 
+                        residente e domiciliado em <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleAddress || '________________________________________________________________________'}</span> (endereço completo), 
+                        responsável legal pelo aluno(a) <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________________________________'}</span> (nome completo), 
+                        matriculado na turma <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? `${selectedStudentForDoc.Turma} (${selectedStudentForDoc.Turno})` : '_________________________'}</span>, 
+                        Declaro, para todos os fins úteis, que:
+                      </p>
+
+                      <p>
+                        Estou familiarizado com as disposições contidas no Manual das Escolas Cívicas e Militares do Estado, 
+                        incluindo, mas não se limitando a, normas disciplinares, regulamentos internos, diretrizes educacionais, 
+                        procedimentos de segurança e protocolos administrativos.
+                      </p>
+
+                      <p>
+                        Aceito o conteúdo dos documentos de orientação, sejam eles o Regulamento Disciplinar Escolar, 
+                        o Projeto de Política Pedagógica, as Normas e Orientações a que se referem, nomeadamente a apresentação pessoal 
+                        e o sistema de créditos e reduções, bem como, afirmo que tenho conhecimento dos documentos aqui citados.
+                      </p>
+                    </div>
+
+                    {/* Local e Data */}
+                    <div className="text-right mt-16 text-sm text-gray-900 font-medium">
+                      <p>
+                        {docFields.city}, {formatDocDate(docFields.date)}.
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-1 mr-4 italic">(local e data)</p>
+                    </div>
+
+                    {/* Assinatura do Responsável */}
+                    <div className="mt-28 flex flex-col items-center">
+                      <div className="w-96 border-t border-black"></div>
+                      <p className="text-xs font-black uppercase text-gray-900 tracking-wide mt-2">Nome e assinatura do responsável</p>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              {/* HISTÓRICO DE DOCUMENTOS EMITIDOS */}
+              <div className="bg-slate-950 p-8 rounded-[2rem] border border-slate-800 no-print space-y-6">
+                <div>
+                  <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center gap-3">
+                    <FileText className="text-blue-500" /> Histórico de Documentações Geradas
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Veja ou reabra documentos preenchidos anteriormente</p>
+                </div>
+
+                {docHistory.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 uppercase font-semibold text-xs border border-dashed border-slate-800 rounded-2xl">
+                    Nenhum documento gerado no histórico.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase">
+                          <th className="py-3 px-4">Aluno</th>
+                          <th className="py-3 px-4">Turma / Turno</th>
+                          <th className="py-3 px-4">Responsável</th>
+                          <th className="py-3 px-4">Documento</th>
+                          <th className="py-3 px-4">Data Emissão</th>
+                          <th className="py-3 px-4 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-900">
+                        {docHistory.map(record => (
+                          <tr 
+                            key={record.id} 
+                            onClick={() => handleLoadDocFromHistory(record)}
+                            className="hover:bg-slate-900/60 cursor-pointer transition-colors group"
+                          >
+                            <td className="py-4 px-4 font-black text-white uppercase">{record.studentName}</td>
+                            <td className="py-4 px-4 text-slate-300 font-medium uppercase">{record.className} • {record.shiftName}</td>
+                            <td className="py-4 px-4 text-slate-300 uppercase">{record.fields.responsibleName}</td>
+                            <td className="py-4 px-4 text-blue-400 font-semibold">{record.templateLabel}</td>
+                            <td className="py-4 px-4 text-slate-400 font-medium">{new Date(record.date).toLocaleDateString('pt-BR')}</td>
+                            <td className="py-4 px-4 text-right space-x-2">
+                              <button
+                                onClick={(e) => handleDeleteDocFromHistory(record.id, e)}
+                                className="p-2 text-slate-500 hover:text-red-500 transition-colors"
+                                title="Excluir do Histórico"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
 
