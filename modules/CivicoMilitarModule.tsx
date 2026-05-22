@@ -103,8 +103,31 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     responsibleAddress: '',
     city: 'Colíder - MT',
     date: new Date().toISOString().split('T')[0],
+    // Fato Observado fields
+    series: '',
+    discipline: '',
+    teacher: user ? user.name : '',
+    achado: '',
+    monitor: 'Monitor Silva',
+    recebidoDate: new Date().toISOString().split('T')[0],
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
+
+  // Automatically infer Series/Year when a student is selected
+  useEffect(() => {
+    if (selectedStudentForDoc) {
+      const classParts = selectedStudentForDoc.Turma.split(' ');
+      let inferredSeries = selectedStudentForDoc.Turma;
+      if (classParts.length >= 2) {
+        const anoWord = classParts[1].toLowerCase() === 'ano' ? 'Ano' : classParts[1];
+        inferredSeries = `${classParts[0]} ${anoWord}`;
+      }
+      setDocFields(prev => ({
+        ...prev,
+        series: prev.series || inferredSeries
+      }));
+    }
+  }, [selectedStudentForDoc]);
 
   // Modals
   const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
@@ -402,6 +425,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       console.error(e);
     }
     return '___ de ____________ de ______';
+  };
+
+  const formatSimpleDate = (dateStr: string) => {
+    if (!dateStr) return '____/____/________';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return dateStr;
   };
 
   // Highlighted Students for Honor Roll
@@ -734,8 +770,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       alert('Por favor, selecione um aluno antes de gerar o documento.');
       return;
     }
-    if (!docFields.responsibleName) {
+    if (selectedDocTemplate === 'termo_ciencia' && !docFields.responsibleName) {
       alert('Por favor, preencha o nome do responsável.');
+      return;
+    }
+    if (selectedDocTemplate === 'fato_observado' && !docFields.achado) {
+      alert('Por favor, preencha o relato do fato observado (achado).');
       return;
     }
 
@@ -746,7 +786,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       className: selectedStudentForDoc.Turma,
       shiftName: selectedStudentForDoc.Turno,
       template: selectedDocTemplate,
-      templateLabel: selectedDocTemplate === 'termo_ciencia' ? 'Termo de Ciência e Concordância' : 'Outro Documento',
+      templateLabel: selectedDocTemplate === 'termo_ciencia' 
+        ? 'Termo de Ciência e Concordância' 
+        : (selectedDocTemplate === 'fato_observado' ? 'Relatório de Fato Observado' : 'Outro Documento'),
       date: docFields.date,
       fields: { ...docFields },
       timestamp: Date.now()
@@ -778,6 +820,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       responsibleAddress: '',
       city: 'Colíder - MT',
       date: new Date().toISOString().split('T')[0],
+      series: '',
+      discipline: '',
+      teacher: user ? user.name : '',
+      achado: '',
+      monitor: 'Monitor Silva',
+      recebidoDate: new Date().toISOString().split('T')[0],
     });
   };
 
@@ -1626,6 +1674,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white uppercase"
                     >
                       <option value="termo_ciencia">Termo de Ciência e Concordância</option>
+                      <option value="fato_observado">Relatório de Fato Observado</option>
                     </select>
                   </div>
 
@@ -1684,55 +1733,138 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     )}
                   </div>
 
-                  {/* Dados do Responsável */}
-                  <div className="border-t border-slate-850 pt-5 space-y-4">
-                    <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Dados do Responsável</h4>
-                    
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Nome Completo</label>
-                      <input
-                        type="text"
-                        value={docFields.responsibleName}
-                        onChange={e => setDocFields(prev => ({ ...prev, responsibleName: e.target.value }))}
-                        placeholder="Nome do pai, mãe ou responsável legal"
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                  {/* Dados Condicionais do Modelo */}
+                  {selectedDocTemplate === 'termo_ciencia' ? (
+                    <div className="border-t border-slate-850 pt-5 space-y-4">
+                      <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Dados do Responsável</h4>
+                      
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">Identidade / RG</label>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Nome Completo</label>
                         <input
                           type="text"
-                          value={docFields.responsibleRg}
-                          onChange={e => setDocFields(prev => ({ ...prev, responsibleRg: e.target.value }))}
-                          placeholder="Digite o RG"
+                          value={docFields.responsibleName}
+                          onChange={e => setDocFields(prev => ({ ...prev, responsibleName: e.target.value }))}
+                          placeholder="Nome do pai, mãe ou responsável legal"
                           className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
                         />
                       </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Identidade / RG</label>
+                          <input
+                            type="text"
+                            value={docFields.responsibleRg}
+                            onChange={e => setDocFields(prev => ({ ...prev, responsibleRg: e.target.value }))}
+                            placeholder="Digite o RG"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">CPF</label>
+                          <input
+                            type="text"
+                            value={docFields.responsibleCpf}
+                            onChange={e => setDocFields(prev => ({ ...prev, responsibleCpf: e.target.value }))}
+                            placeholder="Digite o CPF"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">CPF</label>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Endereço Completo</label>
                         <input
                           type="text"
-                          value={docFields.responsibleCpf}
-                          onChange={e => setDocFields(prev => ({ ...prev, responsibleCpf: e.target.value }))}
-                          placeholder="Digite o CPF"
+                          value={docFields.responsibleAddress}
+                          onChange={e => setDocFields(prev => ({ ...prev, responsibleAddress: e.target.value }))}
+                          placeholder="Rua, número, bairro, cidade"
                           className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
                         />
                       </div>
                     </div>
+                  ) : (
+                    <div className="border-t border-slate-850 pt-5 space-y-4">
+                      <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Dados do Fato Observado</h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Série / Ano</label>
+                          <input
+                            type="text"
+                            value={docFields.series}
+                            onChange={e => setDocFields(prev => ({ ...prev, series: e.target.value }))}
+                            placeholder="Ex: 6º Ano"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Disciplina</label>
+                          <input
+                            type="text"
+                            value={docFields.discipline}
+                            onChange={e => setDocFields(prev => ({ ...prev, discipline: e.target.value }))}
+                            placeholder="Ex: Matemática"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          />
+                        </div>
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Endereço Completo</label>
-                      <input
-                        type="text"
-                        value={docFields.responsibleAddress}
-                        onChange={e => setDocFields(prev => ({ ...prev, responsibleAddress: e.target.value }))}
-                        placeholder="Rua, número, bairro, cidade"
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
-                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Professor</label>
+                          <input
+                            type="text"
+                            value={docFields.teacher}
+                            onChange={e => setDocFields(prev => ({ ...prev, teacher: e.target.value }))}
+                            placeholder="Nome do professor"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Monitor</label>
+                          <input
+                            type="text"
+                            value={docFields.monitor}
+                            onChange={e => setDocFields(prev => ({ ...prev, monitor: e.target.value }))}
+                            placeholder="Nome do monitor"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">ACHADO: relato sucinto e objetivo</label>
+                        <textarea
+                          value={docFields.achado}
+                          onChange={e => setDocFields(prev => ({ ...prev, achado: e.target.value }))}
+                          placeholder="Relate aqui o fato observado de forma sucinta e objetiva..."
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700 min-h-[100px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Data do Fato</label>
+                          <input
+                            type="date"
+                            value={docFields.date}
+                            onChange={e => setDocFields(prev => ({ ...prev, date: e.target.value }))}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Data de Recebimento</label>
+                          <input
+                            type="date"
+                            value={docFields.recebidoDate}
+                            onChange={e => setDocFields(prev => ({ ...prev, recebidoDate: e.target.value }))}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Detalhes Gerais */}
                   <div className="border-t border-slate-850 pt-5 grid grid-cols-2 gap-4">
@@ -1745,15 +1877,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Data</label>
-                      <input
-                        type="date"
-                        value={docFields.date}
-                        onChange={e => setDocFields(prev => ({ ...prev, date: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
-                      />
-                    </div>
+                    {selectedDocTemplate === 'termo_ciencia' && (
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Data</label>
+                        <input
+                          type="date"
+                          value={docFields.date}
+                          onChange={e => setDocFields(prev => ({ ...prev, date: e.target.value }))}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Ações */}
@@ -1841,9 +1975,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <path d="M 180,140 L 110,140 C 125,128 150,105 180,95 Z" fill="#d97706" opacity="0.2" />
                     </svg>
 
-                    {/* Logo/Número 42 no topo direito */}
+                    {/* Logo/Número no topo direito */}
                     <div className="absolute right-[20mm] top-[15mm] flex flex-col items-center text-center pointer-events-none w-[120px]">
-                      <span className="text-[12px] font-black text-[#0f264c] leading-tight">42</span>
+                      <span className="text-[12px] font-black text-[#0f264c] leading-tight">
+                        {selectedDocTemplate === 'termo_ciencia' ? '42' : '43'}
+                      </span>
                       <span className="text-[8px] font-black text-[#0f264c] leading-tight tracking-wider uppercase">Escola Estadual</span>
                       <span className="text-[8px] font-black text-[#0f264c] leading-tight tracking-wider uppercase mb-1.5">Cívico-Militar</span>
                       
@@ -1890,7 +2026,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                     {/* Cabeçalho do Documento */}
                     <div className="text-center pr-32 pl-4 mb-6">
-                      <p className="text-[11px] font-black text-black uppercase tracking-wider mb-1">Anexo I</p>
+                      <p className="text-[11px] font-black text-black uppercase tracking-wider mb-1">
+                        {selectedDocTemplate === 'termo_ciencia' ? 'Anexo I' : 'Anexo II'}
+                      </p>
                       <p className="text-[11px] font-black text-black uppercase leading-tight">Estado de Mato Grosso</p>
                       <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">Secretaria de Estado de Educação</p>
                       <p className="text-[9px] font-black text-black uppercase leading-tight mt-0.5">Superintendência de Escolas Militares e Cívico-Militares</p>
@@ -1898,49 +2036,159 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <div className="border-b border-black w-full my-4"></div>
                     </div>
 
-                    {/* Título do Termo */}
-                    <div className="text-center my-10">
-                      <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Termo de Ciência e Concordância</h2>
-                    </div>
+                    {selectedDocTemplate === 'termo_ciencia' ? (
+                      <>
+                        {/* Título do Termo */}
+                        <div className="text-center my-10">
+                          <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Termo de Ciência e Concordância</h2>
+                        </div>
 
-                    {/* Texto do Documento */}
-                    <div className="text-sm text-gray-900 leading-[1.8] space-y-6 text-justify" style={{ textIndent: '2.5cm' }}>
-                      <p>
-                        Eu, <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleName || '___________________________________________________'}</span> (nome completo), 
-                        portador do documento de Identidade nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleRg || '________________________'}</span>, 
-                        CPF nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleCpf || '____________________'}</span>, 
-                        residente e domiciliado em <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleAddress || '________________________________________________________________________'}</span> (endereço completo), 
-                        responsável legal pelo aluno(a) <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________________________________'}</span> (nome completo), 
-                        matriculado na turma <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? `${selectedStudentForDoc.Turma} (${selectedStudentForDoc.Turno})` : '_________________________'}</span>, 
-                        Declaro, para todos os fins úteis, que:
-                      </p>
+                        {/* Texto do Documento */}
+                        <div className="text-sm text-gray-900 leading-[1.8] space-y-6 text-justify" style={{ textIndent: '2.5cm' }}>
+                          <p>
+                            Eu, <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleName || '___________________________________________________'}</span> (nome completo), 
+                            portador do documento de Identidade nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleRg || '________________________'}</span>, 
+                            CPF nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleCpf || '____________________'}</span>, 
+                            residente e domiciliado em <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleAddress || '________________________________________________________________________'}</span> (endereço completo), 
+                            responsável legal pelo aluno(a) <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________________________________'}</span> (nome completo), 
+                            matriculado na turma <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? `${selectedStudentForDoc.Turma} (${selectedStudentForDoc.Turno})` : '_________________________'}</span>, 
+                            Declaro, para todos os fins úteis, que:
+                          </p>
 
-                      <p>
-                        Estou familiarizado com as disposições contidas no Manual das Escolas Cívicas e Militares do Estado, 
-                        incluindo, mas não se limitando a, normas disciplinares, regulamentos internos, diretrizes educacionais, 
-                        procedimentos de segurança e protocolos administrativos.
-                      </p>
+                          <p>
+                            Estou familiarizado com as disposições contidas no Manual das Escolas Cívicas e Militares do Estado, 
+                            incluindo, mas não se limitando a, normas disciplinares, regulamentos internos, diretrizes educacionais, 
+                            procedimentos de segurança e protocolos administrativos.
+                          </p>
 
-                      <p>
-                        Aceito o conteúdo dos documentos de orientação, sejam eles o Regulamento Disciplinar Escolar, 
-                        o Projeto de Política Pedagógica, as Normas e Orientações a que se referem, nomeadamente a apresentação pessoal 
-                        e o sistema de créditos e reduções, bem como, afirmo que tenho conhecimento dos documentos aqui citados.
-                      </p>
-                    </div>
+                          <p>
+                            Aceito o conteúdo dos documentos de orientação, sejam eles o Regulamento Disciplinar Escolar, 
+                            o Projeto de Política Pedagógica, as Normas e Orientações a que se referem, nomeadamente a apresentação pessoal 
+                            e o sistema de créditos e reduções, bem como, afirmo que tenho conhecimento dos documentos aqui citados.
+                          </p>
+                        </div>
 
-                    {/* Local e Data */}
-                    <div className="text-right mt-16 text-sm text-gray-900 font-medium">
-                      <p>
-                        {docFields.city}, {formatDocDate(docFields.date)}.
-                      </p>
-                      <p className="text-[10px] text-gray-400 mt-1 mr-4 italic">(local e data)</p>
-                    </div>
+                        {/* Local e Data */}
+                        <div className="text-right mt-16 text-sm text-gray-900 font-medium">
+                          <p>
+                            {docFields.city}, {formatDocDate(docFields.date)}.
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-1 mr-4 italic">(local e data)</p>
+                        </div>
 
-                    {/* Assinatura do Responsável */}
-                    <div className="mt-28 flex flex-col items-center">
-                      <div className="w-96 border-t border-black"></div>
-                      <p className="text-xs font-black uppercase text-gray-900 tracking-wide mt-2">Nome e assinatura do responsável</p>
-                    </div>
+                        {/* Assinatura do Responsável */}
+                        <div className="mt-28 flex flex-col items-center">
+                          <div className="w-96 border-t border-black"></div>
+                          <p className="text-xs font-black uppercase text-gray-900 tracking-wide mt-2">Nome e assinatura do responsável</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Título do Fato Observado */}
+                        <div className="text-center my-6">
+                          <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Relatório de Fato Observado</h2>
+                        </div>
+
+                        {/* Dados Básicos */}
+                        <div className="space-y-4 text-xs text-gray-900 mb-6">
+                          <div className="flex items-end">
+                            <span className="font-bold mr-1.5 whitespace-nowrap">Estudante:</span>
+                            <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                              {selectedStudentForDoc ? selectedStudentForDoc.Nome : '__________________________________________________________________________'}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-4 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Série:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                                {docFields.series || '___________________'}
+                              </span>
+                            </div>
+                            <div className="col-span-4 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Turma:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                                {selectedStudentForDoc ? selectedStudentForDoc.Turma : '_________________'}
+                              </span>
+                            </div>
+                            <div className="col-span-4 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Disciplina:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                                {docFields.discipline || '______________________'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-8 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Professor:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                                {docFields.teacher || '_____________________________________'}
+                              </span>
+                            </div>
+                            <div className="col-span-4 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Data:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 text-center h-5 leading-5 truncate">
+                                {formatSimpleDate(docFields.date)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bloco de ACHADO */}
+                        <div className="mt-8 mb-6">
+                          <p className="text-xs font-bold text-gray-900 uppercase mb-2">
+                            ACHADO: <span className="font-normal italic lowercase">relato sucinto e objetivo</span>
+                          </p>
+                          
+                          <div 
+                            className="w-full text-[12px] leading-[28px] text-gray-900 whitespace-pre-wrap break-all text-justify font-mono border border-gray-200 rounded-lg p-4"
+                            style={{ 
+                              minHeight: '198px',
+                              backgroundImage: 'repeating-linear-gradient(transparent, transparent 27px, #cbd5e1 27px, #cbd5e1 28px)',
+                              backgroundAttachment: 'local',
+                              fontFamily: 'monospace',
+                              fontStyle: 'italic',
+                              textTransform: 'uppercase'
+                            }}
+                          >
+                            {docFields.achado || (
+                              <span className="text-gray-300 select-none">
+                                O TEXTO DO RELATO APARECERÁ AQUI ALINHADO ÀS LINHAS DO DOCUMENTO.
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Local e Data */}
+                        <div className="text-center my-8 text-xs text-gray-900 font-medium">
+                          <p>
+                            {docFields.city || '__________________________'}, {formatDocDate(docFields.date)}.
+                          </p>
+                        </div>
+
+                        {/* Assinaturas */}
+                        <div className="grid grid-cols-2 gap-8 mt-12 text-xs text-gray-900">
+                          <div className="flex flex-col items-stretch">
+                            <div className="border-t border-black w-full my-2"></div>
+                            <p className="font-bold text-center uppercase tracking-wide text-[9px] mb-0.5">Assinatura do professor</p>
+                            <p className="text-[8px] text-gray-500 text-center font-medium truncate uppercase">{docFields.teacher}</p>
+                          </div>
+                          <div className="flex flex-col items-stretch">
+                            <div className="border-t border-black w-full my-2"></div>
+                            <p className="font-bold text-center uppercase tracking-wide text-[9px] mb-0.5">Assinatura do monitor</p>
+                            <p className="text-[8px] text-gray-500 text-center font-medium truncate uppercase">{docFields.monitor}</p>
+                          </div>
+                        </div>
+
+                        {/* Recebido block */}
+                        <div className="mt-12 text-xs text-gray-900 font-medium border-t border-gray-200 pt-6">
+                          <p>
+                            Recebido em {docFields.city ? docFields.city.split('-')[0].trim() : '________________'}, {formatDocDate(docFields.recebidoDate)}.
+                          </p>
+                        </div>
+                      </>
+                    )}
 
                   </div>
                 </div>
