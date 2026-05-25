@@ -843,10 +843,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   };
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
       {/* Sidebar do Módulo */}
-      <aside className="w-80 bg-slate-950 flex flex-col no-print border-r border-slate-800 shadow-2xl relative z-10">
-        <div className="p-8 bg-slate-900/40 border-b border-slate-800/80">
+      <aside className="w-80 bg-slate-950 flex flex-col no-print border-r border-slate-900 shadow-2xl relative z-10">
+        <div className="p-8 bg-slate-900/40 border-b border-slate-900/80">
           <h1 className="text-xl font-black flex items-center gap-3">
             <span className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20 text-white">
               <Shield size={22} className="fill-white/10 text-white" />
@@ -933,11 +933,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       </aside>
 
       {/* Área Principal de Conteúdo */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-slate-900">
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
         {/* Header */}
-        <header className="h-24 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-10 shrink-0">
+        <header className="h-24 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0">
           <div className="flex items-center gap-5">
-            <div className="p-4 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="p-4 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100">
               {activeTab === 'dashboard' && <ClipboardList size={22} />}
               {activeTab === 'rotina' && <Flag size={22} />}
               {activeTab === 'inspecao' && <UserCheck size={22} />}
@@ -946,7 +946,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               {activeTab === 'documentos' && <FileText size={22} />}
             </div>
             <div>
-              <h2 className="text-lg font-black text-white uppercase tracking-tight">
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
                 {activeTab === 'dashboard' && 'Painel Geral Disciplinar'}
                 {activeTab === 'rotina' && 'Rotina Cívico-Militar Diária'}
                 {activeTab === 'inspecao' && 'Inspeção de Uniformes e Padrões'}
@@ -954,7 +954,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'honra' && 'Quadro de Honra e Destaques'}
                 {activeTab === 'documentos' && 'Preenchimento de Documentos'}
               </h2>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                 {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares'}
                 {activeTab === 'rotina' && 'Controle de Formatura, Hasteamento e Hinos'}
                 {activeTab === 'inspecao' && 'Apresentação Pessoal e Fardamento'}
@@ -966,7 +966,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           </div>
 
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 px-4 py-2 bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">
+            <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
               <Shield size={14} />
               <span className="text-[10px] font-black uppercase tracking-widest">Rotina Ativa</span>
             </div>
@@ -982,47 +982,47 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <div className="space-y-10">
               {/* Grid de Estatísticas */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-slate-950 p-6 rounded-[2rem] border border-slate-800 shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
                   <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Conduta Média</span>
-                    <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl"><TrendingUp size={16} /></div>
+                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Conduta Média</span>
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><TrendingUp size={16} /></div>
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black text-white">{stats.averageScore}</h3>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Escala de 0.0 a 10.0</p>
+                    <h3 className="text-3xl font-black text-slate-900">{stats.averageScore}</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Escala de 0.0 a 10.0</p>
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-6 rounded-[2rem] border border-slate-800 shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
                   <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Alunos Exemplares</span>
-                    <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl"><Award size={16} /></div>
+                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Alunos Exemplares</span>
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Award size={16} /></div>
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black text-white">{stats.perfectScoreCount}</h3>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Nota Atitude 10.0</p>
+                    <h3 className="text-3xl font-black text-slate-900">{stats.perfectScoreCount}</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Nota Atitude 10.0</p>
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-6 rounded-[2rem] border border-slate-800 shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
                   <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Desconformidades (7d)</span>
-                    <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl"><AlertTriangle size={16} /></div>
+                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Desconformidades (7d)</span>
+                    <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><AlertTriangle size={16} /></div>
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black text-white">{stats.recentInspectionsCount}</h3>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Apresentação Pessoal</p>
+                    <h3 className="text-3xl font-black text-slate-900">{stats.recentInspectionsCount}</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Apresentação Pessoal</p>
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-6 rounded-[2rem] border border-slate-800 shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
                   <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Rotina Cívica</span>
-                    <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl"><Flag size={16} /></div>
+                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Rotina Cívica</span>
+                    <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><Flag size={16} /></div>
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black text-white">{stats.complianceRate}%</h3>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Taxa de Conformidade</p>
+                    <h3 className="text-3xl font-black text-slate-900">{stats.complianceRate}%</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Taxa de Conformidade</p>
                   </div>
                 </div>
               </div>
@@ -1031,18 +1031,18 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* Inspeções Recentes */}
-                <div className="lg:col-span-2 bg-slate-950 p-8 rounded-[2.5rem] border border-slate-800 shadow-lg space-y-6">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-3">
-                      <UserCheck size={18} className="text-blue-500" /> Últimas Ocorrências de Fardamento
+                <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6 text-slate-800">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3">
+                      <UserCheck size={18} className="text-blue-600" /> Últimas Ocorrências de Fardamento
                     </h3>
-                    <button onClick={() => setActiveTab('inspecao')} className="text-[9px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Ver todas</button>
+                    <button onClick={() => setActiveTab('inspecao')} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">Ver todas</button>
                   </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 uppercase font-black tracking-widest text-[9px] pb-3">
+                        <tr className="border-b border-slate-100 text-slate-400 uppercase font-black tracking-widest text-[9px] pb-3">
                           <th className="pb-3">Aluno</th>
                           <th className="pb-3">Turma</th>
                           <th className="pb-3">Item Incorreto</th>
@@ -1052,17 +1052,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       </thead>
                       <tbody>
                         {inspections.slice(0, 5).map(insp => (
-                          <tr key={insp.id} className="border-b border-slate-800/50 hover:bg-slate-900/40 transition-colors">
-                            <td className="py-4 font-bold uppercase text-white truncate max-w-[200px]">{insp.studentName}</td>
-                            <td className="py-4 text-slate-300 font-bold">{insp.className}</td>
-                            <td className="py-4"><span className="px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">{insp.item}</span></td>
-                            <td className="py-4 text-slate-400 font-medium">{new Date(insp.date).toLocaleDateString('pt-BR')}</td>
-                            <td className="py-4 text-slate-400 uppercase font-medium">{insp.responsible.split(' ')[0]}</td>
+                          <tr key={insp.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors text-slate-700">
+                            <td className="py-4 font-bold uppercase text-slate-900 truncate max-w-[200px]">{insp.studentName}</td>
+                            <td className="py-4 text-slate-600 font-bold">{insp.className}</td>
+                            <td className="py-4"><span className="px-2.5 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200/60 font-semibold">{insp.item}</span></td>
+                            <td className="py-4 text-slate-500 font-medium">{new Date(insp.date).toLocaleDateString('pt-BR')}</td>
+                            <td className="py-4 text-slate-500 uppercase font-medium">{insp.responsible.split(' ')[0]}</td>
                           </tr>
                         ))}
                         {inspections.length === 0 && (
                           <tr>
-                            <td colSpan={5} className="py-8 text-center text-slate-500 font-semibold uppercase text-[10px]">Nenhuma desconformidade de fardamento registrada</td>
+                            <td colSpan={5} className="py-8 text-center text-slate-400 font-semibold uppercase text-[10px]">Nenhuma desconformidade de fardamento registrada</td>
                           </tr>
                         )}
                       </tbody>
@@ -1071,12 +1071,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </div>
 
                 {/* Status Recente da Rotina Cívica */}
-                <div className="bg-slate-950 p-8 rounded-[2.5rem] border border-slate-800 shadow-lg space-y-6">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-3">
-                      <Flag size={18} className="text-blue-500" /> Rotinas Recentes
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6 text-slate-800">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3">
+                      <Flag size={18} className="text-blue-600" /> Rotinas Recentes
                     </h3>
-                    <button onClick={() => setActiveTab('rotina')} className="text-[9px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors">Registrar</button>
+                    <button onClick={() => setActiveTab('rotina')} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">Registrar</button>
                   </div>
 
                   <div className="space-y-4">
@@ -1092,13 +1092,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       const percent = Math.round((steps / 6) * 100);
 
                       return (
-                        <div key={rot.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between">
+                        <div key={rot.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between text-slate-700">
                           <div>
-                            <div className="text-xs font-black text-white uppercase">{new Date(rot.date).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-                            <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{rot.shift} • Resp: {rot.responsible.split(' ')[0]}</div>
+                            <div className="text-xs font-black text-slate-900 uppercase">{new Date(rot.date).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{rot.shift} • Resp: {rot.responsible.split(' ')[0]}</div>
                           </div>
                           <div className="text-right">
-                            <span className={`px-2 py-1 rounded text-[10px] font-black ${percent === 100 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
+                            <span className={`px-2 py-1 rounded text-[10px] font-black ${percent === 100 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-blue-50 text-blue-700 border border-blue-200/60'}`}>
                               {percent}% OK
                             </span>
                           </div>
@@ -1106,7 +1106,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       );
                     })}
                     {routines.length === 0 && (
-                      <p className="text-center py-8 text-slate-500 text-[10px] font-semibold uppercase">Nenhum registro de formatura cívica recente</p>
+                      <p className="text-center py-8 text-slate-400 text-[10px] font-semibold uppercase">Nenhum registro de formatura cívica recente</p>
                     )}
                   </div>
                 </div>
@@ -1120,32 +1120,32 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               
               {/* Form de Lançamento */}
-              <div className="lg:col-span-1 bg-slate-950 p-8 rounded-[2.5rem] border border-slate-800 shadow-lg space-y-6">
-                <div className="border-b border-slate-800 pb-4">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Plus size={18} className="text-blue-500" /> Registrar Formatura Geral
+              <div className="lg:col-span-1 bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6 text-slate-800">
+                <div className="border-b border-slate-100 pb-4">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Plus size={18} className="text-blue-600" /> Registrar Formatura Geral
                   </h3>
-                  <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Checklist de Cerimonial Cívico</p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Checklist de Cerimonial Cívico</p>
                 </div>
 
                 <form onSubmit={handleSaveRoutine} className="space-y-6">
                   <div>
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Data de Referência</label>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Data de Referência</label>
                     <input
                       type="date"
                       value={routineForm.date}
                       onChange={e => setRoutineForm(prev => ({ ...prev, date: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Turno</label>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Turno</label>
                     <select
                       value={routineForm.shift}
                       onChange={e => setRoutineForm(prev => ({ ...prev, shift: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                     >
                       <option value="MATUTINO">MATUTINO</option>
                       <option value="VESPERTINO">VESPERTINO</option>
@@ -1154,112 +1154,112 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   </div>
 
                   <div className="space-y-3 pt-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Rotina Executada</label>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Rotina Executada</label>
                     
-                    <label className="flex items-center gap-3 p-3 bg-slate-900/50 hover:bg-slate-900 border border-slate-800/80 rounded-xl cursor-pointer">
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100/50 border border-slate-200/60 rounded-xl cursor-pointer">
                       <input
                         type="checkbox"
                         checked={routineForm.formationOk}
                         onChange={e => setRoutineForm(prev => ({ ...prev, formationOk: e.target.checked }))}
-                        className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 w-4 h-4"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white w-4 h-4"
                       />
-                      <span className="text-xs font-bold text-slate-200">Formação e Alinhamento das Turmas</span>
+                      <span className="text-xs font-bold text-slate-700">Formação e Alinhamento das Turmas</span>
                     </label>
 
-                    <label className="flex items-center gap-3 p-3 bg-slate-900/50 hover:bg-slate-900 border border-slate-800/80 rounded-xl cursor-pointer">
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100/50 border border-slate-200/60 rounded-xl cursor-pointer">
                       <input
                         type="checkbox"
                         checked={routineForm.commandersPresent}
                         onChange={e => setRoutineForm(prev => ({ ...prev, commandersPresent: e.target.checked }))}
-                        className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 w-4 h-4"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white w-4 h-4"
                       />
-                      <span className="text-xs font-bold text-slate-200">Apresentação dos Chefes de Turma</span>
+                      <span className="text-xs font-bold text-slate-700">Apresentação dos Chefes de Turma</span>
                     </label>
 
-                    <div className="p-3 bg-slate-900/50 border border-slate-800/80 rounded-xl space-y-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Bandeiras Hasteadas</span>
+                    <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl space-y-2">
+                      <span className="text-[10px] font-black text-slate-500 uppercase block mb-1">Bandeiras Hasteadas</span>
                       <div className="grid grid-cols-3 gap-2">
-                        <label className="flex flex-col items-center p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer text-center">
+                        <label className="flex flex-col items-center p-2 bg-white border border-slate-200/60 rounded-lg cursor-pointer text-center">
                           <input
                             type="checkbox"
                             checked={routineForm.flagNational}
                             onChange={e => setRoutineForm(prev => ({ ...prev, flagNational: e.target.checked }))}
-                            className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 mb-2 w-3.5 h-3.5"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white mb-2 w-3.5 h-3.5"
                           />
-                          <span className="text-[9px] font-bold text-slate-300 uppercase">Nacional</span>
+                          <span className="text-[9px] font-bold text-slate-600 uppercase">Nacional</span>
                         </label>
-                        <label className="flex flex-col items-center p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer text-center">
+                        <label className="flex flex-col items-center p-2 bg-white border border-slate-200/60 rounded-lg cursor-pointer text-center">
                           <input
                             type="checkbox"
                             checked={routineForm.flagState}
                             onChange={e => setRoutineForm(prev => ({ ...prev, flagState: e.target.checked }))}
-                            className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 mb-2 w-3.5 h-3.5"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white mb-2 w-3.5 h-3.5"
                           />
-                          <span className="text-[9px] font-bold text-slate-300 uppercase">Estadual</span>
+                          <span className="text-[9px] font-bold text-slate-600 uppercase">Estadual</span>
                         </label>
-                        <label className="flex flex-col items-center p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer text-center">
+                        <label className="flex flex-col items-center p-2 bg-white border border-slate-200/60 rounded-lg cursor-pointer text-center">
                           <input
                             type="checkbox"
                             checked={routineForm.flagMunicipal}
                             onChange={e => setRoutineForm(prev => ({ ...prev, flagMunicipal: e.target.checked }))}
-                            className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 mb-2 w-3.5 h-3.5"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white mb-2 w-3.5 h-3.5"
                           />
-                          <span className="text-[9px] font-bold text-slate-300 uppercase">Municipal</span>
+                          <span className="text-[9px] font-bold text-slate-600 uppercase">Municipal</span>
                         </label>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-slate-900/50 border border-slate-800/80 rounded-xl space-y-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Canto dos Hinos</span>
+                    <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl space-y-2">
+                      <span className="text-[10px] font-black text-slate-500 uppercase block mb-1">Canto dos Hinos</span>
                       <div className="grid grid-cols-3 gap-2">
-                        <label className="flex flex-col items-center p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer text-center">
+                        <label className="flex flex-col items-center p-2 bg-white border border-slate-200/60 rounded-lg cursor-pointer text-center">
                           <input
                             type="checkbox"
                             checked={routineForm.anthemNational}
                             onChange={e => setRoutineForm(prev => ({ ...prev, anthemNational: e.target.checked }))}
-                            className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 mb-2 w-3.5 h-3.5"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white mb-2 w-3.5 h-3.5"
                           />
-                          <span className="text-[9px] font-bold text-slate-300 uppercase">Nacional</span>
+                          <span className="text-[9px] font-bold text-slate-600 uppercase">Nacional</span>
                         </label>
-                        <label className="flex flex-col items-center p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer text-center">
+                        <label className="flex flex-col items-center p-2 bg-white border border-slate-200/60 rounded-lg cursor-pointer text-center">
                           <input
                             type="checkbox"
                             checked={routineForm.anthemState}
                             onChange={e => setRoutineForm(prev => ({ ...prev, anthemState: e.target.checked }))}
-                            className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 mb-2 w-3.5 h-3.5"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white mb-2 w-3.5 h-3.5"
                           />
-                          <span className="text-[9px] font-bold text-slate-300 uppercase">Estadual</span>
+                          <span className="text-[9px] font-bold text-slate-600 uppercase">Estadual</span>
                         </label>
-                        <label className="flex flex-col items-center p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer text-center">
+                        <label className="flex flex-col items-center p-2 bg-white border border-slate-200/60 rounded-lg cursor-pointer text-center">
                           <input
                             type="checkbox"
                             checked={routineForm.anthemSchool}
                             onChange={e => setRoutineForm(prev => ({ ...prev, anthemSchool: e.target.checked }))}
-                            className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 mb-2 w-3.5 h-3.5"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white mb-2 w-3.5 h-3.5"
                           />
-                          <span className="text-[9px] font-bold text-slate-300 uppercase">Escola</span>
+                          <span className="text-[9px] font-bold text-slate-600 uppercase">Escola</span>
                         </label>
                       </div>
                     </div>
 
-                    <label className="flex items-center gap-3 p-3 bg-slate-900/50 hover:bg-slate-900 border border-slate-800/80 rounded-xl cursor-pointer">
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100/50 border border-slate-200/60 rounded-xl cursor-pointer">
                       <input
                         type="checkbox"
                         checked={routineForm.marchingOk}
                         onChange={e => setRoutineForm(prev => ({ ...prev, marchingOk: e.target.checked }))}
-                        className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 w-4 h-4"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white w-4 h-4"
                       />
-                      <span className="text-xs font-bold text-slate-200">Desfile das Turmas / Ordem Unida</span>
+                      <span className="text-xs font-bold text-slate-700">Desfile das Turmas / Ordem Unida</span>
                     </label>
 
-                    <label className="flex items-center gap-3 p-3 bg-slate-900/50 hover:bg-slate-900 border border-slate-800/80 rounded-xl cursor-pointer">
+                    <label className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100/50 border border-slate-200/60 rounded-xl cursor-pointer">
                       <input
                         type="checkbox"
                         checked={routineForm.bulletinRead}
                         onChange={e => setRoutineForm(prev => ({ ...prev, bulletinRead: e.target.checked }))}
-                        className="rounded border-slate-800 text-blue-600 focus:ring-blue-500 bg-slate-950 w-4 h-4"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white w-4 h-4"
                       />
-                      <span className="text-xs font-bold text-slate-200">Leitura do Boletim Interno / Avisos</span>
+                      <span className="text-xs font-bold text-slate-700">Leitura do Boletim Interno / Avisos</span>
                     </label>
                   </div>
 
@@ -1273,61 +1273,61 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               </div>
 
               {/* Histórico */}
-              <div className="lg:col-span-2 bg-slate-950 p-8 rounded-[2.5rem] border border-slate-800 shadow-lg space-y-6">
-                <div className="border-b border-slate-800 pb-4">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Flag size={18} className="text-blue-500" /> Histórico Geral de Formaturas Cívicas
+              <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6 text-slate-800">
+                <div className="border-b border-slate-100 pb-4">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Flag size={18} className="text-blue-600" /> Histórico Geral de Formaturas Cívicas
                   </h3>
-                  <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Registros de Conformidade e Hinos</p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Registros de Conformidade e Hinos</p>
                 </div>
 
                 <div className="space-y-6">
                   {routines.map(rot => (
-                    <div key={rot.id} className="p-6 bg-slate-900/40 border border-slate-800 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-slate-700 transition-all">
+                    <div key={rot.id} className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-slate-300 transition-all">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <h4 className="text-sm font-black text-white uppercase">{new Date(rot.date).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
-                          <span className="px-2 py-0.5 text-[8px] font-black text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded uppercase">{rot.shift}</span>
+                          <h4 className="text-sm font-black text-slate-900 uppercase">{new Date(rot.date).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
+                          <span className="px-2 py-0.5 text-[8px] font-black text-blue-600 bg-blue-50 border border-blue-100 rounded uppercase">{rot.shift}</span>
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Responsável: {rot.responsible}</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Responsável: {rot.responsible}</p>
                         
                         {/* Grid de Checks */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-[9px] font-black uppercase text-slate-400">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-[9px] font-black uppercase text-slate-500">
                           <div className="flex items-center gap-1.5">
-                            <span className={rot.formationOk ? 'text-emerald-500' : 'text-slate-600'}>●</span> Alinhamento
+                            <span className={rot.formationOk ? 'text-emerald-600' : 'text-slate-300'}>●</span> Alinhamento
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className={rot.commandersPresent ? 'text-emerald-500' : 'text-slate-600'}>●</span> Comandantes
+                            <span className={rot.commandersPresent ? 'text-emerald-600' : 'text-slate-300'}>●</span> Comandantes
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className={rot.marchingOk ? 'text-emerald-500' : 'text-slate-600'}>●</span> Ordem Unida
+                            <span className={rot.marchingOk ? 'text-emerald-600' : 'text-slate-300'}>●</span> Ordem Unida
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className={rot.bulletinRead ? 'text-emerald-500' : 'text-slate-600'}>●</span> Boletim Interno
+                            <span className={rot.bulletinRead ? 'text-emerald-600' : 'text-slate-300'}>●</span> Boletim Interno
                           </div>
                         </div>
 
                         {/* Hasteamento e Hino Details */}
-                        <div className="flex flex-wrap gap-4 pt-2 text-[9px] font-black uppercase text-slate-500">
+                        <div className="flex flex-wrap gap-4 pt-2 text-[9px] font-black uppercase text-slate-400">
                           <div>
                             Bandeiras: 
-                            <span className={`ml-1 font-bold ${rot.flagsRaised.national ? 'text-white' : 'text-slate-600'}`}>BR</span>
-                            <span className={`ml-1 font-bold ${rot.flagsRaised.state ? 'text-blue-400' : 'text-slate-600'}`}>MT</span>
-                            <span className={`ml-1 font-bold ${rot.flagsRaised.municipal ? 'text-yellow-500' : 'text-slate-600'}`}>MUN</span>
+                            <span className={`ml-1 font-bold ${rot.flagsRaised.national ? 'text-slate-900' : 'text-slate-300'}`}>BR</span>
+                            <span className={`ml-1 font-bold ${rot.flagsRaised.state ? 'text-blue-600' : 'text-slate-300'}`}>MT</span>
+                            <span className={`ml-1 font-bold ${rot.flagsRaised.municipal ? 'text-amber-600' : 'text-slate-300'}`}>MUN</span>
                           </div>
                           <div>
                             Hinos: 
-                            <span className={`ml-1 font-bold ${rot.anthemsSung.national ? 'text-white' : 'text-slate-600'}`}>NAC</span>
-                            <span className={`ml-1 font-bold ${rot.anthemsSung.state ? 'text-blue-400' : 'text-slate-600'}`}>EST</span>
-                            <span className={`ml-1 font-bold ${rot.anthemsSung.school ? 'text-yellow-500' : 'text-slate-600'}`}>ESC</span>
+                            <span className={`ml-1 font-bold ${rot.anthemsSung.national ? 'text-slate-900' : 'text-slate-300'}`}>NAC</span>
+                            <span className={`ml-1 font-bold ${rot.anthemsSung.state ? 'text-blue-600' : 'text-slate-300'}`}>EST</span>
+                            <span className={`ml-1 font-bold ${rot.anthemsSung.school ? 'text-amber-600' : 'text-slate-300'}`}>ESC</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 border-t md:border-t-0 pt-4 md:pt-0 border-slate-800 justify-end">
+                      <div className="flex items-center gap-4 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100 justify-end">
                         <button
                           onClick={() => handleDeleteRoutine(rot.id)}
-                          className="p-3 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 text-red-400 rounded-xl transition-all"
+                          className="p-3 bg-red-50 hover:bg-red-600 hover:text-white border border-red-100 text-red-600 rounded-xl transition-all"
                           title="Excluir"
                         >
                           <Trash2 size={16} />
@@ -1337,7 +1337,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   ))}
 
                   {routines.length === 0 && (
-                    <div className="py-12 text-center text-slate-500 uppercase font-semibold text-xs border-2 border-dashed border-slate-800 rounded-[2.5rem]">
+                    <div className="py-12 text-center text-slate-400 uppercase font-semibold text-xs border-2 border-dashed border-slate-200 rounded-[2.5rem]">
                       Nenhuma rotina cívica cadastrada.
                     </div>
                   )}
@@ -1353,13 +1353,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               {/* Header com Ações */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     type="text"
                     placeholder="Buscar aluno..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-6 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 w-full transition-all text-white placeholder-slate-500"
+                    className="pl-12 pr-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 w-full transition-all text-slate-900 placeholder-slate-400"
                   />
                 </div>
 
@@ -1367,7 +1367,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <select
                     value={selectedClass}
                     onChange={e => setSelectedClass(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   >
                     <option value="ALL">Todas as Turmas</option>
                     {classesList.map(c => (
@@ -1393,37 +1393,37 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     return matchesSearch && matchesClass;
                   })
                   .map(insp => (
-                    <div key={insp.id} className="bg-slate-950 p-6 rounded-[2.5rem] border border-slate-800 hover:border-blue-500/50 shadow-md hover:shadow-2xl transition-all group flex flex-col justify-between">
+                    <div key={insp.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 hover:border-blue-300 shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between text-slate-800">
                       <div>
                         <div className="flex justify-between items-start mb-4">
-                          <div className="w-10 h-10 bg-blue-600/10 border border-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center font-black text-base shadow-inner">
+                          <div className="w-10 h-10 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-black text-base shadow-inner">
                             {insp.studentName.charAt(0)}
                           </div>
-                          <span className="px-2 py-0.5 text-[8px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded uppercase">
+                          <span className="px-2 py-0.5 text-[8px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded uppercase">
                             {insp.className}
                           </span>
                         </div>
 
-                        <h3 className="font-black text-white uppercase text-xs mb-1 line-clamp-1 tracking-tight">{insp.studentName}</h3>
-                        <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-4">Ref: {insp.shift}</p>
+                        <h3 className="font-black text-slate-900 uppercase text-xs mb-1 line-clamp-1 tracking-tight">{insp.studentName}</h3>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-4">Ref: {insp.shift}</p>
 
-                        <div className="p-3 bg-slate-900 border border-slate-850 rounded-xl text-[10px] font-semibold text-slate-300 mb-4">
-                          <span className="text-[8px] text-amber-400 font-black uppercase block mb-1">Item Identificado:</span>
+                        <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-semibold text-slate-700 mb-4">
+                          <span className="text-[8px] text-amber-600 font-black uppercase block mb-1">Item Identificado:</span>
                           {insp.item}
                         </div>
 
                         {insp.observations && (
-                          <div className="p-3 bg-slate-900/50 rounded-xl text-[9px] text-slate-400 leading-relaxed mb-4 italic">
+                          <div className="p-3 bg-slate-50/50 rounded-xl text-[9px] text-slate-500 leading-relaxed mb-4 italic">
                             "{insp.observations}"
                           </div>
                         )}
                       </div>
 
-                      <div className="pt-4 border-t border-slate-900 flex justify-between items-center text-[9px] font-black uppercase text-slate-500">
+                      <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-[9px] font-black uppercase text-slate-400">
                         <span>{new Date(insp.date).toLocaleDateString('pt-BR')}</span>
                         <button
                           onClick={() => handleDeleteInspection(insp.id)}
-                          className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Excluir Registro"
                         >
                           <Trash2 size={14} />
@@ -1433,7 +1433,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   ))}
 
                 {inspections.length === 0 && (
-                  <div className="col-span-full py-16 text-center text-slate-500 uppercase font-semibold text-xs border-2 border-dashed border-slate-800 rounded-[3rem]">
+                  <div className="col-span-full py-16 text-center text-slate-500 uppercase font-semibold text-xs border-2 border-dashed border-slate-200 rounded-[3rem]">
                     Nenhuma inspeção registrada para os filtros selecionados.
                   </div>
                 )}
@@ -1447,13 +1447,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               {/* Header com Ações */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     type="text"
                     placeholder="Buscar aluno por nome..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-6 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 w-full transition-all text-white placeholder-slate-500"
+                    className="pl-12 pr-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 w-full transition-all text-slate-900 placeholder-slate-400"
                   />
                 </div>
 
@@ -1461,7 +1461,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <select
                     value={selectedClass}
                     onChange={e => setSelectedClass(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   >
                     <option value="ALL">Todas as Turmas</option>
                     {classesList.map(c => (
@@ -1472,11 +1472,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               </div>
 
               {/* Tabela de Alunos e Comportamentos */}
-              <div className="bg-slate-950 p-8 rounded-[3rem] border border-slate-800 shadow-xl overflow-hidden">
+              <div className="bg-white p-8 rounded-[3rem] border border-slate-200/80 shadow-sm overflow-hidden text-slate-800">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-500 uppercase font-black tracking-widest text-[9px] pb-3">
+                      <tr className="border-b border-slate-100 text-slate-400 uppercase font-black tracking-widest text-[9px] pb-3">
                         <th className="pb-3 pl-2">Cod.</th>
                         <th className="pb-3">Nome do Aluno</th>
                         <th className="pb-3">Turma</th>
@@ -1492,36 +1492,36 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       {filteredStudents.map(student => {
                         const status = getBehaviorStatus(student.score);
                         return (
-                          <tr key={student.studentId} className="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors">
-                            <td className="py-4 pl-2 font-mono text-slate-500 text-[10px]">{student.studentId}</td>
-                            <td className="py-4 font-bold uppercase text-white truncate max-w-[280px]">{student.studentName}</td>
-                            <td className="py-4 text-slate-300 font-bold">{student.className}</td>
+                          <tr key={student.studentId} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors text-slate-700">
+                            <td className="py-4 pl-2 font-mono text-slate-400 text-[10px]">{student.studentId}</td>
+                            <td className="py-4 font-bold uppercase text-slate-900 truncate max-w-[280px]">{student.studentName}</td>
+                            <td className="py-4 text-slate-600 font-bold">{student.className}</td>
                             <td className="py-4 text-center">
                               <button
                                 onClick={() => handleToggleLeader(student.studentId)}
                                 className={`p-1.5 rounded-lg border transition-all ${student.isClassLeader 
-                                  ? 'bg-blue-600/20 text-blue-400 border-blue-500/30' 
-                                  : 'text-slate-600 border-slate-850 hover:border-slate-700'}`}
+                                  ? 'bg-blue-50 text-blue-600 border-blue-200' 
+                                  : 'text-slate-400 border-slate-200 hover:border-slate-300'}`}
                                 title={student.isClassLeader ? "Revogar Líder de Turma" : "Nomear Líder de Turma"}
                               >
-                                <Star size={14} className={student.isClassLeader ? 'fill-blue-400' : ''} />
+                                <Star size={14} className={student.isClassLeader ? 'fill-blue-600' : ''} />
                               </button>
                             </td>
                             <td className="py-4 text-center">
                               <button
                                 onClick={() => handleToggleHighlight(student.studentId)}
                                 className={`p-1.5 rounded-lg border transition-all ${student.isCivicHighlight 
-                                  ? 'bg-amber-600/20 text-amber-400 border-amber-500/30' 
-                                  : 'text-slate-600 border-slate-850 hover:border-slate-700'}`}
+                                  ? 'bg-amber-50 text-amber-600 border-amber-200' 
+                                  : 'text-slate-400 border-slate-200 hover:border-slate-300'}`}
                                 title={student.isCivicHighlight ? "Remover Destaque Cívico" : "Nomear Destaque Cívico"}
                               >
-                                <Sparkles size={14} className={student.isCivicHighlight ? 'fill-amber-400' : ''} />
+                                <Sparkles size={14} className={student.isCivicHighlight ? 'fill-amber-600' : ''} />
                               </button>
                             </td>
-                            <td className="py-4 text-center font-bold text-slate-400">
+                            <td className="py-4 text-center font-bold text-slate-500">
                               {student.occurrences.length}
                             </td>
-                            <td className="py-4 text-center font-black text-white text-sm">
+                            <td className="py-4 text-center font-black text-slate-900 text-sm">
                               {student.score.toFixed(1)}
                             </td>
                             <td className="py-4 text-center">
@@ -1535,7 +1535,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                   setSelectedStudentState(student);
                                   setIsBehaviorModalOpen(true);
                                 }}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                className="px-4 py-2 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-100 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
                               >
                                 Detalhes
                               </button>
@@ -1545,7 +1545,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       })}
                       {filteredStudents.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="py-12 text-center text-slate-500 uppercase font-semibold text-xs">
+                          <td colSpan={9} className="py-12 text-center text-slate-400 uppercase font-semibold text-xs">
                             Nenhum aluno encontrado para a pesquisa.
                           </td>
                         </tr>
@@ -1563,16 +1563,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               {/* Filtro e Títulos */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
                     <Award size={22} className="text-amber-500" /> Galeria dos Alunos Destaques
                   </h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Liderança, Disciplina e Atitude Cívica Exemplar</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Liderança, Disciplina e Atitude Cívica Exemplar</p>
                 </div>
 
                 <select
                   value={selectedClass}
                   onChange={e => setSelectedClass(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
                   <option value="ALL">Todas as Turmas</option>
                   {classesList.map(c => (
@@ -1584,11 +1584,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               {/* Grid de Alunos Destaque */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {honorRollStudents.map(student => (
-                  <div key={student.studentId} className="bg-slate-950 p-6 rounded-[2.5rem] border border-amber-500/20 hover:border-amber-500/50 shadow-md hover:shadow-2xl transition-all relative overflow-hidden flex flex-col justify-between text-center">
+                  <div key={student.studentId} className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 hover:border-amber-300 shadow-sm hover:shadow-xl transition-all relative overflow-hidden flex flex-col justify-between text-center text-slate-800">
                     
                     {/* Efeitos de Fundo para Alamar de Honra */}
                     {student.score >= 10 && (
-                      <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-500/20 to-transparent w-24 h-24 rounded-bl-[5rem] pointer-events-none flex items-start justify-end p-4">
+                      <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-500/10 to-transparent w-24 h-24 rounded-bl-[5rem] pointer-events-none flex items-start justify-end p-4">
                         <Award size={24} className="text-amber-500 animate-pulse" />
                       </div>
                     )}
@@ -1597,46 +1597,46 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       {/* Distintivo / Avatar */}
                       <div className={`w-20 h-20 rounded-full flex items-center justify-center font-black text-3xl mb-4 border-2 shadow-xl ${
                         student.score >= 10 
-                          ? 'bg-gradient-to-br from-amber-500/20 to-yellow-600/30 border-amber-400 text-amber-400' 
-                          : 'bg-slate-900 border-slate-800 text-blue-400'
+                          ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-amber-300 text-amber-600' 
+                          : 'bg-slate-50 border-slate-200 text-blue-600'
                       }`}>
                         {student.studentName.charAt(0)}
                       </div>
 
-                      <h4 className="font-black text-white uppercase text-xs mb-1 line-clamp-1 max-w-[200px]">{student.studentName}</h4>
-                      <span className="px-2.5 py-0.5 text-[8px] font-black text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded uppercase mb-4">
+                      <h4 className="font-black text-slate-900 uppercase text-xs mb-1 line-clamp-1 max-w-[200px]">{student.studentName}</h4>
+                      <span className="px-2.5 py-0.5 text-[8px] font-black text-blue-600 bg-blue-50 border border-blue-100 rounded uppercase mb-4">
                         {student.className}
                       </span>
 
                       {/* Nota de Atitude */}
-                      <div className="p-4 bg-slate-900/80 border border-slate-850 rounded-2xl w-full mb-4">
+                      <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl w-full mb-4">
                         <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest block mb-0.5">Nota de Atitude</span>
-                        <span className="text-2xl font-black text-white">{student.score.toFixed(1)}</span>
+                        <span className="text-2xl font-black text-slate-900">{student.score.toFixed(1)}</span>
                       </div>
 
                       {/* Distintivos Virtuais */}
                       <div className="flex flex-wrap gap-2 justify-center">
                         {student.score >= 10 && (
-                          <span className="px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
-                            <Shield size={10} className="fill-amber-400/20" /> Alamar de Honra
+                          <span className="px-2 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
+                            <Shield size={10} className="fill-amber-500/20" /> Alamar de Honra
                           </span>
                         )}
                         {student.isClassLeader && (
-                          <span className="px-2 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
-                            <Star size={10} className="fill-blue-400/20" /> Líder de Turma
+                          <span className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
+                            <Star size={10} className="fill-blue-600/20" /> Líder de Turma
                           </span>
                         )}
                         {student.isCivicHighlight && (
-                          <span className="px-2 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/30 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
+                          <span className="px-2 py-1 bg-purple-50 text-purple-600 border border-purple-200 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
                             <Sparkles size={10} /> Destaque Cívico
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-slate-900 flex justify-between items-center text-[8px] font-black uppercase text-slate-500">
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center text-[8px] font-black uppercase text-slate-400">
                       <span>Comportamento</span>
-                      <span className={student.score >= 9.0 ? 'text-emerald-400' : 'text-blue-400'}>
+                      <span className={student.score >= 9.0 ? 'text-emerald-600' : 'text-blue-600'}>
                         {getBehaviorStatus(student.score).label}
                       </span>
                     </div>
@@ -1645,7 +1645,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 ))}
 
                 {honorRollStudents.length === 0 && (
-                  <div className="col-span-full py-16 text-center text-slate-500 uppercase font-semibold text-xs border-2 border-dashed border-slate-800 rounded-[3rem]">
+                  <div className="col-span-full py-16 text-center text-slate-400 uppercase font-semibold text-xs border-2 border-dashed border-slate-200 rounded-[3rem]">
                     Nenhum aluno no Quadro de Honra.
                   </div>
                 )}
@@ -1659,19 +1659,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
                 
                 {/* CONFIGURAÇÃO / FORMULÁRIO */}
-                <div className="xl:col-span-5 bg-slate-950 p-8 rounded-[2rem] border border-slate-800 space-y-6 no-print">
+                <div className="xl:col-span-5 bg-white p-8 rounded-[2rem] border border-slate-200/80 shadow-sm space-y-6 no-print text-slate-800">
                   <div>
-                    <h3 className="text-base font-black text-white uppercase tracking-tight">Preenchimento da Ficha</h3>
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Preenchimento da Ficha</h3>
                     <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Preencha os campos para atualizar o documento</p>
                   </div>
 
                   {/* Modelo */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Modelo do Documento</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Modelo do Documento</label>
                     <select
                       value={selectedDocTemplate}
                       onChange={e => setSelectedDocTemplate(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white uppercase"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 uppercase"
                     >
                       <option value="termo_ciencia">Termo de Ciência e Concordância</option>
                       <option value="fato_observado">Relatório de Fato Observado</option>
@@ -1680,19 +1680,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                   {/* Busca do Aluno */}
                   <div className="space-y-2 relative">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Buscar Aluno</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Buscar Aluno</label>
                     {selectedStudentForDoc ? (
-                      <div className="flex items-center justify-between bg-blue-600/10 border border-blue-500/30 rounded-xl px-4 py-3">
+                      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-slate-800">
                         <div className="text-xs">
-                          <p className="font-black text-blue-400 uppercase">{selectedStudentForDoc.Nome}</p>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">{selectedStudentForDoc.Turma} • {selectedStudentForDoc.Turno}</p>
+                          <p className="font-black text-blue-700 uppercase">{selectedStudentForDoc.Nome}</p>
+                          <p className="text-[9px] text-slate-500 font-bold uppercase">{selectedStudentForDoc.Turma} • {selectedStudentForDoc.Turno}</p>
                         </div>
                         <button
                           onClick={() => {
                             setSelectedStudentForDoc(null);
                             setDocSearchTerm('');
                           }}
-                          className="text-slate-400 hover:text-white text-sm font-bold bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                          className="text-slate-500 hover:text-slate-800 text-sm font-bold bg-slate-200 hover:bg-slate-300 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
                           title="Remover seleção"
                         >
                           ✕
@@ -1701,17 +1701,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     ) : (
                       <>
                         <div className="relative">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                           <input
                             type="text"
                             placeholder="Digite o nome ou código do aluno..."
                             value={docSearchTerm}
                             onChange={e => setDocSearchTerm(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white placeholder-slate-600"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                           />
                         </div>
                         {docFilteredStudents.length > 0 && (
-                          <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-850">
+                          <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-100">
                             {docFilteredStudents.map(student => (
                               <button
                                 key={student.CodigoAluno}
@@ -1719,11 +1719,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                   setSelectedStudentForDoc(student);
                                   setDocSearchTerm(student.Nome);
                                 }}
-                                className="w-full text-left p-3 hover:bg-blue-600/10 text-xs text-white uppercase font-bold transition-colors flex justify-between items-center"
+                                className="w-full text-left p-3 hover:bg-blue-50 text-xs text-slate-800 uppercase font-bold transition-colors flex justify-between items-center"
                               >
                                 <div>
                                   <p>{student.Nome}</p>
-                                  <p className="text-[9px] text-slate-500 font-medium normal-case">{student.Turma} • {student.Turno} • Código: {student.CodigoAluno}</p>
+                                  <p className="text-[9px] text-slate-400 font-medium normal-case">{student.Turma} • {student.Turno} • Código: {student.CodigoAluno}</p>
                                 </div>
                               </button>
                             ))}
@@ -1735,131 +1735,131 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                   {/* Dados Condicionais do Modelo */}
                   {selectedDocTemplate === 'termo_ciencia' ? (
-                    <div className="border-t border-slate-850 pt-5 space-y-4">
-                      <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Dados do Responsável</h4>
+                    <div className="border-t border-slate-100 pt-5 space-y-4">
+                      <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Dados do Responsável</h4>
                       
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">Nome Completo</label>
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Nome Completo</label>
                         <input
                           type="text"
                           value={docFields.responsibleName}
                           onChange={e => setDocFields(prev => ({ ...prev, responsibleName: e.target.value }))}
                           placeholder="Nome do pai, mãe ou responsável legal"
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Identidade / RG</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Identidade / RG</label>
                           <input
                             type="text"
                             value={docFields.responsibleRg}
                             onChange={e => setDocFields(prev => ({ ...prev, responsibleRg: e.target.value }))}
                             placeholder="Digite o RG"
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">CPF</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">CPF</label>
                           <input
                             type="text"
                             value={docFields.responsibleCpf}
                             onChange={e => setDocFields(prev => ({ ...prev, responsibleCpf: e.target.value }))}
                             placeholder="Digite o CPF"
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">Endereço Completo</label>
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Endereço Completo</label>
                         <input
                           type="text"
                           value={docFields.responsibleAddress}
                           onChange={e => setDocFields(prev => ({ ...prev, responsibleAddress: e.target.value }))}
                           placeholder="Rua, número, bairro, cidade"
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                         />
                       </div>
                     </div>
                   ) : (
-                    <div className="border-t border-slate-850 pt-5 space-y-4">
-                      <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Dados do Fato Observado</h4>
+                    <div className="border-t border-slate-100 pt-5 space-y-4">
+                      <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Dados do Fato Observado</h4>
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Série / Ano</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Série / Ano</label>
                           <input
                             type="text"
                             value={docFields.series}
                             onChange={e => setDocFields(prev => ({ ...prev, series: e.target.value }))}
                             placeholder="Ex: 6º Ano"
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Disciplina</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Disciplina</label>
                           <input
                             type="text"
                             value={docFields.discipline}
                             onChange={e => setDocFields(prev => ({ ...prev, discipline: e.target.value }))}
                             placeholder="Ex: Matemática"
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Professor</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Professor</label>
                           <input
                             type="text"
                             value={docFields.teacher}
                             onChange={e => setDocFields(prev => ({ ...prev, teacher: e.target.value }))}
                             placeholder="Nome do professor"
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Monitor</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Monitor</label>
                           <input
                             type="text"
                             value={docFields.monitor}
                             onChange={e => setDocFields(prev => ({ ...prev, monitor: e.target.value }))}
                             placeholder="Nome do monitor"
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">ACHADO: relato sucinto e objetivo</label>
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">ACHADO: relato sucinto e objetivo</label>
                         <textarea
                           value={docFields.achado}
                           onChange={e => setDocFields(prev => ({ ...prev, achado: e.target.value }))}
                           placeholder="Relate aqui o fato observado de forma sucinta e objetiva..."
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white placeholder-slate-700 min-h-[100px]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[100px]"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Data do Fato</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Data do Fato</label>
                           <input
                             type="date"
                             value={docFields.date}
                             onChange={e => setDocFields(prev => ({ ...prev, date: e.target.value }))}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Data de Recebimento</label>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Data de Recebimento</label>
                           <input
                             type="date"
                             value={docFields.recebidoDate}
                             onChange={e => setDocFields(prev => ({ ...prev, recebidoDate: e.target.value }))}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                           />
                         </div>
                       </div>
@@ -1867,24 +1867,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   )}
 
                   {/* Detalhes Gerais */}
-                  <div className="border-t border-slate-850 pt-5 grid grid-cols-2 gap-4">
+                  <div className="border-t border-slate-100 pt-5 grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Cidade / UF</label>
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Cidade / UF</label>
                       <input
                         type="text"
                         value={docFields.city}
                         onChange={e => setDocFields(prev => ({ ...prev, city: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                       />
                     </div>
                     {selectedDocTemplate === 'termo_ciencia' && (
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">Data</label>
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Data</label>
                         <input
                           type="date"
                           value={docFields.date}
                           onChange={e => setDocFields(prev => ({ ...prev, date: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-blue-500 text-white"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                         />
                       </div>
                     )}
@@ -1900,7 +1900,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     </button>
                     <button
                       onClick={handleClearDocForm}
-                      className="px-4 py-4 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-slate-800"
+                      className="px-4 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-slate-200"
                       title="Limpar formulário"
                     >
                       Limpar
@@ -2196,23 +2196,23 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               </div>
 
               {/* HISTÓRICO DE DOCUMENTOS EMITIDOS */}
-              <div className="bg-slate-950 p-8 rounded-[2rem] border border-slate-800 no-print space-y-6">
+              <div className="bg-white p-8 rounded-[2rem] border border-slate-200/80 shadow-sm no-print space-y-6 text-slate-800">
                 <div>
-                  <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center gap-3">
-                    <FileText className="text-blue-500" /> Histórico de Documentações Geradas
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+                    <FileText className="text-blue-600" /> Histórico de Documentações Geradas
                   </h3>
                   <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Veja ou reabra documentos preenchidos anteriormente</p>
                 </div>
 
                 {docHistory.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 uppercase font-semibold text-xs border border-dashed border-slate-800 rounded-2xl">
+                  <div className="py-12 text-center text-slate-400 uppercase font-semibold text-xs border border-dashed border-slate-200 rounded-2xl">
                     Nenhum documento gerado no histórico.
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase">
+                        <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase">
                           <th className="py-3 px-4">Aluno</th>
                           <th className="py-3 px-4">Turma / Turno</th>
                           <th className="py-3 px-4">Responsável</th>
@@ -2221,22 +2221,22 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           <th className="py-3 px-4 text-right">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-900">
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
                         {docHistory.map(record => (
                           <tr 
                             key={record.id} 
                             onClick={() => handleLoadDocFromHistory(record)}
-                            className="hover:bg-slate-900/60 cursor-pointer transition-colors group"
+                            className="hover:bg-slate-50/50 cursor-pointer transition-colors group"
                           >
-                            <td className="py-4 px-4 font-black text-white uppercase">{record.studentName}</td>
-                            <td className="py-4 px-4 text-slate-300 font-medium uppercase">{record.className} • {record.shiftName}</td>
-                            <td className="py-4 px-4 text-slate-300 uppercase">{record.fields.responsibleName}</td>
-                            <td className="py-4 px-4 text-blue-400 font-semibold">{record.templateLabel}</td>
-                            <td className="py-4 px-4 text-slate-400 font-medium">{new Date(record.date).toLocaleDateString('pt-BR')}</td>
+                            <td className="py-4 px-4 font-black text-slate-900 uppercase">{record.studentName}</td>
+                            <td className="py-4 px-4 text-slate-600 font-medium uppercase">{record.className} • {record.shiftName}</td>
+                            <td className="py-4 px-4 text-slate-600 uppercase">{record.fields.responsibleName}</td>
+                            <td className="py-4 px-4 text-blue-600 font-semibold">{record.templateLabel}</td>
+                            <td className="py-4 px-4 text-slate-500 font-medium">{new Date(record.date).toLocaleDateString('pt-BR')}</td>
                             <td className="py-4 px-4 text-right space-x-2">
                               <button
                                 onClick={(e) => handleDeleteDocFromHistory(record.id, e)}
-                                className="p-2 text-slate-500 hover:text-red-500 transition-colors"
+                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                                 title="Excluir do Histórico"
                               >
                                 <Trash2 size={16} />
@@ -2259,24 +2259,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       {/* MODAL 1: LANÇAR INSPEÇÃO */}
       {isInspectionModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-950 border border-slate-800 rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-start border-b border-slate-800 pb-4">
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center gap-2">
-                  <UserCheck size={18} className="text-blue-500" /> Registrar Ocorrência de Fardamento
+                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                  <UserCheck size={18} className="text-blue-600" /> Registrar Ocorrência de Fardamento
                 </h3>
-                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Apresentação Pessoal do Aluno</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Apresentação Pessoal do Aluno</p>
               </div>
-              <button onClick={() => setIsInspectionModalOpen(false)} className="text-slate-500 hover:text-white font-bold text-lg">✕</button>
+              <button onClick={() => setIsInspectionModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
             </div>
 
             <form onSubmit={handleAddInspection} className="space-y-5">
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Aluno</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Aluno</label>
                 <select
                   value={newInspection.studentId}
                   onChange={e => setNewInspection(prev => ({ ...prev, studentId: e.target.value }))}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                   required
                 >
                   <option value="">Selecionar Aluno...</option>
@@ -2289,11 +2289,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               </div>
 
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Item Identificado</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Item Identificado</label>
                 <select
                   value={newInspection.item}
                   onChange={e => setNewInspection(prev => ({ ...prev, item: e.target.value }))}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                 >
                   <option value="Farda incompleta">Farda incompleta</option>
                   <option value="Farda suja / amarrotada">Farda suja / amarrotada</option>
@@ -2305,23 +2305,23 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               </div>
 
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Data da Ocorrência</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Data da Ocorrência</label>
                 <input
                   type="date"
                   value={newInspection.date}
                   onChange={e => setNewInspection(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Observações Detalhadas</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Observações Detalhadas</label>
                 <textarea
                   value={newInspection.observations}
                   onChange={e => setNewInspection(prev => ({ ...prev, observations: e.target.value }))}
                   placeholder="Descreva detalhes específicos da inconformidade..."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white min-h-[80px]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[80px]"
                 />
               </div>
 
@@ -2329,7 +2329,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 <button
                   type="button"
                   onClick={() => setIsInspectionModalOpen(false)}
-                  className="flex-1 py-3 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                  className="flex-1 py-3 bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest"
                 >
                   Cancelar
                 </button>
@@ -2348,26 +2348,26 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       {/* MODAL 2: DETALHES DE COMPORTAMENTO / LANÇAR OCORRÊNCIA */}
       {isBehaviorModalOpen && selectedStudentState && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-950 border border-slate-800 rounded-[3rem] p-8 max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-[3rem] p-8 max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800">
             
             {/* Esquerda: Informações Gerais e Formulário de Lançamento */}
             <div className="space-y-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[280px]">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight truncate max-w-[280px]">
                     {selectedStudentState.studentName}
                   </h3>
-                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                     Turma: {selectedStudentState.className} • Código: {selectedStudentState.studentId}
                   </p>
                 </div>
               </div>
 
               {/* Placa de Nota de Atitude */}
-              <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl flex justify-between items-center">
+              <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex justify-between items-center text-slate-900">
                 <div>
                   <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest block mb-0.5">Nota de Atitude</span>
-                  <span className="text-3xl font-black text-white">{selectedStudentState.score.toFixed(1)}</span>
+                  <span className="text-3xl font-black text-slate-900">{selectedStudentState.score.toFixed(1)}</span>
                 </div>
                 <span className={`px-3 py-1 rounded-xl text-[10px] font-black border uppercase ${getBehaviorStatus(selectedStudentState.score).color}`}>
                   {getBehaviorStatus(selectedStudentState.score).label}
@@ -2375,8 +2375,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               </div>
 
               {/* Form Lançamento de Méritos / Deméritos */}
-              <form onSubmit={handleAddOccurrence} className="space-y-4 pt-2 border-t border-slate-900">
-                <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Lançar Ação / Incidente</h4>
+              <form onSubmit={handleAddOccurrence} className="space-y-4 pt-2 border-t border-slate-100">
+                <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Lançar Ação / Incidente</h4>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -2390,8 +2390,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     }}
                     className={`py-2 rounded-xl text-[9px] font-black uppercase border transition-all flex items-center justify-center gap-1.5 ${
                       newOccurrence.type === 'DEMERIT'
-                        ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                        : 'text-slate-500 border-slate-850 hover:border-slate-800'
+                        ? 'bg-red-50 text-red-600 border-red-200 shadow-sm'
+                        : 'text-slate-500 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
                     <ThumbsDown size={12} /> Demérito (Falta)
@@ -2407,8 +2407,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     }}
                     className={`py-2 rounded-xl text-[9px] font-black uppercase border transition-all flex items-center justify-center gap-1.5 ${
                       newOccurrence.type === 'MERIT'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                        : 'text-slate-500 border-slate-850 hover:border-slate-800'
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm'
+                        : 'text-slate-500 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
                     <ThumbsUp size={12} /> Mérito (Elogio)
@@ -2420,7 +2420,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <select
                     value={newOccurrence.category}
                     onChange={e => setNewOccurrence(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                   >
                     {newOccurrence.type === 'MERIT' ? (
                       meritOptions.map(m => (
@@ -2444,7 +2444,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     type="date"
                     value={newOccurrence.date}
                     onChange={e => setNewOccurrence(prev => ({ ...prev, date: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                     required
                   />
                 </div>
@@ -2455,7 +2455,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     value={newOccurrence.observations}
                     onChange={e => setNewOccurrence(prev => ({ ...prev, observations: e.target.value }))}
                     placeholder="Descreva detalhes específicos do fato gerador..."
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-blue-500 text-white min-h-[60px]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[60px]"
                     required
                   />
                 </div>
@@ -2474,16 +2474,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             </div>
 
             {/* Direita: Histórico de Ocorrências e Botão de Fechar */}
-            <div className="flex flex-col h-full border-t md:border-t-0 md:border-l border-slate-900 pt-6 md:pt-0 md:pl-8 justify-between">
+            <div className="flex flex-col h-full border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8 justify-between">
               <div className="space-y-4 flex-1 overflow-y-auto max-h-[420px] pr-2 custom-scrollbar">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-2">Histórico de Atitude</h4>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Histórico de Atitude</h4>
                 
                 <div className="space-y-3">
                   {selectedStudentState.occurrences.map(occ => (
                     <div key={occ.id} className={`p-4 rounded-2xl border ${
                       occ.type === 'MERIT'
-                        ? 'bg-emerald-500/5 border-emerald-500/10'
-                        : 'bg-red-500/5 border-red-500/10'
+                        ? 'bg-emerald-50/50 border-emerald-100'
+                        : 'bg-red-50/50 border-red-100'
                     }`}>
                       <div className="flex justify-between items-start mb-2">
                         <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase ${
@@ -2493,14 +2493,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         </span>
                         <span className="text-[8px] font-bold text-slate-500">{new Date(occ.date).toLocaleDateString('pt-BR')}</span>
                       </div>
-                      <h5 className="text-[10px] font-black text-white uppercase">{occ.category}</h5>
-                      <p className="text-[9px] text-slate-400 mt-1 italic">"{occ.observations}"</p>
-                      <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-[8px] font-bold text-slate-500 uppercase">
+                      <h5 className="text-[10px] font-black text-slate-800 uppercase">{occ.category}</h5>
+                      <p className="text-[9px] text-slate-600 mt-1 italic">"{occ.observations}"</p>
+                      <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[8px] font-bold text-slate-500 uppercase">
                         <span>Monitor: {occ.responsible.split(' ')[0]}</span>
                         <button
                           type="button"
                           onClick={() => handleDeleteOccurrence(selectedStudentState.studentId, occ.id)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-red-600 hover:text-red-700"
                         >
                           Remover
                         </button>
@@ -2514,14 +2514,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-900">
+              <div className="pt-6 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
                     setIsBehaviorModalOpen(false);
                     setSelectedStudentState(null);
                   }}
-                  className="w-full py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                  className="w-full py-4 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest"
                 >
                   Fechar Painel
                 </button>
