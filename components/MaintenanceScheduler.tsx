@@ -25,6 +25,7 @@ interface MaintenanceTask {
     last_executed_at: string | null;
     assigned_employee_name?: string | null;
     status?: 'PENDENTE' | 'CONCLUIDO' | 'ATRASADO';
+    executed_shift?: string | null;
 }
 
 interface MaintenanceSchedulerProps {
@@ -44,6 +45,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const [selectedAssignment, setSelectedAssignment] = useState<{ block: string, area: string } | null>(null);
     const [selectedEmployeeName, setSelectedEmployeeName] = useState('');
     const [taskDates, setTaskDates] = useState<Record<string, string>>({});
+    const [taskShifts, setTaskShifts] = useState<Record<string, 'MATUTINO' | 'VESPERTINO'>>({});
     const [reportPeriod, setReportPeriod] = useState(new Date().toLocaleDateString('pt-BR'));
 
     useEffect(() => {
@@ -62,7 +64,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
 
             const { data: recordsData, error: recordsError } = await supabase
                 .from('maintenance_records')
-                .select('task_id, completed_at, status')
+                .select('task_id, completed_at, status, performed_by_name')
                 .order('completed_at', { ascending: false });
 
             if (recordsError) throw recordsError;
@@ -87,7 +89,8 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                 return {
                     ...task,
                     last_executed_at: lastRecord ? lastRecord.completed_at : null,
-                    status
+                    status,
+                    executed_shift: lastRecord?.performed_by_name?.includes('[MATUTINO]') ? 'Matutino' : lastRecord?.performed_by_name?.includes('[VESPERTINO]') ? 'Vespertino' : null
                 };
             });
 
@@ -100,21 +103,27 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         }
     };
 
-    const handleMarkAsDone = async (task: MaintenanceTask, customDate?: string) => {
+    const handleMarkAsDone = async (task: MaintenanceTask, customDate?: string, shift: 'MATUTINO' | 'VESPERTINO' = 'MATUTINO') => {
         const executionDate = customDate ? new Date(customDate + 'T12:00:00').toISOString() : new Date().toISOString();
+        const performedByName = `${task.assigned_employee_name || 'Manutenção'} [${shift}]`;
         try {
             const { error } = await supabase.from('maintenance_records').insert([{
                 task_id: task.id,
                 status: 'CONCLUIDO',
                 completed_at: executionDate,
-                performed_by_name: task.assigned_employee_name
+                performed_by_name: performedByName
             }]);
 
             if (error) throw error;
 
             setTasks(prev => prev.map(t =>
                 t.id === task.id
-                    ? { ...t, status: 'CONCLUIDO', last_executed_at: executionDate }
+                    ? { 
+                        ...t, 
+                        status: 'CONCLUIDO', 
+                        last_executed_at: executionDate,
+                        executed_shift: shift === 'MATUTINO' ? 'Matutino' : 'Vespertino'
+                      }
                     : t
             ));
 
@@ -325,21 +334,31 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                             <div className="flex items-center justify-between gap-1 pt-2 mt-auto border-t border-gray-50/50 min-w-0">
                                                                 <div className="text-[9px] text-gray-400 font-medium truncate">
                                                                     {task.last_executed_at
-                                                                        ? `Última: ${new Date(task.last_executed_at).toLocaleDateString('pt-BR')}`
+                                                                        ? `Última: ${new Date(task.last_executed_at).toLocaleDateString('pt-BR')}${task.executed_shift ? ` (${task.executed_shift})` : ''}`
                                                                         : 'Nunca executado'}
                                                                 </div>
 
-                                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                                <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
                                                                     {task.status !== 'CONCLUIDO' && (
-                                                                        <input
-                                                                            type="date"
-                                                                            value={taskDates[task.id] || new Date().toISOString().split('T')[0]}
-                                                                            onChange={e => setTaskDates(prev => ({ ...prev, [task.id]: e.target.value }))}
-                                                                            className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[9px] font-bold outline-none focus:border-indigo-300 text-gray-700 w-[105px] h-7"
-                                                                        />
+                                                                        <>
+                                                                            <input
+                                                                                type="date"
+                                                                                value={taskDates[task.id] || new Date().toISOString().split('T')[0]}
+                                                                                onChange={e => setTaskDates(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                                                className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[9px] font-bold outline-none focus:border-indigo-300 text-gray-700 w-[105px] h-7"
+                                                                            />
+                                                                            <select
+                                                                                value={taskShifts[task.id] || 'MATUTINO'}
+                                                                                onChange={e => setTaskShifts(prev => ({ ...prev, [task.id]: e.target.value as any }))}
+                                                                                className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[9px] font-bold outline-none focus:border-indigo-300 text-gray-700 h-7 w-20 cursor-pointer"
+                                                                            >
+                                                                                <option value="MATUTINO">Matutino</option>
+                                                                                <option value="VESPERTINO">Vespertino</option>
+                                                                            </select>
+                                                                        </>
                                                                     )}
                                                                     <button
-                                                                        onClick={() => handleMarkAsDone(task, taskDates[task.id])}
+                                                                        onClick={() => handleMarkAsDone(task, taskDates[task.id], taskShifts[task.id] || 'MATUTINO')}
                                                                         disabled={task.status === 'CONCLUIDO'}
                                                                         className={`p-1.5 sm:p-2 rounded-full transition-all shrink-0 ${task.status === 'CONCLUIDO'
                                                                                 ? 'bg-emerald-100 text-emerald-600 cursor-default'
@@ -446,7 +465,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                             <td className="py-1 text-[10px]">{task.frequency}</td>
                                                             <td className="py-1 text-[10px]">
                                                                 {task.last_executed_at 
-                                                                    ? new Date(task.last_executed_at).toLocaleDateString('pt-BR') 
+                                                                    ? `${new Date(task.last_executed_at).toLocaleDateString('pt-BR')}${task.executed_shift ? ` (${task.executed_shift === 'Matutino' ? 'Mat' : 'Vesp'})` : ''}` 
                                                                     : '____/____/____'}
                                                             </td>
                                                             <td className="py-1 text-center">
