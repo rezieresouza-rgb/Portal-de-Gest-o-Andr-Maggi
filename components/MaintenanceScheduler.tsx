@@ -379,7 +379,8 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             )}
 
             {/* Hidden Printable Report */}
-            <div id="weekly-report-print" className="hidden print:block bg-white p-8">
+            <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
+                <div id="weekly-report-print" className="bg-white p-8">
                 <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
                     <h1 className="text-2xl font-bold uppercase">Relatório Semanal de Manutenção</h1>
                     <p className="text-sm text-gray-600 uppercase">Escola Estadual André Maggi</p>
@@ -449,6 +450,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     }
                 `}</style>
             </div>
+        </div>
         </div>
     );
 };

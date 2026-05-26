@@ -292,7 +292,7 @@ const KitchenSanitation: React.FC = () => {
          </div>
 
          {/* TEMPLATE OCULTO PARA IMPRESSÃO COZINHA */}
-         <div className="hidden">
+         <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
             <div id="kitchen-print-area" className="p-10 space-y-6 text-gray-900 font-sans h-full bg-white">
                <div className="flex items-center justify-between border-b-2 border-gray-900 pb-6">
                   <div className="flex items-center gap-4">
@@ -305,55 +305,55 @@ const KitchenSanitation: React.FC = () => {
                   <p>Checklist Mensal</p>
                   <p>Mês/Ano: {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
                </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
-               <p>Responsável Técnico: ___________________________________</p>
-               <p>Setor: COZINHA ESCOLAR / ALIMENTAÇÃO</p>
-            </div>
-
-            <div className="border border-gray-900 rounded-xl overflow-hidden shadow-sm">
-               <table className="w-full text-left border-collapse">
-                  <thead className="bg-gray-900 text-white">
-                     <tr>
-                        <th className="p-3 uppercase text-[9px] font-black w-[5%] text-center">POP</th>
-                        <th className="p-3 uppercase text-[9px] font-black w-3/5">Descrição do Procedimento de Higiene</th>
-                        <th className="p-3 uppercase text-[9px] font-black text-center">Freq.</th>
-                        <th className="p-3 uppercase text-[9px] font-black text-center w-24">Visto do Dia</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                     {INITIAL_KITCHEN_TASKS.map((t, idx) => {
-                        const popMatch = t.title.match(/POP (\d+)/);
-                        const popNumber = popMatch ? popMatch[1] : '--';
-                        const titleClean = t.title.replace(/\(POP \d+\)/, '').trim();
-
-                        return (
-                           <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                              <td className="p-3 text-center text-[9px] font-black text-gray-400">{popNumber}</td>
-                              <td className="p-3 text-[10px] font-bold uppercase">{titleClean}</td>
-                              <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency[0]}</td>
-                              <td className="p-3 text-center">
-                                 <div className="w-5 h-5 border border-gray-400 mx-auto rounded-md"></div>
-                              </td>
-                           </tr>
-                        );
-                     })}
-                  </tbody>
-               </table>
-            </div>
-
-            <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 grid grid-cols-2 gap-20">
-               <div className="text-center space-y-2">
-                  <div className="border-t border-gray-400 pt-1">
-                     <p className="text-[9px] font-black uppercase">Responsável pela Cozinha (AAE)</p>
-                     <p className="text-[7px] uppercase text-gray-400 font-bold">Data: ____/____/{new Date().getFullYear()}</p>
-                  </div>
+               <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p>Responsável Técnico: ___________________________________</p>
+                  <p>Setor: COZINHA ESCOLAR / ALIMENTAÇÃO</p>
                </div>
-               <div className="text-center space-y-2">
-                  <div className="border-t border-gray-400 pt-1">
-                     <p className="text-[9px] font-black uppercase">Gestão Escolar / CDCE</p>
-                     <p className="text-[7px] uppercase text-gray-400 font-bold">Assinatura / Carimbo</p>
+
+               <div className="border border-gray-900 rounded-xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                     <thead className="bg-gray-900 text-white">
+                        <tr>
+                           <th className="p-3 uppercase text-[9px] font-black w-[5%] text-center">POP</th>
+                           <th className="p-3 uppercase text-[9px] font-black w-3/5">Descrição do Procedimento de Higiene</th>
+                           <th className="p-3 uppercase text-[9px] font-black text-center">Freq.</th>
+                           <th className="p-3 uppercase text-[9px] font-black text-center w-24">Visto do Dia</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-gray-200">
+                        {INITIAL_KITCHEN_TASKS.map((t, idx) => {
+                           const popMatch = t.title.match(/POP (\d+)/);
+                           const popNumber = popMatch ? popMatch[1] : '--';
+                           const titleClean = t.title.replace(/\(POP \d+\)/, '').trim();
+
+                           return (
+                              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                 <td className="p-3 text-center text-[9px] font-black text-gray-400">{popNumber}</td>
+                                 <td className="p-3 text-[10px] font-bold uppercase">{titleClean}</td>
+                                 <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency[0]}</td>
+                                 <td className="p-3 text-center">
+                                    <div className="w-5 h-5 border border-gray-400 mx-auto rounded-md"></div>
+                                 </td>
+                              </tr>
+                           );
+                        })}
+                     </tbody>
+                  </table>
+               </div>
+
+               <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 grid grid-cols-2 gap-20">
+                  <div className="text-center space-y-2">
+                     <div className="border-t border-gray-400 pt-1">
+                        <p className="text-[9px] font-black uppercase">Responsável pela Cozinha (AAE)</p>
+                        <p className="text-[7px] uppercase text-gray-400 font-bold">Data: ____/____/{new Date().getFullYear()}</p>
+                     </div>
+                  </div>
+                  <div className="text-center space-y-2">
+                     <div className="border-t border-gray-400 pt-1">
+                        <p className="text-[9px] font-black uppercase">Gestão Escolar / CDCE</p>
+                        <p className="text-[7px] uppercase text-gray-400 font-bold">Assinatura / Carimbo</p>
+                     </div>
                   </div>
                </div>
             </div>
