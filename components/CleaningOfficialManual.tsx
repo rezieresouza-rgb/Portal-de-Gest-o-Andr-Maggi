@@ -159,8 +159,33 @@ const CleaningOfficialManual: React.FC = () => {
         @media print {
           .no-print { display: none !important; }
           #manual-printable { border: none !important; }
-          table { font-size: 7pt !important; }
-          body { background: white !important; }
+          table { font-size: 8pt !important; width: 100% !important; border-collapse: collapse !important; }
+          th, td { padding: 8px !important; border: 1px solid #ccc !important; color: black !important; }
+          body { background: white !important; color: black !important; }
+          
+          /* Reset layout height and overflow constraints to allow multi-page printing */
+          html, body, #root, .min-h-screen, .flex, main, .overflow-y-auto, .h-screen {
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+            position: static !important;
+          }
+
+          /* Hide sidebar, headers and other non-print elements */
+          aside, header, .no-print {
+            display: none !important;
+          }
+
+          /* Force printable container to full width and natural height */
+          #manual-printable {
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
         }
       `}</style>
     </div>
