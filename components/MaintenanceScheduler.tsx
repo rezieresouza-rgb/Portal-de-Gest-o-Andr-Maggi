@@ -48,6 +48,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const [taskShifts, setTaskShifts] = useState<Record<string, 'MATUTINO' | 'VESPERTINO'>>({});
     const [reportPeriod, setReportPeriod] = useState(new Date().toLocaleDateString('pt-BR'));
 
+    // Bathroom clean tracking states
+    const [selectedCleanDate, setSelectedCleanDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [selectedCleanEmployee, setSelectedCleanEmployee] = useState('');
+    const [records, setRecords] = useState<any[]>([]);
+    const [isBathroomPanelOpen, setIsBathroomPanelOpen] = useState(true);
+
     useEffect(() => {
         fetchTasks();
     }, []);
@@ -68,6 +74,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                 .order('completed_at', { ascending: false });
 
             if (recordsError) throw recordsError;
+            setRecords(recordsData || []);
 
             const mergedTasks = tasksData.map(task => {
                 const lastRecord = recordsData.find((r: any) => r.task_id === task.id);
@@ -115,6 +122,14 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             }]);
 
             if (error) throw error;
+
+            const newRecord = {
+                task_id: task.id,
+                status: 'CONCLUIDO',
+                completed_at: executionDate,
+                performed_by_name: performedByName
+            };
+            setRecords(prev => [newRecord, ...prev]);
 
             setTasks(prev => prev.map(t =>
                 t.id === task.id
@@ -182,6 +197,72 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         await window.html2pdf().set(opt).from(element).save();
     };
 
+    const handleMarkBathroomClean = async (task: MaintenanceTask, shift: 'MATUTINO' | 'VESPERTINO') => {
+        if (!selectedCleanEmployee) {
+            alert('Por favor, selecione um zelador(a) para registrar o lançamento.');
+            return;
+        }
+
+        const now = new Date();
+        const timePart = now.toTimeString().split(' ')[0]; // HH:MM:SS
+        const executionDate = new Date(`${selectedCleanDate}T${timePart}`).toISOString();
+        const performedByName = `${selectedCleanEmployee} [${shift}]`;
+
+        try {
+            const { error } = await supabase.from('maintenance_records').insert([{
+                task_id: task.id,
+                status: 'CONCLUIDO',
+                completed_at: executionDate,
+                performed_by_name: performedByName
+            }]);
+
+            if (error) throw error;
+
+            const newRecord = {
+                task_id: task.id,
+                status: 'CONCLUIDO',
+                completed_at: executionDate,
+                performed_by_name: performedByName
+            };
+
+            setRecords(prev => [newRecord, ...prev]);
+
+            setTasks(prev => prev.map(t =>
+                t.id === task.id
+                    ? { 
+                        ...t, 
+                        status: 'CONCLUIDO', 
+                        last_executed_at: executionDate,
+                        executed_shift: shift === 'MATUTINO' ? 'Matutino' : 'Vespertino'
+                      }
+                    : t
+            ));
+
+        } catch (error) {
+            console.error('Error completing bathroom task:', error);
+            alert('Erro ao registrar limpeza do banheiro.');
+        }
+    };
+
+    const handleDeleteRecord = async (taskId: string, completedAt: string) => {
+        if (!window.confirm('Deseja realmente remover este registro de higienização?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('maintenance_records')
+                .delete()
+                .match({ task_id: taskId, completed_at: completedAt });
+
+            if (error) throw error;
+
+            setRecords(prev => prev.filter(r => !(r.task_id === taskId && r.completed_at === completedAt)));
+            fetchTasks();
+        } catch (error) {
+            console.error('Error deleting record:', error);
+            alert('Erro ao remover registro.');
+        }
+    };
+
     // Grouping
     const groupedTasks = tasks.reduce((acc, task) => {
         if (filterFrequency !== 'ALL' && task.frequency !== filterFrequency) return acc;
@@ -218,6 +299,13 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         const areaTasks = tasks.filter(t => t.block === block && t.area_name === area);
         return areaTasks.find(t => t.assigned_employee_name)?.assigned_employee_name || null;
     };
+
+    const dailyBathroomTasks = tasks.filter(t => 
+        t.frequency === 'DIARIA' && (
+            t.area_name.toLowerCase().includes('banheiro') || 
+            t.area_name.toLowerCase().includes('sanitário')
+        )
+    );
 
     return (
         <div className="space-y-6 w-full min-w-0">
@@ -260,6 +348,160 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     </div>
                 </div>
             </div>
+
+            {/* MONITOR DE LIMPEZA DE BANHEIROS */}
+            {!loading && dailyBathroomTasks.length > 0 && (
+                <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-[2rem] p-6 shadow-xl space-y-6">
+                    <button 
+                        onClick={() => setIsBathroomPanelOpen(!isBathroomPanelOpen)}
+                        className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left outline-none"
+                    >
+                        <div className="min-w-0 flex-1">
+                            <h3 className="text-base font-black uppercase tracking-wider flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                                Acompanhamento de Higienização de Banheiros
+                            </h3>
+                            <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mt-1">
+                                Monitoramento diário de limpeza por turnos (Matutino / Vespertino)
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3 self-end md:self-auto shrink-0">
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-white/10 px-3 py-1.5 rounded-xl border border-white/5 hover:bg-white/20 transition-all">
+                                {isBathroomPanelOpen ? 'Ocultar Painel' : 'Visualizar Painel'}
+                            </span>
+                        </div>
+                    </button>
+
+                    {isBathroomPanelOpen && (
+                        <div className="space-y-6 pt-4 border-t border-white/10 animate-in fade-in duration-300">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <p className="text-xs text-indigo-200 font-bold max-w-md">
+                                    Para registrar a higienização, selecione o funcionário abaixo e clique em "Limpar" no banheiro e turno correspondentes.
+                                </p>
+                                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                                    {/* Date Picker */}
+                                    <div className="flex items-center gap-1.5 bg-white/10 border border-white/10 rounded-xl px-3 py-2 w-full sm:w-auto">
+                                        <span className="text-[9px] font-black uppercase text-indigo-200 shrink-0">Data Limpeza:</span>
+                                        <input
+                                            type="date"
+                                            value={selectedCleanDate}
+                                            onChange={e => setSelectedCleanDate(e.target.value)}
+                                            className="bg-transparent border-none text-[10px] font-bold text-white outline-none focus:ring-0 w-28 h-5 cursor-pointer"
+                                        />
+                                    </div>
+
+                                    {/* Employee Select */}
+                                    <div className="flex items-center gap-1.5 bg-white/10 border border-white/10 rounded-xl px-3 py-2 w-full sm:w-auto">
+                                        <span className="text-[9px] font-black uppercase text-indigo-200 shrink-0">Zelador(a):</span>
+                                        <select
+                                            value={selectedCleanEmployee}
+                                            onChange={e => setSelectedCleanEmployee(e.target.value)}
+                                            className="bg-transparent border-none text-[10px] font-bold text-white outline-none focus:ring-0 cursor-pointer w-full sm:w-44 text-gray-900"
+                                        >
+                                            <option value="" className="text-gray-900">Selecione...</option>
+                                            {employees.map(emp => (
+                                                <option key={emp.id} value={emp.name} className="text-gray-900">{emp.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Restrooms Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                {dailyBathroomTasks.map(task => {
+                                    // find records for this task on selectedCleanDate
+                                    const dayRecords = records.filter(r => 
+                                        r.task_id === task.id && 
+                                        new Date(r.completed_at).toISOString().split('T')[0] === selectedCleanDate
+                                    );
+
+                                    const matRecord = dayRecords.find(r => r.performed_by_name?.includes('[MATUTINO]'));
+                                    const vespRecord = dayRecords.find(r => r.performed_by_name?.includes('[VESPERTINO]'));
+
+                                    return (
+                                        <div key={task.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col justify-between space-y-4 hover:bg-white/10 transition-all">
+                                            <div>
+                                                <div className="flex justify-between items-start">
+                                                    <span className="text-[8px] font-black uppercase text-indigo-400 tracking-wider bg-indigo-950/50 border border-indigo-900/30 px-1.5 py-0.5 rounded-md">
+                                                        {task.block}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-xs font-black uppercase text-white mt-2 truncate" title={task.area_name}>
+                                                    {task.area_name}
+                                                </h4>
+                                                <p className="text-[9px] font-bold text-white/50 line-clamp-1 mt-1 leading-normal" title={task.task_description}>
+                                                    {task.task_description}
+                                                </p>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {/* MATUTINO SHIFT */}
+                                                <div className="flex flex-col space-y-1">
+                                                    <span className="text-[8px] font-black uppercase text-white/40 tracking-wider">Matutino</span>
+                                                    {matRecord ? (
+                                                        <div className="flex items-center justify-between bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl p-2 text-[9px] font-black uppercase relative group/shift">
+                                                            <div className="truncate flex flex-col">
+                                                                <span className="truncate leading-none">{matRecord.performed_by_name?.split(' [')[0]}</span>
+                                                                <span className="text-[7px] text-emerald-400/80 mt-1 font-bold">
+                                                                    {new Date(matRecord.completed_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleDeleteRecord(task.id, matRecord.completed_at)}
+                                                                className="absolute -top-1 -right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover/shift:opacity-100 transition-opacity shadow-md"
+                                                                title="Remover registro"
+                                                            >
+                                                                <X size={8} />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleMarkBathroomClean(task, 'MATUTINO')}
+                                                            className="w-full py-2 bg-white/10 hover:bg-indigo-600 text-white hover:text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border border-white/5 hover:border-indigo-500"
+                                                        >
+                                                            Limpar
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* VESPERTINO SHIFT */}
+                                                <div className="flex flex-col space-y-1">
+                                                    <span className="text-[8px] font-black uppercase text-white/40 tracking-wider">Vespertino</span>
+                                                    {vespRecord ? (
+                                                        <div className="flex items-center justify-between bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl p-2 text-[9px] font-black uppercase relative group/shift">
+                                                            <div className="truncate flex flex-col">
+                                                                <span className="truncate leading-none">{vespRecord.performed_by_name?.split(' [')[0]}</span>
+                                                                <span className="text-[7px] text-emerald-400/80 mt-1 font-bold">
+                                                                    {new Date(vespRecord.completed_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleDeleteRecord(task.id, vespRecord.completed_at)}
+                                                                className="absolute -top-1 -right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover/shift:opacity-100 transition-opacity shadow-md"
+                                                                title="Remover registro"
+                                                            >
+                                                                <X size={8} />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleMarkBathroomClean(task, 'VESPERTINO')}
+                                                            className="w-full py-2 bg-white/10 hover:bg-indigo-600 text-white hover:text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border border-white/5 hover:border-indigo-500"
+                                                        >
+                                                            Limpar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {loading ? (
                 <div className="text-center py-20 text-gray-400">Carregando cronograma...</div>
