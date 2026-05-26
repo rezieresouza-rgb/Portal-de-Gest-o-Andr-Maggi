@@ -43,6 +43,8 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [selectedAssignment, setSelectedAssignment] = useState<{ block: string, area: string } | null>(null);
     const [selectedEmployeeName, setSelectedEmployeeName] = useState('');
+    const [taskDates, setTaskDates] = useState<Record<string, string>>({});
+    const [reportPeriod, setReportPeriod] = useState(new Date().toLocaleDateString('pt-BR'));
 
     useEffect(() => {
         fetchTasks();
@@ -98,12 +100,13 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         }
     };
 
-    const handleMarkAsDone = async (task: MaintenanceTask) => {
+    const handleMarkAsDone = async (task: MaintenanceTask, customDate?: string) => {
+        const executionDate = customDate ? new Date(customDate + 'T12:00:00').toISOString() : new Date().toISOString();
         try {
             const { error } = await supabase.from('maintenance_records').insert([{
                 task_id: task.id,
                 status: 'CONCLUIDO',
-                completed_at: new Date().toISOString(),
+                completed_at: executionDate,
                 performed_by_name: task.assigned_employee_name
             }]);
 
@@ -111,7 +114,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
 
             setTasks(prev => prev.map(t =>
                 t.id === task.id
-                    ? { ...t, status: 'CONCLUIDO', last_executed_at: new Date().toISOString() }
+                    ? { ...t, status: 'CONCLUIDO', last_executed_at: executionDate }
                     : t
             ));
 
@@ -157,9 +160,10 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         const element = document.getElementById('weekly-report-print');
         if (!element) return;
 
+        const safePeriod = reportPeriod.replace(/\//g, '-').replace(/\s+/g, '_');
         const opt = {
             margin: 5,
-            filename: `Relatorio_Semanal_Manutencao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
+            filename: `Relatorio_Manutencao_${safePeriod}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -225,6 +229,16 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     ))}
                 </div>
                 <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-4 shrink-0 min-w-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
+                    <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-sm shrink-0">
+                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">Período:</span>
+                        <input
+                            type="text"
+                            value={reportPeriod}
+                            onChange={e => setReportPeriod(e.target.value)}
+                            placeholder="Ex: 26/05/2026 ou Maio/2026"
+                            className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-28 focus:ring-0"
+                        />
+                    </div>
                     <button
                         onClick={generateWeeklyReport}
                         className="px-3 sm:px-5 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-1.5 shadow-lg shrink-0"
@@ -315,17 +329,27 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                                         : 'Nunca executado'}
                                                                 </div>
 
-                                                                <button
-                                                                    onClick={() => handleMarkAsDone(task)}
-                                                                    disabled={task.status === 'CONCLUIDO'}
-                                                                    className={`p-1.5 sm:p-2 rounded-full transition-all shrink-0 ${task.status === 'CONCLUIDO'
-                                                                            ? 'bg-emerald-100 text-emerald-600 cursor-default'
-                                                                            : 'bg-gray-100 text-gray-400 hover:bg-indigo-600 hover:text-white'
-                                                                        }`}
-                                                                    title={task.status === 'CONCLUIDO' ? 'Concluído' : 'Marcar como Feito'}
-                                                                >
-                                                                    <CheckCircle2 size={14} className="shrink-0" />
-                                                                </button>
+                                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                                    {task.status !== 'CONCLUIDO' && (
+                                                                        <input
+                                                                            type="date"
+                                                                            value={taskDates[task.id] || new Date().toISOString().split('T')[0]}
+                                                                            onChange={e => setTaskDates(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                                            className="bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[9px] font-bold outline-none focus:border-indigo-300 text-gray-700 w-[105px] h-7"
+                                                                        />
+                                                                    )}
+                                                                    <button
+                                                                        onClick={() => handleMarkAsDone(task, taskDates[task.id])}
+                                                                        disabled={task.status === 'CONCLUIDO'}
+                                                                        className={`p-1.5 sm:p-2 rounded-full transition-all shrink-0 ${task.status === 'CONCLUIDO'
+                                                                                ? 'bg-emerald-100 text-emerald-600 cursor-default'
+                                                                                : 'bg-gray-100 text-gray-400 hover:bg-indigo-600 hover:text-white'
+                                                                            }`}
+                                                                        title={task.status === 'CONCLUIDO' ? 'Concluído' : 'Marcar como Feito'}
+                                                                    >
+                                                                        <CheckCircle2 size={14} className="shrink-0" />
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -382,9 +406,15 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
                 <div id="weekly-report-print" className="bg-white p-8">
                 <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
-                    <h1 className="text-2xl font-bold uppercase">Relatório Semanal de Manutenção</h1>
+                    <h1 className="text-2xl font-bold uppercase">
+                        {filterFrequency === 'DIARIA' ? 'Relatório Diário de Manutenção' :
+                         filterFrequency === 'SEMANAL' ? 'Relatório Semanal de Manutenção' :
+                         filterFrequency === 'MENSAL' ? 'Relatório Mensal de Manutenção' :
+                         filterFrequency === 'BIMESTRAL' ? 'Relatório Bimestral de Manutenção' :
+                         'Relatório Geral de Manutenção'}
+                    </h1>
                     <p className="text-sm text-gray-600 uppercase">Escola Estadual André Maggi</p>
-                    <p className="text-xs text-gray-500 mt-2">Gerado em: {new Date().toLocaleDateString('pt-BR')}</p>
+                    <p className="text-xs text-gray-500 mt-2">Referência: {reportPeriod}</p>
                 </div>
 
                 <div className="space-y-6">
@@ -415,7 +445,9 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                             <td className="py-1 pr-2">{task.task_description}</td>
                                                             <td className="py-1 text-[10px]">{task.frequency}</td>
                                                             <td className="py-1 text-[10px]">
-                                                                {task.last_executed_at ? new Date(task.last_executed_at).toLocaleDateString('pt-BR') : '-'}
+                                                                {task.last_executed_at 
+                                                                    ? new Date(task.last_executed_at).toLocaleDateString('pt-BR') 
+                                                                    : '____/____/____'}
                                                             </td>
                                                             <td className="py-1 text-center">
                                                                 {task.status === 'CONCLUIDO' ? 'OK' : '[ ]'}
