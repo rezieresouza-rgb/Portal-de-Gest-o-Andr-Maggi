@@ -53,6 +53,8 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const [selectedCleanEmployee, setSelectedCleanEmployee] = useState('');
     const [records, setRecords] = useState<any[]>([]);
     const [isBathroomPanelOpen, setIsBathroomPanelOpen] = useState(true);
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [selectedPrintBathroom, setSelectedPrintBathroom] = useState<MaintenanceTask | null>(null);
 
     useEffect(() => {
         fetchTasks();
@@ -263,6 +265,38 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         }
     };
 
+    const handlePrintBathroomSheet = async (task: MaintenanceTask) => {
+        setIsPrinting(true);
+        setSelectedPrintBathroom(task);
+        
+        setTimeout(async () => {
+            const element = document.getElementById('bathroom-print-sheet');
+            if (element) {
+                const safeName = task.area_name.replace(/\s+/g, '_');
+                const safePeriod = reportPeriod.replace(/\//g, '-').replace(/\s+/g, '_');
+                const opt = {
+                    margin: 5,
+                    filename: `Planilha_Limpeza_${safeName}_${safePeriod}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                
+                try {
+                    // @ts-ignore
+                    await window.html2pdf().set(opt).from(element).save();
+                } catch (err) {
+                    console.error("Error printing bathroom sheet:", err);
+                } finally {
+                    setSelectedPrintBathroom(null);
+                    setIsPrinting(false);
+                }
+            } else {
+                setIsPrinting(false);
+            }
+        }, 300);
+    };
+
     // Grouping
     const groupedTasks = tasks.reduce((acc, task) => {
         if (filterFrequency !== 'ALL' && task.frequency !== filterFrequency) return acc;
@@ -422,10 +456,18 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                     return (
                                         <div key={task.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col justify-between space-y-4 hover:bg-white/10 transition-all">
                                             <div>
-                                                <div className="flex justify-between items-start">
-                                                    <span className="text-[8px] font-black uppercase text-indigo-400 tracking-wider bg-indigo-950/50 border border-indigo-900/30 px-1.5 py-0.5 rounded-md">
+                                                <div className="flex justify-between items-center gap-2">
+                                                    <span className="text-[8px] font-black uppercase text-indigo-400 tracking-wider bg-indigo-950/50 border border-indigo-900/30 px-1.5 py-0.5 rounded-md truncate">
                                                         {task.block}
                                                     </span>
+                                                    <button
+                                                        onClick={() => handlePrintBathroomSheet(task)}
+                                                        disabled={isPrinting}
+                                                        className="p-1 text-white/50 hover:text-white bg-white/5 hover:bg-indigo-600 rounded transition-all shrink-0"
+                                                        title="Imprimir Planilha de Banheiro (Afixação)"
+                                                    >
+                                                        <Printer size={10} />
+                                                    </button>
                                                 </div>
                                                 <h4 className="text-xs font-black uppercase text-white mt-2 truncate" title={task.area_name}>
                                                     {task.area_name}
@@ -742,8 +784,81 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         body { -webkit-print-color-adjust: exact; }
                     }
                 `}</style>
+                </div>
+
+                {/* 2. PLANILHA DE AFIXAÇÃO DO BANHEIRO */}
+                {selectedPrintBathroom && (
+                    <div id="bathroom-print-sheet" className="p-10 text-gray-900 font-sans bg-white w-[210mm] h-[297mm]">
+                        <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4 mb-4">
+                            <div>
+                                <h1 className="text-base font-black uppercase tracking-tight">Planilha de Controle de Higienização de Sanitários</h1>
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-0.5">Escola Estadual André Maggi | Manutenção</p>
+                            </div>
+                            <div className="text-right text-[8px] font-black uppercase">
+                                <p className="text-indigo-600 font-black">Zeladoria e Limpeza</p>
+                                <p>Referência: {reportPeriod}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 text-[8px] font-black uppercase bg-gray-50 p-3 rounded-xl border border-gray-200 mb-4 text-gray-800">
+                            <div>
+                                <span className="text-gray-400">Sanitário:</span>
+                                <p className="text-[9px] text-gray-900 font-bold">{selectedPrintBathroom.area_name}</p>
+                            </div>
+                            <div>
+                                <span className="text-gray-400">Bloco/Setor:</span>
+                                <p className="text-[9px] text-gray-900 font-bold">{selectedPrintBathroom.block}</p>
+                            </div>
+                            <div>
+                                <span className="text-gray-400">Responsável Padrão:</span>
+                                <p className="text-[9px] text-gray-900 font-bold">{selectedPrintBathroom.assigned_employee_name || 'Serviços Gerais'}</p>
+                            </div>
+                        </div>
+
+                        <div className="border border-gray-900 rounded-xl overflow-hidden shadow-sm">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-900 text-white">
+                                    <tr className="text-[8px] uppercase font-black">
+                                        <th className="p-1.5 border-r border-gray-800 text-center w-[8%]">Dia</th>
+                                        <th className="p-1.5 border-r border-gray-800 text-center w-[20%]">Turno Matutino (Hora)</th>
+                                        <th className="p-1.5 border-r border-gray-800 w-[20%]">Assinatura / Visto</th>
+                                        <th className="p-1.5 border-r border-gray-800 text-center w-[20%]">Turno Vespertino (Hora)</th>
+                                        <th className="p-1.5 border-r border-gray-800 w-[20%]">Assinatura / Visto</th>
+                                        <th className="p-1.5 w-[12%] text-center">Obs</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-300">
+                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                        <tr key={day} className="h-[6.5mm] text-[8px] font-bold">
+                                            <td className="p-1 border-r border-gray-300 text-center bg-gray-50 font-black">{day}</td>
+                                            <td className="p-1 border-r border-gray-300 text-center text-gray-300 font-normal">____:____</td>
+                                            <td className="p-1 border-r border-gray-300"></td>
+                                            <td className="p-1 border-r border-gray-300 text-center text-gray-300 font-normal">____:____</td>
+                                            <td className="p-1 border-r border-gray-300"></td>
+                                            <td className="p-1"></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-gray-300 grid grid-cols-2 gap-16 text-center text-gray-800">
+                            <div>
+                                <div className="border-t border-gray-400 w-3/4 mx-auto pt-1">
+                                    <p className="text-[8px] font-black uppercase">Responsável pela Limpeza</p>
+                                    <p className="text-[6px] text-gray-400 uppercase font-bold">Visto do Servidor</p>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="border-t border-gray-400 w-3/4 mx-auto pt-1">
+                                    <p className="text-[8px] font-black uppercase">Supervisão de Zeladoria</p>
+                                    <p className="text-[6px] text-gray-400 uppercase font-bold">Assinatura / Carimbo</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
         </div>
     );
 };
