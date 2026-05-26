@@ -94,6 +94,11 @@ const KitchenSanitation: React.FC = () => {
    const [filterFreq, setFilterFreq] = useState<Frequency | 'TODOS'>('DIÁRIA');
    const [searchTerm, setSearchTerm] = useState('');
    const [isPrinting, setIsPrinting] = useState(false);
+   const [reportPeriod, setReportPeriod] = useState(() => {
+      const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      const current = new Date();
+      return `${months[current.getMonth()]} de ${current.getFullYear()}`;
+   });
 
    useEffect(() => {
       localStorage.setItem('kitchen_sanitation_tasks_v2', JSON.stringify(tasks));
@@ -130,16 +135,21 @@ const KitchenSanitation: React.FC = () => {
       };
    }, [tasks]);
 
-   const handlePrintKitchen = async () => {
+   const handlePrintKitchen = async (type: 'checklist' | 'report') => {
       setIsPrinting(true);
-      const element = document.getElementById('kitchen-print-area');
+      const elementId = type === 'checklist' ? 'kitchen-print-checklist' : 'kitchen-print-report';
+      const element = document.getElementById(elementId);
       if (!element) return setIsPrinting(false);
+
+      const filename = type === 'checklist'
+         ? `Checklist_Vazio_Cozinha_UANE_${new Date().getFullYear()}.pdf`
+         : `Relatorio_Execucao_Cozinha_UANE_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
 
       try {
          // @ts-ignore
          await window.html2pdf().set({
             margin: 10,
-            filename: `Checklist_Cozinha_UANE_${new Date().getFullYear()}.pdf`,
+            filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -197,21 +207,31 @@ const KitchenSanitation: React.FC = () => {
                   </div>
                </div>
                <div className="flex flex-col gap-3 mt-8 relative z-10">
+                  <div className="space-y-1">
+                     <label className="text-[9px] font-black uppercase text-orange-300 tracking-widest">Mês/Ano de Referência</label>
+                     <input
+                        type="text"
+                        value={reportPeriod}
+                        onChange={e => setReportPeriod(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white font-bold text-xs outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white/20 transition-all"
+                        placeholder="Ex: Maio de 2026"
+                     />
+                  </div>
                   <button
-                     onClick={handlePrintKitchen}
+                     onClick={() => handlePrintKitchen('checklist')}
                      disabled={isPrinting}
                      className="w-full py-4 bg-white text-orange-950 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2 border border-white/20 shadow-lg"
                   >
                      {isPrinting ? <Loader2 className="animate-spin" size={16} /> : <FileText size={16} />}
-                     Checklist Diário (BOAS PRÁTICAS)
+                     Imprimir Checklist Vazio (Para Afixação)
                   </button>
                   <button
-                     onClick={handlePrintKitchen}
+                     onClick={() => handlePrintKitchen('report')}
                      disabled={isPrinting}
                      className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all flex items-center justify-center gap-2 shadow-xl border border-orange-500"
                   >
                      {isPrinting ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
-                     Imprimir Cronograma Mensal
+                     Imprimir Relatório de Execução (Para Assinatura)
                   </button>
                </div>
             </div>
@@ -293,7 +313,8 @@ const KitchenSanitation: React.FC = () => {
 
          {/* TEMPLATE OCULTO PARA IMPRESSÃO COZINHA */}
          <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
-            <div id="kitchen-print-area" className="p-10 space-y-6 text-gray-900 font-sans h-full bg-white">
+            {/* 1. CHECKLIST VAZIO */}
+            <div id="kitchen-print-checklist" className="p-10 space-y-6 text-gray-900 font-sans h-full bg-white">
                <div className="flex items-center justify-between border-b-2 border-gray-900 pb-6">
                   <div className="flex items-center gap-4">
                      <div className="p-3 bg-gray-900 text-white rounded-xl"><CookingPot size={24} /></div>
@@ -302,8 +323,8 @@ const KitchenSanitation: React.FC = () => {
                   </div>
                </div>
                <div className="text-right text-[10px] font-black uppercase">
-                  <p>Checklist Mensal</p>
-                  <p>Mês/Ano: {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
+                  <p>Checklist Mensal (Ficha de Afixação)</p>
+                  <p>Mês/Ano: {reportPeriod}</p>
                </div>
 
                <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -334,6 +355,78 @@ const KitchenSanitation: React.FC = () => {
                                  <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency[0]}</td>
                                  <td className="p-3 text-center">
                                     <div className="w-5 h-5 border border-gray-400 mx-auto rounded-md"></div>
+                                 </td>
+                              </tr>
+                           );
+                        })}
+                     </tbody>
+                  </table>
+               </div>
+
+               <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 grid grid-cols-2 gap-20">
+                  <div className="text-center space-y-2">
+                     <div className="border-t border-gray-400 pt-1">
+                        <p className="text-[9px] font-black uppercase">Responsável pela Cozinha (AAE)</p>
+                        <p className="text-[7px] uppercase text-gray-400 font-bold">Data: ____/____/{new Date().getFullYear()}</p>
+                     </div>
+                  </div>
+                  <div className="text-center space-y-2">
+                     <div className="border-t border-gray-400 pt-1">
+                        <p className="text-[9px] font-black uppercase">Gestão Escolar / CDCE</p>
+                        <p className="text-[7px] uppercase text-gray-400 font-bold">Assinatura / Carimbo</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            {/* 2. RELATÓRIO DE EXECUÇÃO */}
+            <div id="kitchen-print-report" className="p-10 space-y-6 text-gray-900 font-sans h-full bg-white">
+               <div className="flex items-center justify-between border-b-2 border-gray-900 pb-6">
+                  <div className="flex items-center gap-4">
+                     <div className="p-3 bg-gray-900 text-white rounded-xl"><CookingPot size={24} /></div>
+                     <h1 className="text-2xl font-black uppercase text-gray-900">Relatório de Higienização e Sanitização</h1>
+                     <p className="text-[10px] font-bold uppercase text-gray-500 tracking-widest">Unidade Escolar / Setor de Nutrição Escolar</p>
+                  </div>
+               </div>
+               <div className="text-right text-[10px] font-black uppercase">
+                  <p>Relatório de Execução do Sistema</p>
+                  <p>Mês/Ano: {reportPeriod}</p>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p>Responsável Técnico: ___________________________________</p>
+                  <p>Setor: COZINHA ESCOLAR / ALIMENTAÇÃO</p>
+               </div>
+
+               <div className="border border-gray-900 rounded-xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                     <thead className="bg-gray-900 text-white">
+                        <tr>
+                           <th className="p-3 uppercase text-[9px] font-black w-[5%] text-center">POP</th>
+                           <th className="p-3 uppercase text-[9px] font-black w-[45%]">Descrição do Procedimento de Higiene</th>
+                           <th className="p-3 uppercase text-[9px] font-black text-center w-[15%]">Freq.</th>
+                           <th className="p-3 uppercase text-[9px] font-black w-[25%]">Data Realização</th>
+                           <th className="p-3 uppercase text-[9px] font-black text-center w-[10%]">Status</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-gray-200">
+                        {tasks.map((t, idx) => {
+                           const popMatch = t.title.match(/POP (\d+)/);
+                           const popNumber = popMatch ? popMatch[1] : '--';
+                           const titleClean = t.title.replace(/\(POP \d+\)/, '').trim();
+
+                           return (
+                              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                 <td className="p-3 text-center text-[9px] font-black text-gray-400">{popNumber}</td>
+                                 <td className="p-3 text-[10px] font-bold uppercase">{titleClean}</td>
+                                 <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency}</td>
+                                 <td className="p-3 text-[9px] font-bold text-gray-600">
+                                    {t.status === 'CONCLUÍDO' && t.lastDone
+                                       ? new Date(t.lastDone).toLocaleString('pt-BR')
+                                       : '____/____/____'}
+                                 </td>
+                                 <td className={`p-3 text-center text-[9px] font-black uppercase ${t.status === 'CONCLUÍDO' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                    {t.status === 'CONCLUÍDO' ? 'OK' : 'PENDENTE'}
                                  </td>
                               </tr>
                            );
