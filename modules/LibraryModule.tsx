@@ -53,6 +53,38 @@ const formatDate = (dateString?: string) => {
   return `${d}/${m}/${y}`;
 };
 
+interface GroupedBook {
+  title: string;
+  author: string;
+  category: string;
+  coverUrl: string;
+  synopsis: string;
+  totalCopies: number;
+  availableCopies: number;
+  locations: string[];
+  colorTag?: string;
+  bookType: string;
+  volumeNumber?: string;
+  subtitle?: string;
+  isbn?: string;
+  copies: {
+    id: string;
+    internalRegistration: string;
+    location: string;
+    availableCopies: number;
+    totalCopies: number;
+    volumeNumber?: string;
+    subtitle?: string;
+    isbn?: string;
+    category?: string;
+    coverUrl?: string;
+    synopsis?: string;
+    colorTag?: string;
+    bookType?: string;
+    registrationDate?: string;
+  }[];
+}
+
 const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai' | 'reports'>('dashboard');
 
@@ -353,6 +385,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const [selectedGroupedBook, setSelectedGroupedBook] = useState<GroupedBook | null>(null);
+
   const handleAddBookClick = () => {
     setEditingBookId(null);
     setBookForm({ 
@@ -374,6 +408,41 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       synopsis: ''
     });
     setIsBookModalOpen(true);
+  };
+
+  const handleAddCopyClick = (book: GroupedBook) => {
+    setEditingBookId(null);
+    setBookForm({
+      title: book.title,
+      author: book.author,
+      category: book.category,
+      isbn: book.isbn || '',
+      totalCopies: 1,
+      location: '',
+      estante: '',
+      prateleira: '',
+      internalRegistration: '',
+      registrationDate: new Date().toLocaleDateString('en-CA'),
+      bookType: (book.bookType as any) || 'AVULSO',
+      volumeNumber: book.volumeNumber || '',
+      subtitle: book.subtitle || '',
+      colorTag: book.colorTag || '',
+      coverUrl: book.coverUrl || '',
+      synopsis: book.synopsis || ''
+    });
+    setIsBookModalOpen(true);
+  };
+
+  const handleDirectLoanClick = (copy: any, book: GroupedBook) => {
+    setSelectedGroupedBook(book);
+    setLoanForm({
+      bookSearch: '',
+      bookId: copy.id,
+      readerSearch: '',
+      readerId: '',
+      dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
+    });
+    setIsGlobalLoanModalOpen(true);
   };
 
   const handleEditBookClick = (book: any) => {
@@ -604,6 +673,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         readerId: '',
         dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
       });
+      setSelectedGroupedBook(null);
       alert("Empréstimo registrado!");
     } catch (error) {
       console.error("Erro ao registrar empréstimo:", error);
@@ -866,14 +936,71 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     return [...existing, ...school].slice(0, 100);
   }, [readers, globalSchoolPeople, loanForm.readerSearch]);
 
+  const groupedBooks = useMemo(() => {
+    const groups: { [key: string]: GroupedBook } = {};
+
+    books.forEach(b => {
+      const key = `${b.title.trim().toLowerCase()}|||${b.author.trim().toLowerCase()}`;
+      if (!groups[key]) {
+        groups[key] = {
+          title: b.title,
+          author: b.author,
+          category: b.category,
+          coverUrl: b.coverUrl || '',
+          synopsis: b.synopsis || '',
+          totalCopies: 0,
+          availableCopies: 0,
+          locations: [],
+          colorTag: b.colorTag,
+          bookType: b.bookType || 'AVULSO',
+          volumeNumber: b.volumeNumber,
+          subtitle: b.subtitle,
+          isbn: b.isbn,
+          copies: []
+        };
+      }
+
+      const group = groups[key];
+      group.totalCopies += b.totalCopies;
+      group.availableCopies += b.availableCopies;
+
+      if (b.location && !group.locations.includes(b.location)) {
+        group.locations.push(b.location);
+      }
+
+      if (!group.coverUrl && b.coverUrl) group.coverUrl = b.coverUrl;
+      if (!group.synopsis && b.synopsis) group.synopsis = b.synopsis;
+      if (!group.isbn && b.isbn) group.isbn = b.isbn;
+
+      group.copies.push({
+        id: b.id,
+        internalRegistration: b.internalRegistration || 'N/A',
+        location: b.location,
+        availableCopies: b.availableCopies,
+        totalCopies: b.totalCopies,
+        volumeNumber: b.volumeNumber,
+        subtitle: b.subtitle,
+        isbn: b.isbn,
+        category: b.category,
+        coverUrl: b.coverUrl,
+        synopsis: b.synopsis,
+        colorTag: b.colorTag,
+        bookType: b.bookType,
+        registrationDate: b.registrationDate
+      });
+    });
+
+    return Object.values(groups);
+  }, [books]);
+
   const filteredBooksForLoan = useMemo(() => {
     if (!loanForm.bookSearch) return [];
-    return books.filter(b =>
-      b.title.toLowerCase().includes(loanForm.bookSearch.toLowerCase()) ||
-      (b.isbn && b.isbn.includes(loanForm.bookSearch)) ||
-      (b.internalRegistration && b.internalRegistration.toLowerCase().includes(loanForm.bookSearch.toLowerCase()))
+    return groupedBooks.filter(gb =>
+      gb.title.toLowerCase().includes(loanForm.bookSearch.toLowerCase()) ||
+      (gb.isbn && gb.isbn.includes(loanForm.bookSearch)) ||
+      gb.copies.some(c => c.internalRegistration && c.internalRegistration.toLowerCase().includes(loanForm.bookSearch.toLowerCase()))
     ).slice(0, 5);
-  }, [books, loanForm.bookSearch]);
+  }, [groupedBooks, loanForm.bookSearch]);
 
   const filteredBooksForReport = useMemo(() => {
     return books.filter(b => {
@@ -884,6 +1011,49 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       return matchCategory && matchLocation && matchAvailable && matchType;
     });
   }, [books, inventoryFilter]);
+
+  const groupedBooksForReport = useMemo(() => {
+    const groups: { [key: string]: GroupedBook } = {};
+
+    filteredBooksForReport.forEach(b => {
+      const key = `${b.title.trim().toLowerCase()}|||${b.author.trim().toLowerCase()}`;
+      if (!groups[key]) {
+        groups[key] = {
+          title: b.title,
+          author: b.author,
+          category: b.category,
+          coverUrl: b.coverUrl || '',
+          synopsis: b.synopsis || '',
+          totalCopies: 0,
+          availableCopies: 0,
+          locations: [],
+          colorTag: b.colorTag,
+          bookType: b.bookType || 'AVULSO',
+          volumeNumber: b.volumeNumber,
+          subtitle: b.subtitle,
+          copies: []
+        };
+      }
+
+      const group = groups[key];
+      group.totalCopies += b.totalCopies;
+      group.availableCopies += b.availableCopies;
+
+      if (b.location && !group.locations.includes(b.location)) {
+        group.locations.push(b.location);
+      }
+
+      group.copies.push({
+        id: b.id,
+        internalRegistration: b.internalRegistration || 'N/A',
+        location: b.location,
+        availableCopies: b.availableCopies,
+        totalCopies: b.totalCopies
+      });
+    });
+
+    return Object.values(groups);
+  }, [filteredBooksForReport]);
 
   const filteredLoansForReport = useMemo(() => {
     return loans.filter(l => {
@@ -1011,12 +1181,12 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {books.filter(b => 
-                b.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                b.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (b.internalRegistration && b.internalRegistration.toLowerCase().includes(searchTerm.toLowerCase()))
+              {groupedBooks.filter(gb => 
+                gb.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                gb.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                gb.copies.some(c => c.internalRegistration && c.internalRegistration.toLowerCase().includes(searchTerm.toLowerCase()))
               ).map(book => (
-                <div key={book.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-indigo-200 transition-all group flex flex-col h-full">
+                <div key={book.title + '|||' + book.author} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-indigo-200 transition-all group flex flex-col h-full">
                   <div className="w-full aspect-[3/4] bg-indigo-50 rounded-2xl mb-4 flex items-center justify-center text-indigo-200 relative overflow-hidden group/cover shadow-sm">
                     {book.coverUrl ? (
                       <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/cover:scale-110" />
@@ -1024,10 +1194,6 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       <BookOpen size={48} className="opacity-20 translate-y-2" />
                     )}
                     <div className="absolute inset-0 bg-indigo-900/0 group-hover/cover:bg-indigo-900/20 transition-all duration-300"></div>
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/cover:opacity-100 transition-all duration-300 translate-y-1 group-hover/cover:translate-y-0">
-                      <button onClick={() => handleEditBookClick(book)} title="Editar" className="p-2 bg-white text-indigo-600 rounded-lg shadow-lg hover:bg-indigo-600 hover:text-white transition-all active:scale-90"><Edit3 size={14} /></button>
-                      <button onClick={() => handleDeleteBook(book.id)} title="Excluir" className="p-2 bg-white text-red-600 rounded-lg shadow-lg hover:bg-red-600 hover:text-white transition-all active:scale-90"><Trash2 size={14} /></button>
-                    </div>
                     {book.synopsis && (
                       <div className="absolute bottom-2 left-2 opacity-0 group-hover/cover:opacity-100 transition-all duration-300 translate-y-1 group-hover/cover:translate-y-0">
                         <button 
@@ -1040,43 +1206,82 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-black text-gray-900 uppercase leading-tight line-clamp-1">{book.title}</h4>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">{book.author}</p>
-                    <div className="mt-4 p-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /><span className="text-[9px] font-black text-gray-600 uppercase">{book.location}</span></div>
-                    {book.internalRegistration && (
-                      <div className="mt-2 p-2 bg-indigo-50/50 rounded-xl border border-indigo-100/50 flex items-center gap-2">
-                        <ShieldCheck size={12} className="text-indigo-500" />
-                        <span className="text-[9px] font-black text-indigo-700 uppercase">Reg: {book.internalRegistration}</span>
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm font-black text-gray-900 uppercase leading-tight line-clamp-1">{book.title}</h4>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">{book.author}</p>
+                        </div>
+                        <button 
+                          onClick={() => handleAddCopyClick(book)} 
+                          title="Adicionar Novo Exemplar" 
+                          className="p-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all"
+                        >
+                          <Plus size={12} strokeWidth={2.5} />
+                        </button>
                       </div>
-                    )}
-                    {book.bookType === 'COLEÇÃO' && (
-                      <div className="mt-2 p-2 bg-amber-50 rounded-xl border border-amber-100 flex items-center gap-2">
-                        <Bookmark size={12} className="text-amber-600" />
-                        <span className="text-[9px] font-black text-amber-800 uppercase">
-                          Vol: {book.volumeNumber || '-'} {book.subtitle && `| ${book.subtitle}`}
-                        </span>
+
+                      <div className="mt-4 p-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
+                        <MapPin size={12} className="text-indigo-500" />
+                        <span className="text-[9px] font-black text-gray-600 uppercase line-clamp-1">{book.locations.join(' | ')}</span>
                       </div>
-                    )}
-                    {book.colorTag && (
-                      <div className="mt-2 p-2 rounded-xl border flex items-center gap-2" 
-                           style={{ 
-                             backgroundColor: `${availableColors.find(c => c.name === book.colorTag)?.hex}10`,
-                             borderColor: `${availableColors.find(c => c.name === book.colorTag)?.hex}40`
-                           }}>
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: availableColors.find(c => c.name === book.colorTag)?.hex }}></div>
-                        <span className="text-[9px] font-black uppercase" style={{ color: availableColors.find(c => c.name === book.colorTag)?.hex }}>
-                          Tag: {book.colorTag}
-                        </span>
+
+                      {book.bookType === 'COLEÇÃO' && (
+                        <div className="mt-2 p-2 bg-amber-50 rounded-xl border border-amber-100 flex items-center gap-2">
+                          <Bookmark size={12} className="text-amber-600" />
+                          <span className="text-[9px] font-black text-amber-800 uppercase">
+                            Vol: {book.volumeNumber || '-'} {book.subtitle && `| ${book.subtitle}`}
+                          </span>
+                        </div>
+                      )}
+
+                      {book.colorTag && (
+                        <div className="mt-2 p-2 rounded-xl border flex items-center gap-2" 
+                             style={{ 
+                               backgroundColor: `${availableColors.find(c => c.name === book.colorTag)?.hex}10`,
+                               borderColor: `${availableColors.find(c => c.name === book.colorTag)?.hex}40`
+                             }}>
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: availableColors.find(c => c.name === book.colorTag)?.hex }}></div>
+                          <span className="text-[9px] font-black uppercase" style={{ color: availableColors.find(c => c.name === book.colorTag)?.hex }}>
+                            Tag: {book.colorTag}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Lista de Exemplares Individuais */}
+                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Exemplares Cadastrados</span>
+                      <div className="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar pr-1">
+                        {book.copies.map(copy => (
+                          <div key={copy.id} className="p-2 bg-gray-50 hover:bg-indigo-50/30 border border-gray-100 rounded-xl flex items-center justify-between text-[10px] transition-all">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-1.5 h-1.5 rounded-full ${copy.availableCopies > 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                              <span className="font-black text-gray-700">REG: {copy.internalRegistration}</span>
+                              {copy.location && <span className="text-[8px] text-gray-400 font-bold uppercase line-clamp-1">({copy.location})</span>}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {copy.availableCopies > 0 && (
+                                <button onClick={() => handleDirectLoanClick(copy, book)} title="Emprestar" className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"><BookMarked size={12} /></button>
+                              )}
+                              <button onClick={() => handleEditBookClick(copy)} title="Editar" className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"><Edit3 size={12} /></button>
+                              <button onClick={() => handleDeleteBook(copy.id)} title="Excluir" className="p-1 text-red-600 hover:bg-red-50 rounded-md transition-colors"><Trash2 size={12} /></button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
+
                   </div>
                   <div className="mt-4 border-t border-gray-50 pt-4 text-center">
-                    <p className={`text-xs font-black uppercase ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{book.availableCopies > 0 ? `${book.availableCopies} Exemplares Disponíveis` : 'Indisponível'}</p>
+                    <p className={`text-xs font-black uppercase ${book.availableCopies > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {book.availableCopies > 0 ? `${book.availableCopies} de ${book.totalCopies} Disponíveis` : 'Todos Emprestados'}
+                    </p>
                   </div>
                 </div>
               ))}
-              {books.length === 0 && (
+              {groupedBooks.length === 0 && (
                 <div className="col-span-full py-32 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100 flex flex-col items-center">
                   <Library size={48} className="text-gray-200 mb-4" />
                   <p className="text-gray-400 font-black uppercase text-xs tracking-widest">O acervo está vazio. Comece a cadastrar as obras.</p>
@@ -1372,7 +1577,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <div className="flex gap-4 no-print">
                   <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
                     <p className="text-[8px] font-black text-gray-400 uppercase">Total de Itens Listados</p>
-                    <p className="text-xl font-black text-indigo-600">{reportType === 'inventory' ? filteredBooksForReport.length : filteredLoansForReport.length}</p>
+                    <p className="text-xl font-black text-indigo-600">{reportType === 'inventory' ? groupedBooksForReport.length : filteredLoansForReport.length}</p>
                   </div>
                   {reportType === 'inventory' && (
                     <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
@@ -1406,19 +1611,23 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
-                      {filteredBooksForReport.map(b => (
-                        <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-8 py-4 font-black text-gray-400 text-[10px]">{b.internalRegistration || '-'}</td>
+                      {groupedBooksForReport.map(b => (
+                        <tr key={b.title + '|||' + b.author} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-8 py-4 font-black text-gray-400 text-[10px]">
+                            {b.copies.map(c => c.internalRegistration).join(', ')}
+                          </td>
                           <td className="px-8 py-4">
                             <p className="font-black text-gray-900 uppercase text-xs">{b.title}</p>
                             <p className="text-[9px] text-gray-400 font-bold uppercase">{b.author}</p>
                           </td>
                           <td className="px-8 py-4 text-[10px] font-black text-indigo-400 uppercase">{b.category}</td>
-                          <td className="px-8 py-4 text-center text-[10px] font-black text-gray-600 uppercase italic">{b.location}</td>
+                          <td className="px-8 py-4 text-center text-[10px] font-black text-gray-600 uppercase italic">
+                            {b.locations.join(' | ')}
+                          </td>
                           <td className="px-8 py-4 text-center">
                             <div className="inline-flex items-center gap-1 px-3 py-1 bg-gray-50 border border-gray-100 rounded-lg">
                               <span className="text-[10px] font-black text-gray-900">{b.availableCopies}</span>
-                              <span className="text-[8px] font-black text-gray-300 uppercase">/ {b.totalCopies}</span>
+                              <span className="text-[8px] text-gray-400 font-bold">/ {b.totalCopies}</span>
                             </div>
                           </td>
                         </tr>
@@ -1789,7 +1998,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   <p className="text-[9px] text-indigo-400 font-black uppercase mt-1">Check-out de Obras</p>
                 </div>
               </div>
-              <button onClick={() => setIsGlobalLoanModalOpen(false)} className="p-2 text-gray-300 hover:text-red-500 transition-all"><X size={24} /></button>
+              <button onClick={() => { setIsGlobalLoanModalOpen(false); setSelectedGroupedBook(null); }} className="p-2 text-gray-300 hover:text-red-500 transition-all"><X size={24} /></button>
             </div>
 
             <form onSubmit={confirmLoan} className="p-10 space-y-6">
@@ -1797,7 +2006,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               {/* Localizar Obra */}
               <div className="space-y-1.5 relative">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">1. Localizar Obra</label>
-                {!loanForm.bookId ? (
+                {!selectedGroupedBook ? (
                   <>
                     <div className="relative">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
@@ -1813,15 +2022,15 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto z-20 p-2 space-y-1">
                         {filteredBooksForLoan.map(b => (
                           <button
-                            key={b.id}
+                            key={b.title + '|||' + b.author}
                             type="button"
                             disabled={b.availableCopies <= 0}
-                            onClick={() => setLoanForm({ ...loanForm, bookId: b.id, bookSearch: '' })}
+                            onClick={() => { setSelectedGroupedBook(b); setLoanForm({ ...loanForm, bookId: '', bookSearch: '' }); }}
                             className={`w-full text-left p-3 rounded-xl transition-colors flex items-center justify-between group ${b.availableCopies > 0 ? 'hover:bg-indigo-50' : 'opacity-50 cursor-not-allowed bg-red-50'}`}
                           >
                             <div>
                               <p className="text-xs font-black text-gray-900 uppercase group-hover:text-indigo-600">{b.title}</p>
-                              <p className="text-[9px] text-gray-400 font-bold uppercase">{b.author} - Loc: {b.location}</p>
+                              <p className="text-[9px] text-gray-400 font-bold uppercase">{b.author} - Loc: {b.locations.join(' | ')}</p>
                             </div>
                             <span className={`text-[9px] font-black uppercase ${b.availableCopies > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                               {b.availableCopies > 0 ? `${b.availableCopies} Disp` : 'Esgotado'}
@@ -1835,19 +2044,37 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     )}
                   </>
                 ) : (
-                  <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black">
-                        <BookOpen size={16} />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black">
+                          <BookOpen size={16} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-indigo-900 uppercase leading-none">{selectedGroupedBook.title}</p>
+                          <p className="text-[9px] text-indigo-600 font-bold uppercase mt-1">{selectedGroupedBook.author}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-black text-indigo-900 uppercase leading-none">{books.find(b => b.id === loanForm.bookId)?.title}</p>
-                        <p className="text-[9px] text-indigo-600 font-bold uppercase mt-1">{books.find(b => b.id === loanForm.bookId)?.author}</p>
-                      </div>
+                      <button type="button" onClick={() => { setSelectedGroupedBook(null); setLoanForm(prev => ({ ...prev, bookId: '' })); }} className="p-2 text-indigo-400 hover:text-red-500 rounded-lg hover:bg-white transition-all">
+                        <X size={16} />
+                      </button>
                     </div>
-                    <button type="button" onClick={() => setLoanForm({ ...loanForm, bookId: '' })} className="p-2 text-indigo-400 hover:text-red-500 rounded-lg hover:bg-white transition-all">
-                      <X size={16} />
-                    </button>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Selecione o exemplar (Nº de Registro) <span className="text-red-500">*</span></label>
+                      <select
+                        value={loanForm.bookId}
+                        onChange={e => setLoanForm({ ...loanForm, bookId: e.target.value })}
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-xs outline-none focus:bg-white transition-all"
+                      >
+                        <option value="">Selecione um exemplar...</option>
+                        {selectedGroupedBook.copies.filter(c => c.availableCopies > 0).map(c => (
+                          <option key={c.id} value={c.id}>
+                            REG: {c.internalRegistration} {c.location ? `| Loc: ${c.location}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
               </div>
