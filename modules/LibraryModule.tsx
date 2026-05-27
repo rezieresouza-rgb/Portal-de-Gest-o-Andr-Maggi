@@ -37,7 +37,8 @@ import {
   Info,
   Printer,
   FileBarChart,
-  ArrowDownToLine
+  ArrowDownToLine,
+  Trophy
 } from 'lucide-react';
 import { Book, Reader, Loan, StaffMember } from '../types';
 import { suggestBooks, fetchBookSynopsis, fetchBookCover } from '../geminiService';
@@ -358,6 +359,31 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       todayStr
     };
   }, [books, loans, readers]);
+
+  const topReaders = useMemo(() => {
+    const counts: { [key: string]: { name: string; count: number; class: string; type: string } } = {};
+    
+    loans.forEach(l => {
+      const rId = l.readerId;
+      const rName = l.readerName;
+      if (!rName) return;
+      
+      if (!counts[rName]) {
+        const readerObj = readers.find(r => r.id === rId || r.name === rName);
+        counts[rName] = {
+          name: rName,
+          count: 0,
+          class: readerObj?.class || 'Geral',
+          type: readerObj?.type || 'Aluno'
+        };
+      }
+      counts[rName].count += 1;
+    });
+
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [loans, readers]);
 
   const handleImportReader = async (person: any) => {
     if (readers.some(r => r.registration === person.reg)) {
@@ -1138,11 +1164,11 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col">
                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2 mb-8"><History className="text-indigo-600" size={20} /> Histórico Recente</h3>
-                <div className="space-y-4">
-                  {loans.slice(0, 6).map(l => (
+                <div className="space-y-4 flex-1">
+                  {loans.slice(0, 5).map(l => (
                     <div key={l.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all">
                       <div className="flex items-center gap-4 overflow-hidden">
                         <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-indigo-600 shadow-sm shrink-0"><Bookmark size={18} /></div>
@@ -1151,10 +1177,48 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                           <p className="text-[10px] text-gray-500 font-bold uppercase truncate">{l.readerName}</p>
                         </div>
                       </div>
-                      <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase ${l.status === 'ATIVO' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{l.status}</span>
+                      <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase shrink-0 ${l.status === 'ATIVO' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{l.status}</span>
                     </div>
                   ))}
                   {loans.length === 0 && <p className="text-center py-10 text-gray-300 font-black uppercase text-xs">Nenhum registro</p>}
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2 mb-8"><Trophy className="text-amber-500" size={20} /> Leitores Destaque</h3>
+                <div className="space-y-3 font-bold flex-1">
+                  {topReaders.map((r, index) => {
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const rankingColors = [
+                      'bg-amber-50/70 border-amber-200 text-amber-900',
+                      'bg-slate-50 border-slate-200 text-slate-900',
+                      'bg-orange-50/70 border-orange-200 text-orange-900'
+                    ];
+                    const isTopThree = index < 3;
+                    return (
+                      <div key={r.name} className={`flex items-center justify-between p-3 border rounded-2xl transition-all ${isTopThree ? rankingColors[index] : 'bg-gray-50/50 border-transparent hover:border-gray-100'}`}>
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${isTopThree ? 'bg-white shadow-sm border border-black/5' : 'bg-gray-200 text-gray-700'}`}>
+                            {isTopThree ? medals[index] : index + 1}
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-black uppercase truncate text-gray-950">{r.name}</p>
+                            <p className="text-[8px] font-bold uppercase truncate text-gray-400 mt-0.5">{r.class} • {r.type}</p>
+                          </div>
+                        </div>
+                        <div className="shrink-0 ml-2">
+                          <span className="text-[9px] font-black px-2 py-1 rounded-lg uppercase bg-indigo-50 text-indigo-700">
+                            {r.count} {r.count === 1 ? 'Lido' : 'Lidos'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {topReaders.length === 0 && (
+                    <div className="h-full flex items-center justify-center py-10">
+                      <p className="text-gray-300 font-black uppercase text-xs">Nenhum registro de leitura</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1162,9 +1226,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12"><BrainCircuit size={140} /></div>
                 <div className="relative z-10">
                   <h3 className="text-2xl font-black uppercase tracking-widest mb-4">Bibliotecário IA</h3>
-                  <p className="text-indigo-200 text-sm leading-relaxed mb-8 italic">"O índice de leitura do 9º Ano B aumentou 12% este mês. Sugiro destacar obras de Ficção Científica no mural de entrada."</p>
+                  <p className="text-indigo-200 text-xs leading-relaxed mb-8 italic">"O índice de leitura do 9º Ano B aumentou 12% este mês. Sugiro destacar obras de Ficção Científica no mural de entrada."</p>
                 </div>
-                <button onClick={() => setActiveTab('ai')} className="relative z-10 w-full py-4 bg-white text-indigo-950 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-indigo-50 transition-all">Plano de Incentivo à Leitura</button>
+                <button onClick={() => setActiveTab('ai')} className="relative z-10 w-full py-4 bg-white text-indigo-950 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-indigo-50 transition-all mt-auto">Plano de Incentivo à Leitura</button>
               </div>
             </div>
           </div>
