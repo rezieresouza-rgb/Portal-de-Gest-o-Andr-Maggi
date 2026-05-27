@@ -76,22 +76,53 @@ const BuscaAtivaStudentManager: React.FC = () => {
   }, []);
 
   const fetchAttendance = async () => {
-    // Fetch all attendance records
-    // Optimization: In a real app, we would aggregate on server or use specific query
-    // For now, fetching all is acceptable for 450 students * ~N days
-    const { data, error } = await supabase
-      .from('class_attendance_students')
-      .select('student_id, is_present');
+    try {
+      // 1. Get the total count of attendance records
+      const { count, error: countError } = await supabase
+        .from('class_attendance_students')
+        .select('*', { count: 'exact', head: true });
 
-    if (data) {
+      if (countError) throw countError;
+
+      const total = count || 0;
+      const pageSize = 1000;
+      const pageCount = Math.ceil(total / pageSize);
+      const promises = [];
+
+      // 2. Queue up all ranges in parallel
+      for (let i = 0; i < pageCount; i++) {
+        const start = i * pageSize;
+        const end = start + pageSize - 1;
+        promises.push(
+          supabase
+            .from('class_attendance_students')
+            .select('student_id, is_present')
+            .range(start, end)
+        );
+      }
+
+      // 3. Resolve all promises
+      const results = await Promise.all(promises);
       const stats: Record<string, { total: number, present: number }> = {};
-      data.forEach(record => {
-        const sid = record.student_id;
-        if (!stats[sid]) stats[sid] = { total: 0, present: 0 };
-        stats[sid].total++;
-        if (record.is_present) stats[sid].present++;
+
+      results.forEach(({ data, error }) => {
+        if (error) {
+          console.error("Error fetching attendance page:", error);
+          return;
+        }
+        if (data) {
+          data.forEach(record => {
+            const sid = record.student_id;
+            if (!stats[sid]) stats[sid] = { total: 0, present: 0 };
+            stats[sid].total++;
+            if (record.is_present) stats[sid].present++;
+          });
+        }
       });
+
       setAttendanceStats(stats);
+    } catch (e) {
+      console.error("Error in fetchAttendance:", e);
     }
   };
 
@@ -115,6 +146,7 @@ const BuscaAtivaStudentManager: React.FC = () => {
           studentName: r.student_name || 'Desconhecido',
           date: r.date,
           type: r.type,
+          priority: r.priority || 'MÉDIA',
           reason: r.reason,
           status: r.status,
           responsible: r.responsible,

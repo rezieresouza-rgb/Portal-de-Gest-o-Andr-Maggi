@@ -50,35 +50,71 @@ const BuscaAtivaReports: React.FC = () => {
   const fetchReportData = async () => {
     setLoading(true);
     try {
-      // 1. Get absences from class_attendance_students
-      let query = supabase
+      // 1. Get count of absences first
+      let countQuery = supabase
         .from('class_attendance_students')
-        .select(`
-          student_id,
-          student_name,
-          is_present,
-          students (
-            contact_phone
-          ),
-          class_attendance_records!inner (
-            date,
-            classroom_name
-          )
-        `)
+        .select('student_id, class_attendance_records!inner(date)', { count: 'exact', head: true })
         .eq('is_present', false)
         .gte('class_attendance_records.date', dateRange.start)
         .lte('class_attendance_records.date', dateRange.end);
 
       if (selectedClass !== 'TODAS') {
-        query = query.eq('class_attendance_records.classroom_name', selectedClass);
+        countQuery = countQuery.eq('class_attendance_records.classroom_name', selectedClass);
       }
 
-      const { data: absences, error: absError } = await query;
+      const { count, error: countError } = await countQuery;
+      if (countError) throw countError;
 
-      if (absError) throw absError;
+      const total = count || 0;
+      const pageSize = 1000;
+      const pageCount = Math.ceil(total / pageSize);
+      const promises = [];
+
+      for (let i = 0; i < pageCount; i++) {
+        const start = i * pageSize;
+        const end = start + pageSize - 1;
+
+        let query = supabase
+          .from('class_attendance_students')
+          .select(`
+            student_id,
+            student_name,
+            is_present,
+            students (
+              contact_phone
+            ),
+            class_attendance_records!inner (
+              date,
+              classroom_name
+            )
+          `)
+          .eq('is_present', false)
+          .gte('class_attendance_records.date', dateRange.start)
+          .lte('class_attendance_records.date', dateRange.end)
+          .range(start, end);
+
+        if (selectedClass !== 'TODAS') {
+          query = query.eq('class_attendance_records.classroom_name', selectedClass);
+        }
+
+        promises.push(query);
+      }
+
+      const results = await Promise.all(promises);
+      const absences: any[] = [];
+      
+      results.forEach(({ data, error }) => {
+        if (error) {
+          console.error("Error fetching report page:", error);
+          return;
+        }
+        if (data) {
+          absences.push(...data);
+        }
+      });
 
       // 2. Aggregate Data
-      const rankingMap: Record<string, { count: number, class: string }> = {};
+      const rankingMap: Record<string, { count: number; class: string; contact_phone?: string }> = {};
       
       absences?.forEach(a => {
         rankingMap[a.student_name] = {

@@ -84,40 +84,76 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
   const fetchDashboardData = async () => {
     setIsProcessing(true);
     try {
-      const { data: attendanceData } = await supabase
+      // 1. Fetch Today's Absentees using optimized server-side query
+      const today = new Date().toLocaleDateString('sv-SE');
+      const { data: todayData, error: todayError } = await supabase
         .from('class_attendance_students')
-        .select('student_id, student_name, is_present, class_attendance_records(classroom_name, date)');
+        .select('student_id, student_name, class_attendance_records!inner(classroom_name, date)')
+        .eq('is_present', false)
+        .eq('class_attendance_records.date', today);
 
-      // 2. Fetch Referrals
+      if (todayError) {
+        console.error("Error fetching today's absentees:", todayError);
+      }
+
+      const dailyAbsences: Record<string, any> = {};
+      if (todayData) {
+        todayData.forEach(r => {
+          const sid = r.student_id;
+          dailyAbsences[sid] = {
+            id: sid,
+            name: r.student_name,
+            class: (r.class_attendance_records as any)?.classroom_name
+          };
+        });
+      }
+      setTodayAbsentees(Object.values(dailyAbsences));
+
+      // 2. Fetch all attendance history in parallel pages for overall stats
+      const { count, error: countError } = await supabase
+        .from('class_attendance_students')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) throw countError;
+
+      const total = count || 0;
+      const pageSize = 1000;
+      const pageCount = Math.ceil(total / pageSize);
+      const promises = [];
+
+      for (let i = 0; i < pageCount; i++) {
+        const start = i * pageSize;
+        const end = start + pageSize - 1;
+        promises.push(
+          supabase
+            .from('class_attendance_students')
+            .select('student_id, is_present')
+            .range(start, end)
+        );
+      }
+
+      const results = await Promise.all(promises);
+      const studentStats: Record<string, { total: number, present: number }> = {};
+
+      results.forEach(({ data, error }) => {
+        if (error) {
+          console.error("Error fetching attendance history page:", error);
+          return;
+        }
+        if (data) {
+          data.forEach(r => {
+            const sid = r.student_id;
+            if (!studentStats[sid]) studentStats[sid] = { total: 0, present: 0 };
+            studentStats[sid].total++;
+            if (r.is_present) studentStats[sid].present++;
+          });
+        }
+      });
+
+      // 3. Fetch Referrals
       const { data: referralsData } = await supabase
         .from('referrals')
         .select('*');
-
-      // Process Attendance Stats
-      const studentStats: Record<string, { total: number, present: number }> = {};
-      const today = new Date().toLocaleDateString('sv-SE');
-      const dailyAbsences: Record<string, any> = {};
-
-      if (attendanceData) {
-        attendanceData.forEach(r => {
-          const sid = r.student_id;
-          if (!studentStats[sid]) studentStats[sid] = { total: 0, present: 0 };
-          studentStats[sid].total++;
-          if (r.is_present) studentStats[sid].present++;
-
-          // Check if absent today
-          const recordDate = (r.class_attendance_records as any)?.date;
-          if (!r.is_present && recordDate === today) {
-            dailyAbsences[sid] = {
-              id: sid,
-              name: r.student_name,
-              class: (r.class_attendance_records as any)?.classroom_name
-            };
-          }
-        });
-      }
-
-      setTodayAbsentees(Object.values(dailyAbsences));
 
       let critical = 0;
       const criticalList: any[] = [];

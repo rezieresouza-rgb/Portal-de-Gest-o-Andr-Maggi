@@ -46,41 +46,74 @@ const BuscaAtivaFICAI: React.FC = () => {
 
    const fetchRiskStudents = async () => {
       setLoading(true);
-      // Fetch attendance to find at-risk students
-      const { data: attendanceData } = await supabase
-         .from('class_attendance_students')
-         .select('student_id, is_present');
+      try {
+         // 1. Get the total count of attendance records
+         const { count, error: countError } = await supabase
+            .from('class_attendance_students')
+            .select('*', { count: 'exact', head: true });
 
-      const stats: Record<string, { total: number, present: number }> = {};
-      if (attendanceData) {
-         attendanceData.forEach(r => {
-            const sid = r.student_id;
-            if (!stats[sid]) stats[sid] = { total: 0, present: 0 };
-            stats[sid].total++;
-            if (r.is_present) stats[sid].present++;
-         });
-      }
+         if (countError) throw countError;
 
-      const atRisk: any[] = [];
-      allDbStudents.forEach(s => {
-         const studentId = s.registration_number || s.id;
-         const stat = stats[studentId] || { total: 0, present: 0 };
-         const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
+         const total = count || 0;
+         const pageSize = 1000;
+         const pageCount = Math.ceil(total / pageSize);
+         const promises = [];
 
-         if (percent < 90) { // Limit for FICAI usually < 85% or 5 consecutive
-            atRisk.push({
-               id: studentId,
-               name: s.name,
-               class: s.class,
-               absences: stat.total - stat.present,
-               guardian: s.guardian_name || 'NÃO INFORMADO',
-               phone: s.contact_phone || 'NÃO INFORMADO'
-            });
+         // 2. Queue up all ranges in parallel
+         for (let i = 0; i < pageCount; i++) {
+            const start = i * pageSize;
+            const end = start + pageSize - 1;
+            promises.push(
+               supabase
+                  .from('class_attendance_students')
+                  .select('student_id, is_present')
+                  .range(start, end)
+            );
          }
-      });
 
-      setStudentsAtRisk(atRisk.sort((a, b) => (a.name || "").localeCompare(b.name || "")));
-      setLoading(false);
+         // 3. Resolve all promises
+         const results = await Promise.all(promises);
+         const stats: Record<string, { total: number, present: number }> = {};
+
+         results.forEach(({ data, error }) => {
+            if (error) {
+               console.error("Error fetching FICAI attendance page:", error);
+               return;
+            }
+            if (data) {
+               data.forEach(r => {
+                  const sid = r.student_id;
+                  if (!stats[sid]) stats[sid] = { total: 0, present: 0 };
+                  stats[sid].total++;
+                  if (r.is_present) stats[sid].present++;
+               });
+            }
+         });
+
+         const atRisk: any[] = [];
+         allDbStudents.forEach(s => {
+            const studentId = s.registration_number || s.id;
+            const stat = stats[studentId] || { total: 0, present: 0 };
+            const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
+
+            if (percent < 90) { // Limit for FICAI usually < 85% or 5 consecutive
+               atRisk.push({
+                  id: studentId,
+                  name: s.name,
+                  class: s.class,
+                  absences: stat.total - stat.present,
+                  guardian: s.guardian_name || 'NÃO INFORMADO',
+                  phone: s.contact_phone || 'NÃO INFORMADO'
+               });
+            }
+         });
+
+         setStudentsAtRisk(atRisk.sort((a, b) => (a.name || "").localeCompare(b.name || "")));
+      } catch (e) {
+         console.error("Error in fetchRiskStudents:", e);
+      } finally {
+         setLoading(false);
+      }
    };
 
    const handlePrint = async () => {
