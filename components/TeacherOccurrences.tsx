@@ -31,6 +31,111 @@ const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
 import { User as UserType } from '../types';
 
+interface DemeritOption {
+   category: string;
+   severity: 'LEVE' | 'MÉDIA' | 'GRAVE';
+   points: number;
+}
+
+const DEMERIT_OPTIONS: DemeritOption[] = [
+   // Faltas Leves (1 a 26) - 0.2 pts
+   { category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme', severity: 'LEVE', points: 0.2 },
+   { category: '2. Apresentar-se com barba ou bigode sem fazer', severity: 'LEVE', points: 0.2 },
+   { category: '3. Comparecer à EECM com cabelo em desalinho ou fora do padrão estabelecido pelas diretrizes dos Uniformes', severity: 'LEVE', points: 0.2 },
+   { category: '4. Chegar atrasado a EECM para o início das aulas, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
+   { category: '5. Comparecer a EECM sem levar o material necessário', severity: 'LEVE', points: 0.2 },
+   { category: '6. Adentrar ou permanecer em qualquer dependência da EECM, sem autorização', severity: 'LEVE', points: 0.2 },
+   { category: '7. Consumir alimentos, balas, doces líquidos ou mascar chicletes durante a aula, instrução, treinamento, formatura, atividade escolar, e nas dependências da EECM, salvo quando devidamente autorizado', severity: 'LEVE', points: 0.2 },
+   { category: '8. Conversar ou se mexer quando estiver em forma', severity: 'LEVE', points: 0.2 },
+   { category: '9. Deixar de entregar à Monitoria, Secretaria ou à Coordenação, qualquer objeto que não lhe pertença que tenha encontrado na EECM', severity: 'LEVE', points: 0.2 },
+   { category: '10. Deixar de retribuir cumprimentos ou de prestar sinais de respeito regulamentares, previstos no Manual do Aluno', severity: 'LEVE', points: 0.2 },
+   { category: '11. Deixar material escolar, objetos ou peças de uniforme em locais inapropriados dentro ou fora da unidade escolar', severity: 'LEVE', points: 0.2 },
+   { category: '12. Descartar papéis, restos de comida, embalagens ou qualquer objeto no chão ou fora de locais apropriados', severity: 'LEVE', points: 0.2 },
+   { category: '13. Dobrar qualquer peça de uniforme para diminuir seu tamanho, desfigurando sua originalidade', severity: 'LEVE', points: 0.2 },
+   { category: '14. Debruçar-se sobre a carteira e dormir durante o horário das aulas ou instruções', severity: 'LEVE', points: 0.2 },
+   { category: '15. Executar movimentos de ordem unida de forma displicente ou desatenciosa', severity: 'LEVE', points: 0.2 },
+   { category: '16. Fazer ou provocar excessivo barulho em qualquer dependência da EECM, durante o horário de aula', severity: 'LEVE', points: 0.2 },
+   { category: '17. Não levar ao conhecimento de autoridade competente falta ou irregularidade que presenciar ou de que tiver ciência', severity: 'LEVE', points: 0.2 },
+   { category: '18. Perturbar o estudo do(s) colega(s), com ruídos ou brincadeiras', severity: 'LEVE', points: 0.2 },
+   { category: '19. Utilizar-se, na sala, de qualquer publicação estranha a sua atividade escolar, salvo quando autorizado', severity: 'LEVE', points: 0.2 },
+   { category: '20. Retardar ou contribuir para o atraso da execução de qualquer atividade sem justo motivo', severity: 'LEVE', points: 0.2 },
+   { category: '21. Sentar-se no chão, atentando contra a postura e compostura, estando uniformizado, exceto quando em aula de educação Física', severity: 'LEVE', points: 0.2 },
+   { category: '22. Utilizar qualquer tipo de jogo, brinquedo, figurinhas, coleções no interior da EECM', severity: 'LEVE', points: 0.2 },
+   { category: '23. Usar, a aluna, piercings, brinco fora do padrão estabelecido, mais de um brinco em cada orelha, alargador ou similares, quando uniformizado, durante a aula, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
+   { category: '24. Usar, o aluno, piercings, brinco, alargador ou similares, quando uniformizado, durante a aula, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
+   { category: '25. Usar, quando uniformizado, boné, capuz ou outros adornos, durante a atividade escolar', severity: 'LEVE', points: 0.2 },
+   { category: '26. Ficar na sala de aula durante os intervalos e as formaturas diárias', severity: 'LEVE', points: 0.2 },
+
+   // Faltas Médias (27 a 62) - 0.5 pts
+   { category: '27. Atrasar ou deixar de atender ao chamado da Diretoria, coordenação, Oficial de Gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores no exercício de sua função', severity: 'MÉDIA', points: 0.5 },
+   { category: '28. Deixar de comparecer a qualquer atividade extraclasse para a qual tenha sido designado, exceto quando devidamente justificado', severity: 'MÉDIA', points: 0.5 },
+   { category: '29. Deixar de comparecer às atividades escolares, formaturas, ou delas se ausentar, sem autorização', severity: 'MÉDIA', points: 0.5 },
+   { category: '30. Deixar de cumprir ou esquivar-se de medidas disciplinares impostas pelo Gestor Educacional-Militar', severity: 'MÉDIA', points: 0.5 },
+   { category: '31. Deixar de devolver à EECM, dentro do prazo estipulado, documentos devidamente assinados pelo seu responsável', severity: 'MÉDIA', points: 0.5 },
+   { category: '32. Deixar de devolver, no prazo fixado, livros da biblioteca ou outros materiais pertencentes às EECM', severity: 'MÉDIA', points: 0.5 },
+   { category: '33. Deixar de entregar ao pai ou responsável, documento que lhe foi encaminhado pela EECM', severity: 'MÉDIA', points: 0.5 },
+   { category: '34. Deixar de executar tarefas atribuídas da Diretoria, coordenação, Oficial de Gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores no exercício de sua função', severity: 'MÉDIA', points: 0.5 },
+   { category: '35. Deixar de zelar por sua apresentação pessoal', severity: 'MÉDIA', points: 0.5 },
+   { category: '36. Dirigir memoriais ou petições a qualquer autoridade, sobre assuntos da alçada da Diretoria e do Oficial de Gestão Educacional-Militar', severity: 'MÉDIA', points: 0.5 },
+   { category: '37. Entrar ou sair da EECM por locais não permitidos', severity: 'MÉDIA', points: 0.5 },
+   { category: '38. Espalhar boatos ou notícias tendenciosas por qualquer meio', severity: 'MÉDIA', points: 0.5 },
+   { category: '39. Tocar a sirene, sem ordem para tal', severity: 'MÉDIA', points: 0.5 },
+   { category: '40. Fumar dentro ou nas imediações da EECM ou quando uniformizado', severity: 'MÉDIA', points: 0.5 },
+   { category: '41. Ingressar ou sair da EECM sem estar com o uniforme regulamentar, bem como trocar de roupa (trajes civis) dentro da EECM ou em suas mediações', severity: 'MÉDIA', points: 0.5 },
+   { category: '42. Ler ou distribuir, dentro da EECM, publicações estampas ou jornais que atentem contra a disciplina, a moral e a ordem pública', severity: 'MÉDIA', points: 0.5 },
+   { category: '43. Manter contato físico que denote envolvimento de cunho amoroso (namoro, beijos, etc.) quando devidamente uniformizado, dentro da EECM ou fora dele', severity: 'MÉDIA', points: 0.5 },
+   { category: '44. Não zelar pelo nome da Instituição que representa, deixando de portar-se adequadamente em qualquer ambiente, quando uniformizado ou em atividades relacionadas a EECM', severity: 'MÉDIA', points: 0.5 },
+   { category: '45. Negar-se a colaborar ou participar nos eventos, formaturas, solenidades, desfiles oficiais da EECM', severity: 'MÉDIA', points: 0.5 },
+   { category: '46. Ofender a moral de colegas ou de qualquer membro da Comunidade Escolar por atos, gestos ou palavras', severity: 'MÉDIA', points: 0.5 },
+   { category: '47. Portar-se de forma inconveniente em sala de aula ou outro local de instrução/recreação, bem como transportes de uso coletivo', severity: 'MÉDIA', points: 0.5 },
+   { category: '48. Portar-se de maneira desrespeitosa ou inconveniente nos eventos sociais ou esportivos, promovidos ou com a participação da EECM ou fora dela', severity: 'MÉDIA', points: 0.5 },
+   { category: '49. Proferir palavras de baixo calão, incompatíveis com as normas da boa educação, ou grafá-las em qualquer lugar', severity: 'MÉDIA', points: 0.5 },
+   { category: '50. Propor ou aceitar transação pecuniária de qualquer natureza, no interior da EECM, sem a devida autorização', severity: 'MÉDIA', points: 0.5 },
+   { category: '51. Provocar ou disseminar a discórdia entre colegas', severity: 'MÉDIA', points: 0.5 },
+   { category: '52. Publicar ou contribuir para que sejam publicadas mensagens, fotos, vídeos ou qualquer outro documento, na Internet ou qualquer outro meio de comunicação, que possam expor a integrante da EECM', severity: 'MÉDIA', points: 0.5 },
+   { category: '53. Retirar ou tentar retirar objeto, de qualquer dependência da EECM, ou mesmo deles servir-se, sem ordem do responsável e/ou do proprietário', severity: 'MÉDIA', points: 0.5 },
+   { category: '54. Sair de forma sem autorização', severity: 'MÉDIA', points: 0.5 },
+   { category: '55. Sair, entrar ou permanecer na sala de aula sem permissão', severity: 'MÉDIA', points: 0.5 },
+   { category: '56. Ser retirado, por mau comportamento, de sala de aula ou qualquer ambiente em que esteja sendo realizada atividade', severity: 'MÉDIA', points: 0.5 },
+   { category: '57. Simular doença para esquivar-se ao atendimento de obrigações e de atividades escolares', severity: 'MÉDIA', points: 0.5 },
+   { category: '58. Tomar parte em jogos de azar ou em apostas na unidade escolar ou fora dela, uniformizados ou não', severity: 'MÉDIA', points: 0.5 },
+   { category: '59. Usar as instalações ou equipamentos esportivos do EECM, sem uniformes adequados, ou sem autorização', severity: 'MÉDIA', points: 0.5 },
+   { category: '60. Usar o uniforme ou o nome do EECM em ambiente inapropriado', severity: 'MÉDIA', points: 0.5 },
+   { category: '61. Utilizar, sem autorização, telefones celulares ou quaisquer aparelhos eletrônicos ou não, durante as atividades escolares', severity: 'MÉDIA', points: 0.5 },
+   { category: '62. Usar indevidamente distintivos ou insígnias', severity: 'MÉDIA', points: 0.5 },
+
+   // Faltas Graves (63 a 91) - 1.0 pts
+   { category: '63. Assinar pelo responsável, documento que deva ser entregue à unidade escolar', severity: 'GRAVE', points: 1.0 },
+   { category: '64. Causar danos ao patrimônio da unidade escolar', severity: 'GRAVE', points: 1.0 },
+   { category: '65. Causar ou contribuir para a ocorrência de acidentes de qualquer natureza', severity: 'GRAVE', points: 1.0 },
+   { category: '66. Comunicar-se com outro aluno ou utilizar-se de qualquer meio não permitido durante qualquer instrumento de avaliação', severity: 'GRAVE', points: 1.0 },
+   { category: '67. Denegrir o nome da EECM e/ou de qualquer de seus membros através de procedimentos desrespeitosos, seja por palavras, gestos, meio virtual ou outros', severity: 'GRAVE', points: 1.0 },
+   { category: '68. Desrespeitar, desobedecer ou desafiar a Diretoria, coordenação, Oficial de gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores unidade escolar', severity: 'GRAVE', points: 1.0 },
+   { category: '69. Divulgar, ou concorrer para que isso aconteça, qualquer imagem ou matéria que induza a apologia às drogas, à violência e/ou pornografia', severity: 'GRAVE', points: 1.0 },
+   { category: '70. Entrar na unidade escolar, ou dela se ausentar, sem autorização', severity: 'GRAVE', points: 1.0 },
+   { category: '71. Extraviar documentos que estejam sob sua responsabilidade', severity: 'GRAVE', points: 1.0 },
+   { category: '72. Faltar com a verdade e/ou utilizar-se do anonimato para a prática de qualquer falta disciplinar', severity: 'GRAVE', points: 1.0 },
+   { category: '73. Fazer uso, portar, distribuir, estar sob ação ou induzir outrem ao uso de bebida alcoólica, entorpecentes, tóxicos ou produtos alucinógenos, no interior da EECM, em suas imediações estando ou não uniformizado', severity: 'GRAVE', points: 1.0 },
+   { category: '74. Hastear ou arriar bandeiras e estandartes, sem autorização', severity: 'GRAVE', points: 1.0 },
+   { category: '75. Instigar colegas a cometer faltas disciplinares e/ou ações delituosas que comprometam o bom nome da EECM', severity: 'GRAVE', points: 1.0 },
+   { category: '76. Manter contato físico com denotação libidinosa no ambiente da EECM ou fora dela', severity: 'GRAVE', points: 1.0 },
+   { category: '77. Obter ou fazer uso de imagens, vídeos, áudios ou de qualquer tipo de publicação difamatória contra qualquer membro da Comunidade Escolar', severity: 'GRAVE', points: 1.0 },
+   { category: '78. Ofender membros da Comunidade Escolar com a prática de Bullying e Cyberbullying', severity: 'GRAVE', points: 1.0 },
+   { category: '79. Pichar ou causar qualquer poluição visual ou sonora dentro e nas proximidades da EECM', severity: 'GRAVE', points: 1.0 },
+   { category: '80. Portar objetos que ameacem a segurança individual e/ou da coletividade', severity: 'GRAVE', points: 1.0 },
+   { category: '81. Praticar atos contrários ao culto e ao respeito aos símbolos nacionais', severity: 'GRAVE', points: 1.0 },
+   { category: '82. Promover ou tomar parte de qualquer manifestação coletiva que venha a macular o nome da EECM e/ou que prejudique o bom andamento das aulas e/ou avaliações', severity: 'GRAVE', points: 1.0 },
+   { category: '83. Promover trote de qualquer natureza', severity: 'GRAVE', points: 1.0 },
+   { category: '84. Promover, incitar ou envolver-se em rixa, inclusive luta corporal, dentro ou fora da EECM, estando ou não uniformizado', severity: 'GRAVE', points: 1.0 },
+   { category: '85. Provocar ou tomar parte, uniformizado ou estando na EECM, em manifestações de natureza política', severity: 'GRAVE', points: 1.0 },
+   { category: '86. Rasurar, violar ou alterar documento ou o conteúdo dos mesmos', severity: 'GRAVE', points: 1.0 },
+   { category: '87. Representar a EECM e/ou por ela tomar compromisso, sem estar para isso autorizado', severity: 'GRAVE', points: 1.0 },
+   { category: '88. Ter em seu poder, introduzir, ler ou distribuir, dentro da EECM, cartazes, jornais ou publicações que atentem contra a disciplina e/ou o moral ou de cunho político-partidário', severity: 'GRAVE', points: 1.0 },
+   { category: '89. Utilizar ou subtrair indevidamente objetos ou valores alheios', severity: 'GRAVE', points: 1.0 },
+   { category: '90. Utilizar-se de processos fraudulentos na realização de trabalhos pedagógicos', severity: 'GRAVE', points: 1.0 },
+   { category: '91. Utilizar-se indevidamente e/ou causar avaria e/ou destruição do patrimônio pertencente à EECM', severity: 'GRAVE', points: 1.0 }
+];
+
 interface TeacherOccurrencesProps {
    user: UserType;
 }
@@ -47,6 +152,12 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [printingOccurrence, setPrintingOccurrence] = useState<ClassroomOccurrence | null>(null);
    // Multi-student selection
    const [selectedStudents, setSelectedStudents] = useState<{ name: string; class: string }[]>([]);
+
+   // Cívico-Militar integration states
+   const [linkDemerit, setLinkDemerit] = useState(false);
+   const [demeritSearchTerm, setDemeritSearchTerm] = useState('');
+   const [selectedDemerit, setSelectedDemerit] = useState<DemeritOption | null>(null);
+   const [showDemeritDropdown, setShowDemeritDropdown] = useState(false);
 
    const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean }>({
       date: new Date().toLocaleDateString('sv-SE'),
@@ -121,9 +232,28 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       setSearchTerm('');
       setSelectedStudents([]);
       setEditingOccurrenceId(null);
+      setLinkDemerit(false);
+      setDemeritSearchTerm('');
+      setSelectedDemerit(null);
+      setShowDemeritDropdown(false);
    };
 
    const handleEdit = (occ: ClassroomOccurrence) => {
+      let cleanDescription = occ.description;
+      let matchedDemerit: DemeritOption | null = null;
+      let shouldLink = false;
+
+      const match = occ.description.match(/^\[DEMÉRITO CÍVICO-MILITAR:\s*(.+?)\](?:\s*\n+)?([\s\S]*)$/);
+      if (match) {
+         const categoryText = match[1].trim();
+         cleanDescription = match[2].trim();
+         const found = DEMERIT_OPTIONS.find(o => o.category === categoryText);
+         if (found) {
+            matchedDemerit = found;
+            shouldLink = true;
+         }
+      }
+
       setForm({
          date: occ.date,
          teacherName: occ.teacherName,
@@ -131,12 +261,15 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          studentName: occ.studentName,
          type: occ.type,
          severity: occ.severity,
-         description: occ.description,
+         description: cleanDescription,
          notifiedParents: occ.notifiedParents || false,
          forwardToPsychosocial: false // Do not resend on edit
       });
       setSelectedStudents([{ name: occ.studentName, class: occ.className }]);
       setSearchTerm('');
+      setLinkDemerit(shouldLink);
+      setSelectedDemerit(matchedDemerit);
+      setDemeritSearchTerm(matchedDemerit ? matchedDemerit.category : '');
       setEditingOccurrenceId(occ.id);
       setIsModalOpen(true);
    };
@@ -219,7 +352,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       setSelectedStudents(prev => prev.filter(s => s.name !== name));
    };
 
-    const syncOccurrenceToCivicoMilitar = (
+   const syncOccurrenceToCivicoMilitar = (
       studentName: string,
       className: string,
       teacherName: string,
@@ -229,7 +362,9 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       date: string,
       occurrenceId: string,
       isDelete: boolean = false,
-      isUpdate: boolean = false
+      isUpdate: boolean = false,
+      linkedDemeritCategory?: string,
+      linkedDemeritPoints?: number
    ) => {
       try {
          const savedScores = localStorage.getItem('civico_militar_student_scores_v1');
@@ -278,11 +413,29 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
             }));
          }
 
+         let finalDemeritCategory = linkedDemeritCategory;
+         let finalPoints = linkedDemeritPoints;
+
+         // Try to parse from description if not explicitly passed (e.g. on delete or update from old instances)
+         const match = description.match(/^\[DEMÉRITO CÍVICO-MILITAR:\s*(.+?)\](?:\s*\n+)?([\s\S]*)$/);
+         if (match) {
+            const cat = match[1].trim();
+            finalDemeritCategory = cat;
+            const found = DEMERIT_OPTIONS.find(o => o.category === cat);
+            if (found) {
+               finalPoints = found.points;
+            }
+         }
+
+         const cleanObs = match ? match[2].trim() : description;
+
          // Determine points and behavior type
          let points = 0.2;
          const isMerit = type === 'ELOGIO';
          if (isMerit) {
             points = 0.3; // Merit default
+         } else if (finalPoints !== undefined) {
+            points = finalPoints;
          } else {
             switch (severity) {
                case 'CRÍTICA':
@@ -357,10 +510,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   occurrences[occIndex] = {
                      ...oldOcc,
                      type: isMerit ? 'MERIT' : 'DEMERIT',
-                     category: `[DOCENTE] Ocorrência: ${type} (${severity})`,
+                     category: finalDemeritCategory || `[DOCENTE] Ocorrência: ${type} (${severity})`,
                      points,
                      date,
-                     observations: description,
+                     observations: cleanObs,
                      responsible: teacherName
                   };
 
@@ -375,10 +528,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                const newOcc = {
                   id: occurrenceId,
                   type: isMerit ? 'MERIT' : 'DEMERIT',
-                  category: `[DOCENTE] Ocorrência: ${type} (${severity})`,
+                  category: finalDemeritCategory || `[DOCENTE] Ocorrência: ${type} (${severity})`,
                   points,
                   date,
-                  observations: description,
+                  observations: cleanObs,
                   responsible: teacherName
                };
 
@@ -414,6 +567,11 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       setIsSaving(true);
       const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+      let finalDescription = form.description;
+      if (form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit) {
+         finalDescription = `[DEMÉRITO CÍVICO-MILITAR: ${selectedDemerit.category}]\n\n${form.description}`;
+      }
+
       try {
          if (editingOccurrenceId) {
             // Editing: update single record
@@ -426,7 +584,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                student_name: student.name,
                category: form.type,
                severity: form.severity,
-               description: form.description
+               description: finalDescription
             };
             const { error } = await supabase.from('occurrences').update(payload).eq('id', editingOccurrenceId).select();
             if (error) throw error;
@@ -437,11 +595,13 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                form.teacherName,
                form.type,
                form.severity,
-               form.description,
+               finalDescription,
                form.date,
                editingOccurrenceId,
                false,
-               true // isUpdate
+               true, // isUpdate
+               form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.category : undefined,
+               form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.points : undefined
             );
          } else {
             // Creating: one occurrence per selected student
@@ -454,7 +614,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   student_name: student.name,
                   category: form.type,
                   severity: form.severity,
-                  description: form.description,
+                  description: finalDescription,
                   status: 'REGISTRADO',
                   location: 'SALA DE AULA'
                };
@@ -469,9 +629,13 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      form.teacherName,
                      form.type,
                      form.severity,
-                     form.description,
+                     finalDescription,
                      form.date,
-                     createdOcc.id
+                     createdOcc.id,
+                     false,
+                     false,
+                     form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.category : undefined,
+                     form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.points : undefined
                   );
                }
 
@@ -797,11 +961,130 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                               </div>
                               <div className="space-y-1.5">
                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Severidade</label>
-                                 <select value={form.severity} onChange={e => setForm({ ...form, severity: e.target.value as any })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white transition-all">
+                                 <select 
+                                    value={form.severity} 
+                                    disabled={linkDemerit}
+                                    onChange={e => setForm({ ...form, severity: e.target.value as any })} 
+                                    className={`w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white transition-all ${linkDemerit ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`}
+                                 >
                                     {SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
                                  </select>
                               </div>
                            </div>
+
+                           {form.type === 'DISCIPLINAR' && (
+                              <div className="p-6 bg-red-50/50 border border-red-100/60 rounded-[2rem] space-y-4">
+                                 <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                       <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center text-white">
+                                          <ShieldCheckIcon size={18} strokeWidth={2.5} />
+                                       </div>
+                                       <div>
+                                          <span className="text-xs font-black text-gray-900 uppercase tracking-tight">Regulamento Cívico-Militar</span>
+                                          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Vincular infração ao comportamento militar</p>
+                                       </div>
+                                    </div>
+                                    <button
+                                       type="button"
+                                       onClick={() => {
+                                          const nextVal = !linkDemerit;
+                                          setLinkDemerit(nextVal);
+                                          if (!nextVal) {
+                                             setSelectedDemerit(null);
+                                             setDemeritSearchTerm('');
+                                          }
+                                       }}
+                                       className={`w-12 h-7 rounded-full transition-all duration-300 relative ${linkDemerit ? 'bg-red-600' : 'bg-gray-200'}`}
+                                    >
+                                       <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${linkDemerit ? 'left-6' : 'left-1'}`} />
+                                    </button>
+                                 </div>
+
+                                 {linkDemerit && (
+                                    <div className="space-y-2 relative">
+                                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Buscar e Selecionar Demérito</label>
+                                       <div className="relative">
+                                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                                          <input
+                                             type="text"
+                                             value={demeritSearchTerm}
+                                             onChange={e => {
+                                                setDemeritSearchTerm(e.target.value);
+                                                setShowDemeritDropdown(true);
+                                             }}
+                                             onFocus={() => setShowDemeritDropdown(true)}
+                                             onBlur={() => setTimeout(() => setShowDemeritDropdown(false), 200)}
+                                             placeholder="Digite o número ou descrição do demérito..."
+                                             className="w-full pl-12 pr-10 py-3.5 bg-white border border-gray-100 rounded-xl font-bold text-xs outline-none focus:ring-4 focus:ring-red-500/5 transition-all uppercase"
+                                          />
+                                          {selectedDemerit && (
+                                             <button
+                                                type="button"
+                                                onClick={() => {
+                                                   setSelectedDemerit(null);
+                                                   setDemeritSearchTerm('');
+                                                }}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                                             >
+                                                <X size={16} />
+                                             </button>
+                                          )}
+                                       </div>
+
+                                       {showDemeritDropdown && (
+                                          <div className="absolute z-[110] left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-gray-150 overflow-y-auto max-h-48 divide-y divide-gray-50 animate-in slide-in-from-top-1">
+                                             {DEMERIT_OPTIONS.filter(o => 
+                                                o.category.toLowerCase().includes(demeritSearchTerm.toLowerCase())
+                                             ).slice(0, 8).map(d => (
+                                                <button
+                                                   key={d.category}
+                                                   type="button"
+                                                   onClick={() => {
+                                                      setSelectedDemerit(d);
+                                                      setDemeritSearchTerm(d.category);
+                                                      setShowDemeritDropdown(false);
+                                                      // Map severity: LEVE -> BAIXA, MÉDIA -> MÉDIA, GRAVE -> ALTA
+                                                      let mappedSeverity: CaseSeverity = 'MÉDIA';
+                                                      if (d.severity === 'LEVE') mappedSeverity = 'BAIXA';
+                                                      else if (d.severity === 'GRAVE') mappedSeverity = 'ALTA';
+                                                      setForm(prev => ({ ...prev, severity: mappedSeverity }));
+                                                   }}
+                                                   className="w-full text-left p-3 hover:bg-red-50/50 transition-colors flex justify-between items-center gap-4"
+                                                >
+                                                   <span className="text-[10px] font-black uppercase text-gray-800 line-clamp-2 leading-snug">{d.category}</span>
+                                                   <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border shrink-0 ${
+                                                      d.severity === 'GRAVE' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                      d.severity === 'MÉDIA' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                      'bg-blue-50 text-blue-600 border-blue-100'
+                                                   }`}>
+                                                      {d.severity} ({d.points} pts)
+                                                   </span>
+                                                </button>
+                                             ))}
+                                             {DEMERIT_OPTIONS.filter(o => 
+                                                o.category.toLowerCase().includes(demeritSearchTerm.toLowerCase())
+                                             ).length === 0 && (
+                                                <div className="p-4 text-center text-[10px] text-gray-400 font-bold uppercase">Nenhum demérito encontrado</div>
+                                             )}
+                                          </div>
+                                       )}
+
+                                       {selectedDemerit && (
+                                          <div className="flex items-center gap-2 p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
+                                             <span className="text-[10px] font-bold text-gray-400 uppercase">Selecionado:</span>
+                                             <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                                                selectedDemerit.severity === 'GRAVE' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                selectedDemerit.severity === 'MÉDIA' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                'bg-blue-50 text-blue-600 border-blue-100'
+                                             }`}>
+                                                {selectedDemerit.severity} (-{selectedDemerit.points} PTS)
+                                             </span>
+                                          </div>
+                                       )}
+                                    </div>
+                                 )}
+                              </div>
+                           )}
 
                            <div className="space-y-1.5">
                               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Relato Descritivo</label>
