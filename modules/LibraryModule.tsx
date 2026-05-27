@@ -385,6 +385,30 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       .slice(0, 5);
   }, [loans, readers]);
 
+  const topBooks = useMemo(() => {
+    const counts: { [key: string]: { title: string; count: number; author: string; category: string } } = {};
+    
+    loans.forEach(l => {
+      const title = l.bookTitle;
+      if (!title) return;
+      
+      if (!counts[title]) {
+        const bookObj = books.find(b => b.title.trim().toLowerCase() === title.trim().toLowerCase());
+        counts[title] = {
+          title: bookObj?.title || title,
+          count: 0,
+          author: bookObj?.author || 'Desconhecido',
+          category: bookObj?.category || 'Geral'
+        };
+      }
+      counts[title].count += 1;
+    });
+
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [loans, books]);
+
   const handleImportReader = async (person: any) => {
     if (readers.some(r => r.registration === person.reg)) {
       alert("Este leitor já está cadastrado na biblioteca.");
@@ -1164,7 +1188,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col">
                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2 mb-8"><History className="text-indigo-600" size={20} /> Histórico Recente</h3>
                 <div className="space-y-4 flex-1">
@@ -1181,6 +1205,44 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     </div>
                   ))}
                   {loans.length === 0 && <p className="text-center py-10 text-gray-300 font-black uppercase text-xs">Nenhum registro</p>}
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2 mb-8"><BookMarked className="text-indigo-600" size={20} /> Títulos Mais Emprestados</h3>
+                <div className="space-y-3 font-bold flex-1">
+                  {topBooks.map((b, index) => {
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const rankingColors = [
+                      'bg-indigo-50/70 border-indigo-200 text-indigo-950',
+                      'bg-slate-50 border-slate-200 text-slate-900',
+                      'bg-gray-50/50 border-transparent hover:border-gray-100'
+                    ];
+                    const isTopThree = index < 3;
+                    return (
+                      <div key={b.title} className={`flex items-center justify-between p-3 border rounded-2xl transition-all ${isTopThree ? rankingColors[index] : 'bg-gray-50/50 border-transparent hover:border-gray-100'}`}>
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${isTopThree ? 'bg-white shadow-sm border border-black/5' : 'bg-gray-200 text-gray-700'}`}>
+                            {isTopThree ? medals[index] : index + 1}
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-black uppercase truncate text-gray-950">{b.title}</p>
+                            <p className="text-[8px] font-bold uppercase truncate text-gray-400 mt-0.5">{b.author} • {b.category}</p>
+                          </div>
+                        </div>
+                        <div className="shrink-0 ml-2">
+                          <span className="text-[9px] font-black px-2 py-1 rounded-lg uppercase bg-emerald-50 text-emerald-700">
+                            {b.count} {b.count === 1 ? 'Empréstimo' : 'Empréstimos'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {topBooks.length === 0 && (
+                    <div className="h-full flex items-center justify-center py-10">
+                      <p className="text-gray-300 font-black uppercase text-xs">Nenhum empréstimo registrado</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
