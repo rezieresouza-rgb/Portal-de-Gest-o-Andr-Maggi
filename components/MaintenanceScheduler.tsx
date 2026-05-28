@@ -44,7 +44,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     // Assignment Modal State
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [selectedAssignment, setSelectedAssignment] = useState<{ block: string, area: string } | null>(null);
-    const [selectedEmployeeName, setSelectedEmployeeName] = useState('');
+    const [selectedEmployeeNames, setSelectedEmployeeNames] = useState<string[]>(['', '', '']);
     const [taskDates, setTaskDates] = useState<Record<string, string>>({});
     const [taskShifts, setTaskShifts] = useState<Record<string, 'MATUTINO' | 'VESPERTINO'>>({});
     const [reportPeriod, setReportPeriod] = useState(new Date().toLocaleDateString('pt-BR'));
@@ -71,12 +71,19 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     // Auto-select signatures for employees assigned to tasks in the current filtered view
     useEffect(() => {
         const activeTasks = tasks.filter(t => filterFrequency === 'ALL' || t.frequency === filterFrequency);
-        const assigned = Array.from(new Set(
-            activeTasks
-                .map(t => t.assigned_employee_name)
-                .filter((name): name is string => typeof name === 'string' && name.trim() !== '')
-        ));
-        setSelectedSignatures(assigned);
+        const assignedNamesList: string[] = [];
+        activeTasks.forEach(t => {
+            if (t.assigned_employee_name) {
+                const names = t.assigned_employee_name.split(' / ');
+                names.forEach(name => {
+                    const trimmed = name.trim();
+                    if (trimmed && !assignedNamesList.includes(trimmed)) {
+                        assignedNamesList.push(trimmed);
+                    }
+                });
+            }
+        });
+        setSelectedSignatures(assignedNamesList);
     }, [tasks, filterFrequency]);
 
     const fetchTasks = async () => {
@@ -176,7 +183,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const handleAssignEmployee = async () => {
         if (!selectedAssignment) return;
 
-        const employeeNameToAssign = selectedEmployeeName === '' ? null : selectedEmployeeName;
+        const employeeNameToAssign = selectedEmployeeNames.filter(Boolean).map(n => n.trim()).join(' / ') || null;
 
         try {
             const { error } = await supabase
@@ -194,8 +201,8 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
 
             setIsAssignModalOpen(false);
             setSelectedAssignment(null);
-            setSelectedEmployeeName('');
-            alert(employeeNameToAssign ? 'Responsável definido com sucesso!' : 'Responsável removido com sucesso!');
+            setSelectedEmployeeNames(['', '', '']);
+            alert(employeeNameToAssign ? 'Responsáveis definidos com sucesso!' : 'Responsáveis removidos com sucesso!');
 
         } catch (error) {
             console.error('Error assigning employee:', error);
@@ -439,10 +446,11 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                             </span>
                             <div className="max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3 space-y-2 custom-scrollbar bg-gray-50/50">
                                 {employees.map(emp => {
-                                    const isAssigned = tasks.some(t => 
-                                        (filterFrequency === 'ALL' || t.frequency === filterFrequency) &&
-                                        t.assigned_employee_name === emp.name
-                                    );
+                                    const isAssigned = tasks.some(t => {
+                                        if (filterFrequency !== 'ALL' && t.frequency !== filterFrequency) return false;
+                                        if (!t.assigned_employee_name) return false;
+                                        return t.assigned_employee_name.split(' / ').map(n => n.trim()).includes(emp.name);
+                                    });
                                     return (
                                         <label key={emp.id} className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase cursor-pointer hover:text-gray-900 select-none">
                                             <input
@@ -735,7 +743,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                     <button
                                                         onClick={() => {
                                                             setSelectedAssignment({ block, area });
-                                                            setSelectedEmployeeName(responsible || '');
+                                                            const names = (responsible || '').split(' / ').map(n => n.trim()).filter(Boolean);
+                                                            const initialNames = ['', '', ''];
+                                                            for (let i = 0; i < Math.min(names.length, 3); i++) {
+                                                                initialNames[i] = names[i];
+                                                            }
+                                                            setSelectedEmployeeNames(initialNames);
                                                             setIsAssignModalOpen(true);
                                                         }}
                                                         className="flex items-center self-start sm:self-auto gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-[9px] font-black uppercase tracking-wide shrink-0 max-w-full truncate"
@@ -835,18 +848,27 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                 <p className="text-sm font-bold text-gray-900">{selectedAssignment?.area}</p>
                                 <p className="text-xs text-gray-500">{selectedAssignment?.block}</p>
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Profissional</label>
-                                <select
-                                    value={selectedEmployeeName}
-                                    onChange={e => setSelectedEmployeeName(e.target.value)}
-                                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                >
-                                    <option value="">Selecione...</option>
-                                    {employees.map(emp => (
-                                        <option key={emp.id} value={emp.name}>{emp.name}</option>
-                                    ))}
-                                </select>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Profissionais Responsáveis (Até 3)</label>
+                                {[0, 1, 2].map(index => (
+                                    <div key={index} className="space-y-1">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase">Responsável {index + 1}</span>
+                                        <select
+                                            value={selectedEmployeeNames[index]}
+                                            onChange={e => {
+                                                const newNames = [...selectedEmployeeNames];
+                                                newNames[index] = e.target.value;
+                                                setSelectedEmployeeNames(newNames);
+                                            }}
+                                            className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        >
+                                            <option value="">Nenhum / Remover</option>
+                                            {employees.map(emp => (
+                                                <option key={emp.id} value={emp.name}>{emp.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ))}
                             </div>
                             <button
                                 onClick={handleAssignEmployee}
