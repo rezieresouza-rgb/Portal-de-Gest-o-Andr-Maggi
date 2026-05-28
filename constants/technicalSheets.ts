@@ -7,7 +7,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
     ingredients: [
       { description: 'ALFACE', perCapitaLiquido: 6.85 },
       { description: 'ALHO', perCapitaLiquido: 0.93 },
-      { description: 'CARNE MOIDA', perCapitaLiquido: 28.57 },
+      { description: 'CARNE MOIDA CONGELADA DE BOVINO - MÚSCULO', perCapitaLiquido: 28.57 },
       { description: 'CEBOLA', perCapitaLiquido: 2.73 },
       { description: 'CEBOLINHA', perCapitaLiquido: 1.69 },
       { description: 'EXTRATO DE TOMATE', perCapitaLiquido: 5.00 },
@@ -204,7 +204,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
       { description: 'ABÓBORA', perCapitaLiquido: 10.00 },
       { description: 'ALHO', perCapitaLiquido: 0.93 },
       { description: 'ARROZ BRANCO', perCapitaLiquido: 35.00 },
-      { description: 'CARNE BOVINA MOÍDA', perCapitaLiquido: 30.00 },
+      { description: 'CARNE MOIDA CONGELADA DE BOVINO - MÚSCULO', perCapitaLiquido: 30.00 },
       { description: 'CEBOLA', perCapitaLiquido: 2.73 },
       { description: 'CEBOLINHA', perCapitaLiquido: 1.50 },
       { description: 'COLORAU', perCapitaLiquido: 0.50 },
@@ -303,7 +303,7 @@ export const TECHNICAL_SHEETS: TechnicalSheet[] = [
 ];
 
 export const PERISHABLES = [
-  'ALFACE', 'TOMATE', 'ABACAXI', 'FRANGO', 'CARNE MOIDA', 'CARNE SUÍNA',
+  'ALFACE', 'TOMATE', 'ABACAXI', 'FRANGO', 'CARNE MOIDA CONGELADA DE BOVINO - MÚSCULO', 'CARNE SUÍNA',
   'CARNE EM ISCAS', 'POLPA DE FRUTA',
   'BANANA', 'MELÃO', 'PEIXE', 'CEBOLINHA', 'SALSA', 'MANDIOCA', 'ABÓBORA',
   'LEITE', 'QUEIJO MUSSARELA', 'MAMÃO', 'MAÇÃ', 'PONCÃ', 'MELANCIA'

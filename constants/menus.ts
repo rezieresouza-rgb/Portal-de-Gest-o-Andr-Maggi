@@ -23,7 +23,7 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         dish: "SALADA DE ALFACE COM TOMATE, MACARRÃO COM MOLHO DE CARNE MOÍDA", 
         entradaDish: "ABACAXI",
         entradaIngredients: ["ABACAXI"],
-        ingredients: ["ALFACE", "ALHO", "CARNE BOVINA MOÍDA", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "LIMÃO", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA", "TOMATE"] 
+        ingredients: ["ALFACE", "ALHO", "CARNE MOIDA CONGELADA DE BOVINO - MÚSCULO", "CEBOLA", "CEBOLINHA", "EXTRATO DE TOMATE", "LIMÃO", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA", "TOMATE"] 
       },
       { 
         day: "Terça", 
@@ -105,7 +105,7 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         dish: "RISOTO DE CARNE COM ABÓBORA E FEIJÃO", 
         entradaDish: "MELANCIA",
         entradaIngredients: ["MELANCIA"],
-        ingredients: ["ABÓBORA", "ALHO", "ARROZ BRANCO", "CARNE BOVINA MOÍDA", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] 
+        ingredients: ["ABÓBORA", "ALHO", "ARROZ BRANCO", "CARNE MOIDA CONGELADA DE BOVINO - MÚSCULO", "CEBOLA", "CEBOLINHA", "COLORAU", "FEIJÃO CARIOCA", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA"] 
       },
       { 
         day: "Terça", 
@@ -174,7 +174,7 @@ export const OFFICIAL_MENUS: WeeklyMenu[] = [
         dish: "SALADA DE ALFACE, AGRIÃO E CENOURA, MACARRÃO COM MOLHO DE CARNE MOÍDA E FEIJÃO", 
         entradaDish: "MAMÃO",
         entradaIngredients: ["MAMÃO"],
-        ingredients: ["AGRIÃO", "ALFACE", "ALHO", "CARNE BOVINA MOÍDA", "CEBOLA", "CEBOLINHA", "CENOURA", "EXTRATO DE TOMATE", "FEIJÃO CARIOCA", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA", "VINAGRE"] 
+        ingredients: ["AGRIÃO", "ALFACE", "ALHO", "CARNE MOIDA CONGELADA DE BOVINO - MÚSCULO", "CEBOLA", "CEBOLINHA", "CENOURA", "EXTRATO DE TOMATE", "FEIJÃO CARIOCA", "MACARRÃO", "ÓLEO DE SOJA", "PIMENTÃO", "SAL", "SALSA", "VINAGRE"] 
       }
     ]
   },
