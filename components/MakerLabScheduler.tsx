@@ -12,7 +12,9 @@ import {
   ArrowLeft,
   Layers,
   CircuitBoard,
-  Save
+  Save,
+  Library,
+  BookOpen
 } from 'lucide-react';
 import { MakerLabBooking, Shift, StaffMember } from '../types';
 import { useStaff } from '../hooks/useStaff';
@@ -106,7 +108,7 @@ const MakerLabScheduler: React.FC = () => {
     );
 
     if (conflict) {
-      return alert(`ERRO: Conflito de horário! O Laboratório Maker já está reservado para as aulas (${conflict.classes.join(', ')}) no turno ${newBooking.shift} por ${conflict.teacherName}.`);
+      return alert(`ERRO: Conflito de horário! A Biblioteca Antiga já está reservada para as aulas (${conflict.classes.join(', ')}) no turno ${newBooking.shift} por ${conflict.teacherName}.`);
     }
 
     try {
@@ -152,7 +154,7 @@ const MakerLabScheduler: React.FC = () => {
   };
 
   const deleteBooking = async (id: string) => {
-    if (window.confirm("Deseja cancelar esta reserva do Laboratório Maker?")) {
+    if (window.confirm("Deseja cancelar esta reserva da Biblioteca Antiga?")) {
       try {
         const { error } = await supabase.from('bookings').delete().eq('id', id);
         if (error) throw error;
@@ -169,11 +171,11 @@ const MakerLabScheduler: React.FC = () => {
       <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-6">
           <div className="p-4 bg-sky-50 text-sky-600 rounded-3xl">
-            <Cpu size={32} />
+            <Library size={32} />
           </div>
           <div>
-            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Laboratório Maker</h3>
-            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Protótipos, Robótica e Criatividade</p>
+            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Biblioteca Antiga</h3>
+            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Agenda de Leitura e Estudos</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -207,7 +209,7 @@ const MakerLabScheduler: React.FC = () => {
                   shiftBookings.map(sb => (
                     <div key={sb.id} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-sky-200 transition-all relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <CircuitBoard size={80} className="text-sky-900" />
+                        <BookOpen size={80} className="text-sky-900" />
                       </div>
                       <div className="relative z-10">
                         <div className="flex justify-between items-start mb-4">
@@ -247,7 +249,7 @@ const MakerLabScheduler: React.FC = () => {
         onClick={() => setActiveTab('history')}
         className="w-full py-4 bg-gray-100 rounded-3xl border border-gray-200 text-gray-400 font-black uppercase text-[10px] tracking-[0.3em] hover:bg-gray-200 transition-all flex items-center justify-center gap-3"
       >
-        <History size={16} /> Relatório de Atividades Maker
+        <History size={16} /> Relatório de Atividades da Biblioteca Antiga
       </button>
     </div>
   );
@@ -263,7 +265,7 @@ const MakerLabScheduler: React.FC = () => {
 
       <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in duration-500">
         <div className="p-8 border-b border-gray-50 flex justify-between items-center">
-          <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Histórico de Uso (Laboratório Maker)</h3>
+          <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Histórico de Uso (Biblioteca Antiga)</h3>
           <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-xl border border-sky-100">
             <ShieldCheck size={16} />
             <span className="text-[10px] font-black uppercase tracking-widest">Base de Dados Auditada</span>
@@ -335,7 +337,7 @@ const MakerLabScheduler: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <div className="p-4 bg-sky-600 text-white rounded-3xl shadow-xl shadow-sky-600/20"><Plus size={28} strokeWidth={3} /></div>
                   <div>
-                    <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Reservar Lab Maker</h3>
+                    <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Reservar Biblioteca Antiga</h3>
                     <p className="text-[10px] text-sky-400 font-bold uppercase tracking-widest mt-1">Data: {selectedDate.split('-').reverse().join('/')}</p>
                   </div>
                 </div>

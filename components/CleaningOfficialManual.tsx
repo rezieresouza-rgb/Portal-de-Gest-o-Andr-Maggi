@@ -39,7 +39,7 @@ const CleaningOfficialManual: React.FC = () => {
       trimestral: "Eliminar objetos aderidos à laje/forro; Lavar cortinas"
     },
     {
-      ambiente: "4. Laboratórios (Maker, Ciências, EF, APA)",
+      ambiente: "4. Laboratórios (Biblioteca Antiga, Ciências, EF, APA)",
       diaria: "Remover pó em bancadas, banquetas, mesas, racks, armários, microscópios, computadores, TVs e demais equipamentos; Varrer o piso; Manter cestos limpos; Inspeções: vidros, lâmpadas, fechaduras, mobiliário, partes metálicas pontiagudas",
       semanal: "Eliminar marcas em mobiliário; Remover mobiliário para limpeza completa do piso; Higienizar cestos",
       mensal: "Remover manchas do piso; Limpar paredes e rodapés; Limpar janelas; Limpar filtros do ar condicionado; Limpar equipamentos eletroeletrônicos com produto específico",

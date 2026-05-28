@@ -22,7 +22,7 @@ interface MaintenanceTask {
     block: string;
     area_name: string;
     task_description: string;
-    frequency: 'DIARIA' | 'SEMANAL' | 'MENSAL' | 'BIMESTRAL';
+    frequency: 'DIARIA' | 'SEMANAL' | 'MENSAL' | 'TRIMESTRAL';
     last_executed_at: string | null;
     assigned_employee_name?: string | null;
     status?: 'PENDENTE' | 'CONCLUIDO' | 'ATRASADO';
@@ -117,7 +117,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     if (task.frequency === 'DIARIA' && diffDays <= 1) status = 'CONCLUIDO';
                     else if (task.frequency === 'SEMANAL' && diffDays <= 7) status = 'CONCLUIDO';
                     else if (task.frequency === 'MENSAL' && diffDays <= 30) status = 'CONCLUIDO';
-                    else if (task.frequency === 'BIMESTRAL' && diffDays <= 60) status = 'CONCLUIDO';
+                    else if (task.frequency === 'TRIMESTRAL' && diffDays <= 90) status = 'CONCLUIDO';
                     else status = 'ATRASADO';
                 }
 
@@ -341,7 +341,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             case 'DIARIA': return 'Diária';
             case 'SEMANAL': return 'Semanal';
             case 'MENSAL': return 'Mensal';
-            case 'BIMESTRAL': return 'Bimestral';
+            case 'TRIMESTRAL': return 'Trimestral';
             default: return freq;
         }
     };
@@ -351,7 +351,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             case 'DIARIA': return 'text-blue-600 bg-blue-50';
             case 'SEMANAL': return 'text-purple-600 bg-purple-50';
             case 'MENSAL': return 'text-orange-600 bg-orange-50';
-            case 'BIMESTRAL': return 'text-pink-600 bg-pink-50';
+            case 'TRIMESTRAL': return 'text-pink-600 bg-pink-50';
             default: return 'text-gray-600 bg-gray-50';
         }
     };
@@ -374,7 +374,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             {/* Header / Filters */}
             <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 w-full min-w-0">
                 <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 w-full lg:flex-1 min-w-0 custom-scrollbar">
-                    {['ALL', 'DIARIA', 'SEMANAL', 'MENSAL', 'BIMESTRAL'].map(freq => (
+                    {['ALL', 'DIARIA', 'SEMANAL', 'MENSAL', 'TRIMESTRAL'].map(freq => (
                         <button
                             key={freq}
                             onClick={() => setFilterFrequency(freq)}
@@ -889,7 +889,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         {filterFrequency === 'DIARIA' ? 'Relatório Diário de Manutenção' :
                          filterFrequency === 'SEMANAL' ? 'Relatório Semanal de Manutenção' :
                          filterFrequency === 'MENSAL' ? 'Relatório Mensal de Manutenção' :
-                         filterFrequency === 'BIMESTRAL' ? 'Relatório Bimestral de Manutenção' :
+                         filterFrequency === 'TRIMESTRAL' ? 'Relatório Trimestral de Manutenção' :
                          'Relatório Geral de Manutenção'}
                     </h1>
                     <p className="text-sm text-gray-600 uppercase">Escola Estadual André Maggi</p>

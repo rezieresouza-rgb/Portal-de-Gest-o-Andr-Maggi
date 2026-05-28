@@ -11,7 +11,8 @@ import {
   Beaker,
   UtensilsCrossed,
   BookOpen,
-  Cpu
+  Cpu,
+  Library
 } from 'lucide-react';
 import ChromebookScheduler from '../components/ChromebookScheduler';
 import ScienceLabScheduler from '../components/ScienceLabScheduler';
@@ -40,7 +41,7 @@ const SchedulingModule: React.FC<SchedulingModuleProps> = ({ onExit }) => {
   const menuItems = [
     { id: 'chromebooks', label: 'Estações Chromebook', icon: Laptop, color: 'fuchsia' },
     { id: 'science_lab', label: 'Lab. de Ciências', icon: Beaker, color: 'emerald' },
-    { id: 'maker_lab', label: 'Laboratório Maker', icon: Cpu, color: 'sky' },
+    { id: 'maker_lab', label: 'Biblioteca Antiga', icon: Library, color: 'sky' },
     { id: 'pedagogical_kitchen', label: 'Cozinha Pedagógica', icon: UtensilsCrossed, color: 'orange' },
     { id: 'library_room', label: 'Espaço Biblioteca', icon: BookOpen, color: 'indigo' },
     { id: 'auditorium', label: 'Auditório / Teatro', icon: Building2, color: 'emerald' },
