@@ -369,7 +369,7 @@ const KitchenSanitation: React.FC = () => {
                               <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                                  <td className="p-3 text-center text-[9px] font-black text-gray-400">{popNumber}</td>
                                  <td className="p-3 text-[10px] font-bold uppercase">{titleClean}</td>
-                                 <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency[0]}</td>
+                                 <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency}</td>
                                  <td className="p-3 text-center">
                                     <div className="w-5 h-5 border border-gray-400 mx-auto rounded-md"></div>
                                  </td>
