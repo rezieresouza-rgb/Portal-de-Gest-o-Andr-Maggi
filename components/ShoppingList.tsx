@@ -526,6 +526,7 @@ const ShoppingList: React.FC = () => {
 
     // BUSCAR SALDO NOS CONTRATOS ATIVOS
     let totalBalance = 0;
+    let totalContracted = 0;
     let found = false;
 
     contracts.forEach(contract => {
@@ -534,12 +535,20 @@ const ShoppingList: React.FC = () => {
         // Busca exata ou parcial para maior robustez
         if (normalizedCi === normalizedTarget || normalizedCi.includes(normalizedTarget) || normalizedTarget.includes(normalizedCi)) {
           totalBalance += ((ci.contractedQuantity || 0) - (ci.acquiredQuantity || 0));
+          totalContracted += (ci.contractedQuantity || 0);
           found = true;
         }
       });
     });
 
-    return found ? totalBalance : null;
+    if (!found) return null;
+    const usage = totalContracted > 0 ? ((totalContracted - totalBalance) / totalContracted) * 100 : 0;
+
+    return {
+      remaining: totalBalance,
+      contracted: totalContracted,
+      usage
+    };
   };
 
   const addManualItem = async (product: any) => {
@@ -712,14 +721,14 @@ const ShoppingList: React.FC = () => {
                             {item.description}
                             {item.isPerishable && <span className="block text-[7px] font-black bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase mt-1 w-fit">Perecível</span>}
                           </td>
-                          <td className="px-6 py-5 text-center">
+                          <td className="px-6 py-5">
                              {(() => {
                                 const stock = getStockForProduct(item.description);
                                 
                                 if (stock === 'loading') return <Loader2 size={12} className="animate-spin text-orange-400 mx-auto" />;
                                 
-                                if (stock === null) return (
-                                  <div className="group relative cursor-help">
+                                if (stock === null || typeof stock === 'string') return (
+                                  <div className="group relative cursor-help text-center">
                                     <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">Não mapeado</span>
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[8px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none text-center font-bold uppercase">
                                       Nenhum contrato ativo encontrado com este item. Confira o nome no contrato.
@@ -728,13 +737,12 @@ const ShoppingList: React.FC = () => {
                                 );
                                 
                                 return (
-                                  <div className="group relative cursor-help flex flex-col items-center">
-                                    <span className={`text-[11px] font-black ${(stock as number) <= (item.quantity * 2) ? 'text-red-500' : 'text-emerald-700'}`}>
-                                      {formatQuantity(stock as number, item.unit)}
+                                  <div className="flex flex-col items-center">
+                                    <span className="text-[10px] font-bold text-gray-500 mb-1">
+                                      {formatQuantity(stock.remaining, 'KG')} / {formatQuantity(stock.contracted, 'KG')}
                                     </span>
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-gray-900 text-white text-[8px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none text-center font-bold uppercase leading-relaxed">
-                                      Saldo Disponível no Contrato <br/>
-                                      (Qtd Contratada - Qtd Já Pedida)
+                                    <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50">
+                                      <div className={`h-full transition-all duration-1000 ${stock.usage > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${stock.usage}%` }} />
                                     </div>
                                   </div>
                                 );
@@ -905,7 +913,7 @@ const ShoppingList: React.FC = () => {
               <thead>
                 <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
                    <th className="px-8 py-4">Ingrediente</th>
-                   <th className="px-6 py-4 text-center">Estoque Atual</th>
+                   <th className="px-6 py-4 text-center">Saldo Contrato</th>
                    <th className="px-6 py-4 text-center">Quantidade</th>
                   <th className="px-6 py-4">Observação</th>
                   <th className="px-6 py-4">Fornecedor / Contrato</th>
@@ -919,19 +927,19 @@ const ShoppingList: React.FC = () => {
                      <p className="font-black text-gray-900 uppercase text-xs">{item.description}</p>
                      {item.is_perishable && <span className="text-[7px] font-black bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase mt-1 inline-block">Perecível</span>}
                    </td>
-                   <td className="px-6 py-5 text-center">
+                   <td className="px-6 py-5">
                       {(() => {
                          const stock = getStockForProduct(item.description);
                          if (stock === 'loading') return <Loader2 size={10} className="animate-spin text-gray-400 mx-auto" />;
-                         if (stock === null) return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic">---</span>;
+                         if (stock === null || typeof stock === 'string') return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic text-center block">---</span>;
                          
                          return (
-                            <div className="group relative cursor-help flex flex-col items-center">
-                               <span className={`text-[11px] font-black ${(stock as number) <= (item.quantity * 2) ? 'text-red-500' : 'text-emerald-700'}`}>
-                                  {formatQuantity(stock as number, item.unit)}
+                            <div className="flex flex-col items-center">
+                               <span className="text-[10px] font-bold text-gray-500 mb-1">
+                                 {formatQuantity(stock.remaining, 'KG')} / {formatQuantity(stock.contracted, 'KG')}
                                </span>
-                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[7px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none text-center font-bold uppercase leading-relaxed">
-                                  Saldo Contratual na data
+                               <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50">
+                                 <div className={`h-full transition-all duration-1000 ${stock.usage > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${stock.usage}%` }} />
                                </div>
                             </div>
                          );
