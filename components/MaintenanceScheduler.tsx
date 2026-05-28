@@ -54,7 +54,22 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const [selectedEmployeeNames, setSelectedEmployeeNames] = useState<string[]>(['', '', '']);
     const [taskDates, setTaskDates] = useState<Record<string, string>>({});
     const [taskShifts, setTaskShifts] = useState<Record<string, 'MATUTINO' | 'VESPERTINO'>>({});
-    const [reportPeriod, setReportPeriod] = useState(new Date().toLocaleDateString('pt-BR'));
+    const [reportPeriodStart, setReportPeriodStart] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - d.getDay() + 1); // Monday
+        return d.toISOString().split('T')[0];
+    });
+    const [reportPeriodEnd, setReportPeriodEnd] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - d.getDay() + 5); // Friday
+        return d.toISOString().split('T')[0];
+    });
+
+    const formatDateBr = (dateStr: string) => {
+        if (!dateStr) return '';
+        return dateStr.split('-').reverse().join('/');
+    };
+    const reportPeriod = `${formatDateBr(reportPeriodStart)} a ${formatDateBr(reportPeriodEnd)}`;
 
     // Bathroom clean tracking states
     const [selectedCleanDate, setSelectedCleanDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -521,13 +536,19 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                 </div>
                 <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-4 shrink-0 min-w-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
                     <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-sm shrink-0">
-                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">Período:</span>
+                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">De:</span>
                         <input
-                            type="text"
-                            value={reportPeriod}
-                            onChange={e => setReportPeriod(e.target.value)}
-                            placeholder="Ex: 26/05/2026 ou Maio/2026"
-                            className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-28 focus:ring-0"
+                            type="date"
+                            value={reportPeriodStart}
+                            onChange={e => setReportPeriodStart(e.target.value)}
+                            className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-24 px-1 focus:ring-0 cursor-pointer"
+                        />
+                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">Até:</span>
+                        <input
+                            type="date"
+                            value={reportPeriodEnd}
+                            onChange={e => setReportPeriodEnd(e.target.value)}
+                            className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-24 px-1 focus:ring-0 cursor-pointer"
                         />
                     </div>
                     <button
