@@ -1095,9 +1095,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                             </td>
                                                             {includeTaskSignature && (
                                                                 <td className="py-1 text-[9px] text-gray-500 italic">
-                                                                    {task.status === 'CONCLUIDO' 
-                                                                        ? (task.assigned_employee_name || 'Servidor') 
-                                                                        : '_________________'}
+                                                                    _________________
                                                                 </td>
                                                             )}
                                                         </tr>
