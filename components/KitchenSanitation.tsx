@@ -30,7 +30,7 @@ import {
    Loader2
 } from 'lucide-react';
 
-type KitchenArea = 'Pré-preparo' | 'Cocção' | 'Distribuição' | 'Higiene e Lixo' | 'Armazenamento' | 'Utensílios/Equipamentos';
+type KitchenArea = 'Pré-preparo' | 'Cocção' | 'Distribuição' | 'Higiene e Lixo' | 'Armazenamento' | 'Utensílios/Equipamentos' | 'Refeitório';
 type Frequency = 'DIÁRIA' | 'SEMANAL' | 'MENSAL' | 'TRIMESTRAL' | 'PERIÓDICA';
 
 interface SanitationTask {
@@ -44,7 +44,7 @@ interface SanitationTask {
 }
 
 const KITCHEN_AREAS: KitchenArea[] = [
-   'Pré-preparo', 'Cocção', 'Distribuição', 'Higiene e Lixo', 'Armazenamento', 'Utensílios/Equipamentos'
+   'Pré-preparo', 'Cocção', 'Distribuição', 'Higiene e Lixo', 'Armazenamento', 'Utensílios/Equipamentos', 'Refeitório'
 ];
 
 const INITIAL_KITCHEN_TASKS: SanitationTask[] = [
@@ -52,7 +52,7 @@ const INITIAL_KITCHEN_TASKS: SanitationTask[] = [
    { id: 'k-1', area: 'Higiene e Lixo', title: 'Higienização das mãos dos manipuladores (POP 2)', frequency: 'DIÁRIA', status: 'PENDENTE' },
    { id: 'k-2', area: 'Pré-preparo', title: 'Higienização das mesas e bancadas de manipulação (POP 8)', frequency: 'DIÁRIA', status: 'PENDENTE' },
    { id: 'k-3', area: 'Utensílios/Equipamentos', title: 'Higienização de utensílios: facas, talheres, pratos, canecas, placas (POP 6)', frequency: 'DIÁRIA', status: 'PENDENTE' },
-   { id: 'k-4', area: 'Utensílios/Equipamentos', title: 'Higienização de utensílios em alumínio: panelas, assadeiras, conchas (POP 7)', frequency: 'DIÁRIA', status: 'PENDENTE' },
+   { id: 'k-4', area: 'Utensílios/Equipamentos', title: 'Higienização de utensílios in alumínio: panelas, assadeiras, conchas (POP 7)', frequency: 'DIÁRIA', status: 'PENDENTE' },
    { id: 'k-5', area: 'Higiene e Lixo', title: 'Higienização das lixeiras (POP 9)', frequency: 'DIÁRIA', status: 'PENDENTE' },
    { id: 'k-6', area: 'Higiene e Lixo', title: 'Higienização de pisos e rodapés (POP 10)', frequency: 'DIÁRIA', status: 'PENDENTE' },
    { id: 'k-7', area: 'Cocção', title: 'Higienização de fogão e forno (POP 4)', frequency: 'DIÁRIA', status: 'PENDENTE' },
@@ -82,12 +82,29 @@ const INITIAL_KITCHEN_TASKS: SanitationTask[] = [
    { id: 'k-25', area: 'Distribuição', title: 'Distribuição dos alimentos (POP 27)', frequency: 'PERIÓDICA', status: 'PENDENTE' },
    { id: 'k-26', area: 'Distribuição', title: 'Reaproveitamento de sobras (POP 28)', frequency: 'PERIÓDICA', status: 'PENDENTE' },
    { id: 'k-27', area: 'Pré-preparo', title: 'Dessalga (POP 29)', frequency: 'PERIÓDICA', status: 'PENDENTE' },
+
+   // TAREFAS DO REFEITÓRIO
+   { id: 'k-ref-1', area: 'Refeitório', title: 'Limpeza e desinfecção de mesas e cadeiras do refeitório antes e após as refeições (POP 30)', frequency: 'DIÁRIA', status: 'PENDENTE' },
+   { id: 'k-ref-2', area: 'Refeitório', title: 'Varredura e higienização úmida/lavagem do chão do refeitório (POP 31)', frequency: 'DIÁRIA', status: 'PENDENTE' },
+   { id: 'k-ref-3', area: 'Refeitório', title: 'Higienização das paredes e do forro/teto do refeitório (POP 32)', frequency: 'SEMANAL', status: 'PENDENTE' },
+   { id: 'k-ref-4', area: 'Refeitório', title: 'Higienização de ventiladores e luminárias do refeitório (POP 33)', frequency: 'MENSAL', status: 'PENDENTE' }
 ];
 
 const KitchenSanitation: React.FC = () => {
    const [tasks, setTasks] = useState<SanitationTask[]>(() => {
       const saved = localStorage.getItem('kitchen_sanitation_tasks_v2');
-      return saved ? JSON.parse(saved) : INITIAL_KITCHEN_TASKS;
+      if (saved) {
+         const parsed = JSON.parse(saved);
+         const hasRefectory = parsed.some((t: any) => t.area === 'Refeitório');
+         if (!hasRefectory) {
+            const refectoryTasks = INITIAL_KITCHEN_TASKS.filter(t => t.area === 'Refeitório');
+            const merged = [...parsed, ...refectoryTasks];
+            localStorage.setItem('kitchen_sanitation_tasks_v2', JSON.stringify(merged));
+            return merged;
+         }
+         return parsed;
+      }
+      return INITIAL_KITCHEN_TASKS;
    });
 
    const [filterArea, setFilterArea] = useState<KitchenArea | 'TODOS'>('TODOS');
@@ -329,7 +346,7 @@ const KitchenSanitation: React.FC = () => {
 
                <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
                   <p>Responsável Técnico: ___________________________________</p>
-                  <p>Setor: COZINHA ESCOLAR / ALIMENTAÇÃO</p>
+                  <p>Setor: COZINHA/REFEITÓRIO</p>
                </div>
 
                <div className="border border-gray-900 rounded-xl overflow-hidden shadow-sm">
@@ -395,7 +412,7 @@ const KitchenSanitation: React.FC = () => {
 
                <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
                   <p>Responsável Técnico: ___________________________________</p>
-                  <p>Setor: COZINHA ESCOLAR / ALIMENTAÇÃO</p>
+                  <p>Setor: COZINHA/REFEITÓRIO</p>
                </div>
 
                <div className="border border-gray-900 rounded-xl overflow-hidden shadow-sm">

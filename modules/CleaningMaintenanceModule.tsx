@@ -51,6 +51,7 @@ const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
   { id: 'env-8', name: 'CORREDORES, RAMPAS E HALL', category: 'CIRCULACAO', complianceRate: 100 },
   { id: 'env-9', name: 'CALÇADAS (INTERNAS)', category: 'CALCADA_INTERNA', complianceRate: 100 },
   { id: 'env-10', name: 'CALÇADA EXTERNA', category: 'CALCADA_EXTERNA', complianceRate: 100 },
+  { id: 'env-11', name: 'PÁTIO E REFEITÓRIO', category: 'PATIO_REFEITORIO', complianceRate: 100 },
 ];
 
 const DETAILED_PROTOCOLS: Record<string, Record<CleaningFrequency, string[]>> = {
@@ -113,6 +114,12 @@ const DETAILED_PROTOCOLS: Record<string, Record<CleaningFrequency, string[]>> = 
     'SEMANAL': ["Limpeza detalhada das áreas externas", "Remover manchas superficiais", "Higienizar lixeiras externas", "Controle de matos"],
     'MENSAL': ["Lavagem completa com jato de água ou lavadora de alta pressão", "Remover manchas persistentes", "Revisar drenagem externa", "Remoção de matos resistentes"],
     'TRIMESTRAL': ["Revisão geral de pisos externos", "Reparos em rachaduras e nivelamento", "Limpeza completa de áreas de difícil acesso", "Tratamento preventivo contra matos"]
+  },
+  PATIO_REFEITORIO: {
+    'DIÁRIA': ["Limpar mesas e bancos antes e após as refeições", "Varrer e passar pano com desinfetante no piso", "Manter lixeiras limpas e vazias", "Recolher resíduos de alimentos", "Inspeções: lâmpadas, ventiladores, bebedouros"],
+    'SEMANAL': ["Lavagem completa do piso e paredes azulejadas", "Higienizar mesas e bancos detalhadamente", "Lavar lixeiras"],
+    'MENSAL': ["Limpar vidros e janelas", "Limpar ventiladores e bebedouros por fora", "Limpar calhas próximas"],
+    'TRIMESTRAL': ["Limpeza de forro/laje", "Revisão geral de mesas e bancos e reparos"]
   }
 };
 
@@ -325,7 +332,7 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
           <button onClick={() => setActiveTab('scheduler')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'scheduler' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Calendar size={18} className="shrink-0" /> <span className="truncate">Cronograma (Blocos)</span></button>
           <button onClick={() => setActiveTab('team')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Users size={18} className="shrink-0" /> <span className="truncate">Equipe de Apoio</span></button>
           <button onClick={() => setActiveTab('predial')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'predial' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Hammer size={18} className="shrink-0" /> <span className="truncate">Manutenção Predial</span></button>
-          <button onClick={() => setActiveTab('kitchen')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><CookingPot size={18} className="shrink-0" /> <span className="truncate">Higiene Cozinha</span></button>
+          <button onClick={() => setActiveTab('kitchen')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><CookingPot size={18} className="shrink-0" /> <span className="truncate">Higiene Cozinha/Refeitório</span></button>
           <button onClick={() => setActiveTab('materials')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'materials' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Droplets size={18} className="shrink-0" /> <span className="truncate">Insumos Limpeza</span></button>
           <button onClick={() => setActiveTab('ppe')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ppe' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><HardHat size={18} className="shrink-0" /> <span className="truncate">Controle EPIs</span></button>
 
@@ -442,6 +449,7 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
                     <option value="CIRCULACAO">Circulação</option>
                     <option value="CALCADA_INTERNA">Calçada Interna</option>
                     <option value="CALCADA_EXTERNA">Calçada Externa</option>
+                    <option value="PATIO_REFEITORIO">Pátio e Refeitório</option>
                   </select>
                 </div>
                 <button type="submit" className="w-full py-5 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all">Salvar Ambiente</button>

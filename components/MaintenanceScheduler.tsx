@@ -13,7 +13,8 @@ import {
     Printer,
     FileText,
     Users,
-    X
+    X,
+    Settings2
 } from 'lucide-react';
 
 interface MaintenanceTask {
@@ -56,9 +57,27 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const [isPrinting, setIsPrinting] = useState(false);
     const [selectedPrintBathroom, setSelectedPrintBathroom] = useState<MaintenanceTask | null>(null);
 
+    // Print Options Configuration State
+    const [showReportConfig, setShowReportConfig] = useState(false);
+    const [selectedSignatures, setSelectedSignatures] = useState<string[]>([]);
+    const [includeTaskSignature, setIncludeTaskSignature] = useState(true);
+    const [includeGestaoSignature, setIncludeGestaoSignature] = useState(true);
+    const [includeZeladoriaSignature, setIncludeZeladoriaSignature] = useState(true);
+
     useEffect(() => {
         fetchTasks();
     }, []);
+
+    // Auto-select signatures for employees assigned to tasks in the current filtered view
+    useEffect(() => {
+        const activeTasks = tasks.filter(t => filterFrequency === 'ALL' || t.frequency === filterFrequency);
+        const assigned = Array.from(new Set(
+            activeTasks
+                .map(t => t.assigned_employee_name)
+                .filter((name): name is string => typeof name === 'string' && name.trim() !== '')
+        ));
+        setSelectedSignatures(assigned);
+    }, [tasks, filterFrequency]);
 
     const fetchTasks = async () => {
         setLoading(true);
@@ -155,30 +174,32 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     };
 
     const handleAssignEmployee = async () => {
-        if (!selectedAssignment || !selectedEmployeeName) return;
+        if (!selectedAssignment) return;
+
+        const employeeNameToAssign = selectedEmployeeName === '' ? null : selectedEmployeeName;
 
         try {
             const { error } = await supabase
                 .from('maintenance_tasks')
-                .update({ assigned_employee_name: selectedEmployeeName })
+                .update({ assigned_employee_name: employeeNameToAssign })
                 .match({ block: selectedAssignment.block, area_name: selectedAssignment.area });
 
             if (error) throw error;
 
             setTasks(prev => prev.map(t =>
                 (t.block === selectedAssignment.block && t.area_name === selectedAssignment.area)
-                    ? { ...t, assigned_employee_name: selectedEmployeeName }
+                    ? { ...t, assigned_employee_name: employeeNameToAssign }
                     : t
             ));
 
             setIsAssignModalOpen(false);
             setSelectedAssignment(null);
             setSelectedEmployeeName('');
-            alert('Responsável definido com sucesso!');
+            alert(employeeNameToAssign ? 'Responsável definido com sucesso!' : 'Responsável removido com sucesso!');
 
         } catch (error) {
             console.error('Error assigning employee:', error);
-            alert('Erro ao definir responsável.');
+            alert('Erro ao processar alteração.');
         }
     };
 
@@ -371,6 +392,17 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         />
                     </div>
                     <button
+                        onClick={() => setShowReportConfig(!showReportConfig)}
+                        className={`p-2 rounded-xl border transition-all shrink-0 ${
+                            showReportConfig 
+                                ? 'bg-indigo-50 border-indigo-200 text-indigo-600' 
+                                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                        }`}
+                        title="Opções de Assinaturas e Impressão"
+                    >
+                        <Settings2 size={16} />
+                    </button>
+                    <button
                         onClick={generateWeeklyReport}
                         className="px-3 sm:px-5 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-1.5 shadow-lg shrink-0"
                     >
@@ -382,6 +414,123 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     </div>
                 </div>
             </div>
+
+            {/* PAINEL DE OPÇÕES DE IMPRESSÃO / CONFIGURAÇÃO DO RELATÓRIO */}
+            {showReportConfig && (
+                <div className="bg-white p-6 rounded-[2rem] border border-indigo-100 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                        <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                            <FileText size={14} className="text-indigo-600" />
+                            Configurar Assinaturas do Relatório de Manutenção
+                        </h4>
+                        <button 
+                            onClick={() => setShowReportConfig(false)}
+                            className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Coluna 1: Lista de servidores que assinam */}
+                        <div className="space-y-2">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                                Servidores para Assinatura
+                            </span>
+                            <div className="max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3 space-y-2 custom-scrollbar bg-gray-50/50">
+                                {employees.map(emp => {
+                                    const isAssigned = tasks.some(t => 
+                                        (filterFrequency === 'ALL' || t.frequency === filterFrequency) &&
+                                        t.assigned_employee_name === emp.name
+                                    );
+                                    return (
+                                        <label key={emp.id} className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase cursor-pointer hover:text-gray-900 select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedSignatures.includes(emp.name)}
+                                                onChange={e => {
+                                                    if (e.target.checked) {
+                                                        setSelectedSignatures(prev => [...prev, emp.name]);
+                                                    } else {
+                                                        setSelectedSignatures(prev => prev.filter(name => name !== emp.name));
+                                                    }
+                                                }}
+                                                className="rounded text-indigo-600 focus:ring-indigo-500/20 w-3.5 h-3.5 border-gray-300"
+                                            />
+                                            <span className="truncate flex-1">{emp.name}</span>
+                                            {isAssigned && (
+                                                <span className="text-[8px] bg-emerald-100 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-black tracking-tight shrink-0">
+                                                    Tarefas Ativas
+                                                </span>
+                                            )}
+                                        </label>
+                                    );
+                                })}
+                                {employees.length === 0 && (
+                                    <p className="text-[10px] text-gray-400 italic py-2">Nenhum servidor cadastrado na equipe de apoio.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Coluna 2: Configurações de layout */}
+                        <div className="space-y-3">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                                Opções de Layout
+                            </span>
+                            <div className="space-y-3 bg-gray-50/50 border border-gray-100 rounded-xl p-3">
+                                <label className="flex items-center gap-2.5 text-xs font-bold text-gray-700 uppercase cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={includeTaskSignature}
+                                        onChange={e => setIncludeTaskSignature(e.target.checked)}
+                                        className="rounded text-indigo-600 focus:ring-indigo-500/20 w-3.5 h-3.5 border-gray-300"
+                                    />
+                                    Coluna de Assinatura por Tarefa
+                                </label>
+                                <label className="flex items-center gap-2.5 text-xs font-bold text-gray-700 uppercase cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={includeGestaoSignature}
+                                        onChange={e => setIncludeGestaoSignature(e.target.checked)}
+                                        className="rounded text-indigo-600 focus:ring-indigo-500/20 w-3.5 h-3.5 border-gray-300"
+                                    />
+                                    Assinatura da Gestão Escolar
+                                </label>
+                                <label className="flex items-center gap-2.5 text-xs font-bold text-gray-700 uppercase cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={includeZeladoriaSignature}
+                                        onChange={e => setIncludeZeladoriaSignature(e.target.checked)}
+                                        className="rounded text-indigo-600 focus:ring-indigo-500/20 w-3.5 h-3.5 border-gray-300"
+                                    />
+                                    Assinatura da Zeladoria/Manutenção
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Coluna 3: Resumo e Ação */}
+                        <div className="bg-indigo-50/30 border border-indigo-100 rounded-2xl p-4 flex flex-col justify-between">
+                            <div className="space-y-2">
+                                <span className="text-[9px] font-black text-indigo-700 uppercase tracking-widest block">Resumo do Relatório</span>
+                                <p className="text-xs text-gray-600 leading-normal">
+                                    Tipo: <strong className="text-gray-900 uppercase">
+                                        {filterFrequency === 'ALL' ? 'Geral' : getFrequencyLabel(filterFrequency)}
+                                    </strong>
+                                </p>
+                                <p className="text-xs text-gray-600 leading-normal">
+                                    Assinaturas de Servidores selecionadas: <strong className="text-indigo-700 font-black">{selectedSignatures.length}</strong>
+                                </p>
+                            </div>
+                            <button
+                                onClick={generateWeeklyReport}
+                                className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md transition-all flex items-center justify-center gap-1.5"
+                            >
+                                <Printer size={14} /> Gerar e Imprimir Relatório
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* MONITOR DE LIMPEZA DE BANHEIROS */}
             {!loading && dailyBathroomTasks.length > 0 && (
@@ -736,10 +885,13 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                             <table className="w-full text-left text-xs mb-4">
                                                 <thead>
                                                     <tr className="border-b border-gray-200">
-                                                        <th className="py-1 w-1/2">Tarefa</th>
-                                                        <th className="py-1 w-1/6">Freq.</th>
-                                                        <th className="py-1 w-1/6">Execução</th>
-                                                        <th className="py-1 w-1/6 text-center">Status</th>
+                                                        <th className="py-1 w-[40%]">Tarefa</th>
+                                                        <th className="py-1 w-[12%]">Freq.</th>
+                                                        <th className="py-1 w-[18%]">Execução</th>
+                                                        <th className="py-1 w-[10%] text-center">Status</th>
+                                                        {includeTaskSignature && (
+                                                            <th className="py-1 w-[20%]">Assinatura</th>
+                                                        )}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -755,6 +907,13 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                             <td className="py-1 text-center">
                                                                 {task.status === 'CONCLUIDO' ? 'OK' : '[ ]'}
                                                             </td>
+                                                            {includeTaskSignature && (
+                                                                <td className="py-1 text-[9px] text-gray-500 italic">
+                                                                    {task.status === 'CONCLUIDO' 
+                                                                        ? (task.assigned_employee_name || 'Servidor') 
+                                                                        : '_________________'}
+                                                                </td>
+                                                            )}
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -767,16 +926,43 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     ))}
                 </div>
 
-                <div className="mt-12 flex justify-between gap-8 pt-8 border-t border-gray-300">
-                    <div className="flex-1 text-center">
-                        <div className="border-t border-black w-3/4 mx-auto pt-2"></div>
-                        <p className="text-xs font-bold uppercase">Gestão Escolar</p>
+                {/* Dynamic Server Signatures */}
+                {selectedSignatures.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                        <h4 className="text-[10px] font-black uppercase mb-6 tracking-wider text-gray-400">
+                            Assinatura dos Servidores Responsáveis pelas Tarefas
+                        </h4>
+                        <div className="grid grid-cols-2 gap-x-12 gap-y-12">
+                            {selectedSignatures.map(server => (
+                                <div key={server} className="text-center break-inside-avoid">
+                                    <div className="border-t border-black w-4/5 mx-auto pt-2"></div>
+                                    <p className="text-[11px] font-bold uppercase text-gray-900 leading-tight">{server}</p>
+                                    <p className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">Executor Responsável</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex-1 text-center">
-                        <div className="border-t border-black w-3/4 mx-auto pt-2"></div>
-                        <p className="text-xs font-bold uppercase">Responsável Manutenção</p>
+                )}
+
+                {/* General Supervisory Signatures */}
+                {(includeGestaoSignature || includeZeladoriaSignature) && (
+                    <div className="mt-12 flex justify-between gap-12 pt-8 border-t border-gray-300">
+                        {includeGestaoSignature && (
+                            <div className="flex-1 text-center break-inside-avoid">
+                                <div className="border-t border-black w-4/5 mx-auto pt-2"></div>
+                                <p className="text-xs font-bold uppercase text-gray-900">Gestão Escolar</p>
+                                <p className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold">Assinatura / Carimbo</p>
+                            </div>
+                        )}
+                        {includeZeladoriaSignature && (
+                            <div className="flex-1 text-center break-inside-avoid">
+                                <div className="border-t border-black w-4/5 mx-auto pt-2"></div>
+                                <p className="text-xs font-bold uppercase text-gray-900">Supervisão de Zeladoria</p>
+                                <p className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold">Responsável Zeladoria/Manutenção</p>
+                            </div>
+                        )}
                     </div>
-                </div>
+                )}
 
                 <style>{`
                     @media print {

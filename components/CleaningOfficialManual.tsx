@@ -86,6 +86,13 @@ const CleaningOfficialManual: React.FC = () => {
       semanal: "Limpeza detalhada das áreas externas; Remover manchas superficiais; Higienizar lixeiras externas; Controle de matos",
       mensal: "Lavagem completa com jato de água ou lavadora de alta pressão; Remover manchas persistentes; Revisar drenagem externa; Remoção de matos resistentes",
       trimestral: "Revisão geral de pisos externos; Reparos em rachaduras e nivelamento; Limpeza completa de áreas de difícil acesso; Tratamento preventivo contra matos"
+    },
+    {
+      ambiente: "11. Pátio e Refeitório",
+      diaria: "Limpar mesas e bancos antes e após as refeições; Varrer e passar pano com desinfetante no piso; Manter lixeiras limpas e vazias; Recolher resíduos de alimentos; Inspeções: lâmpadas, ventiladores, bebedouros",
+      semanal: "Lavagem completa do piso e paredes azulejadas; Higienizar mesas e bancos detalhadamente; Lavar lixeiras",
+      mensal: "Limpar vidros e janelas; Limpar ventiladores e bebedouros por fora; Limpar calhas próximas",
+      trimestral: "Limpeza de forro/laje; Revisão geral de mesas e bancos e reparos"
     }
   ];
 
