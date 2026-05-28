@@ -71,6 +71,7 @@ const INITIAL_KITCHEN_TASKS: SanitationTask[] = [
    { id: 'k-16', area: 'Higiene e Lixo', title: 'Higienização da caixa de gordura (POP 17)', frequency: 'MENSAL', status: 'PENDENTE' },
    { id: 'k-17', area: 'Cocção', title: 'Higienização do exaustor/coifa (POP 18)', frequency: 'MENSAL', status: 'PENDENTE' },
    { id: 'k-18', area: 'Higiene e Lixo', title: 'Controle de potabilidade da água (POP 22)', frequency: 'MENSAL', status: 'PENDENTE' },
+   { id: 'k-28', area: 'Utensílios/Equipamentos', title: 'Limpeza e higienização dos filtros dos aparelhos de ar-condicionado da cozinha (POP 34)', frequency: 'MENSAL', status: 'PENDENTE' },
 
    // PERIÓDICAS / CONFORME NECESSIDADE
    { id: 'k-19', area: 'Utensílios/Equipamentos', title: 'Higienização de panos de limpeza (POP 19)', frequency: 'PERIÓDICA', status: 'PENDENTE' },
@@ -87,18 +88,20 @@ const INITIAL_KITCHEN_TASKS: SanitationTask[] = [
    { id: 'k-ref-1', area: 'Refeitório', title: 'Limpeza e desinfecção de mesas e cadeiras do refeitório antes e após as refeições (POP 30)', frequency: 'DIÁRIA', status: 'PENDENTE' },
    { id: 'k-ref-2', area: 'Refeitório', title: 'Varredura e higienização úmida/lavagem do chão do refeitório (POP 31)', frequency: 'DIÁRIA', status: 'PENDENTE' },
    { id: 'k-ref-3', area: 'Refeitório', title: 'Higienização das paredes e do forro/teto do refeitório (POP 32)', frequency: 'SEMANAL', status: 'PENDENTE' },
-   { id: 'k-ref-4', area: 'Refeitório', title: 'Higienização de ventiladores e luminárias do refeitório (POP 33)', frequency: 'MENSAL', status: 'PENDENTE' }
+   { id: 'k-ref-4', area: 'Refeitório', title: 'Higienização de ventiladores e luminárias do refeitório (POP 33)', frequency: 'MENSAL', status: 'PENDENTE' },
+   { id: 'k-ref-5', area: 'Refeitório', title: 'Limpeza e higienização dos filtros dos aparelhos de ar-condicionado do refeitório (POP 35)', frequency: 'MENSAL', status: 'PENDENTE' }
 ];
 
 const KitchenSanitation: React.FC = () => {
    const [tasks, setTasks] = useState<SanitationTask[]>(() => {
       const saved = localStorage.getItem('kitchen_sanitation_tasks_v2');
       if (saved) {
-         const parsed = JSON.parse(saved);
-         const hasRefectory = parsed.some((t: any) => t.area === 'Refeitório');
-         if (!hasRefectory) {
-            const refectoryTasks = INITIAL_KITCHEN_TASKS.filter(t => t.area === 'Refeitório');
-            const merged = [...parsed, ...refectoryTasks];
+         const parsed = JSON.parse(saved) as SanitationTask[];
+         const missingTasks = INITIAL_KITCHEN_TASKS.filter(
+            initialTask => !parsed.some(savedTask => savedTask.id === initialTask.id)
+         );
+         if (missingTasks.length > 0) {
+            const merged = [...parsed, ...missingTasks];
             localStorage.setItem('kitchen_sanitation_tasks_v2', JSON.stringify(merged));
             return merged;
          }
