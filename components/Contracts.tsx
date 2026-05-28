@@ -1526,24 +1526,25 @@ const Contracts: React.FC = () => {
                               key={`qty-${item.id}-${batchDeliveryData[item.id] || 0}`}
                               type="text"
                               defaultValue={batchDeliveryData[item.id] ? formatQuantity(batchDeliveryData[item.id]) : ''}
-                              onBlur={(e) => {
-                                const val = parseNumeric(e.target.value);
-                                setBatchDeliveryData(prev => {
-                                  const next = { ...prev };
-                                  if (val > 0) {
-                                    const available = item.contractedQuantity - item.acquiredQuantity;
-                                    if (val > available) {
-                                      alert(`Aviso: A quantidade para ${item.description} excede o saldo (${formatQuantity(available)}).`);
-                                      next[item.id] = available;
-                                    } else {
-                                      next[item.id] = val;
-                                    }
-                                  } else {
-                                    delete next[item.id];
-                                  }
-                                  return next;
-                                });
-                              }}
+                               onBlur={(e) => {
+                                 const val = parseNumeric(e.target.value);
+                                 setBatchDeliveryData(prev => {
+                                   const next = { ...prev };
+                                   if (val > 0) {
+                                     const available = item.contractedQuantity - item.acquiredQuantity;
+                                     const isException = selectedContract?.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+                                     if (val > available && !isException) {
+                                       alert(`Aviso: A quantidade para ${item.description} excede o saldo (${formatQuantity(available)}).`);
+                                       next[item.id] = available;
+                                     } else {
+                                       next[item.id] = val;
+                                     }
+                                   } else {
+                                     delete next[item.id];
+                                   }
+                                   return next;
+                                 });
+                               }}
                               placeholder="0,000"
                               className="w-full text-center border border-emerald-200 bg-white p-2.5 rounded-xl text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-inner placeholder-gray-300"
                             />
@@ -2505,13 +2506,14 @@ const Contracts: React.FC = () => {
                   const originalQty = originalBatchDeliveryData[item.id] || 0;
                   const currentQty = Number(editBatchDeliveryData[item.id]) || 0;
                   const remaining = item.contractedQuantity - item.acquiredQuantity + originalQty;
+                  const isException = selectedContract.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
                   return (
                     <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-5"><p className="font-black text-gray-900 text-xs uppercase">{item.description}</p></td>
                       <td className="px-6 py-5 text-center"><p className="font-bold text-gray-500 text-xs uppercase">{item.unit}</p></td>
-                      <td className="px-6 py-5 text-center"><p className="font-black text-gray-600 text-xs">{formatQuantity(remaining)}</p></td>
+                      <td className="px-6 py-5 text-center"><p className="font-black text-gray-600 text-xs">{isException ? 'Sem Limite' : formatQuantity(remaining)}</p></td>
                       <td className="px-6 py-5 flex justify-center">
-                        <input type="number" min="0" max={remaining} step="any" value={currentQty || ""} onChange={(e) => setEditBatchDeliveryData(prev => ({ ...prev, [item.id]: Number(e.target.value) }))} className="w-24 p-2 bg-white border border-gray-200 rounded-lg text-center font-black text-blue-700 outline-none focus:border-blue-500" placeholder="0" />
+                        <input type="number" min="0" max={isException ? undefined : remaining} step="any" value={currentQty || ""} onChange={(e) => setEditBatchDeliveryData(prev => ({ ...prev, [item.id]: Number(e.target.value) }))} className="w-24 p-2 bg-white border border-gray-200 rounded-lg text-center font-black text-blue-700 outline-none focus:border-blue-500" placeholder="0" />
                       </td>
                     </tr>
                   );

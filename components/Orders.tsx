@@ -398,8 +398,9 @@ const Orders: React.FC = () => {
             const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === id);
             const originalQty = originalItem ? originalItem.quantity : 0;
             const available = (contractItem.contractedQuantity - contractItem.acquiredQuantity) + originalQty;
+            const isException = selectedContract?.number === '01/2026/SEDUC/MT' && contractItem.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
 
-            if (numericValue > available) {
+            if (numericValue > available && !isException) {
               return { ...item, [field]: available, selected: true };
             }
           }
@@ -530,7 +531,8 @@ const Orders: React.FC = () => {
     const overLimitItems = localItems.filter(li => {
       if (!li.selected) return false;
       const ci = selectedContract?.items.find(i => i.id === li.contractItemId);
-      return ci && li.requestedQuantity > (ci.contractedQuantity - ci.acquiredQuantity);
+      const isException = selectedContract?.number === '01/2026/SEDUC/MT' && ci?.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+      return ci && !isException && li.requestedQuantity > (ci.contractedQuantity - ci.acquiredQuantity);
     });
 
     if (overLimitItems.length > 0) {
