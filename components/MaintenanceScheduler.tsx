@@ -1081,17 +1081,26 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                     {[...groupedTasks[block][area]].sort((a, b) => (FREQUENCY_ORDER[a.frequency] || 99) - (FREQUENCY_ORDER[b.frequency] || 99)).map(task => (
+                                                     {[...groupedTasks[block][area]].sort((a, b) => (FREQUENCY_ORDER[a.frequency] || 99) - (FREQUENCY_ORDER[b.frequency] || 99)).map(task => {
+                                                        const periodRecords = records.filter(r => r.task_id === task.id && r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z');
+                                                        const hasRecords = periodRecords.length > 0;
+                                                        
+                                                        const uniqueDates = Array.from(new Set(periodRecords.map(r => {
+                                                            const d = new Date(r.completed_at);
+                                                            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`;
+                                                        })));
+                                                        
+                                                        const datesString = hasRecords ? uniqueDates.join(', ') : '____/____/____';
+
+                                                        return (
                                                         <tr key={task.id} className="border-b border-gray-100">
                                                             <td className="py-1 pr-2">{task.task_description}</td>
                                                             <td className="py-1 text-[10px]">{task.frequency}</td>
-                                                            <td className="py-1 text-[10px]">
-                                                                {task.last_executed_at 
-                                                                    ? `${new Date(task.last_executed_at).toLocaleDateString('pt-BR')}${task.executed_shift ? ` (${task.executed_shift === 'Matutino' ? 'Mat' : 'Vesp'})` : ''}` 
-                                                                    : '____/____/____'}
+                                                            <td className="py-1 text-[10px] break-words max-w-[120px]">
+                                                                {datesString}
                                                             </td>
-                                                            <td className="py-1 text-center">
-                                                                {task.status === 'CONCLUIDO' ? 'OK' : '[ ]'}
+                                                            <td className="py-1 text-center font-bold">
+                                                                {hasRecords ? 'OK' : '[ ]'}
                                                             </td>
                                                             {includeTaskSignature && (
                                                                 <td className="py-1 text-[9px] text-gray-500 italic">
@@ -1099,7 +1108,8 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                                 </td>
                                                             )}
                                                         </tr>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </tbody>
                                             </table>
                                         </div>
