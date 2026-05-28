@@ -234,6 +234,32 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         await window.html2pdf().set(opt).from(element).save();
     };
 
+    const generateMuralChecklist = async () => {
+        setIsPrinting(true);
+        setTimeout(async () => {
+            const element = document.getElementById('mural-checklist-print');
+            if (element) {
+                const opt = {
+                    margin: 5,
+                    filename: `Checklist_Mural_Zeladoria.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 1.5 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                };
+                try {
+                    // @ts-ignore
+                    await window.html2pdf().set(opt).from(element).save();
+                } catch (err) {
+                    console.error("Error printing mural checklist:", err);
+                } finally {
+                    setIsPrinting(false);
+                }
+            } else {
+                setIsPrinting(false);
+            }
+        }, 300);
+    };
+
     const handleMarkBathroomClean = async (task: MaintenanceTask, shift: 'MATUTINO' | 'VESPERTINO') => {
         if (!selectedCleanEmployee) {
             alert('Por favor, selecione um zelador(a) para registrar o lançamento.');
@@ -343,6 +369,14 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         return acc;
     }, {} as Record<string, Record<string, MaintenanceTask[]>>);
 
+    const muralGroupedTasks = tasks.reduce((acc, task) => {
+        if (!acc[task.block]) acc[task.block] = {};
+        if (!acc[task.block][task.area_name]) acc[task.block][task.area_name] = [];
+
+        acc[task.block][task.area_name].push(task);
+        return acc;
+    }, {} as Record<string, Record<string, MaintenanceTask[]>>);
+
     const getFrequencyLabel = (freq: string) => {
         switch (freq) {
             case 'DIARIA': return 'Diária';
@@ -367,6 +401,97 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const getAreaResponsible = (block: string, area: string) => {
         const areaTasks = tasks.filter(t => t.block === block && t.area_name === area);
         return areaTasks.find(t => t.assigned_employee_name)?.assigned_employee_name || null;
+    };
+
+    const getFlatMuralTasks = () => {
+        const flatList: Array<{
+            block: string;
+            area: string;
+            task: MaintenanceTask;
+            isFirstInBlock: boolean;
+            blockSpan: number;
+            isFirstInArea: boolean;
+            areaSpan: number;
+        }> = [];
+        
+        const sortedBlocks = Object.keys(muralGroupedTasks).sort();
+        
+        sortedBlocks.forEach(block => {
+            const areas = muralGroupedTasks[block];
+            const sortedAreas = Object.keys(areas).sort();
+            
+            // Count total tasks in this block
+            let blockTotalTasks = 0;
+            sortedAreas.forEach(area => {
+                blockTotalTasks += areas[area].length;
+            });
+            
+            let isFirstInBlock = true;
+            
+            sortedAreas.forEach(area => {
+                const areaTasks = [...areas[area]].sort((a, b) => (FREQUENCY_ORDER[a.frequency] || 99) - (FREQUENCY_ORDER[b.frequency] || 99));
+                const areaTotalTasks = areaTasks.length;
+                let isFirstInArea = true;
+                
+                areaTasks.forEach(task => {
+                    flatList.push({
+                        block,
+                        area,
+                        task,
+                        isFirstInBlock,
+                        blockSpan: blockTotalTasks,
+                        isFirstInArea,
+                        areaSpan: areaTotalTasks
+                    });
+                    isFirstInBlock = false;
+                    isFirstInArea = false;
+                });
+            });
+        });
+        return flatList;
+    };
+
+    const renderMuralVistos = (task: MaintenanceTask) => {
+        if (task.frequency === 'DIARIA') {
+            return (
+                <div className="flex justify-center items-center gap-2">
+                    {['S', 'T', 'Q', 'Q', 'S'].map((day, i) => (
+                        <div key={i} className="flex flex-col items-center">
+                            <div className="w-5 h-5 border border-gray-400 rounded bg-white"></div>
+                            <span className="text-[7px] font-bold text-gray-500 mt-0.5">{day}</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        } else if (task.frequency === 'SEMANAL') {
+            return (
+                <div className="flex justify-center items-center gap-2">
+                    {['S1', 'S2', 'S3', 'S4'].map((week, i) => (
+                        <div key={i} className="flex flex-col items-center">
+                            <div className="w-5 h-5 border border-gray-400 rounded bg-white"></div>
+                            <span className="text-[7px] font-bold text-gray-500 mt-0.5">{week}</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        } else if (task.frequency === 'MENSAL') {
+            return (
+                <div className="flex justify-center items-center">
+                    <div className="w-16 h-5 border border-gray-400 rounded bg-white flex items-center justify-center">
+                        <span className="text-[7px] font-bold text-gray-300 uppercase">VISTO MENSAL</span>
+                    </div>
+                </div>
+            );
+        } else if (task.frequency === 'TRIMESTRAL') {
+            return (
+                <div className="flex justify-center items-center">
+                    <div className="w-20 h-5 border border-gray-400 rounded bg-white flex items-center justify-center">
+                        <span className="text-[7px] font-bold text-gray-300 uppercase">VISTO TRIMESTRAL</span>
+                    </div>
+                </div>
+            );
+        }
+        return null;
     };
 
     const dailyBathroomTasks = tasks.filter(t => 
@@ -415,6 +540,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         title="Opções de Assinaturas e Impressão"
                     >
                         <Settings2 size={16} />
+                    </button>
+                    <button
+                        onClick={generateMuralChecklist}
+                        className="px-3 sm:px-5 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1.5 shadow-lg shrink-0"
+                    >
+                        <Printer size={14} className="shrink-0" /> <span className="truncate">Checklist Mural (Vazio)</span>
                     </button>
                     <button
                         onClick={generateWeeklyReport}
@@ -1078,6 +1209,78 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         </div>
                     </div>
                 )}
+
+                {/* 3. CHECKLIST MURAL (VAZIO) */}
+                <div id="mural-checklist-print" className="p-8 text-gray-900 font-sans bg-white w-[297mm]" style={{ minHeight: '210mm' }}>
+                    <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4 mb-4">
+                        <div>
+                            <h1 className="text-lg font-black uppercase tracking-tight">Checklist de Rotina de Zeladoria e Manutenção</h1>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">Escola Estadual André Maggi</p>
+                        </div>
+                        <div className="text-right text-[10px] font-black uppercase">
+                            <p className="text-indigo-600 font-black">MURAL DE AFIXAÇÃO</p>
+                            <p>Referência: {reportPeriod || '_________________'}</p>
+                        </div>
+                    </div>
+
+                    <div className="border border-gray-900 rounded-xl overflow-hidden shadow-sm">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-gray-900 text-white">
+                                <tr className="text-[9px] uppercase font-black">
+                                    <th className="p-2 border-r border-gray-800 w-[15%]">Bloco / Setor</th>
+                                    <th className="p-2 border-r border-gray-800 w-[18%]">Ambiente / Área</th>
+                                    <th className="p-2 border-r border-gray-800 w-[38%]">Tarefa de Manutenção / Zeladoria</th>
+                                    <th className="p-2 border-r border-gray-800 w-[10%] text-center">Frequência</th>
+                                    <th className="p-2 w-[19%] text-center">Vistos de Execução</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-300">
+                                {getFlatMuralTasks().map((item, index) => (
+                                    <tr key={item.task.id} className="text-[9px] hover:bg-gray-50/50">
+                                        {item.isFirstInBlock && (
+                                            <td rowSpan={item.blockSpan} className="p-2 border-r border-b border-gray-300 font-bold uppercase text-[9px] align-middle bg-gray-50/50 max-w-[120px] break-words">
+                                                {item.block}
+                                            </td>
+                                        )}
+                                        {item.isFirstInArea && (
+                                            <td rowSpan={item.areaSpan} className="p-2 border-r border-b border-gray-300 font-bold uppercase text-[9px] align-middle max-w-[120px] break-words">
+                                                {item.area}
+                                                <div className="text-[7px] text-gray-500 font-normal mt-1 lowercase">
+                                                    Resp: {getAreaResponsible(item.block, item.area) || '_________'}
+                                                </div>
+                                            </td>
+                                        )}
+                                        <td className="p-2 border-r border-b border-gray-300 font-medium break-words leading-relaxed">
+                                            {item.task.task_description}
+                                        </td>
+                                        <td className="p-2 border-r border-b border-gray-300 text-[8px] font-black uppercase text-center align-middle">
+                                            {getFrequencyLabel(item.task.frequency)}
+                                        </td>
+                                        <td className="p-2 border-b border-gray-300 text-center align-middle bg-gray-50/20">
+                                            {renderMuralVistos(item.task)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Signatures at the bottom */}
+                    <div className="mt-8 pt-4 border-t border-gray-300 grid grid-cols-2 gap-16 text-center text-gray-800 break-inside-avoid">
+                        <div>
+                            <div className="border-t border-gray-400 w-3/4 mx-auto pt-2">
+                                <p className="text-[9px] font-black uppercase">Supervisão de Zeladoria</p>
+                                <p className="text-[7px] text-gray-400 uppercase font-bold">Assinatura / Carimbo</p>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="border-t border-gray-400 w-3/4 mx-auto pt-2">
+                                <p className="text-[9px] font-black uppercase">Gestão Escolar / Direção</p>
+                                <p className="text-[7px] text-gray-400 uppercase font-bold">Assinatura / Carimbo</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
