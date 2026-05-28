@@ -33,6 +33,13 @@ interface MaintenanceSchedulerProps {
     employees: { id: string, name: string }[];
 }
 
+const FREQUENCY_ORDER: Record<string, number> = {
+    'DIARIA': 1,
+    'SEMANAL': 2,
+    'MENSAL': 3,
+    'TRIMESTRAL': 4
+};
+
 const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }) => {
     const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
     const [loading, setLoading] = useState(true);
@@ -759,7 +766,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 min-w-0 w-full">
-                                                    {groupedTasks[block][area].map(task => (
+                                                    {[...groupedTasks[block][area]].sort((a, b) => (FREQUENCY_ORDER[a.frequency] || 99) - (FREQUENCY_ORDER[b.frequency] || 99)).map(task => (
                                                         <div key={task.id} className={`p-4 rounded-xl border transition-all flex flex-col justify-between min-w-0 w-full ${task.status === 'CONCLUIDO' ? 'bg-emerald-50/30 border-emerald-100' :
                                                                 task.status === 'ATRASADO' ? 'bg-red-50/30 border-red-100' :
                                                                     'bg-white border-gray-100 hover:border-indigo-100 hover:shadow-sm'
@@ -922,7 +929,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {groupedTasks[block][area].map(task => (
+                                                     {[...groupedTasks[block][area]].sort((a, b) => (FREQUENCY_ORDER[a.frequency] || 99) - (FREQUENCY_ORDER[b.frequency] || 99)).map(task => (
                                                         <tr key={task.id} className="border-b border-gray-100">
                                                             <td className="py-1 pr-2">{task.task_description}</td>
                                                             <td className="py-1 text-[10px]">{task.frequency}</td>
