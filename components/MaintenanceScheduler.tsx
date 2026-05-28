@@ -1211,7 +1211,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                 )}
 
                 {/* 3. CHECKLIST MURAL (VAZIO) */}
-                <div id="mural-checklist-print" className="p-8 text-gray-900 font-sans bg-white w-[297mm]" style={{ minHeight: '210mm' }}>
+                <div id="mural-checklist-print" className="p-6 text-gray-900 font-sans bg-white w-[280mm]" style={{ minHeight: '190mm', boxSizing: 'border-box' }}>
                     <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4 mb-4">
                         <div>
                             <h1 className="text-lg font-black uppercase tracking-tight">Checklist de Rotina de Zeladoria e Manutenção</h1>
