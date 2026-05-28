@@ -121,6 +121,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             const { data: recordsData, error: recordsError } = await supabase
                 .from('maintenance_records')
                 .select('task_id, completed_at, status, performed_by_name')
+                .limit(20000)
                 .order('completed_at', { ascending: false });
 
             if (recordsError) throw recordsError;
