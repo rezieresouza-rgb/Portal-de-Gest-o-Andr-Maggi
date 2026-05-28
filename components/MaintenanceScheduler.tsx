@@ -791,13 +791,18 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                                         </>
                                                                     )}
                                                                     <button
-                                                                        onClick={() => handleMarkAsDone(task, taskDates[task.id], taskShifts[task.id] || 'MATUTINO')}
-                                                                        disabled={task.status === 'CONCLUIDO'}
+                                                                        onClick={() => {
+                                                                            if (task.status === 'CONCLUIDO' && task.last_executed_at) {
+                                                                                handleDeleteRecord(task.id, task.last_executed_at);
+                                                                            } else {
+                                                                                handleMarkAsDone(task, taskDates[task.id], taskShifts[task.id] || 'MATUTINO');
+                                                                            }
+                                                                        }}
                                                                         className={`p-1.5 sm:p-2 rounded-full transition-all shrink-0 ${task.status === 'CONCLUIDO'
-                                                                                ? 'bg-emerald-100 text-emerald-600 cursor-default'
+                                                                                ? 'bg-emerald-100 text-emerald-600 hover:bg-red-100 hover:text-red-600 cursor-pointer'
                                                                                 : 'bg-gray-100 text-gray-400 hover:bg-indigo-600 hover:text-white'
                                                                             }`}
-                                                                        title={task.status === 'CONCLUIDO' ? 'Concluído' : 'Marcar como Feito'}
+                                                                        title={task.status === 'CONCLUIDO' ? 'Desmarcar como concluída' : 'Marcar como Feito'}
                                                                     >
                                                                         <CheckCircle2 size={14} className="shrink-0" />
                                                                     </button>
