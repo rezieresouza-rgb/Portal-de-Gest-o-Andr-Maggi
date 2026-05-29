@@ -57,17 +57,18 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
       
       const uniqueAreas = Array.from(new Set(data?.map(t => t.area_name))).filter(Boolean);
       
-      // Merge with environments prop if any, and sort
+      // Merge with environments prop if any, add COZINHA/REFEITÓRIO, and sort
       const allLocations = Array.from(new Set([
         ...uniqueAreas,
-        ...environments.map(e => e.name)
+        ...environments.map(e => e.name),
+        'COZINHA/REFEITÓRIO'
       ])).sort();
       
       setLocations(allLocations);
     } catch (err) {
       console.error("Erro ao buscar locais:", err);
       // Fallback to environments prop
-      setLocations(environments.map(e => e.name));
+      setLocations(Array.from(new Set([...environments.map(e => e.name), 'COZINHA/REFEITÓRIO'])).sort());
     }
   };
 
