@@ -209,9 +209,32 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
             />
           </div>
           <button 
-            onClick={() => window.print()}
+            onClick={async () => {
+              const element = document.getElementById('occurrences-report');
+              if (!element) return;
+              
+              // Remove hidden class temporarily for html2canvas to work properly
+              element.classList.remove('hidden');
+              element.classList.add('block');
+              
+              try {
+                // @ts-ignore
+                await window.html2pdf().set({
+                  margin: 10,
+                  filename: `Relatorio_Ocorrencias_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
+                  image: { type: 'jpeg', quality: 0.98 },
+                  html2canvas: { scale: 2 },
+                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                }).from(element).save();
+              } catch (err) {
+                console.error("Erro ao gerar PDF:", err);
+              } finally {
+                element.classList.remove('block');
+                element.classList.add('hidden');
+              }
+            }}
             className="px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center"
-            title="Imprimir Relatório"
+            title="Baixar Relatório em PDF"
           >
             <Printer size={18} />
           </button>
@@ -284,7 +307,15 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
         )}
       </div>
 
-      <div className="hidden print:block w-full">
+      <div id="occurrences-report" className="hidden w-full bg-white p-8">
+        <div className="text-center border-b-2 border-black pb-6 mb-8">
+          <h1 className="text-2xl font-black uppercase mb-2">Relatório de Ocorrências de Manutenção</h1>
+          <p className="text-base font-bold uppercase">Escola Estadual André Antônio Maggi</p>
+          <p className="text-xs uppercase text-gray-600 mt-2">
+            Status: {viewMode === 'HISTORICO' ? 'HISTÓRICO DE RESOLVIDOS' : 'OCORRÊNCIAS ATIVAS'}
+          </p>
+        </div>
+
         <table className="w-full text-left border-collapse border border-gray-300 text-sm font-sans mt-4">
           <thead>
             <tr className="bg-gray-100 border-b border-gray-300">
