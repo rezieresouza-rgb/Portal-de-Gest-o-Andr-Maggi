@@ -118,17 +118,33 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
 
             if (tasksError) throw tasksError;
 
-            const { data: recordsData, error: recordsError } = await supabase
-                .from('maintenance_records')
-                .select('task_id, completed_at, status, performed_by_name')
-                .limit(20000)
-                .order('completed_at', { ascending: false });
+            // Fetch all records overcoming the 1000 row hard limit
+            let allRecordsData: any[] = [];
+            let page = 0;
+            const pageSize = 1000;
+            while (true) {
+                const { data: pageData, error: pageError } = await supabase
+                    .from('maintenance_records')
+                    .select('task_id, completed_at, status, performed_by_name')
+                    .order('completed_at', { ascending: false })
+                    .range(page * pageSize, (page + 1) * pageSize - 1);
 
-            if (recordsError) throw recordsError;
-            setRecords(recordsData || []);
+                if (pageError) throw pageError;
+                
+                if (pageData && pageData.length > 0) {
+                    allRecordsData = [...allRecordsData, ...pageData];
+                }
+                
+                if (!pageData || pageData.length < pageSize) {
+                    break;
+                }
+                page++;
+            }
+            
+            setRecords(allRecordsData);
 
             const mergedTasks = tasksData.map(task => {
-                const lastRecord = recordsData.find((r: any) => r.task_id === task.id);
+                const lastRecord = allRecordsData.find((r: any) => r.task_id === task.id);
                 let status: 'PENDENTE' | 'CONCLUIDO' | 'ATRASADO' = 'PENDENTE';
 
                 if (lastRecord) {
