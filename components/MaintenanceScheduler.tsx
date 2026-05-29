@@ -805,7 +805,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                                 <h4 className="text-xs font-black uppercase text-white mt-2 truncate" title={task.area_name}>
                                                     {task.area_name}
                                                 </h4>
-                                                <p className="text-[9px] font-bold text-white/50 line-clamp-1 mt-1 leading-normal" title={task.task_description}>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <span className="text-[7px] bg-white/10 text-white/70 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider truncate">
+                                                        Resp: {task.assigned_employee_name || 'Serviços Gerais'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[9px] font-bold text-white/50 line-clamp-1 mt-1.5 leading-normal" title={task.task_description}>
                                                     {task.task_description}
                                                 </p>
                                             </div>
