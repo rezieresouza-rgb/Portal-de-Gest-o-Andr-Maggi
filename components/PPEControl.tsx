@@ -299,7 +299,12 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                   <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Cargo</label><input disabled value={deliveryForm.employeeRole} className="w-full p-4 bg-gray-100 border border-gray-100 rounded-2xl font-black text-xs text-gray-500 uppercase" /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">EPI</label><select required value={deliveryForm.ppeId} onChange={e => setDeliveryForm({ ...deliveryForm, ppeId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none">{items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.currentStock} {i.unit})</option>)}</select></div>
+                  <div className="md:col-span-2 space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">EPI</label>
+                    <select required value={deliveryForm.ppeId} onChange={e => setDeliveryForm({ ...deliveryForm, ppeId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none">
+                      <option value="">SELECIONE O EPI...</option>
+                      {items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.currentStock} {i.unit})</option>)}
+                    </select>
+                  </div>
                   <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Qtd</label><input required type="number" min="1" value={deliveryForm.quantity} onChange={e => setDeliveryForm({ ...deliveryForm, quantity: parseInt(e.target.value) })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-lg text-center outline-none" /></div>
                 </div>
                 <button type="submit" className="w-full py-5 bg-orange-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-orange-700 transition-all">Confirmar e Gerar Termo</button>
