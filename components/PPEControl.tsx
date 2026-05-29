@@ -148,6 +148,11 @@ const PPEControl: React.FC = () => {
     setTimeout(async () => {
       const element = document.getElementById(`termo-${delivery.id}`);
       if (!element) return setIsPrinting(false);
+      
+      // Temporarily show the element so html2canvas can render it
+      element.classList.remove('hidden');
+      element.classList.add('block');
+      
       try {
         // @ts-ignore
         await window.html2pdf().set({
@@ -160,6 +165,8 @@ const PPEControl: React.FC = () => {
       } catch (err) {
         console.error(err);
       } finally {
+        element.classList.remove('block');
+        element.classList.add('hidden');
         setIsPrinting(false);
       }
     }, 100);
