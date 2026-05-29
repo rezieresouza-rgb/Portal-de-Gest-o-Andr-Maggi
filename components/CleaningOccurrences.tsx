@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { CleaningEmployee, SchoolEnvironment } from '../types';
-import { AlertTriangle, Plus, Search, Trash2, CheckCircle2, Clock, X, Loader2 } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Trash2, CheckCircle2, Clock, X, Loader2, Printer, History } from 'lucide-react';
 
 interface Occurrence {
   id: string;
@@ -25,6 +25,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'ATIVAS' | 'HISTORICO'>('ATIVAS');
 
   const [newOcc, setNewOcc] = useState({
     reported_by: '',
@@ -151,11 +152,15 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     }
   };
 
-  const filteredData = occurrences.filter(o => 
-    o.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.reported_by.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData = occurrences.filter(o => {
+    const matchesSearch = o.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.reported_by.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesMode = viewMode === 'HISTORICO' ? o.status === 'RESOLVIDO' : o.status !== 'RESOLVIDO';
+    
+    return matchesSearch && matchesMode;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in w-full">
@@ -164,14 +169,35 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
           <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center shadow-inner">
             <AlertTriangle size={28} />
           </div>
-          <div>
+          <div className="no-print">
             <h2 className="text-xl font-black text-gray-900 uppercase">Registro de Ocorrências</h2>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Lâmpadas queimadas, vazamentos, reparos rápidos</p>
           </div>
+          <div className="hidden print:block">
+            <h2 className="text-xl font-black text-gray-900 uppercase">Relatório de Ocorrências de Manutenção</h2>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+              Escola Estadual André Antônio Maggi - {viewMode === 'HISTORICO' ? 'Histórico de Resolvidos' : 'Ocorrências Ativas'}
+            </p>
+          </div>
         </div>
         
-        <div className="flex gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto no-print">
+          <div className="flex bg-gray-100 p-1 rounded-2xl w-full sm:w-auto">
+            <button 
+              onClick={() => setViewMode('ATIVAS')}
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'ATIVAS' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              <AlertTriangle size={14} /> Ativas
+            </button>
+            <button 
+              onClick={() => setViewMode('HISTORICO')}
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'HISTORICO' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              <History size={14} /> Histórico
+            </button>
+          </div>
+          
+          <div className="relative flex-1 sm:w-48">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
               type="text" 
@@ -182,10 +208,17 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
             />
           </div>
           <button 
+            onClick={() => window.print()}
+            className="px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center"
+            title="Imprimir Relatório"
+          >
+            <Printer size={18} />
+          </button>
+          <button 
             onClick={() => setIsModalOpen(true)}
             className="px-6 py-3 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2 whitespace-nowrap"
           >
-            <Plus size={16} /> <span className="hidden sm:inline">Nova Ocorrência</span>
+            <Plus size={16} /> <span className="hidden sm:inline">Nova</span>
           </button>
         </div>
       </div>
@@ -222,7 +255,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                     {occ.status === 'RESOLVIDO' ? <CheckCircle2 size={14} /> : occ.status === 'EM_ANDAMENTO' ? <Clock size={14} /> : <AlertTriangle size={14} />}
                     {occ.status}
                   </button>
-                  <button onClick={() => deleteOccurrence(occ.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <button onClick={() => deleteOccurrence(occ.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors no-print">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -237,9 +270,11 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                   <p className="text-xs font-bold text-gray-800">{occ.reported_by}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Data</p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                    {occ.status === 'RESOLVIDO' ? 'Resolvido em' : 'Data'}
+                  </p>
                   <p className="text-[10px] font-bold text-gray-600">
-                    {new Date(occ.reported_at).toLocaleDateString('pt-BR')}
+                    {new Date(occ.status === 'RESOLVIDO' && occ.resolved_at ? occ.resolved_at : occ.reported_at).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               </div>
