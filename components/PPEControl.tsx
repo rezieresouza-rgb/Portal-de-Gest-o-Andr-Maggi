@@ -56,14 +56,16 @@ const INITIAL_PPE_ITEMS: PPEItem[] = [
   { id: 'ppe-g3', name: 'MÁSCARA PFF2 COM VÁLVULA (QUÍMICOS)', category: 'MANUTENÇÃO', currentStock: 10, minStock: 10, unit: 'UNID' },
 ];
 
-const PPEControl: React.FC = () => {
+interface PPEControlProps {
+  employees: CleaningEmployee[];
+}
+
+const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
   const [activeSubTab, setActiveSubTab] = useState<'inventory' | 'deliveries'>('inventory');
   const [activeCategory, setActiveCategory] = useState<PPECategory | 'TODOS'>('TODOS');
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-
-  const [staff, setStaff] = useState<CleaningEmployee[]>([]);
 
   const [items, setItems] = useState<PPEItem[]>(() => {
     const saved = localStorage.getItem('school_ppe_items_v4');
@@ -83,16 +85,6 @@ const PPEControl: React.FC = () => {
     quantity: 1,
     date: new Date().toLocaleDateString('sv-SE'),
   });
-
-  useEffect(() => {
-    const loadStaff = () => {
-      const saved = localStorage.getItem('cleaning_team_v1');
-      if (saved) setStaff(JSON.parse(saved));
-    };
-    loadStaff();
-    window.addEventListener('storage', loadStaff);
-    return () => window.removeEventListener('storage', loadStaff);
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('school_ppe_items_v4', JSON.stringify(items));
