@@ -223,7 +223,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 print:hidden">
         {loading ? (
           <div className="col-span-full flex justify-center py-20">
             <Loader2 className="animate-spin text-red-500" size={40} />
@@ -281,6 +281,41 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
             </div>
           ))
         )}
+      </div>
+
+      <div className="hidden print:block w-full">
+        <table className="w-full text-left border-collapse border border-gray-300 text-sm font-sans mt-4">
+          <thead>
+            <tr className="bg-gray-100 border-b border-gray-300">
+              <th className="p-3 border border-gray-300 font-black uppercase text-xs">Data</th>
+              <th className="p-3 border border-gray-300 font-black uppercase text-xs">Local</th>
+              <th className="p-3 border border-gray-300 font-black uppercase text-xs">Categoria</th>
+              <th className="p-3 border border-gray-300 font-black uppercase text-xs">Descrição</th>
+              <th className="p-3 border border-gray-300 font-black uppercase text-xs">Reportado por</th>
+              <th className="p-3 border border-gray-300 font-black uppercase text-xs">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map(occ => (
+              <tr key={occ.id} className="border-b border-gray-300">
+                <td className="p-3 border border-gray-300">
+                  {new Date(occ.status === 'RESOLVIDO' && occ.resolved_at ? occ.resolved_at : occ.reported_at).toLocaleDateString('pt-BR')}
+                </td>
+                <td className="p-3 border border-gray-300 font-bold uppercase">{occ.location}</td>
+                <td className="p-3 border border-gray-300 uppercase text-xs">{occ.category}</td>
+                <td className="p-3 border border-gray-300">{occ.description}</td>
+                <td className="p-3 border border-gray-300 uppercase text-xs">{occ.reported_by}</td>
+                <td className="p-3 border border-gray-300 font-bold uppercase text-xs">
+                  {occ.status === 'RESOLVIDO' ? 'RESOLVIDO' : occ.status === 'EM_ANDAMENTO' ? 'EM ANDAMENTO' : 'PENDENTE'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        
+        <div className="mt-12 text-center text-xs uppercase text-gray-500 font-bold">
+          Gerado pelo Portal de Gestão André Antônio Maggi em {new Date().toLocaleDateString('pt-BR')}
+        </div>
       </div>
 
       {isModalOpen && (
