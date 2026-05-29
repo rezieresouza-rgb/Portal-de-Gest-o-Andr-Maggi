@@ -21,6 +21,7 @@ interface CleaningOccurrencesProps {
 
 const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, environments }) => {
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +35,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
 
   useEffect(() => {
     fetchOccurrences();
+    fetchLocations();
     
     const channels = supabase.channel('occurrences_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cleaning_occurrences' }, fetchOccurrences)
@@ -42,7 +44,31 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     return () => {
       channels.unsubscribe();
     };
-  }, []);
+  }, [environments]);
+
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('maintenance_tasks')
+        .select('area_name');
+        
+      if (error) throw error;
+      
+      const uniqueAreas = Array.from(new Set(data?.map(t => t.area_name))).filter(Boolean);
+      
+      // Merge with environments prop if any, and sort
+      const allLocations = Array.from(new Set([
+        ...uniqueAreas,
+        ...environments.map(e => e.name)
+      ])).sort();
+      
+      setLocations(allLocations);
+    } catch (err) {
+      console.error("Erro ao buscar locais:", err);
+      // Fallback to environments prop
+      setLocations(environments.map(e => e.name));
+    }
+  };
 
   const fetchOccurrences = async () => {
     setLoading(true);
@@ -255,8 +281,8 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                   className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/20"
                 >
                   <option value="">SELECIONE O AMBIENTE...</option>
-                  {environments.map(env => (
-                    <option key={env.id} value={env.name}>{env.name}</option>
+                  {locations.map((loc, idx) => (
+                    <option key={idx} value={loc as string}>{loc as string}</option>
                   ))}
                 </select>
               </div>
