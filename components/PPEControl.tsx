@@ -220,7 +220,57 @@ const PPEControl: React.FC = () => {
                   <td className="px-8 py-5"><div className="flex items-center gap-4"><div className="p-3 bg-gray-100 text-gray-400 rounded-xl"><User size={20} /></div><div><p className="text-sm font-black text-gray-900 uppercase">{del.employeeName}</p><p className="text-[9px] text-gray-400 font-bold uppercase">{del.employeeRole}</p></div></div></td>
                   <td className="px-8 py-5"><p className="text-xs font-black text-gray-700 uppercase">{del.ppeName}</p><p className="text-[9px] text-orange-600 font-bold uppercase">Quantidade: {del.quantity}</p></td>
                   <td className="px-8 py-5 text-center"><p className="text-xs font-bold text-gray-400">{new Date(del.date).toLocaleDateString('pt-BR')}</p></td>
-                  <td className="px-8 py-5 text-right"><div className="flex justify-end gap-2"><button onClick={() => printTermo(del)} className="p-3 bg-white text-gray-300 hover:text-blue-600 rounded-xl border border-gray-100 transition-all"><Printer size={18} /></button></div><div id={`termo-${del.id}`} className="hidden"><div className="p-12 space-y-10 text-gray-900 font-sans"><div className="text-center border-b-2 border-black pb-8"><h1 className="text-xl font-black uppercase">Termo de Recebimento de EPI</h1><p className="text-sm font-bold uppercase">Escola André Maggi</p></div><p>Eu, <strong>{del.employeeName}</strong> ({del.employeeRole}), recebi em {new Date(del.date).toLocaleDateString('pt-BR')} o item <strong>{del.ppeName}</strong> (Qtd: {del.quantity}).</p><div className="pt-24 grid grid-cols-2 gap-20 text-center"><div className="border-t border-black pt-2 uppercase text-[10px] font-black">Servidor</div><div className="border-t border-black pt-2 uppercase text-[10px] font-black">Almoxarifado</div></div></div></div></td>
+                  <td className="px-8 py-5 text-right">
+                    <div className="flex justify-end gap-2"><button onClick={() => printTermo(del)} className="p-3 bg-white text-gray-300 hover:text-blue-600 rounded-xl border border-gray-100 transition-all"><Printer size={18} /></button></div>
+                    <div id={`termo-${del.id}`} className="hidden">
+                      <div className="p-12 space-y-6 text-gray-900 font-sans text-sm leading-relaxed max-w-4xl mx-auto">
+                        <div className="text-center border-b-2 border-black pb-6 mb-8">
+                          <h1 className="text-2xl font-black uppercase mb-2">Termo de Responsabilidade e Recibo de EPI</h1>
+                          <p className="text-base font-bold uppercase">Escola Estadual André Antônio Maggi</p>
+                          <p className="text-xs uppercase text-gray-600">Ministério do Trabalho e Emprego - NR-06</p>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <p className="text-justify">
+                            Declaramos para os devidos fins que o(a) servidor(a) <strong>{del.employeeName}</strong>, ocupante do cargo/função de <strong>{del.employeeRole}</strong>, recebeu da ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI o Equipamento de Proteção Individual (EPI) abaixo especificado, de forma gratuita, adequado ao risco e em perfeito estado de conservação e funcionamento.
+                          </p>
+                          
+                          <div className="bg-gray-50 border border-gray-300 p-4 rounded-xl my-6">
+                            <p className="font-bold uppercase text-xs text-gray-500 mb-1">Especificações do Equipamento Recebido</p>
+                            <p className="text-lg font-black uppercase">{del.ppeName}</p>
+                            <p className="text-sm font-bold text-gray-700">Quantidade: {del.quantity} unidade(s)</p>
+                            <p className="text-sm font-bold text-gray-700">Data de Entrega: {new Date(del.date).toLocaleDateString('pt-BR')}</p>
+                          </div>
+
+                          <p className="text-justify">
+                            O(a) servidor(a) declara ter recebido orientação e treinamento sobre o uso adequado, guarda e conservação do referido equipamento, comprometendo-se a:
+                          </p>
+                          
+                          <ul className="list-disc pl-8 space-y-2 text-justify">
+                            <li>Utilizá-lo única e exclusivamente para a finalidade a que se destina, durante toda a jornada de trabalho;</li>
+                            <li>Responsabilizar-se por sua guarda, limpeza e conservação;</li>
+                            <li>Comunicar imediatamente à chefia imediata ou direção qualquer alteração, dano ou extravio que o torne impróprio para uso, para fins de substituição;</li>
+                            <li>Devolver o equipamento de imediato quando do seu desligamento da instituição ou término do contrato.</li>
+                          </ul>
+
+                          <p className="text-justify mt-4">
+                            Declara ainda estar plenamente ciente de que o uso inadequado, extravio por dolo ou culpa, ou a recusa injustificada em utilizar o EPI fornecido, constitui ato faltoso passível de sanções disciplinares, conforme disposições da Norma Regulamentadora NR-06.
+                          </p>
+                        </div>
+                        
+                        <div className="pt-24 mt-12 grid grid-cols-2 gap-16 text-center">
+                          <div>
+                            <div className="border-t border-black pt-2 uppercase text-xs font-black">Assinatura do(a) Servidor(a)</div>
+                            <p className="text-[10px] text-gray-500 mt-1">{del.employeeName}</p>
+                          </div>
+                          <div>
+                            <div className="border-t border-black pt-2 uppercase text-xs font-black">Responsável pela Entrega</div>
+                            <p className="text-[10px] text-gray-500 mt-1">Almoxarifado / Zeladoria</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
                 </tr>
               ))}</tbody>
             </table>
