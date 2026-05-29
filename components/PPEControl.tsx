@@ -26,34 +26,34 @@ import { PPEItem, PPEDelivery, PPECategory, CleaningEmployee } from '../types';
 
 const INITIAL_PPE_ITEMS: PPEItem[] = [
   // COZINHA (UANE)
-  { id: 'ppe-k1', name: 'TOUCA DESCARTÁVEL OU DE ALGODÃO', category: 'COZINHA', currentStock: 15, minStock: 20, unit: 'UNID/PCT' },
-  { id: 'ppe-k2', name: 'UNIFORME BRANCO (ALGODÃO)', category: 'COZINHA', currentStock: 10, minStock: 10, unit: 'UNID' },
-  { id: 'ppe-k3', name: 'AVENTAL DE ALGODÃO', category: 'COZINHA', currentStock: 12, minStock: 10, unit: 'UNID' },
-  { id: 'ppe-k4', name: 'AVENTAL TÉRMICO', category: 'COZINHA', currentStock: 4, minStock: 4, unit: 'UNID' },
-  { id: 'ppe-k5', name: 'LUVAS DE MALHA DE AÇO', category: 'COZINHA', currentStock: 2, minStock: 2, unit: 'PAR' },
-  { id: 'ppe-k6', name: 'LUVAS (VINIL, LÁTEX OU POLIETILENO)', category: 'COZINHA', currentStock: 8, minStock: 15, unit: 'CX' },
-  { id: 'ppe-k7', name: 'LUVAS TÉRMICAS', category: 'COZINHA', currentStock: 4, minStock: 4, unit: 'PAR' },
-  { id: 'ppe-k8', name: 'SAPATO FECHADO ANTIDERRAPANTE', category: 'COZINHA', currentStock: 6, minStock: 6, unit: 'PAR' },
-  { id: 'ppe-k9', name: 'CALÇA COMPRIDA E CAMISETA MANGA CURTA', category: 'COZINHA', currentStock: 10, minStock: 10, unit: 'CONJ' },
+  { id: 'ppe-k1', name: 'TOUCA DESCARTÁVEL OU DE ALGODÃO', category: 'COZINHA', currentStock: 0, minStock: 20, unit: 'UNID/PCT' },
+  { id: 'ppe-k2', name: 'UNIFORME BRANCO (ALGODÃO)', category: 'COZINHA', currentStock: 0, minStock: 10, unit: 'UNID' },
+  { id: 'ppe-k3', name: 'AVENTAL DE ALGODÃO', category: 'COZINHA', currentStock: 0, minStock: 10, unit: 'UNID' },
+  { id: 'ppe-k4', name: 'AVENTAL TÉRMICO', category: 'COZINHA', currentStock: 0, minStock: 4, unit: 'UNID' },
+  { id: 'ppe-k5', name: 'LUVAS DE MALHA DE AÇO', category: 'COZINHA', currentStock: 0, minStock: 2, unit: 'PAR' },
+  { id: 'ppe-k6', name: 'LUVAS (VINIL, LÁTEX OU POLIETILENO)', category: 'COZINHA', currentStock: 0, minStock: 15, unit: 'CX' },
+  { id: 'ppe-k7', name: 'LUVAS TÉRMICAS', category: 'COZINHA', currentStock: 0, minStock: 4, unit: 'PAR' },
+  { id: 'ppe-k8', name: 'SAPATO FECHADO ANTIDERRAPANTE', category: 'COZINHA', currentStock: 0, minStock: 6, unit: 'PAR' },
+  { id: 'ppe-k9', name: 'CALÇA COMPRIDA E CAMISETA MANGA CURTA', category: 'COZINHA', currentStock: 0, minStock: 10, unit: 'CONJ' },
 
   // LIMPEZA / GERAL
-  { id: 'ppe-c1', name: 'AVENTAL DE PVC (IMPERMEÁVEL)', category: 'LIMPEZA', currentStock: 15, minStock: 10, unit: 'UNID' },
-  { id: 'ppe-c2', name: 'LUVAS DE PVC (CURTAS E LONGAS)', category: 'LIMPEZA', currentStock: 10, minStock: 12, unit: 'PAR' },
-  { id: 'ppe-c3', name: 'LUVAS NITRÍLICAS (BORRACHA)', category: 'LIMPEZA', currentStock: 5, minStock: 10, unit: 'PAR' },
-  { id: 'ppe-c4', name: 'ÓCULOS DE PROTEÇÃO', category: 'LIMPEZA', currentStock: 4, minStock: 6, unit: 'UNID' },
-  { id: 'ppe-c5', name: 'BOTAS DE BORRACHA', category: 'LIMPEZA', currentStock: 8, minStock: 8, unit: 'PAR' },
+  { id: 'ppe-c1', name: 'AVENTAL DE PVC (IMPERMEÁVEL)', category: 'LIMPEZA', currentStock: 0, minStock: 10, unit: 'UNID' },
+  { id: 'ppe-c2', name: 'LUVAS DE PVC (CURTAS E LONGAS)', category: 'LIMPEZA', currentStock: 0, minStock: 12, unit: 'PAR' },
+  { id: 'ppe-c3', name: 'LUVAS NITRÍLICAS (BORRACHA)', category: 'LIMPEZA', currentStock: 0, minStock: 10, unit: 'PAR' },
+  { id: 'ppe-c4', name: 'ÓCULOS DE PROTEÇÃO', category: 'LIMPEZA', currentStock: 0, minStock: 6, unit: 'UNID' },
+  { id: 'ppe-c5', name: 'BOTAS DE BORRACHA', category: 'LIMPEZA', currentStock: 0, minStock: 8, unit: 'PAR' },
 
   // MANUTENÇÃO / EXTERNO
-  { id: 'ppe-m1', name: 'PROTETOR AURICULAR (ABAFADOR)', category: 'MANUTENÇÃO', currentStock: 5, minStock: 5, unit: 'UNID' },
-  { id: 'ppe-m2', name: 'PROTETOR FACIAL (VISEIRA POLICARBONATO)', category: 'MANUTENÇÃO', currentStock: 4, minStock: 4, unit: 'UNID' },
-  { id: 'ppe-m3', name: 'PERNEIRA DE PROTEÇÃO (PAR)', category: 'MANUTENÇÃO', currentStock: 6, minStock: 6, unit: 'PAR' },
-  { id: 'ppe-m4', name: 'LUVA DE VAQUETA (COURO)', category: 'MANUTENÇÃO', currentStock: 10, minStock: 10, unit: 'PAR' },
-  { id: 'ppe-m5', name: 'COLETE REFLETIVO', category: 'MANUTENÇÃO', currentStock: 5, minStock: 5, unit: 'UNID' },
+  { id: 'ppe-m1', name: 'PROTETOR AURICULAR (ABAFADOR)', category: 'MANUTENÇÃO', currentStock: 0, minStock: 5, unit: 'UNID' },
+  { id: 'ppe-m2', name: 'PROTETOR FACIAL (VISEIRA POLICARBONATO)', category: 'MANUTENÇÃO', currentStock: 0, minStock: 4, unit: 'UNID' },
+  { id: 'ppe-m3', name: 'PERNEIRA DE PROTEÇÃO (PAR)', category: 'MANUTENÇÃO', currentStock: 0, minStock: 6, unit: 'PAR' },
+  { id: 'ppe-m4', name: 'LUVA DE VAQUETA (COURO)', category: 'MANUTENÇÃO', currentStock: 0, minStock: 10, unit: 'PAR' },
+  { id: 'ppe-m5', name: 'COLETE REFLETIVO', category: 'MANUTENÇÃO', currentStock: 0, minStock: 5, unit: 'UNID' },
 
   // MÁSCARAS / RESPIRATÓRIA
-  { id: 'ppe-g1', name: 'MÁSCARA DESCARTÁVEL (CX C/ 50)', category: 'COZINHA', currentStock: 10, minStock: 10, unit: 'CX' },
-  { id: 'ppe-g2', name: 'MÁSCARA PFF2 (N95) PROTEÇÃO RESPIRATÓRIA', category: 'LIMPEZA', currentStock: 20, minStock: 20, unit: 'UNID' },
-  { id: 'ppe-g3', name: 'MÁSCARA PFF2 COM VÁLVULA (QUÍMICOS)', category: 'MANUTENÇÃO', currentStock: 10, minStock: 10, unit: 'UNID' },
+  { id: 'ppe-g1', name: 'MÁSCARA DESCARTÁVEL (CX C/ 50)', category: 'COZINHA', currentStock: 0, minStock: 10, unit: 'CX' },
+  { id: 'ppe-g2', name: 'MÁSCARA PFF2 (N95) PROTEÇÃO RESPIRATÓRIA', category: 'LIMPEZA', currentStock: 0, minStock: 20, unit: 'UNID' },
+  { id: 'ppe-g3', name: 'MÁSCARA PFF2 COM VÁLVULA (QUÍMICOS)', category: 'MANUTENÇÃO', currentStock: 0, minStock: 10, unit: 'UNID' },
 ];
 
 interface PPEControlProps {
@@ -68,12 +68,12 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
   const [isPrinting, setIsPrinting] = useState(false);
 
   const [items, setItems] = useState<PPEItem[]>(() => {
-    const saved = localStorage.getItem('school_ppe_items_v4');
+    const saved = localStorage.getItem('school_ppe_items_v5');
     return saved ? JSON.parse(saved) : INITIAL_PPE_ITEMS;
   });
 
   const [deliveries, setDeliveries] = useState<PPEDelivery[]>(() => {
-    const saved = localStorage.getItem('school_ppe_deliveries_v4');
+    const saved = localStorage.getItem('school_ppe_deliveries_v5');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -87,8 +87,8 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem('school_ppe_items_v4', JSON.stringify(items));
-    localStorage.setItem('school_ppe_deliveries_v4', JSON.stringify(deliveries));
+    localStorage.setItem('school_ppe_items_v5', JSON.stringify(items));
+    localStorage.setItem('school_ppe_deliveries_v5', JSON.stringify(deliveries));
   }, [items, deliveries]);
 
   const filteredItems = useMemo(() => {
@@ -204,7 +204,31 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4"><span className="text-[8px] font-black uppercase px-2 py-1 bg-gray-900 text-white rounded-lg">{item.category}</span><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Min: {item.minStock}</span></div>
                 <h4 className="text-sm font-black text-gray-900 uppercase leading-snug mb-6 h-10 line-clamp-2">{item.name}</h4>
-                <div className="flex items-end justify-between"><div><p className={`text-4xl font-black ${item.currentStock < item.minStock ? 'text-red-700' : 'text-gray-900'}`}>{item.currentStock}</p><p className="text-[9px] font-bold text-gray-400 uppercase">{item.unit} em estoque</p></div><div className="p-3 bg-gray-100 text-gray-400 rounded-xl"><Package size={24} /></div></div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <button onClick={() => {
+                        const newItems = [...items];
+                        const idx = newItems.findIndex(i => i.id === item.id);
+                        if (newItems[idx].currentStock > 0) {
+                          newItems[idx] = { ...newItems[idx], currentStock: newItems[idx].currentStock - 1 };
+                          setItems(newItems);
+                        }
+                      }} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-black text-gray-500 transition-colors">-</button>
+                      <p className={`text-4xl font-black ${item.currentStock < item.minStock ? 'text-red-700' : 'text-gray-900'}`}>{item.currentStock}</p>
+                      <button onClick={() => {
+                        const newItems = [...items];
+                        const idx = newItems.findIndex(i => i.id === item.id);
+                        newItems[idx] = { ...newItems[idx], currentStock: newItems[idx].currentStock + 1 };
+                        setItems(newItems);
+                      }} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-black text-gray-500 transition-colors">+</button>
+                    </div>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase">{item.unit} em estoque</p>
+                  </div>
+                  <div className="p-3 bg-gray-100 text-gray-400 rounded-xl">
+                    <Package size={24} />
+                  </div>
+                </div>
               </div>
             </div>
           ))}
