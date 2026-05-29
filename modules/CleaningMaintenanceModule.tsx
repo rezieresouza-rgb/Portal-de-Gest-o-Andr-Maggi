@@ -39,6 +39,7 @@ import PredialMaintenanceDashboard from '../components/PredialMaintenanceDashboa
 import CleaningOfficialManual from '../components/CleaningOfficialManual';
 import MaintenanceScheduler from '../components/MaintenanceScheduler';
 import PreventiveMaintenancePlan from '../components/PreventiveMaintenancePlan';
+import CleaningOccurrences from '../components/CleaningOccurrences';
 
 const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
   { id: 'env-1', name: 'SALAS DE AULA', category: 'SALA_AULA', complianceRate: 100 },
@@ -127,7 +128,7 @@ const DETAILED_PROTOCOLS: Record<string, Record<CleaningFrequency, string[]>> = 
 import { supabase } from '../supabaseClient';
 
 const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tasks' | 'team' | 'predial' | 'kitchen' | 'ppe' | 'materials' | 'protocol_official' | 'scheduler' | 'preventive_plan'>('scheduler');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'tasks' | 'team' | 'predial' | 'kitchen' | 'ppe' | 'materials' | 'protocol_official' | 'scheduler' | 'preventive_plan' | 'occurrences'>('scheduler');
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
@@ -330,6 +331,7 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
           <button onClick={() => setActiveTab('preventive_plan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'preventive_plan' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><ShieldCheck size={18} className="shrink-0" /> <span className="truncate">Plano SEDUC</span></button>
 
           <button onClick={() => setActiveTab('scheduler')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'scheduler' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Calendar size={18} className="shrink-0" /> <span className="truncate">Cronograma (Blocos)</span></button>
+          <button onClick={() => setActiveTab('occurrences')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'occurrences' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><AlertTriangle size={18} className="shrink-0" /> <span className="truncate">Registro de Ocorrências</span></button>
           <button onClick={() => setActiveTab('team')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Users size={18} className="shrink-0" /> <span className="truncate">Equipe de Apoio</span></button>
           <button onClick={() => setActiveTab('predial')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'predial' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Hammer size={18} className="shrink-0" /> <span className="truncate">Manutenção Predial</span></button>
           <button onClick={() => setActiveTab('kitchen')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><CookingPot size={18} className="shrink-0" /> <span className="truncate">Higiene Cozinha/Refeitório</span></button>
@@ -366,6 +368,7 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
           {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
 
           {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} />}
+          {activeTab === 'occurrences' && <CleaningOccurrences employees={employees} environments={environments} />}
 
 
 

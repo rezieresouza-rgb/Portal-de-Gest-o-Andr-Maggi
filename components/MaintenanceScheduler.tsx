@@ -1088,7 +1088,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                         <div key={area} className="break-inside-avoid">
                                             <div className="flex justify-between items-end mb-1 border-b border-gray-300 pb-1">
                                                 <h4 className="text-sm font-bold uppercase">{area}</h4>
-                                                <span className="text-xs uppercase text-gray-600">Resp: {responsible || '_________________'}</span>
+                                                {responsible && <span className="text-xs uppercase text-gray-600">Resp: {responsible}</span>}
                                             </div>
                                             <table className="w-full text-left text-xs mb-4">
                                                 <thead>
@@ -1297,7 +1297,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                                             <td rowSpan={item.areaSpan} className="p-2 border-r border-b border-gray-300 font-bold uppercase text-[9px] align-middle max-w-[120px] break-words">
                                                 {item.area}
                                                 <div className="text-[7px] text-gray-500 font-normal mt-1 lowercase">
-                                                    Resp: {getAreaResponsible(item.block, item.area) || '_________'}
+                                                    {getAreaResponsible(item.block, item.area) && `Resp: ${getAreaResponsible(item.block, item.area)}`}
                                                 </div>
                                             </td>
                                         )}
