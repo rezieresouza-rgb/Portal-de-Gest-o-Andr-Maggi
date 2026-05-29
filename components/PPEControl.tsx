@@ -326,7 +326,7 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                   <div className="md:col-span-2 space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">EPI</label>
                     <select required value={deliveryForm.ppeId} onChange={e => setDeliveryForm({ ...deliveryForm, ppeId: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none">
                       <option value="">SELECIONE O EPI...</option>
-                      {items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.currentStock} {i.unit})</option>)}
+                      {items.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Qtd</label><input required type="number" min="1" value={deliveryForm.quantity} onChange={e => setDeliveryForm({ ...deliveryForm, quantity: parseInt(e.target.value) })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-lg text-center outline-none" /></div>
