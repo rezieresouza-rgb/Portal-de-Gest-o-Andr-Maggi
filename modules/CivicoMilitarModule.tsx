@@ -240,36 +240,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   useEffect(() => {
     // A. Inspections
     try {
-      const savedInspections = localStorage.getItem('civico_militar_inspections_v1');
+      const savedInspections = localStorage.getItem('civico_militar_inspections_v2');
       if (savedInspections) {
         setInspections(JSON.parse(savedInspections));
       } else {
-        const mock: InspectionRecord[] = [
-          {
-            id: 'insp-1',
-            studentId: '2667280',
-            studentName: 'YURY LINS DOS SANTOS MOTA',
-            className: '6º ANO A',
-            item: 'Calçado fora da norma (cor/limpeza)',
-            date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-            shift: 'MATUTINO',
-            observations: 'Tênis esportivo colorido, fora do padrão regulamentar preto.',
-            responsible: 'Monitor Silva'
-          },
-          {
-            id: 'insp-2',
-            studentId: '2667264',
-            studentName: 'MICAEL AZEVEDO PEREIRA',
-            className: '6º ANO A',
-            item: 'Cabelo fora do padrão (corte/penteado)',
-            date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
-            shift: 'MATUTINO',
-            observations: 'Corte com listra/desenho nas laterais.',
-            responsible: 'Monitor Silva'
-          }
-        ];
-        localStorage.setItem('civico_militar_inspections_v1', JSON.stringify(mock));
-        setInspections(mock);
+        localStorage.setItem('civico_militar_inspections_v2', JSON.stringify([]));
+        setInspections([]);
       }
     } catch (e) {
       console.error(e);
@@ -277,38 +253,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
     // B. Civic Routines
     try {
-      const savedRoutines = localStorage.getItem('civico_militar_routines_v1');
+      const savedRoutines = localStorage.getItem('civico_militar_routines_v2');
       if (savedRoutines) {
         setRoutines(JSON.parse(savedRoutines));
       } else {
-        const mockRoutines: CivicRoutineRecord[] = [
-          {
-            id: 'rot-1',
-            date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-            shift: 'MATUTINO',
-            formationOk: true,
-            commandersPresent: true,
-            flagsRaised: { national: true, state: true, municipal: true },
-            anthemsSung: { national: true, state: true, school: false },
-            marchingOk: true,
-            bulletinRead: true,
-            responsible: 'Dir. Adjunto Tenente Costa'
-          },
-          {
-            id: 'rot-2',
-            date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
-            shift: 'VESPERTINO',
-            formationOk: true,
-            commandersPresent: true,
-            flagsRaised: { national: true, state: true, municipal: true },
-            anthemsSung: { national: true, state: false, school: true },
-            marchingOk: true,
-            bulletinRead: true,
-            responsible: 'Dir. Adjunto Tenente Costa'
-          }
-        ];
-        localStorage.setItem('civico_militar_routines_v1', JSON.stringify(mockRoutines));
-        setRoutines(mockRoutines);
+        localStorage.setItem('civico_militar_routines_v2', JSON.stringify([]));
+        setRoutines([]);
       }
     } catch (e) {
       console.error(e);
@@ -316,7 +266,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
     // C. Student Behavior Scores
     try {
-      const savedScores = localStorage.getItem('civico_militar_student_scores_v2');
+      const savedScores = localStorage.getItem('civico_militar_student_scores_v3');
       if (savedScores) {
         // Check for new students in dbStudents that are not in savedScores
         const saved = JSON.parse(savedScores) as StudentBehaviorState[];
@@ -342,40 +292,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           studentName: s.Nome,
           className: s.Turma,
           score: 8.0, // Baseado no Art. 45, § 2º do Regulamento Disciplinar (grau numérico 8,0)
-          isClassLeader: idx === 5 || idx === 35 || idx === 85,
-          isCivicHighlight: idx === 12 || idx === 92,
-          occurrences: idx % 15 === 0 ? [
-            {
-              id: `occ-${idx}-1`,
-              type: 'DEMERIT',
-              category: '8. Conversar ou se mexer quando estiver em forma',
-              points: 0.2,
-              date: new Date(Date.now() - 120 * 60 * 60 * 1000).toISOString().split('T')[0],
-              observations: 'Conversa reiterada durante o hasteamento da bandeira.',
-              responsible: 'Monitor Silva'
-            }
-          ] : (idx % 25 === 0 ? [
-            {
-              id: `occ-${idx}-1`,
-              type: 'DEMERIT',
-              category: '4. Chegar atrasado a EECM para o início das aulas, instrução, treinamento, formatura ou atividade escolar',
-              points: 0.2,
-              date: new Date(Date.now() - 96 * 60 * 60 * 1000).toISOString().split('T')[0],
-              observations: 'Apresentou-se após o início da chamada geral.',
-              responsible: 'Monitor Silva'
-            },
-            {
-              id: `occ-${idx}-2`,
-              type: 'DEMERIT',
-              category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
-              points: 0.2,
-              date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              observations: 'Apresentou-se com farda amassada e sapato desalinhado.',
-              responsible: 'Monitor Silva'
-            }
-          ] : [])
+          isClassLeader: false,
+          isCivicHighlight: false,
+          occurrences: []
         }));
-        localStorage.setItem('civico_militar_student_scores_v2', JSON.stringify(initialStates));
+        localStorage.setItem('civico_militar_student_scores_v3', JSON.stringify(initialStates));
         setStudentStates(initialStates);
       }
     } catch (e) {
@@ -384,7 +305,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
     // D. Document History
     try {
-      const savedDocs = localStorage.getItem('civico_militar_documentos_v1');
+      const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
       if (savedDocs) {
         setDocHistory(JSON.parse(savedDocs));
       }
@@ -395,17 +316,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   // Sync state to local storage when state changes
   const saveInspectionsToStorage = (list: InspectionRecord[]) => {
-    localStorage.setItem('civico_militar_inspections_v1', JSON.stringify(list));
+    localStorage.setItem('civico_militar_inspections_v2', JSON.stringify(list));
     setInspections(list);
   };
 
   const saveRoutinesToStorage = (list: CivicRoutineRecord[]) => {
-    localStorage.setItem('civico_militar_routines_v1', JSON.stringify(list));
+    localStorage.setItem('civico_militar_routines_v2', JSON.stringify(list));
     setRoutines(list);
   };
 
   const saveStudentStatesToStorage = (list: StudentBehaviorState[]) => {
-    localStorage.setItem('civico_militar_student_scores_v2', JSON.stringify(list));
+    localStorage.setItem('civico_militar_student_scores_v3', JSON.stringify(list));
     setStudentStates(list);
     // If a modal is open for a student, update its local copy as well
     if (selectedStudentState) {
@@ -415,7 +336,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   };
 
   const saveDocHistoryToStorage = (list: any[]) => {
-    localStorage.setItem('civico_militar_documentos_v1', JSON.stringify(list));
+    localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(list));
     setDocHistory(list);
   };
 
