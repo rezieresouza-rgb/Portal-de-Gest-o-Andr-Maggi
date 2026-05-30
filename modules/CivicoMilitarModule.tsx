@@ -2233,6 +2233,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">Secretaria de Estado de Educação</p>
                       <p className="text-[9px] font-black text-black uppercase leading-tight mt-0.5">Superintendência de Escolas Militares e Cívico-Militares</p>
                       <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">Escola Estadual Cívico-Militar</p>
+                      <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">André Antônio Maggi</p>
                       <div className="border-b border-black w-full my-4"></div>
                     </div>
 
