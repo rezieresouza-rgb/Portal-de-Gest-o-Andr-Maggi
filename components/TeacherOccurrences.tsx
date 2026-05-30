@@ -26,7 +26,7 @@ import { SCHOOL_CLASSES, INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 
-const OCCURRENCE_TYPES = ['DISCIPLINAR', 'PEDAGÓGICO', 'MÉDICO', 'ELOGIO', 'OUTRO'];
+const OCCURRENCE_TYPES = ['DISCIPLINAR', 'PEDAGÓGICO', 'MÉDICO', 'ELOGIO', 'FATO OBSERVADO', 'OUTRO'];
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
 import { User as UserType } from '../types';
@@ -159,7 +159,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [selectedDemerit, setSelectedDemerit] = useState<DemeritOption | null>(null);
    const [showDemeritDropdown, setShowDemeritDropdown] = useState(false);
 
-   const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean }>({
+   const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean, discipline: string }>({
       date: new Date().toLocaleDateString('sv-SE'),
       teacherName: user.name,
       className: '',
@@ -167,6 +167,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       type: 'DISCIPLINAR' as any,
       severity: 'MÉDIA' as any,
       description: '',
+      discipline: '',
       notifiedParents: false,
       forwardToPsychosocial: false
    });
@@ -226,6 +227,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          type: 'DISCIPLINAR' as any,
          severity: 'MÉDIA' as any,
          description: '',
+         discipline: '',
          notifiedParents: false,
          forwardToPsychosocial: false
       });
@@ -262,6 +264,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          type: occ.type,
          severity: occ.severity,
          description: cleanDescription,
+         discipline: '',
          notifiedParents: occ.notifiedParents || false,
          forwardToPsychosocial: false // Do not resend on edit
       });
@@ -666,6 +669,39 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                      console.error('Erro ao encaminhar para psicossocial:', referralError);
                      alert(`Ocorrência salva, mas o encaminhamento falhou: ${referralError.message}. Verifique o Supabase.`);
                   }
+               }
+
+               // If FATO OBSERVADO, inject into civico_militar_documentos_v1
+               if (form.type === 'FATO OBSERVADO') {
+                  const savedDocs = localStorage.getItem('civico_militar_documentos_v1');
+                  let docsList = [];
+                  if (savedDocs) {
+                     try {
+                        docsList = JSON.parse(savedDocs);
+                     } catch (e) {}
+                  }
+                  docsList.unshift({
+                     id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                     studentId: 'AUTO_GEK', // generic since we only have names
+                     studentName: student.name,
+                     className: student.class,
+                     shiftName: 'MATUTINO/VESPERTINO',
+                     template: 'fato_observado',
+                     templateLabel: 'Relatório de Fato Observado',
+                     date: form.date,
+                     fields: {
+                        date: form.date,
+                        recebidoDate: '',
+                        teacher: form.teacherName,
+                        monitor: '',
+                        series: student.class,
+                        discipline: form.discipline || 'MÚLTIPLAS',
+                        achado: finalDescription,
+                        city: 'Sinop - MT'
+                     },
+                     timestamp: Date.now()
+                  });
+                  localStorage.setItem('civico_militar_documentos_v1', JSON.stringify(docsList));
                }
             }
          }
@@ -1083,6 +1119,20 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                        )}
                                     </div>
                                  )}
+                              </div>
+                           )}
+
+                           {form.type === 'FATO OBSERVADO' && (
+                              <div className="space-y-1.5">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Disciplina / Matéria</label>
+                                 <input
+                                    type="text"
+                                    required
+                                    value={form.discipline}
+                                    onChange={e => setForm({ ...form, discipline: e.target.value })}
+                                    placeholder="Ex: Matemática, História..."
+                                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-red-500/5 transition-all uppercase"
+                                 />
                               </div>
                            )}
 
