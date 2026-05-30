@@ -481,6 +481,12 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
             </div>
             <div className="flex flex-wrap gap-4 justify-center">
                <button 
+                  onClick={() => seedRetroactiveData(1)} 
+                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
+               >
+                  <History size={16} /> Relatório de Janeiro
+               </button>
+               <button 
                   onClick={() => seedRetroactiveData(2)} 
                   className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
                >
