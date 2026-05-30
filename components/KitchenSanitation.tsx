@@ -565,15 +565,21 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                   </table>
                </div>
 
-               <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 grid grid-cols-2 gap-20">
-                  <div className="text-center space-y-2">
-                     <div className="border-t border-gray-400 pt-1">
-                        <p className="text-[9px] font-black uppercase">Responsável pela Cozinha (AAE)</p>
-                        <p className="text-[7px] uppercase text-gray-400 font-bold">Data: ____/____/{new Date().getFullYear()}</p>
+               <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 flex flex-wrap justify-between gap-10">
+                  <div className="text-center space-y-2 flex-1 min-w-[200px]">
+                     <div className="border-t border-gray-400 pt-1 mt-6">
+                        <p className="text-[9px] font-black uppercase">__________________________________</p>
+                        <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
                      </div>
                   </div>
-                  <div className="text-center space-y-2">
-                     <div className="border-t border-gray-400 pt-1">
+                  <div className="text-center space-y-2 flex-1 min-w-[200px]">
+                     <div className="border-t border-gray-400 pt-1 mt-6">
+                        <p className="text-[9px] font-black uppercase">__________________________________</p>
+                        <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
+                     </div>
+                  </div>
+                  <div className="text-center space-y-2 flex-1 min-w-[200px]">
+                     <div className="border-t border-gray-400 pt-1 mt-6">
                         <p className="text-[9px] font-black uppercase">Gestão Escolar / CDCE</p>
                         <p className="text-[7px] uppercase text-gray-400 font-bold">Assinatura / Carimbo</p>
                      </div>
@@ -642,15 +648,27 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                   </table>
                </div>
 
-               <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 grid grid-cols-2 gap-20">
-                  <div className="text-center space-y-2">
-                     <div className="border-t border-gray-400 pt-1">
-                        <p className="text-[9px] font-black uppercase">Responsável pela Cozinha (AAE)</p>
-                        <p className="text-[7px] uppercase text-gray-400 font-bold">Data: ____/____/{new Date().getFullYear()}</p>
+               <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 flex flex-wrap justify-between gap-10">
+                  {Array.from(new Set(tasks.filter(t => t.status === 'CONCLUÍDO' && t.completedBy && t.completedBy !== 'SISTEMA').map(t => t.completedBy))).length > 0 ? (
+                     Array.from(new Set(tasks.filter(t => t.status === 'CONCLUÍDO' && t.completedBy && t.completedBy !== 'SISTEMA').map(t => t.completedBy))).map(serverName => (
+                        <div key={serverName} className="text-center space-y-2 flex-1 min-w-[200px]">
+                           <div className="border-t border-gray-400 pt-1 mt-6">
+                              <p className="text-[9px] font-black uppercase">{serverName}</p>
+                              <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
+                           </div>
+                        </div>
+                     ))
+                  ) : (
+                     <div className="text-center space-y-2 flex-1 min-w-[200px]">
+                        <div className="border-t border-gray-400 pt-1 mt-6">
+                           <p className="text-[9px] font-black uppercase">Responsável pela Cozinha</p>
+                           <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
+                        </div>
                      </div>
-                  </div>
-                  <div className="text-center space-y-2">
-                     <div className="border-t border-gray-400 pt-1">
+                  )}
+
+                  <div className="text-center space-y-2 flex-1 min-w-[200px]">
+                     <div className="border-t border-gray-400 pt-1 mt-6">
                         <p className="text-[9px] font-black uppercase">Gestão Escolar / CDCE</p>
                         <p className="text-[7px] uppercase text-gray-400 font-bold">Assinatura / Carimbo</p>
                      </div>
