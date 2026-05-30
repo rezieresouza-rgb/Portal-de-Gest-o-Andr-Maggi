@@ -174,23 +174,45 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         })));
       }
 
-      // 5. Fetch Attendance for Risk Analysis
+      // 5. Fetch active students to get their current classroom and status
+      const { data: studentsData } = await supabase
+        .from('students')
+        .select('id, name, enrollments(status, classrooms(name))');
+
+      const activeStudentsMap: Record<string, { class: string, name: string }> = {};
+      if (studentsData) {
+        studentsData.forEach(s => {
+          const activeEnrollment = s.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO');
+          if (activeEnrollment) {
+            activeStudentsMap[s.id] = {
+              name: s.name,
+              class: activeEnrollment.classrooms?.name || 'SEM TURMA'
+            };
+          }
+        });
+      }
+
+      // Fetch Attendance for Risk Analysis
       const { data: attData } = await supabase
         .from('class_attendance_students')
-        .select('student_id, is_present, student_name, class_attendance_records(classroom_name)');
+        .select('student_id, is_present');
 
       const attStats: Record<string, any> = {};
       if (attData) {
         attData.forEach((record: any) => {
           const studentId = record.student_id;
           if (!studentId) return;
+
+          // Only include active/reclassified students
+          if (!activeStudentsMap[studentId]) return;
+
           if (!attStats[studentId]) {
             attStats[studentId] = {
               id: studentId,
               total: 0,
               present: 0,
-              name: record.student_name || 'Aluno',
-              className: record.class_attendance_records?.classroom_name || 'Turma'
+              name: activeStudentsMap[studentId].name,
+              className: activeStudentsMap[studentId].class
             };
           }
           attStats[studentId].total += 1;
