@@ -2505,7 +2505,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     ) : (
                       demeritOptions.map(d => (
                         <option key={d.category} value={d.category}>
-                          [{d.severity}] {d.category} (-{d.points.toFixed(1)})
+                          [{d.severity}] {d.category}
                         </option>
                       ))
                     )}
@@ -2532,11 +2532,20 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         onChange={e => setNewOccurrence(prev => ({ ...prev, disciplinaryMeasure: e.target.value }))}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                       >
-                        {disciplinaryMeasuresList.map(measure => (
-                          <option key={measure} value={measure}>
-                            {measure}
-                          </option>
-                        ))}
+                        {disciplinaryMeasuresList.map(measure => {
+                          let pts = 0.1;
+                          if (measure === 'Advertência Escrita') pts = 0.3;
+                          else if (measure === 'Suspensão de Sala de Aula') pts = 0.5;
+                          else if (measure === 'Ações Educativas') pts = 1.0;
+                          else if (measure === 'Transferência Educativa') pts = 2.0;
+                          else if (measure === 'Estudo Orientado de Caráter Educativo') pts = 0.5;
+                          
+                          return (
+                            <option key={measure} value={measure}>
+                              {measure} {measure === 'Suspensão de Sala de Aula' ? `(-${pts.toFixed(2)} por dia)` : `(-${pts.toFixed(2)})`}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                     {newOccurrence.disciplinaryMeasure === 'Suspensão de Sala de Aula' && (
