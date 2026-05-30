@@ -205,8 +205,12 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
       });
       
       setTasks(newTasks);
-      setReportPeriod(`${monthNumber === 4 ? 'Abril' : 'Maio'} de ${year}`);
-      alert(`Dados fictícios de ${monthNumber === 4 ? 'Abril' : 'Maio'} gerados! Agora você pode imprimir o relatório.`);
+      
+      const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho'];
+      const mName = monthNames[monthIndex];
+      setReportPeriod(`${mName} de ${year}`);
+      
+      alert(`Dados fictícios de ${mName} gerados! Agora você pode imprimir o relatório.`);
    };
 
    const filteredTasks = useMemo(() => {
@@ -449,7 +453,19 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                <h4 className="text-lg font-black text-purple-900 uppercase tracking-tight">Gerador de Relatórios Antigos</h4>
                <p className="text-[10px] text-purple-700 font-bold uppercase tracking-widest mt-1">Clique para preencher as tarefas automaticamente e imprimir meses passados</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4 justify-center">
+               <button 
+                  onClick={() => seedRetroactiveData(2)} 
+                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
+               >
+                  <History size={16} /> Relatório de Fevereiro
+               </button>
+               <button 
+                  onClick={() => seedRetroactiveData(3)} 
+                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
+               >
+                  <History size={16} /> Relatório de Março
+               </button>
                <button 
                   onClick={() => seedRetroactiveData(4)} 
                   className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
