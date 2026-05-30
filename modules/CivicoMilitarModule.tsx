@@ -3077,6 +3077,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <option value="Farda suja / amarrotada">Farda suja / amarrotada</option>
                   <option value="Cabelo fora do padrão (corte/penteado)">Cabelo fora do padrão (corte/penteado)</option>
                   <option value="Calçado fora da norma (cor/limpeza)">Calçado fora da norma (cor/limpeza)</option>
+                  <option value="Sem calçado fechado">Sem calçado fechado</option>
+                  <option value="Jaqueta fora do padrão (outra cor)">Jaqueta fora do padrão (outra cor)</option>
                   <option value="Adornos proibidos (brincos, colares, anéis)">Adornos proibidos (brincos, colares, anéis)</option>
                   <option value="Unhas sem corte / esmalte inadequado">Unhas sem corte / esmalte inadequado</option>
                 </select>
