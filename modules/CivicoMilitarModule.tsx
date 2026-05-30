@@ -53,6 +53,7 @@ interface BehaviorOccurrence {
   observations: string;
   responsible: string;
   disciplinaryMeasure?: string;
+  suspensionDays?: number;
   isEscalated?: boolean;
 }
 
@@ -149,7 +150,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
     date: new Date().toISOString().split('T')[0],
     observations: '',
-    disciplinaryMeasure: 'Advertência Oral'
+    disciplinaryMeasure: 'Advertência Oral',
+    suspensionDays: 1
   });
 
   // Main lists loaded from LocalStorage
@@ -455,12 +457,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   // Helper lists for merit/demerit drop-downs
   const meritOptions = [
-    { category: 'Ação de solidariedade exemplar', points: 0.2 },
-    { category: 'Zelo incomum pelo patrimônio escolar', points: 0.2 },
-    { category: 'Destaque acadêmico/pedagógico', points: 0.2 },
-    { category: 'Destaque na Ordem Unida / Formatura', points: 0.2 },
-    { category: 'Auxílio voluntário à equipe de gestão', points: 0.2 },
-    { category: 'Atitude cívica exemplar comprovada', points: 0.3 }
+    { category: 'Elogio Individual', points: 0.50 },
+    { category: 'Elogio Coletivo', points: 0.30 }
   ];
 
   const disciplinaryMeasuresList = [
@@ -629,11 +627,21 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
     if (newOccurrence.type === 'MERIT') {
       const merit = meritOptions.find(o => o.category === newOccurrence.category);
-      points = merit ? merit.points : 0.2;
+      points = merit ? merit.points : 0.5;
     } else {
       const dem = demeritOptions.find(o => o.category === newOccurrence.category);
-      points = dem ? dem.points : 0.2;
       const originalSeverity = dem ? dem.severity : 'LEVE';
+
+      // Calculate points based on the Disciplinary Measure (Art 46)
+      switch (newOccurrence.disciplinaryMeasure) {
+        case 'Advertência Oral': points = 0.1; break;
+        case 'Advertência Escrita': points = 0.3; break;
+        case 'Suspensão de Sala de Aula': points = 0.5 * (newOccurrence.suspensionDays || 1); break;
+        case 'Ações Educativas': points = 1.0; break;
+        case 'Transferência Educativa': points = 2.0; break; // Assumed severe deduction
+        case 'Estudo Orientado de Caráter Educativo': points = 0.5; break;
+        default: points = 0.1;
+      }
 
       const prevLeves = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'LEVE').length;
       const prevMediasBase = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'MÉDIA').length;
@@ -655,12 +663,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
              isEscalated = true;
          }
       }
-
-      if (effectiveSeverity === 'MÉDIA') points = 0.5;
-      if (effectiveSeverity === 'GRAVE') points = 1.0;
       
       if (isEscalated) {
-          alert(`Atenção: Por reincidência, esta ocorrência foi agravada para Falta ${effectiveSeverity}! (Desconto de ${points.toFixed(1)} pts)`);
+          alert(`Atenção: Por reincidência, o sistema detectou que esta ocorrência configura uma Falta ${effectiveSeverity}. Certifique-se de que a medida selecionada seja adequada à reincidência.`);
       }
     }
 
@@ -673,6 +678,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       observations: newOccurrence.observations,
       responsible: user.name || 'Gestor',
       disciplinaryMeasure: newOccurrence.type === 'DEMERIT' ? newOccurrence.disciplinaryMeasure : undefined,
+      suspensionDays: (newOccurrence.type === 'DEMERIT' && newOccurrence.disciplinaryMeasure === 'Suspensão de Sala de Aula') ? newOccurrence.suspensionDays : undefined,
       isEscalated: isEscalated
     };
 
@@ -703,7 +709,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
       date: new Date().toISOString().split('T')[0],
       observations: '',
-      disciplinaryMeasure: 'Advertência Oral'
+      disciplinaryMeasure: 'Advertência Oral',
+      suspensionDays: 1
     });
   };
 
@@ -2517,20 +2524,36 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </div>
 
                 {newOccurrence.type === 'DEMERIT' && (
-                  <div>
-                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Medida Disciplinar Aplicada</label>
-                    <select
-                      value={newOccurrence.disciplinaryMeasure || 'Advertência Oral'}
-                      onChange={e => setNewOccurrence(prev => ({ ...prev, disciplinaryMeasure: e.target.value }))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                    >
-                      {disciplinaryMeasuresList.map(measure => (
-                        <option key={measure} value={measure}>
-                          {measure}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Medida Disciplinar Aplicada</label>
+                      <select
+                        value={newOccurrence.disciplinaryMeasure || 'Advertência Oral'}
+                        onChange={e => setNewOccurrence(prev => ({ ...prev, disciplinaryMeasure: e.target.value }))}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                      >
+                        {disciplinaryMeasuresList.map(measure => (
+                          <option key={measure} value={measure}>
+                            {measure}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {newOccurrence.disciplinaryMeasure === 'Suspensão de Sala de Aula' && (
+                      <div>
+                        <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Quantidade de Dias (-0,50 / dia)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="3"
+                          value={newOccurrence.suspensionDays || 1}
+                          onChange={e => setNewOccurrence(prev => ({ ...prev, suspensionDays: parseInt(e.target.value) || 1 }))}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          required
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div>
@@ -2583,7 +2606,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       {occ.disciplinaryMeasure && (
                         <div className="mt-2 bg-white/60 p-2 rounded border border-slate-100 flex items-center justify-between">
                           <span className="text-[8px] font-black uppercase text-slate-500">Medida Aplicada:</span>
-                          <span className="text-[9px] font-bold text-indigo-700">{occ.disciplinaryMeasure}</span>
+                          <span className="text-[9px] font-bold text-indigo-700">
+                             {occ.disciplinaryMeasure}
+                             {occ.suspensionDays ? ` (${occ.suspensionDays} dia${occ.suspensionDays > 1 ? 's' : ''})` : ''}
+                          </span>
                         </div>
                       )}
 
