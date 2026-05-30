@@ -121,9 +121,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     itensEnquadramento: '',
     atenuantes: '',
     agravantes: '',
-    gestorMilitar: ''
+    gestorMilitar: '',
+    documentNumber: ''
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
+
+  const nextFichaNumber = useMemo(() => {
+    if (selectedDocTemplate !== 'ficha_medida_disciplinar') return '';
+    const currentYear = new Date().getFullYear();
+    const fichasThisYear = docHistory.filter(d => {
+      return d.template === 'ficha_medida_disciplinar' && new Date(d.date).getFullYear() === currentYear;
+    });
+    return `${(fichasThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
+  }, [docHistory, selectedDocTemplate]);
 
   // Automatically infer Series/Year when a student is selected
   useEffect(() => {
@@ -854,9 +864,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       template: selectedDocTemplate,
       templateLabel: selectedDocTemplate === 'termo_ciencia' 
         ? 'Termo de Ciência e Concordância' 
-        : (selectedDocTemplate === 'fato_observado' ? 'Relatório de Fato Observado' : 'Outro Documento'),
+        : (selectedDocTemplate === 'fato_observado' ? 'Relatório de Fato Observado' : 'Ficha de Medida Disciplinar'),
       date: docFields.date,
-      fields: { ...docFields },
+      fields: { 
+        ...docFields,
+        documentNumber: selectedDocTemplate === 'ficha_medida_disciplinar' 
+          ? (docFields.documentNumber || nextFichaNumber) 
+          : docFields.documentNumber
+      },
       timestamp: Date.now()
     };
 
@@ -2288,7 +2303,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         {/* Título da Ficha */}
                         <div className="text-center my-6">
                           <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Ficha de Medida Disciplinar</h2>
-                          <p className="text-sm font-bold text-gray-900 mt-1">Notificação de Medida Disciplinar Número: {Math.floor(Math.random() * 9000000) + 1000000}</p>
+                          <p className="text-sm font-bold text-gray-900 mt-1">Notificação de Medida Disciplinar Número: {docFields.documentNumber || nextFichaNumber}</p>
                         </div>
 
                         {/* Dados Básicos */}
