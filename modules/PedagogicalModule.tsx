@@ -39,7 +39,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { ClassroomObservation, PedagogicalProject, LessonPlan, Assessment } from '../types';
+import { ClassroomObservation, PedagogicalProject, LessonPlan, Assessment, PedagogicalIntervention } from '../types';
 import { analyzePedagogicalPerformance } from '../geminiService';
 import { useToast } from '../components/Toast';
 import CoordinationExternalGrades from '../components/CoordinationExternalGrades';
@@ -72,6 +72,11 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, { total: number, present: number, name: string, className: string }>>({});
+  const [interventions, setInterventions] = useState<PedagogicalIntervention[]>([]);
+  const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
+  const [interventionStudent, setInterventionStudent] = useState<{name: string, className: string} | null>(null);
+  const [newIntervention, setNewIntervention] = useState({ reason: '', action_plan: '', deadline: '', status: 'EM_ANDAMENTO' as 'EM_ANDAMENTO' | 'AGUARDANDO_FAMILIA' | 'RESOLVIDO' });
+  const [isSavingIntervention, setIsSavingIntervention] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -193,6 +198,12 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       }
       setAttendanceMap(attStats);
 
+      // 6. Fetch Interventions
+      const { data: intData } = await supabase.from('pedagogical_interventions').select('*').order('created_at', { ascending: false });
+      if (intData) {
+        setInterventions(intData as PedagogicalIntervention[]);
+      }
+
     } catch (error) {
       console.error("Error fetching pedagogical data:", error);
     }
@@ -209,11 +220,52 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         .on('postgres_changes', { event: '*', schema: 'public', table: 'classroom_observations' }, fetchData)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'pedagogical_projects' }, fetchData)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'class_attendance_students' }, fetchData)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedagogical_interventions' }, fetchData)
         .subscribe()
     ];
 
     return () => { subs.forEach(s => s.unsubscribe()); };
   }, []);
+
+  const handleSaveIntervention = async () => {
+    if (!interventionStudent || !newIntervention.reason || !newIntervention.action_plan) {
+      addToast('Preencha os campos obrigatórios!', 'error');
+      return;
+    }
+    setIsSavingIntervention(true);
+    try {
+      const { error } = await supabase.from('pedagogical_interventions').insert([{
+        student_name: interventionStudent.name,
+        class_name: interventionStudent.className,
+        reason: newIntervention.reason,
+        action_plan: newIntervention.action_plan,
+        deadline: newIntervention.deadline || null,
+        status: newIntervention.status
+      }]);
+      if (error) throw error;
+      addToast('Intervenção salva com sucesso!', 'success');
+      setIsInterventionModalOpen(false);
+      setNewIntervention({ reason: '', action_plan: '', deadline: '', status: 'EM_ANDAMENTO' });
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      addToast('Erro ao salvar intervenção.', 'error');
+    } finally {
+      setIsSavingIntervention(false);
+    }
+  };
+
+  const handleUpdateInterventionStatus = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase.from('pedagogical_interventions').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+      addToast('Status atualizado!', 'success');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      addToast('Erro ao atualizar status.', 'error');
+    }
+  };
 
   const performanceStats = useMemo(() => {
     const allInternal = assessments;
@@ -479,7 +531,16 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-black text-orange-400">{((student.present / student.total) * 100).toFixed(0)}%</p>
-                          <p className="text-[8px] font-black text-orange-400/60 uppercase">Presença</p>
+                          <p className="text-[8px] font-black text-orange-400/60 uppercase mb-2">Presença</p>
+                          <button 
+                            onClick={() => {
+                              setInterventionStudent({ name: student.name, className: student.className });
+                              setIsInterventionModalOpen(true);
+                            }}
+                            className="text-[9px] font-black uppercase bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-all"
+                          >
+                            Criar Intervenção
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -510,9 +571,21 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {criticalStudents.map((s, i) => (
-                            <span key={i} className="px-3 py-1 bg-red-500/5 border border-red-500/10 rounded-lg text-[10px] font-bold text-red-300 uppercase flex items-center gap-2">
-                              {s.studentName} <span className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-[9px] font-black border border-white/5">{s.score}</span>
-                            </span>
+                            <div key={i} className="flex items-center gap-1 bg-red-500/5 border border-red-500/10 rounded-lg p-1 pr-2">
+                              <span className="px-2 py-1 text-[10px] font-bold text-red-300 uppercase flex items-center gap-2">
+                                {s.studentName} <span className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-[9px] font-black border border-white/5">{s.score}</span>
+                              </span>
+                              <button 
+                                onClick={() => {
+                                  setInterventionStudent({ name: s.studentName, className: ass.className });
+                                  setIsInterventionModalOpen(true);
+                                }}
+                                className="w-6 h-6 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all"
+                                title="Criar Intervenção"
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -520,7 +593,114 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                   })}
                 </div>
               </div>
+
+              {/* 3. ACTIVE INTERVENTIONS SECTION */}
+              {interventions.length > 0 && (
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-violet-500/20 shadow-xl backdrop-blur-md">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl border border-violet-500/20"><Target size={24} /></div>
+                    <h4 className="text-lg font-black text-white uppercase">Intervenções Ativas</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {interventions.map(int => (
+                      <div key={int.id} className="p-5 border border-white/5 rounded-3xl hover:bg-white/5 transition-all bg-white/5">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h5 className="text-sm font-black text-white uppercase">{int.student_name}</h5>
+                            <p className="text-[10px] font-bold text-white/40 uppercase">{int.class_name}</p>
+                          </div>
+                          <select 
+                            value={int.status} 
+                            onChange={(e) => handleUpdateInterventionStatus(int.id, e.target.value)}
+                            className={`text-[9px] font-black uppercase rounded-lg px-2 py-1 outline-none border ${
+                              int.status === 'RESOLVIDO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                              int.status === 'AGUARDANDO_FAMILIA' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
+                              'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                            }`}
+                          >
+                            <option value="EM_ANDAMENTO" className="bg-gray-900 text-white">Em Andamento</option>
+                            <option value="AGUARDANDO_FAMILIA" className="bg-gray-900 text-white">Aguardando Família</option>
+                            <option value="RESOLVIDO" className="bg-gray-900 text-white">Resolvido</option>
+                          </select>
+                        </div>
+                        <p className="text-xs text-white/70 mb-2"><span className="font-bold text-white/40 uppercase text-[9px] mr-1">Motivo:</span> {int.reason}</p>
+                        <p className="text-xs text-white/70 mb-2"><span className="font-bold text-white/40 uppercase text-[9px] mr-1">Ação:</span> {int.action_plan}</p>
+                        {int.deadline && <p className="text-[10px] text-amber-400 font-bold uppercase"><span className="text-white/40 mr-1">Prazo:</span> {new Date(int.deadline).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {isInterventionModalOpen && interventionStudent && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <div className="bg-gray-900 border border-white/10 p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-black text-white uppercase">Nova Intervenção</h3>
+                    <button onClick={() => setIsInterventionModalOpen(false)} className="text-white/50 hover:text-white"><X size={20} /></button>
+                  </div>
+                  <div className="mb-6">
+                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Estudante</p>
+                    <p className="text-sm font-black text-white uppercase">{interventionStudent.name}</p>
+                    <p className="text-xs text-white/50">{interventionStudent.className}</p>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Motivo / Risco Identificado *</label>
+                      <input 
+                        type="text" 
+                        value={newIntervention.reason} 
+                        onChange={e => setNewIntervention({...newIntervention, reason: e.target.value})}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1"
+                        placeholder="Ex: Nota 4.0 em Matemática"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Ação Pedagógica *</label>
+                      <textarea 
+                        value={newIntervention.action_plan} 
+                        onChange={e => setNewIntervention({...newIntervention, action_plan: e.target.value})}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1 min-h-[100px]"
+                        placeholder="Ex: Encaminhado para monitoria de reforço; Família convocada."
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Prazo para Reavaliação</label>
+                        <input 
+                          type="date" 
+                          value={newIntervention.deadline} 
+                          onChange={e => setNewIntervention({...newIntervention, deadline: e.target.value})}
+                          className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Status Inicial</label>
+                        <select 
+                          value={newIntervention.status} 
+                          onChange={e => setNewIntervention({...newIntervention, status: e.target.value as any})}
+                          className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1"
+                        >
+                          <option value="EM_ANDAMENTO" className="bg-gray-900 text-white">Em Andamento</option>
+                          <option value="AGUARDANDO_FAMILIA" className="bg-gray-900 text-white">Aguardando Família</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-8">
+                    <button 
+                      onClick={handleSaveIntervention}
+                      disabled={isSavingIntervention}
+                      className="w-full py-4 bg-violet-600 hover:bg-violet-700 text-white font-black uppercase text-xs tracking-widest rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
+                    >
+                      {isSavingIntervention ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                      Salvar Intervenção
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       case 'plans':

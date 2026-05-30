@@ -147,6 +147,17 @@ export interface PsychosocialMeetingAta {
   timestamp: number;
 }
 
+export interface PedagogicalIntervention {
+  id: string;
+  student_name: string;
+  class_name: string;
+  reason: string;
+  action_plan: string;
+  deadline?: string;
+  status: 'EM_ANDAMENTO' | 'AGUARDANDO_FAMILIA' | 'RESOLVIDO';
+  created_at: string;
+}
+
 export interface RightsViolationNotification {
   id: string;
   notificationDate: string;
