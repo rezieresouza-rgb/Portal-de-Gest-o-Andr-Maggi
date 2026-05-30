@@ -89,8 +89,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           classrooms (name),
           grades (
             score,
-            student_name,
-            students (name, classroom_id, classrooms(name))
+            student_name
           )
         `);
 
@@ -107,7 +106,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           max_score: a.max_score,
           grades: a.grades.map((g: any) => ({
             studentId: 'N/A', // Not used in UI display apparently
-            studentName: g.students?.name || g.student_name || 'Aluno',
+            studentName: g.student_name || 'Aluno',
             score: g.score,
             proficiencyLevel: g.score < 6 ? 'BAIXO' : 'ALTO'
           })),
@@ -177,23 +176,23 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       // 5. Fetch Attendance for Risk Analysis
       const { data: attData } = await supabase
         .from('class_attendance_students')
-        .select('student_id, is_present, students(name, classroom_id, classrooms(name))');
+        .select('student_id, is_present, student_name, class_attendance_records(classroom_name)');
 
-      const attStats: Record<string, { total: number, present: number, name: string, className: string }> = {};
-
+      const attStats: Record<string, any> = {};
       if (attData) {
-        attData.forEach((r: any) => {
-          const sid = r.student_id;
-          if (!attStats[sid]) {
-            attStats[sid] = {
+        attData.forEach((record: any) => {
+          const studentId = record.student_id;
+          if (!studentId) return;
+          if (!attStats[studentId]) {
+            attStats[studentId] = {
               total: 0,
               present: 0,
-              name: r.students?.name || 'Aluno',
-              className: r.students?.classrooms?.name || 'N/A'
+              name: record.student_name || 'Aluno',
+              className: record.class_attendance_records?.classroom_name || 'Turma'
             };
           }
-          attStats[sid].total++;
-          if (r.is_present) attStats[sid].present++;
+          attStats[studentId].total += 1;
+          if (record.is_present) attStats[studentId].present += 1;
         });
       }
       setAttendanceMap(attStats);
