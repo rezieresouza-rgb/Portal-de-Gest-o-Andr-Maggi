@@ -2054,48 +2054,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <span className="text-[12px] font-black text-[#0f264c] leading-tight">
                         {selectedDocTemplate === 'termo_ciencia' ? '42' : '43'}
                       </span>
-                      <span className="text-[8px] font-black text-[#0f264c] leading-tight tracking-wider uppercase">Escola Estadual</span>
-                      <span className="text-[8px] font-black text-[#0f264c] leading-tight tracking-wider uppercase mb-1.5">Cívico-Militar</span>
-                      
-                      {/* High-fidelity Vector Shield Crest Logo */}
-                      <svg width="60" height="75" viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-sm">
-                        <path d="M 5,5 Q 30,2.5 55,5 C 55,38 48,58 30,71 C 12,58 5,38 5,5 Z" fill="#ffffff" />
-                        <path d="M 5,5 Q 30,2.5 30,2.5 L 30,36 L 5,36 Z" fill="#ffffff" />
-                        <path d="M 30,2.5 Q 42.5,3.75 55,5 L 55,36 L 30,36 Z" fill="#f0f7ff" />
-                        <path d="M 5,36 C 5,45 10,58 30,71 C 50,58 55,45 55,36 Z" fill="#0f264c" />
-                        <line x1="30" y1="2.5" x2="30" y2="36" stroke="#0f264c" stroke-width="2" />
-                        <line x1="5" y1="36" x2="55" y2="36" stroke="#0f264c" stroke-width="2" />
-                        <path d="M 5,5 Q 30,2.5 55,5 C 55,38 48,58 30,71 C 12,58 5,38 5,5 Z" stroke="#0f264c" stroke-width="2.5" stroke-linejoin="round" />
-                        
-                        {/* Book (Top-Left) */}
-                        <g transform="translate(10, 11) scale(0.65)" stroke="#0f264c" stroke-width="2" stroke-linejoin="round" fill="none">
-                          <path d="M2 18C6 14 12 14 16 17C20 14 26 14 30 18V4C26 0 20 0 16 3C12 0 6 0 2 4V18Z" />
-                          <path d="M16 3V17" />
-                        </g>
-                        
-                        {/* Handshake (Top-Right) */}
-                        <g transform="translate(34, 12) scale(0.55)" fill="#0f264c">
-                          <path d="M1 9.5a2 2 0 0 1 2-2h4l4.5 4.5-1.5 1.5L6 9.5H3v1.5L6 14l-1.5 1.5L1 11V9.5z"/>
-                          <path d="M19 11.5a2 2 0 0 1-2 2h-4L8.5 9l1.5-1.5 4 4h3v-1.5L14 7l1.5-1.5 3.5 3v3z"/>
-                        </g>
-                        
-                        {/* Crossed Swords (Bottom) */}
-                        <g transform="translate(19, 41) scale(0.75)" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none">
-                          <path d="M 3,21 L 21,3" />
-                          <path d="M 4,16 L 8,20" stroke-width="3" />
-                          <path d="M 4,20 L 2,22" stroke-width="2.5" />
-                          <path d="M 21,21 L 3,3" />
-                          <path d="M 20,16 L 16,20" stroke-width="3" />
-                          <path d="M 20,20 L 22,22" stroke-width="2.5" />
-                        </g>
-                        
-                        {/* Stars (Bottom) */}
-                        <g fill="#ffffff">
-                          <path d="M 30,59.5 L 31,61.5 L 33,61.5 L 31.5,62.5 L 32,64.5 L 30,63.5 L 28,64.5 L 28.5,62.5 L 27,61.5 L 29,61.5 Z" />
-                          <path d="M 20,55.5 L 21,57.5 L 23,57.5 L 21.5,58.5 L 22,60.5 L 20,59.5 L 18,60.5 L 18.5,58.5 L 17,57.5 L 19,57.5 Z" />
-                          <path d="M 40,55.5 L 41,57.5 L 43,57.5 L 41.5,58.5 L 42,60.5 L 40,59.5 L 38,60.5 L 38.5,58.5 L 37,57.5 L 39,57.5 Z" />
-                        </g>
-                      </svg>
+                      <img src="/logo-escola.png" alt="Logo Escola" className="w-[80px] h-auto object-contain drop-shadow-sm" />
                     </div>
 
                     {/* Cabeçalho do Documento */}
