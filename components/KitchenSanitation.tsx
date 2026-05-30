@@ -168,6 +168,47 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
       }));
    };
 
+   const seedRetroactiveData = (monthNumber: number) => {
+      const year = 2026;
+      const monthIndex = monthNumber - 1; 
+      
+      const newTasks = tasks.map(t => {
+         // Create a realistic date for the given month
+         // Diárias -> scattered throughout the month
+         // Mensais -> near the end of the month
+         let day = Math.floor(Math.random() * 25) + 1;
+         if (t.frequency === 'MENSAL') day = 28;
+         
+         const date = new Date(year, monthIndex, day, 14, 30, 0);
+         
+         // 95% complete to look realistic
+         const isDone = Math.random() > 0.05;
+         
+         // Pick random employee
+         const emp = employees.length > 0 ? employees[Math.floor(Math.random() * employees.length)].name : 'SISTEMA';
+
+         if (isDone) {
+            return {
+               ...t,
+               status: 'CONCLUÍDO' as const,
+               lastDone: date.toISOString(),
+               completedBy: emp
+            };
+         } else {
+            return {
+               ...t,
+               status: 'PENDENTE' as const,
+               lastDone: undefined,
+               completedBy: undefined
+            };
+         }
+      });
+      
+      setTasks(newTasks);
+      setReportPeriod(`${monthNumber === 4 ? 'Abril' : 'Maio'} de ${year}`);
+      alert(`Dados fictícios de ${monthNumber === 4 ? 'Abril' : 'Maio'} gerados! Agora você pode imprimir o relatório.`);
+   };
+
    const filteredTasks = useMemo(() => {
       return tasks.filter(t => {
          const matchArea = filterArea === 'TODOS' || t.area === filterArea;
@@ -400,6 +441,28 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                   </div>
                </div>
             ))}
+         </div>
+
+         {/* GERADOR DE RELATÓRIOS RETROATIVOS */}
+         <div className="bg-purple-50 p-8 rounded-[3rem] border border-purple-200 shadow-inner flex flex-col items-center justify-center space-y-5 no-print mt-10">
+            <div className="text-center">
+               <h4 className="text-lg font-black text-purple-900 uppercase tracking-tight">Gerador de Relatórios Antigos</h4>
+               <p className="text-[10px] text-purple-700 font-bold uppercase tracking-widest mt-1">Clique para preencher as tarefas automaticamente e imprimir meses passados</p>
+            </div>
+            <div className="flex gap-4">
+               <button 
+                  onClick={() => seedRetroactiveData(4)} 
+                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
+               >
+                  <History size={16} /> Relatório de Abril
+               </button>
+               <button 
+                  onClick={() => seedRetroactiveData(5)} 
+                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
+               >
+                  <History size={16} /> Relatório de Maio
+               </button>
+            </div>
          </div>
 
          {/* TEMPLATE OCULTO PARA IMPRESSÃO COZINHA */}
