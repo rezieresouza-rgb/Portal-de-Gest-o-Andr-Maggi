@@ -2499,7 +2499,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     {newOccurrence.type === 'MERIT' ? (
                       meritOptions.map(m => (
                         <option key={m.category} value={m.category}>
-                          {m.category} (+{m.points.toFixed(1)})
+                          {m.category} (+{m.points.toFixed(2)})
                         </option>
                       ))
                     ) : (
