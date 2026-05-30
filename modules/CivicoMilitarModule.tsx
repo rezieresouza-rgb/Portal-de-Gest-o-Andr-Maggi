@@ -2604,9 +2604,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         {/* Título do Termo */}
                         <div className="text-center my-6">
                           <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Termo de Adequação de Conduta Escolar (TACE)</h2>
-                          <p className="text-[11px] font-bold text-gray-900 mt-2 uppercase leading-tight px-12">
-                            Nº {docFields.documentNumber || nextTaceNumber}, Celebrado entre a EECM André Antônio Maggi e o(s) responsável(eis) pelo(a) estudante {selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________'}, objetivando o cumprimento de obrigações.
-                          </p>
+                          <div className="flex justify-end mt-4">
+                            <p className="text-[11px] font-bold text-gray-900 uppercase leading-tight text-justify w-1/2">
+                              Nº {docFields.documentNumber || nextTaceNumber}, Celebrado entre a EECM André Antônio Maggi e o(s) responsável(eis) pelo(a) estudante {selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________'}, objetivando o cumprimento de obrigações.
+                            </p>
+                          </div>
                         </div>
 
                         {/* Texto do Documento */}
