@@ -1,140 +1,21 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import {
    AlertCircle,
-   MessageSquare as MessageSquareIcon,
    Save,
-   CheckCircle2,
-   ShieldAlert,
    Search,
-   ChevronRight,
-   ShieldCheck,
-   Flag,
-   Clock,
-   X,
-   Plus,
-   Trash2,
-   AlertTriangle,
    History,
    Loader2,
-   Edit3,
-   Printer,
-   ShieldCheck as ShieldCheckIcon
+   Plus,
+   FileText,
+   Trash2,
+   X,
+   ShieldCheck
 } from 'lucide-react';
-import { ClassroomOccurrence, CaseSeverity } from '../types';
+import { ClassroomOccurrence } from '../types';
 import { SCHOOL_CLASSES, INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
-
-const OCCURRENCE_TYPES = ['DISCIPLINAR', 'PEDAGÓGICO', 'MÉDICO', 'ELOGIO', 'FATO OBSERVADO', 'OUTRO'];
-const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
-
 import { User as UserType } from '../types';
-
-interface DemeritOption {
-   category: string;
-   severity: 'LEVE' | 'MÉDIA' | 'GRAVE';
-   points: number;
-}
-
-const DEMERIT_OPTIONS: DemeritOption[] = [
-   // Faltas Leves (1 a 26) - 0.2 pts
-   { category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme', severity: 'LEVE', points: 0.2 },
-   { category: '2. Apresentar-se com barba ou bigode sem fazer', severity: 'LEVE', points: 0.2 },
-   { category: '3. Comparecer à EECM com cabelo em desalinho ou fora do padrão estabelecido pelas diretrizes dos Uniformes', severity: 'LEVE', points: 0.2 },
-   { category: '4. Chegar atrasado a EECM para o início das aulas, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
-   { category: '5. Comparecer a EECM sem levar o material necessário', severity: 'LEVE', points: 0.2 },
-   { category: '6. Adentrar ou permanecer em qualquer dependência da EECM, sem autorização', severity: 'LEVE', points: 0.2 },
-   { category: '7. Consumir alimentos, balas, doces líquidos ou mascar chicletes durante a aula, instrução, treinamento, formatura, atividade escolar, e nas dependências da EECM, salvo quando devidamente autorizado', severity: 'LEVE', points: 0.2 },
-   { category: '8. Conversar ou se mexer quando estiver em forma', severity: 'LEVE', points: 0.2 },
-   { category: '9. Deixar de entregar à Monitoria, Secretaria ou à Coordenação, qualquer objeto que não lhe pertença que tenha encontrado na EECM', severity: 'LEVE', points: 0.2 },
-   { category: '10. Deixar de retribuir cumprimentos ou de prestar sinais de respeito regulamentares, previstos no Manual do Aluno', severity: 'LEVE', points: 0.2 },
-   { category: '11. Deixar material escolar, objetos ou peças de uniforme em locais inapropriados dentro ou fora da unidade escolar', severity: 'LEVE', points: 0.2 },
-   { category: '12. Descartar papéis, restos de comida, embalagens ou qualquer objeto no chão ou fora de locais apropriados', severity: 'LEVE', points: 0.2 },
-   { category: '13. Dobrar qualquer peça de uniforme para diminuir seu tamanho, desfigurando sua originalidade', severity: 'LEVE', points: 0.2 },
-   { category: '14. Debruçar-se sobre a carteira e dormir durante o horário das aulas ou instruções', severity: 'LEVE', points: 0.2 },
-   { category: '15. Executar movimentos de ordem unida de forma displicente ou desatenciosa', severity: 'LEVE', points: 0.2 },
-   { category: '16. Fazer ou provocar excessivo barulho em qualquer dependência da EECM, durante o horário de aula', severity: 'LEVE', points: 0.2 },
-   { category: '17. Não levar ao conhecimento de autoridade competente falta ou irregularidade que presenciar ou de que tiver ciência', severity: 'LEVE', points: 0.2 },
-   { category: '18. Perturbar o estudo do(s) colega(s), com ruídos ou brincadeiras', severity: 'LEVE', points: 0.2 },
-   { category: '19. Utilizar-se, na sala, de qualquer publicação estranha a sua atividade escolar, salvo quando autorizado', severity: 'LEVE', points: 0.2 },
-   { category: '20. Retardar ou contribuir para o atraso da execução de qualquer atividade sem justo motivo', severity: 'LEVE', points: 0.2 },
-   { category: '21. Sentar-se no chão, atentando contra a postura e compostura, estando uniformizado, exceto quando em aula de educação Física', severity: 'LEVE', points: 0.2 },
-   { category: '22. Utilizar qualquer tipo de jogo, brinquedo, figurinhas, coleções no interior da EECM', severity: 'LEVE', points: 0.2 },
-   { category: '23. Usar, a aluna, piercings, brinco fora do padrão estabelecido, mais de um brinco em cada orelha, alargador ou similares, quando uniformizado, durante a aula, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
-   { category: '24. Usar, o aluno, piercings, brinco, alargador ou similares, quando uniformizado, durante a aula, instrução, treinamento, formatura ou atividade escolar', severity: 'LEVE', points: 0.2 },
-   { category: '25. Usar, quando uniformizado, boné, capuz ou outros adornos, durante a atividade escolar', severity: 'LEVE', points: 0.2 },
-   { category: '26. Ficar na sala de aula durante os intervalos e as formaturas diárias', severity: 'LEVE', points: 0.2 },
-
-   // Faltas Médias (27 a 62) - 0.5 pts
-   { category: '27. Atrasar ou deixar de atender ao chamado da Diretoria, coordenação, Oficial de Gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores no exercício de sua função', severity: 'MÉDIA', points: 0.5 },
-   { category: '28. Deixar de comparecer a qualquer atividade extraclasse para a qual tenha sido designado, exceto quando devidamente justificado', severity: 'MÉDIA', points: 0.5 },
-   { category: '29. Deixar de comparecer às atividades escolares, formaturas, ou delas se ausentar, sem autorização', severity: 'MÉDIA', points: 0.5 },
-   { category: '30. Deixar de cumprir ou esquivar-se de medidas disciplinares impostas pelo Gestor Educacional-Militar', severity: 'MÉDIA', points: 0.5 },
-   { category: '31. Deixar de devolver à EECM, dentro do prazo estipulado, documentos devidamente assinados pelo seu responsável', severity: 'MÉDIA', points: 0.5 },
-   { category: '32. Deixar de devolver, no prazo fixado, livros da biblioteca ou outros materiais pertencentes às EECM', severity: 'MÉDIA', points: 0.5 },
-   { category: '33. Deixar de entregar ao pai ou responsável, documento que lhe foi encaminhado pela EECM', severity: 'MÉDIA', points: 0.5 },
-   { category: '34. Deixar de executar tarefas atribuídas da Diretoria, coordenação, Oficial de Gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores no exercício de sua função', severity: 'MÉDIA', points: 0.5 },
-   { category: '35. Deixar de zelar por sua apresentação pessoal', severity: 'MÉDIA', points: 0.5 },
-   { category: '36. Dirigir memoriais ou petições a qualquer autoridade, sobre assuntos da alçada da Diretoria e do Oficial de Gestão Educacional-Militar', severity: 'MÉDIA', points: 0.5 },
-   { category: '37. Entrar ou sair da EECM por locais não permitidos', severity: 'MÉDIA', points: 0.5 },
-   { category: '38. Espalhar boatos ou notícias tendenciosas por qualquer meio', severity: 'MÉDIA', points: 0.5 },
-   { category: '39. Tocar a sirene, sem ordem para tal', severity: 'MÉDIA', points: 0.5 },
-   { category: '40. Fumar dentro ou nas imediações da EECM ou quando uniformizado', severity: 'MÉDIA', points: 0.5 },
-   { category: '41. Ingressar ou sair da EECM sem estar com o uniforme regulamentar, bem como trocar de roupa (trajes civis) dentro da EECM ou em suas mediações', severity: 'MÉDIA', points: 0.5 },
-   { category: '42. Ler ou distribuir, dentro da EECM, publicações estampas ou jornais que atentem contra a disciplina, a moral e a ordem pública', severity: 'MÉDIA', points: 0.5 },
-   { category: '43. Manter contato físico que denote envolvimento de cunho amoroso (namoro, beijos, etc.) quando devidamente uniformizado, dentro da EECM ou fora dele', severity: 'MÉDIA', points: 0.5 },
-   { category: '44. Não zelar pelo nome da Instituição que representa, deixando de portar-se adequadamente em qualquer ambiente, quando uniformizado ou em atividades relacionadas a EECM', severity: 'MÉDIA', points: 0.5 },
-   { category: '45. Negar-se a colaborar ou participar nos eventos, formaturas, solenidades, desfiles oficiais da EECM', severity: 'MÉDIA', points: 0.5 },
-   { category: '46. Ofender a moral de colegas ou de qualquer membro da Comunidade Escolar por atos, gestos ou palavras', severity: 'MÉDIA', points: 0.5 },
-   { category: '47. Portar-se de forma inconveniente em sala de aula ou outro local de instrução/recreação, bem como transportes de uso coletivo', severity: 'MÉDIA', points: 0.5 },
-   { category: '48. Portar-se de maneira desrespeitosa ou inconveniente nos eventos sociais ou esportivos, promovidos ou com a participação da EECM ou fora dela', severity: 'MÉDIA', points: 0.5 },
-   { category: '49. Proferir palavras de baixo calão, incompatíveis com as normas da boa educação, ou grafá-las em qualquer lugar', severity: 'MÉDIA', points: 0.5 },
-   { category: '50. Propor ou aceitar transação pecuniária de qualquer natureza, no interior da EECM, sem a devida autorização', severity: 'MÉDIA', points: 0.5 },
-   { category: '51. Provocar ou disseminar a discórdia entre colegas', severity: 'MÉDIA', points: 0.5 },
-   { category: '52. Publicar ou contribuir para que sejam publicadas mensagens, fotos, vídeos ou qualquer outro documento, na Internet ou qualquer outro meio de comunicação, que possam expor a integrante da EECM', severity: 'MÉDIA', points: 0.5 },
-   { category: '53. Retirar ou tentar retirar objeto, de qualquer dependência da EECM, ou mesmo deles servir-se, sem ordem do responsável e/ou do proprietário', severity: 'MÉDIA', points: 0.5 },
-   { category: '54. Sair de forma sem autorização', severity: 'MÉDIA', points: 0.5 },
-   { category: '55. Sair, entrar ou permanecer na sala de aula sem permissão', severity: 'MÉDIA', points: 0.5 },
-   { category: '56. Ser retirado, por mau comportamento, de sala de aula ou qualquer ambiente em que esteja sendo realizada atividade', severity: 'MÉDIA', points: 0.5 },
-   { category: '57. Simular doença para esquivar-se ao atendimento de obrigações e de atividades escolares', severity: 'MÉDIA', points: 0.5 },
-   { category: '58. Tomar parte em jogos de azar ou em apostas na unidade escolar ou fora dela, uniformizados ou não', severity: 'MÉDIA', points: 0.5 },
-   { category: '59. Usar as instalações ou equipamentos esportivos do EECM, sem uniformes adequados, ou sem autorização', severity: 'MÉDIA', points: 0.5 },
-   { category: '60. Usar o uniforme ou o nome do EECM em ambiente inapropriado', severity: 'MÉDIA', points: 0.5 },
-   { category: '61. Utilizar, sem autorização, telefones celulares ou quaisquer aparelhos eletrônicos ou não, durante as atividades escolares', severity: 'MÉDIA', points: 0.5 },
-   { category: '62. Usar indevidamente distintivos ou insígnias', severity: 'MÉDIA', points: 0.5 },
-
-   // Faltas Graves (63 a 91) - 1.0 pts
-   { category: '63. Assinar pelo responsável, documento que deva ser entregue à unidade escolar', severity: 'GRAVE', points: 1.0 },
-   { category: '64. Causar danos ao patrimônio da unidade escolar', severity: 'GRAVE', points: 1.0 },
-   { category: '65. Causar ou contribuir para a ocorrência de acidentes de qualquer natureza', severity: 'GRAVE', points: 1.0 },
-   { category: '66. Comunicar-se com outro aluno ou utilizar-se de qualquer meio não permitido durante qualquer instrumento de avaliação', severity: 'GRAVE', points: 1.0 },
-   { category: '67. Denegrir o nome da EECM e/ou de qualquer de seus membros através de procedimentos desrespeitosos, seja por palavras, gestos, meio virtual ou outros', severity: 'GRAVE', points: 1.0 },
-   { category: '68. Desrespeitar, desobedecer ou desafiar a Diretoria, coordenação, Oficial de gestão Educacional-Militar, o Oficial de Gestão Cívico-Militar, Monitores, professores ou servidores unidade escolar', severity: 'GRAVE', points: 1.0 },
-   { category: '69. Divulgar, ou concorrer para que isso aconteça, qualquer imagem ou matéria que induza a apologia às drogas, à violência e/ou pornografia', severity: 'GRAVE', points: 1.0 },
-   { category: '70. Entrar na unidade escolar, ou dela se ausentar, sem autorização', severity: 'GRAVE', points: 1.0 },
-   { category: '71. Extraviar documentos que estejam sob sua responsabilidade', severity: 'GRAVE', points: 1.0 },
-   { category: '72. Faltar com a verdade e/ou utilizar-se do anonimato para a prática de qualquer falta disciplinar', severity: 'GRAVE', points: 1.0 },
-   { category: '73. Fazer uso, portar, distribuir, estar sob ação ou induzir outrem ao uso de bebida alcoólica, entorpecentes, tóxicos ou produtos alucinógenos, no interior da EECM, em suas imediações estando ou não uniformizado', severity: 'GRAVE', points: 1.0 },
-   { category: '74. Hastear ou arriar bandeiras e estandartes, sem autorização', severity: 'GRAVE', points: 1.0 },
-   { category: '75. Instigar colegas a cometer faltas disciplinares e/ou ações delituosas que comprometam o bom nome da EECM', severity: 'GRAVE', points: 1.0 },
-   { category: '76. Manter contato físico com denotação libidinosa no ambiente da EECM ou fora dela', severity: 'GRAVE', points: 1.0 },
-   { category: '77. Obter ou fazer uso de imagens, vídeos, áudios ou de qualquer tipo de publicação difamatória contra qualquer membro da Comunidade Escolar', severity: 'GRAVE', points: 1.0 },
-   { category: '78. Ofender membros da Comunidade Escolar com a prática de Bullying e Cyberbullying', severity: 'GRAVE', points: 1.0 },
-   { category: '79. Pichar ou causar qualquer poluição visual ou sonora dentro e nas proximidades da EECM', severity: 'GRAVE', points: 1.0 },
-   { category: '80. Portar objetos que ameacem a segurança individual e/ou da coletividade', severity: 'GRAVE', points: 1.0 },
-   { category: '81. Praticar atos contrários ao culto e ao respeito aos símbolos nacionais', severity: 'GRAVE', points: 1.0 },
-   { category: '82. Promover ou tomar parte de qualquer manifestação coletiva que venha a macular o nome da EECM e/ou que prejudique o bom andamento das aulas e/ou avaliações', severity: 'GRAVE', points: 1.0 },
-   { category: '83. Promover trote de qualquer natureza', severity: 'GRAVE', points: 1.0 },
-   { category: '84. Promover, incitar ou envolver-se em rixa, inclusive luta corporal, dentro ou fora da EECM, estando ou não uniformizado', severity: 'GRAVE', points: 1.0 },
-   { category: '85. Provocar ou tomar parte, uniformizado ou estando na EECM, em manifestações de natureza política', severity: 'GRAVE', points: 1.0 },
-   { category: '86. Rasurar, violar ou alterar documento ou o conteúdo dos mesmos', severity: 'GRAVE', points: 1.0 },
-   { category: '87. Representar a EECM e/ou por ela tomar compromisso, sem estar para isso autorizado', severity: 'GRAVE', points: 1.0 },
-   { category: '88. Ter em seu poder, introduzir, ler ou distribuir, dentro da EECM, cartazes, jornais ou publicações que atentem contra a disciplina e/ou o moral ou de cunho político-partidário', severity: 'GRAVE', points: 1.0 },
-   { category: '89. Utilizar ou subtrair indevidamente objetos ou valores alheios', severity: 'GRAVE', points: 1.0 },
-   { category: '90. Utilizar-se de processos fraudulentos na realização de trabalhos pedagógicos', severity: 'GRAVE', points: 1.0 },
-   { category: '91. Utilizar-se indevidamente e/ou causar avaria e/ou destruição do patrimônio pertencente à EECM', severity: 'GRAVE', points: 1.0 }
-];
 
 interface TeacherOccurrencesProps {
    user: UserType;
@@ -147,66 +28,50 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
    const [masterStudents, setMasterStudents] = useState<any[]>([]);
    const [loading, setLoading] = useState(false);
    const [isSaving, setIsSaving] = useState(false);
-   const [editingOccurrenceId, setEditingOccurrenceId] = useState<string | null>(null);
-   const [viewingOccurrence, setViewingOccurrence] = useState<ClassroomOccurrence | null>(null);
-   const [printingOccurrence, setPrintingOccurrence] = useState<ClassroomOccurrence | null>(null);
-   // Multi-student selection
    const [selectedStudents, setSelectedStudents] = useState<{ name: string; class: string }[]>([]);
 
-   // Cívico-Militar integration states
-   const [linkDemerit, setLinkDemerit] = useState(false);
-   const [demeritSearchTerm, setDemeritSearchTerm] = useState('');
-   const [selectedDemerit, setSelectedDemerit] = useState<DemeritOption | null>(null);
-   const [showDemeritDropdown, setShowDemeritDropdown] = useState(false);
-
-   const [form, setForm] = useState<Omit<ClassroomOccurrence, 'id' | 'timestamp'> & { forwardToPsychosocial: boolean, discipline: string }>({
+   const [form, setForm] = useState({
       date: new Date().toLocaleDateString('sv-SE'),
       teacherName: user.name,
       className: '',
-      studentName: '',
-      type: 'DISCIPLINAR' as any,
-      severity: 'MÉDIA' as any,
-      description: '',
       discipline: '',
-      notifiedParents: false,
+      description: '',
       forwardToPsychosocial: false
    });
 
    const [recentOccurrences, setRecentOccurrences] = useState<ClassroomOccurrence[]>([]);
    const [filterClass, setFilterClass] = useState('');
    const [filterStudent, setFilterStudent] = useState('');
-   const [filterType, setFilterType] = useState('');
 
    const filteredOccurrences = useMemo(() => {
       return recentOccurrences.filter(occ => {
          const matchesClass = !filterClass || occ.className === filterClass;
          const matchesStudent = !filterStudent || occ.studentName.toLowerCase().includes(filterStudent.toLowerCase());
-         const matchesType = !filterType || occ.type === filterType;
-         return matchesClass && matchesStudent && matchesType;
+         return matchesClass && matchesStudent;
       });
-   }, [recentOccurrences, filterClass, filterStudent, filterType]);
+   }, [recentOccurrences, filterClass, filterStudent]);
 
    const fetchOccurrences = async () => {
       setLoading(true);
       const { data, error } = await supabase
          .from('occurrences')
          .select('*')
+         .eq('responsible_name', user.name)
          .order('date', { ascending: false });
 
       if (error) {
          console.error('Error fetching occurrences:', error);
       } else {
-         // Map Supabase rows to ClassroomOccurrence type
          const mapped: ClassroomOccurrence[] = data.map(item => ({
             id: item.id,
             date: item.date,
             teacherName: item.responsible_name,
             className: item.classroom_name,
             studentName: item.student_name,
-            type: item.category as any, // category mapped to type
+            type: item.category as any,
             severity: item.severity as any,
             description: item.description,
-            notifiedParents: false, 
+            notifiedParents: false,
             timestamp: new Date(item.created_at || item.date).getTime()
          }));
          setRecentOccurrences(mapped);
@@ -223,81 +88,22 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          date: new Date().toLocaleDateString('sv-SE'),
          teacherName: user.name,
          className: '',
-         studentName: '',
-         type: 'DISCIPLINAR' as any,
-         severity: 'MÉDIA' as any,
-         description: '',
          discipline: '',
-         notifiedParents: false,
+         description: '',
          forwardToPsychosocial: false
       });
       setSearchTerm('');
       setSelectedStudents([]);
-      setEditingOccurrenceId(null);
-      setLinkDemerit(false);
-      setDemeritSearchTerm('');
-      setSelectedDemerit(null);
-      setShowDemeritDropdown(false);
    };
 
-   const handleEdit = (occ: ClassroomOccurrence) => {
-      let cleanDescription = occ.description;
-      let matchedDemerit: DemeritOption | null = null;
-      let shouldLink = false;
-
-      const match = occ.description.match(/^\[DEMÉRITO CÍVICO-MILITAR:\s*(.+?)\](?:\s*\n+)?([\s\S]*)$/);
-      if (match) {
-         const categoryText = match[1].trim();
-         cleanDescription = match[2].trim();
-         const found = DEMERIT_OPTIONS.find(o => o.category === categoryText);
-         if (found) {
-            matchedDemerit = found;
-            shouldLink = true;
-         }
-      }
-
-      setForm({
-         date: occ.date,
-         teacherName: occ.teacherName,
-         className: occ.className,
-         studentName: occ.studentName,
-         type: occ.type,
-         severity: occ.severity,
-         description: cleanDescription,
-         discipline: '',
-         notifiedParents: occ.notifiedParents || false,
-         forwardToPsychosocial: false // Do not resend on edit
-      });
-      setSelectedStudents([{ name: occ.studentName, class: occ.className }]);
-      setSearchTerm('');
-      setLinkDemerit(shouldLink);
-      setSelectedDemerit(matchedDemerit);
-      setDemeritSearchTerm(matchedDemerit ? matchedDemerit.category : '');
-      setEditingOccurrenceId(occ.id);
-      setIsModalOpen(true);
-   };
-
-   const handlePrint = (occ: ClassroomOccurrence) => {
-      setPrintingOccurrence(occ);
-      setTimeout(() => {
-         window.print();
-      }, 500);
-   };
-
-   const handleViewDetails = (occ: ClassroomOccurrence) => {
-      setViewingOccurrence(occ);
-   };
-
-   // Realtime subscription
    const { students: dbStudents } = useStudents();
 
    useEffect(() => {
       if (dbStudents) {
          setMasterStudents(dbStudents);
       }
-   }, [dbStudents, isModalOpen]);
+   }, [dbStudents]);
 
-   // Realtime subscription
    useEffect(() => {
       const subscription = supabase
          .channel('occurrences_changes')
@@ -313,37 +119,26 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
    const filteredStudents = useMemo(() => {
       const searchClass = form.className;
-
-      // If no class is selected and search term is too short, return empty
       if (!searchClass && (!searchTerm || searchTerm.length < 2)) return [];
-
       let filtered = masterStudents;
-
-      // First, filter by class if selected
       if (searchClass) {
          filtered = filtered.filter(s => s.class === searchClass);
       }
-
-      // Then, filter by name if there's a search term
       if (searchTerm) {
          filtered = filtered.filter(s => s.name && s.name.toLowerCase().includes(searchTerm.toLowerCase()));
       }
-
-      // Limit results to avoid massive dropdowns, but allow more if we're viewing a whole class
-    return filtered
-      .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
-      .slice(0, searchClass && !searchTerm ? 50 : 6);
-  }, [searchTerm, masterStudents, form.className]);
+      return filtered
+         .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+         .slice(0, searchClass && !searchTerm ? 50 : 6);
+   }, [searchTerm, masterStudents, form.className]);
 
    const handleSelectStudent = (student: any) => {
-      // Avoid duplicates
       if (selectedStudents.some(s => s.name === student.name)) {
          setShowDropdown(false);
          setSearchTerm('');
          return;
       }
       setSelectedStudents(prev => [...prev, { name: student.name, class: student.class }]);
-      // Set className from first selected student
       if (selectedStudents.length === 0) {
          setForm(prev => ({ ...prev, className: student.class }));
       }
@@ -355,353 +150,86 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       setSelectedStudents(prev => prev.filter(s => s.name !== name));
    };
 
-   const syncOccurrenceToCivicoMilitar = (
-      studentName: string,
-      className: string,
-      teacherName: string,
-      type: string,
-      severity: string,
-      description: string,
-      date: string,
-      occurrenceId: string,
-      isDelete: boolean = false,
-      isUpdate: boolean = false,
-      linkedDemeritCategory?: string,
-      linkedDemeritPoints?: number
-   ) => {
-      try {
-         const savedScores = localStorage.getItem('civico_militar_student_scores_v1');
-         let studentStates: any[] = [];
-         if (savedScores) {
-            studentStates = JSON.parse(savedScores);
-         } else {
-            // Initialize states for all INITIAL_STUDENTS
-            studentStates = INITIAL_STUDENTS.map((s, idx) => ({
-               studentId: s.CodigoAluno,
-               studentName: s.Nome,
-               className: s.Turma,
-               score: idx % 15 === 0 ? 9.8 : (idx % 25 === 0 ? 9.6 : 10.0),
-               isClassLeader: idx === 5 || idx === 35 || idx === 85,
-               isCivicHighlight: idx === 12 || idx === 92,
-               occurrences: idx % 15 === 0 ? [
-                  {
-                     id: `occ-${idx}-1`,
-                     type: 'DEMERIT',
-                     category: '8. Conversar ou se mexer quando estiver em forma',
-                     points: 0.2,
-                     date: new Date(Date.now() - 120 * 60 * 60 * 1000).toISOString().split('T')[0],
-                     observations: 'Conversa reiterada durante o hasteamento da bandeira.',
-                     responsible: 'Monitor Silva'
-                  }
-               ] : (idx % 25 === 0 ? [
-                  {
-                     id: `occ-${idx}-1`,
-                     type: 'DEMERIT',
-                     category: '4. Chegar atrasado a EECM para o início das aulas, instrução, treinamento, formatura ou atividade escolar',
-                     points: 0.2,
-                     date: new Date(Date.now() - 96 * 60 * 60 * 1000).toISOString().split('T')[0],
-                     observations: 'Apresentou-se após o início da chamada geral.',
-                     responsible: 'Monitor Silva'
-                  },
-                  {
-                     id: `occ-${idx}-2`,
-                     type: 'DEMERIT',
-                     category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
-                     points: 0.2,
-                     date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                     observations: 'Apresentou-se com farda amassada e sapato desalinhado.',
-                     responsible: 'Monitor Silva'
-                  }
-               ] : [])
-            }));
-         }
-
-         let finalDemeritCategory = linkedDemeritCategory;
-         let finalPoints = linkedDemeritPoints;
-
-         // Try to parse from description if not explicitly passed (e.g. on delete or update from old instances)
-         const match = description.match(/^\[DEMÉRITO CÍVICO-MILITAR:\s*(.+?)\](?:\s*\n+)?([\s\S]*)$/);
-         if (match) {
-            const cat = match[1].trim();
-            finalDemeritCategory = cat;
-            const found = DEMERIT_OPTIONS.find(o => o.category === cat);
-            if (found) {
-               finalPoints = found.points;
-            }
-         }
-
-         const cleanObs = match ? match[2].trim() : description;
-
-         // Determine points and behavior type
-         let points = 0.2;
-         const isMerit = type === 'ELOGIO';
-         if (isMerit) {
-            points = 0.3; // Merit default
-         } else if (finalPoints !== undefined) {
-            points = finalPoints;
-         } else {
-            switch (severity) {
-               case 'CRÍTICA':
-                  points = 2.0; // Gravíssima
-                  break;
-               case 'ALTA':
-                  points = 1.0; // Grave
-                  break;
-               case 'MÉDIA':
-                  points = 0.5; // Média
-                  break;
-               case 'BAIXA':
-               default:
-                  points = 0.2; // Leve
-                  break;
-            }
-         }
-
-         // Find student (case-insensitive name & class matching)
-         const normalizedName = studentName.trim().toUpperCase();
-         const normalizedClass = className.trim().toUpperCase();
-
-         const studentIdx = studentStates.findIndex(
-            s => s.studentName.trim().toUpperCase() === normalizedName &&
-                 s.className.trim().toUpperCase() === normalizedClass
-         );
-
-         if (studentIdx !== -1) {
-            const student = studentStates[studentIdx];
-            let occurrences = [...(student.occurrences || [])];
-
-            if (isDelete) {
-               // Find if this occurrence exists
-               const targetOcc = occurrences.find(o => o.id === occurrenceId);
-               if (targetOcc) {
-                  // Remove occurrence and reverse points from score
-                  occurrences = occurrences.filter(o => o.id !== occurrenceId);
-                  let newScore = student.score;
-                  if (targetOcc.type === 'MERIT') {
-                     newScore = Math.max(0, parseFloat((newScore - targetOcc.points).toFixed(2)));
-                  } else {
-                     newScore = Math.min(10, parseFloat((newScore + targetOcc.points).toFixed(2)));
-                  }
-                  studentStates[studentIdx] = {
-                     ...student,
-                     score: newScore,
-                     occurrences
-                  };
-               }
-            } else if (isUpdate) {
-               // Find existing occurrence
-               const occIndex = occurrences.findIndex(o => o.id === occurrenceId);
-               if (occIndex !== -1) {
-                  const oldOcc = occurrences[occIndex];
-                  
-                  // Revert old occurrence points first
-                  let tempScore = student.score;
-                  if (oldOcc.type === 'MERIT') {
-                     tempScore = Math.max(0, parseFloat((tempScore - oldOcc.points).toFixed(2)));
-                  } else {
-                     tempScore = Math.min(10, parseFloat((tempScore + oldOcc.points).toFixed(2)));
-                  }
-
-                  // Apply new occurrence points
-                  if (isMerit) {
-                     tempScore = Math.min(10, parseFloat((tempScore + points).toFixed(2)));
-                  } else {
-                     tempScore = Math.max(0, parseFloat((tempScore - points).toFixed(2)));
-                  }
-
-                  // Update occurrence
-                  occurrences[occIndex] = {
-                     ...oldOcc,
-                     type: isMerit ? 'MERIT' : 'DEMERIT',
-                     category: finalDemeritCategory || `[DOCENTE] Ocorrência: ${type} (${severity})`,
-                     points,
-                     date,
-                     observations: cleanObs,
-                     responsible: teacherName
-                  };
-
-                  studentStates[studentIdx] = {
-                     ...student,
-                     score: tempScore,
-                     occurrences
-                  };
-               }
-            } else {
-               // Create new occurrence
-               const newOcc = {
-                  id: occurrenceId,
-                  type: isMerit ? 'MERIT' : 'DEMERIT',
-                  category: finalDemeritCategory || `[DOCENTE] Ocorrência: ${type} (${severity})`,
-                  points,
-                  date,
-                  observations: cleanObs,
-                  responsible: teacherName
-               };
-
-               occurrences = [newOcc, ...occurrences];
-
-               let newScore = student.score;
-               if (isMerit) {
-                  newScore = Math.min(10, parseFloat((newScore + points).toFixed(2)));
-               } else {
-                  newScore = Math.max(0, parseFloat((newScore - points).toFixed(2)));
-               }
-
-               studentStates[studentIdx] = {
-                  ...student,
-                  score: newScore,
-                  occurrences
-                };
-            }
-
-            localStorage.setItem('civico_militar_student_scores_v1', JSON.stringify(studentStates));
-         }
-      } catch (err) {
-         console.error('Error syncing occurrence to cívico-militar:', err);
-      }
-   };
-
    const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
 
       if (selectedStudents.length === 0) return alert("Selecione ao menos um aluno.");
-      if (!form.description.trim()) return alert("Descreva o que ocorreu.");
+      if (!form.description.trim()) return alert("Descreva o que ocorreu no campo de Achado.");
 
       setIsSaving(true);
       const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-      let finalDescription = form.description;
-      if (form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit) {
-         finalDescription = `[DEMÉRITO CÍVICO-MILITAR: ${selectedDemerit.category}]\n\n${form.description}`;
-      }
-
       try {
-         if (editingOccurrenceId) {
-            // Editing: update single record
-            const student = selectedStudents[0];
+         for (const student of selectedStudents) {
             const payload = {
                date: form.date,
                time,
                responsible_name: form.teacherName,
                classroom_name: student.class,
                student_name: student.name,
-               category: form.type,
-               severity: form.severity,
-               description: finalDescription
+               category: 'FATO OBSERVADO',
+               severity: 'MÉDIA',
+               description: form.description,
+               status: 'REGISTRADO',
+               location: 'SALA DE AULA'
             };
-            const { error } = await supabase.from('occurrences').update(payload).eq('id', editingOccurrenceId).select();
+            const { data, error } = await supabase.from('occurrences').insert([payload]).select();
             if (error) throw error;
 
-            syncOccurrenceToCivicoMilitar(
-               student.name,
-               student.class,
-               form.teacherName,
-               form.type,
-               form.severity,
-               finalDescription,
-               form.date,
-               editingOccurrenceId,
-               false,
-               true, // isUpdate
-               form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.category : undefined,
-               form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.points : undefined
-            );
-         } else {
-            // Creating: one occurrence per selected student
-            for (const student of selectedStudents) {
-               const payload = {
+            // Inject into Cívico-Militar documents
+            const savedDocs = localStorage.getItem('civico_militar_documentos_v1');
+            let docsList = [];
+            if (savedDocs) {
+               try {
+                  docsList = JSON.parse(savedDocs);
+               } catch (e) {}
+            }
+            docsList.unshift({
+               id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+               studentId: 'AUTO_GEK',
+               studentName: student.name,
+               className: student.class,
+               shiftName: 'MATUTINO/VESPERTINO',
+               template: 'fato_observado',
+               templateLabel: 'Relatório de Fato Observado',
+               date: form.date,
+               fields: {
                   date: form.date,
-                  time,
-                  responsible_name: form.teacherName,
-                  classroom_name: student.class,
+                  recebidoDate: '',
+                  teacher: form.teacherName,
+                  monitor: '',
+                  series: student.class,
+                  discipline: form.discipline || 'MÚLTIPLAS',
+                  achado: form.description,
+                  city: 'Colíder - MT'
+               },
+               timestamp: Date.now()
+            });
+            localStorage.setItem('civico_militar_documentos_v1', JSON.stringify(docsList));
+
+            // Forward to Psychosocial if requested
+            if (form.forwardToPsychosocial) {
+               const { error: referralError } = await supabase.from('psychosocial_referrals').insert([{
                   student_name: student.name,
-                  category: form.type,
-                  severity: form.severity,
-                  description: finalDescription,
-                  status: 'REGISTRADO',
-                  location: 'SALA DE AULA'
-               };
-               const { data, error } = await supabase.from('occurrences').insert([payload]).select();
-               if (error) throw error;
+                  class_name: student.class,
+                  teacher_name: form.teacherName,
+                  school_unit: 'ESCOLA ANDRÉ MAGGI',
+                  date: form.date,
+                  report: `[VIA FATO OBSERVADO] ${form.description}`,
+                  status: 'AGUARDANDO_TRIAGEM',
+                  student_age: 'Não informado',
+                  attendance_frequency: '0',
+                  previous_strategies: 'Encaminhamento via Fato Observado',
+                  adopted_procedures: ['ENCAMINHAMENTO_DIRETO'],
+                  observations: { learning: [], behavioral: [], emotional: [] }
+               }]);
 
-               const createdOcc = data && data[0];
-               if (createdOcc && createdOcc.id) {
-                  syncOccurrenceToCivicoMilitar(
-                     student.name,
-                     student.class,
-                     form.teacherName,
-                     form.type,
-                     form.severity,
-                     finalDescription,
-                     form.date,
-                     createdOcc.id,
-                     false,
-                     false,
-                     form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.category : undefined,
-                     form.type === 'DISCIPLINAR' && linkDemerit && selectedDemerit ? selectedDemerit.points : undefined
-                  );
-               }
-
-               // Forward to Psychosocial if requested
-               if (form.forwardToPsychosocial) {
-                  const { error: referralError } = await supabase.from('psychosocial_referrals').insert([{
-                     student_name: student.name,
-                     class_name: student.class,
-                     teacher_name: form.teacherName,
-                     school_unit: 'ESCOLA ANDRÉ MAGGI',
-                     date: form.date,
-                     report: `[VIA OCORRÊNCIA] ${form.description}`,
-                     status: 'AGUARDANDO_TRIAGEM',
-                     student_age: 'Não informado',
-                     attendance_frequency: '0',
-                     previous_strategies: 'Encaminhamento direto via Ocorrência',
-                     adopted_procedures: ['ENCAMINHAMENTO_DIRETO'],
-                     observations: { learning: [], behavioral: [], emotional: [] }
+               if (!referralError) {
+                  await supabase.from('psychosocial_notifications').insert([{
+                     title: 'Encaminhamento Psicossocial',
+                     message: `O professor(a) ${form.teacherName} encaminhou o aluno ${student.name} junto ao Fato Observado.`,
+                     is_read: false
                   }]);
-
-                  if (!referralError) {
-                     await supabase.from('psychosocial_notifications').insert([{
-                        title: 'Encaminhamento via Ocorrência',
-                        message: `O professor(a) ${form.teacherName} encaminhou o aluno ${student.name} através de um registro de ocorrência.`,
-                        is_read: false
-                     }]);
-                  } else {
-                     console.error('Erro ao encaminhar para psicossocial:', referralError);
-                     alert(`Ocorrência salva, mas o encaminhamento falhou: ${referralError.message}. Verifique o Supabase.`);
-                  }
-               }
-
-               // If FATO OBSERVADO, inject into civico_militar_documentos_v1
-               if (form.type === 'FATO OBSERVADO') {
-                  const savedDocs = localStorage.getItem('civico_militar_documentos_v1');
-                  let docsList = [];
-                  if (savedDocs) {
-                     try {
-                        docsList = JSON.parse(savedDocs);
-                     } catch (e) {}
-                  }
-                  docsList.unshift({
-                     id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                     studentId: 'AUTO_GEK', // generic since we only have names
-                     studentName: student.name,
-                     className: student.class,
-                     shiftName: 'MATUTINO/VESPERTINO',
-                     template: 'fato_observado',
-                     templateLabel: 'Relatório de Fato Observado',
-                     date: form.date,
-                     fields: {
-                        date: form.date,
-                        recebidoDate: '',
-                        teacher: form.teacherName,
-                        monitor: '',
-                        series: student.class,
-                        discipline: form.discipline || 'MÚLTIPLAS',
-                        achado: finalDescription,
-                        city: 'Colíder - MT'
-                     },
-                     timestamp: Date.now()
-                  });
-                  localStorage.setItem('civico_militar_documentos_v1', JSON.stringify(docsList));
                }
             }
          }
@@ -709,14 +237,10 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
          setIsModalOpen(false);
          resetForm();
          const count = selectedStudents.length;
-         alert(editingOccurrenceId
-            ? 'Ocorrência atualizada com sucesso!'
-            : count > 1
-               ? `${count} ocorrências registradas com sucesso!`
-               : 'Ocorrência registrada e enviada para coordenação!');
+         alert(count > 1 ? `${count} Relatórios enviados com sucesso!` : 'Relatório de Fato Observado enviado com sucesso para a Coordenação Cívico-Militar!');
       } catch (err) {
          console.error(err);
-         alert('Erro ao salvar ocorrência.');
+         alert('Erro ao enviar relatório.');
       } finally {
          setIsSaving(false);
       }
@@ -724,644 +248,272 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
    const deleteOccurrence = async (id: string) => {
       if (window.confirm("Deseja remover este registro do seu histórico?")) {
-         const targetOcc = recentOccurrences.find(occ => occ.id === id);
          const { error } = await supabase.from('occurrences').delete().eq('id', id);
          if (error) {
             console.error(error);
-            alert("Erro ao excluir ocurrencia");
-         } else if (targetOcc) {
-            syncOccurrenceToCivicoMilitar(
-               targetOcc.studentName,
-               targetOcc.className,
-               targetOcc.teacherName,
-               targetOcc.type,
-               targetOcc.severity,
-               targetOcc.description,
-               targetOcc.date,
-               id,
-               true // isDelete
-            );
+            alert("Erro ao excluir registro.");
          }
       }
    };
 
-   const getSeverityStyle = (sev: string) => {
-      switch (sev) {
-         case 'CRÍTICA': return 'bg-red-100 text-red-700 border-red-200';
-         case 'ALTA': return 'bg-rose-50 text-rose-600 border-rose-100';
-         case 'MÉDIA': return 'bg-amber-50 text-amber-600 border-amber-100';
-         default: return 'bg-blue-50 text-blue-600 border-blue-100';
-      }
-   };
-
    return (
-      <>
-         {/* CONTEÚDO PRINCIPAL (ANIMADO) */}
-         <div className="space-y-8 animate-in fade-in duration-500 pb-20 no-print">
-            
-            {/* CABEÇALHO E BOTÃO DE AÇÃO */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
-               <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-red-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-red-200 rotate-3 hover:rotate-0 transition-transform duration-500">
-                     <AlertCircle size={40} strokeWidth={2.5} />
+      <div className="space-y-8 animate-in fade-in duration-500 pb-20 no-print">
+         
+         {/* CABEÇALHO */}
+         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-6">
+               <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-blue-200 rotate-3 hover:rotate-0 transition-transform duration-500">
+                  <FileText size={40} strokeWidth={2.5} />
+               </div>
+               <div>
+                  <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none mb-2">Fato Observado</h1>
+                  <div className="flex items-center gap-3">
+                     <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-100">Área do Professor</span>
+                     <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                     <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">Relatos e Encaminhamentos</span>
+                  </div>
+               </div>
+            </div>
+            <button onClick={() => setIsModalOpen(true)} className="px-8 py-5 bg-gray-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl hover:bg-black active:scale-95 transition-all flex items-center gap-4 group">
+               <Plus size={20} strokeWidth={3} className="text-blue-500 group-hover:rotate-90 transition-transform duration-500" />
+               Novo Relatório
+            </button>
+         </div>
+
+         {/* HISTÓRICO */}
+         <div className="bg-white rounded-[3.5rem] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="p-10 border-b border-gray-50 bg-gray-50/30 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+               <div className="flex items-center gap-5">
+                  <div className="p-4 bg-white rounded-3xl shadow-sm border border-gray-100">
+                     <History size={28} className="text-gray-400" />
                   </div>
                   <div>
-                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none mb-2">Lançar Ocorrência</h1>
+                     <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Meus Relatórios Enviados</h3>
+                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sincronizado com a gestão cívico-militar</p>
+                  </div>
+               </div>
+
+               <div className="flex flex-col md:flex-row items-center gap-3">
+                  <div className="relative w-full md:w-80">
+                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                     <input
+                        type="text"
+                        placeholder="BUSCAR PELO NOME..."
+                        className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-2xl font-bold text-[10px] uppercase outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        value={filterStudent}
+                        onChange={(e) => setFilterStudent(e.target.value)}
+                     />
+                  </div>
+                  <select
+                     value={filterClass}
+                     onChange={(e) => setFilterClass(e.target.value)}
+                     className="w-full md:w-48 px-6 py-4 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-blue-500/5 transition-all appearance-none cursor-pointer"
+                  >
+                     <option value="">TODAS AS TURMAS</option>
+                     {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+               </div>
+            </div>
+
+            <div className="divide-y divide-gray-50">
+               {loading ? (
+                  <div className="p-12 flex justify-center">
+                     <Loader2 className="animate-spin text-gray-300" size={32} />
+                  </div>
+               ) : filteredOccurrences.length > 0 ? filteredOccurrences.map(occ => (
+                  <div key={occ.id} className="p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:bg-gray-50/50 transition-all group relative">
+                     <div className="flex items-center gap-6 flex-1">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 bg-blue-50 text-blue-600 border-blue-100 shadow-sm">
+                           <FileText size={24} />
+                        </div>
+                        <div>
+                           <div className="flex items-center gap-3 mb-1">
+                              <h4 className="font-black text-gray-900 uppercase tracking-tight text-lg">{occ.studentName}</h4>
+                           </div>
+                           <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                              <span className="text-gray-900 bg-gray-100 px-2 py-0.5 rounded">{occ.className}</span>
+                              <span className="text-blue-500">{new Date(occ.date).toLocaleDateString('pt-BR')}</span>
+                              {occ.category && <span>• {occ.category}</span>}
+                           </div>
+                        </div>
+                     </div>
+
                      <div className="flex items-center gap-3">
-                        <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-red-100">Área do Professor</span>
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                        <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">Registro Pedagógico e Disciplinar</span>
+                        <button 
+                           onClick={() => deleteOccurrence(occ.id)}
+                           className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-gray-100 text-gray-300 hover:text-red-500 hover:bg-red-50 hover:border-red-100 transition-all"
+                        >
+                           <Trash2 size={18} />
+                        </button>
                      </div>
                   </div>
-               </div>
-               <button onClick={() => setIsModalOpen(true)} className="px-8 py-5 bg-gray-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl hover:bg-black active:scale-95 transition-all flex items-center gap-4 group">
-                  <Plus size={20} strokeWidth={3} className="text-red-500 group-hover:rotate-90 transition-transform duration-500" />
-                  Novo Registro de Fato
-               </button>
-            </div>
-
-            {/* LISTA DE HISTÓRICO GLOBAL */}
-            <div className="bg-white rounded-[3.5rem] border border-gray-100 shadow-sm overflow-hidden">
-               <div className="p-10 border-b border-gray-50 bg-gray-50/30 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                  <div className="flex items-center gap-5">
-                     <div className="p-4 bg-white rounded-3xl shadow-sm border border-gray-100">
-                        <History size={28} className="text-gray-400" />
+               )) : (
+                  <div className="p-20 text-center flex flex-col items-center justify-center">
+                     <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                        <FileText size={40} className="text-gray-300" />
                      </div>
-                     <div>
-                        <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Histórico Global</h3>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sincronizado com a coordenação</p>
-                     </div>
+                     <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Nenhum relatório encontrado</p>
                   </div>
-
-                  <div className="flex flex-col md:flex-row items-center gap-3">
-                     <div className="relative w-full md:w-80">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                        <input
-                           type="text"
-                           placeholder="BUSCAR PELO NOME..."
-                           className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-2xl font-bold text-[10px] uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all"
-                           value={filterStudent}
-                           onChange={(e) => setFilterStudent(e.target.value)}
-                        />
-                     </div>
-                     <select
-                        value={filterClass}
-                        onChange={(e) => setFilterClass(e.target.value)}
-                        className="w-full md:w-48 px-6 py-4 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all appearance-none cursor-pointer"
-                     >
-                        <option value="">TODAS AS TURMAS</option>
-                        {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-                     </select>
-                     <select
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
-                        className="w-full md:w-40 px-6 py-4 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:ring-4 focus:ring-red-500/5 transition-all appearance-none cursor-pointer"
-                     >
-                        <option value="">TIPO</option>
-                        {OCCURRENCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                     </select>
-                  </div>
-               </div>
-
-               <div className="divide-y divide-gray-50">
-                  {loading ? (
-                     <div className="p-12 flex justify-center">
-                        <Loader2 className="animate-spin text-gray-300" size={32} />
-                     </div>
-                  ) : filteredOccurrences.length > 0 ? filteredOccurrences.map(occ => (
-                     <div key={occ.id} className="p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:bg-gray-50/50 transition-all group relative">
-                        <div className="flex items-center gap-6 flex-1">
-                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${getSeverityStyle(occ.severity)} shadow-sm`}>
-                              <AlertCircle size={24} />
-                           </div>
-                           <div>
-                              <div className="flex items-center gap-3">
-                                 <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight">{occ.studentName}</h4>
-                                 <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${getSeverityStyle(occ.severity)}`}>{occ.type}</span>
-                              </div>
-                              <p className="text-xs text-gray-500 font-medium italic mt-1 line-clamp-1">"{occ.description}"</p>
-                              <div className="flex flex-wrap items-center gap-4 mt-3">
-                                 <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Clock size={12} /> {new Date(occ.date).toLocaleDateString('pt-BR')}</span>
-                                 <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Flag size={12} /> Turma: {occ.className}</span>
-                                 <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-gray-100">
-                                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                                    <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter">Relator: {occ.teacherName}</span>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-                        <div className="flex flex-col sm:flex-row items-center gap-2">
-                           <button onClick={() => handlePrint(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Imprimir Ata Oficial">
-                              <Printer size={20} />
-                           </button>
-                           {occ.teacherName === user.name && (
-                              <>
-                                 <button onClick={() => handleEdit(occ)} className="p-3 bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all" title="Editar Registro">
-                                    <Edit3 size={20} />
-                                 </button>
-                                 <button onClick={() => deleteOccurrence(occ.id)} className="p-3 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Excluir Registro">
-                                    <Trash2 size={20} />
-                                 </button>
-                              </>
-                           )}
-                           <button 
-                              onClick={(e) => { e.stopPropagation(); handleViewDetails(occ); }}
-                              className="p-3 bg-gray-50 text-gray-300 hover:scale-110 active:scale-95 group-hover:bg-red-600 group-hover:text-white rounded-xl transition-all shadow-sm hidden md:block relative z-10"
-                              title="Ver Detalhes do Registro"
-                           >
-                              <ChevronRight size={24} />
-                           </button>
-                        </div>
-                     </div>
-                  )) : (
-                     <div className="py-24 text-center">
-                        <MessageSquareIcon size={48} className="mx-auto mb-4 text-gray-100" />
-                        <p className="text-gray-300 font-black uppercase text-xs tracking-widest">
-                           { (filterClass || filterStudent || filterType) 
-                              ? 'Nenhum registro corresponde aos filtros selecionados' 
-                              : 'Nenhum registro encontrado no histórico global' }
-                        </p>
-                     </div>
-                  )}
-               </div>
-            </div>
-
-            {/* NOTA DE CONFORMIDADE */}
-            <div className="bg-gray-900 p-8 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><ShieldCheckIcon size={140} /></div>
-               <div className="flex items-center gap-6 relative z-10">
-                  <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-md">
-                     <AlertTriangle size={32} className="text-red-400" />
-                  </div>
-                  <div>
-                     <p className="text-red-400 text-[10px] font-black uppercase tracking-widest mb-1">Atenção Docente</p>
-                     <h4 className="text-xl font-black uppercase">Escrituração Permanente</h4>
-                     <p className="text-gray-400 text-xs font-medium uppercase tracking-tight">Estes registros são sincronizados com o Livro de Ocorrência da Gestão Escolar.</p>
-                  </div>
-               </div>
+               )}
             </div>
          </div>
 
-         {/* MODAIS (FORA DO CONTAINER ANIMADO PARA GARANTIR POSICIONAMENTO FIXED) */}
-
-         {/* MODAL DE NOVO REGISTRO / EDIÇÃO */}
+         {/* MODAL DE NOVO RELATÓRIO */}
          {isModalOpen && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-red-950/40 backdrop-blur-sm animate-in fade-in duration-300 no-print">
-               <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-red-100 overflow-hidden flex flex-col max-h-[95vh]">
-                  <div className="p-8 bg-red-50 flex justify-between items-center border-b border-red-100 shrink-0">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+               <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+               
+               <div className="bg-white w-full max-w-3xl rounded-[3rem] shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                  
+                  <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-[3rem]">
                      <div className="flex items-center gap-4">
-                        <div className="p-4 bg-red-600 text-white rounded-3xl shadow-lg">
-                           <Plus size={28} strokeWidth={3} />
+                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                           <FileText size={24} />
                         </div>
                         <div>
-                           <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">{editingOccurrenceId ? 'Editar Fato Pedagógico' : 'Novo Registro de Fato'}</h3>
-                           <p className="text-[10px] text-red-600 font-bold uppercase tracking-widest mt-1">Escrituração Disciplinar Docente</p>
+                           <h2 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Relatório de Fato Observado</h2>
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Preenchimento Oficial</p>
                         </div>
                      </div>
-                     <button onClick={() => { setIsModalOpen(false); resetForm(); }} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
-                        <X size={24} />
+                     <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 flex items-center justify-center rounded-full bg-white border border-gray-100 text-gray-400 hover:bg-gray-100 transition-colors">
+                        <X size={20} />
                      </button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                     <form onSubmit={handleSave} className="space-y-8">
-                        <div className="space-y-6">
+                  <div className="p-8 overflow-y-auto custom-scrollbar">
+                     <form id="fatoForm" onSubmit={handleSave} className="space-y-6">
+                        
+                        <div className="space-y-6 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative z-20">
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="space-y-1.5">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turma</label>
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Turma do Aluno</label>
                                  <select
                                     value={form.className}
                                     onChange={e => {
                                        setForm({ ...form, className: e.target.value });
-                                       if (!editingOccurrenceId) setSelectedStudents([]);
-                                       if (e.target.value) setShowDropdown(true);
+                                       setSearchTerm('');
                                     }}
-                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
+                                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all appearance-none cursor-pointer"
                                  >
-                                    <option value="">Selecione a turma...</option>
+                                    <option value="">Selecione a Turma</option>
                                     {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                                  </select>
                               </div>
-                              <div className="space-y-1.5 relative">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                                    Estudante <span className="text-red-500">*</span>
-                                 </label>
-                                 <div className="relative">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                                    <input
-                                       type="text"
-                                       value={searchTerm}
-                                       onFocus={() => setShowDropdown(true)}
-                                       onChange={e => {
-                                          setSearchTerm(e.target.value);
-                                          setShowDropdown(true);
-                                       }}
-                                       placeholder={form.className ? 'Buscar aluno...' : 'Selecione a turma primeiro...'}
-                                       className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-red-500/5 focus:bg-white transition-all uppercase"
-                                    />
-                                 </div>
 
-                                 {showDropdown && filteredStudents.length > 0 && (
-                                    <div className="absolute z-[100] left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto max-h-60 divide-y divide-gray-50 animate-in slide-in-from-top-2">
-                                       {filteredStudents.map(s => (
-                                          <button
-                                             key={s.id || s.registration_number || s.name}
-                                             type="button"
-                                             onClick={() => handleSelectStudent(s)}
-                                             className="w-full text-left p-4 hover:bg-red-50 transition-colors flex justify-between items-center"
-                                          >
-                                             <span className="text-xs font-black uppercase text-gray-800">{s.name}</span>
-                                             <span className="text-[9px] font-bold text-gray-400 uppercase">{s.class}</span>
-                                          </button>
-                                       ))}
-                                    </div>
-                                 )}
-                              </div>
-                           </div>
-
-                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                               <div className="space-y-1.5">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data</label>
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data do Fato</label>
                                  <input
                                     type="date"
+                                    required
                                     value={form.date}
                                     onChange={e => setForm({ ...form, date: e.target.value })}
-                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white"
+                                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
                                  />
-                              </div>
-                              <div className="space-y-1.5">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Classificação</label>
-                                 <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as any })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white transition-all">
-                                    {OCCURRENCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                 </select>
-                              </div>
-                              <div className="space-y-1.5">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Severidade</label>
-                                 <select 
-                                    value={form.severity} 
-                                    disabled={linkDemerit}
-                                    onChange={e => setForm({ ...form, severity: e.target.value as any })} 
-                                    className={`w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase outline-none focus:bg-white transition-all ${linkDemerit ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`}
-                                 >
-                                    {SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
-                                 </select>
                               </div>
                            </div>
 
-                           {form.type === 'DISCIPLINAR' && (
-                              <div className="p-6 bg-red-50/50 border border-red-100/60 rounded-[2rem] space-y-4">
-                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                       <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center text-white">
-                                          <ShieldCheckIcon size={18} strokeWidth={2.5} />
-                                       </div>
-                                       <div>
-                                          <span className="text-xs font-black text-gray-900 uppercase tracking-tight">Regulamento Cívico-Militar</span>
-                                          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Vincular infração ao comportamento militar</p>
-                                       </div>
-                                    </div>
-                                    <button
-                                       type="button"
-                                       onClick={() => {
-                                          const nextVal = !linkDemerit;
-                                          setLinkDemerit(nextVal);
-                                          if (!nextVal) {
-                                             setSelectedDemerit(null);
-                                             setDemeritSearchTerm('');
-                                          }
-                                       }}
-                                       className={`w-12 h-7 rounded-full transition-all duration-300 relative ${linkDemerit ? 'bg-red-600' : 'bg-gray-200'}`}
-                                    >
-                                       <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${linkDemerit ? 'left-6' : 'left-1'}`} />
-                                    </button>
+                           <div className="space-y-1.5 relative">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Aluno(s) Envolvido(s)</label>
+                              
+                              {selectedStudents.length > 0 && (
+                                 <div className="flex flex-wrap gap-2 mb-3">
+                                    {selectedStudents.map(student => (
+                                       <span key={student.name} className="px-3 py-1.5 bg-blue-50 border border-blue-100 text-blue-700 rounded-xl text-xs font-bold uppercase flex items-center gap-2">
+                                          {student.name}
+                                          <button type="button" onClick={() => handleRemoveStudent(student.name)} className="hover:bg-blue-200 p-0.5 rounded-full transition-colors"><X size={12} /></button>
+                                       </span>
+                                    ))}
                                  </div>
+                              )}
 
-                                 {linkDemerit && (
-                                    <div className="space-y-2 relative">
-                                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Buscar e Selecionar Demérito</label>
-                                       <div className="relative">
-                                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
-                                          <input
-                                             type="text"
-                                             value={demeritSearchTerm}
-                                             onChange={e => {
-                                                setDemeritSearchTerm(e.target.value);
-                                                setShowDemeritDropdown(true);
-                                             }}
-                                             onFocus={() => setShowDemeritDropdown(true)}
-                                             onBlur={() => setTimeout(() => setShowDemeritDropdown(false), 200)}
-                                             placeholder="Digite o número ou descrição do demérito..."
-                                             className="w-full pl-12 pr-10 py-3.5 bg-white border border-gray-100 rounded-xl font-bold text-xs outline-none focus:ring-4 focus:ring-red-500/5 transition-all uppercase"
-                                          />
-                                          {selectedDemerit && (
+                              <div className="relative">
+                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                 <input
+                                    type="text"
+                                    placeholder="Buscar e adicionar aluno..."
+                                    value={searchTerm}
+                                    onFocus={() => setShowDropdown(true)}
+                                    onChange={(e) => {
+                                       setSearchTerm(e.target.value);
+                                       setShowDropdown(true);
+                                    }}
+                                    className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm uppercase outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                                 />
+                                 
+                                 {showDropdown && (searchTerm.length >= 2 || form.className) && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50 max-h-64 overflow-y-auto">
+                                       {filteredStudents.length > 0 ? (
+                                          filteredStudents.map(student => (
                                              <button
+                                                key={student.CodigoAluno}
                                                 type="button"
-                                                onClick={() => {
-                                                   setSelectedDemerit(null);
-                                                   setDemeritSearchTerm('');
-                                                }}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                                                onClick={() => handleSelectStudent(student)}
+                                                className="w-full text-left px-6 py-4 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors flex justify-between items-center"
                                              >
-                                                <X size={16} />
+                                                <span className="font-bold text-gray-700 uppercase text-xs">{student.name}</span>
+                                                <span className="text-[10px] font-black bg-gray-100 text-gray-500 px-2 py-1 rounded uppercase tracking-widest">{student.class}</span>
                                              </button>
-                                          )}
-                                       </div>
-
-                                       {showDemeritDropdown && (
-                                          <div className="absolute z-[110] left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-gray-150 overflow-y-auto max-h-48 divide-y divide-gray-50 animate-in slide-in-from-top-1">
-                                             {DEMERIT_OPTIONS.filter(o => 
-                                                o.category.toLowerCase().includes(demeritSearchTerm.toLowerCase())
-                                             ).slice(0, 8).map(d => (
-                                                <button
-                                                   key={d.category}
-                                                   type="button"
-                                                   onClick={() => {
-                                                      setSelectedDemerit(d);
-                                                      setDemeritSearchTerm(d.category);
-                                                      setShowDemeritDropdown(false);
-                                                      // Map severity: LEVE -> BAIXA, MÉDIA -> MÉDIA, GRAVE -> ALTA
-                                                      let mappedSeverity: CaseSeverity = 'MÉDIA';
-                                                      if (d.severity === 'LEVE') mappedSeverity = 'BAIXA';
-                                                      else if (d.severity === 'GRAVE') mappedSeverity = 'ALTA';
-                                                      setForm(prev => ({ ...prev, severity: mappedSeverity }));
-                                                   }}
-                                                   className="w-full text-left p-3 hover:bg-red-50/50 transition-colors flex justify-between items-center gap-4"
-                                                >
-                                                   <span className="text-[10px] font-black uppercase text-gray-800 line-clamp-2 leading-snug">{d.category}</span>
-                                                   <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border shrink-0 ${
-                                                      d.severity === 'GRAVE' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                      d.severity === 'MÉDIA' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                      'bg-blue-50 text-blue-600 border-blue-100'
-                                                   }`}>
-                                                      {d.severity} ({d.points} pts)
-                                                   </span>
-                                                </button>
-                                             ))}
-                                             {DEMERIT_OPTIONS.filter(o => 
-                                                o.category.toLowerCase().includes(demeritSearchTerm.toLowerCase())
-                                             ).length === 0 && (
-                                                <div className="p-4 text-center text-[10px] text-gray-400 font-bold uppercase">Nenhum demérito encontrado</div>
-                                             )}
-                                          </div>
-                                       )}
-
-                                       {selectedDemerit && (
-                                          <div className="flex items-center gap-2 p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
-                                             <span className="text-[10px] font-bold text-gray-400 uppercase">Selecionado:</span>
-                                             <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
-                                                selectedDemerit.severity === 'GRAVE' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                selectedDemerit.severity === 'MÉDIA' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                'bg-blue-50 text-blue-600 border-blue-100'
-                                             }`}>
-                                                {selectedDemerit.severity} (-{selectedDemerit.points} PTS)
-                                             </span>
+                                          ))
+                                       ) : (
+                                          <div className="px-6 py-8 text-center text-gray-400 font-bold uppercase text-xs tracking-widest">
+                                             Nenhum aluno encontrado
                                           </div>
                                        )}
                                     </div>
                                  )}
                               </div>
-                           )}
-
-                           {form.type === 'FATO OBSERVADO' && (
-                              <div className="space-y-1.5">
-                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Disciplina / Matéria</label>
-                                 <input
-                                    type="text"
-                                    required
-                                    value={form.discipline}
-                                    onChange={e => setForm({ ...form, discipline: e.target.value })}
-                                    placeholder="Ex: Matemática, História..."
-                                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-red-500/5 transition-all uppercase"
-                                 />
-                              </div>
-                           )}
+                           </div>
+                           
+                           <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Disciplina / Matéria</label>
+                              <input
+                                 type="text"
+                                 required
+                                 value={form.discipline}
+                                 onChange={e => setForm({ ...form, discipline: e.target.value })}
+                                 placeholder="Ex: Matemática, História..."
+                                 className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all uppercase"
+                              />
+                           </div>
 
                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Relato Descritivo</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Achado (Relato Descritivo)</label>
                               <textarea
                                  required
                                  value={form.description}
                                  onChange={e => setForm({ ...form, description: e.target.value })}
                                  placeholder="Relate os fatos de forma objetiva e profissional..."
-                                 className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-40 resize-none outline-none focus:bg-white focus:ring-4 focus:ring-red-500/5 transition-all"
+                                 className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-40 resize-none outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
                               />
                            </div>
 
-                           <div className="flex items-center gap-4 p-4 bg-red-50 rounded-2xl border border-red-100">
+                           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                               <input
                                  type="checkbox"
                                  id="forward_psycho"
                                  checked={form.forwardToPsychosocial}
                                  onChange={e => setForm({ ...form, forwardToPsychosocial: e.target.checked })}
-                                 className="w-5 h-5 rounded border-red-300 text-red-600 focus:ring-red-500"
+                                 className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
-                              <label htmlFor="forward_psycho" className="text-xs font-black text-red-800 uppercase tracking-widest cursor-pointer select-none">
-                                 Encaminhar para o Setor Psicossocial / Mediação
+                              <label htmlFor="forward_psycho" className="text-xs font-black text-gray-600 uppercase tracking-widest cursor-pointer select-none">
+                                 Também encaminhar cópia para o Setor Psicossocial
                               </label>
                            </div>
                         </div>
 
-                        <button type="submit" disabled={isSaving} className="w-full py-5 bg-red-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] shadow-2xl shadow-red-900/20 hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-3">
-                           {isSaving ? <Loader2 className="animate-spin" /> : <Save size={24} />}
-                           {editingOccurrenceId ? 'Salvar Alterações' : 'Efetivar Registro no Diário'}
-                        </button>
                      </form>
                   </div>
-               </div>
-            </div>
-         )}
 
-         {/* MODAL DE VISUALIZAÇÃO DETALHADA */}
-         {viewingOccurrence && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md animate-in fade-in duration-300 no-print pointer-events-auto">
-               <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-                  <div className="p-8 bg-gray-50 flex justify-between items-center border-b border-gray-100 shrink-0">
-                     <div className="flex items-center gap-4">
-                        <div className={`p-4 rounded-3xl shadow-lg border-2 ${getSeverityStyle(viewingOccurrence.severity)}`}>
-                           <ShieldAlert size={28} />
-                        </div>
-                        <div>
-                           <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter line-clamp-1">{viewingOccurrence.studentName}</h3>
-                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Detalhes do Registro Escolar</p>
-                        </div>
-                     </div>
-                     <button onClick={() => setViewingOccurrence(null)} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
-                        <X size={24} />
-                     </button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Data</p>
-                           <p className="text-xs font-black text-gray-900">{new Date(viewingOccurrence.date).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Turma</p>
-                           <p className="text-xs font-black text-gray-900">{viewingOccurrence.className}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Natureza</p>
-                           <p className="text-xs font-black text-gray-900">{viewingOccurrence.type}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                           <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Severidade</p>
-                           <p className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border w-fit ${getSeverityStyle(viewingOccurrence.severity)}`}>
-                              {viewingOccurrence.severity}
-                           </p>
-                        </div>
-                     </div>
-
-                     <div className="space-y-3">
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
-                           <MessageSquareIcon size={14} className="text-red-600" /> Relato Narrativo do Professor
-                        </h4>
-                        <div className="p-6 bg-red-50/30 border border-red-100 rounded-[2rem] text-sm font-medium leading-relaxed text-gray-800 italic">
-                           "{viewingOccurrence.description}"
-                        </div>
-                     </div>
-
-                     <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-2xl bg-gray-50/50">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-black text-gray-500 text-xs">
-                           {viewingOccurrence.teacherName.charAt(0)}
-                        </div>
-                        <div>
-                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Relator(a)</p>
-                           <p className="text-xs font-black text-gray-900 uppercase tracking-tighter">{viewingOccurrence.teacherName}</p>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="p-8 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-                     <button 
-                        onClick={() => { setViewingOccurrence(null); handlePrint(viewingOccurrence); }}
-                        className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2"
-                     >
-                        <Printer size={16} /> Imprimir PDF Oficial
-                     </button>
-                     {viewingOccurrence.teacherName === user.name && (
-                        <button 
-                           onClick={() => { handleEdit(viewingOccurrence); setViewingOccurrence(null); }}
-                           className="flex-1 py-4 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
-                        >
-                           <Edit3 size={16} /> Editar Registro
-                        </button>
-                     )}
-                     <button 
-                        onClick={() => setViewingOccurrence(null)}
-                        className="py-4 px-8 bg-white text-gray-400 border border-gray-200 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-50 transition-all"
-                     >
-                        Fechar
+                  <div className="p-8 border-t border-gray-100 bg-gray-50/50 rounded-b-[3rem]">
+                     <button type="submit" form="fatoForm" disabled={isSaving} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] shadow-2xl shadow-blue-900/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3">
+                        {isSaving ? <Loader2 className="animate-spin" /> : <Save size={24} />}
+                        Gerar e Enviar Relatório
                      </button>
                   </div>
                </div>
             </div>
          )}
-
-         {/* ÁREA DE IMPRESSÃO (OCULTA NA TELA) */}
-         {printingOccurrence && (
-            <div className="print-area hidden">
-               <div className="print-page bg-white text-black p-[20mm]">
-                  <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-8">
-                     <div className="flex items-center justify-start w-1/4">
-                        <img src="/logo-escola.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
-                     </div>
-                     <div className="w-2/4 flex justify-center items-center">
-                        <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-24 w-auto object-contain max-w-full" />
-                     </div>
-                     <div className="flex items-center justify-end w-1/4">
-                        <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-16 w-auto object-contain" />
-                     </div>
-                  </div>
-
-                  <div className="text-center mb-10 space-y-2">
-                     <h1 className="text-2xl font-black uppercase tracking-tight text-gray-900 border-2 border-black py-3 rounded-xl bg-gray-50">
-                        Ata Contínua de Registro Escolar
-                     </h1>
-                     <p className="text-xs font-bold uppercase tracking-widest text-gray-600">
-                        Escrituração Oficial e Sincronizada Pelo Discente
-                     </p>
-                  </div>
-
-                  <div className="border border-black rounded-lg overflow-hidden mb-8">
-                     <table className="w-full text-sm font-medium">
-                        <tbody>
-                           <tr className="border-b border-black">
-                              <td className="p-3 bg-gray-100 font-black uppercase w-1/4 border-r border-black">Estudante</td>
-                              <td className="p-3 uppercase font-black text-base">{printingOccurrence.studentName}</td>
-                           </tr>
-                           <tr className="border-b border-black">
-                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Turma Base</td>
-                              <td className="p-3 uppercase font-black">{printingOccurrence.className}</td>
-                           </tr>
-                           <tr className="border-b border-black">
-                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Data/Hora</td>
-                              <td className="p-3">{new Date(printingOccurrence.date).toLocaleDateString('pt-BR')} às {printingOccurrence.time || '--:--'}</td>
-                           </tr>
-                           <tr className="border-b border-black">
-                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Natureza Fato</td>
-                              <td className="p-3 uppercase">{printingOccurrence.type}</td>
-                           </tr>
-                           <tr>
-                              <td className="p-3 bg-gray-100 font-black uppercase border-r border-black">Severidade</td>
-                              <td className="p-3 uppercase font-bold">{printingOccurrence.severity}</td>
-                           </tr>
-                        </tbody>
-                     </table>
-                  </div>
-
-                  <div className="mb-16">
-                     <h4 className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 w-fit mb-4">
-                        Relato Narrativo
-                     </h4>
-                     <p className="text-base leading-relaxed text-justify p-6 border border-black rounded-lg min-h-[150px]">
-                        "{printingOccurrence.description}"
-                     </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-16 mt-20 text-center">
-                     <div className="border-t border-black pt-4">
-                        <p className="text-xs font-black uppercase">{printingOccurrence.teacherName}</p>
-                        <p className="text-[10px] uppercase text-gray-600 font-medium">Docente Relator</p>
-                     </div>
-                     <div className="border-t border-black pt-4">
-                        <p className="text-xs font-black uppercase">Direção / Coordenação</p>
-                        <p className="text-[10px] uppercase text-gray-600 font-medium">Ciente Organizacional em ___/___/___</p>
-                     </div>
-                  </div>
-
-                  <div className="absolute bottom-10 left-0 w-full text-center opacity-40 flex items-center justify-center gap-2">
-                     <ShieldCheckIcon size={14} />
-                     <span className="text-[8px] font-black uppercase tracking-widest">
-                        Documento Oficializado via Portal de Gestão André Maggi
-                     </span>
-                  </div>
-               </div>
-            </div>
-         )}
-
-         {/* ESTILOS DE IMPRESSÃO */}
-         <style>{`
-            @media print {
-               @page { size: A4 portrait; margin: 0; }
-               body, html { margin: 0; padding: 0; background: white; }
-               .no-print { display: none !important; }
-               .print-area { display: block !important; }
-               .animate-in { animation: none !important; transition: none !important; }
-               .print-page {
-                  width: 210mm;
-                  min-height: 297mm;
-                  margin: 0 auto;
-                  padding-top: 15mm !important;
-                  background: white;
-                  box-sizing: border-box;
-                  position: absolute;
-                  top: 0; left: 0; right: 0;
-                  z-index: 99999;
-               }
-            }
-         `}</style>
-      </>
+      </div>
    );
 };
 
