@@ -184,8 +184,34 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
          // 95% complete to look realistic
          const isDone = Math.random() > 0.05;
          
-         // Pick random employee
-         const emp = employees.length > 0 ? employees[Math.floor(Math.random() * employees.length)].name : 'SISTEMA';
+         // Pick employee based on user rules
+         let validEmployees: string[] = [];
+         
+         // MATUTINO:
+         // MARIA ELIANE DE SOUZA (19/01 a 13/02)
+         if ((monthIndex === 0 && day >= 19) || (monthIndex === 1 && day <= 13)) {
+            validEmployees.push('MARIA ELIANE DE SOUZA');
+         }
+         // NADIJA TAIZ SIMÃO DA SILVA (19/01 a 29/05)
+         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) {
+            validEmployees.push('NADIJA TAIZ SIMÃO DA SILVA');
+         }
+         // JHENIFA SIMAO DA SILVA (A partir de 18/02)
+         if ((monthIndex === 1 && day >= 18) || monthIndex > 1) {
+            validEmployees.push('JHENIFA SIMAO DA SILVA');
+         }
+         
+         // VESPERTINO:
+         // MARIA APARECIDA DOS SANTOS ARAUJO SOUZA (19/01 a 29/05)
+         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) {
+            validEmployees.push('MARIA APARECIDA DOS SANTOS ARAUJO SOUZA');
+         }
+         // MARLI DO NASCIMENTO (19/01 a 29/05)
+         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) {
+            validEmployees.push('MARLI DO NASCIMENTO');
+         }
+
+         const emp = validEmployees.length > 0 ? validEmployees[Math.floor(Math.random() * validEmployees.length)] : 'SISTEMA';
 
          if (isDone) {
             return {
