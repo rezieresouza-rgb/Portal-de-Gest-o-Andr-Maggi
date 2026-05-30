@@ -135,6 +135,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
             rows: content.rows || [],
             status: p.status as LessonPlan['status'],
             coordinationFeedback: p.coordination_feedback,
+            history: content.history || [],
             timestamp: new Date(p.created_at).getTime()
           };
         }));
@@ -278,11 +279,26 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   };
 
   const handleUpdatePlanStatus = async (id: string, status: LessonPlan['status']) => {
+    // Fetch the current plan to get the exact content_json
+    const { data: currentPlanData } = await supabase.from('lesson_plans').select('content_json').eq('id', id).single();
+    
+    const content = currentPlanData?.content_json || {};
+    const currentHistory = content.history || [];
+    
+    if (feedbackText.trim()) {
+      currentHistory.push({
+        role: 'COORDINATION',
+        text: feedbackText,
+        date: new Date().toISOString()
+      });
+    }
+
     const { error } = await supabase
       .from('lesson_plans')
       .update({
         status: status,
-        coordination_feedback: feedbackText
+        coordination_feedback: feedbackText,
+        content_json: { ...content, history: currentHistory }
       })
       .eq('id', id);
 
@@ -295,6 +311,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       ...p,
       status,
       coordinationFeedback: feedbackText,
+      history: currentHistory,
       timestamp: Date.now()
     } : p));
     setSelectedPlan(null);
@@ -578,8 +595,28 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                     <div className="bg-violet-900/20 p-8 rounded-[2.5rem] border border-violet-500/20 flex flex-col gap-6">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-violet-600 text-white rounded-lg shadow-md"><MessageSquareIcon size={18} /></div>
-                        <h4 className="text-xs font-black text-violet-300 uppercase tracking-widest">Feedback da Coordenação</h4>
+                        <h4 className="text-xs font-black text-violet-300 uppercase tracking-widest">Feedback e Interações</h4>
                       </div>
+
+                      {selectedPlan.history && selectedPlan.history.length > 0 && (
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {selectedPlan.history.map((h, idx) => (
+                            <div key={idx} className={`p-4 rounded-2xl border ${h.role === 'TEACHER' ? 'bg-amber-500/10 border-amber-500/20 ml-8' : 'bg-violet-500/10 border-violet-500/20 mr-8'}`}>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className={`text-[9px] font-black uppercase tracking-widest ${h.role === 'TEACHER' ? 'text-amber-400' : 'text-violet-400'}`}>
+                                  {h.role === 'TEACHER' ? 'Professor(a)' : 'Você (Coordenação)'}
+                                </span>
+                                <span className="text-[9px] font-bold text-white/40">
+                                  {new Date(h.date).toLocaleString('pt-BR')}
+                                </span>
+                              </div>
+                              <p className={`text-xs font-medium leading-relaxed whitespace-pre-wrap ${h.role === 'TEACHER' ? 'text-amber-100' : 'text-violet-100'}`}>
+                                {h.text}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <textarea
                         value={feedbackText}
                         onChange={e => setFeedbackText(e.target.value)}

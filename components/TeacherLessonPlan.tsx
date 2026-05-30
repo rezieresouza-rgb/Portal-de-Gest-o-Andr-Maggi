@@ -58,6 +58,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [teacherMessage, setTeacherMessage] = useState('');
 
   const [form, setForm] = useState<Omit<LessonPlan, 'id' | 'timestamp'>>({
     bimestre: '1º BIMESTRE',
@@ -72,10 +73,11 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     themes: '',
     observations: '',
     rows: [
-      { weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '' }
+      { weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '', recomposition: '' }
     ],
     status: 'RASCUNHO',
-    coordinationFeedback: ''
+    coordinationFeedback: '',
+    history: []
   });
 
   // Helper to update form state safely
@@ -280,10 +282,12 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
               activities: r.activities || '',
               methodology: r.methodology || '',
               duration: r.duration || '',
-              evaluation: r.evaluation || ''
+              evaluation: r.evaluation || '',
+              recomposition: r.recomposition || ''
             })),
             status: p.status,
             coordinationFeedback: p.teacher_id === user.id ? p.coordination_feedback : '',
+            history: content.history || [],
             timestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now()
           };
         });
@@ -372,7 +376,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         activities: '',
         methodology: '',
         duration: '',
-        evaluation: ''
+        evaluation: '',
+        recomposition: ''
       }]
     }));
   };
@@ -451,6 +456,15 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
     setIsSaving(true);
     const status = statusOverride || form.status;
 
+    const currentHistory = form.history || [];
+    if (status === 'EM_ANALISE' && teacherMessage.trim()) {
+      currentHistory.push({
+        role: 'TEACHER',
+        text: teacherMessage,
+        date: new Date().toISOString()
+      });
+    }
+
     const contentJson = {
       teacher: form.teacher,
       year: form.year,
@@ -460,7 +474,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       skills: form.skills,
       recompositionSkills: form.recompositionSkills,
       observations: form.observations,
-      rows: form.rows
+      rows: form.rows,
+      history: currentHistory
     };
 
     try {
@@ -509,11 +524,13 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         recompositionSkills: [],
         themes: '',
         observations: '',
-        rows: [{ weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '' }],
+        rows: [{ weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '', recomposition: '' }],
         status: 'RASCUNHO',
-        coordinationFeedback: ''
+        coordinationFeedback: '',
+        history: []
       });
       setActiveId(null);
+      setTeacherMessage('');
     } catch (err) {
       console.error(err);
       alert("Erro ao salvar roteiro.");
@@ -543,10 +560,12 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
       recompositionSkills: [],
       themes: '',
       observations: '',
-      rows: [{ weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '' }],
-      status: 'RASCUNHO'
+      rows: [{ weekOrDate: 'De __ a __ de __ de __', theme: '', materialPage: '', skillsText: '', content: '', activities: '', methodology: '', duration: '', evaluation: '', recomposition: '' }],
+      status: 'RASCUNHO',
+      history: []
     });
     setViewMode('form');
+    setTeacherMessage('');
   };
 
   const getStatusInfo = (status: LessonPlan['status']) => {
@@ -624,7 +643,7 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
 
                   <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
                     <button
-                      onClick={() => { setForm(p); setActiveId(p.id); setViewMode('form'); }}
+                      onClick={() => { setForm(p); setActiveId(p.id); setTeacherMessage(''); setViewMode('form'); }}
                       className="text-amber-600 font-black uppercase text-[10px] tracking-widest flex items-center gap-1"
                     >
                       Editar <ChevronRight size={12} />
@@ -692,8 +711,8 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* ALERT STATUS FEEDBACK */}
-      {form.status === 'CORRECAO_SOLICITADA' && (
+      {/* ALERT STATUS FEEDBACK & HISTORY */}
+      {form.status === 'CORRECAO_SOLICITADA' && (!form.history || form.history.length === 0) && (
         <div className="bg-red-50 border-2 border-red-200 p-6 rounded-[2.5rem] animate-in slide-in-from-top-4 duration-500 flex items-start gap-5">
           <div className="p-3 bg-red-600 text-white rounded-2xl shadow-lg">
             <AlertCircle size={28} />
@@ -705,6 +724,47 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
               <p className="text-red-900 font-bold italic">"{form.coordinationFeedback}"</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {form.history && form.history.length > 0 && (
+        <div className="bg-white border-2 border-gray-100 p-8 rounded-[2.5rem] animate-in slide-in-from-top-4 duration-500 flex flex-col gap-6 no-print">
+          <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
+            <MessageCircle size={24} className="text-indigo-600" />
+            Histórico de Interações
+          </h4>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            {form.history.map((h, idx) => (
+              <div key={idx} className={`p-5 rounded-[2rem] border ${h.role === 'TEACHER' ? 'bg-amber-50 border-amber-100 ml-8 md:ml-16' : 'bg-indigo-50 border-indigo-100 mr-8 md:mr-16'}`}>
+                <div className="flex justify-between items-center mb-3">
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${h.role === 'TEACHER' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                    {h.role === 'TEACHER' ? 'Professor(a)' : 'Coordenação Pedagógica'}
+                  </span>
+                  <span className="text-[10px] font-bold text-gray-400">
+                    {new Date(h.date).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+                <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${h.role === 'TEACHER' ? 'text-amber-900' : 'text-indigo-900'}`}>
+                  {h.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mensagem para Coordenação */}
+      {form.status !== 'VALIDADO' && (
+        <div className="bg-indigo-50 p-6 rounded-[2.5rem] border border-indigo-100 no-print flex flex-col gap-3">
+          <label className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center gap-2">
+            <MessageCircle size={14} /> Mensagem para Coordenação (Opcional ao enviar)
+          </label>
+          <textarea
+            value={teacherMessage}
+            onChange={(e) => setTeacherMessage(e.target.value)}
+            className="w-full p-4 bg-white border border-indigo-100 rounded-[1.5rem] text-sm font-medium h-20 resize-none outline-none focus:border-indigo-400 transition-all placeholder:text-indigo-300"
+            placeholder="Digite aqui alguma observação para a coordenação pedagógica ao enviar o roteiro..."
+          />
         </div>
       )}
 
@@ -927,6 +987,12 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Atividades propostas</label>
                       <textarea value={row.activities} onChange={e => updateRow(idx, 'activities', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs resize-none outline-none min-h-[60px]" />
                     </div>
+                    {(form.subject === 'MATEMÁTICA' || form.subject === 'LÍNGUA PORTUGUESA') && (
+                      <div className="space-y-1.5 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
+                        <label className="text-[10px] font-bold text-blue-700 uppercase tracking-widest ml-1">Atividades de Recomposição de Aprendizagem</label>
+                        <textarea value={row.recomposition || ''} onChange={e => updateRow(idx, 'recomposition', e.target.value)} className="w-full p-4 bg-white border border-blue-100 rounded-xl text-xs resize-none outline-none min-h-[60px] focus:border-blue-300" placeholder="Descreva as atividades para nivelamento/recomposição..." />
+                      </div>
+                    )}
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Como fazer e onde pesquisar</label>
                       <textarea value={row.methodology} onChange={e => updateRow(idx, 'methodology', e.target.value)} className="w-full p-4 bg-white border border-gray-100 rounded-2xl text-xs resize-none outline-none min-h-[60px]" />
@@ -1045,7 +1111,16 @@ const TeacherLessonPlan: React.FC<TeacherLessonPlanProps> = ({ user }) => {
                   <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', fontWeight: 700, color: '#92400e', verticalAlign: 'top' }}>{row.weekOrDate}</td>
                   <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top' }}>{row.theme}</td>
                   <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'pre-wrap' }}>{row.content}</td>
-                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'pre-wrap' }}>{row.activities}</td>
+                  <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'pre-wrap' }}>
+                    {row.activities}
+                    {(form.subject === 'MATEMÁTICA' || form.subject === 'LÍNGUA PORTUGUESA') && row.recomposition && (
+                      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #d1d5db' }}>
+                        <span style={{ fontWeight: 900, textTransform: 'uppercase', color: '#1d4ed8' }}>Recomposição de Aprendizagem:</span>
+                        <br />
+                        {row.recomposition}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top', whiteSpace: 'pre-wrap' }}>{row.methodology}</td>
                   <td style={{ border: '1px solid #d1d5db', padding: '5px 8px', verticalAlign: 'top' }}>{row.evaluation}</td>
                 </tr>
