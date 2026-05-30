@@ -697,7 +697,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                         series: student.class,
                         discipline: form.discipline || 'MÚLTIPLAS',
                         achado: finalDescription,
-                        city: 'Sinop - MT'
+                        city: 'Colíder - MT'
                      },
                      timestamp: Date.now()
                   });
