@@ -121,6 +121,8 @@ const SecretariatBulletinPrinter: React.FC = () => {
             `)
             .in('student_id', studentCodes);
 
+         const behaviorData = JSON.parse(localStorage.getItem('civicomilitar_students_v1') || '[]');
+
          // Mapear dados para o formato do BulletinCard (CUMULATIVO)
          const baseSubjects = [
             'LÍNGUA PORTUGUESA',
@@ -131,14 +133,15 @@ const SecretariatBulletinPrinter: React.FC = () => {
             'LÍNGUA INGLESA',
             'EDUCAÇÃO FÍSICA',
             'ARTE',
-            'ENSINO RELIGIOSO',
-            'PROJETO DE VIDA'
+            'COMPORTAMENTO'
          ];
          const assessmentSubjects = assessments?.map(a => a.subject) || [];
          const subjects = Array.from(new Set([...baseSubjects, ...assessmentSubjects]));
 
          const mappedStudents = enrollments.map((e: any) => {
             const student = e.students;
+            const studentBehavior = behaviorData.find((b: any) => b.id === student.id);
+            const behaviorScore = studentBehavior ? studentBehavior.score : 8.0;
 
             // Estrutura: { 'Matemática': { '1º BIMESTRE': 8.5, '2º BIMESTRE': 7.0 }, ... }
             const studentGrades: Record<string, Record<string, number>> = {};
@@ -147,24 +150,31 @@ const SecretariatBulletinPrinter: React.FC = () => {
             subjects.forEach(subj => {
                studentGrades[subj] = {};
                
-               // Calcular faltas (ausências) extraídas do diário do professor na disciplina
-               const subjAtt = attendanceData?.filter((a: any) => {
-                  if (a.student_id !== student.registration_number) return false;
-                  const recSubj = a.class_attendance_records?.subject || '';
-                  return recSubj === subj || recSubj.startsWith(subj + ' -');
-               }) || [];
-               const absencesCount = subjAtt.filter((a: any) => !a.is_present).length;
-               studentAbsencesBySubject[subj] = absencesCount;
+               if (subj === 'COMPORTAMENTO') {
+                  studentAbsencesBySubject[subj] = 0;
+                  activeBimestres.forEach(bim => {
+                     studentGrades[subj][bim] = behaviorScore;
+                  });
+               } else {
+                  // Calcular faltas (ausências) extraídas do diário do professor na disciplina
+                  const subjAtt = attendanceData?.filter((a: any) => {
+                     if (a.student_id !== student.registration_number) return false;
+                     const recSubj = a.class_attendance_records?.subject || '';
+                     return recSubj === subj || recSubj.startsWith(subj + ' -');
+                  }) || [];
+                  const absencesCount = subjAtt.filter((a: any) => !a.is_present).length;
+                  studentAbsencesBySubject[subj] = absencesCount;
 
-               activeBimestres.forEach(bim => {
-                  const ass = assessments?.find(a => a.subject === subj && a.bimestre === bim);
-                  if (ass) {
-                     const g = allGrades.find(gr => gr.assessment_id === ass.id && gr.student_code === student.registration_number);
-                     studentGrades[subj][bim] = g ? g.score : 0;
-                  } else {
-                     studentGrades[subj][bim] = 0;
-                  }
-               });
+                  activeBimestres.forEach(bim => {
+                     const ass = assessments?.find(a => a.subject === subj && a.bimestre === bim);
+                     if (ass) {
+                        const g = allGrades.find(gr => gr.assessment_id === ass.id && gr.student_code === student.registration_number);
+                        studentGrades[subj][bim] = g ? g.score : 0;
+                     } else {
+                        studentGrades[subj][bim] = 0;
+                     }
+                  });
+               }
             });
 
             // Cálculo de frequência
