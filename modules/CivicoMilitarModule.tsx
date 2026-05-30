@@ -459,7 +459,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   // Helper lists for merit/demerit drop-downs
   const meritOptions = [
     { category: 'Elogio Individual', points: 0.50 },
-    { category: 'Elogio Coletivo', points: 0.30 }
+    { category: 'Elogio Coletivo', points: 0.30 },
+    { category: 'Média Bimestral >= 8,0 (Art. 50)', points: 0.50 },
+    { category: '2 Meses sem Medida Disciplinar (Art. 51)', points: 0.20 }
   ];
 
   const disciplinaryMeasuresList = [
