@@ -73,6 +73,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const [aiLoading, setAiLoading] = useState(false);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, { total: number, present: number, name: string, className: string }>>({});
   const [interventions, setInterventions] = useState<PedagogicalIntervention[]>([]);
+  const [activeBuscaAtivaIds, setActiveBuscaAtivaIds] = useState<Set<string>>(new Set());
   const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
   const [interventionStudent, setInterventionStudent] = useState<{name: string, className: string} | null>(null);
   const [newIntervention, setNewIntervention] = useState({ reason: '', action_plan: '', deadline: '', status: 'EM_ANDAMENTO' as 'EM_ANDAMENTO' | 'AGUARDANDO_FAMILIA' | 'RESOLVIDO' });
@@ -185,6 +186,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           if (!studentId) return;
           if (!attStats[studentId]) {
             attStats[studentId] = {
+              id: studentId,
               total: 0,
               present: 0,
               name: record.student_name || 'Aluno',
@@ -201,6 +203,12 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       const { data: intData } = await supabase.from('pedagogical_interventions').select('*').order('created_at', { ascending: false });
       if (intData) {
         setInterventions(intData as PedagogicalIntervention[]);
+      }
+
+      // 7. Fetch active Busca Ativa referrals
+      const { data: refData } = await supabase.from('referrals').select('student_id').eq('status', 'ABERTO');
+      if (refData) {
+        setActiveBuscaAtivaIds(new Set(refData.map(r => r.student_id)));
       }
 
     } catch (error) {
@@ -220,6 +228,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         .on('postgres_changes', { event: '*', schema: 'public', table: 'pedagogical_projects' }, fetchData)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'class_attendance_students' }, fetchData)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'pedagogical_interventions' }, fetchData)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'referrals' }, fetchData)
         .subscribe()
     ];
 
@@ -531,15 +540,22 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                         <div className="text-right">
                           <p className="text-lg font-black text-orange-400">{((student.present / student.total) * 100).toFixed(0)}%</p>
                           <p className="text-[8px] font-black text-orange-400/60 uppercase mb-2">Presença</p>
-                          <button 
-                            onClick={() => {
-                              setInterventionStudent({ name: student.name, className: student.className });
-                              setIsInterventionModalOpen(true);
-                            }}
-                            className="text-[9px] font-black uppercase bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-all"
-                          >
-                            Criar Intervenção
-                          </button>
+                          <div className="flex flex-col gap-2 items-end">
+                            {activeBuscaAtivaIds.has(student.id) && (
+                              <span className="text-[8px] font-black uppercase bg-red-500/20 text-red-400 px-2 py-1 rounded-lg border border-red-500/20 flex items-center gap-1">
+                                <AlertTriangle size={10} /> Em Busca Ativa
+                              </span>
+                            )}
+                            <button 
+                              onClick={() => {
+                                setInterventionStudent({ name: student.name, className: student.className });
+                                setIsInterventionModalOpen(true);
+                              }}
+                              className="text-[9px] font-black uppercase bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-all w-full text-center"
+                            >
+                              Criar Intervenção
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
