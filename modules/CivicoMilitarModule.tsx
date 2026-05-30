@@ -2054,7 +2054,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <span className="text-[12px] font-black text-[#0f264c] leading-tight">
                         {selectedDocTemplate === 'termo_ciencia' ? '42' : '43'}
                       </span>
-                      <img src="/logo-escola.png" alt="Logo Escola" className="w-[80px] h-auto object-contain drop-shadow-sm" />
+                      <img src="/logo-escola-oficial.png" alt="Logo Escola" className="w-[80px] h-auto object-contain drop-shadow-sm" />
                     </div>
 
                     {/* Cabeçalho do Documento */}
