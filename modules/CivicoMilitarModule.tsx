@@ -882,6 +882,47 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     });
   };
 
+  const handleGenerateMeasureDoc = (occ: BehaviorOccurrence, studentId: string) => {
+    // 1. Encontrar o aluno na base da secretaria
+    const student = dbStudents.find(s => s.CodigoAluno === studentId);
+    if (!student) return;
+
+    // 2. Setar aba de documentos e template
+    setActiveTab('documentos');
+    setSelectedDocTemplate('ficha_medida_disciplinar');
+    setSelectedStudentForDoc(student);
+
+    // 3. Descobrir a gravidade original (LEVE/MÉDIA/GRAVE)
+    let severity = 'LEVE';
+    const def = demeritOptions.find(d => d.category === occ.category);
+    if (def) severity = def.severity;
+    
+    // Se foi agravada por reincidência, subir um nível
+    if (occ.isEscalated) {
+       if (severity === 'LEVE') severity = 'MÉDIA';
+       else if (severity === 'MÉDIA') severity = 'GRAVE';
+    }
+
+    // 4. Preencher automaticamente o formulário do documento
+    setDocFields(prev => ({
+      ...prev,
+      faltaDate: occ.date,
+      medidaAplicada: occ.disciplinaryMeasure || 'Advertência Oral',
+      falta: severity,
+      itensEnquadramento: occ.category,
+      achado: occ.observations,
+      date: new Date().toISOString().split('T')[0],
+      city: 'Colíder - MT',
+      teacher: user?.name || '',
+      monitor: occ.responsible,
+      atenuantes: '',
+      agravantes: occ.isEscalated ? 'Reincidência' : ''
+    }));
+
+    // 5. Fechar modal atual
+    setIsBehaviorModalOpen(false);
+  };
+
   const handleDeleteOccurrence = (studentId: string, occId: string) => {
     if (!window.confirm('Excluir esta ocorrência? A nota de atitude do aluno será recalculada.')) return;
 
@@ -3193,13 +3234,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                       <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[8px] font-bold text-slate-500 uppercase">
                         <span>Monitor: {occ.responsible.split(' ')[0]}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteOccurrence(selectedStudentState.studentId, occ.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Remover
-                        </button>
+                        <div className="flex items-center gap-3">
+                          {occ.type === 'DEMERIT' && (
+                             <button
+                               type="button"
+                               onClick={() => handleGenerateMeasureDoc(occ, selectedStudentState.studentId)}
+                               className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                               title="Gerar Ficha de Medida Disciplinar"
+                             >
+                               <FileText size={10} /> Gerar Ficha
+                             </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOccurrence(selectedStudentState.studentId, occ.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Remover
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
