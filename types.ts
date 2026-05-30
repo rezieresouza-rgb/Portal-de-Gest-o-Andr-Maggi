@@ -264,7 +264,20 @@ export interface PrintedDocument { id: string; title: string; reference_date: st
 export interface CleaningEmployee { id: string; name: string; shift: 'MATUTINO' | 'VESPERTINO' | 'NOTURNO'; isFixed?: boolean; scope?: string; }
 export type PPECategory = 'COZINHA' | 'LIMPEZA' | 'MANUTENÇÃO';
 export interface PPEItem { id: string; name: string; category: PPECategory; currentStock: number; minStock: number; unit: string; }
-export interface PPEDelivery { id: string; employeeName: string; employeeRole: string; ppeId: string; ppeName: string; quantity: number; date: string; timestamp: number; }
+export interface PPEDeliveryItem {
+  ppeId: string;
+  ppeName: string;
+  quantity: number;
+}
+
+export interface PPEDelivery {
+  id: string;
+  employeeName: string;
+  employeeRole: string;
+  items: PPEDeliveryItem[];
+  date: string;
+  timestamp: number;
+}
 export type CleaningMaterialCategory = 'COZINHA' | 'ESCOLA';
 export interface CleaningMaterial { id: string; name: string; category: CleaningMaterialCategory; stock: number; minStock: number; unit: string; }
 export interface MaterialDelivery { id: string; employeeName: string; employeeRole: string; materialId: string; materialName: string; quantity: number; date: string; timestamp: number; }
