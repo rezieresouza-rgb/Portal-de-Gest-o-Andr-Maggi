@@ -43,6 +43,7 @@ const SecretariatAttendanceHistory: React.FC = () => {
     const [printingRecord, setPrintingRecord] = useState<AttendanceRecord | null>(null);
     const [printingBatch, setPrintingBatch] = useState(false);
     const [printingConsolidated, setPrintingConsolidated] = useState(false);
+    const [printingSummary, setPrintingSummary] = useState(false);
 
     const fetchRecords = async () => {
         setLoading(true);
@@ -142,6 +143,8 @@ const SecretariatAttendanceHistory: React.FC = () => {
     const handlePrint = (record: AttendanceRecord) => {
         setPrintingRecord(record);
         setPrintingBatch(false);
+        setPrintingConsolidated(false);
+        setPrintingSummary(false);
         setTimeout(() => {
             window.print();
         }, 500);
@@ -152,6 +155,7 @@ const SecretariatAttendanceHistory: React.FC = () => {
         setPrintingRecord(null);
         setPrintingBatch(true);
         setPrintingConsolidated(false);
+        setPrintingSummary(false);
         setTimeout(() => {
             window.print();
         }, 500);
@@ -162,6 +166,18 @@ const SecretariatAttendanceHistory: React.FC = () => {
         setPrintingRecord(null);
         setPrintingBatch(false);
         setPrintingConsolidated(true);
+        setPrintingSummary(false);
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    };
+
+    const handlePrintSummary = () => {
+        if (records.length === 0) return;
+        setPrintingRecord(null);
+        setPrintingBatch(false);
+        setPrintingConsolidated(false);
+        setPrintingSummary(true);
         setTimeout(() => {
             window.print();
         }, 500);
@@ -185,6 +201,14 @@ const SecretariatAttendanceHistory: React.FC = () => {
                     <p className="text-sm text-gray-500 font-medium">Consulte e imprima os diários de presença lançados pelos professores</p>
                 </div>
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button
+                        onClick={handlePrintSummary}
+                        disabled={records.length === 0 || loading}
+                        className="flex-1 md:flex-none px-4 py-3 bg-white border border-indigo-100 text-indigo-600 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm hover:bg-indigo-50 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        <Printer size={14} />
+                        Relatório Geral
+                    </button>
                     <button
                         onClick={handlePrintAll}
                         disabled={records.length === 0 || loading}
@@ -359,9 +383,52 @@ const SecretariatAttendanceHistory: React.FC = () => {
             </div>
 
             {/* --- HIDDEN PRINT AREA --- */}
-            {(printingRecord || printingBatch || printingConsolidated) && (
+            {(printingRecord || printingBatch || printingConsolidated || printingSummary) && (
                 <div className="print-area">
-                    {printingConsolidated ? (
+                    {printingSummary ? (
+                        <div className="pdf-page p-8" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+                                <img src="/logo-escola-oficial.png" alt="Escola André Maggi" className="h-20 object-contain" />
+                                <div className="text-center flex-1 mx-4">
+                                    <h1 className="text-xl font-bold uppercase tracking-widest border-black inline-block pb-1 px-8">Relatório Geral de Chamadas</h1>
+                                    <p className="text-sm mt-2 font-bold text-gray-600">Período: {startDate.split('-').reverse().join('/')} a {endDate.split('-').reverse().join('/')}</p>
+                                </div>
+                                <img src="/SEDUC 2.jpg" alt="Seduc MT" className="h-20 object-contain" />
+                            </div>
+
+                            <table className="w-full border-collapse border border-black text-xs">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="border border-black p-2 text-left uppercase">Data</th>
+                                        <th className="border border-black p-2 text-left uppercase">Turma</th>
+                                        <th className="border border-black p-2 text-left uppercase">Professor</th>
+                                        <th className="border border-black p-2 text-left uppercase">Disciplina</th>
+                                        <th className="border border-black p-2 text-center uppercase">P</th>
+                                        <th className="border border-black p-2 text-center uppercase">F</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {records.map(r => {
+                                        const presentCount = r.students.filter(s => s.is_present).length;
+                                        const absentCount = r.students.length - presentCount;
+                                        return (
+                                            <tr key={r.id}>
+                                                <td className="border border-black p-2 font-bold">{r.date.split('-').reverse().join('/')}</td>
+                                                <td className="border border-black p-2 uppercase font-bold">{r.classroom_name}</td>
+                                                <td className="border border-black p-2 uppercase">{r.teacher_name}</td>
+                                                <td className="border border-black p-2 uppercase text-gray-600">{r.subject}</td>
+                                                <td className="border border-black p-2 text-center text-emerald-700 font-black">{presentCount}</td>
+                                                <td className="border border-black p-2 text-center text-red-700 font-black">{absentCount}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                            <div className="mt-8 text-center text-[10px] text-gray-500 uppercase tracking-widest border-t border-gray-300 pt-4">
+                                Documento gerado eletronicamente pelo Portal Gestão Escolar — André Antônio Maggi
+                            </div>
+                        </div>
+                    ) : printingConsolidated ? (
                         // CONSOLIDATED PRINT LAYOUT
                         consolidatedGroups.map((group, gIdx) => {
                             // Collect unique students across all records in this group
