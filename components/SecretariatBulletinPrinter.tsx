@@ -226,7 +226,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
          <div className="bulletin-card p-3 border border-black bg-white space-y-1">
             <div className="flex justify-between items-center border-b border-black pb-1 gap-4">
                <div className="flex items-center justify-start flex-1">
-                  <img src="/logo-escola.png" alt="Escola Logo" className="h-12 w-auto object-contain" />
+                  <img src="/logo-escola-oficial.png" alt="Escola Logo" className="h-12 w-auto object-contain" />
                </div>
 
                <div className="flex-[2] flex justify-center px-4">
