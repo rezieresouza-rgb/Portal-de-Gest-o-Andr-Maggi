@@ -84,6 +84,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           classrooms (name),
           grades (
             score,
+            student_name,
             students (name, classroom_id, classrooms(name))
           )
         `);
@@ -101,7 +102,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           max_score: a.max_score,
           grades: a.grades.map((g: any) => ({
             studentId: 'N/A', // Not used in UI display apparently
-            studentName: g.students?.name || 'Aluno',
+            studentName: g.students?.name || g.student_name || 'Aluno',
             score: g.score,
             proficiencyLevel: g.score < 6 ? 'BAIXO' : 'ALTO'
           })),
