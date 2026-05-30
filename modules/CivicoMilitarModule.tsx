@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { User } from '../types';
+import CivicoMilitarReports from '../components/CivicoMilitarReports';
 
 interface CivicoMilitarModuleProps {
   user: User;
@@ -89,7 +90,7 @@ interface CivicRoutineRecord {
 }
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'relatorios'>('dashboard');
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -964,6 +965,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               }`}
           >
             <FileText size={18} /> Documentações
+          </button>
+          <button
+            onClick={() => setActiveTab('relatorios')}
+            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'relatorios'
+              ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/10'
+              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+              }`}
+          >
+            <TrendingUp size={18} /> Relatórios
           </button>
         </nav>
 
@@ -2282,8 +2292,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   </div>
                 )}
               </div>
-
             </div>
+          )}
+
+          {activeTab === 'relatorios' && (
+             <CivicoMilitarReports studentStates={studentStates} />
           )}
 
         </div>
