@@ -136,6 +136,18 @@ const KitchenSanitation: React.FC = () => {
       }));
    };
 
+   const setTaskDate = (id: string, dateString: string) => {
+      setTasks(prev => prev.map(t => {
+         if (t.id !== id) return t;
+         if (!dateString) {
+            return { ...t, status: 'PENDENTE', lastDone: undefined };
+         }
+         // Use noon to avoid timezone shift issues making it the day before
+         const newDate = new Date(`${dateString}T12:00:00`);
+         return { ...t, status: 'CONCLUÍDO', lastDone: newDate.toISOString() };
+      }));
+   };
+
    const filteredTasks = useMemo(() => {
       return tasks.filter(t => {
          const matchArea = filterArea === 'TODOS' || t.area === filterArea;
@@ -312,20 +324,31 @@ const KitchenSanitation: React.FC = () => {
                      )}
                   </div>
 
-                  <div className="mt-8 flex gap-2 relative z-10">
-                     <button
-                        onClick={() => toggleTask(task.id)}
-                        className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${task.status === 'CONCLUÍDO'
-                           ? 'bg-emerald-600 text-white shadow-lg'
-                           : 'bg-gray-900 text-white hover:bg-orange-600'
-                           }`}
-                     >
-                        {task.status === 'CONCLUÍDO' ? <CheckCircle2 size={16} /> : <Clock size={16} />}
-                        {task.status === 'CONCLUÍDO' ? 'Concluída' : 'Marcar Concluída'}
-                     </button>
-                     <button className="p-3.5 bg-gray-100 text-gray-400 hover:bg-blue-100 hover:text-blue-600 rounded-2xl transition-all shadow-sm">
-                        <Camera size={18} />
-                     </button>
+                  <div className="mt-6 flex flex-col gap-3 relative z-10">
+                     <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Data Realizada</label>
+                        <input 
+                           type="date" 
+                           value={task.lastDone ? task.lastDone.split('T')[0] : ''} 
+                           onChange={(e) => setTaskDate(task.id, e.target.value)}
+                           className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all text-gray-700"
+                        />
+                     </div>
+                     <div className="flex gap-2">
+                        <button
+                           onClick={() => toggleTask(task.id)}
+                           className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${task.status === 'CONCLUÍDO'
+                              ? 'bg-emerald-600 text-white shadow-lg'
+                              : 'bg-gray-900 text-white hover:bg-orange-600'
+                              }`}
+                        >
+                           {task.status === 'CONCLUÍDO' ? <CheckCircle2 size={16} /> : <Clock size={16} />}
+                           {task.status === 'CONCLUÍDO' ? 'Concluída' : 'Marcar Concluída'}
+                        </button>
+                        <button className="p-3.5 bg-gray-100 text-gray-400 hover:bg-blue-100 hover:text-blue-600 rounded-2xl transition-all shadow-sm">
+                           <Camera size={18} />
+                        </button>
+                     </div>
                   </div>
                </div>
             ))}
