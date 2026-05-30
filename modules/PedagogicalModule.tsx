@@ -62,6 +62,10 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules' | 'class_council'>('dashboard');
 
+  const [filterTurma, setFilterTurma] = useState<string>('');
+  const [filterStudent, setFilterStudent] = useState<string>('');
+  const [filterSubject, setFilterSubject] = useState<string>('');
+
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [externalAssessments, setExternalAssessments] = useState<Assessment[]>([]);
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
@@ -297,8 +301,81 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     }
   };
 
+  // --- FILTROS GLOBAIS ---
+  const uniqueTurmas = useMemo(() => {
+    const turmas = new Set<string>();
+    assessments.forEach(a => turmas.add(a.className));
+    lessonPlans.forEach(p => p.classNames.forEach((c: string) => turmas.add(c)));
+    Object.values(attendanceMap).forEach(s => turmas.add(s.className));
+    return Array.from(turmas).filter(Boolean).sort();
+  }, [assessments, lessonPlans, attendanceMap]);
+
+  const uniqueSubjects = useMemo(() => {
+    const subjects = new Set<string>();
+    assessments.forEach(a => subjects.add(a.subject));
+    lessonPlans.forEach(p => subjects.add(p.subject));
+    return Array.from(subjects).filter(Boolean).sort();
+  }, [assessments, lessonPlans]);
+
+  const filteredAssessments = useMemo(() => {
+    return assessments.filter(a => {
+      if (filterTurma && a.className !== filterTurma) return false;
+      if (filterSubject && a.subject !== filterSubject) return false;
+      if (filterStudent && !a.grades.some(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase()))) return false;
+      return true;
+    }).map(a => {
+      if (filterStudent) {
+        return { ...a, grades: a.grades.filter(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase())) };
+      }
+      return a;
+    });
+  }, [assessments, filterTurma, filterSubject, filterStudent]);
+
+  const filteredExternalAssessments = useMemo(() => {
+    return externalAssessments.filter(a => {
+      if (filterTurma && a.className !== filterTurma) return false;
+      if (filterSubject && a.subject !== filterSubject) return false;
+      if (filterStudent && !a.grades.some(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase()))) return false;
+      return true;
+    }).map(a => {
+      if (filterStudent) {
+        return { ...a, grades: a.grades.filter(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase())) };
+      }
+      return a;
+    });
+  }, [externalAssessments, filterTurma, filterSubject, filterStudent]);
+
+  const filteredAttendanceMap = useMemo(() => {
+    const filtered: Record<string, any> = {};
+    Object.values(attendanceMap).forEach(s => {
+      if (filterTurma && s.className !== filterTurma) return;
+      if (filterStudent && !s.name.toLowerCase().includes(filterStudent.toLowerCase())) return;
+      filtered[s.id] = s;
+    });
+    return filtered;
+  }, [attendanceMap, filterTurma, filterStudent]);
+
+  const filteredPlans = useMemo(() => {
+    return lessonPlans.filter(p => {
+      if (filterTurma && !p.classNames.includes(filterTurma)) return false;
+      if (filterSubject && p.subject !== filterSubject) return false;
+      return true;
+    });
+  }, [lessonPlans, filterTurma, filterSubject]);
+
+  const filteredObservations = useMemo(() => {
+    return observations.filter(o => {
+      if (filterTurma && o.class_name !== filterTurma) return false;
+      if (filterSubject && o.subject !== filterSubject) return false;
+      return true;
+    });
+  }, [observations, filterTurma, filterSubject]);
+
+  const filteredProjects = useMemo(() => projects, [projects]); // Doesn't filter well by subject/class as it is broad
+
+  // --- ESTATÍSTICAS ---
   const performanceStats = useMemo(() => {
-    const allInternal = assessments;
+    const allInternal = filteredAssessments;
     let totalBelowAverage = 0; // Grades
     let totalHighAbsence = 0; // Attendance
 
@@ -320,7 +397,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     });
 
     // 2. Analyze Attendance
-    Object.values(attendanceMap).forEach((stat: any) => {
+    Object.values(filteredAttendanceMap).forEach((stat: any) => {
       const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
       if (percent < 85) { // < 85% is critical
         totalHighAbsence++;
@@ -345,9 +422,9 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       totalBelowAverage,
       totalHighAbsence,
       criticalClasses,
-      externalCount: externalAssessments.length
+      externalCount: filteredExternalAssessments.length
     };
-  }, [assessments, externalAssessments, attendanceMap]);
+  }, [filteredAssessments, filteredExternalAssessments, filteredAttendanceMap]);
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -406,11 +483,11 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     setAiLoading(true);
     try {
       const payload = {
-        observations: observations.slice(0, 5),
+        observations: filteredObservations.slice(0, 5),
         stats: performanceStats,
-        plansCount: lessonPlans.length,
-        assessments: assessments.slice(0, 3),
-        externalAssessments: externalAssessments.slice(0, 3)
+        plansCount: filteredPlans.length,
+        assessments: filteredAssessments.slice(0, 3),
+        externalAssessments: filteredExternalAssessments.slice(0, 3)
       };
       const result = await analyzePedagogicalPerformance(payload);
       setAiInsight(result || 'Não foi possível gerar análise no momento.');
@@ -553,7 +630,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
-                    {Object.values(attendanceMap).filter((s: any) => (s.present / s.total) < 0.85).map((student: any, idx) => (
+                    {Object.values(filteredAttendanceMap).filter((s: any) => (s.present / s.total) < 0.85).map((student: any, idx) => (
                       <div key={idx} className="p-4 bg-orange-500/5 rounded-2xl border border-orange-500/10 flex justify-between items-center hover:bg-orange-500/10 transition-all">
                         <div>
                           <p className="text-xs font-black text-white uppercase">{student.name}</p>
@@ -593,7 +670,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
-                  {assessments.map(ass => {
+                  {filteredAssessments.map(ass => {
                     const criticalStudents = ass.grades.filter(g => g.score < 6);
                     if (criticalStudents.length === 0) return null;
 
@@ -639,7 +716,11 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                     <h4 className="text-lg font-black text-white uppercase">Intervenções Ativas</h4>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {interventions.map(int => (
+                    {interventions.filter(i => {
+                        if (filterTurma && i.class_name !== filterTurma) return false;
+                        if (filterStudent && !i.student_name.toLowerCase().includes(filterStudent.toLowerCase())) return false;
+                        return true;
+                      }).map(int => (
                       <div key={int.id} className="p-5 border border-white/5 rounded-3xl hover:bg-white/5 transition-all bg-white/5">
                         <div className="flex justify-between items-start mb-2">
                           <div>
@@ -750,7 +831,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
               </div>
               <div className="flex gap-2">
                 <span className="px-4 py-2 bg-amber-500/10 text-amber-400 rounded-xl text-[9px] font-black uppercase border border-amber-500/20 flex items-center gap-2">
-                  <Clock size={12} /> {lessonPlans.filter(p => p.status === 'EM_ANALISE').length} Aguardando
+                  <Clock size={12} /> {filteredPlans.filter(p => p.status === 'EM_ANALISE').length} Aguardando
                 </span>
               </div>
             </div>
@@ -893,8 +974,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {lessonPlans.filter(p => p.status === 'EM_ANALISE').length > 0 ? (
-                  lessonPlans.filter(p => p.status === 'EM_ANALISE').map(plan => (
+                {filteredPlans.filter(p => p.status === 'EM_ANALISE').length > 0 ? (
+                  filteredPlans.filter(p => p.status === 'EM_ANALISE').map(plan => (
                     <div key={plan.id} onClick={() => setSelectedPlan(plan)} className="group bg-white/5 p-6 rounded-[2rem] border border-white/10 hover:bg-white/10 hover:shadow-xl transition-all cursor-pointer flex flex-col md:flex-row items-center justify-between gap-8">
                       <div className="flex items-center gap-6">
                         <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-amber-500/20">
@@ -1043,7 +1124,55 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
               </div>
             </div>
           </header>
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          
+          <div className="bg-black/20 border-b border-white/5 px-10 py-3 flex items-center gap-4 shrink-0 shadow-inner overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-2 text-white/40 shrink-0">
+              <Filter size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Filtros:</span>
+            </div>
+            
+            <select
+              value={filterTurma}
+              onChange={(e) => setFilterTurma(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-violet-500/50 min-w-[160px] cursor-pointer hover:bg-white/10 transition-all appearance-none"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23ffffff\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
+            >
+              <option value="" className="bg-gray-900">Todas as Turmas</option>
+              {uniqueTurmas.map(t => <option key={t} value={t} className="bg-gray-900">{t}</option>)}
+            </select>
+
+            <select
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-violet-500/50 min-w-[180px] cursor-pointer hover:bg-white/10 transition-all appearance-none"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23ffffff\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
+            >
+              <option value="" className="bg-gray-900">Todas as Disciplinas</option>
+              {uniqueSubjects.map(s => <option key={s} value={s} className="bg-gray-900">{s}</option>)}
+            </select>
+
+            <div className="relative shrink-0">
+              <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <input
+                type="text"
+                placeholder="Buscar Aluno..."
+                value={filterStudent}
+                onChange={(e) => setFilterStudent(e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-white placeholder-white/40 focus:outline-none focus:border-violet-500/50 w-[240px] transition-all focus:bg-white/10"
+              />
+            </div>
+
+            {(filterTurma || filterSubject || filterStudent) && (
+              <button 
+                onClick={() => { setFilterTurma(''); setFilterSubject(''); setFilterStudent(''); }}
+                className="text-[10px] font-black text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500 px-4 py-2 rounded-xl border border-red-500/20 ml-auto transition-all uppercase tracking-widest shrink-0"
+              >
+                Limpar Filtros
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
             {renderContent()}
           </div>
         </main>
