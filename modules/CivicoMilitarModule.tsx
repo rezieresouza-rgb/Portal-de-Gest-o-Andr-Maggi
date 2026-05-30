@@ -255,7 +255,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
     // C. Student Behavior Scores
     try {
-      const savedScores = localStorage.getItem('civico_militar_student_scores_v1');
+      const savedScores = localStorage.getItem('civico_militar_student_scores_v2');
       if (savedScores) {
         setStudentStates(JSON.parse(savedScores));
       } else {
@@ -264,7 +264,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           studentId: s.CodigoAluno,
           studentName: s.Nome,
           className: s.Turma,
-          score: idx % 15 === 0 ? 9.8 : (idx % 25 === 0 ? 9.6 : 10.0), // Give a few students some custom initial scores
+          score: 8.0, // Baseado no Art. 45, § 2º do Regulamento Disciplinar (grau numérico 8,0)
           isClassLeader: idx === 5 || idx === 35 || idx === 85,
           isCivicHighlight: idx === 12 || idx === 92,
           occurrences: idx % 15 === 0 ? [
@@ -298,7 +298,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             }
           ] : [])
         }));
-        localStorage.setItem('civico_militar_student_scores_v1', JSON.stringify(initialStates));
+        localStorage.setItem('civico_militar_student_scores_v2', JSON.stringify(initialStates));
         setStudentStates(initialStates);
       }
     } catch (e) {
@@ -328,7 +328,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   };
 
   const saveStudentStatesToStorage = (list: StudentBehaviorState[]) => {
-    localStorage.setItem('civico_militar_student_scores_v1', JSON.stringify(list));
+    localStorage.setItem('civico_militar_student_scores_v2', JSON.stringify(list));
     setStudentStates(list);
     // If a modal is open for a student, update its local copy as well
     if (selectedStudentState) {
