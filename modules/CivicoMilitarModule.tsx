@@ -895,7 +895,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setDocSearchTerm(student.Nome);
     setDocFields(record.fields);
   };
-
+  const recentFatosObservados = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return docHistory.filter(d => 
+      d.template === 'fato_observado' && 
+      d.date && 
+      d.date.startsWith(today)
+    );
+  }, [docHistory]);
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
       {/* Sidebar do Módulo */}
@@ -1043,6 +1050,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           {/* TAB 1: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="space-y-10">
+              
+              {recentFatosObservados.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 p-6 rounded-[2rem] flex items-center justify-between shadow-sm relative overflow-hidden animate-in slide-in-from-top-4">
+                   <div className="absolute top-0 left-0 bottom-0 w-2 bg-amber-400"></div>
+                   <div className="flex items-center gap-4">
+                      <div className="p-3 bg-amber-100 text-amber-600 rounded-2xl">
+                         <AlertTriangle size={24} className="animate-pulse" />
+                      </div>
+                      <div>
+                         <h3 className="text-amber-800 font-black text-sm uppercase">Novo Fato Observado Recebido</h3>
+                         <p className="text-amber-700/80 text-[10px] font-bold uppercase mt-1">Existem {recentFatosObservados.length} relatórios enviados pelos professores aguardando análise hoje.</p>
+                      </div>
+                   </div>
+                   <button onClick={() => setActiveTab('documentos')} className="px-5 py-3 bg-amber-500 text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-amber-600 transition-colors shadow-md">
+                      Analisar Agora
+                   </button>
+                </div>
+              )}
+
               {/* Grid de Estatísticas */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
