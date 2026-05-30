@@ -299,9 +299,23 @@ const SecretariatBulletinPrinter: React.FC = () => {
                            </td>
                            <td className="p-1 text-center font-bold border-l border-black">{student.frequency}%</td>
                            <td className="p-1 text-center border-l border-black">
-                              <span className={`font-black ${average >= 6 ? 'text-emerald-700' : 'text-red-700'}`}>
-                                 {average >= 6 ? 'Apto' : 'Recuperação'}
-                              </span>
+                              {subj === 'COMPORTAMENTO' ? (
+                                 <span className={`font-black uppercase ${
+                                    average >= 9.0 ? 'text-emerald-700' :
+                                    average >= 7.0 ? 'text-blue-700' :
+                                    average >= 5.0 ? 'text-amber-600' : 'text-red-700'
+                                 }`}>
+                                    {average >= 10 ? 'Excepcional' :
+                                     average >= 9.0 ? 'Ótimo' :
+                                     average >= 7.0 ? 'Bom' :
+                                     average >= 5.0 ? 'Regular' :
+                                     average >= 2.0 ? 'Insuficiente' : 'Incompatível'}
+                                 </span>
+                              ) : (
+                                 <span className={`font-black ${average >= 6 ? 'text-emerald-700' : 'text-red-700'}`}>
+                                    {average >= 6 ? 'Apto' : 'Recuperação'}
+                                 </span>
+                              )}
                            </td>
                         </tr>
                      );
