@@ -22,7 +22,11 @@ import {
   Calendar,
   Clock,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Activity,
+  AlertOctagon,
+  Radio,
+  Shirt
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
@@ -654,6 +658,93 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     return { label: 'INCOMPATÍVEL', color: 'text-red-600 bg-red-50 border-red-100' };
   };
 
+  // Dashboard Advanced Stats
+  const advancedStats = useMemo(() => {
+    // 1. Top 10 Honra
+    const topHonra = [...studentStates].sort((a, b) => b.score - a.score).slice(0, 10);
+    
+    // 2. Top 10 Alerta
+    const topAlerta = [...studentStates].sort((a, b) => a.score - b.score).slice(0, 10);
+
+    // 3. Ranking de Turmas
+    const classScores: Record<string, { total: number; count: number }> = {};
+    studentStates.forEach(s => {
+      if (s.className && s.className !== 'SEM TURMA') {
+        if (!classScores[s.className]) classScores[s.className] = { total: 0, count: 0 };
+        classScores[s.className].total += s.score;
+        classScores[s.className].count += 1;
+      }
+    });
+    const rankingTurmas = Object.entries(classScores)
+      .map(([className, data]) => ({
+        className,
+        avg: data.total / data.count
+      }))
+      .sort((a, b) => b.avg - a.avg);
+
+    // 4. Termômetro Disciplinar & 5. Feed de Ocorrências
+    let elogios = 0, leves = 0, medias = 0, graves = 0;
+    const allOccurrences: any[] = [];
+    
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    studentStates.forEach(s => {
+      s.occurrences.forEach(o => {
+        // Feed
+        allOccurrences.push({
+          ...o,
+          studentName: s.studentName,
+          className: s.className,
+          studentId: s.studentId,
+        });
+
+        // Termômetro (apenas mês atual)
+        const d = new Date(o.date);
+        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+          if (o.type === 'MERIT') elogios++;
+          else {
+            const def = demeritOptions.find(dOpt => dOpt.category === o.category);
+            if (def?.severity === 'LEVE') leves++;
+            else if (def?.severity === 'MÉDIA') medias++;
+            else if (def?.severity === 'GRAVE') graves++;
+          }
+        }
+      });
+    });
+    
+    allOccurrences.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const feedOcorrencias = allOccurrences.slice(0, 15); // Últimas 15
+
+    // 6. Censo do Fardamento
+    const fardamentoStats: Record<string, number> = {};
+    inspections.forEach(i => {
+      fardamentoStats[i.item] = (fardamentoStats[i.item] || 0) + 1;
+    });
+    const censoFardamento = Object.entries(fardamentoStats)
+      .map(([item, count]) => ({ item, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // 7. Lideranças
+    const lideres = studentStates.filter(s => s.isClassLeader);
+
+    // 8. Meta do Batalhão
+    const totalStudents = studentStates.length;
+    const excellenceCount = studentStates.filter(s => s.score >= 8.0).length;
+    const excellenceRate = totalStudents > 0 ? Math.round((excellenceCount / totalStudents) * 100) : 100;
+
+    return {
+      topHonra,
+      topAlerta,
+      rankingTurmas,
+      termometro: { elogios, leves, medias, graves },
+      feedOcorrencias,
+      censoFardamento,
+      lideres,
+      excellenceRate
+    };
+  }, [studentStates, inspections]);
+
   // 3. Actions
   const handleAddInspection = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1128,7 +1219,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         {/* Área com Scroll */}
         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
           
-          {/* TAB 1: DASHBOARD */}
+          {/* TAB 1: DASHBOARD AVANÇADO */}
           {activeTab === 'dashboard' && (
             <div className="space-y-10">
               
@@ -1150,138 +1241,205 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </div>
               )}
 
-              {/* Grid de Estatísticas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Conduta Média</span>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><TrendingUp size={16} /></div>
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-black text-slate-900">{stats.averageScore}</h3>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Escala de 0.0 a 10.0</p>
-                  </div>
-                </div>
+              {/* 1. Meta do Batalhão & Termômetro */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 {/* Meta do Batalhão */}
+                 <div className="lg:col-span-2 bg-gradient-to-br from-blue-900 to-slate-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden flex flex-col justify-center">
+                    <div className="absolute top-0 right-0 p-8 opacity-10"><Award size={120} /></div>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-blue-300 mb-2">Meta de Excelência Escolar</h3>
+                    <div className="flex items-end gap-4 relative z-10">
+                       <span className="text-6xl font-black">{advancedStats.excellenceRate}%</span>
+                       <span className="text-xs font-semibold text-blue-200 mb-2 uppercase max-w-[200px]">Dos alunos estão com nota igual ou superior a 8.0</span>
+                    </div>
+                    {/* Barra de Progresso */}
+                    <div className="w-full h-3 bg-slate-800 rounded-full mt-6 overflow-hidden relative z-10">
+                       <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${advancedStats.excellenceRate}%` }}></div>
+                    </div>
+                 </div>
 
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Alunos Exemplares</span>
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Award size={16} /></div>
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-black text-slate-900">{stats.perfectScoreCount}</h3>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Nota Atitude 10.0</p>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Desconformidades (7d)</span>
-                    <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><AlertTriangle size={16} /></div>
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-black text-slate-900">{stats.recentInspectionsCount}</h3>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Apresentação Pessoal</p>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 shadow-sm flex flex-col justify-between text-slate-800">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Rotina Cívica</span>
-                    <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><Flag size={16} /></div>
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-black text-slate-900">{stats.complianceRate}%</h3>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Taxa de Conformidade</p>
-                  </div>
-                </div>
+                 {/* Termômetro Disciplinar do Mês */}
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm flex flex-col justify-center">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500" /> Termômetro Mensal</h3>
+                    <div className="space-y-4">
+                       <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-600">Elogios Registrados</span>
+                          <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-black">{advancedStats.termometro.elogios}</span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-600">Faltas Leves</span>
+                          <span className="px-3 py-1 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-black">{advancedStats.termometro.leves}</span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-600">Faltas Médias</span>
+                          <span className="px-3 py-1 bg-orange-50 text-orange-600 rounded-lg text-xs font-black">{advancedStats.termometro.medias}</span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-600">Faltas Graves</span>
+                          <span className="px-3 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-black">{advancedStats.termometro.graves}</span>
+                       </div>
+                    </div>
+                 </div>
               </div>
 
-              {/* Centro de Operações Rápidas e Recentes */}
+              {/* 2. Rankings Top 10 e Batalha das Turmas */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                {/* Inspeções Recentes */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6 text-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3">
-                      <UserCheck size={18} className="text-blue-600" /> Últimas Ocorrências de Fardamento
+                 {/* Top 10 Honra */}
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm shadow-emerald-50 text-slate-800">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
+                       <Award size={20} className="text-emerald-500" /> Destaques de Honra
                     </h3>
-                    <button onClick={() => setActiveTab('inspecao')} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">Ver todas</button>
-                  </div>
+                    <div className="space-y-4">
+                       {advancedStats.topHonra.slice(0, 5).map((s, idx) => (
+                          <div key={s.studentId} className="flex items-center gap-3 group">
+                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-transform group-hover:scale-110 ${idx === 0 ? 'bg-amber-100 text-amber-600' : idx === 1 ? 'bg-slate-100 text-slate-500' : idx === 2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-50 text-slate-400'}`}>
+                                {idx + 1}º
+                             </div>
+                             <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-slate-800 truncate uppercase">{s.studentName}</div>
+                                <div className="text-[9px] text-slate-400 font-bold uppercase">{s.className}</div>
+                             </div>
+                             <div className="text-sm font-black text-emerald-600">{s.score.toFixed(1)}</div>
+                          </div>
+                       ))}
+                    </div>
+                 </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-slate-400 uppercase font-black tracking-widest text-[9px] pb-3">
-                          <th className="pb-3">Aluno</th>
-                          <th className="pb-3">Turma</th>
-                          <th className="pb-3">Item Incorreto</th>
-                          <th className="pb-3">Data</th>
-                          <th className="pb-3">Responsável</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {inspections.slice(0, 5).map(insp => (
-                          <tr key={insp.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors text-slate-700">
-                            <td className="py-4 font-bold uppercase text-slate-900 truncate max-w-[200px]">{insp.studentName}</td>
-                            <td className="py-4 text-slate-600 font-bold">{insp.className}</td>
-                            <td className="py-4"><span className="px-2.5 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200/60 font-semibold">{insp.item}</span></td>
-                            <td className="py-4 text-slate-500 font-medium">{new Date(insp.date).toLocaleDateString('pt-BR')}</td>
-                            <td className="py-4 text-slate-500 uppercase font-medium">{insp.responsible.split(' ')[0]}</td>
-                          </tr>
-                        ))}
-                        {inspections.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="py-8 text-center text-slate-400 font-semibold uppercase text-[10px]">Nenhuma desconformidade de fardamento registrada</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Status Recente da Rotina Cívica */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6 text-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3">
-                      <Flag size={18} className="text-blue-600" /> Rotinas Recentes
+                 {/* Top 10 Alertas */}
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-red-100 shadow-sm shadow-red-50 text-slate-800">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
+                       <AlertOctagon size={20} className="text-red-500" /> Alerta Disciplinar
                     </h3>
-                    <button onClick={() => setActiveTab('rotina')} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">Registrar</button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {routines.slice(0, 4).map(rot => {
-                      // calculate percent compliance
-                      let steps = 0;
-                      if (rot.formationOk) steps++;
-                      if (rot.commandersPresent) steps++;
-                      if (rot.flagsRaised.national && rot.flagsRaised.state && rot.flagsRaised.municipal) steps++;
-                      if (rot.anthemsSung.national && rot.anthemsSung.state) steps++;
-                      if (rot.marchingOk) steps++;
-                      if (rot.bulletinRead) steps++;
-                      const percent = Math.round((steps / 6) * 100);
-
-                      return (
-                        <div key={rot.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between text-slate-700">
-                          <div>
-                            <div className="text-xs font-black text-slate-900 uppercase">{new Date(rot.date).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-                            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{rot.shift} • Resp: {rot.responsible.split(' ')[0]}</div>
+                    <div className="space-y-4">
+                       {advancedStats.topAlerta.slice(0, 5).map((s, idx) => (
+                          <div key={s.studentId} className="flex items-center gap-3 group">
+                             <div className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xs font-black transition-transform group-hover:scale-110">
+                                <AlertTriangle size={12} />
+                             </div>
+                             <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-slate-800 truncate uppercase">{s.studentName}</div>
+                                <div className="text-[9px] text-slate-400 font-bold uppercase">{s.className}</div>
+                             </div>
+                             <div className="text-sm font-black text-red-600">{s.score.toFixed(1)}</div>
                           </div>
-                          <div className="text-right">
-                            <span className={`px-2 py-1 rounded text-[10px] font-black ${percent === 100 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-blue-50 text-blue-700 border border-blue-200/60'}`}>
-                              {percent}% OK
-                            </span>
+                       ))}
+                    </div>
+                 </div>
+
+                 {/* Batalha das Turmas */}
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-blue-100 shadow-sm shadow-blue-50 text-slate-800">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
+                       <Users size={20} className="text-blue-500" /> Batalha das Turmas
+                    </h3>
+                    <div className="space-y-4">
+                       {advancedStats.rankingTurmas.slice(0, 5).map((t, idx) => (
+                          <div key={t.className} className="flex items-center gap-3 group">
+                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-transform group-hover:scale-110 ${idx === 0 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'bg-slate-50 text-slate-500'}`}>
+                                {idx + 1}
+                             </div>
+                             <div className="flex-1 font-bold text-sm text-slate-700 uppercase">{t.className}</div>
+                             <div className="text-sm font-black text-slate-900">{t.avg.toFixed(2)}</div>
                           </div>
-                        </div>
-                      );
-                    })}
-                    {routines.length === 0 && (
-                      <p className="text-center py-8 text-slate-400 text-[10px] font-semibold uppercase">Nenhum registro de formatura cívica recente</p>
-                    )}
-                  </div>
-                </div>
+                       ))}
+                    </div>
+                 </div>
 
               </div>
+
+              {/* 3. Feed e Censo */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 
+                 {/* Feed de Ocorrências em Tempo Real */}
+                 <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm text-slate-800">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
+                       <Radio size={20} className="text-indigo-500" /> Feed de Ocorrências Recentes
+                    </h3>
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                       {advancedStats.feedOcorrencias.map(occ => (
+                          <div key={occ.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-4 transition-all hover:bg-white hover:shadow-sm">
+                             <div className={`p-2 rounded-xl mt-1 ${occ.type === 'MERIT' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                                {occ.type === 'MERIT' ? <Award size={16} /> : <AlertOctagon size={16} />}
+                             </div>
+                             <div className="flex-1">
+                                <div className="text-xs font-black text-slate-900 uppercase">
+                                  {occ.studentName} 
+                                  <span className="text-slate-400 font-medium normal-case ml-2">• {occ.className}</span>
+                                </div>
+                                <div className="text-[10px] font-bold text-slate-600 mt-1">{occ.category}</div>
+                                <div className="text-[9px] text-slate-400 uppercase tracking-wider mt-2 flex items-center gap-2">
+                                   <Clock size={10} /> {formatSimpleDate(occ.date)} • Por: {occ.responsible.split(' ')[0]}
+                                </div>
+                             </div>
+                             <div className={`text-xs font-black ${occ.type === 'MERIT' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {occ.type === 'MERIT' ? '+' : '-'}{occ.points.toFixed(1)} pts
+                             </div>
+                          </div>
+                       ))}
+                       {advancedStats.feedOcorrencias.length === 0 && (
+                          <div className="text-center text-slate-400 font-semibold text-xs py-8 uppercase">Nenhum registro recente</div>
+                       )}
+                    </div>
+                 </div>
+
+                 {/* Censo do Fardamento e Xerifes */}
+                 <div className="space-y-8">
+                    {/* Censo do Fardamento */}
+                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm text-slate-800">
+                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
+                          <Shirt size={20} className="text-amber-500" /> Falhas de Fardamento
+                       </h3>
+                       <div className="space-y-5">
+                          {advancedStats.censoFardamento.slice(0, 6).map((item, idx) => {
+                             const percent = Math.round((item.count / Math.max(inspections.length, 1)) * 100);
+                             return (
+                                <div key={item.item}>
+                                   <div className="flex justify-between text-[10px] font-bold uppercase mb-1">
+                                      <span className="text-slate-700 truncate pr-2 max-w-[200px]" title={item.item}>{item.item}</span>
+                                      <span className="text-slate-400">{percent}%</span>
+                                   </div>
+                                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                      <div className={`h-full rounded-full ${idx === 0 ? 'bg-amber-500' : 'bg-slate-400'}`} style={{ width: `${percent}%` }}></div>
+                                   </div>
+                                </div>
+                             );
+                          })}
+                          {advancedStats.censoFardamento.length === 0 && (
+                             <div className="text-center text-slate-400 font-semibold text-[10px] py-4 uppercase">Nenhuma inspeção falha registrada</div>
+                          )}
+                       </div>
+                    </div>
+
+                    {/* Mural de Lideranças */}
+                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm text-slate-800">
+                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
+                          <Star size={20} className="text-indigo-500 fill-indigo-500" /> Líderes de Turma
+                       </h3>
+                       <div className="space-y-3">
+                          {advancedStats.lideres.slice(0, 5).map(lider => (
+                             <div key={lider.studentId} className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xs">
+                                   {lider.className.split(' ')[0]}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                   <div className="text-xs font-bold text-slate-800 truncate uppercase">{lider.studentName}</div>
+                                   <div className="text-[9px] text-slate-400 font-bold uppercase">{lider.className}</div>
+                                </div>
+                             </div>
+                          ))}
+                          {advancedStats.lideres.length === 0 && (
+                             <div className="text-center text-slate-400 font-semibold text-[10px] py-4 uppercase">Nenhum líder nomeado</div>
+                          )}
+                          {advancedStats.lideres.length > 5 && (
+                             <button onClick={() => setActiveTab('honra')} className="w-full mt-2 py-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:bg-indigo-50 rounded-xl transition-colors">
+                                Ver Todos ({advancedStats.lideres.length})
+                             </button>
+                          )}
+                       </div>
+                    </div>
+                 </div>
+
+              </div>
+
             </div>
           )}
 
@@ -1664,7 +1822,22 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         return (
                           <tr key={student.studentId} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors text-slate-700">
                             <td className="py-4 pl-2 font-mono text-slate-400 text-[10px]">{student.studentId}</td>
-                            <td className="py-4 font-bold uppercase text-slate-900 truncate max-w-[280px]">{student.studentName}</td>
+                            <td className="py-4 font-bold uppercase text-slate-900 truncate max-w-[280px]">
+                              <div>{student.studentName}</div>
+                              {(() => {
+                                const dbStudent = dbStudents.find(s => s.CodigoAluno === student.studentId);
+                                if (dbStudent && (dbStudent.NomeResponsavel || dbStudent.TelefoneContato)) {
+                                  return (
+                                    <div className="text-[8px] text-slate-400 mt-0.5 flex items-center gap-1 font-semibold normal-case tracking-wider">
+                                      <Users size={8} /> 
+                                      {dbStudent.NomeResponsavel || 'Não informado'}
+                                      {dbStudent.TelefoneContato && ` • ${dbStudent.TelefoneContato}`}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </td>
                             <td className="py-4 text-slate-600 font-bold">{student.className}</td>
                             <td className="py-4 text-center">
                               <button
@@ -2811,6 +2984,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                     Turma: {selectedStudentState.className} • Código: {selectedStudentState.studentId}
                   </p>
+                  {(() => {
+                    const studentFull = dbStudents.find(s => s.CodigoAluno === selectedStudentState.studentId);
+                    if (studentFull && (studentFull.NomeResponsavel || studentFull.TelefoneContato)) {
+                      return (
+                        <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
+                          <Users size={10} /> 
+                          {studentFull.NomeResponsavel || 'RESPONSÁVEL NÃO INFORMADO'} 
+                          {studentFull.TelefoneContato && ` • ${studentFull.TelefoneContato}`}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
 
