@@ -572,10 +572,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   // Behavior Categories depending on score
   const getBehaviorStatus = (score: number) => {
-    if (score >= 9.0) return { label: 'EXCELENTE', color: 'text-emerald-500 bg-emerald-50 border-emerald-100' };
+    if (score >= 10.0) return { label: 'EXCEPCIONAL', color: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
+    if (score >= 9.0) return { label: 'ÓTIMO', color: 'text-emerald-500 bg-emerald-50 border-emerald-100' };
     if (score >= 7.0) return { label: 'BOM', color: 'text-blue-500 bg-blue-50 border-blue-100' };
     if (score >= 5.0) return { label: 'REGULAR', color: 'text-amber-500 bg-amber-50 border-amber-100' };
-    return { label: 'INSUFICIENTE', color: 'text-red-500 bg-red-50 border-red-100' };
+    if (score >= 2.0) return { label: 'INSUFICIENTE', color: 'text-orange-500 bg-orange-50 border-orange-100' };
+    return { label: 'INCOMPATÍVEL', color: 'text-red-600 bg-red-50 border-red-100' };
   };
 
   // 3. Actions
