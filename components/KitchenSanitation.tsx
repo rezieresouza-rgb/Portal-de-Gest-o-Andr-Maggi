@@ -27,7 +27,9 @@ import {
    Download,
    CheckSquare,
    Printer,
-   Loader2
+   Loader2,
+   Users,
+   UserCheck
 } from 'lucide-react';
 
 type KitchenArea = 'Pré-preparo' | 'Cocção' | 'Distribuição' | 'Higiene e Lixo' | 'Armazenamento' | 'Utensílios/Equipamentos' | 'Refeitório';
