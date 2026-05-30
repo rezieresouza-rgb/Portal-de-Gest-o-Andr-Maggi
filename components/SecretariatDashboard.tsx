@@ -92,8 +92,25 @@ const SecretariatDashboard: React.FC = () => {
             .order('movement_date', { ascending: false })
             .limit(5);
 
+         // 6. Matrículas Novas Reais
+         const { data: newStudents } = await supabase
+            .from('students')
+            .select(`
+               id,
+               name,
+               created_at,
+               enrollments (
+                  status,
+                  classrooms (name)
+               )
+            `)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+         let allMovements: DashboardMovement[] = [];
+
          if (movements) {
-            const mapped: DashboardMovement[] = movements.map((m: any) => {
+            allMovements = [...allMovements, ...movements.map((m: any) => {
                const s = m.students;
                const activeEnr = s?.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO') || s?.enrollments?.[0];
                return {
@@ -104,9 +121,25 @@ const SecretariatDashboard: React.FC = () => {
                   date: m.movement_date,
                   classroom: activeEnr?.classrooms?.name || 'SEM TURMA'
                };
-            });
-            setRecentMovements(mapped);
+            })];
          }
+
+         if (newStudents) {
+            allMovements = [...allMovements, ...newStudents.map((s: any) => {
+               const activeEnr = s.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO') || s.enrollments?.[0];
+               return {
+                  id: `new-${s.id}`,
+                  student_name: s.name || 'ALUNO NÃO IDENTIFICADO',
+                  type: 'MATRÍCULA NOVA',
+                  description: 'Novo aluno registrado no sistema',
+                  date: s.created_at ? s.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+                  classroom: activeEnr?.classrooms?.name || 'SEM TURMA'
+               };
+            })];
+         }
+
+         allMovements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+         setRecentMovements(allMovements.slice(0, 5));
 
       } catch (error) {
          console.error("Erro ao carregar dashboard:", error);
@@ -205,7 +238,9 @@ const SecretariatDashboard: React.FC = () => {
                                     <p className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-tight truncate">{item.student_name}</p>
                                     <div className="flex items-center gap-1 sm:gap-2 mt-0.5 truncate">
                                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 ${
-                                          item.type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'
+                                          item.type === 'TRANSFERENCIA' ? 'bg-amber-100 text-amber-600' : 
+                                          item.type === 'MATRÍCULA NOVA' ? 'bg-emerald-100 text-emerald-600' :
+                                          'bg-indigo-100 text-indigo-600'
                                        }`}>{item.type}</span>
                                        <span className="text-[8px] sm:text-[9px] text-gray-400 font-bold uppercase truncate">{item.classroom}</span>
                                     </div>
