@@ -127,7 +127,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     atenuantes: '',
     agravantes: '',
     gestorMilitar: '',
-    documentNumber: ''
+    documentNumber: '',
+    // Termo de Adequação de Conduta fields
+    obrigacoesPrazo: '',
+    gestorEducacional: '',
+    coordenadorName: ''
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
 
@@ -2002,6 +2006,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <option value="termo_ciencia">Termo de Ciência e Concordância</option>
                       <option value="fato_observado">Relatório de Fato Observado</option>
                       <option value="ficha_medida_disciplinar">Ficha de Medida Disciplinar (Anexo III)</option>
+                      <option value="termo_adequacao_conduta">Termo de Adequação de Conduta Escolar (TACE)</option>
                     </select>
                   </div>
 
@@ -2061,9 +2066,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   </div>
 
                   {/* Dados Condicionais do Modelo */}
-                  {selectedDocTemplate === 'termo_ciencia' ? (
+                  {(selectedDocTemplate === 'termo_ciencia' || selectedDocTemplate === 'termo_adequacao_conduta') ? (
                     <div className="border-t border-slate-100 pt-5 space-y-4">
-                      <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Dados do Responsável</h4>
+                      <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                        {selectedDocTemplate === 'termo_ciencia' ? 'Dados do Responsável' : 'Dados do TACE'}
+                      </h4>
                       
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold text-slate-500 uppercase">Nome Completo</label>
@@ -2109,6 +2116,76 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                         />
                       </div>
+
+                      {selectedDocTemplate === 'termo_adequacao_conduta' && (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase">Resumo do Fato Gerador (Achado)</label>
+                            <textarea
+                              value={docFields.achado}
+                              onChange={e => setDocFields(prev => ({ ...prev, achado: e.target.value }))}
+                              placeholder="Resumo do fato que deu origem à celebração do TACE..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase">Obrigações e Prazo</label>
+                            <textarea
+                              value={docFields.obrigacoesPrazo}
+                              onChange={e => setDocFields(prev => ({ ...prev, obrigacoesPrazo: e.target.value }))}
+                              placeholder="A estudante aceita e obriga-se a (descrever o acordo e período)..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase">Gestor Cívico-Militar</label>
+                              <input
+                                type="text"
+                                value={docFields.gestorMilitar}
+                                onChange={e => setDocFields(prev => ({ ...prev, gestorMilitar: e.target.value }))}
+                                placeholder="Capitão Fulano"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase">Gestor Educacional Militar</label>
+                              <input
+                                type="text"
+                                value={docFields.gestorEducacional}
+                                onChange={e => setDocFields(prev => ({ ...prev, gestorEducacional: e.target.value }))}
+                                placeholder="Tenente Sicrano"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase">Diretor(a) Escolar</label>
+                              <input
+                                type="text"
+                                value={docFields.teacher}
+                                onChange={e => setDocFields(prev => ({ ...prev, teacher: e.target.value }))}
+                                placeholder="JOÃO PAULO..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase">Coordenador(a) Pedagógica</label>
+                              <input
+                                type="text"
+                                value={docFields.coordenadorName}
+                                onChange={e => setDocFields(prev => ({ ...prev, coordenadorName: e.target.value }))}
+                                placeholder="MARISTELA..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ) : selectedDocTemplate === 'ficha_medida_disciplinar' ? (
                     <div className="border-t border-slate-100 pt-5 space-y-4">
@@ -2322,7 +2399,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                       />
                     </div>
-                    {selectedDocTemplate === 'termo_ciencia' && (
+                    {(selectedDocTemplate === 'termo_ciencia' || selectedDocTemplate === 'termo_adequacao_conduta') && (
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold text-slate-500 uppercase">Data</label>
                         <input
@@ -2485,6 +2562,84 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <div className="mt-28 flex flex-col items-center">
                           <div className="w-96 border-t border-black"></div>
                           <p className="text-xs font-black uppercase text-gray-900 tracking-wide mt-2">Nome e assinatura do responsável</p>
+                        </div>
+                      </>
+                    ) : selectedDocTemplate === 'termo_adequacao_conduta' ? (
+                      <>
+                        {/* Título do Termo */}
+                        <div className="text-center my-6">
+                          <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Termo de Adequação de Conduta Escolar (TACE)</h2>
+                          <p className="text-[11px] font-bold text-gray-900 mt-2 uppercase leading-tight px-12">
+                            Nº {docFields.documentNumber || nextFichaNumber}, Celebrado entre a EECM André Antônio Maggi e o(s) responsável(eis) pelo(a) estudante {selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________'}, objetivando o cumprimento de obrigações.
+                          </p>
+                        </div>
+
+                        {/* Texto do Documento */}
+                        <div className="text-sm text-gray-900 leading-[1.8] space-y-4 text-justify" style={{ textIndent: '2.5cm' }}>
+                          <p>
+                            Pelo presente instrumento particular, a EECM <span className="font-black uppercase">André Antônio Maggi</span>, com personalidade jurídica de direito privado, com sede e foro em {docFields.city ? docFields.city.split('-')[0].trim() : 'Colíder'} - MT, inscrita no CNPJ nº ____________________, representada, neste ato, pelo(a) Diretor(a) Escolar Sr(a). <span className="font-black uppercase">{docFields.teacher || 'JOÃO PAULO DOS SANTOS NETO'}</span>, celebra com o(a) Sr(a). <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleName || '___________________________________________________'}</span> (pai/mãe/responsável), CPF: <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleCpf || '____________________'}</span>, responsável(eis) pelo(s) Sr(s). <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________________________________'}</span>, estudante do <span className="font-black uppercase">{docFields.series || '___________'}</span>. O presente Termo de Adequação de Conduta Escolar (TACE), tem por objetivo ajustar o comportamento do Aluno(a) em conformidade com as normas e regulamentos da Escola Estadual Cívico-Militar, garantindo um ambiente escolar saudável e disciplinado, sob as seguintes condições:
+                          </p>
+                        </div>
+
+                        <div className="text-sm text-gray-900 space-y-4 mt-6 text-justify">
+                          <p className="font-bold">Considerando que:</p>
+                          <ol className="list-decimal pl-5 space-y-2">
+                            <li>A Escola tem como missão proporcionar um ambiente de ensino disciplinado, organizado e propício ao desenvolvimento integral dos alunos.</li>
+                            <li>O Aluno(a) e seu Responsável têm o dever de cumprir e zelar pelo cumprimento das normas e regulamentos da Escola.</li>
+                            <li>Recentemente, foram observados comportamentos e atitudes do(a) estudante que não estão em conformidade com as normas da Escola.</li>
+                          </ol>
+
+                          <p className="font-bold text-base mt-4">Do Fato</p>
+                          <p>Resumo do fato que deu origem à celebração do TACE: <span className="underline decoration-dotted">{docFields.achado || '_________________________________________________________________'}</span></p>
+
+                          <p className="font-bold text-base mt-4">Do Reconhecimento</p>
+                          <p>O estudante, neste ato representado por seu responsável (quando for o caso), reconhece e assume a responsabilidade pelas irregularidades a que deu causa e compromete-se a ajustar sua conduta, assim como observar os deveres e medidas disciplinares previstos no Regulamento Disciplinar das EECM e Regimento Escolar.</p>
+
+                          <p className="font-bold text-base mt-4">Das Obrigações e Prazo</p>
+                          <p>A estudante aceita e obriga-se a <span className="underline decoration-dotted">{docFields.obrigacoesPrazo || '_________________________________________________________________'}</span>, sob pena de ser instaurado o respectivo procedimento administrativo disciplinar, sem prejuízo da apuração relativa à inobservância das obrigações previstas neste TACE.</p>
+
+                          <p className="font-bold text-base mt-4">Da Fiscalização</p>
+                          <p>A fiscalização do cumprimento dos compromissos estabelecidos neste Termo de Adequação de Conduta Escolar, será de responsabilidade da Gestão Cívico-Militar, através dos Monitores, juntamente com a Coordenação Pedagógica, através dos Professores.</p>
+
+                          <p className="font-bold text-base mt-4">Consequências do Não Cumprimento:</p>
+                          <p>O não cumprimento das obrigações estabelecidas neste Termo poderá resultar em medidas disciplinares, conforme previsto no Artigo 13, do Regulamento Disciplinar das Escolas Estaduais Cívico-Militares e Regimento Interno da Escola, incluindo advertências, suspensões, ações educativas e, em casos extremos, a transferência educativa do(a) Estudante.</p>
+
+                          <p className="font-bold text-base mt-4">Disposições Gerais:</p>
+                          <p>Este Termo é firmado em duas vias de igual teor, ficando uma via em posse da Escola e outra em posse do Responsável.</p>
+                        </div>
+
+                        {/* Local e Data */}
+                        <div className="text-center mt-10 text-sm text-gray-900 font-medium">
+                          <p>{docFields.city || 'Colíder - MT'}, {formatDocDate(docFields.date)}.</p>
+                        </div>
+
+                        {/* Assinaturas */}
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-16 mt-16 text-xs text-gray-900 break-inside-avoid">
+                          <div className="flex flex-col items-center">
+                            <div className="w-full border-t border-black"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.teacher || 'JOÃO PAULO DOS SANTOS NETO'}</p>
+                            <p className="text-center">Diretor(a) Escolar</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="w-full border-t border-black"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.gestorMilitar || 'Capitão ANTONIO JOÃO RIBEIRO'}</p>
+                            <p className="text-center">Gestor Cívico-Militar</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="w-full border-t border-black"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.responsibleName || '___________________________________'}</p>
+                            <p className="text-center">Responsável ou Aluno + 18 anos</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="w-full border-t border-black"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.coordenadorName || 'MARISTELA LÚCIA PONTES DE ALCANTARA'}</p>
+                            <p className="text-center">Coordenadora Pedagógica</p>
+                          </div>
+                          <div className="col-span-2 flex flex-col items-center">
+                            <div className="w-1/2 border-t border-black"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.gestorEducacional || 'Tenente MARCELO DEL BOSCO DA COSTA'}</p>
+                            <p className="text-center">Gestor Educacional Militar</p>
+                          </div>
                         </div>
                       </>
                     ) : selectedDocTemplate === 'ficha_medida_disciplinar' ? (
