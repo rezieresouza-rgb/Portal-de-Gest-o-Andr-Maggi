@@ -40,6 +40,7 @@ interface SanitationTask {
    frequency: Frequency;
    status: 'CONCLUÍDO' | 'PENDENTE' | 'ATRASADO';
    lastDone?: string;
+   completedBy?: string;
    notes?: string;
 }
 
@@ -92,9 +93,17 @@ const INITIAL_KITCHEN_TASKS: SanitationTask[] = [
    { id: 'k-ref-5', area: 'Refeitório', title: 'Limpeza e higienização dos filtros dos aparelhos de ar-condicionado do refeitório (POP 35)', frequency: 'MENSAL', status: 'PENDENTE' }
 ];
 
-const KitchenSanitation: React.FC = () => {
+import { CleaningEmployee } from '../types';
+
+interface KitchenSanitationProps {
+   employees: CleaningEmployee[];
+}
+
+const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
+   const [activeEmployee, setActiveEmployee] = useState<string>('');
+   
    const [tasks, setTasks] = useState<SanitationTask[]>(() => {
-      const saved = localStorage.getItem('kitchen_sanitation_tasks_v2');
+      const saved = localStorage.getItem('kitchen_sanitation_tasks_v3');
       if (saved) {
          const parsed = JSON.parse(saved) as SanitationTask[];
          const missingTasks = INITIAL_KITCHEN_TASKS.filter(
@@ -102,7 +111,7 @@ const KitchenSanitation: React.FC = () => {
          );
          if (missingTasks.length > 0) {
             const merged = [...parsed, ...missingTasks];
-            localStorage.setItem('kitchen_sanitation_tasks_v2', JSON.stringify(merged));
+            localStorage.setItem('kitchen_sanitation_tasks_v3', JSON.stringify(merged));
             return merged;
          }
          return parsed;
@@ -121,30 +130,39 @@ const KitchenSanitation: React.FC = () => {
    });
 
    useEffect(() => {
-      localStorage.setItem('kitchen_sanitation_tasks_v2', JSON.stringify(tasks));
+      localStorage.setItem('kitchen_sanitation_tasks_v3', JSON.stringify(tasks));
    }, [tasks]);
 
    const toggleTask = (id: string) => {
+      if (!activeEmployee) {
+         alert("Por favor, selecione qual servidor(a) está realizando as tarefas no topo da tela antes de concluir.");
+         return;
+      }
       setTasks(prev => prev.map(t => {
          if (t.id !== id) return t;
          const isDone = t.status === 'CONCLUÍDO';
          return {
             ...t,
             status: isDone ? 'PENDENTE' : 'CONCLUÍDO',
-            lastDone: isDone ? undefined : new Date().toISOString()
+            lastDone: isDone ? undefined : new Date().toISOString(),
+            completedBy: isDone ? undefined : activeEmployee
          };
       }));
    };
 
    const setTaskDate = (id: string, dateString: string) => {
+      if (!activeEmployee && dateString) {
+         alert("Por favor, selecione qual servidor(a) realizou a tarefa no topo da tela antes de definir a data.");
+         return;
+      }
       setTasks(prev => prev.map(t => {
          if (t.id !== id) return t;
          if (!dateString) {
-            return { ...t, status: 'PENDENTE', lastDone: undefined };
+            return { ...t, status: 'PENDENTE', lastDone: undefined, completedBy: undefined };
          }
          // Use noon to avoid timezone shift issues making it the day before
          const newDate = new Date(`${dateString}T12:00:00`);
-         return { ...t, status: 'CONCLUÍDO', lastDone: newDate.toISOString() };
+         return { ...t, status: 'CONCLUÍDO', lastDone: newDate.toISOString(), completedBy: activeEmployee };
       }));
    };
 
@@ -269,6 +287,27 @@ const KitchenSanitation: React.FC = () => {
             </div>
          </div>
 
+         {/* SELEÇÃO DO SERVIDOR EXECUTANTE */}
+         <div className="bg-orange-50 p-6 rounded-[2.5rem] border border-orange-200 shadow-inner flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-4">
+               <div className="p-3 bg-orange-600 text-white rounded-2xl"><Users size={24} /></div>
+               <div>
+                  <h4 className="text-sm font-black text-orange-950 uppercase">Servidor(a) Responsável</h4>
+                  <p className="text-[10px] text-orange-700 font-bold uppercase tracking-widest">Quem está realizando a higienização?</p>
+               </div>
+            </div>
+            <select
+               value={activeEmployee}
+               onChange={e => setActiveEmployee(e.target.value)}
+               className="flex-1 max-w-md px-6 py-4 bg-white border-2 border-orange-200 rounded-2xl font-black text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all uppercase"
+            >
+               <option value="" disabled>SELECIONE O(A) SERVIDOR(A)...</option>
+               {employees.map(emp => (
+                  <option key={emp.id} value={emp.name}>{emp.name}</option>
+               ))}
+            </select>
+         </div>
+
          {/* ÁREA DE FILTROS E BUSCA */}
          <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center no-print">
             <div className="flex bg-gray-100 p-1.5 rounded-2xl">
@@ -318,9 +357,16 @@ const KitchenSanitation: React.FC = () => {
                      </div>
                      <h4 className="text-sm font-black text-gray-900 uppercase leading-snug mb-2">{task.title}</h4>
                      {task.lastDone && (
-                        <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-tight flex items-center gap-1">
-                           <CheckCircle2 size={10} /> Realizado: {new Date(task.lastDone).toLocaleString('pt-BR')}
-                        </p>
+                        <div className="space-y-1 mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                           <p className="text-[9px] text-emerald-700 font-bold uppercase tracking-tight flex items-center gap-1.5">
+                              <CheckCircle2 size={12} /> Realizado: {new Date(task.lastDone).toLocaleString('pt-BR')}
+                           </p>
+                           {task.completedBy && (
+                              <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-tight flex items-center gap-1.5">
+                                 <UserCheck size={12} /> Por: {task.completedBy}
+                              </p>
+                           )}
+                        </div>
                      )}
                   </div>
 
@@ -464,9 +510,14 @@ const KitchenSanitation: React.FC = () => {
                                  <td className="p-3 text-[10px] font-bold uppercase">{titleClean}</td>
                                  <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency}</td>
                                  <td className="p-3 text-[9px] font-bold text-gray-600">
-                                    {t.status === 'CONCLUÍDO' && t.lastDone
-                                       ? new Date(t.lastDone).toLocaleString('pt-BR')
-                                       : '____/____/____'}
+                                    {t.status === 'CONCLUÍDO' && t.lastDone ? (
+                                       <>
+                                          <div>{new Date(t.lastDone).toLocaleString('pt-BR')}</div>
+                                          {t.completedBy && <div className="text-[7px] text-gray-400 mt-0.5">Por: {t.completedBy}</div>}
+                                       </>
+                                    ) : (
+                                       '____/____/____'
+                                    )}
                                  </td>
                                  <td className={`p-3 text-center text-[9px] font-black uppercase ${t.status === 'CONCLUÍDO' ? 'text-emerald-600' : 'text-amber-600'}`}>
                                     {t.status === 'CONCLUÍDO' ? 'OK' : 'PENDENTE'}

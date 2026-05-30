@@ -411,7 +411,7 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
           )}
 
           {activeTab === 'predial' && <PredialMaintenanceDashboard onNavigateToPreventive={() => setActiveTab('preventive_plan')} />}
-          {activeTab === 'kitchen' && <KitchenSanitation />}
+          {activeTab === 'kitchen' && <KitchenSanitation employees={employees} />}
           {activeTab === 'materials' && <CleaningMaterialControl />}
           {activeTab === 'ppe' && <PPEControl employees={employees} />}
         </div>
