@@ -114,6 +114,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     achado: '',
     monitor: 'Monitor Silva',
     recebidoDate: new Date().toISOString().split('T')[0],
+    // Ficha de Medida Disciplinar fields
+    faltaDate: new Date().toISOString().split('T')[0],
+    medidaAplicada: '',
+    falta: '',
+    itensEnquadramento: '',
+    atenuantes: '',
+    agravantes: '',
+    gestorMilitar: ''
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
 
@@ -1789,6 +1797,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     >
                       <option value="termo_ciencia">Termo de Ciência e Concordância</option>
                       <option value="fato_observado">Relatório de Fato Observado</option>
+                      <option value="ficha_medida_disciplinar">Ficha de Medida Disciplinar (Anexo III)</option>
                     </select>
                   </div>
 
@@ -1893,6 +1902,124 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           value={docFields.responsibleAddress}
                           onChange={e => setDocFields(prev => ({ ...prev, responsibleAddress: e.target.value }))}
                           placeholder="Rua, número, bairro, cidade"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                        />
+                      </div>
+                    </div>
+                  ) : selectedDocTemplate === 'ficha_medida_disciplinar' ? (
+                    <div className="border-t border-slate-100 pt-5 space-y-4">
+                      <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Dados da Ficha de Medida Disciplinar</h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Data da Infração</label>
+                          <input
+                            type="date"
+                            value={docFields.faltaDate}
+                            onChange={e => setDocFields(prev => ({ ...prev, faltaDate: e.target.value }))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Série / Ano</label>
+                          <input
+                            type="text"
+                            value={docFields.series}
+                            onChange={e => setDocFields(prev => ({ ...prev, series: e.target.value }))}
+                            placeholder="Ex: 6º Ano"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Disciplina</label>
+                          <input
+                            type="text"
+                            value={docFields.discipline}
+                            onChange={e => setDocFields(prev => ({ ...prev, discipline: e.target.value }))}
+                            placeholder="Ex: Matemática"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Professor</label>
+                          <input
+                            type="text"
+                            value={docFields.teacher}
+                            onChange={e => setDocFields(prev => ({ ...prev, teacher: e.target.value }))}
+                            placeholder="Nome do professor"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Medida Disciplinar Aplicada</label>
+                        <select
+                          value={docFields.medidaAplicada}
+                          onChange={e => setDocFields(prev => ({ ...prev, medidaAplicada: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 uppercase"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="Advertência Oral">Advertência Oral</option>
+                          <option value="Advertência Escrita">Advertência Escrita</option>
+                          <option value="Suspensão de Sala de Aula">Suspensão de Sala de Aula</option>
+                          <option value="Ações Educativas">Ações Educativas</option>
+                          <option value="Transferência Educativa">Transferência Educativa</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Falta Disciplinar (Descrição)</label>
+                        <textarea
+                          value={docFields.falta}
+                          onChange={e => setDocFields(prev => ({ ...prev, falta: e.target.value }))}
+                          placeholder="Descreva a falta disciplinar cometida..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Enquadramento no Regulamento (Itens)</label>
+                        <input
+                          type="text"
+                          value={docFields.itensEnquadramento}
+                          onChange={e => setDocFields(prev => ({ ...prev, itensEnquadramento: e.target.value }))}
+                          placeholder="Ex: Art. X, inciso Y"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Atenuantes</label>
+                          <textarea
+                            value={docFields.atenuantes}
+                            onChange={e => setDocFields(prev => ({ ...prev, atenuantes: e.target.value }))}
+                            placeholder="Circunstâncias atenuantes..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Agravantes</label>
+                          <textarea
+                            value={docFields.agravantes}
+                            onChange={e => setDocFields(prev => ({ ...prev, agravantes: e.target.value }))}
+                            placeholder="Circunstâncias agravantes..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Gestor Educacional Militar</label>
+                        <input
+                          type="text"
+                          value={docFields.gestorMilitar}
+                          onChange={e => setDocFields(prev => ({ ...prev, gestorMilitar: e.target.value }))}
+                          placeholder="Nome do gestor que assinará"
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
                         />
                       </div>
@@ -2154,6 +2281,179 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           <div className="w-96 border-t border-black"></div>
                           <p className="text-xs font-black uppercase text-gray-900 tracking-wide mt-2">Nome e assinatura do responsável</p>
                         </div>
+                      </>
+                    ) : selectedDocTemplate === 'ficha_medida_disciplinar' ? (
+                      <>
+                        {/* Título da Ficha */}
+                        <div className="text-center my-6">
+                          <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Ficha de Medida Disciplinar</h2>
+                          <p className="text-sm font-bold text-gray-900 mt-1">Notificação de Medida Disciplinar Número: {Math.floor(Math.random() * 9000000) + 1000000}</p>
+                        </div>
+
+                        {/* Dados Básicos */}
+                        <div className="space-y-4 text-xs text-gray-900 mb-6">
+                          <div className="flex items-end">
+                            <span className="font-bold mr-1.5 whitespace-nowrap">Estudante:</span>
+                            <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                              {selectedStudentForDoc ? selectedStudentForDoc.Nome : '__________________________________________________________________________'}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-6 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Série:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                                {docFields.series || '___________________'}
+                              </span>
+                            </div>
+                            <div className="col-span-6 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Turma:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                                {selectedStudentForDoc ? selectedStudentForDoc.Turma : '_________________'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-6 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Disciplina:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                                {docFields.discipline || '______________________'}
+                              </span>
+                            </div>
+                            <div className="col-span-6 flex items-end">
+                              <span className="font-bold mr-1.5 whitespace-nowrap">Data:</span>
+                              <span className="flex-1 border-b border-gray-400 font-semibold px-2 text-center h-5 leading-5 truncate">
+                                {formatSimpleDate(docFields.date)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-end">
+                            <span className="font-bold mr-1.5 whitespace-nowrap">Professor:</span>
+                            <span className="flex-1 border-b border-gray-400 font-semibold px-2 uppercase h-5 leading-5 truncate">
+                              {docFields.teacher || '_____________________________________'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Texto Notificação */}
+                        <div className="text-xs text-gray-900 text-justify space-y-4 mb-6 leading-relaxed">
+                          <p>
+                            Senhor (a) responsável, informamos que, no dia <span className="font-bold underline decoration-dotted underline-offset-4">{formatSimpleDate(docFields.date)}</span>, o estudante recebeu uma 
+                            Notificação de Medida Disciplinar de <span className="font-bold underline decoration-dotted underline-offset-4 uppercase">{docFields.medidaAplicada || '_____________________________________'}</span>, o que 
+                            poderá ocasionar a perda de créditos. O período recursal está previsto no Art. 44, § 1º, do 
+                            Capítulo X do Regulamento Disciplinar das EECM-MT. A defesa poderá ser feita por escrito, no 
+                            prazo de 3 (três) dias úteis a contar do dia do recebimento da Notificação. A Medida Disciplinar 
+                            será efetivada ou arquivada conforme despacho do gestor competente. O estudante supracitado 
+                            cometeu a seguinte falta disciplinar no dia <span className="font-bold underline decoration-dotted underline-offset-4">{formatSimpleDate(docFields.faltaDate)}</span>: <span className="font-bold uppercase">{docFields.falta || '___________________________________________________________________________________'}</span>, 
+                            sendo enquadrado no(s) item(ns) abaixo, conforme Apêndice I Regulamento Disciplinar das EECM-MT: 
+                            <span className="font-bold ml-1 uppercase">{docFields.itensEnquadramento || '_____________________________________________________'}</span>.
+                          </p>
+                        </div>
+
+                        {/* Circunstâncias */}
+                        <div className="space-y-4 mb-10 text-xs text-gray-900">
+                          <div className="space-y-1">
+                            <p className="font-bold">Circunstâncias atenuantes:</p>
+                            <p className="border-b border-gray-400 h-5 px-1 uppercase">{docFields.atenuantes}</p>
+                            <p className="border-b border-gray-400 h-5"></p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-bold">Circunstâncias agravantes:</p>
+                            <p className="border-b border-gray-400 h-5 px-1 uppercase">{docFields.agravantes}</p>
+                            <p className="border-b border-gray-400 h-5"></p>
+                          </div>
+                        </div>
+
+                        {/* Assinatura Gestor (Página 1) */}
+                        <div className="mt-16 mb-8 flex flex-col items-center">
+                          <div className="w-80 border-t border-black"></div>
+                          <p className="text-xs font-bold uppercase text-gray-900 mt-2">{docFields.gestorMilitar || 'Gestor Educacional Militar'}</p>
+                        </div>
+
+                        {/* Recebimento (Página 1) */}
+                        <div className="flex justify-between items-end text-xs text-gray-900 mt-12 mb-16">
+                          <p>
+                            Recebi 1ª via em ____/____/________
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-8 text-xs text-gray-900 mb-16 break-after-page">
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="mt-2 text-center">Nome completo do Responsável</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="mt-2 text-center">Assinatura do Responsável</p>
+                          </div>
+                        </div>
+
+                        {/* PAGE 2 */}
+                        <div className="pt-8">
+                          {/* Cabeçalho Anexo III p2 (opcional, PDF tem algo similar) */}
+                          <div className="text-right pr-4 mb-8">
+                            <p className="text-[11px] font-black text-black uppercase tracking-wider">Anexo III (Pág 2)</p>
+                          </div>
+
+                          <div className="space-y-6 text-xs text-gray-900">
+                            <div>
+                              <p className="font-bold uppercase mb-4">DEFESA DO RESPONSÁVEL OU DO ESTUDANTE (SE MAIOR DE IDADE)</p>
+                              <div className="space-y-6">
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                              </div>
+                            </div>
+                            
+                            <div className="text-center my-6">
+                              <p>__________________________________, ________de________________________de____________.</p>
+                            </div>
+
+                            <div className="space-y-2 mb-10">
+                              <div className="flex items-end">
+                                <span className="mr-2">Nome do Responsável ou do Estudante:</span>
+                                <span className="flex-1 border-b border-gray-400"></span>
+                              </div>
+                              <div className="flex items-end w-2/3">
+                                <span className="mr-2">RG:</span>
+                                <span className="flex-1 border-b border-gray-400"></span>
+                              </div>
+                              <div className="flex items-end w-2/3">
+                                <span className="mr-2">Telefone:</span>
+                                <span className="flex-1 border-b border-gray-400"></span>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-center mb-16">
+                              <div className="w-80 border-t border-black"></div>
+                              <p className="mt-2">Assinatura</p>
+                            </div>
+
+                            <div>
+                              <p className="font-bold uppercase mb-4">DESPACHO DO GESTOR COMPETENTE:</p>
+                              <div className="space-y-6">
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                                <div className="border-b border-gray-400 w-full h-4"></div>
+                              </div>
+                            </div>
+
+                            <div className="text-center my-8">
+                              <p>__________________________________, ________de________________________de____________.</p>
+                            </div>
+
+                            <div className="flex flex-col items-center mt-12 mb-8">
+                              <div className="w-80 border-t border-black"></div>
+                              <p className="mt-2">Gestor competente</p>
+                            </div>
+                          </div>
+                        </div>
+
                       </>
                     ) : (
                       <>
