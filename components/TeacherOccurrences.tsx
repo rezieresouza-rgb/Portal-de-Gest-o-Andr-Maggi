@@ -56,7 +56,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
       const { data, error } = await supabase
          .from('occurrences')
          .select('*')
-         .eq('responsible_name', user.name)
          .order('date', { ascending: false });
 
       if (error) {
