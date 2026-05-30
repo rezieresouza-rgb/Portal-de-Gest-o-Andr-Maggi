@@ -52,6 +52,8 @@ interface BehaviorOccurrence {
   date: string;
   observations: string;
   responsible: string;
+  disciplinaryMeasure?: string;
+  isEscalated?: boolean;
 }
 
 interface StudentBehaviorState {
@@ -146,7 +148,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     type: 'DEMERIT' as 'MERIT' | 'DEMERIT',
     category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
     date: new Date().toISOString().split('T')[0],
-    observations: ''
+    observations: '',
+    disciplinaryMeasure: 'Advertência Oral'
   });
 
   // Main lists loaded from LocalStorage
@@ -460,6 +463,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     { category: 'Atitude cívica exemplar comprovada', points: 0.3 }
   ];
 
+  const disciplinaryMeasuresList = [
+    'Advertência Oral',
+    'Advertência Escrita',
+    'Suspensão de Sala de Aula',
+    'Ações Educativas',
+    'Transferência Educativa',
+    'Estudo Orientado de Caráter Educativo'
+  ];
+
   const demeritOptions = [
     // Faltas Leves (1 a 26) - 0.2 pts
     { category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme', severity: 'LEVE', points: 0.2 },
@@ -611,14 +623,45 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     e.preventDefault();
     if (!selectedStudentState) return;
 
-    // Find points of category
     let points = 0.2;
+    let isEscalated = false;
+    let effectiveSeverity = 'LEVE';
+
     if (newOccurrence.type === 'MERIT') {
       const merit = meritOptions.find(o => o.category === newOccurrence.category);
       points = merit ? merit.points : 0.2;
     } else {
       const dem = demeritOptions.find(o => o.category === newOccurrence.category);
       points = dem ? dem.points : 0.2;
+      const originalSeverity = dem ? dem.severity : 'LEVE';
+
+      const prevLeves = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'LEVE').length;
+      const prevMediasBase = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'MÉDIA').length;
+      const prevEscalatedLeves = Math.floor(prevLeves / 3);
+      
+      effectiveSeverity = originalSeverity;
+
+      if (originalSeverity === 'LEVE') {
+         if ((prevLeves + 1) % 3 === 0) {
+             effectiveSeverity = 'MÉDIA';
+             isEscalated = true;
+         }
+      }
+
+      const totalMediasAntes = prevMediasBase + prevEscalatedLeves;
+      if (effectiveSeverity === 'MÉDIA') {
+         if ((totalMediasAntes + 1) % 2 === 0) {
+             effectiveSeverity = 'GRAVE';
+             isEscalated = true;
+         }
+      }
+
+      if (effectiveSeverity === 'MÉDIA') points = 0.5;
+      if (effectiveSeverity === 'GRAVE') points = 1.0;
+      
+      if (isEscalated) {
+          alert(`Atenção: Por reincidência, esta ocorrência foi agravada para Falta ${effectiveSeverity}! (Desconto de ${points.toFixed(1)} pts)`);
+      }
     }
 
     const occurrence: BehaviorOccurrence = {
@@ -628,7 +671,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       points,
       date: newOccurrence.date,
       observations: newOccurrence.observations,
-      responsible: user.name || 'Gestor'
+      responsible: user.name || 'Gestor',
+      disciplinaryMeasure: newOccurrence.type === 'DEMERIT' ? newOccurrence.disciplinaryMeasure : undefined,
+      isEscalated: isEscalated
     };
 
     // Calculate new score
@@ -657,7 +702,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       type: 'DEMERIT',
       category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
       date: new Date().toISOString().split('T')[0],
-      observations: ''
+      observations: '',
+      disciplinaryMeasure: 'Advertência Oral'
     });
   };
 
@@ -1519,7 +1565,28 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                               </button>
                             </td>
                             <td className="py-4 text-center font-bold text-slate-500">
-                              {student.occurrences.length}
+                              <div className="flex flex-col items-center gap-1.5">
+                                 <span className="text-xs">{student.occurrences.length}</span>
+                                 {student.occurrences.length > 0 && (
+                                   <div className="flex gap-1">
+                                      {(() => {
+                                        const leves = student.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'LEVE').length;
+                                        const medias = student.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'MÉDIA').length;
+                                        const graves = student.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'GRAVE').length;
+                                        const agravadas = student.occurrences.filter(o => o.isEscalated).length;
+                                        
+                                        return (
+                                           <>
+                                              {leves > 0 && <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[8px] rounded" title="Leves">L: {leves}</span>}
+                                              {medias > 0 && <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[8px] rounded" title="Médias">M: {medias}</span>}
+                                              {graves > 0 && <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[8px] rounded" title="Graves">G: {graves}</span>}
+                                              {agravadas > 0 && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[8px] rounded" title="Agravadas por Reincidência">⚡ {agravadas}</span>}
+                                           </>
+                                        );
+                                      })()}
+                                   </div>
+                                 )}
+                              </div>
                             </td>
                             <td className="py-4 text-center font-black text-slate-900 text-sm">
                               {student.score.toFixed(1)}
@@ -2449,6 +2516,23 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   />
                 </div>
 
+                {newOccurrence.type === 'DEMERIT' && (
+                  <div>
+                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Medida Disciplinar Aplicada</label>
+                    <select
+                      value={newOccurrence.disciplinaryMeasure || 'Advertência Oral'}
+                      onChange={e => setNewOccurrence(prev => ({ ...prev, disciplinaryMeasure: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                    >
+                      {disciplinaryMeasuresList.map(measure => (
+                        <option key={measure} value={measure}>
+                          {measure}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Detalhes / Observações</label>
                   <textarea
@@ -2495,6 +2579,20 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       </div>
                       <h5 className="text-[10px] font-black text-slate-800 uppercase">{occ.category}</h5>
                       <p className="text-[9px] text-slate-600 mt-1 italic">"{occ.observations}"</p>
+                      
+                      {occ.disciplinaryMeasure && (
+                        <div className="mt-2 bg-white/60 p-2 rounded border border-slate-100 flex items-center justify-between">
+                          <span className="text-[8px] font-black uppercase text-slate-500">Medida Aplicada:</span>
+                          <span className="text-[9px] font-bold text-indigo-700">{occ.disciplinaryMeasure}</span>
+                        </div>
+                      )}
+
+                      {occ.isEscalated && (
+                        <div className="mt-1 bg-red-100 text-red-700 px-2 py-1 rounded text-[8px] font-black uppercase inline-flex items-center gap-1">
+                           <AlertTriangle size={10} /> Agravada por Reincidência
+                        </div>
+                      )}
+
                       <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[8px] font-bold text-slate-500 uppercase">
                         <span>Monitor: {occ.responsible.split(' ')[0]}</span>
                         <button
