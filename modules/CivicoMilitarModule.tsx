@@ -142,7 +142,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       return d.template === 'ficha_medida_disciplinar' && new Date(d.date).getFullYear() === currentYear;
     });
     return `${(fichasThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
-  }, [docHistory, selectedDocTemplate]);
+  }, [selectedDocTemplate, docHistory]);
+
+  const nextTaceNumber = useMemo(() => {
+    if (selectedDocTemplate !== 'termo_adequacao_conduta') return '';
+    const currentYear = new Date().getFullYear();
+    const tacesThisYear = docHistory.filter(d => {
+      return d.template === 'termo_adequacao_conduta' && new Date(d.date).getFullYear() === currentYear;
+    });
+    return `${(tacesThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
+  }, [selectedDocTemplate, docHistory]);
 
   // Automatically infer Series/Year when a student is selected
   useEffect(() => {
@@ -981,6 +990,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         ...docFields,
         documentNumber: selectedDocTemplate === 'ficha_medida_disciplinar' 
           ? (docFields.documentNumber || nextFichaNumber) 
+          : selectedDocTemplate === 'termo_adequacao_conduta'
+          ? (docFields.documentNumber || nextTaceNumber)
           : docFields.documentNumber
       },
       timestamp: Date.now()
@@ -2120,6 +2131,18 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       {selectedDocTemplate === 'termo_adequacao_conduta' && (
                         <>
                           <div className="space-y-2">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase">Número do Documento</label>
+                            <input
+                              type="text"
+                              value={docFields.documentNumber}
+                              onChange={e => setDocFields(prev => ({ ...prev, documentNumber: e.target.value }))}
+                              placeholder={`Automático: ${nextTaceNumber}`}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                            />
+                            <p className="text-[9px] text-slate-400 italic mt-1">Deixe em branco para preenchimento automático.</p>
+                          </div>
+
+                          <div className="space-y-2">
                             <label className="text-[9px] font-bold text-slate-500 uppercase">Resumo do Fato Gerador (Achado)</label>
                             <textarea
                               value={docFields.achado}
@@ -2191,6 +2214,18 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     <div className="border-t border-slate-100 pt-5 space-y-4">
                       <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Dados da Ficha de Medida Disciplinar</h4>
                       
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Número do Documento</label>
+                        <input
+                          type="text"
+                          value={docFields.documentNumber}
+                          onChange={e => setDocFields(prev => ({ ...prev, documentNumber: e.target.value }))}
+                          placeholder={`Automático: ${nextFichaNumber}`}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                        />
+                        <p className="text-[9px] text-slate-400 italic mt-1">Deixe em branco para preenchimento automático.</p>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[9px] font-bold text-slate-500 uppercase">Data da Infração</label>
@@ -2570,7 +2605,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <div className="text-center my-6">
                           <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Termo de Adequação de Conduta Escolar (TACE)</h2>
                           <p className="text-[11px] font-bold text-gray-900 mt-2 uppercase leading-tight px-12">
-                            Nº {docFields.documentNumber || nextFichaNumber}, Celebrado entre a EECM André Antônio Maggi e o(s) responsável(eis) pelo(a) estudante {selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________'}, objetivando o cumprimento de obrigações.
+                            Nº {docFields.documentNumber || nextTaceNumber}, Celebrado entre a EECM André Antônio Maggi e o(s) responsável(eis) pelo(a) estudante {selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________'}, objetivando o cumprimento de obrigações.
                           </p>
                         </div>
 
