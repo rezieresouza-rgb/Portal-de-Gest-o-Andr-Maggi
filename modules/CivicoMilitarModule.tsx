@@ -25,6 +25,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
+import { supabase } from '../supabaseClient';
 import { User } from '../types';
 import CivicoMilitarReports from '../components/CivicoMilitarReports';
 
@@ -146,7 +147,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       }
       setDocFields(prev => ({
         ...prev,
-        series: prev.series || inferredSeries
+        series: prev.series || inferredSeries,
+        responsibleName: selectedStudentForDoc.NomeResponsavel || prev.responsibleName,
+        responsibleAddress: selectedStudentForDoc.TelefoneContato ? `(Tel: ${selectedStudentForDoc.TelefoneContato})` : prev.responsibleAddress
       }));
     }
   }, [selectedStudentForDoc]);
@@ -177,6 +180,41 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [inspections, setInspections] = useState<InspectionRecord[]>([]);
   const [routines, setRoutines] = useState<CivicRoutineRecord[]>([]);
   const [studentStates, setStudentStates] = useState<StudentBehaviorState[]>([]);
+  const [dbStudents, setDbStudents] = useState<any[]>(INITIAL_STUDENTS);
+
+  // Load students from Supabase
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('*, enrollments(status, classrooms(name, shift))');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const mapped = data.map((s: any) => {
+            const activeEnr = s.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO') || s.enrollments?.[0];
+            return {
+              CodigoAluno: s.registration_number,
+              Nome: s.name,
+              Turma: activeEnr?.classrooms?.name || 'SEM TURMA',
+              Turno: activeEnr?.classrooms?.shift || '---',
+              DataNascimento: s.birth_date,
+              PAED: s.paed ? 'Sim' : 'Não',
+              TransporteEscolar: s.school_transport ? 'Sim' : 'Não',
+              NomeResponsavel: s.guardian_name || '',
+              TelefoneContato: s.contact_phone || ''
+            };
+          });
+          setDbStudents(mapped);
+        }
+      } catch (err) {
+        console.error('Error fetching students:', err);
+      }
+    };
+    fetchStudents();
+  }, []);
 
   // Civic Routine Form Checklist State
   const [routineForm, setRoutineForm] = useState({
@@ -276,10 +314,26 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     try {
       const savedScores = localStorage.getItem('civico_militar_student_scores_v2');
       if (savedScores) {
-        setStudentStates(JSON.parse(savedScores));
+        // Check for new students in dbStudents that are not in savedScores
+        const saved = JSON.parse(savedScores) as StudentBehaviorState[];
+        const newStudents = dbStudents.filter(dbS => !saved.find(s => s.studentId === dbS.CodigoAluno));
+        if (newStudents.length > 0) {
+          const addedStates: StudentBehaviorState[] = newStudents.map(s => ({
+            studentId: s.CodigoAluno,
+            studentName: s.Nome,
+            className: s.Turma,
+            score: 8.0,
+            isClassLeader: false,
+            isCivicHighlight: false,
+            occurrences: []
+          }));
+          setStudentStates([...saved, ...addedStates]);
+        } else {
+          setStudentStates(saved);
+        }
       } else {
-        // Initialize behavior states for all INITIAL_STUDENTS
-        const initialStates: StudentBehaviorState[] = INITIAL_STUDENTS.map((s, idx) => ({
+        // Initialize behavior states for all dbStudents
+        const initialStates: StudentBehaviorState[] = dbStudents.map((s, idx) => ({
           studentId: s.CodigoAluno,
           studentName: s.Nome,
           className: s.Turma,
@@ -406,9 +460,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   // Classes list
   const classesList = useMemo(() => {
-    const classesSet = new Set(INITIAL_STUDENTS.map(s => s.Turma));
-    return Array.from(classesSet).sort();
-  }, []);
+    const classesSet = new Set(dbStudents.map(s => s.Turma));
+    return Array.from(classesSet).filter(c => c && c !== 'SEM TURMA').sort();
+  }, [dbStudents]);
 
   // Filtered Students for behavior management
   const filteredStudents = useMemo(() => {
@@ -423,11 +477,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   // Filtered Students for document auto-complete
   const docFilteredStudents = useMemo(() => {
     if (!docSearchTerm.trim()) return [];
-    return INITIAL_STUDENTS.filter(s =>
+    return dbStudents.filter(s =>
       s.Nome.toLowerCase().includes(docSearchTerm.toLowerCase()) ||
       s.CodigoAluno.includes(docSearchTerm)
     ).slice(0, 5);
-  }, [docSearchTerm]);
+  }, [docSearchTerm, dbStudents]);
 
   // Date formatter helper
   const formatDocDate = (dateStr: string) => {
@@ -605,7 +659,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     e.preventDefault();
     if (!newInspection.studentId) return;
 
-    const studentObj = INITIAL_STUDENTS.find(s => s.CodigoAluno === newInspection.studentId);
+    const studentObj = dbStudents.find(s => s.CodigoAluno === newInspection.studentId);
     if (!studentObj) return;
 
     const record: InspectionRecord = {
@@ -912,7 +966,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const handleLoadDocFromHistory = (record: any) => {
     setSelectedDocTemplate(record.template);
-    const student = INITIAL_STUDENTS.find(s => s.CodigoAluno === record.studentId) || {
+    const student = dbStudents.find(s => s.CodigoAluno === record.studentId) || {
       Nome: record.studentName,
       Turma: record.className,
       Turno: record.shiftName,
@@ -2665,19 +2719,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <form onSubmit={handleAddInspection} className="space-y-5">
               <div>
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Aluno</label>
-                <select
-                  value={newInspection.studentId}
-                  onChange={e => setNewInspection(prev => ({ ...prev, studentId: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                  required
-                >
-                  <option value="">Selecionar Aluno...</option>
-                  {INITIAL_STUDENTS.map(s => (
-                    <option key={s.CodigoAluno} value={s.CodigoAluno}>
-                      {s.Nome} ({s.Turma})
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <select
+                    value={newInspection.studentId}
+                    onChange={e => setNewInspection(prev => ({ ...prev, studentId: e.target.value }))}
+                    className="w-full pl-10 pr-3 bg-slate-50 border border-slate-200 rounded-xl py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                    required
+                  >
+                    <option value="">Selecionar Aluno...</option>
+                    {dbStudents.map(s => (
+                      <option key={s.CodigoAluno} value={s.CodigoAluno}>
+                        {s.Nome} ({s.Turma})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
