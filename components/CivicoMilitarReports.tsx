@@ -54,6 +54,7 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
     const infractionCounts: Record<string, number> = {};
     const classCounts: Record<string, number> = {};
     const studentCounts: Record<string, { name: string, className: string, count: number }> = {};
+    const meritStudentCounts: Record<string, { name: string, className: string, count: number }> = {};
     
     // For timeline (last 7 data points based on period)
     const timelineDataMap: Record<string, { date: string, demeritos: number, meritos: number }> = {};
@@ -84,6 +85,10 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
         if (occ.type === 'MERIT') {
           totalMerits++;
           timelineDataMap[dateKey].meritos++;
+          if (!meritStudentCounts[student.studentId]) {
+            meritStudentCounts[student.studentId] = { name: student.studentName, className: student.className, count: 0 };
+          }
+          meritStudentCounts[student.studentId].count++;
         } else {
           totalDemerits++;
           timelineDataMap[dateKey].demeritos++;
@@ -115,6 +120,10 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    const topMeritStudents = Object.values(meritStudentCounts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
     const severityPie = [
       { name: 'Faltas Leves', value: severityCount.LEVE, color: COLORS.LEVE },
       { name: 'Faltas Médias', value: severityCount.MÉDIA, color: COLORS.MÉDIA },
@@ -133,6 +142,7 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
       topInfractions,
       topClasses,
       topStudents,
+      topMeritStudents,
       severityPie,
       timelineData
     };
@@ -262,7 +272,7 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
       </div>
 
       {/* Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Infractions */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-6 flex items-center gap-2">
@@ -325,6 +335,30 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
                 </div>
               </div>
             )) : <p className="text-xs text-slate-400 font-bold uppercase text-center py-10">Nenhuma turma</p>}
+          </div>
+        </div>
+
+        {/* Top Merits */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-6 flex items-center gap-2">
+            <Award size={18} className="text-emerald-500" /> Alunos Destaque (Elogios)
+          </h3>
+          <div className="space-y-4">
+            {filteredData.topMeritStudents.length > 0 ? filteredData.topMeritStudents.map((item, idx) => (
+              <div key={idx} className="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100 relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-[10px]">{idx + 1}º</div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-900 uppercase truncate max-w-[140px]">{item.name}</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase">{item.className}</p>
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white border border-emerald-100 flex items-center justify-center font-black text-emerald-600 shrink-0">
+                  {item.count}
+                </div>
+              </div>
+            )) : <p className="text-xs text-slate-400 font-bold uppercase text-center py-10">Nenhum aluno com méritos</p>}
           </div>
         </div>
 
