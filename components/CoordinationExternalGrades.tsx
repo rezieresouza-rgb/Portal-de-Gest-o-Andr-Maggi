@@ -16,7 +16,10 @@ import {
    Loader2,
    X,
    BrainCircuit,
-   Lightbulb
+   Lightbulb,
+   Save,
+   Check,
+   RefreshCw
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { Assessment, StudentGrade } from '../types';
