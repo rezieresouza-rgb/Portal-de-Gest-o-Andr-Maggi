@@ -375,3 +375,18 @@ export interface PreventiveMaintenanceItem {
   cost?: number;
   observations?: string;
 }
+
+export interface ActionPlanTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface ActionPlan {
+  id: string;
+  assessment_id: string;
+  diagnosis: string;
+  skills_to_reinforce: string;
+  tasks: ActionPlanTask[];
+  created_at: string;
+}

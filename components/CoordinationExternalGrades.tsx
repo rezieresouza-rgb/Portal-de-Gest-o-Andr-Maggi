@@ -421,10 +421,25 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    };
 
    // AI Handler
-   const handleGenerateAIReport = async (assessment: Assessment) => {
+   const handleGenerateAIReport = async (assessment: Assessment, forceRegenerate: boolean = false) => {
       setSelectedAssessmentForAI(assessment);
       setLoadingAI(true);
       setAiReport(null);
+
+      if (!forceRegenerate) {
+         // Check for existing plan
+         const { data: existingPlan } = await supabase
+            .from('action_plans')
+            .select('*')
+            .eq('assessment_id', assessment.id)
+            .single();
+            
+         if (existingPlan) {
+            setAiReport(existingPlan);
+            setLoadingAI(false);
+            return;
+         }
+      }
 
       const avg = assessment.grades.reduce((acc, g) => acc + g.score, 0) / (assessment.grades.length || 1);
       const lowPerformers = assessment.grades
@@ -456,6 +471,51 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
       const result = await generatePedagogicalIntervention(payload);
       setAiReport(result);
       setLoadingAI(false);
+   };
+
+   const handleSaveActionPlan = async () => {
+      if (!selectedAssessmentForAI || !aiReport) return;
+      
+      const planTasks = aiReport.actions.map((action: string) => ({
+         id: crypto.randomUUID(),
+         title: action,
+         completed: false
+      }));
+
+      const { data, error } = await supabase.from('action_plans').insert({
+         assessment_id: selectedAssessmentForAI.id,
+         diagnosis: aiReport.diagnosis,
+         skills_to_reinforce: aiReport.skillsToReinforce || aiReport.skills_to_reinforce || '',
+         tasks: planTasks
+      }).select().single();
+
+      if (error) {
+         addToast("Erro ao salvar o plano de ação.", "error");
+         console.error(error);
+      } else if (data) {
+         setAiReport(data);
+         addToast("Plano de Ação salvo com sucesso!", "success");
+      }
+   };
+
+   const handleToggleTask = async (taskId: string) => {
+      if (!aiReport || !aiReport.id) return;
+
+      const newTasks = aiReport.tasks.map((t: any) => 
+         t.id === taskId ? { ...t, completed: !t.completed } : t
+      );
+      
+      // Update UI optimistically
+      setAiReport({ ...aiReport, tasks: newTasks });
+      
+      const { error } = await supabase
+         .from('action_plans')
+         .update({ tasks: newTasks })
+         .eq('id', aiReport.id);
+         
+      if (error) {
+         addToast("Erro ao atualizar a tarefa.", "error");
+      }
    };
 
    return (
@@ -729,7 +789,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <button onClick={() => setSelectedAssessmentForAI(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
                   </div>
 
-                  <div className="p-10 overflow-y-auto custom-scrollbar space-y-8 flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
+                  <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
                      {loadingAI ? (
                         <div className="py-20 flex flex-col items-center justify-center text-center space-y-6">
                            <Loader2 size={48} className="animate-spin text-violet-500" />
