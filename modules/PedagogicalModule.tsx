@@ -63,6 +63,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules' | 'class_council'>('dashboard');
 
+  const [riskFilter, setRiskFilter] = useState<'ALL' | 'GRADES' | 'ATTENDANCE'>('ALL');
+
   const [filterTurma, setFilterTurma] = useState<string>('');
   const [filterStudent, setFilterStudent] = useState<string>('');
   const [filterSubject, setFilterSubject] = useState<string>('');
@@ -621,9 +623,15 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
               </div>
             </div>
 
+            <div className="flex gap-2 border-b border-white/10 pb-6 overflow-x-auto no-scrollbar">
+              <button onClick={() => setRiskFilter('ALL')} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${riskFilter === 'ALL' ? 'bg-white/10 text-white border border-white/20' : 'text-white/40 hover:bg-white/5 hover:text-white/80'}`}>Todas as Situações</button>
+              <button onClick={() => setRiskFilter('ATTENDANCE')} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${riskFilter === 'ATTENDANCE' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-orange-400/40 hover:bg-orange-500/10 hover:text-orange-400'}`}>Infrequência (&lt; 85%)</button>
+              <button onClick={() => setRiskFilter('GRADES')} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${riskFilter === 'GRADES' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-red-400/40 hover:bg-red-500/10 hover:text-red-400'}`}>Notas Críticas (&lt; 6.0)</button>
+            </div>
+
             <div className="grid grid-cols-1 gap-6">
               {/* 1. ATTENDANCE RISK SECTION */}
-              {performanceStats.totalHighAbsence > 0 && (
+              {(riskFilter === 'ALL' || riskFilter === 'ATTENDANCE') && performanceStats.totalHighAbsence > 0 && (
                 <div className="bg-white/5 p-8 rounded-[2.5rem] border border-orange-500/20 shadow-xl backdrop-blur-md relative overflow-hidden">
                   <div className="flex items-center gap-4 mb-6 relative z-10">
                     <div className="p-3 bg-orange-500/10 text-orange-400 rounded-2xl border border-orange-500/20"><UserX size={24} /></div>
@@ -664,7 +672,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
               )}
 
               {/* 2. GRADE RISK SECTION */}
-              <div className="bg-white/5 p-8 rounded-[2.5rem] border border-red-500/20 shadow-xl backdrop-blur-md">
+              {(riskFilter === 'ALL' || riskFilter === 'GRADES') && performanceStats.totalBelowAverage > 0 && (
+                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-red-500/20 shadow-xl backdrop-blur-md">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-3 bg-red-500/10 text-red-400 rounded-2xl border border-red-500/20"><TrendingUp size={24} /></div>
                   <h4 className="text-lg font-black text-white uppercase">Alerta de Desempenho (Notas &lt; 6.0)</h4>
@@ -708,6 +717,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                   })}
                 </div>
               </div>
+              )}
 
               {/* 3. ACTIVE INTERVENTIONS SECTION */}
               {interventions.length > 0 && (
