@@ -21,6 +21,7 @@ import {
 import { useToast } from './Toast';
 import { Assessment, StudentGrade } from '../types';
 import { extractAssessmentResults, generatePedagogicalIntervention } from '../geminiService';
+import Habilidades6Ano from '../data/habilidades_6ano.json';
 import { supabase } from '../supabaseClient';
 import {
    BarChart,
@@ -433,8 +434,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
       let skillsData = null;
       try {
          if (assessment.className.includes('6º') || assessment.className.includes('6')) {
-            const Habilidades6Ano = await import('../data/habilidades_6ano.json');
-            skillsData = Habilidades6Ano.default.filter((h: any) => h.disciplina.toUpperCase() === assessment.subject.toUpperCase());
+            skillsData = Habilidades6Ano.filter((h: any) => h.disciplina.toUpperCase() === assessment.subject.toUpperCase());
          }
       } catch (err) {
          console.warn("Habilidades não encontradas localmente para esta turma.", err);
