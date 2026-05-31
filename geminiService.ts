@@ -602,7 +602,7 @@ export const generatePedagogicalIntervention = async (assessmentData: any) => {
   const ai = getAIClient();
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: `Você é um especialista em educação e análise de dados pedagógicos (CAED/Sistema Estruturado).
       
       Analise os resultados desta avaliação externa:
