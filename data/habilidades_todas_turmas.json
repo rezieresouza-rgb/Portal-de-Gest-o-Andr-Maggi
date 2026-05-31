@@ -1,618 +1,4198 @@
 {
   "6º ANO D": {
-    "LÍNGUA PORTUGUESA": [
-      {
-        "codigo": "EF06LP04MT0261",
-        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
-        "rendimento": 55,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF06LP06MT0161",
-        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
-        "rendimento": 48,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF67LP28MT0161",
-        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
-        "rendimento": 76,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF67LP28MT0561",
-        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
-        "rendimento": 28,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF67LP28MT0661",
-        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
-        "rendimento": 31,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF69LP47MT0161",
-        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
-        "rendimento": 10,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 29
+    "LÍNGUA PORTUGUESA": {
+      "habilidades": [
+        {
+          "codigo": "EF06LP04MT0261",
+          "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+          "rendimento": 55,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF06LP06MT0161",
+          "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+          "rendimento": 48,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF67LP28MT0161",
+          "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+          "rendimento": 76,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF67LP28MT0561",
+          "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+          "rendimento": 28,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF67LP28MT0661",
+          "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+          "rendimento": 31,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF69LP47MT0161",
+          "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+          "rendimento": 10,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 29
+        }
+      ],
+      "alunos": {
+        "ADRIEL COSTA GONCALO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "AKEMILLY MARIA BALDAIA PAIM": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "ALLISON VICTOR DOS SANTOS PORTO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "ARTHUR DE LIMA SANCHES": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "DAVY HENRIQUE BACHIEGA COSTA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "ELOIZA DE SOUZA DIAS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "ENZO VINICIOS ALMONDES DE LIMA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "ESTER SANTANA RODRIGUES SANTOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "FELIPE GERMANO BENTO DA SILVA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "GABRIELI MARTINS LIMA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "GABRIELLY CORREIA DOS SANTOS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "GABRIEL PLACEDINO TREVIZAN": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "GUSTTAVO HENRIQUE DA COSTA SOUZA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "HENRRY GABRIEL CARDOSO DORIA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "HIAGO BRUNO ARAUJO DE ALMEIDA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "HIAXLLEY VICTOR PAULINO BISPO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JEAN PAULO SOARES DE OLIVEIRA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "JEFERSON TARIFA DOS SANTOS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "JOAO MIGUEL JESUS ARAUJO THOME": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JOAO VITOR DOS SANTOS MATEUS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "JORGE HENRIQUE PEREIRA DE AZEVEDO": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JOYCE DE JESUS DOS SANTOS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "LORANE DA SILVA BEZERRA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "MARIANA BENICIO COSTA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "MATHEUS DE SOUZA FRANCA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "PAOLLA LIMA DA SILVA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "SAMUEL LEANDRO DO VALE": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "TAKAKPYNEITI KABRAL METUKTIRE": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "YAN SILVA NUNES": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        }
       }
-    ],
-    "ARTE": [
-      {
-        "codigo": "EF69AR01MT0161",
-        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
-        "rendimento": 55,
-        "disciplina": "ARTE",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF69AR03MT0161",
-        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
-        "rendimento": 41,
-        "disciplina": "ARTE",
-        "questoes": 29
+    },
+    "ARTE": {
+      "habilidades": [
+        {
+          "codigo": "EF69AR01MT0161",
+          "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+          "rendimento": 55,
+          "disciplina": "ARTE",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF69AR03MT0161",
+          "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+          "rendimento": 41,
+          "disciplina": "ARTE",
+          "questoes": 29
+        }
+      ],
+      "alunos": {
+        "ADRIEL COSTA GONCALO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "AKEMILLY MARIA BALDAIA PAIM": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "ALLISON VICTOR DOS SANTOS PORTO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "ARTHUR DE LIMA SANCHES": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "DAVY HENRIQUE BACHIEGA COSTA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "ELOIZA DE SOUZA DIAS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "ENZO VINICIOS ALMONDES DE LIMA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "ESTER SANTANA RODRIGUES SANTOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "FELIPE GERMANO BENTO DA SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GABRIELI MARTINS LIMA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "GABRIELLY CORREIA DOS SANTOS": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GABRIEL PLACEDINO TREVIZAN": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GUSTTAVO HENRIQUE DA COSTA SOUZA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "HENRRY GABRIEL CARDOSO DORIA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "HIAGO BRUNO ARAUJO DE ALMEIDA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "HIAXLLEY VICTOR PAULINO BISPO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "JEAN PAULO SOARES DE OLIVEIRA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "JEFERSON TARIFA DOS SANTOS": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "JOAO MIGUEL JESUS ARAUJO THOME": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "JOAO VITOR DOS SANTOS MATEUS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "JORGE HENRIQUE PEREIRA DE AZEVEDO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "JOYCE DE JESUS DOS SANTOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "LORANE DA SILVA BEZERRA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "MARIANA BENICIO COSTA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "MATHEUS DE SOUZA FRANCA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "PAOLLA LIMA DA SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "SAMUEL LEANDRO DO VALE": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "TAKAKPYNEITI KABRAL METUKTIRE": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "YAN SILVA NUNES": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        }
       }
-    ],
-    "GEOGRAFIA": [
-      {
-        "codigo": "EF06GE01MT2",
-        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
-        "rendimento": 72,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF06GE09MT1",
-        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
-        "rendimento": 28,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 29
+    },
+    "GEOGRAFIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06GE01MT2",
+          "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+          "rendimento": 72,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF06GE09MT1",
+          "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+          "rendimento": 28,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 29
+        }
+      ],
+      "alunos": {
+        "ADRIEL COSTA GONCALO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "AKEMILLY MARIA BALDAIA PAIM": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": true
+        },
+        "ALLISON VICTOR DOS SANTOS PORTO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "ARTHUR DE LIMA SANCHES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "DAVY HENRIQUE BACHIEGA COSTA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "ELOIZA DE SOUZA DIAS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "ENZO VINICIOS ALMONDES DE LIMA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "ESTER SANTANA RODRIGUES SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "FELIPE GERMANO BENTO DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "GABRIELI MARTINS LIMA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "GABRIELLY CORREIA DOS SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "GABRIEL PLACEDINO TREVIZAN": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "GUSTTAVO HENRIQUE DA COSTA SOUZA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "HENRRY GABRIEL CARDOSO DORIA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "HIAGO BRUNO ARAUJO DE ALMEIDA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": true
+        },
+        "HIAXLLEY VICTOR PAULINO BISPO": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "JEAN PAULO SOARES DE OLIVEIRA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "JEFERSON TARIFA DOS SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAO MIGUEL JESUS ARAUJO THOME": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAO VITOR DOS SANTOS MATEUS": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "JORGE HENRIQUE PEREIRA DE AZEVEDO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOYCE DE JESUS DOS SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "LORANE DA SILVA BEZERRA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "MARIANA BENICIO COSTA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "MATHEUS DE SOUZA FRANCA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "PAOLLA LIMA DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "SAMUEL LEANDRO DO VALE": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "TAKAKPYNEITI KABRAL METUKTIRE": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "YAN SILVA NUNES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        }
       }
-    ],
-    "HISTÓRIA": [
-      {
-        "codigo": "EF06HI03MT1",
-        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
-        "rendimento": 76,
-        "disciplina": "HISTÓRIA",
-        "questoes": 29
-      },
-      {
-        "codigo": "EF06HI06MT1",
-        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
-        "rendimento": 34,
-        "disciplina": "HISTÓRIA",
-        "questoes": 29
+    },
+    "HISTÓRIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06HI03MT1",
+          "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+          "rendimento": 76,
+          "disciplina": "HISTÓRIA",
+          "questoes": 29
+        },
+        {
+          "codigo": "EF06HI06MT1",
+          "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+          "rendimento": 34,
+          "disciplina": "HISTÓRIA",
+          "questoes": 29
+        }
+      ],
+      "alunos": {
+        "ADRIEL COSTA GONCALO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "AKEMILLY MARIA BALDAIA PAIM": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "ALLISON VICTOR DOS SANTOS PORTO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "ARTHUR DE LIMA SANCHES": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "DAVY HENRIQUE BACHIEGA COSTA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "ELOIZA DE SOUZA DIAS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "ENZO VINICIOS ALMONDES DE LIMA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "ESTER SANTANA RODRIGUES SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "FELIPE GERMANO BENTO DA SILVA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "GABRIELI MARTINS LIMA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "GABRIELLY CORREIA DOS SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "GABRIEL PLACEDINO TREVIZAN": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "GUSTTAVO HENRIQUE DA COSTA SOUZA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "HENRRY GABRIEL CARDOSO DORIA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "HIAGO BRUNO ARAUJO DE ALMEIDA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "HIAXLLEY VICTOR PAULINO BISPO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "JEAN PAULO SOARES DE OLIVEIRA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "JEFERSON TARIFA DOS SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "JOAO MIGUEL JESUS ARAUJO THOME": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "JOAO VITOR DOS SANTOS MATEUS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "JORGE HENRIQUE PEREIRA DE AZEVEDO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "JOYCE DE JESUS DOS SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "LORANE DA SILVA BEZERRA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "MARIANA BENICIO COSTA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "MATHEUS DE SOUZA FRANCA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "PAOLLA LIMA DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "SAMUEL LEANDRO DO VALE": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "TAKAKPYNEITI KABRAL METUKTIRE": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "YAN SILVA NUNES": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        }
       }
-    ],
-    "MATEMÁTICA": [
-      {
-        "codigo": "EF06MA03MT01",
-        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
-        "rendimento": 54,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 26
-      },
-      {
-        "codigo": "EF06MA03MT02",
-        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
-        "rendimento": 50,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 26
-      },
-      {
-        "codigo": "EF06MA17MT01",
-        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
-        "rendimento": 35,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 26
-      },
-      {
-        "codigo": "EF06MA17MT02",
-        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
-        "rendimento": 50,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 26
-      },
-      {
-        "codigo": "EF06MA19MT01",
-        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
-        "rendimento": 62,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 26
-      },
-      {
-        "codigo": "EF06MA20MT01",
-        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
-        "rendimento": 38,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 26
+    },
+    "MATEMÁTICA": {
+      "habilidades": [
+        {
+          "codigo": "EF06MA03MT01",
+          "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+          "rendimento": 54,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 26
+        },
+        {
+          "codigo": "EF06MA03MT02",
+          "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+          "rendimento": 50,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 26
+        },
+        {
+          "codigo": "EF06MA17MT01",
+          "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+          "rendimento": 35,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 26
+        },
+        {
+          "codigo": "EF06MA17MT02",
+          "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+          "rendimento": 50,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 26
+        },
+        {
+          "codigo": "EF06MA19MT01",
+          "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+          "rendimento": 62,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 26
+        },
+        {
+          "codigo": "EF06MA20MT01",
+          "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+          "rendimento": 38,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 26
+        }
+      ],
+      "alunos": {
+        "ADRIEL COSTA GONCALO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "ARTHUR DE LIMA SANCHES": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "DAVY HENRIQUE BACHIEGA COSTA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "ELOIZA DE SOUZA DIAS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "ENZO VINICIOS ALMONDES DE LIMA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "ESTER SANTANA RODRIGUES SANTOS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "FELIPE GERMANO BENTO DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "GABRIELI MARTINS LIMA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "GABRIELLY CORREIA DOS SANTOS": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "GABRIEL PLACEDINO TREVIZAN": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "GUSTTAVO HENRIQUE DA COSTA SOUZA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "HENRRY GABRIEL CARDOSO DORIA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "HIAGO BRUNO ARAUJO DE ALMEIDA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "HIAXLLEY VICTOR PAULINO BISPO": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "JEAN PAULO SOARES DE OLIVEIRA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "JEFERSON TARIFA DOS SANTOS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "JOAO MIGUEL JESUS ARAUJO THOME": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "JOAO VITOR DOS SANTOS MATEUS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "JORGE HENRIQUE PEREIRA DE AZEVEDO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "JOYCE DE JESUS DOS SANTOS": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "LORANE DA SILVA BEZERRA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "MATHEUS DE SOUZA FRANCA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "PAOLLA LIMA DA SILVA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "SAMUEL LEANDRO DO VALE": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "TAKAKPYNEITI KABRAL METUKTIRE": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "YAN SILVA NUNES": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        }
       }
-    ],
-    "CIÊNCIAS": [
-      {
-        "codigo": "EF06CI11MT04",
-        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
-        "rendimento": 27,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 26
-      },
-      {
-        "codigo": "EF06CI12MT01",
-        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
-        "rendimento": 27,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 26
+    },
+    "CIÊNCIAS": {
+      "habilidades": [
+        {
+          "codigo": "EF06CI11MT04",
+          "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+          "rendimento": 27,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 26
+        },
+        {
+          "codigo": "EF06CI12MT01",
+          "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+          "rendimento": 27,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 26
+        }
+      ],
+      "alunos": {
+        "ADRIEL COSTA GONCALO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "ARTHUR DE LIMA SANCHES": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "DAVY HENRIQUE BACHIEGA COSTA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "ELOIZA DE SOUZA DIAS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "ENZO VINICIOS ALMONDES DE LIMA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "ESTER SANTANA RODRIGUES SANTOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "FELIPE GERMANO BENTO DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "GABRIELI MARTINS LIMA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "GABRIELLY CORREIA DOS SANTOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "GABRIEL PLACEDINO TREVIZAN": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "GUSTTAVO HENRIQUE DA COSTA SOUZA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "HENRRY GABRIEL CARDOSO DORIA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "HIAGO BRUNO ARAUJO DE ALMEIDA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "HIAXLLEY VICTOR PAULINO BISPO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "JEAN PAULO SOARES DE OLIVEIRA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "JEFERSON TARIFA DOS SANTOS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "JOAO MIGUEL JESUS ARAUJO THOME": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "JOAO VITOR DOS SANTOS MATEUS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "JORGE HENRIQUE PEREIRA DE AZEVEDO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "JOYCE DE JESUS DOS SANTOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "LORANE DA SILVA BEZERRA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "MATHEUS DE SOUZA FRANCA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "PAOLLA LIMA DA SILVA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "SAMUEL LEANDRO DO VALE": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "TAKAKPYNEITI KABRAL METUKTIRE": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "YAN SILVA NUNES": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        }
       }
-    ]
+    }
   },
   "6º ANO E": {
-    "LÍNGUA PORTUGUESA": [
-      {
-        "codigo": "EF06LP04MT0261",
-        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
-        "rendimento": 26,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06LP06MT0161",
-        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
-        "rendimento": 52,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0161",
-        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
-        "rendimento": 70,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0561",
-        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
-        "rendimento": 30,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0661",
-        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
-        "rendimento": 44,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF69LP47MT0161",
-        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
-        "rendimento": 19,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
+    "LÍNGUA PORTUGUESA": {
+      "habilidades": [
+        {
+          "codigo": "EF06LP04MT0261",
+          "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+          "rendimento": 26,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06LP06MT0161",
+          "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+          "rendimento": 52,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0161",
+          "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+          "rendimento": 70,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0561",
+          "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+          "rendimento": 30,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0661",
+          "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+          "rendimento": 44,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF69LP47MT0161",
+          "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+          "rendimento": 19,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ADRYAN SOUSA DOS ANJOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "ANA CLARA DE OLIVEIRA ANDRADE": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "ELOISA MOREIRA DONATO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "EMILY VITORIA DE ALMEIDA FAUSTINO": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "GABRIELA HENRIQUE GIZONI DA SILVA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "GREG NAUAN DO AMARAL": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "GUILHERME DOS SANTOS AMORIM": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "GUILHERME HENRIQ MOREIRA DA SILVA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "HESTER BEATRIZ DOS SANTOS MARTIRIO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "JOAO LUIZ MESQUITA SILVA DOS SANTOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "JOAO PEDRO FERMINO DA SILVA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JOAQUIM LEITE MARCHIORO": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JOSE EDUARDO DOURADO DE ARAUJO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "KHYMBERLLY KLERYS VAZ DE OLIVEIRA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "KOKOIREJ MARIZA METUKTIRE": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "LUIZ MIGUEL CHAVES MENDONCA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "MARYA CLARA FERREIRA DOS SANTOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "MIKAELLY CRISTINA FERREIRA DOS SANTOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "NICOLAS JOSE PEREIRA VIANA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "RAYQUE VITOR DOS SANTOS RODRIGUES": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "ROSE EMANUELLY ALMEIDA AGUIAR": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "RUTE DOS SANTOS MAGIOLO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "SAMUEL UES FERREIRA DA SILVA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "VICTOR JOAQUIM MARQUES MADEIRA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "WIDYNEI HENRIQUE DOS SANTOS CORREA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "YASMIN MARIA VITORIA NASCIMENTO DA SILVA PEDROSO": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "YAYCKE ARISTIDES DO NASCIMENTO JURUNA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        }
       }
-    ],
-    "ARTE": [
-      {
-        "codigo": "EF69AR01MT0161",
-        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
-        "rendimento": 63,
-        "disciplina": "ARTE",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF69AR03MT0161",
-        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
-        "rendimento": 30,
-        "disciplina": "ARTE",
-        "questoes": 27
+    },
+    "ARTE": {
+      "habilidades": [
+        {
+          "codigo": "EF69AR01MT0161",
+          "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+          "rendimento": 63,
+          "disciplina": "ARTE",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF69AR03MT0161",
+          "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+          "rendimento": 30,
+          "disciplina": "ARTE",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ADRYAN SOUSA DOS ANJOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "ANA CLARA DE OLIVEIRA ANDRADE": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "ELOISA MOREIRA DONATO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "EMILY VITORIA DE ALMEIDA FAUSTINO": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "GABRIELA HENRIQUE GIZONI DA SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GREG NAUAN DO AMARAL": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GUILHERME DOS SANTOS AMORIM": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GUILHERME HENRIQ MOREIRA DA SILVA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "HESTER BEATRIZ DOS SANTOS MARTIRIO": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "JOAO LUIZ MESQUITA SILVA DOS SANTOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "JOAO PEDRO FERMINO DA SILVA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "JOAQUIM LEITE MARCHIORO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "JOSE EDUARDO DOURADO DE ARAUJO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "KHYMBERLLY KLERYS VAZ DE OLIVEIRA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "KOKOIREJ MARIZA METUKTIRE": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "LUIZ MIGUEL CHAVES MENDONCA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "MARYA CLARA FERREIRA DOS SANTOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "MIKAELLY CRISTINA FERREIRA DOS SANTOS": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "NICOLAS JOSE PEREIRA VIANA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "RAYQUE VITOR DOS SANTOS RODRIGUES": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "ROSE EMANUELLY ALMEIDA AGUIAR": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "RUTE DOS SANTOS MAGIOLO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "SAMUEL UES FERREIRA DA SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "VICTOR JOAQUIM MARQUES MADEIRA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "WIDYNEI HENRIQUE DOS SANTOS CORREA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "YASMIN MARIA VITORIA NASCIMENTO DA SILVA PEDROSO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "YAYCKE ARISTIDES DO NASCIMENTO JURUNA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        }
       }
-    ],
-    "GEOGRAFIA": [
-      {
-        "codigo": "EF06GE01MT2",
-        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
-        "rendimento": 74,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06GE09MT1",
-        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
-        "rendimento": 11,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 27
+    },
+    "GEOGRAFIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06GE01MT2",
+          "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+          "rendimento": 74,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06GE09MT1",
+          "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+          "rendimento": 11,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ADRYAN SOUSA DOS ANJOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "ANA CLARA DE OLIVEIRA ANDRADE": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "ELOISA MOREIRA DONATO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "EMILY VITORIA DE ALMEIDA FAUSTINO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "GABRIELA HENRIQUE GIZONI DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "GREG NAUAN DO AMARAL": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "GUILHERME DOS SANTOS AMORIM": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "GUILHERME HENRIQ MOREIRA DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "HESTER BEATRIZ DOS SANTOS MARTIRIO": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "JOAO LUIZ MESQUITA SILVA DOS SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAO PEDRO FERMINO DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAQUIM LEITE MARCHIORO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOSE EDUARDO DOURADO DE ARAUJO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "KHYMBERLLY KLERYS VAZ DE OLIVEIRA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "KOKOIREJ MARIZA METUKTIRE": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "LUIZ MIGUEL CHAVES MENDONCA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "MARYA CLARA FERREIRA DOS SANTOS": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "MIKAELLY CRISTINA FERREIRA DOS SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "NICOLAS JOSE PEREIRA VIANA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "RAYQUE VITOR DOS SANTOS RODRIGUES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "ROSE EMANUELLY ALMEIDA AGUIAR": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "RUTE DOS SANTOS MAGIOLO": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "SAMUEL UES FERREIRA DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "VICTOR JOAQUIM MARQUES MADEIRA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "WIDYNEI HENRIQUE DOS SANTOS CORREA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "YASMIN MARIA VITORIA NASCIMENTO DA SILVA PEDROSO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "YAYCKE ARISTIDES DO NASCIMENTO JURUNA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        }
       }
-    ],
-    "HISTÓRIA": [
-      {
-        "codigo": "EF06HI03MT1",
-        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
-        "rendimento": 41,
-        "disciplina": "HISTÓRIA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06HI06MT1",
-        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
-        "rendimento": 26,
-        "disciplina": "HISTÓRIA",
-        "questoes": 27
+    },
+    "HISTÓRIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06HI03MT1",
+          "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+          "rendimento": 41,
+          "disciplina": "HISTÓRIA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06HI06MT1",
+          "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+          "rendimento": 26,
+          "disciplina": "HISTÓRIA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ADRYAN SOUSA DOS ANJOS": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "ANA CLARA DE OLIVEIRA ANDRADE": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "ELOISA MOREIRA DONATO": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "EMILY VITORIA DE ALMEIDA FAUSTINO": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "GABRIELA HENRIQUE GIZONI DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "GREG NAUAN DO AMARAL": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "GUILHERME DOS SANTOS AMORIM": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "GUILHERME HENRIQ MOREIRA DA SILVA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "HESTER BEATRIZ DOS SANTOS MARTIRIO": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "JOAO LUIZ MESQUITA SILVA DOS SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "JOAO PEDRO FERMINO DA SILVA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "JOAQUIM LEITE MARCHIORO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "JOSE EDUARDO DOURADO DE ARAUJO": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "KHYMBERLLY KLERYS VAZ DE OLIVEIRA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "KOKOIREJ MARIZA METUKTIRE": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "LUIZ MIGUEL CHAVES MENDONCA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "MARYA CLARA FERREIRA DOS SANTOS": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "MIKAELLY CRISTINA FERREIRA DOS SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "NICOLAS JOSE PEREIRA VIANA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "RAYQUE VITOR DOS SANTOS RODRIGUES": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "ROSE EMANUELLY ALMEIDA AGUIAR": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "RUTE DOS SANTOS MAGIOLO": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "SAMUEL UES FERREIRA DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "VICTOR JOAQUIM MARQUES MADEIRA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "WIDYNEI HENRIQUE DOS SANTOS CORREA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "YASMIN MARIA VITORIA NASCIMENTO DA SILVA PEDROSO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "YAYCKE ARISTIDES DO NASCIMENTO JURUNA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        }
       }
-    ],
-    "MATEMÁTICA": [
-      {
-        "codigo": "EF06MA03MT01",
-        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
-        "rendimento": 63,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA03MT02",
-        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
-        "rendimento": 56,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA17MT01",
-        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
-        "rendimento": 37,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA17MT02",
-        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
-        "rendimento": 67,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA19MT01",
-        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
-        "rendimento": 52,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA20MT01",
-        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
-        "rendimento": 52,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
+    },
+    "MATEMÁTICA": {
+      "habilidades": [
+        {
+          "codigo": "EF06MA03MT01",
+          "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+          "rendimento": 63,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA03MT02",
+          "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+          "rendimento": 56,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA17MT01",
+          "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+          "rendimento": 37,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA17MT02",
+          "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+          "rendimento": 67,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA19MT01",
+          "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+          "rendimento": 52,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA20MT01",
+          "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+          "rendimento": 52,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ADRYAN SOUSA DOS ANJOS": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "ANA CLARA DE OLIVEIRA ANDRADE": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "ELOISA MOREIRA DONATO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "EMILY VITORIA DE ALMEIDA FAUSTINO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "GABRIELA HENRIQUE GIZONI DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "GREG NAUAN DO AMARAL": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "GUILHERME DOS SANTOS AMORIM": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "GUILHERME HENRIQ MOREIRA DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "HESTER BEATRIZ DOS SANTOS MARTIRIO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "JOAO LUIZ MESQUITA SILVA DOS SANTOS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "JOAO PEDRO FERMINO DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "JOAQUIM LEITE MARCHIORO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "JOSE EDUARDO DOURADO DE ARAUJO": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "KHYMBERLLY KLERYS VAZ DE OLIVEIRA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "KOKOIREJ MARIZA METUKTIRE": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "LUIZ MIGUEL CHAVES MENDONCA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "MARYA CLARA FERREIRA DOS SANTOS": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "MIKAELLY CRISTINA FERREIRA DOS SANTOS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "NICOLAS JOSE PEREIRA VIANA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "RAYQUE VITOR DOS SANTOS RODRIGUES": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "ROSE EMANUELLY ALMEIDA AGUIAR": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "RUTE DOS SANTOS MAGIOLO": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "SAMUEL UES FERREIRA DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "VICTOR JOAQUIM MARQUES MADEIRA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "WIDYNEI HENRIQUE DOS SANTOS CORREA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "YASMIN MARIA VITORIA NASCIMENTO DA SILVA PEDROSO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "YAYCKE ARISTIDES DO NASCIMENTO JURUNA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        }
       }
-    ],
-    "CIÊNCIAS": [
-      {
-        "codigo": "EF06CI11MT04",
-        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
-        "rendimento": 52,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06CI12MT01",
-        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
-        "rendimento": 33,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 27
+    },
+    "CIÊNCIAS": {
+      "habilidades": [
+        {
+          "codigo": "EF06CI11MT04",
+          "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+          "rendimento": 52,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06CI12MT01",
+          "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+          "rendimento": 33,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ADRYAN SOUSA DOS ANJOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "ANA CLARA DE OLIVEIRA ANDRADE": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "ELOISA MOREIRA DONATO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "EMILY VITORIA DE ALMEIDA FAUSTINO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "GABRIELA HENRIQUE GIZONI DA SILVA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "GREG NAUAN DO AMARAL": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "GUILHERME DOS SANTOS AMORIM": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "GUILHERME HENRIQ MOREIRA DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "HESTER BEATRIZ DOS SANTOS MARTIRIO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "JOAO LUIZ MESQUITA SILVA DOS SANTOS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "JOAO PEDRO FERMINO DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "JOAQUIM LEITE MARCHIORO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "JOSE EDUARDO DOURADO DE ARAUJO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "KHYMBERLLY KLERYS VAZ DE OLIVEIRA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "KOKOIREJ MARIZA METUKTIRE": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "LUIZ MIGUEL CHAVES MENDONCA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "MARYA CLARA FERREIRA DOS SANTOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "MIKAELLY CRISTINA FERREIRA DOS SANTOS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "NICOLAS JOSE PEREIRA VIANA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "RAYQUE VITOR DOS SANTOS RODRIGUES": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "ROSE EMANUELLY ALMEIDA AGUIAR": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "RUTE DOS SANTOS MAGIOLO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "SAMUEL UES FERREIRA DA SILVA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "VICTOR JOAQUIM MARQUES MADEIRA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "WIDYNEI HENRIQUE DOS SANTOS CORREA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "YASMIN MARIA VITORIA NASCIMENTO DA SILVA PEDROSO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "YAYCKE ARISTIDES DO NASCIMENTO JURUNA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        }
       }
-    ]
+    }
   },
   "6º ANO B": {
-    "LÍNGUA PORTUGUESA": [
-      {
-        "codigo": "EF06LP04MT0261",
-        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
-        "rendimento": 48,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06LP06MT0161",
-        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
-        "rendimento": 41,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0161",
-        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
-        "rendimento": 81,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0561",
-        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
-        "rendimento": 15,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0661",
-        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
-        "rendimento": 30,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF69LP47MT0161",
-        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
-        "rendimento": 33,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
+    "LÍNGUA PORTUGUESA": {
+      "habilidades": [
+        {
+          "codigo": "EF06LP04MT0261",
+          "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+          "rendimento": 48,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06LP06MT0161",
+          "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+          "rendimento": 41,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0161",
+          "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+          "rendimento": 81,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0561",
+          "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+          "rendimento": 15,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0661",
+          "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+          "rendimento": 30,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF69LP47MT0161",
+          "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+          "rendimento": 33,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ALISON GUILHERME RODRIGUES ARAUJO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "ANTHONY MIGUEL PEREIRA DE SOUZA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "BEKIRE METUKTIRE": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "BEPY ARETI METUKTIRE": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "BRENDA VITORIA SILVA BERTORELLO": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "CAMILLY VITORIA BALBINO SOARES": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "DANIEL ROBERT RUFINO DA COSTA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "DAVID LUIZ RIBEIRO DOS SANTOS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "EDUARDO PEREIRA DA SILVA SIMPLICIO": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "EMANUEL LORENZO DO CARMO BRANCO": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "ENZO GONCALVES DOS SANTOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "EVERTON KAUAN DOMICIANO GONCALVES": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "GABRIEL DA SILVA SOUZA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "ISADORA NOBREGA NEGRETE GARCIA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JHENIFER PEREIRA DA SILVA SIMPLICIO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JOAO MIGUEL MARTINS NOVAIS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "JULIANA DE SOUZA CAMPOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "LAUARA LAIANNY APARECIDA ASSUNCAO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "LUCAS GABRIEL DE SOUZA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "MARIA CLARA CARDOSO RESENDE": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "MEREKORE TAPAYUNA METUKTIRE": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "SABRINA DOS SANTOS SILVA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "STEFANY LAURA RODRIGUES LIMA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "THAEMILLI REGIELLI MARCELINO SOARES": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "VINICIUS RAFAEL NOVAIS DA SILVA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "VITORIA GABRIELLY DIAS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "YURI GABRIEL ALVES DE AMORIM": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        }
       }
-    ],
-    "ARTE": [
-      {
-        "codigo": "EF69AR01MT0161",
-        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
-        "rendimento": 48,
-        "disciplina": "ARTE",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF69AR03MT0161",
-        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
-        "rendimento": 44,
-        "disciplina": "ARTE",
-        "questoes": 27
+    },
+    "ARTE": {
+      "habilidades": [
+        {
+          "codigo": "EF69AR01MT0161",
+          "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+          "rendimento": 48,
+          "disciplina": "ARTE",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF69AR03MT0161",
+          "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+          "rendimento": 44,
+          "disciplina": "ARTE",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ALISON GUILHERME RODRIGUES ARAUJO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "ANTHONY MIGUEL PEREIRA DE SOUZA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "BEKIRE METUKTIRE": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "BEPY ARETI METUKTIRE": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "BRENDA VITORIA SILVA BERTORELLO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "CAMILLY VITORIA BALBINO SOARES": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "DANIEL ROBERT RUFINO DA COSTA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "DAVID LUIZ RIBEIRO DOS SANTOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "EDUARDO PEREIRA DA SILVA SIMPLICIO": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "EMANUEL LORENZO DO CARMO BRANCO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "ENZO GONCALVES DOS SANTOS": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "EVERTON KAUAN DOMICIANO GONCALVES": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GABRIEL DA SILVA SOUZA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "ISADORA NOBREGA NEGRETE GARCIA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "JHENIFER PEREIRA DA SILVA SIMPLICIO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "JOAO MIGUEL MARTINS NOVAIS": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "JULIANA DE SOUZA CAMPOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "LAUARA LAIANNY APARECIDA ASSUNCAO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "LUCAS GABRIEL DE SOUZA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "MARIA CLARA CARDOSO RESENDE": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "MEREKORE TAPAYUNA METUKTIRE": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "SABRINA DOS SANTOS SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "STEFANY LAURA RODRIGUES LIMA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "THAEMILLI REGIELLI MARCELINO SOARES": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "VINICIUS RAFAEL NOVAIS DA SILVA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "VITORIA GABRIELLY DIAS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "YURI GABRIEL ALVES DE AMORIM": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        }
       }
-    ],
-    "GEOGRAFIA": [
-      {
-        "codigo": "EF06GE01MT2",
-        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
-        "rendimento": 85,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06GE09MT1",
-        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
-        "rendimento": 30,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 27
+    },
+    "GEOGRAFIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06GE01MT2",
+          "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+          "rendimento": 85,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06GE09MT1",
+          "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+          "rendimento": 30,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ALISON GUILHERME RODRIGUES ARAUJO": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "ANTHONY MIGUEL PEREIRA DE SOUZA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "BEKIRE METUKTIRE": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "BEPY ARETI METUKTIRE": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "BRENDA VITORIA SILVA BERTORELLO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "CAMILLY VITORIA BALBINO SOARES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "DANIEL ROBERT RUFINO DA COSTA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "DAVID LUIZ RIBEIRO DOS SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "EDUARDO PEREIRA DA SILVA SIMPLICIO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "EMANUEL LORENZO DO CARMO BRANCO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "ENZO GONCALVES DOS SANTOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "EVERTON KAUAN DOMICIANO GONCALVES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "GABRIEL DA SILVA SOUZA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "ISADORA NOBREGA NEGRETE GARCIA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JHENIFER PEREIRA DA SILVA SIMPLICIO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAO MIGUEL MARTINS NOVAIS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JULIANA DE SOUZA CAMPOS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "LAUARA LAIANNY APARECIDA ASSUNCAO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "LUCAS GABRIEL DE SOUZA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "MARIA CLARA CARDOSO RESENDE": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "MEREKORE TAPAYUNA METUKTIRE": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": true
+        },
+        "SABRINA DOS SANTOS SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "STEFANY LAURA RODRIGUES LIMA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "THAEMILLI REGIELLI MARCELINO SOARES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "VINICIUS RAFAEL NOVAIS DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "VITORIA GABRIELLY DIAS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "YURI GABRIEL ALVES DE AMORIM": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        }
       }
-    ],
-    "HISTÓRIA": [
-      {
-        "codigo": "EF06HI03MT1",
-        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
-        "rendimento": 67,
-        "disciplina": "HISTÓRIA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06HI06MT1",
-        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
-        "rendimento": 33,
-        "disciplina": "HISTÓRIA",
-        "questoes": 27
+    },
+    "HISTÓRIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06HI03MT1",
+          "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+          "rendimento": 67,
+          "disciplina": "HISTÓRIA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06HI06MT1",
+          "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+          "rendimento": 33,
+          "disciplina": "HISTÓRIA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ALISON GUILHERME RODRIGUES ARAUJO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "ANTHONY MIGUEL PEREIRA DE SOUZA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "BEKIRE METUKTIRE": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "BEPY ARETI METUKTIRE": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "BRENDA VITORIA SILVA BERTORELLO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "CAMILLY VITORIA BALBINO SOARES": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "DANIEL ROBERT RUFINO DA COSTA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "DAVID LUIZ RIBEIRO DOS SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "EDUARDO PEREIRA DA SILVA SIMPLICIO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "EMANUEL LORENZO DO CARMO BRANCO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "ENZO GONCALVES DOS SANTOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "EVERTON KAUAN DOMICIANO GONCALVES": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "GABRIEL DA SILVA SOUZA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "ISADORA NOBREGA NEGRETE GARCIA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "JHENIFER PEREIRA DA SILVA SIMPLICIO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "JOAO MIGUEL MARTINS NOVAIS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "JULIANA DE SOUZA CAMPOS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "LAUARA LAIANNY APARECIDA ASSUNCAO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "LUCAS GABRIEL DE SOUZA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "MARIA CLARA CARDOSO RESENDE": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "MEREKORE TAPAYUNA METUKTIRE": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "SABRINA DOS SANTOS SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "STEFANY LAURA RODRIGUES LIMA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "THAEMILLI REGIELLI MARCELINO SOARES": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "VINICIUS RAFAEL NOVAIS DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "VITORIA GABRIELLY DIAS": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "YURI GABRIEL ALVES DE AMORIM": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        }
       }
-    ],
-    "MATEMÁTICA": [
-      {
-        "codigo": "EF06MA03MT01",
-        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
-        "rendimento": 78,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA03MT02",
-        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
-        "rendimento": 70,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA17MT01",
-        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
-        "rendimento": 33,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA17MT02",
-        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
-        "rendimento": 59,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA19MT01",
-        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
-        "rendimento": 48,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA20MT01",
-        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
-        "rendimento": 41,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
+    },
+    "MATEMÁTICA": {
+      "habilidades": [
+        {
+          "codigo": "EF06MA03MT01",
+          "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+          "rendimento": 78,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA03MT02",
+          "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+          "rendimento": 70,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA17MT01",
+          "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+          "rendimento": 33,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA17MT02",
+          "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+          "rendimento": 59,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA19MT01",
+          "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+          "rendimento": 48,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA20MT01",
+          "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+          "rendimento": 41,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ALISON GUILHERME RODRIGUES ARAUJO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "ANTHONY MIGUEL PEREIRA DE SOUZA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "BEKIRE METUKTIRE": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "BEPY ARETI METUKTIRE": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "BRENDA VITORIA SILVA BERTORELLO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "CAMILLY VITORIA BALBINO SOARES": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "DANIEL ROBERT RUFINO DA COSTA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "DAVID LUIZ RIBEIRO DOS SANTOS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "EDUARDO PEREIRA DA SILVA SIMPLICIO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "EMANUEL LORENZO DO CARMO BRANCO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "ENZO GONCALVES DOS SANTOS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "EVERTON KAUAN DOMICIANO GONCALVES": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "GABRIEL DA SILVA SOUZA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "ISADORA NOBREGA NEGRETE GARCIA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "JHENIFER PEREIRA DA SILVA SIMPLICIO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "JOAO MIGUEL MARTINS NOVAIS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "JULIANA DE SOUZA CAMPOS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "LAUARA LAIANNY APARECIDA ASSUNCAO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "LUCAS GABRIEL DE SOUZA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "MARIA CLARA CARDOSO RESENDE": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "MEREKORE TAPAYUNA METUKTIRE": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "SABRINA DOS SANTOS SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "STEFANY LAURA RODRIGUES LIMA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "THAEMILLI REGIELLI MARCELINO SOARES": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "VINICIUS RAFAEL NOVAIS DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "VITORIA GABRIELLY DIAS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "YURI GABRIEL ALVES DE AMORIM": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        }
       }
-    ],
-    "CIÊNCIAS": [
-      {
-        "codigo": "EF06CI11MT04",
-        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
-        "rendimento": 41,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06CI12MT01",
-        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
-        "rendimento": 19,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 27
+    },
+    "CIÊNCIAS": {
+      "habilidades": [
+        {
+          "codigo": "EF06CI11MT04",
+          "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+          "rendimento": 41,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06CI12MT01",
+          "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+          "rendimento": 19,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ALISON GUILHERME RODRIGUES ARAUJO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "ANTHONY MIGUEL PEREIRA DE SOUZA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "BEKIRE METUKTIRE": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "BEPY ARETI METUKTIRE": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "BRENDA VITORIA SILVA BERTORELLO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "CAMILLY VITORIA BALBINO SOARES": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "DANIEL ROBERT RUFINO DA COSTA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "DAVID LUIZ RIBEIRO DOS SANTOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "EDUARDO PEREIRA DA SILVA SIMPLICIO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "EMANUEL LORENZO DO CARMO BRANCO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "ENZO GONCALVES DOS SANTOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "EVERTON KAUAN DOMICIANO GONCALVES": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "GABRIEL DA SILVA SOUZA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "ISADORA NOBREGA NEGRETE GARCIA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "JHENIFER PEREIRA DA SILVA SIMPLICIO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "JOAO MIGUEL MARTINS NOVAIS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "JULIANA DE SOUZA CAMPOS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "LAUARA LAIANNY APARECIDA ASSUNCAO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "LUCAS GABRIEL DE SOUZA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "MARIA CLARA CARDOSO RESENDE": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "MEREKORE TAPAYUNA METUKTIRE": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "SABRINA DOS SANTOS SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "STEFANY LAURA RODRIGUES LIMA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "THAEMILLI REGIELLI MARCELINO SOARES": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "VINICIUS RAFAEL NOVAIS DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "VITORIA GABRIELLY DIAS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "YURI GABRIEL ALVES DE AMORIM": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        }
       }
-    ]
+    }
   },
   "6º ANO A": {
-    "LÍNGUA PORTUGUESA": [
-      {
-        "codigo": "EF06LP04MT0261",
-        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
-        "rendimento": 44,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06LP06MT0161",
-        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
-        "rendimento": 63,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0161",
-        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
-        "rendimento": 85,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0561",
-        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
-        "rendimento": 19,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF67LP28MT0661",
-        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
-        "rendimento": 26,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF69LP47MT0161",
-        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
-        "rendimento": 19,
-        "disciplina": "LÍNGUA PORTUGUESA",
-        "questoes": 27
+    "LÍNGUA PORTUGUESA": {
+      "habilidades": [
+        {
+          "codigo": "EF06LP04MT0261",
+          "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+          "rendimento": 44,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06LP06MT0161",
+          "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+          "rendimento": 63,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0161",
+          "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+          "rendimento": 85,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0561",
+          "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+          "rendimento": 19,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF67LP28MT0661",
+          "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+          "rendimento": 26,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF69LP47MT0161",
+          "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+          "rendimento": 19,
+          "disciplina": "LÍNGUA PORTUGUESA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ANA CLARA PEREIRA BRITO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "BEPIET PANARA METUKTIRE": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "CRISLAINE VICTORIA FARIAS DE ALMEIDA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "CRISLANE EDUARDA FARIAS DE ALMEIDA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "DAVI CARVALHO SALMENTO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "DAVI LUCAS LIMA RODRIGUES": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "EMILY CRISTINA DO NASCIMENTO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "ENZO ARTHUR DA SILVA SANTOS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "FELIPE NUNES DA SILVA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "FERNANDO DJARA TXUCARRAMAE": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "GUILHERME SOUZA ALVES": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "GUSTAVO HENRIQUE DE PAULA DE LARA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "ISADORA CAETANO MATEUS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JASMIM RAFAELA AMANCIO DE LIMA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JOAO GABRIEL DE OLIVEIRA MARTINS": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "JOAO LUCAS DE SOUZA DA SILVA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": true
+        },
+        "JOAO OTAVIO GONSALVES DE LIMA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "JOAO VITOR PEREIRA DA SILVA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "KAUAN FEITOSA MORAES": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "MARIA FERNANDA EQUIDONE MACHADO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": false
+        },
+        "MIGUEL AZEVEDO PEREIRA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": false,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "MIKAELY TIBURCIO SILVA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "MISAEL LUIZ DA SILVA DIAS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "PAULA FERNANDA COIMBRA DA SILVA": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": true,
+          "EF69LP47MT0161": true
+        },
+        "SABRINA VITORIA MATIAS MARTINS": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": true,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "WELBER LERRANDRO LOPES APARECIDO": {
+          "EF06LP04MT0261": false,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": false,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        },
+        "YURY LINS DOS SANTOS MOTA": {
+          "EF06LP04MT0261": true,
+          "EF06LP06MT0161": false,
+          "EF67LP28MT0161": true,
+          "EF67LP28MT0561": true,
+          "EF67LP28MT0661": false,
+          "EF69LP47MT0161": false
+        }
       }
-    ],
-    "ARTE": [
-      {
-        "codigo": "EF69AR01MT0161",
-        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
-        "rendimento": 56,
-        "disciplina": "ARTE",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF69AR03MT0161",
-        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
-        "rendimento": 41,
-        "disciplina": "ARTE",
-        "questoes": 27
+    },
+    "ARTE": {
+      "habilidades": [
+        {
+          "codigo": "EF69AR01MT0161",
+          "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+          "rendimento": 56,
+          "disciplina": "ARTE",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF69AR03MT0161",
+          "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+          "rendimento": 41,
+          "disciplina": "ARTE",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ANA CLARA PEREIRA BRITO": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "BEPIET PANARA METUKTIRE": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "CRISLAINE VICTORIA FARIAS DE ALMEIDA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "CRISLANE EDUARDA FARIAS DE ALMEIDA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "DAVI CARVALHO SALMENTO": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "DAVI LUCAS LIMA RODRIGUES": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "EMILY CRISTINA DO NASCIMENTO": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "ENZO ARTHUR DA SILVA SANTOS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "FELIPE NUNES DA SILVA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "FERNANDO DJARA TXUCARRAMAE": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "GUILHERME SOUZA ALVES": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "GUSTAVO HENRIQUE DE PAULA DE LARA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "ISADORA CAETANO MATEUS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": true
+        },
+        "JASMIM RAFAELA AMANCIO DE LIMA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "JOAO GABRIEL DE OLIVEIRA MARTINS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "JOAO LUCAS DE SOUZA DA SILVA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "JOAO OTAVIO GONSALVES DE LIMA": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "JOAO VITOR PEREIRA DA SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "KAUAN FEITOSA MORAES": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "MARIA FERNANDA EQUIDONE MACHADO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "MIGUEL AZEVEDO PEREIRA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "MIKAELY TIBURCIO SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "MISAEL LUIZ DA SILVA DIAS": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": true
+        },
+        "PAULA FERNANDA COIMBRA DA SILVA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "SABRINA VITORIA MATIAS MARTINS": {
+          "EF69AR01MT0161": false,
+          "EF69AR03MT0161": false
+        },
+        "WELBER LERRANDRO LOPES APARECIDO": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        },
+        "YURY LINS DOS SANTOS MOTA": {
+          "EF69AR01MT0161": true,
+          "EF69AR03MT0161": false
+        }
       }
-    ],
-    "GEOGRAFIA": [
-      {
-        "codigo": "EF06GE01MT2",
-        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
-        "rendimento": 74,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06GE09MT1",
-        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
-        "rendimento": 33,
-        "disciplina": "GEOGRAFIA",
-        "questoes": 27
+    },
+    "GEOGRAFIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06GE01MT2",
+          "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+          "rendimento": 74,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06GE09MT1",
+          "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+          "rendimento": 33,
+          "disciplina": "GEOGRAFIA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ANA CLARA PEREIRA BRITO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "BEPIET PANARA METUKTIRE": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "CRISLAINE VICTORIA FARIAS DE ALMEIDA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "CRISLANE EDUARDA FARIAS DE ALMEIDA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "DAVI CARVALHO SALMENTO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "DAVI LUCAS LIMA RODRIGUES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "EMILY CRISTINA DO NASCIMENTO": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "ENZO ARTHUR DA SILVA SANTOS": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "FELIPE NUNES DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "FERNANDO DJARA TXUCARRAMAE": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "GUILHERME SOUZA ALVES": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": true
+        },
+        "GUSTAVO HENRIQUE DE PAULA DE LARA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "ISADORA CAETANO MATEUS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "JASMIM RAFAELA AMANCIO DE LIMA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAO GABRIEL DE OLIVEIRA MARTINS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "JOAO LUCAS DE SOUZA DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAO OTAVIO GONSALVES DE LIMA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "JOAO VITOR PEREIRA DA SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "KAUAN FEITOSA MORAES": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "MARIA FERNANDA EQUIDONE MACHADO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "MIGUEL AZEVEDO PEREIRA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": false
+        },
+        "MIKAELY TIBURCIO SILVA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "MISAEL LUIZ DA SILVA DIAS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "PAULA FERNANDA COIMBRA DA SILVA": {
+          "EF06GE01MT2": false,
+          "EF06GE09MT1": true
+        },
+        "SABRINA VITORIA MATIAS MARTINS": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": true
+        },
+        "WELBER LERRANDRO LOPES APARECIDO": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        },
+        "YURY LINS DOS SANTOS MOTA": {
+          "EF06GE01MT2": true,
+          "EF06GE09MT1": false
+        }
       }
-    ],
-    "HISTÓRIA": [
-      {
-        "codigo": "EF06HI03MT1",
-        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
-        "rendimento": 63,
-        "disciplina": "HISTÓRIA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06HI06MT1",
-        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
-        "rendimento": 37,
-        "disciplina": "HISTÓRIA",
-        "questoes": 27
+    },
+    "HISTÓRIA": {
+      "habilidades": [
+        {
+          "codigo": "EF06HI03MT1",
+          "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+          "rendimento": 63,
+          "disciplina": "HISTÓRIA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06HI06MT1",
+          "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+          "rendimento": 37,
+          "disciplina": "HISTÓRIA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ANA CLARA PEREIRA BRITO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "BEPIET PANARA METUKTIRE": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "CRISLAINE VICTORIA FARIAS DE ALMEIDA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "CRISLANE EDUARDA FARIAS DE ALMEIDA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "DAVI CARVALHO SALMENTO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "DAVI LUCAS LIMA RODRIGUES": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "EMILY CRISTINA DO NASCIMENTO": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "ENZO ARTHUR DA SILVA SANTOS": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "FELIPE NUNES DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "FERNANDO DJARA TXUCARRAMAE": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "GUILHERME SOUZA ALVES": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "GUSTAVO HENRIQUE DE PAULA DE LARA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "ISADORA CAETANO MATEUS": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "JASMIM RAFAELA AMANCIO DE LIMA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "JOAO GABRIEL DE OLIVEIRA MARTINS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "JOAO LUCAS DE SOUZA DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "JOAO OTAVIO GONSALVES DE LIMA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "JOAO VITOR PEREIRA DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "KAUAN FEITOSA MORAES": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "MARIA FERNANDA EQUIDONE MACHADO": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "MIGUEL AZEVEDO PEREIRA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "MIKAELY TIBURCIO SILVA": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": true
+        },
+        "MISAEL LUIZ DA SILVA DIAS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "PAULA FERNANDA COIMBRA DA SILVA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        },
+        "SABRINA VITORIA MATIAS MARTINS": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": false
+        },
+        "WELBER LERRANDRO LOPES APARECIDO": {
+          "EF06HI03MT1": false,
+          "EF06HI06MT1": false
+        },
+        "YURY LINS DOS SANTOS MOTA": {
+          "EF06HI03MT1": true,
+          "EF06HI06MT1": true
+        }
       }
-    ],
-    "MATEMÁTICA": [
-      {
-        "codigo": "EF06MA03MT01",
-        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
-        "rendimento": 56,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA03MT02",
-        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
-        "rendimento": 52,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA17MT01",
-        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
-        "rendimento": 41,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA17MT02",
-        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
-        "rendimento": 41,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA19MT01",
-        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
-        "rendimento": 44,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06MA20MT01",
-        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
-        "rendimento": 52,
-        "disciplina": "MATEMÁTICA",
-        "questoes": 27
+    },
+    "MATEMÁTICA": {
+      "habilidades": [
+        {
+          "codigo": "EF06MA03MT01",
+          "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+          "rendimento": 56,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA03MT02",
+          "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+          "rendimento": 52,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA17MT01",
+          "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+          "rendimento": 41,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA17MT02",
+          "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+          "rendimento": 41,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA19MT01",
+          "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+          "rendimento": 44,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06MA20MT01",
+          "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+          "rendimento": 52,
+          "disciplina": "MATEMÁTICA",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ANA CLARA PEREIRA BRITO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "BEPIET PANARA METUKTIRE": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "CRISLAINE VICTORIA FARIAS DE ALMEIDA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "CRISLANE EDUARDA FARIAS DE ALMEIDA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "DAVI CARVALHO SALMENTO": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "DAVI LUCAS LIMA RODRIGUES": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "EMILLY VITORIA GOMES DOS SANTOS": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "EMILY CRISTINA DO NASCIMENTO": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "FELIPE NUNES DA SILVA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "FERNANDO DJARA TXUCARRAMAE": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "GUILHERME SOUZA ALVES": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "GUSTAVO HENRIQUE DE PAULA DE LARA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "ISADORA CAETANO MATEUS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "JASMIM RAFAELA AMANCIO DE LIMA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "JOAO GABRIEL DE OLIVEIRA MARTINS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "JOAO LUCAS DE SOUZA DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "JOAO OTAVIO GONSALVES DE LIMA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": false
+        },
+        "JOAO VITOR PEREIRA DA SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "KAUAN FEITOSA MORAES": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "MARIA FERNANDA EQUIDONE MACHADO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "MIGUEL AZEVEDO PEREIRA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "MIKAELY TIBURCIO SILVA": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "MISAEL LUIZ DA SILVA DIAS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": true,
+          "EF06MA20MT01": true
+        },
+        "PAULA FERNANDA COIMBRA DA SILVA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": false,
+          "EF06MA17MT01": true,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "SABRINA VITORIA MATIAS MARTINS": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        },
+        "WELBER LERRANDRO LOPES APARECIDO": {
+          "EF06MA03MT01": true,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": true,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": false
+        },
+        "YURY LINS DOS SANTOS MOTA": {
+          "EF06MA03MT01": false,
+          "EF06MA03MT02": true,
+          "EF06MA17MT01": false,
+          "EF06MA17MT02": false,
+          "EF06MA19MT01": false,
+          "EF06MA20MT01": true
+        }
       }
-    ],
-    "CIÊNCIAS": [
-      {
-        "codigo": "EF06CI11MT04",
-        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
-        "rendimento": 37,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 27
-      },
-      {
-        "codigo": "EF06CI12MT01",
-        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
-        "rendimento": 30,
-        "disciplina": "CIÊNCIAS",
-        "questoes": 27
+    },
+    "CIÊNCIAS": {
+      "habilidades": [
+        {
+          "codigo": "EF06CI11MT04",
+          "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+          "rendimento": 37,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 27
+        },
+        {
+          "codigo": "EF06CI12MT01",
+          "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+          "rendimento": 30,
+          "disciplina": "CIÊNCIAS",
+          "questoes": 27
+        }
+      ],
+      "alunos": {
+        "ANA CLARA PEREIRA BRITO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "BEPIET PANARA METUKTIRE": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "CRISLAINE VICTORIA FARIAS DE ALMEIDA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "CRISLANE EDUARDA FARIAS DE ALMEIDA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "DAVI CARVALHO SALMENTO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "DAVI LUCAS LIMA RODRIGUES": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "EMILLY VITORIA GOMES DOS SANTOS": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "EMILY CRISTINA DO NASCIMENTO": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "FELIPE NUNES DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "FERNANDO DJARA TXUCARRAMAE": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "GUILHERME SOUZA ALVES": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "GUSTAVO HENRIQUE DE PAULA DE LARA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "ISADORA CAETANO MATEUS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "JASMIM RAFAELA AMANCIO DE LIMA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "JOAO GABRIEL DE OLIVEIRA MARTINS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "JOAO LUCAS DE SOUZA DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "JOAO OTAVIO GONSALVES DE LIMA": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "JOAO VITOR PEREIRA DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "KAUAN FEITOSA MORAES": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "MARIA FERNANDA EQUIDONE MACHADO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "MIGUEL AZEVEDO PEREIRA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "MIKAELY TIBURCIO SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": true
+        },
+        "MISAEL LUIZ DA SILVA DIAS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": true
+        },
+        "PAULA FERNANDA COIMBRA DA SILVA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        },
+        "SABRINA VITORIA MATIAS MARTINS": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "WELBER LERRANDRO LOPES APARECIDO": {
+          "EF06CI11MT04": true,
+          "EF06CI12MT01": false
+        },
+        "YURY LINS DOS SANTOS MOTA": {
+          "EF06CI11MT04": false,
+          "EF06CI12MT01": false
+        }
       }
-    ]
+    }
   }
 }

@@ -53,21 +53,32 @@ try {
       const turmaNormalizada = normalizeTurmaName(row['Turma']);
       
       if (!stats[turmaNormalizada]) {
-        stats[turmaNormalizada] = {};
+        stats[turmaNormalizada] = {
+           habilidades: {},
+           alunos: {}
+        };
+      }
+      
+      const alunoNome = row['Aluno Nome'] || 'Desconhecido';
+      if (!stats[turmaNormalizada].alunos[alunoNome]) {
+         stats[turmaNormalizada].alunos[alunoNome] = {};
       }
 
       for (const key of Object.keys(row)) {
         if (['Aluno ID', 'Aluno Nome', 'Turma'].includes(key)) continue;
         
-        if (!stats[turmaNormalizada][key]) {
-          stats[turmaNormalizada][key] = { totalAlunos: 0, somaAcertos: 0 };
+        if (!stats[turmaNormalizada].habilidades[key]) {
+          stats[turmaNormalizada].habilidades[key] = { totalAlunos: 0, somaAcertos: 0 };
         }
         
         const val = row[key];
         if (val !== null && val !== undefined && val !== '') {
-           stats[turmaNormalizada][key].totalAlunos++;
+           stats[turmaNormalizada].habilidades[key].totalAlunos++;
            if (val === 1) {
-             stats[turmaNormalizada][key].somaAcertos++;
+             stats[turmaNormalizada].habilidades[key].somaAcertos++;
+             stats[turmaNormalizada].alunos[alunoNome][key] = true;
+           } else if (val === 0) {
+             stats[turmaNormalizada].alunos[alunoNome][key] = false;
            }
         }
       }
@@ -77,29 +88,42 @@ try {
     for (const turma of Object.keys(stats)) {
       if (!result[turma]) result[turma] = {};
 
-      for (const hab_col of Object.keys(stats[turma])) {
-        const { totalAlunos, somaAcertos } = stats[turma][hab_col];
+      for (const hab_col of Object.keys(stats[turma].habilidades)) {
+        const { totalAlunos, somaAcertos } = stats[turma].habilidades[hab_col];
         if (totalAlunos === 0) continue;
 
-        // hab_col is usually something like "EF06MA03MT01- CALCULAR O RESULTADO..."
         let codigo = hab_col.split('-')[0].trim();
         let descricao = hab_col;
 
         const disciplina = getSubjectFromCode(codigo);
         
         if (!result[turma][disciplina]) {
-          result[turma][disciplina] = [];
+          result[turma][disciplina] = {
+             habilidades: [],
+             alunos: {} // { "João": { "EF06MA...": true } }
+          };
         }
 
         const rendimento = Math.round((somaAcertos / totalAlunos) * 100);
 
-        result[turma][disciplina].push({
+        result[turma][disciplina].habilidades.push({
           codigo,
           descricao,
           rendimento,
           disciplina,
-          questoes: totalAlunos // para contexto, embora seja alunos, podemos mandar como volume
+          questoes: totalAlunos
         });
+        
+        // Passar os dados dos alunos que fizeram essa disciplina
+        for (const aluno of Object.keys(stats[turma].alunos)) {
+           if (!result[turma][disciplina].alunos[aluno]) {
+              result[turma][disciplina].alunos[aluno] = {};
+           }
+           const hit = stats[turma].alunos[aluno][hab_col];
+           if (hit !== undefined) {
+              result[turma][disciplina].alunos[aluno][codigo] = hit;
+           }
+        }
       }
     }
   }

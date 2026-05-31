@@ -119,6 +119,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
    // AI Modal State
    const [selectedAssessmentForAI, setSelectedAssessmentForAI] = useState<Assessment | null>(null);
+   const [activeModalTab, setActiveModalTab] = useState<'alunos' | 'habilidades'>('alunos');
    const [aiReport, setAiReport] = useState<any | null>(null);
    const [loadingAI, setLoadingAI] = useState(false);
 
@@ -436,8 +437,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          // O assessment.className geralmente vem como "6º ANO A" ou similar, 
          // o que já bate com as chaves geradas (ex: "6º ANO A") no json.
          const classData = (HabilidadesTodasTurmas as Record<string, any>)[assessment.className.toUpperCase()];
-         if (classData) {
-            skillsData = classData[assessment.subject.toUpperCase()];
+         if (classData && classData[assessment.subject.toUpperCase()]) {
+            skillsData = classData[assessment.subject.toUpperCase()].habilidades;
          }
       } catch (err) {
          console.warn("Habilidades não encontradas localmente para esta turma.", err);
@@ -789,7 +790,21 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <button onClick={() => setSelectedAssessmentForView(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
                   </div>
 
-                  <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
+                  <div className="flex border-b border-white/10 px-8">
+                     <button 
+                        onClick={() => setActiveModalTab('alunos')}
+                        className={`px-6 py-4 font-bold text-sm tracking-wide transition-all ${activeModalTab === 'alunos' ? 'border-b-2 border-violet-500 text-violet-400' : 'text-white/40 hover:text-white/70'}`}>
+                        Desempenho dos Alunos
+                     </button>
+                     <button 
+                        onClick={() => setActiveModalTab('habilidades')}
+                        className={`px-6 py-4 font-bold text-sm tracking-wide transition-all ${activeModalTab === 'habilidades' ? 'border-b-2 border-amber-500 text-amber-400' : 'text-white/40 hover:text-white/70'}`}>
+                        Raio-X de Habilidades
+                     </button>
+                  </div>
+
+                  <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
+                  {activeModalTab === 'alunos' ? (
                      <div className="grid grid-cols-1 gap-3">
                         {selectedAssessmentForView.grades.sort((a, b) => a.studentName.localeCompare(b.studentName)).map(g => (
                            <React.Fragment key={g.studentName}>
@@ -878,6 +893,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </div>
                         )}
                      </div>
+                  ) : (
+                     <SkillsXRay assessment={selectedAssessmentForView} />
+                  )}
                   </div>
                </div>
             </div>
@@ -885,5 +903,135 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
       </div>
    );
 };
+
+function SkillsXRay({ assessment }: { assessment: Assessment }) {
+   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+
+   const classData = (HabilidadesTodasTurmas as Record<string, any>)[assessment.className.toUpperCase()];
+   const subjectData = classData ? classData[assessment.subject.toUpperCase()] : null;
+   
+   if (!subjectData || !subjectData.habilidades || subjectData.habilidades.length === 0) {
+      return (
+         <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+               <span className="text-white/20">∅</span>
+            </div>
+            <h4 className="text-white/50 font-bold mb-2">Sem dados de habilidades</h4>
+            <p className="text-white/30 text-sm max-w-sm">
+               Não encontramos o mapeamento de habilidades para esta turma/disciplina na planilha importada.
+            </p>
+         </div>
+      );
+   }
+
+   const habilidades = subjectData.habilidades;
+   const alunosData = subjectData.alunos;
+
+   return (
+      <div className="space-y-8 animate-in fade-in duration-300">
+         <section>
+            <h4 className="text-amber-400 font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+               Desempenho Geral da Turma ({habilidades.length} Habilidades)
+            </h4>
+            <div className="grid grid-cols-1 gap-3">
+               {habilidades.sort((a: any, b: any) => b.rendimento - a.rendimento).map((hab: any) => (
+                  <div key={hab.codigo} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                     <div className="flex justify-between items-start gap-4 mb-2">
+                        <div>
+                           <p className="text-white font-bold text-sm" title={hab.descricao}>{hab.codigo}</p>
+                           <p className="text-white/50 text-xs line-clamp-1 mt-0.5" title={hab.descricao}>{hab.descricao.split('-').slice(1).join('-').trim()}</p>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs font-black ${hab.rendimento >= 70 ? 'bg-green-500/20 text-green-400' : hab.rendimento >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                           {hab.rendimento}%
+                        </div>
+                     </div>
+                     <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+                        <div 
+                           className={`h-full rounded-full ${hab.rendimento >= 70 ? 'bg-green-500' : hab.rendimento >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                           style={{ width: `${Math.max(hab.rendimento, 2)}%` }}
+                        />
+                     </div>
+                  </div>
+               ))}
+            </div>
+         </section>
+
+         <section>
+            <h4 className="text-violet-400 font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+               Raio-X por Aluno
+            </h4>
+            <div className="grid grid-cols-1 gap-2">
+               {Object.keys(alunosData).sort().map(aluno => {
+                  const studentSkills = alunosData[aluno];
+                  const isExpanded = expandedStudent === aluno;
+                  
+                  // Calcular percentual do aluno
+                  const total = Object.keys(studentSkills).length;
+                  const acertos = Object.values(studentSkills).filter(v => v === true).length;
+                  const rendimento = total > 0 ? Math.round((acertos / total) * 100) : 0;
+
+                  return (
+                     <div key={aluno} className={`bg-white/5 border ${isExpanded ? 'border-violet-500/50' : 'border-white/10'} rounded-xl overflow-hidden transition-all`}>
+                        <div 
+                           className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5"
+                           onClick={() => setExpandedStudent(isExpanded ? null : aluno)}
+                        >
+                           <div>
+                              <p className="text-white text-sm font-bold">{aluno}</p>
+                              <p className="text-white/40 text-xs mt-0.5">Acertou {acertos} de {total} habilidades</p>
+                           </div>
+                           <div className={`text-sm font-black ${rendimento >= 70 ? 'text-green-400' : rendimento >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                              {rendimento}%
+                           </div>
+                        </div>
+
+                        {isExpanded && (
+                           <div className="p-4 pt-0 border-t border-white/5 bg-black/20 flex flex-col gap-4 animate-in slide-in-from-top-2">
+                              <div>
+                                 <p className="text-green-400 text-xs font-bold uppercase tracking-widest mb-2 mt-4">Dominadas (Acertos)</p>
+                                 <div className="flex flex-wrap gap-2">
+                                    {Object.entries(studentSkills).filter(([_, hit]) => hit === true).map(([codigo]) => {
+                                       const desc = habilidades.find((h: any) => h.codigo === codigo)?.descricao || codigo;
+                                       return (
+                                          <span key={codigo} title={desc} className="px-2 py-1 bg-green-500/10 border border-green-500/20 text-green-300 rounded text-[10px] font-bold cursor-help">
+                                             {codigo}
+                                          </span>
+                                       );
+                                    })}
+                                    {Object.entries(studentSkills).filter(([_, hit]) => hit === true).length === 0 && (
+                                       <span className="text-white/30 text-xs italic">Nenhuma habilidade dominada.</span>
+                                    )}
+                                 </div>
+                              </div>
+
+                              <div>
+                                 <p className="text-red-400 text-xs font-bold uppercase tracking-widest mb-2">Em Déficit (Erros)</p>
+                                 <div className="flex flex-wrap gap-2">
+                                    {Object.entries(studentSkills).filter(([_, hit]) => hit === false).map(([codigo]) => {
+                                       const desc = habilidades.find((h: any) => h.codigo === codigo)?.descricao || codigo;
+                                       return (
+                                          <span key={codigo} title={desc} className="px-2 py-1 bg-red-500/10 border border-red-500/20 text-red-300 rounded text-[10px] font-bold cursor-help">
+                                             {codigo}
+                                          </span>
+                                       );
+                                    })}
+                                    {Object.entries(studentSkills).filter(([_, hit]) => hit === false).length === 0 && (
+                                       <span className="text-white/30 text-xs italic">Nenhuma habilidade em déficit.</span>
+                                    )}
+                                 </div>
+                              </div>
+                           </div>
+                        )}
+                     </div>
+                  );
+               })}
+            </div>
+         </section>
+      </div>
+   );
+}
+
 
 export default CoordinationExternalGrades;
