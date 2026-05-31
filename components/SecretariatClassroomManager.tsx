@@ -606,7 +606,7 @@ const SecretariatClassroomManager: React.FC = () => {
             await supabase.from('enrollments').update({ 
                status: 'RECLASSIFICADO',
                adjustment_date: newMovement.adjustment_date 
-            }).eq('student_id', selectedStudentForMovement.id).neq('status', 'ilike', 'TRANSFERIDO%');
+            }).eq('student_id', selectedStudentForMovement.id).not('status', 'ilike', 'TRANSFERIDO%');
          }
 
          // Update Status

@@ -259,7 +259,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     
     setIsLogLoading(true);
     try {
-      const logEntry: MediationLog = {
+      const logEntry: any = {
         id: `log-${Date.now()}`,
         date: newLog.date,
         professional: newLog.professional,

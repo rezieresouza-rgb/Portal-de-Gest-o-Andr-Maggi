@@ -45,24 +45,37 @@ const PROFICIENCY_LEVELS = [
    { label: 'Alto', value: 'ALTO', color: 'text-emerald-600 bg-emerald-50' },
 ];
 
-const CoordinationExternalGrades: React.FC = () => {
+interface CoordinationExternalGradesProps {
+   globalFilterTurma?: string;
+   globalFilterSubject?: string;
+}
+
+const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({ globalFilterTurma, globalFilterSubject }) => {
    const { addToast } = useToast();
    const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
    const [isImporting, setIsImporting] = useState(false);
    const [isLoadingStudents, setIsLoadingStudents] = useState(false);
    const fileInputRef = useRef<HTMLInputElement>(null);
 
+   const [allExternalAssessments, setAllExternalAssessments] = useState<Assessment[]>([]);
    const [externalAssessments, setExternalAssessments] = useState<Assessment[]>([]);
    const [students, setStudents] = useState<{ id: string, name: string }[]>([]);
    const [classrooms, setClassrooms] = useState<string[]>([]);
+
+   // View Details State
+   const [selectedAssessmentForView, setSelectedAssessmentForView] = useState<Assessment | null>(null);
 
    // AI Modal State
    const [selectedAssessmentForAI, setSelectedAssessmentForAI] = useState<Assessment | null>(null);
    const [aiReport, setAiReport] = useState<any | null>(null);
    const [loadingAI, setLoadingAI] = useState(false);
 
-   // Analytics State
-   const [selectedSubjectChart, setSelectedSubjectChart] = useState<string>(SUBJECTS[0]);
+   const [selectedSubjectChart, setSelectedSubjectChart] = useState<string>(globalFilterSubject || SUBJECTS[0]);
+
+   // Sync chart subject with global filter
+   useEffect(() => {
+      if (globalFilterSubject) setSelectedSubjectChart(globalFilterSubject);
+   }, [globalFilterSubject]);
 
    // Form State
    const [form, setForm] = useState<Omit<Assessment, 'id' | 'timestamp'>>({
@@ -109,6 +122,7 @@ const CoordinationExternalGrades: React.FC = () => {
             })),
             timestamp: new Date(a.date).getTime()
          }));
+         setAllExternalAssessments(formatted);
          setExternalAssessments(formatted);
       }
 
@@ -126,6 +140,18 @@ const CoordinationExternalGrades: React.FC = () => {
    useEffect(() => {
       fetchData();
    }, []);
+
+   // Apply Global Filters
+   useEffect(() => {
+      let filtered = allExternalAssessments;
+      if (globalFilterTurma) {
+         filtered = filtered.filter(a => a.className === globalFilterTurma);
+      }
+      if (globalFilterSubject) {
+         filtered = filtered.filter(a => a.subject === globalFilterSubject);
+      }
+      setExternalAssessments(filtered);
+   }, [globalFilterTurma, globalFilterSubject, allExternalAssessments]);
 
    // Fetch Students when Class changes in Form - IMPROVED ROBUSTNESS
    useEffect(() => {
@@ -398,28 +424,27 @@ const CoordinationExternalGrades: React.FC = () => {
                   </div>
                   <div className="h-[300px] w-full">
                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
                            <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
                            <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
                            <Tooltip
+                              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                               contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', backgroundColor: '#1e1b4b', color: '#fff' }}
                               itemStyle={{ fontSize: '11px', fontWeight: 'bold', color: '#ccc' }}
                               labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#fff', marginBottom: '4px', textTransform: 'uppercase' }}
                            />
                            <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: '#fff' }} />
                            {activeClasses.map((cls, idx) => (
-                              <Line
+                              <Bar
                                  key={cls}
-                                 type="monotone"
                                  dataKey={cls}
-                                 stroke={COLORS[idx % COLORS.length]}
-                                 strokeWidth={3}
-                                 dot={{ r: 4, strokeWidth: 2, fill: '#1e1b4b' }}
-                                 activeDot={{ r: 6 }}
+                                 fill={COLORS[idx % COLORS.length]}
+                                 radius={[4, 4, 0, 0]}
+                                 barSize={30}
                               />
                            ))}
-                        </LineChart>
+                        </BarChart>
                      </ResponsiveContainer>
                   </div>
                </div>
@@ -451,14 +476,23 @@ const CoordinationExternalGrades: React.FC = () => {
                               </div>
                            </div>
                            <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
-                              <button onClick={() => deleteRecord(ass.id)} className="text-white/20 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
-                              <button
-                                 onClick={() => handleGenerateAIReport(ass)}
-                                 className="px-3 py-2 bg-violet-500/10 text-violet-300 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-violet-500/20 transition-all flex items-center gap-2 border border-violet-500/20"
-                              >
-                                 <Sparkles size={12} />
-                                 Plano de Ação (IA)
-                              </button>
+                              <button onClick={() => deleteRecord(ass.id)} className="text-white/20 hover:text-red-400 transition-colors" title="Excluir"><Trash2 size={16} /></button>
+                              <div className="flex gap-2">
+                                 <button
+                                    onClick={() => setSelectedAssessmentForView(ass)}
+                                    className="px-3 py-2 bg-white/5 text-white/60 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 border border-white/10"
+                                 >
+                                    <Search size={12} />
+                                    Ver Alunos
+                                 </button>
+                                 <button
+                                    onClick={() => handleGenerateAIReport(ass)}
+                                    className="px-3 py-2 bg-violet-500/10 text-violet-300 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-violet-500/20 transition-all flex items-center gap-2 border border-violet-500/20"
+                                 >
+                                    <Sparkles size={12} />
+                                    Plano de Ação (IA)
+                                 </button>
+                              </div>
                            </div>
                         </div>
                      );
@@ -669,6 +703,51 @@ const CoordinationExternalGrades: React.FC = () => {
 
                   <div className="p-6 border-t border-white/10 bg-white/5 flex justify-end shrink-0">
                      <button onClick={() => window.print()} className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-black uppercase text-xs tracking-widest transition-all">Imprimir Relatório</button>
+                  </div>
+               </div>
+            </div>
+         )}
+
+         {/* VIEW STUDENTS MODAL */}
+         {selectedAssessmentForView && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
+               <div className="bg-[#1a1a1a] rounded-[3rem] w-full max-w-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-white/10">
+                  <div className="p-8 bg-violet-900/50 text-white flex justify-between items-center shrink-0 border-b border-white/10">
+                     <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white/10 rounded-2xl"><Search size={28} /></div>
+                        <div>
+                           <h3 className="text-xl font-black uppercase tracking-tight">Desempenho dos Alunos</h3>
+                           <p className="text-violet-200 text-xs font-bold uppercase tracking-widest">{selectedAssessmentForView.subject} • {selectedAssessmentForView.className} • {selectedAssessmentForView.bimestre}</p>
+                        </div>
+                     </div>
+                     <button onClick={() => setSelectedAssessmentForView(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
+                  </div>
+
+                  <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
+                     <div className="grid grid-cols-1 gap-3">
+                        {selectedAssessmentForView.grades.sort((a, b) => a.studentName.localeCompare(b.studentName)).map(g => (
+                           <div key={g.studentName} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:border-violet-500/30 transition-all">
+                              <div>
+                                 <p className="text-xs font-black text-white uppercase">{g.studentName}</p>
+                                 <div className="flex items-center gap-2 mt-1">
+                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${PROFICIENCY_LEVELS.find(l => l.value === g.proficiencyLevel)?.color}`}>
+                                       Nível: {PROFICIENCY_LEVELS.find(l => l.value === g.proficiencyLevel)?.label}
+                                    </span>
+                                 </div>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                 <div className="w-20 p-2 text-center bg-black/20 rounded-xl font-black text-sm text-white border border-white/5">
+                                    {g.score}%
+                                 </div>
+                              </div>
+                           </div>
+                        ))}
+                        {selectedAssessmentForView.grades.length === 0 && (
+                           <div className="p-8 text-center bg-white/5 rounded-2xl border-2 border-dashed border-white/10">
+                              <p className="text-white/30 font-bold text-xs">Nenhum aluno registrado nesta avaliação.</p>
+                           </div>
+                        )}
+                     </div>
                   </div>
                </div>
             </div>

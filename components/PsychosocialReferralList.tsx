@@ -141,7 +141,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
         student_age: formData.studentAge,
         previous_strategies: formData.previousStrategies,
         attendance_frequency: formData.attendanceFrequency,
-        adopted_procedures: formData.adoptedProcedures,
+        adopted_procedures: formData.adopted_procedures,
         report: formData.report,
         referral_destination: formData.referralDestination,
         mediation_procedures: formData.mediationProcedures || []

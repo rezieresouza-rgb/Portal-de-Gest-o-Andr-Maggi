@@ -193,7 +193,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           if (activeEnrollment) {
             activeStudentsMap[s.id] = {
               name: s.name,
-              class: activeEnrollment.classrooms?.name || 'SEM TURMA'
+              class: Array.isArray(activeEnrollment.classrooms) ? (activeEnrollment.classrooms as any)[0]?.name || 'SEM TURMA' : (activeEnrollment.classrooms as any)?.name || 'SEM TURMA'
             };
           }
         });
@@ -309,7 +309,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     const turmas = new Set<string>();
     assessments.forEach(a => turmas.add(a.className));
     lessonPlans.forEach(p => p.classNames.forEach((c: string) => turmas.add(c)));
-    Object.values(attendanceMap).forEach(s => turmas.add(s.className));
+    Object.values(attendanceMap).forEach((s: any) => turmas.add(s.className));
     return Array.from(turmas).filter(Boolean).sort();
   }, [assessments, lessonPlans, attendanceMap]);
 
@@ -350,7 +350,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
 
   const filteredAttendanceMap = useMemo(() => {
     const filtered: Record<string, any> = {};
-    Object.values(attendanceMap).forEach(s => {
+    Object.values(attendanceMap).forEach((s: any) => {
       if (filterTurma && s.className !== filterTurma) return;
       if (filterStudent && !s.name.toLowerCase().includes(filterStudent.toLowerCase())) return;
       filtered[s.id] = s;
@@ -590,7 +590,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           </div>
         );
       case 'external_grades':
-        return <CoordinationExternalGrades />;
+        return <CoordinationExternalGrades globalFilterTurma={filterTurma} globalFilterSubject={filterSubject} />;
       case 'calendar':
         return <UnifiedSchoolCalendar />;
       case 'referrals':

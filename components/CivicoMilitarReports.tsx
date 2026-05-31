@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Filter, AlertTriangle, TrendingUp, Users, ShieldAlert, Award, FileText } from 'lucide-react';
-import { StudentBehaviorState } from '../types'; // Adjust imports as necessary
+
 
 interface CivicoMilitarReportsProps {
-  studentStates: StudentBehaviorState[];
+  studentStates: any[];
 }
 
 type Period = 'HOJE' | 'SEMANA' | 'MES' | 'TRIMESTRE' | 'ANO';

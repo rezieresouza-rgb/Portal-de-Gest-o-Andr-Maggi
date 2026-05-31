@@ -131,7 +131,6 @@ interface NewMovementForm {
   // Geral
   responsible_name: string;
   transfer_subtype: 'INTERNA' | 'EXTERNA';
-  transfer_subtype: 'INTERNA' | 'EXTERNA';
   is_reclassified: boolean;
   adjustment_date: string;
 }
@@ -338,7 +337,7 @@ const StudentMovementsManager: React.FC = () => {
             await supabase.from('enrollments').update({ 
               status: 'RECLASSIFICADO',
               adjustment_date: form.adjustment_date
-            }).eq('student_id', form.student_id).neq('status', 'ilike', 'TRANSFERIDO%');
+            }).eq('student_id', form.student_id).not('status', 'ilike', 'TRANSFERIDO%');
           } else if (form.movement_type === 'TRANSFERENCIA') {
             const newStatus = form.transfer_subtype === 'INTERNA' ? 'TRANSFERIDO DE TURMA' : 'TRANSFERIDO DE ESCOLA';
             await supabase.from('students').update({ status: newStatus }).eq('id', form.student_id);

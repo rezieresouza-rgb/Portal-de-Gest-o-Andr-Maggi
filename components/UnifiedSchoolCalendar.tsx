@@ -14,11 +14,8 @@ import {
    CalendarDays,
    Loader2,
    Printer,
-   Save,
    CheckCircle2,
    Trash2,
-   FileText,
-   History,
    Clock
 } from 'lucide-react';
 import { useToast } from './Toast';

@@ -1672,7 +1672,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             >
                                <option className="bg-gray-900" value="all">Todas as Fontes</option>
                                {Object.values(funds).map(f => (
-                                 <option className="bg-gray-900" key={f.id} value={f.id}>{f.name}</option>
+                                 <option className="bg-gray-900" key={(f as any).id} value={(f as any).id}>{(f as any).name}</option>
                                ))}
                             </select>
                             
@@ -1726,7 +1726,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                              </thead>
                              <tbody className="divide-y divide-white/5 print:divide-gray-300">
                                {(() => {
-                                 let filtered = Object.values(funds).flatMap(f => f.transactions.map(t => ({...t, fundName: f.name})));
+                                 let filtered = Object.values(funds).flatMap(f => (f as any).transactions.map((t: any) => ({...t, fundName: (f as any).name})));
                                  
                                  if (reportFilters.fund !== 'all') {
                                     filtered = filtered.filter(t => t.fundName === funds[reportFilters.fund as SubModuleType].name);
