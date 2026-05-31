@@ -36,7 +36,7 @@ import {
    Line
 } from 'recharts';
 
-const SYSTEMS = ['CAED', 'SISTEMA ESTRUTURADO'];
+const SYSTEMS = ['SEE', 'SISTEMA ESTRUTURADO'];
 const SUBJECTS = ["MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA", "LÍNGUA INGLESA"];
 const PROFICIENCY_LEVELS = [
    { label: 'Muito Baixo', value: 'MUITO_BAIXO', color: 'text-red-600 bg-red-50' },
@@ -64,6 +64,57 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
    // View Details State
    const [selectedAssessmentForView, setSelectedAssessmentForView] = useState<Assessment | null>(null);
+   const [studentStats, setStudentStats] = useState<Record<string, { attendance: number, activeReferrals: number, civicoBehavior: number }>>({});
+   const [selectedStudentHistory, setSelectedStudentHistory] = useState<string | null>(null);
+
+   // Cross-referencing Data fetcher
+   useEffect(() => {
+      const fetchStats = async () => {
+         if (!selectedAssessmentForView) return;
+         
+         const studentIds = selectedAssessmentForView.grades.map(g => g.studentId).filter(id => id !== 'N/A' && id !== undefined);
+         if (studentIds.length === 0) return;
+
+         try {
+            // 1. Fetch Attendance
+            const { data: attData } = await supabase.from('class_attendance_students').select('student_id, is_present').in('student_id', studentIds);
+            
+            // 2. Fetch Referrals (Psicossocial)
+            const { data: refData } = await supabase.from('referrals').select('student_id').in('student_id', studentIds).eq('status', 'ABERTO');
+            
+            // 3. Fetch Civico-Militar behavior (if applicable)
+            const { data: civData } = await supabase.from('student_behavior').select('student_id, type').in('student_id', studentIds);
+
+            const stats: Record<string, { attendance: number, activeReferrals: number, civicoBehavior: number }> = {};
+            
+            studentIds.forEach(id => {
+               // Referrals
+               const refs = refData?.filter(r => r.student_id === id).length || 0;
+               
+               // Attendance
+               const atts = attData?.filter(a => a.student_id === id) || [];
+               const totalClasses = atts.length;
+               const presentClasses = atts.filter(a => a.is_present).length;
+               const attendancePct = totalClasses > 0 ? (presentClasses / totalClasses) * 100 : 100;
+               
+               // Civico-Militar (Ocorrências Negativas)
+               const civs = civData?.filter(c => c.student_id === id && (c.type === 'FALTA_LEVE' || c.type === 'FALTA_MEDIA' || c.type === 'FALTA_GRAVE')).length || 0;
+
+               stats[id] = { 
+                  attendance: attendancePct, 
+                  activeReferrals: refs,
+                  civicoBehavior: civs
+               };
+            });
+            
+            setStudentStats(stats);
+         } catch (error) {
+            console.error("Erro ao buscar dados cruzados:", error);
+         }
+      };
+      
+      fetchStats();
+   }, [selectedAssessmentForView]);
 
    // AI Modal State
    const [selectedAssessmentForAI, setSelectedAssessmentForAI] = useState<Assessment | null>(null);
@@ -84,7 +135,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
       className: '',
       subject: SUBJECTS[0],
       teacherName: 'COORDENAÇÃO',
-      type: 'CAED',
+      type: 'SEE',
       description: '',
       max_score: 100,
       grades: []
@@ -97,10 +148,10 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          .from('assessments')
          .select(`
         *,
-        grades (score, proficiency_level, students(name)),
+        grades (student_id, score, proficiency_level, students(name)),
         classrooms (name)
       `)
-         .in('type', ['CAED', 'SISTEMA ESTRUTURADO'])
+         .in('type', ['CAED', 'SEE', 'SISTEMA ESTRUTURADO'])
          .order('date', { ascending: false });
 
       if (assessData) {
@@ -115,7 +166,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
             description: a.type + ' - ' + a.date,
             max_score: a.max_score,
             grades: a.grades.map((g: any) => ({
-               studentId: 'N/A', // We don't need ID for display list usually, or we can't easily map back if we don't fetch it
+               studentId: g.student_id || 'N/A', 
                studentName: g.students?.name || 'Aluno',
                score: g.score,
                proficiencyLevel: g.proficiency_level
@@ -378,12 +429,24 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          .filter(g => g.score < 60)
          .map(g => `${g.studentName} (${g.score}%)`);
 
+      // Tenta buscar habilidades estruturadas (ex: 6º ano)
+      let skillsData = null;
+      try {
+         if (assessment.className.includes('6º') || assessment.className.includes('6')) {
+            const Habilidades6Ano = await import('../data/habilidades_6ano.json');
+            skillsData = Habilidades6Ano.default.filter((h: any) => h.disciplina.toUpperCase() === assessment.subject.toUpperCase());
+         }
+      } catch (err) {
+         console.warn("Habilidades não encontradas localmente para esta turma.", err);
+      }
+
       const payload = {
          subject: assessment.subject,
          className: assessment.className,
          bimestre: assessment.bimestre,
          averageScore: avg.toFixed(1),
-         lowPerformers: lowPerformers
+         lowPerformers: lowPerformers,
+         skillsData: skillsData
       };
 
       const result = await generatePedagogicalIntervention(payload);
@@ -398,7 +461,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   <div>
                      <h2 className="text-3xl font-black text-white uppercase tracking-tight">Avaliações de Sistema</h2>
-                     <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Resultados CAED / Sistema Estruturado</p>
+                     <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Resultados SEE / Sistema Estruturado</p>
                   </div>
                   <button
                      onClick={() => setViewMode('form')}
@@ -459,7 +522,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <div>
                               <div className="flex justify-between items-start mb-4">
                                  <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl border border-violet-500/20"><FileBarChart size={24} /></div>
-                                 <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg border ${ass.type === 'CAED' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>{ass.type}</span>
+                                 <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg border ${ass.type === 'CAED' || ass.type === 'SEE' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>{ass.type === 'CAED' ? 'SEE' : ass.type}</span>
                               </div>
                               <h4 className="text-lg font-black text-white uppercase leading-tight">{ass.subject}</h4>
                               <p className="text-[10px] text-white/40 font-bold uppercase mt-1">{ass.className} • {ass.bimestre}</p>
@@ -726,13 +789,38 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
                      <div className="grid grid-cols-1 gap-3">
                         {selectedAssessmentForView.grades.sort((a, b) => a.studentName.localeCompare(b.studentName)).map(g => (
-                           <div key={g.studentName} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:border-violet-500/30 transition-all">
-                              <div>
-                                 <p className="text-xs font-black text-white uppercase">{g.studentName}</p>
-                                 <div className="flex items-center gap-2 mt-1">
+                           <React.Fragment key={g.studentName}>
+                           <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:border-violet-500/30 transition-all">
+                              <div 
+                                 className="cursor-pointer"
+                                 onClick={() => setSelectedStudentHistory(selectedStudentHistory === g.studentId ? null : g.studentId)}
+                              >
+                                 <p className="text-xs font-black text-white uppercase hover:text-violet-400 transition-colors">{g.studentName}</p>
+                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${PROFICIENCY_LEVELS.find(l => l.value === g.proficiencyLevel)?.color}`}>
                                        Nível: {PROFICIENCY_LEVELS.find(l => l.value === g.proficiencyLevel)?.label}
                                     </span>
+                                    
+                                    {/* BADGES DE CRUZAMENTO */}
+                                    {g.studentId && studentStats[g.studentId] && (
+                                       <>
+                                          {studentStats[g.studentId].attendance < 85 && (
+                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-red-500/20 text-red-400 border border-red-500/30" title={`Frequência: ${studentStats[g.studentId].attendance.toFixed(1)}%`}>
+                                                Falta Crítica
+                                             </span>
+                                          )}
+                                          {studentStats[g.studentId].activeReferrals > 0 && (
+                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-orange-500/20 text-orange-400 border border-orange-500/30" title={`${studentStats[g.studentId].activeReferrals} Encaminhamento(s) Aberto(s)`}>
+                                                Psicossocial
+                                             </span>
+                                          )}
+                                          {studentStats[g.studentId].civicoBehavior > 0 && (
+                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" title={`${studentStats[g.studentId].civicoBehavior} Ocorrência(s) Disciplinar(es)`}>
+                                                Conduta
+                                             </span>
+                                          )}
+                                       </>
+                                    )}
                                  </div>
                               </div>
                               <div className="flex items-center gap-4">
@@ -741,6 +829,45 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  </div>
                               </div>
                            </div>
+                           
+                           {/* HISTÓRICO DO ALUNO (MINI-DOSSIÊ) */}
+                           {selectedStudentHistory === g.studentId && (
+                              <div className="p-4 bg-black/40 rounded-2xl border border-violet-500/20 mt-1 mb-3 animate-in slide-in-from-top-2">
+                                 <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <TrendingUp size={14} /> Evolução Individual: {g.studentName}
+                                 </h4>
+                                 <div className="h-48 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                       <BarChart
+                                          data={allExternalAssessments
+                                             .filter(a => a.subject === selectedAssessmentForView.subject && a.className === selectedAssessmentForView.className)
+                                             .map(a => {
+                                                const studentGrade = a.grades.find(gr => gr.studentId === g.studentId);
+                                                return {
+                                                   name: a.bimestre,
+                                                   score: studentGrade ? studentGrade.score : 0,
+                                                   date: a.date
+                                                };
+                                             })
+                                             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                                          }
+                                          margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+                                       >
+                                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                          <XAxis dataKey="name" stroke="#ffffff50" fontSize={10} tickMargin={10} axisLine={false} tickLine={false} />
+                                          <YAxis stroke="#ffffff50" fontSize={10} axisLine={false} tickLine={false} domain={[0, 100]} />
+                                          <Tooltip
+                                             contentStyle={{ backgroundColor: '#1a1a1a', borderColor: '#ffffff20', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}
+                                             itemStyle={{ color: '#a78bfa' }}
+                                             cursor={{fill: '#ffffff05'}}
+                                          />
+                                          <Bar dataKey="score" name="Proficiência (%)" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                       </BarChart>
+                                    </ResponsiveContainer>
+                                 </div>
+                              </div>
+                           )}
+                           </React.Fragment>
                         ))}
                         {selectedAssessmentForView.grades.length === 0 && (
                            <div className="p-8 text-center bg-white/5 rounded-2xl border-2 border-dashed border-white/10">

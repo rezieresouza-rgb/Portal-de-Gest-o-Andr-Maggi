@@ -1,0 +1,30 @@
+[
+  {
+    "codigo": "EF0",
+    "descricao": "EF0 - EF06HI06MT1-Identificar geograficamente as rotas de povoamento no território americano.",
+    "rendimento": 33,
+    "disciplina": "HISTÓRIA",
+    "questoes": 12
+  },
+  {
+    "codigo": "EF0",
+    "descricao": "EF0 - EF06HI03MT1-Identificar as hipóteses científicas sobre o surgimento da espécie humana e sua historicidade.",
+    "rendimento": 62,
+    "disciplina": "HISTÓRIA",
+    "questoes": 11
+  },
+  {
+    "codigo": "EF0",
+    "descricao": "EF0 - EF06GE09MT1-Reconhecer a importância da legenda para a compreensão do mapa.",
+    "rendimento": 25,
+    "disciplina": "GEOGRAFIA",
+    "questoes": 10
+  },
+  {
+    "codigo": "EF0",
+    "descricao": "EF0 - EF06GE01MT2-Diferenciar os tipos de paisagens que marcam o espaço geográfico.",
+    "rendimento": 76,
+    "disciplina": "GEOGRAFIA",
+    "questoes": 9
+  }
+]

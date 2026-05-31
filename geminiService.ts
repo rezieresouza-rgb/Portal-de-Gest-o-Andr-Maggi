@@ -611,11 +611,12 @@ export const generatePedagogicalIntervention = async (assessmentData: any) => {
       - Bimestre: ${assessmentData.bimestre}
       - Média da Turma: ${assessmentData.averageScore}%
       - Alunos com Baixo Desempenho (<60%): ${JSON.stringify(assessmentData.lowPerformers)}
+      ${assessmentData.skillsData ? `- Desempenho nas Habilidades (Geral): ${JSON.stringify(assessmentData.skillsData)}` : ''}
       
       Gere um PARECER TÉCNICO PEDAGÓGICO curto e direto contendo:
       1. **Diagnóstico**: Identifique prováveis lacunas de aprendizagem.
       2. **Ação Imediata**: Sugira 2 metodologias ativas para aplicar em sala de aula visando corrigir essas lacunas.
-      3. **Descritores/Habilidades**: Cite quais habilidades da BNCC provavelmente precisam ser retomadas.
+      3. **Descritores/Habilidades**: Cite quais habilidades da BNCC (utilize os dados de Desempenho nas Habilidades se fornecidos) que precisam ser retomadas.
       
       Responda em formato JSON.`,
       config: {
