@@ -1,0 +1,618 @@
+{
+  "6º ANO D": {
+    "LÍNGUA PORTUGUESA": [
+      {
+        "codigo": "EF06LP04MT0261",
+        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+        "rendimento": 55,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF06LP06MT0161",
+        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+        "rendimento": 48,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF67LP28MT0161",
+        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+        "rendimento": 76,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF67LP28MT0561",
+        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+        "rendimento": 28,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF67LP28MT0661",
+        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+        "rendimento": 31,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF69LP47MT0161",
+        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+        "rendimento": 10,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 29
+      }
+    ],
+    "ARTE": [
+      {
+        "codigo": "EF69AR01MT0161",
+        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+        "rendimento": 55,
+        "disciplina": "ARTE",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF69AR03MT0161",
+        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+        "rendimento": 41,
+        "disciplina": "ARTE",
+        "questoes": 29
+      }
+    ],
+    "GEOGRAFIA": [
+      {
+        "codigo": "EF06GE01MT2",
+        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+        "rendimento": 72,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF06GE09MT1",
+        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+        "rendimento": 28,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 29
+      }
+    ],
+    "HISTÓRIA": [
+      {
+        "codigo": "EF06HI03MT1",
+        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+        "rendimento": 76,
+        "disciplina": "HISTÓRIA",
+        "questoes": 29
+      },
+      {
+        "codigo": "EF06HI06MT1",
+        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+        "rendimento": 34,
+        "disciplina": "HISTÓRIA",
+        "questoes": 29
+      }
+    ],
+    "MATEMÁTICA": [
+      {
+        "codigo": "EF06MA03MT01",
+        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+        "rendimento": 54,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 26
+      },
+      {
+        "codigo": "EF06MA03MT02",
+        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+        "rendimento": 50,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 26
+      },
+      {
+        "codigo": "EF06MA17MT01",
+        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+        "rendimento": 35,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 26
+      },
+      {
+        "codigo": "EF06MA17MT02",
+        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+        "rendimento": 50,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 26
+      },
+      {
+        "codigo": "EF06MA19MT01",
+        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+        "rendimento": 62,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 26
+      },
+      {
+        "codigo": "EF06MA20MT01",
+        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+        "rendimento": 38,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 26
+      }
+    ],
+    "CIÊNCIAS": [
+      {
+        "codigo": "EF06CI11MT04",
+        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+        "rendimento": 27,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 26
+      },
+      {
+        "codigo": "EF06CI12MT01",
+        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+        "rendimento": 27,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 26
+      }
+    ]
+  },
+  "6º ANO E": {
+    "LÍNGUA PORTUGUESA": [
+      {
+        "codigo": "EF06LP04MT0261",
+        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+        "rendimento": 26,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06LP06MT0161",
+        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+        "rendimento": 52,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0161",
+        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+        "rendimento": 70,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0561",
+        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+        "rendimento": 30,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0661",
+        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+        "rendimento": 44,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF69LP47MT0161",
+        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+        "rendimento": 19,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      }
+    ],
+    "ARTE": [
+      {
+        "codigo": "EF69AR01MT0161",
+        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+        "rendimento": 63,
+        "disciplina": "ARTE",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF69AR03MT0161",
+        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+        "rendimento": 30,
+        "disciplina": "ARTE",
+        "questoes": 27
+      }
+    ],
+    "GEOGRAFIA": [
+      {
+        "codigo": "EF06GE01MT2",
+        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+        "rendimento": 74,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06GE09MT1",
+        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+        "rendimento": 11,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 27
+      }
+    ],
+    "HISTÓRIA": [
+      {
+        "codigo": "EF06HI03MT1",
+        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+        "rendimento": 41,
+        "disciplina": "HISTÓRIA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06HI06MT1",
+        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+        "rendimento": 26,
+        "disciplina": "HISTÓRIA",
+        "questoes": 27
+      }
+    ],
+    "MATEMÁTICA": [
+      {
+        "codigo": "EF06MA03MT01",
+        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+        "rendimento": 63,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA03MT02",
+        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+        "rendimento": 56,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA17MT01",
+        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+        "rendimento": 37,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA17MT02",
+        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+        "rendimento": 67,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA19MT01",
+        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+        "rendimento": 52,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA20MT01",
+        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+        "rendimento": 52,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      }
+    ],
+    "CIÊNCIAS": [
+      {
+        "codigo": "EF06CI11MT04",
+        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+        "rendimento": 52,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06CI12MT01",
+        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+        "rendimento": 33,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 27
+      }
+    ]
+  },
+  "6º ANO B": {
+    "LÍNGUA PORTUGUESA": [
+      {
+        "codigo": "EF06LP04MT0261",
+        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+        "rendimento": 48,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06LP06MT0161",
+        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+        "rendimento": 41,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0161",
+        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+        "rendimento": 81,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0561",
+        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+        "rendimento": 15,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0661",
+        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+        "rendimento": 30,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF69LP47MT0161",
+        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+        "rendimento": 33,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      }
+    ],
+    "ARTE": [
+      {
+        "codigo": "EF69AR01MT0161",
+        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+        "rendimento": 48,
+        "disciplina": "ARTE",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF69AR03MT0161",
+        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+        "rendimento": 44,
+        "disciplina": "ARTE",
+        "questoes": 27
+      }
+    ],
+    "GEOGRAFIA": [
+      {
+        "codigo": "EF06GE01MT2",
+        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+        "rendimento": 85,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06GE09MT1",
+        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+        "rendimento": 30,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 27
+      }
+    ],
+    "HISTÓRIA": [
+      {
+        "codigo": "EF06HI03MT1",
+        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+        "rendimento": 67,
+        "disciplina": "HISTÓRIA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06HI06MT1",
+        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+        "rendimento": 33,
+        "disciplina": "HISTÓRIA",
+        "questoes": 27
+      }
+    ],
+    "MATEMÁTICA": [
+      {
+        "codigo": "EF06MA03MT01",
+        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+        "rendimento": 78,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA03MT02",
+        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+        "rendimento": 70,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA17MT01",
+        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+        "rendimento": 33,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA17MT02",
+        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+        "rendimento": 59,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA19MT01",
+        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+        "rendimento": 48,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA20MT01",
+        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+        "rendimento": 41,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      }
+    ],
+    "CIÊNCIAS": [
+      {
+        "codigo": "EF06CI11MT04",
+        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+        "rendimento": 41,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06CI12MT01",
+        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+        "rendimento": 19,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 27
+      }
+    ]
+  },
+  "6º ANO A": {
+    "LÍNGUA PORTUGUESA": [
+      {
+        "codigo": "EF06LP04MT0261",
+        "descricao": "EF06LP04MT0261-ANALISAR A FUNÇÃO E AS FLEXÕES DE ADJETIVOS.",
+        "rendimento": 44,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06LP06MT0161",
+        "descricao": "EF06LP06MT0161-ANALISAR AS REGRAS DE CONCORDÂNCIA NOMINAL (RELAÇÕES ENTRE OS SUBSTANTIVOS E SEUS DETERMINANTES) .",
+        "rendimento": 63,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0161",
+        "descricao": "EF67LP28MT0161-RECONHECER A PRESENÇA DE UM ENSINAMENTO MORAL OU LIÇÃO DE VIDA EXPLÍCITA OU IMPLÍCITA EM CADA FÁBULA.",
+        "rendimento": 85,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0561",
+        "descricao": "EF67LP28MT0561-IDENTIFICAR OS ELEMENTOS CARACTERÍSTICOS DE MITOS E LENDAS, COMO: PERSONAGENS SOBRENATURAIS (DEUSES, HERÓIS, MONSTROS), EXPLICAÇÕES PARA FENÔMENOS NATURAIS, VALORES CULTURAIS.",
+        "rendimento": 19,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF67LP28MT0661",
+        "descricao": "EF67LP28MT0661-DISTINGUIR MITOS DE LENDAS (MITOS EXPLICAM A ORIGEM DO MUNDO E DOS SERES; LENDAS NARRAM FEITOS HEROICOS OU ACONTECIMENTOS EXTRAORDINÁRIOS).",
+        "rendimento": 26,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF69LP47MT0161",
+        "descricao": "EF69LP47MT0161-COMPREENDER, EM FÁBULAS, A ESCOLHA LEXICAL PARA A CARACTERIZAÇÃO DOS CENÁRIOS E DOS PERSONAGENS.",
+        "rendimento": 19,
+        "disciplina": "LÍNGUA PORTUGUESA",
+        "questoes": 27
+      }
+    ],
+    "ARTE": [
+      {
+        "codigo": "EF69AR01MT0161",
+        "descricao": "EF69AR01MT0161-COMPREENDER E ANALISAR  FORMAS DISTINTAS DAS ARTES\r\nVISUAIS TRADICIONAIS E CONTEMPORÂNEAS, EM OBRAS DE ARTISTAS BRASILEIROS E\r\nESTRANGEIROS DE DIFERENTES ÉPOCAS E EM DIFERENTES MATRIZES ESTÉTICAS E\r\nCULTURAIS, DE MODO A AMPLIAR A EXPERIÊNCIA COM DIFERENTES CONTEXTOS E\r\nPRÁTICAS ARTÍSTICO-VISUAIS E CULTIVAR A PERCEPÇÃO, O IMAGINÁRIO, A\r\nCAPACIDADE DE SIMBOLIZAR E O REPERTÓRIO IMAGÉTICO.",
+        "rendimento": 56,
+        "disciplina": "ARTE",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF69AR03MT0161",
+        "descricao": "EF69AR03MT0161-RECONHECER E ANALISAR SITUAÇÕES NAS QUAIS AS LINGUAGENS DAS ARTES VISUAIS\r\nSE INTEGRAM ÀS LINGUAGENS AUDIOVISUAIS (CINEMA, ANIMAÇÕES, VÍDEOS ETC.),\r\nGRÁFICAS (CAPAS DE LIVROS, ILUSTRAÇÕES DE TEXTOS DIVERSOS ETC.),\r\nCENOGRÁFICAS, COREOGRÁFICAS, MUSICAIS ETC.",
+        "rendimento": 41,
+        "disciplina": "ARTE",
+        "questoes": 27
+      }
+    ],
+    "GEOGRAFIA": [
+      {
+        "codigo": "EF06GE01MT2",
+        "descricao": "EF06GE01MT2-DIFERENCIAR OS TIPOS DE PAISAGENS QUE MARCAM O ESPAÇO GEOGRÁFICO.",
+        "rendimento": 74,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06GE09MT1",
+        "descricao": "EF06GE09MT1-RECONHECER A IMPORTÂNCIA DA LEGENDA PARA A COMPREENSÃO DO MAPA.",
+        "rendimento": 33,
+        "disciplina": "GEOGRAFIA",
+        "questoes": 27
+      }
+    ],
+    "HISTÓRIA": [
+      {
+        "codigo": "EF06HI03MT1",
+        "descricao": "EF06HI03MT1-IDENTIFICAR AS HIPÓTESES CIENTÍFICAS SOBRE O SURGIMENTO DA ESPÉCIE HUMANA E SUA HISTORICIDADE.",
+        "rendimento": 63,
+        "disciplina": "HISTÓRIA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06HI06MT1",
+        "descricao": "EF06HI06MT1-IDENTIFICAR GEOGRAFICAMENTE AS ROTAS DE POVOAMENTO NO TERRITÓRIO AMERICANO.",
+        "rendimento": 37,
+        "disciplina": "HISTÓRIA",
+        "questoes": 27
+      }
+    ],
+    "MATEMÁTICA": [
+      {
+        "codigo": "EF06MA03MT01",
+        "descricao": "EF06MA03MT01- CALCULAR O RESULTADO DE EXPRESSÕES NUMÉRICAS COM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO, MULTIPLICAÇÃO E DIVISÃO), ENVOLVENDO NÚMEROS NATURAIS, RESPEITANDO A ORDEM DAS OPERAÇÕES.",
+        "rendimento": 56,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA03MT02",
+        "descricao": "EF06MA03MT02-RESOLVER PROBLEMAS QUE ENVOLVAM AS QUATRO OPERAÇÕES BÁSICAS (ADIÇÃO, SUBTRAÇÃO E MULTIPLICAÇÃO) COM NÚMEROS NATURAIS.",
+        "rendimento": 52,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA17MT01",
+        "descricao": "EF06MA17MT01-RECONHECER OS ELEMENTOS DE UM POLIEDRO (FACES, VÉRTICES E ARESTAS) EM REPRESENTAÇÕES BIDIMENSIONAIS OU TRIDIMENSIONAIS.",
+        "rendimento": 41,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA17MT02",
+        "descricao": "EF06MA17MT02-RELACIONAR A PLANIFICAÇÃO DE UM PRISMA OU PIRÂMIDE À SUA FORMA TRIDIMENSIONAL CORRESPONDENTE.",
+        "rendimento": 41,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA19MT01",
+        "descricao": "EF06MA19MT01-CLASSIFICAR UM TRIÂNGULO COMO EQUILÁTERO, ISÓSCELES OU ESCALENO, A PARTIR DA MEDIDA DE SEUS LADOS.",
+        "rendimento": 44,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06MA20MT01",
+        "descricao": "EF06MA20MT01-COMPARAR ÂNGULOS, CLASSIFICANDO-OS COMO RETO, AGUDO OU OBTUSO, A PARTIR DE SUAS MEDIDAS EM GRAUS.",
+        "rendimento": 52,
+        "disciplina": "MATEMÁTICA",
+        "questoes": 27
+      }
+    ],
+    "CIÊNCIAS": [
+      {
+        "codigo": "EF06CI11MT04",
+        "descricao": "EF06CI11MT04-COMPREENDER AS ETAPAS DO CICLO DA ÁGUA.",
+        "rendimento": 37,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 27
+      },
+      {
+        "codigo": "EF06CI12MT01",
+        "descricao": "EF06CI12MT01-CLASSIFICAR OS DIFERENTES TIPOS DE ROCHAS.",
+        "rendimento": 30,
+        "disciplina": "CIÊNCIAS",
+        "questoes": 27
+      }
+    ]
+  }
+}

@@ -21,7 +21,7 @@ import {
 import { useToast } from './Toast';
 import { Assessment, StudentGrade } from '../types';
 import { extractAssessmentResults, generatePedagogicalIntervention } from '../geminiService';
-import Habilidades6Ano from '../data/habilidades_6ano.json';
+import HabilidadesTodasTurmas from '../data/habilidades_todas_turmas.json';
 import { supabase } from '../supabaseClient';
 import {
    BarChart,
@@ -430,11 +430,14 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          .filter(g => g.score < 60)
          .map(g => `${g.studentName} (${g.score}%)`);
 
-      // Tenta buscar habilidades estruturadas (ex: 6º ano)
+      // Tenta buscar habilidades estruturadas da nova base de dados global
       let skillsData = null;
       try {
-         if (assessment.className.includes('6º') || assessment.className.includes('6')) {
-            skillsData = Habilidades6Ano.filter((h: any) => h.disciplina.toUpperCase() === assessment.subject.toUpperCase());
+         // O assessment.className geralmente vem como "6º ANO A" ou similar, 
+         // o que já bate com as chaves geradas (ex: "6º ANO A") no json.
+         const classData = (HabilidadesTodasTurmas as Record<string, any>)[assessment.className.toUpperCase()];
+         if (classData) {
+            skillsData = classData[assessment.subject.toUpperCase()];
          }
       } catch (err) {
          console.warn("Habilidades não encontradas localmente para esta turma.", err);
