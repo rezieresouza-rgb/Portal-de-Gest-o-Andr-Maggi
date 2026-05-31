@@ -3285,11 +3285,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 )}
 
                 <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Detalhes / Observações</label>
+                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">
+                    {newOccurrence.category.startsWith('9') ? 'Descrição da Falta (Obrigatório)' : 'Detalhes / Observações'}
+                  </label>
                   <textarea
                     value={newOccurrence.observations}
                     onChange={e => setNewOccurrence(prev => ({ ...prev, observations: e.target.value }))}
-                    placeholder="Descreva detalhes específicos do fato gerador..."
+                    placeholder={newOccurrence.category.startsWith('9') ? "Especifique a falta e descreva os detalhes do fato gerador..." : "Descreva detalhes específicos do fato gerador..."}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[60px]"
                     required
                   />
