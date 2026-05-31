@@ -36,7 +36,8 @@ import {
   ClipboardCheck,
   BookOpen,
   CalendarDays,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Filter
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ClassroomObservation, PedagogicalProject, LessonPlan, Assessment, PedagogicalIntervention } from '../types';
