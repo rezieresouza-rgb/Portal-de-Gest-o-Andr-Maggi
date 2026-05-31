@@ -829,7 +829,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  {aiReport.id && aiReport.tasks ? (
                                     aiReport.tasks.map((task: any, idx: number) => (
                                        <div key={task.id} 
-                                            onClick={() => handleToggleTaskStatus(task.id, !task.completed)}
+                                            onClick={() => handleToggleTask(task.id)}
                                             className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer select-none ${task.completed ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/5 border-transparent hover:border-white/10'}`}>
                                           <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border transition-all ${task.completed ? 'bg-emerald-500 border-emerald-400 text-white' : 'bg-white/10 border-white/20 text-transparent'}`}>
                                              {task.completed && <Check size={14} strokeWidth={3} />}
