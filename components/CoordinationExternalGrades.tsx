@@ -807,21 +807,59 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <div>
                               <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Lightbulb size={14} /> Habilidades Foco (BNCC/DRC-MT)</h4>
                               <div className="bg-amber-500/10 p-6 rounded-3xl border border-amber-500/20">
-                                 <p className="text-amber-200 font-bold text-sm">{aiReport.skillsToReinforce}</p>
+                                 <p className="text-amber-200 font-bold text-sm">{aiReport.skillsToReinforce || aiReport.skills_to_reinforce}</p>
                               </div>
                            </div>
 
                            <div>
-                              <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest mb-3 flex items-center gap-2"><CheckCircle2 size={14} /> Metodologias Ativas Sugeridas</h4>
-                              <div className="space-y-3">
-                                 {aiReport.actions?.map((action: string, idx: number) => (
-                                    <div key={idx} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-transparent hover:border-white/10 transition-all">
-                                       <div className="w-6 h-6 rounded-full bg-violet-600/50 text-white flex items-center justify-center font-bold text-xs shrink-0 border border-violet-500/30">{idx + 1}</div>
-                                       <p className="text-white/80 text-sm font-medium">{action}</p>
-                                    </div>
-                                 ))}
+                              <div className="flex justify-between items-center mb-3">
+                                 <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                                    <CheckCircle2 size={14} /> {aiReport.id ? 'Checklist de Ação (PDCA)' : 'Metodologias Ativas Sugeridas'}
+                                 </h4>
+                                 {aiReport.id && aiReport.tasks && (
+                                    <span className="text-[10px] font-bold text-white/50 bg-white/5 px-2 py-1 rounded-md">
+                                       {aiReport.tasks.filter((t: any) => t.completed).length} de {aiReport.tasks.length} Concluídas
+                                    </span>
+                                 )}
                               </div>
+                              <div className="space-y-3">
+                                 {aiReport.id && aiReport.tasks ? (
+                                    aiReport.tasks.map((task: any, idx: number) => (
+                                       <div key={task.id} 
+                                            onClick={() => handleToggleTaskStatus(task.id, !task.completed)}
+                                            className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer select-none ${task.completed ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/5 border-transparent hover:border-white/10'}`}>
+                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border transition-all ${task.completed ? 'bg-emerald-500 border-emerald-400 text-white' : 'bg-white/10 border-white/20 text-transparent'}`}>
+                                             {task.completed && <Check size={14} strokeWidth={3} />}
+                                          </div>
+                                          <p className={`text-sm font-medium transition-all ${task.completed ? 'text-emerald-200/50 line-through' : 'text-white/80'}`}>{task.title}</p>
+                                       </div>
+                                    ))
+                                 ) : (
+                                    aiReport.actions?.map((action: string, idx: number) => (
+                                       <div key={idx} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-transparent transition-all">
+                                          <div className="w-6 h-6 rounded-full bg-violet-600/50 text-white flex items-center justify-center font-bold text-xs shrink-0 border border-violet-500/30">{idx + 1}</div>
+                                          <p className="text-white/80 text-sm font-medium">{action}</p>
+                                       </div>
+                                    ))
+                                 )}
+                              </div>
+                              
+                              {!aiReport.id && (
+                                 <div className="mt-8 flex justify-center">
+                                    <button onClick={handleSaveActionPlan} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+                                       <Save size={18} /> Salvar como Plano de Ação
+                                    </button>
+                                 </div>
+                              )}
                            </div>
+                           
+                           {aiReport.id && (
+                              <div className="mt-8 flex justify-center border-t border-white/10 pt-6">
+                                 <button onClick={() => handleGenerateAIReport(selectedAssessmentForAI, true)} className="text-white/40 hover:text-white transition-all text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                                    <RefreshCw size={14} /> Gerar Novas Ideias (Substituir Plano)
+                                 </button>
+                              </div>
+                           )}
                         </div>
                      ) : (
                         <div className="text-center py-10 text-white/30">Não foi possível gerar o relatório.</div>
