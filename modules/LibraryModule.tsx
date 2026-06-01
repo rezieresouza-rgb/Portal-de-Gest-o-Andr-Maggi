@@ -1024,6 +1024,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
       group.copies.push({
         id: b.id,
+        title: b.title,
+        author: b.author,
         internalRegistration: b.internalRegistration || 'N/A',
         location: b.location,
         availableCopies: b.availableCopies,
