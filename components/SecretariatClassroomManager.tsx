@@ -670,6 +670,41 @@ const SecretariatClassroomManager: React.FC = () => {
       }
    };
 
+   // --- EXPORT EMAILS ---
+   const handleExportEmails = async () => {
+      try {
+         setIsLoading(true);
+         const { data, error } = await supabase
+            .from('students')
+            .select('name, registration_number')
+            .order('name');
+         
+         if (error) throw error;
+         if (!data) return;
+
+         let content = "NOME DO ALUNO;CODIGO;E-MAIL INSTITUCIONAL\n";
+         data.forEach((s: any) => {
+            const email = `e${s.registration_number}@edu.mt.gov.br`;
+            content += `${s.name};${s.registration_number};${email}\n`;
+         });
+
+         const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+         const url = URL.createObjectURL(blob);
+         const link = document.createElement('a');
+         link.setAttribute('href', url);
+         link.setAttribute('download', 'lista_emails_alunos.csv');
+         link.style.visibility = 'hidden';
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
+      } catch (error) {
+         console.error("Erro ao exportar e-mails:", error);
+         alert("Erro ao gerar lista de e-mails.");
+      } finally {
+         setIsLoading(false);
+      }
+   };
+
    // --- RENDERING HELPERS ---
 
    const formatDateSafe = (dateStr: string) => {
@@ -778,6 +813,12 @@ const SecretariatClassroomManager: React.FC = () => {
                   className="px-6 py-3 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all shadow-lg"
                >
                   <FileUp size={14} /> Importar PDF
+               </button>
+               <button
+                  onClick={handleExportEmails}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg"
+               >
+                  <Download size={14} /> Lista de E-mails
                </button>
                <input type="file" ref={fileInputRef} onChange={handleImportPDF} className="hidden" accept=".pdf" />
                
@@ -1001,6 +1042,15 @@ const SecretariatClassroomManager: React.FC = () => {
                                     value={studentForm.Nome}
                                     onChange={e => setStudentForm({ ...studentForm, Nome: e.target.value.toUpperCase() })}
                                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all uppercase"
+                                 />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">E-mail Institucional (Gerado Automaticamente)</label>
+                                 <input
+                                    readOnly
+                                    value={studentForm.registration_number ? `e${studentForm.registration_number.trim()}@edu.mt.gov.br` : ''}
+                                    className="w-full p-4 bg-indigo-50/50 border border-indigo-100/50 rounded-2xl font-bold text-sm text-indigo-700 outline-none lowercase placeholder:text-indigo-300"
+                                    placeholder="e...codigo...@edu.mt.gov.br"
                                  />
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

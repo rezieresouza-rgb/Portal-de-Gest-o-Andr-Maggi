@@ -124,6 +124,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     medidaAplicada: '',
     falta: '',
     itensEnquadramento: '',
+    outroEnquadramento: '',
     atenuantes: '',
     agravantes: '',
     gestorMilitar: '',
@@ -2299,13 +2300,36 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold text-slate-500 uppercase">Enquadramento no Regulamento (Itens)</label>
-                        <input
-                          type="text"
+                        <select
                           value={docFields.itensEnquadramento}
-                          onChange={e => setDocFields(prev => ({ ...prev, itensEnquadramento: e.target.value }))}
-                          placeholder="Ex: Art. X, inciso Y"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
-                        />
+                          onChange={e => {
+                            const value = e.target.value;
+                            setDocFields(prev => ({
+                              ...prev,
+                              itensEnquadramento: value,
+                              // clear outroEnquadramento when not 'Outro'
+                              outroEnquadramento: value !== 'Outro' ? '' : prev.outroEnquadramento,
+                            }));
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="Advertência Oral">Advertência Oral</option>
+                          <option value="Advertência Escrita">Advertência Escrita</option>
+                          <option value="Suspensão de Sala de Aula">Suspensão de Sala de Aula</option>
+                          <option value="Ações Educativas">Ações Educativas</option>
+                          <option value="Transferência Educativa">Transferência Educativa</option>
+                          <option value="Outro">Outro</option>
+                        </select>
+                        {docFields.itensEnquadramento === 'Outro' && (
+                          <input
+                            type="text"
+                            placeholder="Descreva o ato não listado"
+                            value={docFields.outroEnquadramento || ''}
+                            onChange={e => setDocFields(prev => ({ ...prev, outroEnquadramento: e.target.value }))}
+                            className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          />
+                        )
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
@@ -2745,7 +2769,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                             será efetivada ou arquivada conforme despacho do gestor competente. O estudante supracitado 
                             cometeu a seguinte falta disciplinar no dia <span className="font-bold underline decoration-dotted underline-offset-4">{formatSimpleDate(docFields.faltaDate)}</span>: <span className="font-bold uppercase">{docFields.falta || '___________________________________________________________________________________'}</span>, 
                             sendo enquadrado no(s) item(ns) abaixo, conforme Apêndice I Regulamento Disciplinar das EECM-MT: 
-                            <span className="font-bold ml-1 uppercase">{docFields.itensEnquadramento || '_____________________________________________________'}</span>.
+                            <span className="font-bold ml-1 uppercase">{docFields.itensEnquadramento === 'Outro' ? (docFields.outroEnquadramento || '_____________________________________________________') : (docFields.itensEnquadramento || '_____________________________________________________')}</span>.
                           </p>
                         </div>
 

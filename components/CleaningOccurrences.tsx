@@ -265,6 +265,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                   occ.category === 'ELETRICA' ? 'bg-yellow-100 text-yellow-800' :
                   occ.category === 'HIDRAULICA' ? 'bg-blue-100 text-blue-800' :
                   occ.category === 'ESTRUTURAL' ? 'bg-orange-100 text-orange-800' :
+                  occ.category === 'EQUIPAMENTOS' ? 'bg-purple-100 text-purple-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
                   {occ.category}
@@ -399,6 +400,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                   <option value="ELETRICA">ELÉTRICA (Lâmpada, tomada...)</option>
                   <option value="HIDRAULICA">HIDRÁULICA (Vazamento, torneira...)</option>
                   <option value="ESTRUTURAL">ESTRUTURAL (Porta, fechadura, piso...)</option>
+                  <option value="EQUIPAMENTOS">EQUIPAMENTOS (Máquinas, ferramentas...)</option>
                   <option value="OUTROS">OUTROS</option>
                 </select>
               </div>
