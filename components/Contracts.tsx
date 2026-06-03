@@ -866,7 +866,7 @@ const Contracts: React.FC = () => {
       setIsLoadingStatements(true);
       const { data: guides, error: guidesError } = await supabase
         .from('payment_guides')
-        .select('id, guide_number, issue_date, total_value, created_at')
+        .select('id, guide_number, issue_date, total_value, created_at, order_number')
         .eq('statement_id', statement.id)
         .order('issue_date', { ascending: true, nullsFirst: true })
         .order('created_at', { ascending: true });
