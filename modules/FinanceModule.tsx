@@ -1760,7 +1760,11 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     filtered = filtered.filter(t => t.date <= reportFilters.endDate);
                                  }
                                  
-                                 filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                                 filtered.sort((a, b) => {
+                                    const dateTimeA = new Date(`${a.date}T${a.time || '00:00:00'}`).getTime();
+                                    const dateTimeB = new Date(`${b.date}T${b.time || '00:00:00'}`).getTime();
+                                    return dateTimeA - dateTimeB;
+                                 });
 
                                  const totalEntries = filtered.filter(t => t.type === 'ENTRY').reduce((acc, t) => acc + t.value, 0);
                                  const totalExpenses = filtered.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.value, 0);
