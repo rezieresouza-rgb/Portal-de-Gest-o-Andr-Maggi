@@ -1653,12 +1653,12 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                   )}
 
                   {activeTab === 'transaction_reports' && (
-                    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-                       <div className="bg-white/5 backdrop-blur-md p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-8">
-                         <div className="flex justify-between items-center border-b border-white/5 pb-6">
-                           <div className="flex items-center gap-3">
-                             <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20"><FileSearch size={20} /></div>
-                             <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">Relatório de Lançamentos</h3>
+                    <div className="space-y-8 animate-in fade-in duration-500 pb-20 print:space-y-4 print:pb-0 print:bg-white print:text-black">
+                       <div className="bg-white/5 backdrop-blur-md p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-8 print:bg-white print:p-0 print:border-none print:shadow-none print:space-y-4">
+                         <div className="flex justify-between items-center border-b border-white/5 pb-6 print:border-b-2 print:border-gray-300 print:pb-2">
+                           <div className="flex items-center gap-3 print:w-full print:justify-center">
+                             <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20 print:hidden"><FileSearch size={20} /></div>
+                             <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none print:text-black print:text-2xl print:text-center">Relatório de Lançamentos</h3>
                            </div>
                            <button onClick={() => window.print()} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2 no-print">
                               <Printer size={16} /> Imprimir Relatório
@@ -1725,16 +1725,16 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             />
                          </div>
 
-                         <div className="overflow-x-auto bg-white/5 p-4 rounded-3xl border border-white/10 print:bg-transparent print:border-none print:p-0">
+                         <div className="overflow-x-auto bg-white/5 p-4 rounded-3xl border border-white/10 print:bg-white print:p-0 print:border-none print:overflow-visible">
                            <table className="w-full text-left text-[11px] border-collapse print:text-black">
                              <thead>
-                               <tr className="text-white/40 border-b border-white/5 print:text-black print:border-black">
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Data</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Fonte</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Descrição</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest">NF</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest">Tipo</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest text-right">Valor</th>
+                               <tr className="text-white/40 border-b border-white/5 print:text-black print:border-b-2 print:border-black">
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Data</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Fonte</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Descrição</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">NF</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Tipo</th>
+                                 <th className="px-4 py-3 font-black uppercase tracking-widest text-right print:text-black">Valor</th>
                                </tr>
                              </thead>
                              <tbody className="divide-y divide-white/5 print:divide-gray-300">

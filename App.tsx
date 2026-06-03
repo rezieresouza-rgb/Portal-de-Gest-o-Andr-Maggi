@@ -252,7 +252,7 @@ const App: React.FC = () => {
         </div>
       }>
         <ToastProvider>
-          <div className={`bg-gray-50 w-full min-w-0 ${(!user || activeModule === 'hub') ? 'min-h-screen overflow-x-hidden' : 'h-screen overflow-hidden'}`}>
+          <div className={`bg-gray-50 w-full min-w-0 ${(!user || activeModule === 'hub') ? 'min-h-screen overflow-x-hidden' : 'h-screen overflow-hidden print:h-auto print:overflow-visible'}`}>
             {renderActiveModule()}
           </div>
         </ToastProvider>
