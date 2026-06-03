@@ -2329,7 +2329,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                             onChange={e => setDocFields(prev => ({ ...prev, outroEnquadramento: e.target.value }))}
                             className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                           />
-                        )
+                        )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
