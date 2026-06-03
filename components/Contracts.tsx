@@ -2352,6 +2352,7 @@ const Contracts: React.FC = () => {
                     <thead className="bg-gray-50 text-[8px] font-black text-gray-400 uppercase border-b border-gray-100">
                       <tr>
                         <th className="px-4 py-2 text-[8px]">Nº da Guia</th>
+                        <th className="px-4 py-2 text-[8px]">Nº do Pedido</th>
                         <th className="px-4 py-2 text-center text-[8px]">Recebimento</th>
                         <th className="px-4 py-2 text-right text-[8px]">Valor da Guia</th>
                       </tr>
@@ -2360,6 +2361,7 @@ const Contracts: React.FC = () => {
                       {generatedStatementPdf.guides.map((g: any, gIdx: number) => (
                         <tr key={gIdx} className="text-[9px] text-gray-600">
                           <td className="px-4 py-2 font-black uppercase text-gray-900 text-[9px]">{g.guide_number}</td>
+                          <td className="px-4 py-2 font-bold uppercase text-[9px]">{g.order_number || '-'}</td>
                           <td className="px-4 py-2 text-center font-bold text-[9px]">{new Date(g.issue_date + "T12:00:00").toLocaleDateString('pt-BR')}</td>
                           <td className="px-4 py-2 text-right font-black text-emerald-700 text-[9px]">R$ {g.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
