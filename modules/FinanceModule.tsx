@@ -577,7 +577,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   return (
     <div className="min-h-screen bg-gray-900 font-sans relative overflow-hidden text-white">
       {/* Animated Background */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 print:hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-20 fixed"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-indigo-950 to-black fixed opacity-90"></div>
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite] fixed"></div>
@@ -585,7 +585,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       </div>
 
       <div className="relative z-10 flex h-screen w-full min-w-0">
-        <aside className="w-64 shrink-0 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col no-print">
+        <aside className="w-64 shrink-0 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col print:hidden">
           <div className="p-6">
             <h1 className="text-xl font-bold flex items-center gap-2">
               <span className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">💰</span>
@@ -660,7 +660,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         </aside>
 
         <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
-          <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-4 md:px-8 shrink-0 backdrop-blur-sm min-w-0 w-full gap-2">
+          <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-4 md:px-8 shrink-0 backdrop-blur-sm min-w-0 w-full gap-2 print:hidden">
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10 shrink-0"><Wallet size={20} /></div>
               <h2 className="text-xs md:text-sm font-black text-white/80 uppercase tracking-widest truncate">{user.name}</h2>
@@ -688,8 +688,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
-            <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full print:overflow-visible print:p-0 print:m-0 print:h-auto">
+            <div className="max-w-7xl mx-auto space-y-6 print:m-0 print:w-full print:max-w-none">
 
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-40 gap-4 opacity-50">
@@ -1660,12 +1660,12 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                              <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20 print:hidden"><FileSearch size={20} /></div>
                              <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none print:text-black print:text-2xl print:text-center">Relatório de Lançamentos</h3>
                            </div>
-                           <button onClick={() => window.print()} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2 no-print">
+                           <button onClick={() => window.print()} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2 print:hidden">
                               <Printer size={16} /> Imprimir Relatório
                            </button>
                          </div>
                          
-                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 no-print">
+                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 print:hidden">
                             <select 
                                value={reportFilters.fund} 
                                onChange={e => setReportFilters({...reportFilters, fund: e.target.value})}
