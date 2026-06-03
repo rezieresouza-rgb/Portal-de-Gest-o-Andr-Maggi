@@ -114,6 +114,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
   const [reportFilters, setReportFilters] = useState({
     fund: 'all',
+    fundingSource: 'ALL',
     type: 'ALL',
     group: 'ALL',
     startDate: '',
@@ -1675,6 +1676,18 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                  <option className="bg-gray-900" key={(f as any).id} value={(f as any).id}>{(f as any).name}</option>
                                ))}
                             </select>
+
+                            {reportFilters.fund === 'merenda' && (
+                              <select 
+                                 value={reportFilters.fundingSource} 
+                                 onChange={e => setReportFilters({...reportFilters, fundingSource: e.target.value})}
+                                 className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                              >
+                                 <option className="bg-gray-900" value="ALL">Fed. & Est.</option>
+                                 <option className="bg-gray-900" value="FEDERAL">Apenas Federal</option>
+                                 <option className="bg-gray-900" value="ESTADUAL">Apenas Estadual</option>
+                              </select>
+                            )}
                             
                             <select 
                                value={reportFilters.type} 
@@ -1730,6 +1743,9 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                  
                                  if (reportFilters.fund !== 'all') {
                                     filtered = filtered.filter(t => t.fundName === funds[reportFilters.fund as SubModuleType].name);
+                                    if (reportFilters.fund === 'merenda' && reportFilters.fundingSource && reportFilters.fundingSource !== 'ALL') {
+                                       filtered = filtered.filter(t => t.fundingSource === reportFilters.fundingSource);
+                                    }
                                  }
                                  if (reportFilters.type !== 'ALL') {
                                     filtered = filtered.filter(t => t.type === reportFilters.type);
