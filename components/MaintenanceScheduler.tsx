@@ -14,7 +14,8 @@ import {
     FileText,
     Users,
     X,
-    Settings2
+    Settings2,
+    History
 } from 'lucide-react';
 
 interface MaintenanceTask {
@@ -47,6 +48,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
         'Bloco I - Térreo': true
     });
     const [filterFrequency, setFilterFrequency] = useState<string>('ALL');
+    const [viewMode, setViewMode] = useState<'schedule' | 'history'>('schedule');
 
     // Assignment Modal State
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -247,6 +249,23 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
             console.error('Error assigning employee:', error);
             alert('Erro ao processar alteração.');
         }
+    };
+
+    const generateHistoryReport = async () => {
+        const element = document.getElementById('history-report-print');
+        if (!element) return;
+
+        const safePeriod = reportPeriod.replace(/\//g, '-').replace(/\s+/g, '_');
+        const opt = {
+            margin: 5,
+            filename: `Historico_Manutencao_${safePeriod}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // @ts-ignore
+        await window.html2pdf().set(opt).from(element).save();
     };
 
     const generateWeeklyReport = async () => {
@@ -541,8 +560,8 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                     {['ALL', 'DIARIA', 'SEMANAL', 'MENSAL', 'TRIMESTRAL'].map(freq => (
                         <button
                             key={freq}
-                            onClick={() => setFilterFrequency(freq)}
-                            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider border transition-all shrink-0 ${filterFrequency === freq
+                            onClick={() => { setFilterFrequency(freq); setViewMode('schedule'); }}
+                            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider border transition-all shrink-0 ${filterFrequency === freq && viewMode === 'schedule'
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
                                     : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
                                 }`}
@@ -550,6 +569,15 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                             {freq === 'ALL' ? 'Todos' : getFrequencyLabel(freq)}
                         </button>
                     ))}
+                    <button
+                        onClick={() => setViewMode(viewMode === 'schedule' ? 'history' : 'schedule')}
+                        className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider border transition-all shrink-0 flex items-center gap-1.5 ${viewMode === 'history'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                                : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
+                            }`}
+                    >
+                        <History size={14} className="shrink-0" /> <span className="truncate">{viewMode === 'history' ? 'Voltar' : 'Histórico'}</span>
+                    </button>
                 </div>
                 <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-4 shrink-0 min-w-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
                     <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-sm shrink-0">
@@ -586,10 +614,10 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
                         <Printer size={14} className="shrink-0" /> <span className="truncate">Checklist Mural (Vazio)</span>
                     </button>
                     <button
-                        onClick={generateWeeklyReport}
+                        onClick={viewMode === 'history' ? generateHistoryReport : generateWeeklyReport}
                         className="px-3 sm:px-5 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-1.5 shadow-lg shrink-0"
                     >
-                        <Printer size={14} className="shrink-0" /> <span className="truncate">Imprimir Relatório</span>
+                        <Printer size={14} className="shrink-0" /> <span className="truncate">{viewMode === 'history' ? 'Imprimir Histórico' : 'Imprimir Relatório'}</span>
                     </button>
                     <div className="text-right shrink-0 border-l border-gray-200 pl-3 sm:pl-4">
                         <p className="text-[8px] sm:text-[9px] font-black uppercase text-gray-400 tracking-tighter">Total de Tarefas</p>
@@ -885,6 +913,52 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
 
             {loading ? (
                 <div className="text-center py-20 text-gray-400">Carregando cronograma...</div>
+            ) : viewMode === 'history' ? (
+                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden p-6 animate-in fade-in w-full min-w-0">
+                    <h3 className="text-base sm:text-lg font-black uppercase mb-6 flex items-center gap-2 text-gray-900">
+                        <History className="text-indigo-600" />
+                        Histórico de Lançamentos ({reportPeriod})
+                    </h3>
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left text-xs min-w-[800px]">
+                            <thead>
+                                <tr className="border-b-2 border-gray-200 text-gray-400 uppercase tracking-wider font-black">
+                                    <th className="pb-3 px-4">Data/Hora</th>
+                                    <th className="pb-3 px-4">Bloco</th>
+                                    <th className="pb-3 px-4">Ambiente</th>
+                                    <th className="pb-3 px-4">Tarefa</th>
+                                    <th className="pb-3 px-4">Turno</th>
+                                    <th className="pb-3 px-4">Responsável</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {records
+                                    .filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z')
+                                    .map((r, i) => {
+                                        const task = tasks.find(t => t.id === r.task_id);
+                                        if (!task) return null;
+                                        return (
+                                            <tr key={`${r.task_id}-${r.completed_at}-${i}`} className="hover:bg-gray-50/50">
+                                                <td className="py-3 px-4 font-bold text-gray-900 whitespace-nowrap">
+                                                    {new Date(r.completed_at).toLocaleDateString('pt-BR')} <span className="text-gray-400 text-[10px] ml-1">{new Date(r.completed_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-600 px-2 py-1 rounded-md">{task.block}</span>
+                                                </td>
+                                                <td className="py-3 px-4 font-bold text-gray-700">{task.area_name}</td>
+                                                <td className="py-3 px-4 text-gray-600 max-w-xs truncate" title={task.task_description}>{task.task_description}</td>
+                                                <td className="py-3 px-4 font-medium text-gray-500">{r.performed_by_name?.includes('[MATUTINO]') ? 'Matutino' : r.performed_by_name?.includes('[VESPERTINO]') ? 'Vespertino' : '-'}</td>
+                                                <td className="py-3 px-4 font-bold text-indigo-700">{r.performed_by_name?.split(' [')[0] || '-'}</td>
+                                            </tr>
+                                        );
+                                    })}
+                            </tbody>
+                        </table>
+                        {records.filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z').length === 0 && (
+                            <p className="text-center py-10 text-gray-400 font-bold uppercase text-xs">Nenhum lançamento encontrado neste período</p>
+                        )}
+                    </div>
+                </div>
             ) : Object.keys(groupedTasks).length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
                     <Calendar size={48} className="mx-auto text-gray-200 mb-4" />
@@ -1064,6 +1138,64 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
 
             {/* Hidden Printable Report */}
             <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
+                {/* 0. RELATÓRIO DE HISTÓRICO */}
+                <div id="history-report-print" className="bg-white p-8 font-sans w-[210mm]">
+                    <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
+                        <h1 className="text-2xl font-bold uppercase text-gray-900">Relatório de Histórico de Lançamentos</h1>
+                        <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual André Maggi</p>
+                        <p className="text-xs text-gray-500 mt-2 font-bold bg-gray-100 inline-block px-3 py-1 rounded">Referência: {reportPeriod}</p>
+                    </div>
+                    <table className="w-full text-left text-[9px] border-collapse">
+                        <thead>
+                            <tr className="border-b-2 border-gray-800 uppercase font-black text-gray-900 bg-gray-50">
+                                <th className="p-2 w-[15%]">Data/Hora</th>
+                                <th className="p-2 w-[15%]">Bloco</th>
+                                <th className="p-2 w-[20%]">Ambiente</th>
+                                <th className="p-2 w-[30%]">Tarefa Concluída</th>
+                                <th className="p-2 w-[20%]">Responsável</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {records
+                                .filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z')
+                                .map((r, i) => {
+                                    const task = tasks.find(t => t.id === r.task_id);
+                                    if (!task) return null;
+                                    return (
+                                        <tr key={`${r.task_id}-${r.completed_at}-${i}`} className="border-b border-gray-300">
+                                            <td className="p-2 font-bold">
+                                                {new Date(r.completed_at).toLocaleDateString('pt-BR')} <span className="text-gray-500">{new Date(r.completed_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                                            </td>
+                                            <td className="p-2 uppercase font-bold text-gray-600">{task.block}</td>
+                                            <td className="p-2 font-bold text-gray-800">{task.area_name}</td>
+                                            <td className="p-2 font-medium">{task.task_description}</td>
+                                            <td className="p-2 font-bold text-gray-900">{r.performed_by_name?.split(' [')[0]}</td>
+                                        </tr>
+                                    );
+                                })}
+                        </tbody>
+                    </table>
+                    {records.filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z').length === 0 && (
+                        <div className="text-center py-10 font-bold text-gray-400 uppercase text-xs">
+                            Nenhum lançamento registrado no período.
+                        </div>
+                    )}
+                    <div className="mt-16 pt-8 border-t border-gray-800 grid grid-cols-2 gap-16 text-center text-gray-800 break-inside-avoid">
+                        <div>
+                            <div className="border-t border-gray-800 w-3/4 mx-auto pt-2">
+                                <p className="text-[10px] font-black uppercase text-gray-900">Supervisão de Zeladoria</p>
+                                <p className="text-[8px] text-gray-500 uppercase font-bold mt-1">Assinatura / Carimbo</p>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="border-t border-gray-800 w-3/4 mx-auto pt-2">
+                                <p className="text-[10px] font-black uppercase text-gray-900">Gestão Escolar / Direção</p>
+                                <p className="text-[8px] text-gray-500 uppercase font-bold mt-1">Assinatura / Carimbo</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="weekly-report-print" className="bg-white p-8">
                 <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
                     <h1 className="text-2xl font-bold uppercase">
