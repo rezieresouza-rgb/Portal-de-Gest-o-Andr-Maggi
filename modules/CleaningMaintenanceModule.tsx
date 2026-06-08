@@ -31,7 +31,7 @@ import {
   RefreshCw,
   BookOpen
 } from 'lucide-react';
-import { SchoolEnvironment, CleaningTask, CleaningFrequency, CleaningEmployee, StaffMember, SchoolEnvironmentCategory } from '../types';
+import { User, SchoolEnvironment, CleaningTask, CleaningFrequency, CleaningEmployee, StaffMember, SchoolEnvironmentCategory } from '../types';
 import KitchenSanitation from '../components/KitchenSanitation';
 import PPEControl from '../components/PPEControl';
 import CleaningMaterialControl from '../components/CleaningMaterialControl';
@@ -127,7 +127,7 @@ const DETAILED_PROTOCOLS: Record<string, Record<CleaningFrequency, string[]>> = 
 // Supabase Import
 import { supabase } from '../supabaseClient';
 
-const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
+const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tasks' | 'team' | 'predial' | 'kitchen' | 'ppe' | 'materials' | 'protocol_official' | 'scheduler' | 'preventive_plan' | 'occurrences'>('scheduler');
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
@@ -367,7 +367,7 @@ const CleaningMaintenanceModule: React.FC<{ onExit: () => void }> = ({ onExit })
           {activeTab === 'protocol_official' && <CleaningOfficialManual />}
           {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
 
-          {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} />}
+          {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} currentUser={user} />}
           {activeTab === 'occurrences' && <CleaningOccurrences employees={employees} environments={environments} />}
 
 

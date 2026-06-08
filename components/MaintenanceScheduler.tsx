@@ -17,6 +17,7 @@ import {
     Settings2,
     History
 } from 'lucide-react';
+import { User } from '../types';
 
 interface MaintenanceTask {
     id: string;
@@ -32,6 +33,7 @@ interface MaintenanceTask {
 
 interface MaintenanceSchedulerProps {
     employees: { id: string, name: string }[];
+    currentUser?: User;
 }
 
 const FREQUENCY_ORDER: Record<string, number> = {
@@ -41,7 +43,7 @@ const FREQUENCY_ORDER: Record<string, number> = {
     'TRIMESTRAL': 4
 };
 
-const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }) => {
+const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, currentUser }) => {
     const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({
@@ -413,6 +415,14 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     const groupedTasks = tasks.reduce((acc, task) => {
         if (filterFrequency !== 'ALL' && task.frequency !== filterFrequency) return acc;
 
+        if (currentUser) {
+            const isGestao = ['ADMINISTRADOR', 'GESTAO', 'SECRETARIA', 'DIRECAO', 'COORDENACAO'].includes(currentUser.role);
+            if (!isGestao) {
+                const isAssignedToMe = task.assigned_employee_name && task.assigned_employee_name.toUpperCase().includes(currentUser.name.toUpperCase());
+                if (!isAssignedToMe) return acc;
+            }
+        }
+
         if (!acc[task.block]) acc[task.block] = {};
         if (!acc[task.block][task.area_name]) acc[task.block][task.area_name] = [];
 
@@ -421,6 +431,14 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees }
     }, {} as Record<string, Record<string, MaintenanceTask[]>>);
 
     const muralGroupedTasks = tasks.reduce((acc, task) => {
+        if (currentUser) {
+            const isGestao = ['ADMINISTRADOR', 'GESTAO', 'SECRETARIA', 'DIRECAO', 'COORDENACAO'].includes(currentUser.role);
+            if (!isGestao) {
+                const isAssignedToMe = task.assigned_employee_name && task.assigned_employee_name.toUpperCase().includes(currentUser.name.toUpperCase());
+                if (!isAssignedToMe) return acc;
+            }
+        }
+
         if (!acc[task.block]) acc[task.block] = {};
         if (!acc[task.block][task.area_name]) acc[task.block][task.area_name] = [];
 

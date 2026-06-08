@@ -70,6 +70,8 @@ interface GroupedBook {
   isbn?: string;
   copies: {
     id: string;
+    title?: string;
+    author?: string;
     internalRegistration: string;
     location: string;
     availableCopies: number;
