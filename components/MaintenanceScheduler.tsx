@@ -52,6 +52,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
     const [filterFrequency, setFilterFrequency] = useState<string>('ALL');
     const [viewMode, setViewMode] = useState<'schedule' | 'history'>('schedule');
 
+    // History filters
+    const [historyFilterEmployee, setHistoryFilterEmployee] = useState('');
+    const [historyFilterDate, setHistoryFilterDate] = useState('');
+    const [historyFilterBlock, setHistoryFilterBlock] = useState('');
+    const [historyFilterArea, setHistoryFilterArea] = useState('');
+
     // Assignment Modal State
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [selectedAssignment, setSelectedAssignment] = useState<{ block: string, area: string } | null>(null);
@@ -465,6 +471,28 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
             default: return 'text-gray-600 bg-gray-50';
         }
     };
+
+    const filteredHistoryRecords = records.filter(r => {
+        if (r.completed_at < reportPeriodStart || r.completed_at > reportPeriodEnd + 'T23:59:59Z') return false;
+        
+        const task = tasks.find(t => t.id === r.task_id);
+        if (!task) return false;
+
+        if (historyFilterEmployee) {
+            const employeeName = r.performed_by_name?.split(' [')[0] || '';
+            if (!employeeName.toUpperCase().includes(historyFilterEmployee.toUpperCase())) return false;
+        }
+
+        if (historyFilterDate) {
+            const rDate = new Date(r.completed_at).toISOString().split('T')[0];
+            if (rDate !== historyFilterDate) return false;
+        }
+
+        if (historyFilterBlock && !task.block.toUpperCase().includes(historyFilterBlock.toUpperCase())) return false;
+        if (historyFilterArea && !task.area_name.toUpperCase().includes(historyFilterArea.toUpperCase())) return false;
+
+        return true;
+    });
 
     // Helper to get responsible for an area (assuming all tasks in area have same responsible)
     const getAreaResponsible = (block: string, area: string) => {
@@ -937,6 +965,37 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                         <History className="text-indigo-600" />
                         Histórico de Lançamentos ({reportPeriod})
                     </h3>
+
+                    <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Filtrar por Servidor..."
+                            value={historyFilterEmployee}
+                            onChange={e => setHistoryFilterEmployee(e.target.value)}
+                            className="p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 w-full"
+                        />
+                        <input
+                            type="date"
+                            value={historyFilterDate}
+                            onChange={e => setHistoryFilterDate(e.target.value)}
+                            className="p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 w-full text-gray-500 uppercase"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Filtrar por Bloco/Setor..."
+                            value={historyFilterBlock}
+                            onChange={e => setHistoryFilterBlock(e.target.value)}
+                            className="p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 w-full"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Filtrar por Ambiente..."
+                            value={historyFilterArea}
+                            onChange={e => setHistoryFilterArea(e.target.value)}
+                            className="p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 w-full"
+                        />
+                    </div>
+
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left text-xs min-w-[800px]">
                             <thead>
@@ -950,9 +1009,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {records
-                                    .filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z')
-                                    .map((r, i) => {
+                                {filteredHistoryRecords.map((r, i) => {
                                         const task = tasks.find(t => t.id === r.task_id);
                                         if (!task) return null;
                                         return (
@@ -972,7 +1029,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                     })}
                             </tbody>
                         </table>
-                        {records.filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z').length === 0 && (
+                        {filteredHistoryRecords.length === 0 && (
                             <p className="text-center py-10 text-gray-400 font-bold uppercase text-xs">Nenhum lançamento encontrado neste período</p>
                         )}
                     </div>
@@ -1174,9 +1231,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                             </tr>
                         </thead>
                         <tbody>
-                            {records
-                                .filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z')
-                                .map((r, i) => {
+                            {filteredHistoryRecords.map((r, i) => {
                                     const task = tasks.find(t => t.id === r.task_id);
                                     if (!task) return null;
                                     return (
@@ -1193,7 +1248,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                 })}
                         </tbody>
                     </table>
-                    {records.filter(r => r.completed_at >= reportPeriodStart && r.completed_at <= reportPeriodEnd + 'T23:59:59Z').length === 0 && (
+                    {filteredHistoryRecords.length === 0 && (
                         <div className="text-center py-10 font-bold text-gray-400 uppercase text-xs">
                             Nenhum lançamento registrado no período.
                         </div>
