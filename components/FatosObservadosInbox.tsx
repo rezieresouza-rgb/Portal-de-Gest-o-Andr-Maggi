@@ -4,9 +4,12 @@ import { Loader2, Search, FileText, CheckCircle, Clock, AlertTriangle, ArrowRigh
 
 interface FatosObservadosInboxProps {
   onPreencherDocumento: (occ: any) => void;
+  demeritOptions: Array<{ category: string; severity: string; points: number }>;
+  disciplinaryMeasuresList: string[];
+  onAplicarPunicao: (studentName: string, category: string, disciplinaryMeasure: string, suspensionDays: number | undefined, observations: string, date: string) => void;
 }
 
-const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencherDocumento }) => {
+const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencherDocumento, demeritOptions, disciplinaryMeasuresList, onAplicarPunicao }) => {
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,6 +19,12 @@ const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencher
   const [selectedOcc, setSelectedOcc] = useState<any>(null);
   const [feedback, setFeedback] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Punição State
+  const [punicaoEnabled, setPunicaoEnabled] = useState(false);
+  const [punicaoCategory, setPunicaoCategory] = useState('');
+  const [punicaoMeasure, setPunicaoMeasure] = useState('Advertência Oral');
+  const [punicaoDays, setPunicaoDays] = useState(1);
 
   const fetchOccurrences = async () => {
     setLoading(true);
@@ -77,11 +86,21 @@ const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencher
         })
         .eq('id', selectedOcc.id);
 
-      if (error) throw error;
+      if (newStatus === 'CONCLUÍDO' && punicaoEnabled && punicaoCategory) {
+         onAplicarPunicao(
+            selectedOcc.student_name,
+            punicaoCategory,
+            punicaoMeasure,
+            punicaoMeasure === 'Suspensão de Sala de Aula' ? punicaoDays : undefined,
+            `[Via Fato Observado] ${selectedOcc.description}\n\nParecer: ${feedback}`,
+            selectedOcc.date
+         );
+      }
       
-      alert('Status atualizado com sucesso!');
+      alert('Tratativa concluída com sucesso!');
       setSelectedOcc(null);
       setFeedback('');
+      setPunicaoEnabled(false);
       fetchOccurrences();
     } catch (err) {
       console.error(err);
@@ -200,6 +219,79 @@ const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencher
                   placeholder="Escreva um parecer ou feedback para o professor..."
                   className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm font-medium h-32 resize-none outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
                 />
+              </div>
+
+              {/* Enquadramento Disciplinar */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-black uppercase text-slate-800 flex items-center gap-2">
+                    <CheckCircle size={16} className="text-slate-400" />
+                    Enquadramento Disciplinar Oficial
+                  </h4>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={punicaoEnabled}
+                      onChange={(e) => {
+                        setPunicaoEnabled(e.target.checked);
+                        if (e.target.checked && !punicaoCategory && demeritOptions.length > 0) {
+                          setPunicaoCategory(demeritOptions[0].category);
+                        }
+                      }}
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span className="ml-3 text-xs font-bold text-slate-600 uppercase">Habilitar Desconto</span>
+                  </label>
+                </div>
+                
+                {punicaoEnabled && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-500 uppercase">Enquadramento no Regulamento</label>
+                      <select 
+                        value={punicaoCategory} 
+                        onChange={(e) => setPunicaoCategory(e.target.value)} 
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none bg-white"
+                      >
+                        {demeritOptions.map((opt, i) => (
+                          <option key={i} value={opt.category}>
+                            {opt.category} (Falta {opt.severity})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1 space-y-2">
+                        <label className="text-xs font-black text-slate-500 uppercase">Medida Disciplinar</label>
+                        <select 
+                          value={punicaoMeasure} 
+                          onChange={(e) => setPunicaoMeasure(e.target.value)} 
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 outline-none bg-white"
+                        >
+                          {disciplinaryMeasuresList.map((m, i) => (
+                            <option key={i} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {punicaoMeasure === 'Suspensão de Sala de Aula' && (
+                        <div className="w-full sm:w-32 space-y-2">
+                          <label className="text-xs font-black text-slate-500 uppercase">Dias</label>
+                          <input 
+                            type="number" 
+                            min="1" 
+                            max="5" 
+                            value={punicaoDays} 
+                            onChange={(e) => setPunicaoDays(parseInt(e.target.value))}
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-bold text-center focus:ring-4 focus:ring-blue-500/10 outline-none bg-white"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

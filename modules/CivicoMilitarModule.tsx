@@ -1095,6 +1095,81 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     );
   }, [docHistory]);
 
+  const handleInboxPunicao = (studentName: string, category: string, disciplinaryMeasure: string, suspensionDays: number | undefined, observations: string, retroDate: string) => {
+    const studentState = studentStates.find(s => s.studentName === studentName);
+    if (!studentState) return;
+
+    let points = 0.2;
+    let isEscalated = false;
+    let effectiveSeverity = 'LEVE';
+
+    const dem = demeritOptions.find(o => o.category === category);
+    const originalSeverity = dem ? dem.severity : 'LEVE';
+
+    switch (disciplinaryMeasure) {
+      case 'Advertência Oral': points = 0.1; break;
+      case 'Advertência Escrita': points = 0.3; break;
+      case 'Suspensão de Sala de Aula': points = 0.5 * (suspensionDays || 1); break;
+      case 'Ações Educativas': points = 1.0; break;
+      case 'Transferência Educativa': points = 2.0; break;
+      case 'Estudo Orientado de Caráter Educativo': points = 0.5; break;
+      default: points = 0.1;
+    }
+
+    const prevLeves = studentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'LEVE').length;
+    const prevMediasBase = studentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'MÉDIA').length;
+    const prevEscalatedLeves = Math.floor(prevLeves / 3);
+    
+    effectiveSeverity = originalSeverity;
+
+    if (originalSeverity === 'LEVE') {
+       if ((prevLeves + 1) % 3 === 0) {
+           effectiveSeverity = 'MÉDIA';
+           isEscalated = true;
+       }
+    }
+
+    const totalMediasAntes = prevMediasBase + prevEscalatedLeves;
+    if (effectiveSeverity === 'MÉDIA') {
+       if ((totalMediasAntes + 1) % 2 === 0) {
+           effectiveSeverity = 'GRAVE';
+           isEscalated = true;
+       }
+    }
+    
+    if (isEscalated) {
+        alert(`Atenção: Por reincidência, a punição do aluno ${studentName} escalou para uma Falta ${effectiveSeverity}.`);
+    }
+
+    const occurrence: BehaviorOccurrence = {
+      id: `occ-${Date.now()}`,
+      type: 'DEMERIT',
+      category: category,
+      points,
+      date: retroDate,
+      observations: observations,
+      responsible: user.name || 'Gestor',
+      disciplinaryMeasure: disciplinaryMeasure,
+      suspensionDays: disciplinaryMeasure === 'Suspensão de Sala de Aula' ? suspensionDays : undefined,
+      isEscalated: isEscalated
+    };
+
+    let newScore = Math.max(0, parseFloat((studentState.score - points).toFixed(2)));
+
+    const updatedStates = studentStates.map(s => {
+      if (s.studentId === studentState.studentId) {
+        return {
+          ...s,
+          score: newScore,
+          occurrences: [occurrence, ...s.occurrences]
+        };
+      }
+      return s;
+    });
+
+    saveStudentStatesToStorage(updatedStates);
+  };
+
   const expiredAuthorizations = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return docHistory.filter(d => {
@@ -3270,7 +3345,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             </div>
           )}
           {activeTab === 'fatos_observados' && (
-             <FatosObservadosInbox onPreencherDocumento={handlePreencherDocumentoDaInbox} />
+             <FatosObservadosInbox 
+                onPreencherDocumento={handlePreencherDocumentoDaInbox} 
+                demeritOptions={demeritOptions}
+                disciplinaryMeasuresList={disciplinaryMeasuresList}
+                onAplicarPunicao={handleInboxPunicao}
+             />
           )}
 
           {activeTab === 'relatorios' && (
