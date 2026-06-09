@@ -580,7 +580,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     { category: '88. Ter em seu poder, introduzir, ler ou distribuir, dentro da EECM, cartazes, jornais ou publicações que atentem contra a disciplina e/ou o moral ou de cunho político-partidário', severity: 'GRAVE', points: 1.0 },
     { category: '89. Utilizar ou subtrair indevidamente objetos ou valores alheios', severity: 'GRAVE', points: 1.0 },
     { category: '90. Utilizar-se de processos fraudulentos na realização de trabalhos pedagógicos', severity: 'GRAVE', points: 1.0 },
-    { category: '91. Utilizar-se indevidamente e/ou causar avariar e/ou destruição do patrimônio pertencente a EECM', severity: 'GRAVE', points: 1.0 }
+    { category: '91. Utilizar-se indevidamente e/ou causar avariar e/ou destruição do patrimônio pertencente a EECM', severity: 'GRAVE', points: 1.0 },
+    
+    // Faltas "Outras" / Abertas
+    { category: '[OUTROS] Falta Leve (Descrever na observação)', severity: 'LEVE', points: 0.2 },
+    { category: '[OUTROS] Falta Média (Descrever na observação)', severity: 'MÉDIA', points: 0.5 },
+    { category: '[OUTROS] Falta Grave (Descrever na observação)', severity: 'GRAVE', points: 1.0 }
   ];
 
   // Behavior Categories depending on score
