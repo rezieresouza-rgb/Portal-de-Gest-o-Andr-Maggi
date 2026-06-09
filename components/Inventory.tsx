@@ -340,14 +340,31 @@ const Inventory: React.FC = () => {
       setHistory([]);
       localStorage.removeItem('merenda_inventory_history_v1');
 
-      // 2. Buscar todas as guias de entrada e itens do contrato para preencher os estoques
+      // 2. Buscar todas as guias de entrada, itens do contrato e registros diários de refeição
       const { data: guidesData } = await supabase.from('payment_guides').select('*');
       const { data: guideItemsData } = await supabase.from('payment_guide_items').select('*, item:contract_items(*)');
       const { data: contractItemsData } = await supabase.from('contract_items').select('*');
+      const { data: mealRecordsData } = await supabase.from('merenda_meal_records').select('*');
       
       const guides = guidesData || [];
       const guideItems = guideItemsData || [];
       const contractItemsList = contractItemsData || [];
+      const mealRecords = mealRecordsData || [];
+
+      // Fazer parse seguro dos registros reais de refeições (Registro Diário)
+      const parsedMealRecords = mealRecords.map((row: any) => {
+        try {
+          return {
+            date: row.date,
+            shift: row.shift ? row.shift.toUpperCase() : '',
+            entrada: typeof row.entrada === 'string' ? JSON.parse(row.entrada) : row.entrada,
+            principal: typeof row.principal === 'string' ? JSON.parse(row.principal) : row.principal
+          };
+        } catch (err) {
+          console.error("Erro ao fazer parse de meal record:", err);
+          return null;
+        }
+      }).filter(Boolean);
 
       // Função auxiliar para calcular o saldo inicial baseado em 20% do volume total do contrato (Opção 2)
       const getInitialBalance = (itemName: string): number => {
@@ -448,16 +465,55 @@ const Inventory: React.FC = () => {
              guidesToday.forEach(g => {
                 const gItems = guideItems.filter(gi => gi.guide_id === g.id);
                 gItems.forEach(gi => {
-                   const invItem = currentInventory.find(i => i.name === gi.item.description.toUpperCase());
-                   if (invItem) {
-                      invItem.entries += gi.quantity;
+                   if (gi.item) {
+                     const invItem = currentInventory.find(i => i.name === gi.item.description.toUpperCase());
+                     if (invItem) {
+                        invItem.entries += gi.quantity;
+                     }
                    }
                 });
              });
            }
 
-           // Consumo Aleatório (Saídas) baseado no cardápio
-           if (currentMenuDay) {
+           // Consumo: Verificar se existe um registro real no Registro Diário para esta data/turno (Prioritário)
+           const matchingMealRecord = parsedMealRecords.find(
+             (r: any) => r.date === dateStr && r.shift === turno.toUpperCase()
+           );
+
+           if (matchingMealRecord) {
+             // Agrega todos os ingredientes consumidos lançados
+             const mealIngredients: { name: string; quantity: number }[] = [];
+             ['entrada', 'principal'].forEach((key) => {
+               const meal = matchingMealRecord[key];
+               if (meal && Array.isArray(meal.ingredients)) {
+                 meal.ingredients.forEach((ing: any) => {
+                   const qty = parseFloat(ing.quantity);
+                   if (ing.name && !isNaN(qty) && qty > 0) {
+                     mealIngredients.push({
+                       name: ing.name.toUpperCase(),
+                       quantity: qty
+                     });
+                   }
+                 });
+               }
+             });
+
+             // Preenche as saídas reais no inventário
+             currentInventory.forEach(invItem => {
+               const matches = mealIngredients.filter(ing => 
+                 invItem.name === ing.name || 
+                 invItem.name.includes(ing.name) || 
+                 ing.name.includes(invItem.name)
+               );
+               if (matches.length > 0) {
+                 const totalConsumption = matches.reduce((sum, m) => sum + m.quantity, 0);
+                 // Limita consumo ao saldo disponível (saldo anterior + entradas) para não ficar negativo
+                 const available = invItem.previousBalance + invItem.entries;
+                 invItem.outputs = Math.min(totalConsumption, available > 0 ? available : totalConsumption);
+               }
+             });
+           } else if (currentMenuDay) {
+              // Fallback: Consumo Aleatório (Saídas) baseado no cardápio letivo
               currentMenuDay.ingredients.forEach(ing => {
                  const invItem = currentInventory.find(i => i.name === ing.toUpperCase() || i.name.includes(ing.toUpperCase()) || ing.toUpperCase().includes(i.name));
                  if (invItem) {
@@ -465,7 +521,7 @@ const Inventory: React.FC = () => {
                     const rawConsumption = Math.floor(Math.random() * (5 - 2 + 1)) + 2; 
                     // Limita consumo ao que tem em estoque (saldo anterior + entradas)
                     const available = invItem.previousBalance + invItem.entries;
-                    const finalConsumption = Math.min(rawConsumption, available > 0 ? available : rawConsumption); // Se available for zero ou negativo (estoque não lançado?), vai ficar negativo, ok.
+                    const finalConsumption = Math.min(rawConsumption, available > 0 ? available : rawConsumption);
                     invItem.outputs += finalConsumption;
                  }
               });
@@ -476,7 +532,7 @@ const Inventory: React.FC = () => {
              id: `gen-${dateStr}-${turno}`,
              date: dateStr,
              turno: turno,
-             responsavel: 'Motor Retroativo IA',
+             responsavel: matchingMealRecord ? 'Consumo Real Integrado' : 'Motor Retroativo IA',
              items: currentInventory.map(i => ({ ...i })),
              timestamp: currentDate.getTime() + (turno === 'Matutino' ? 0 : 43200000)
            };
@@ -513,11 +569,87 @@ const Inventory: React.FC = () => {
       setHistory(generatedSnapshots);
       localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(generatedSnapshots));
       setItems(currentInventory);
-      alert("✅ Histórico Retroativo gerado com sucesso! Os estoques foram atualizados com base nas compras reais e consumo simulado.");
+      alert("✅ Histórico Retroativo gerado com sucesso! Os estoques foram atualizados com base nas compras reais e nos consumos reais do Registro Diário (com fallback do cardápio letivo).");
       
     } catch (e: any) {
       console.error(e);
       alert("Erro ao gerar simulação: " + e.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleImportFromDailyRegister = async () => {
+    setIsSaving(true);
+    try {
+      const selectedDate = data; // A data selecionada no input de tipo date
+      const selectedShift = turno.toUpperCase(); // 'MATUTINO' ou 'VESPERTINO'
+      
+      const { data: mealRecordData, error } = await supabase
+        .from('merenda_meal_records')
+        .select('*')
+        .eq('date', selectedDate)
+        .eq('shift', selectedShift)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!mealRecordData) {
+        alert(`Nenhum registro diário de merenda foi encontrado para a data ${new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR')} e turno ${turno}.`);
+        return;
+      }
+
+      // Parse dos dados do registro
+      const entrada = typeof mealRecordData.entrada === 'string' ? JSON.parse(mealRecordData.entrada) : mealRecordData.entrada;
+      const principal = typeof mealRecordData.principal === 'string' ? JSON.parse(mealRecordData.principal) : mealRecordData.principal;
+
+      // Agrega todos os ingredientes e quantidades do registro
+      const mealIngredients: { name: string; quantity: number }[] = [];
+      
+      [entrada, principal].forEach((meal) => {
+        if (meal && Array.isArray(meal.ingredients)) {
+          meal.ingredients.forEach((ing: any) => {
+            const qty = parseFloat(ing.quantity);
+            if (ing.name && !isNaN(qty) && qty > 0) {
+              mealIngredients.push({
+                name: ing.name.toUpperCase(),
+                quantity: qty
+              });
+            }
+          });
+        }
+      });
+
+      if (mealIngredients.length === 0) {
+        alert("O registro diário foi encontrado, mas não contém nenhum ingrediente com quantidade válida informada.");
+        return;
+      }
+
+      // Atualiza as saídas nos itens ativos do estoque
+      let updatedCount = 0;
+      setItems(prev => prev.map(invItem => {
+        // Encontra correspondência no registro
+        const matches = mealIngredients.filter(ing => 
+          invItem.name === ing.name || 
+          invItem.name.includes(ing.name) || 
+          ing.name.includes(invItem.name)
+        );
+
+        if (matches.length > 0) {
+          const totalQty = matches.reduce((sum, m) => sum + m.quantity, 0);
+          updatedCount++;
+          return {
+            ...invItem,
+            outputs: totalQty
+          };
+        }
+        return invItem;
+      }));
+
+      alert(`✅ Sucesso! Importamos as quantidades consumidas de ${updatedCount} ingrediente(s) do Registro Diário.`);
+    } catch (err: any) {
+      console.error("Erro ao importar consumo do registro diário:", err);
+      alert("Erro ao importar dados: " + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -625,9 +757,14 @@ const Inventory: React.FC = () => {
               </div>
               <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Data do Lançamento</label><input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs outline-none focus:ring-2 focus:ring-emerald-500/20" /></div>
               <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações Rápidas</label>
-                <button onClick={syncWithMenu} className="w-full p-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
-                  <RotateCcw size={14} /> Carregar Ingredientes do Mês
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button onClick={handleImportFromDailyRegister} className="w-full p-3 bg-amber-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-700 transition-all flex items-center justify-center gap-2">
+                    <ClipboardCheck size={14} /> Importar do Registro Diário
+                  </button>
+                  <button onClick={syncWithMenu} className="w-full p-3 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+                    <RotateCcw size={14} /> Ingredientes do Mês
+                  </button>
+                </div>
               </div>
             </div>
 
