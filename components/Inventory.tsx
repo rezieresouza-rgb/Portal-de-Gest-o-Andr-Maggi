@@ -402,19 +402,31 @@ const Inventory: React.FC = () => {
         setData(nextDate.toLocaleDateString('sv-SE'));
       }
 
-      alert("Fechamento de turno realizado! Avançando para o próximo período.");
+      alert("Fechamento de turno realizado! Avançando o turno/dia.");
     }
   };
 
   const handleGenerateRetroactiveHistory = async () => {
-    if (!window.confirm("ATENÇÃO: Esta ação irá apagar o histórico atual e gerar uma simulação retroativa desde 02/Fevereiro até hoje. Deseja continuar?")) return;
+    if (!window.confirm("ATENÇÃO: Esta ação irá apagar o histórico de simulações passadas (preservando o dia de hoje em diante) e gerar uma simulação retroativa desde 02/Fevereiro até ontem. Deseja continuar?")) return;
     
+    // Configurar data final para Ontem (protegendo o dia atual)
+    const activeDate = new Date(data + 'T12:00:00');
+    const endDate = new Date(activeDate.getTime() - 24 * 60 * 60 * 1000); // Ontem
+    endDate.setHours(12, 0, 0, 0);
+
+    const startDate = new Date('2026-02-02T12:00:00');
+    if (endDate < startDate) {
+      alert("A simulação só pode ser gerada a partir de datas futuras ao início das aulas (03/Fevereiro).");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // 1. Apagar histórico atual no Supabase e local
-      await supabase.from('merenda_inventory_history').delete().neq('id', '0');
-      setHistory([]);
-      localStorage.removeItem('merenda_inventory_history_v1');
+      // 1. Apagar histórico atual no Supabase para datas anteriores à data ativa (preservando hoje)
+      await supabase.from('merenda_inventory_history').delete().lt('date', data);
+      
+      // Preservar o histórico local do dia ativo em diante
+      const preservedHistory = history.filter(h => h.date >= data);
 
       // 2. Buscar todas as guias de entrada, itens do contrato e registros diários de refeição
       const { data: guidesData } = await supabase.from('payment_guides').select('*');
@@ -442,26 +454,31 @@ const Inventory: React.FC = () => {
         }
       }).filter(Boolean);
 
-      // Função auxiliar para calcular o saldo inicial baseado em 20% do volume total do contrato (Opção 2)
-      const getInitialBalance = (itemName: string): number => {
+      // Inicializar saldo do contrato restante para cada item na simulação
+      const contractBalances: Record<string, number> = {};
+      
+      items.forEach(item => {
         let totalQty = 0;
-        // Busca do banco de dados (tabela contract_items)
-        const dbItems = contractItemsList.filter(ci => ci.description?.toUpperCase() === itemName.toUpperCase());
+        const dbItems = contractItemsList.filter(ci => ci.description?.toUpperCase() === item.name.toUpperCase());
         if (dbItems.length > 0) {
           dbItems.forEach(ci => {
             totalQty += ci.contracted_quantity || 0;
           });
         } else {
-          // Fallback para constante local INITIAL_CONTRACTS
           INITIAL_CONTRACTS.forEach(contract => {
             contract.items.forEach(ci => {
-              if (ci.description?.toUpperCase() === itemName.toUpperCase()) {
+              if (ci.description?.toUpperCase() === item.name.toUpperCase()) {
                 totalQty += ci.contractedQuantity || 0;
               }
             });
           });
         }
-        // Retorna 20% do volume total contratado
+        contractBalances[item.name.toUpperCase()] = totalQty;
+      });
+
+      // Função auxiliar para calcular o saldo inicial baseado em 20% do volume total do contrato (Opção 2)
+      const getInitialBalance = (itemName: string): number => {
+        const totalQty = contractBalances[itemName.toUpperCase()] || 0;
         return parseFloat((totalQty * 0.2).toFixed(2));
       };
 
@@ -476,25 +493,42 @@ const Inventory: React.FC = () => {
 
       // Garante que os itens de contrato estejam na lista se não estiverem
       guideItems.forEach((gi: any) => {
-        if (gi.item && !currentInventory.some(i => i.name === gi.item.description.toUpperCase())) {
-           const itemName = gi.item.description.toUpperCase();
-           currentInventory.push({
-             id: `item-gen-${gi.item.id}`,
-             name: itemName,
-             unit: gi.item.unit,
-             previousBalance: getInitialBalance(itemName),
-             entries: 0,
-             outputs: 0,
-             min: 1
-           });
+        if (gi.item) {
+          const uName = gi.item.description.toUpperCase();
+          if (!(uName in contractBalances)) {
+            let totalQty = 0;
+            const dbItems = contractItemsList.filter(ci => ci.description?.toUpperCase() === uName);
+            if (dbItems.length > 0) {
+              dbItems.forEach(ci => {
+                totalQty += ci.contracted_quantity || 0;
+              });
+            } else {
+              INITIAL_CONTRACTS.forEach(contract => {
+                contract.items.forEach(ci => {
+                  if (ci.description?.toUpperCase() === uName) {
+                    totalQty += ci.contractedQuantity || 0;
+                  }
+                });
+              });
+            }
+            contractBalances[uName] = totalQty;
+          }
+
+          if (!currentInventory.some(i => i.name === uName)) {
+             currentInventory.push({
+               id: `item-gen-${gi.item.id}`,
+               name: uName,
+               unit: gi.item.unit,
+               previousBalance: getInitialBalance(uName),
+               entries: 0,
+               outputs: 0,
+               min: 1
+             });
+          }
         }
       });
 
       // 4. Configurar loop do tempo
-      const startDate = new Date('2026-02-02T12:00:00');
-      const endDate = new Date();
-      endDate.setHours(12, 0, 0, 0);
-      
       const generatedSnapshots: InventorySnapshot[] = [];
       let currentDate = startDate;
       let weekCounter = 0; // Para rodar as 5 semanas de cardápio
@@ -504,9 +538,9 @@ const Inventory: React.FC = () => {
         
         // Pula fins de semana
         if (dayOfWeek === 0 || dayOfWeek === 6) {
-           if (dayOfWeek === 6) weekCounter++; // Avança semana no sábado
-           currentDate.setDate(currentDate.getDate() + 1);
-           continue;
+            if (dayOfWeek === 6) weekCounter++; // Avança semana no sábado
+            currentDate.setDate(currentDate.getDate() + 1);
+            continue;
         }
 
         const dateStr = currentDate.toISOString().split('T')[0];
@@ -517,8 +551,8 @@ const Inventory: React.FC = () => {
         const monthData = SCHOOL_CALENDAR_2026.meses[monthIndex];
         const event = monthData?.eventos?.find(e => e.dia === dia);
         if (event && (event.categoria === 'FERIADO' || event.categoria === 'FERIAS')) {
-           currentDate.setDate(currentDate.getDate() + 1);
-           continue;
+            currentDate.setDate(currentDate.getDate() + 1);
+            continue;
         }
 
         // Dias Letivos da Semana (Segunda = 1 -> 'Segunda')
@@ -542,9 +576,14 @@ const Inventory: React.FC = () => {
                 const gItems = guideItems.filter(gi => gi.guide_id === g.id);
                 gItems.forEach(gi => {
                    if (gi.item) {
-                     const invItem = currentInventory.find(i => i.name === gi.item.description.toUpperCase());
+                     const uName = gi.item.description.toUpperCase();
+                     const invItem = currentInventory.find(i => i.name === uName);
                      if (invItem) {
                         invItem.entries += gi.quantity;
+                        // Abate do saldo contratual disponível
+                        if (contractBalances[uName] !== undefined) {
+                          contractBalances[uName] = Math.max(0, contractBalances[uName] - gi.quantity);
+                        }
                      }
                    }
                 });
@@ -583,8 +622,22 @@ const Inventory: React.FC = () => {
                );
                if (matches.length > 0) {
                  const totalConsumption = matches.reduce((sum, m) => sum + m.quantity, 0);
-                 // Limita consumo ao saldo disponível (saldo anterior + entradas) para não ficar negativo
-                 const available = invItem.previousBalance + invItem.entries;
+                 const uName = invItem.name.toUpperCase();
+                 
+                 // Injeção contratual se o saldo físico for insuficiente
+                 let available = invItem.previousBalance + invItem.entries;
+                 if (available < totalConsumption) {
+                   const deficit = totalConsumption - available;
+                   const remainingContract = contractBalances[uName] || 0;
+                   if (remainingContract > 0) {
+                     const pullQty = Math.min(deficit, remainingContract);
+                     invItem.entries += pullQty;
+                     contractBalances[uName] = Math.max(0, remainingContract - pullQty);
+                     available += pullQty;
+                   }
+                 }
+
+                 // Limita o consumo ao disponível (para estoque não ficar negativo)
                  invItem.outputs = Math.min(totalConsumption, available > 0 ? available : totalConsumption);
                }
              });
@@ -593,10 +646,22 @@ const Inventory: React.FC = () => {
               currentMenuDay.ingredients.forEach(ing => {
                  const invItem = currentInventory.find(i => i.name === ing.toUpperCase() || i.name.includes(ing.toUpperCase()) || ing.toUpperCase().includes(i.name));
                  if (invItem) {
-                    // Consumo entre 2 e 5, ou se tiver pouco saldo, consome o que tem, limitando a 0
+                    const uName = invItem.name.toUpperCase();
                     const rawConsumption = Math.floor(Math.random() * (5 - 2 + 1)) + 2; 
-                    // Limita consumo ao que tem em estoque (saldo anterior + entradas)
-                    const available = invItem.previousBalance + invItem.entries;
+                    
+                    // Injeção contratual se o saldo físico for insuficiente
+                    let available = invItem.previousBalance + invItem.entries;
+                    if (available < rawConsumption) {
+                      const deficit = rawConsumption - available;
+                      const remainingContract = contractBalances[uName] || 0;
+                      if (remainingContract > 0) {
+                        const pullQty = Math.min(deficit, remainingContract);
+                        invItem.entries += pullQty;
+                        contractBalances[uName] = Math.max(0, remainingContract - pullQty);
+                        available += pullQty;
+                      }
+                    }
+
                     const finalConsumption = Math.min(rawConsumption, available > 0 ? available : rawConsumption);
                     invItem.outputs += finalConsumption;
                  }
@@ -641,11 +706,12 @@ const Inventory: React.FC = () => {
         );
       }
 
-      // 6. Atualizar Estados Locais
-      setHistory(generatedSnapshots);
-      localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(generatedSnapshots));
+      // 6. Atualizar Estados Locais (Unindo simulação ao histórico preservado de hoje em diante)
+      const combinedHistory = [...generatedSnapshots, ...preservedHistory];
+      setHistory(combinedHistory);
+      localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(combinedHistory));
       setItems(currentInventory);
-      alert("✅ Histórico Retroativo gerado com sucesso! Os estoques foram atualizados com base nas compras reais e nos consumos reais do Registro Diário (com fallback do cardápio letivo).");
+      alert("✅ Histórico Retroativo recalculado até ontem! Os consumos foram abatidos prioritariamente do Registro Diário (com fallback do cardápio letivo). Os déficits foram supridos pelo saldo dos contratos ativos e o dia de hoje permaneceu protegido.");
       
     } catch (e: any) {
       console.error(e);
