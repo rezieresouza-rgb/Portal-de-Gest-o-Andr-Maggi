@@ -151,6 +151,8 @@ const Inventory: React.FC = () => {
   const [nutricaoStaff, setNutricaoStaff] = useState<StaffMember[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [historySearchTerm, setHistorySearchTerm] = useState('');
+  const [historyTurnFilter, setHistoryTurnFilter] = useState('TODOS');
 
   useEffect(() => {
     const fetchStaff = async () => {
@@ -524,6 +526,20 @@ const Inventory: React.FC = () => {
     return [...items].sort((a, b) => a.name.localeCompare(b.name));
   }, [items]);
 
+  const filteredHistory = useMemo(() => {
+    return history.filter(h => {
+      const formattedDate = new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR');
+      const matchesSearch = 
+        h.responsavel.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
+        formattedDate.includes(historySearchTerm) ||
+        h.date.includes(historySearchTerm);
+        
+      const matchesTurn = historyTurnFilter === 'TODOS' || h.turno === historyTurnFilter;
+      
+      return matchesSearch && matchesTurn;
+    });
+  }, [history, historySearchTerm, historyTurnFilter]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm print:hidden">
@@ -596,51 +612,90 @@ const Inventory: React.FC = () => {
           </div>
         )}
         {viewMode === 'history' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 duration-300">
-            {history.length > 0 ? history.map((h) => (
-              <div 
-                key={h.id} 
-                onClick={() => loadFromHistory(h)}
-                className="bg-gray-50 p-6 rounded-3xl border border-gray-100 hover:border-emerald-200 transition-all cursor-pointer group relative"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-emerald-100 text-emerald-600 rounded-2xl"><Calendar size={20} /></div>
-                    <div>
-                      <p className="font-black text-gray-900 uppercase text-xs">{new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR')} - {h.turno}</p>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h.responsavel}</p>
-                    </div>
-                  </div>
-                  <button onClick={async (e) => {
-                    e.stopPropagation();
-                    if(window.confirm("Excluir este fechamento de histórico?")) {
-                      const updated = history.filter(item => item.id !== h.id);
-                      setHistory(updated);
-                      localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updated));
-                      await supabase.from('merenda_inventory_history').delete().eq('id', h.id);
-                    }
-                  }} className="text-gray-300 hover:text-red-500 p-2"><Trash2 size={16} /></button>
-                </div>
+          <div className="space-y-6">
+            {/* Barra de Filtros de Histórico */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50 p-6 rounded-3xl border border-gray-100 mb-2">
+              <div className="flex items-center gap-2">
+                <Search size={16} className="text-gray-400" />
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filtrar Lançamentos</span>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <input 
+                  type="text"
+                  placeholder="Buscar Data (Ex: 05/06) ou Responsável..."
+                  value={historySearchTerm}
+                  onChange={(e) => setHistorySearchTerm(e.target.value)}
+                  className="px-4 py-2.5 bg-white border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
                 
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 space-y-2">
-                   <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase border-b pb-1">
-                     <span>Produto</span>
-                     <span>Final</span>
-                   </div>
-                   {h.items.filter(i => i.entries > 0 || i.outputs > 0 || i.previousBalance > 0).slice(0, 5).map(item => (
-                     <div key={item.id} className="flex justify-between text-[10px] items-center">
-                       <span className="font-bold text-gray-700 truncate w-32">{item.name}</span>
-                       <span className="font-black text-emerald-700">{(item.previousBalance + item.entries - item.outputs).toLocaleString('pt-BR')} {item.unit}</span>
+                <select
+                  value={historyTurnFilter}
+                  onChange={(e) => setHistoryTurnFilter(e.target.value)}
+                  className="px-4 py-2.5 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
+                >
+                  <option value="TODOS">Todos os Turnos</option>
+                  <option value="Matutino">Matutino</option>
+                  <option value="Vespertino">Vespertino</option>
+                </select>
+                
+                {(historySearchTerm || historyTurnFilter !== 'TODOS') && (
+                  <button 
+                    onClick={() => { setHistorySearchTerm(''); setHistoryTurnFilter('TODOS'); }}
+                    className="text-[10px] font-black text-red-500 uppercase hover:underline whitespace-nowrap"
+                  >
+                    Limpar Filtros
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 duration-300">
+              {filteredHistory.length > 0 ? filteredHistory.map((h) => (
+                <div 
+                  key={h.id} 
+                  onClick={() => loadFromHistory(h)}
+                  className="bg-gray-50 p-6 rounded-3xl border border-gray-100 hover:border-emerald-200 transition-all cursor-pointer group relative"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-emerald-100 text-emerald-600 rounded-2xl"><Calendar size={20} /></div>
+                      <div>
+                        <p className="font-black text-gray-900 uppercase text-xs">{new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR')} - {h.turno}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h.responsavel}</p>
+                      </div>
+                    </div>
+                    <button onClick={async (e) => {
+                      e.stopPropagation();
+                      if(window.confirm("Excluir este fechamento de histórico?")) {
+                        const updated = history.filter(item => item.id !== h.id);
+                        setHistory(updated);
+                        localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updated));
+                        await supabase.from('merenda_inventory_history').delete().eq('id', h.id);
+                      }
+                    }} className="text-gray-300 hover:text-red-500 p-2"><Trash2 size={16} /></button>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 space-y-2">
+                     <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase border-b pb-1">
+                       <span>Produto</span>
+                       <span>Final</span>
                      </div>
-                   ))}
-                   {h.items.length > 5 && <p className="text-[8px] text-center text-gray-400 font-bold uppercase mt-2">... e mais {h.items.length - 5} itens</p>}
+                     {h.items.filter(i => i.entries > 0 || i.outputs > 0 || i.previousBalance > 0).slice(0, 5).map(item => (
+                       <div key={item.id} className="flex justify-between text-[10px] items-center">
+                         <span className="font-bold text-gray-700 truncate w-32">{item.name}</span>
+                         <span className="font-black text-emerald-700">{(item.previousBalance + item.entries - item.outputs).toLocaleString('pt-BR')} {item.unit}</span>
+                       </div>
+                     ))}
+                     {h.items.length > 5 && <p className="text-[8px] text-center text-gray-400 font-bold uppercase mt-2">... e mais {h.items.length - 5} itens</p>}
+                  </div>
                 </div>
-              </div>
-            )) : (
-              <div className="col-span-full py-12 text-center text-gray-300 font-black uppercase text-xs tracking-widest border-2 border-dashed border-gray-100 rounded-[2.5rem]">
-                Nenhum fechamento histórico encontrado.
-              </div>
-            )}
+              )) : (
+                <div className="col-span-full py-12 text-center text-gray-300 font-black uppercase text-xs tracking-widest border-2 border-dashed border-gray-100 rounded-[2.5rem]">
+                  Nenhum fechamento histórico encontrado.
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
