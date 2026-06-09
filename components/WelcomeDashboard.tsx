@@ -386,7 +386,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
                         <div className="flex items-center gap-2 mb-2">
                            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl shadow-sm border border-amber-100"><Cake size={16} /></div>
-                           <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight leading-tight">Aniversariantes</h3>
+                           <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight leading-tight">Aniversariantes Mês de {new Date().toLocaleDateString('pt-BR', { month: 'long' })}</h3>
                         </div>
 
                         <div className="space-y-2">
