@@ -97,6 +97,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [readers, setReaders] = useState<Reader[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [loanSearch, setLoanSearch] = useState('');
 
   const fetchData = async () => {
     try {
@@ -1480,7 +1481,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       case 'loans':
         return (
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in duration-500">
-            <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+            <div className="p-8 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 gap-4">
               <div className="flex items-center gap-4">
                 <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Registro de Circulação</h3>
                 <div className="flex gap-2">
@@ -1488,12 +1489,21 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   <span className="px-3 py-1 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase border border-red-100">{stats.delayedLoans.length} Atrasados</span>
                 </div>
               </div>
-              <button
-                onClick={() => setIsGlobalLoanModalOpen(true)}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all"
-              >
-                <BookMarked size={16} /> Registrar Empréstimo
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="Buscar por aluno, turma ou cód. do livro..."
+                  value={loanSearch}
+                  onChange={e => setLoanSearch(e.target.value)}
+                  className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold uppercase w-full sm:w-72 shadow-sm focus:border-indigo-500 outline-none"
+                />
+                <button
+                  onClick={() => setIsGlobalLoanModalOpen(true)}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase flex justify-center items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all shrink-0"
+                >
+                  <BookMarked size={16} /> Registrar Empréstimo
+                </button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -1507,7 +1517,16 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {loans.map(loan => (
+                  {loans.filter(loan => {
+                    if (!loanSearch) return true;
+                    const search = loanSearch.toLowerCase();
+                    const reader = readers.find(r => r.id === loan.readerId);
+                    const book = books.find(b => b.id === loan.bookId);
+                    const readerName = loan.readerName.toLowerCase();
+                    const readerClass = (reader?.class || '').toLowerCase();
+                    const bookCode = (book?.internalRegistration || '').toLowerCase();
+                    return readerName.includes(search) || readerClass.includes(search) || bookCode.includes(search);
+                  }).map(loan => (
                     <tr key={loan.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-8 py-6">
                         <p className="font-black text-gray-900 uppercase">{loan.readerName}</p>
