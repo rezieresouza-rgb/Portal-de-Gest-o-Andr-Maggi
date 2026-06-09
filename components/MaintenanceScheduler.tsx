@@ -436,22 +436,6 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
         return acc;
     }, {} as Record<string, Record<string, MaintenanceTask[]>>);
 
-    const muralGroupedTasks = tasks.reduce((acc, task) => {
-        if (currentUser) {
-            const isGestao = ['ADMINISTRADOR', 'GESTAO', 'SECRETARIA', 'DIRECAO', 'COORDENACAO'].includes(currentUser.role);
-            if (!isGestao) {
-                const isAssignedToMe = task.assigned_employee_name && task.assigned_employee_name.toUpperCase().includes(currentUser.name.toUpperCase());
-                if (!isAssignedToMe) return acc;
-            }
-        }
-
-        if (!acc[task.block]) acc[task.block] = {};
-        if (!acc[task.block][task.area_name]) acc[task.block][task.area_name] = [];
-
-        acc[task.block][task.area_name].push(task);
-        return acc;
-    }, {} as Record<string, Record<string, MaintenanceTask[]>>);
-
     const getFrequencyLabel = (freq: string) => {
         switch (freq) {
             case 'DIARIA': return 'Diária';
@@ -511,10 +495,10 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
             areaSpan: number;
         }> = [];
         
-        const sortedBlocks = Object.keys(muralGroupedTasks).sort();
+        const sortedBlocks = Object.keys(groupedTasks).sort();
         
         sortedBlocks.forEach(block => {
-            const areas = muralGroupedTasks[block];
+            const areas = groupedTasks[block];
             const sortedAreas = Object.keys(areas).sort();
             
             // Count total tasks in this block
