@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { OFFICIAL_MENUS } from '../constants/menus';
 import { INITIAL_CONTRACTS } from '../constants/initialData';
+import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
 import { supabase } from '../supabaseClient';
 import { StaffMember } from '../types';
 
@@ -324,6 +325,173 @@ const Inventory: React.FC = () => {
     }
   };
 
+  const handleGenerateRetroactiveHistory = async () => {
+    if (!window.confirm("ATENÇÃO: Esta ação irá apagar o histórico atual e gerar uma simulação retroativa desde 02/Fevereiro até hoje. Deseja continuar?")) return;
+    
+    setIsSaving(true);
+    try {
+      // 1. Apagar histórico atual no Supabase e local
+      await supabase.from('merenda_inventory_history').delete().neq('id', '0');
+      setHistory([]);
+      localStorage.removeItem('merenda_inventory_history_v1');
+
+      // 2. Buscar todas as guias de entrada para preencher os estoques
+      const { data: guidesData } = await supabase.from('payment_guides').select('*');
+      const { data: guideItemsData } = await supabase.from('payment_guide_items').select('*, item:contract_items(*)');
+      
+      const guides = guidesData || [];
+      const guideItems = guideItemsData || [];
+
+      // 3. Montar inventário inicial com saldo zero
+      // Pega todos os itens cadastrados no estado atual
+      let currentInventory = items.map(i => ({
+        ...i,
+        previousBalance: 0,
+        entries: 0,
+        outputs: 0
+      }));
+
+      // Garante que os itens de contrato estejam na lista se não estiverem
+      guideItems.forEach((gi: any) => {
+        if (!currentInventory.some(i => i.name === gi.item.description.toUpperCase())) {
+           currentInventory.push({
+             id: `item-gen-${gi.item.id}`,
+             name: gi.item.description.toUpperCase(),
+             unit: gi.item.unit,
+             previousBalance: 0,
+             entries: 0,
+             outputs: 0,
+             min: 1
+           });
+        }
+      });
+
+      // 4. Configurar loop do tempo
+      const startDate = new Date('2026-02-02T12:00:00');
+      const endDate = new Date();
+      endDate.setHours(12, 0, 0, 0);
+      
+      const generatedSnapshots: InventorySnapshot[] = [];
+      let currentDate = startDate;
+      let weekCounter = 0; // Para rodar as 5 semanas de cardápio
+
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay(); // 0 = Domingo, 1 = Segunda, 2 = Terça...
+        
+        // Pula fins de semana
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+           if (dayOfWeek === 6) weekCounter++; // Avança semana no sábado
+           currentDate.setDate(currentDate.getDate() + 1);
+           continue;
+        }
+
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const monthIndex = currentDate.getMonth();
+        const dia = currentDate.getDate();
+
+        // Checar calendário (Feriados e Férias)
+        const monthData = SCHOOL_CALENDAR_2026.meses[monthIndex];
+        const event = monthData?.eventos?.find(e => e.dia === dia);
+        if (event && (event.categoria === 'FERIADO' || event.categoria === 'FERIAS')) {
+           currentDate.setDate(currentDate.getDate() + 1);
+           continue;
+        }
+
+        // Dias Letivos da Semana (Segunda = 1 -> 'Segunda')
+        const diasSemanaMap = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+        const dayName = diasSemanaMap[dayOfWeek];
+
+        const menuWeekIndex = weekCounter % 5;
+        const currentMenuDay = OFFICIAL_MENUS[menuWeekIndex]?.days.find(d => d.dayName === dayName);
+
+        // Turnos: Matutino e Vespertino
+        const turnos = ['Matutino', 'Vespertino'];
+        
+        for (const turno of turnos) {
+           // Zera entradas e saídas do turno
+           currentInventory = currentInventory.map(i => ({ ...i, entries: 0, outputs: 0 }));
+
+           // Se for Matutino, adiciona entradas das Guias daquele dia
+           if (turno === 'Matutino') {
+             const guidesToday = guides.filter(g => g.issue_date === dateStr);
+             guidesToday.forEach(g => {
+                const gItems = guideItems.filter(gi => gi.guide_id === g.id);
+                gItems.forEach(gi => {
+                   const invItem = currentInventory.find(i => i.name === gi.item.description.toUpperCase());
+                   if (invItem) {
+                      invItem.entries += gi.quantity;
+                   }
+                });
+             });
+           }
+
+           // Consumo Aleatório (Saídas) baseado no cardápio
+           if (currentMenuDay) {
+              currentMenuDay.ingredients.forEach(ing => {
+                 const invItem = currentInventory.find(i => i.name === ing.toUpperCase() || i.name.includes(ing.toUpperCase()) || ing.toUpperCase().includes(i.name));
+                 if (invItem) {
+                    // Consumo entre 2 e 5, ou se tiver pouco saldo, consome o que tem, limitando a 0
+                    const rawConsumption = Math.floor(Math.random() * (5 - 2 + 1)) + 2; 
+                    // Limita consumo ao que tem em estoque (saldo anterior + entradas)
+                    const available = invItem.previousBalance + invItem.entries;
+                    const finalConsumption = Math.min(rawConsumption, available > 0 ? available : rawConsumption); // Se available for zero ou negativo (estoque não lançado?), vai ficar negativo, ok.
+                    invItem.outputs += finalConsumption;
+                 }
+              });
+           }
+
+           // Gerar Snapshot do Turno
+           const snapshot: InventorySnapshot = {
+             id: `gen-${dateStr}-${turno}`,
+             date: dateStr,
+             turno: turno,
+             responsavel: 'Motor Retroativo IA',
+             items: currentInventory.map(i => ({ ...i })),
+             timestamp: currentDate.getTime() + (turno === 'Matutino' ? 0 : 43200000)
+           };
+           generatedSnapshots.unshift(snapshot); // unshift para ficar do mais recente pro mais antigo
+
+           // Atualiza Saldo Anterior para o próximo turno
+           currentInventory = currentInventory.map(i => ({
+             ...i,
+             previousBalance: i.previousBalance + i.entries - i.outputs,
+             entries: 0,
+             outputs: 0
+           }));
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // 5. Salvar na Nuvem (Em lotes de 50)
+      for (let i = 0; i < generatedSnapshots.length; i += 50) {
+        const batch = generatedSnapshots.slice(i, i + 50);
+        await supabase.from('merenda_inventory_history').insert(
+          batch.map(s => ({
+            id: s.id,
+            date: s.date,
+            turno: s.turno,
+            responsavel: s.responsavel,
+            items: s.items,
+            timestamp: s.timestamp
+          }))
+        );
+      }
+
+      // 6. Atualizar Estados Locais
+      setHistory(generatedSnapshots);
+      localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(generatedSnapshots));
+      setItems(currentInventory);
+      alert("✅ Histórico Retroativo gerado com sucesso! Os estoques foram atualizados com base nas compras reais e consumo simulado.");
+      
+    } catch (e: any) {
+      console.error(e);
+      alert("Erro ao gerar simulação: " + e.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const loadFromHistory = (snapshot: InventorySnapshot) => {
     setItems(snapshot.items.map(i => ({ ...i })));
     setData(snapshot.date);
@@ -378,6 +546,9 @@ const Inventory: React.FC = () => {
                 </button>
                 <button onClick={syncWithContracts} className="px-4 py-3 bg-blue-50 text-blue-700 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-blue-100 hover:bg-blue-100 transition-all flex items-center gap-2">
                   <ShoppingCart size={14} /> Sincronizar Contratos (12 Ativos)
+                </button>
+                <button onClick={handleGenerateRetroactiveHistory} className="px-4 py-3 bg-purple-50 text-purple-700 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-purple-100 hover:bg-purple-100 transition-all flex items-center gap-2">
+                  <History size={14} /> Simular Histórico Letivo
                 </button>
                 <button onClick={handleResetDaily} className="px-4 py-3 bg-emerald-100 text-emerald-700 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-200 transition-all">
                   Fechar Turno
