@@ -23,6 +23,7 @@ import {
   Clock,
   Sparkles,
   BookOpen,
+  MessageSquare,
   Activity,
   AlertOctagon,
   Radio,
@@ -31,6 +32,7 @@ import {
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import { User } from '../types';
+import FatosObservadosInbox from '../components/FatosObservadosInbox';
 import CivicoMilitarReports from '../components/CivicoMilitarReports';
 
 interface CivicoMilitarModuleProps {
@@ -355,54 +357,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     } catch (e) {
       console.error(e);
     }
-
-    // Sync occurrences from Supabase directly
-    const fetchSupabaseOccurrences = async () => {
-       try {
-          const { data, error } = await supabase
-             .from('occurrences')
-             .select('*')
-             .eq('category', 'FATO OBSERVADO');
-
-          if (!error && data) {
-             const mapped = data.map(occ => ({
-                id: `occ-${occ.id}`,
-                studentId: 'AUTO_GEK',
-                studentName: occ.student_name,
-                className: occ.classroom_name,
-                shiftName: 'MATUTINO/VESPERTINO',
-                template: 'fato_observado',
-                templateLabel: 'Relatório de Fato Observado',
-                date: occ.date,
-                fields: {
-                   date: occ.date,
-                   recebidoDate: '',
-                   teacher: occ.responsible_name,
-                   monitor: '',
-                   series: occ.classroom_name,
-                   discipline: 'MÚLTIPLAS',
-                   achado: occ.description,
-                   city: 'Colíder - MT'
-                },
-                timestamp: new Date(occ.created_at || occ.date).getTime()
-             }));
-
-             setDocHistory(prev => {
-                const newDocs = mapped.filter(m => !prev.some(p => p.id === m.id || (p.studentName === m.studentName && p.date === m.date && p.fields.achado === m.fields.achado)));
-                if (newDocs.length > 0) {
-                   const combined = [...newDocs, ...prev].sort((a, b) => b.timestamp - a.timestamp);
-                   localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(combined));
-                   return combined;
-                }
-                return prev;
-             });
-          }
-       } catch (err) {
-          console.error('Error syncing Supabase occurrences:', err);
-       }
-    };
-    
-    fetchSupabaseOccurrences();
   }, []);
 
   // Sync state to local storage when state changes
@@ -1149,6 +1103,30 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     });
   }, [docHistory]);
 
+  const handlePreencherDocumentoDaInbox = (occ: any) => {
+    const student = dbStudents.find(s => s.Nome === occ.student_name);
+    if (student) {
+      setSelectedStudentForDoc(student);
+      setDocSearchTerm(student.Nome);
+    } else {
+      setDocSearchTerm(occ.student_name || '');
+    }
+
+    setDocFields({
+      date: occ.date,
+      recebidoDate: '',
+      teacher: occ.responsible_name || '',
+      monitor: '',
+      series: occ.classroom_name || '',
+      discipline: 'MÚLTIPLAS',
+      achado: occ.description || '',
+      city: 'Colíder - MT'
+    });
+    
+    setSelectedDocTemplate('fato_observado');
+    setActiveTab('documentos');
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
       {/* Sidebar do Módulo */}
@@ -1218,6 +1196,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               }`}
           >
             <FileText size={18} /> Documentações
+          </button>
+          <button
+            onClick={() => setActiveTab('fatos_observados')}
+            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'fatos_observados'
+              ? 'bg-amber-600 text-white shadow-xl shadow-amber-600/10'
+              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+              }`}
+          >
+            <MessageSquare size={18} /> Caixa de Fatos
           </button>
           <button
             onClick={() => setActiveTab('relatorios')}
@@ -3281,6 +3268,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 )}
               </div>
             </div>
+          )}
+          {activeTab === 'fatos_observados' && (
+             <FatosObservadosInbox onPreencherDocumento={handlePreencherDocumentoDaInbox} />
           )}
 
           {activeTab === 'relatorios' && (
