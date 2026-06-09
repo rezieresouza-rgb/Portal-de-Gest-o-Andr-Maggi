@@ -145,7 +145,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
   const getLocalTimeString = () => {
     const d = new Date();
-    return d.toTimeString().split(' ')[0].substring(0, 5); // HH:mm
+    return d.toTimeString().split(' ')[0]; // HH:mm:ss
   };
 
   const [newTx, setNewTx] = useState({
@@ -193,7 +193,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       const { data: transactionsData, error: txError } = await supabase
         .from('transactions')
         .select('*')
-        .order('date', { ascending: true });
+        .order('date', { ascending: true })
+        .order('time', { ascending: true });
 
       if (txError) throw txError;
 
@@ -322,7 +323,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   // Transações filtradas para a aba ativa
   const activeFundTransactions = useMemo(() => {
     if (!funds[activeTab]) return [];
-    return funds[activeTab].transactions.filter(passesFilter);
+    return funds[activeTab].transactions
+      .filter(passesFilter)
+      .sort((a, b) => {
+        const dateTimeA = new Date(`${a.date}T${a.time || '00:00:00'}`).getTime();
+        const dateTimeB = new Date(`${b.date}T${b.time || '00:00:00'}`).getTime();
+        return dateTimeA - dateTimeB;
+      });
   }, [funds, activeTab, filters]);
 
   // Filtro específico para relatório de impostos AF
@@ -1358,7 +1365,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                 <tr key={t.id} className="hover:bg-white/5 transition-colors">
                                   <td className="px-6 py-4 font-bold text-white/50">
                                     {t.date ? t.date.split('-').reverse().join('/') : ''}
-                                    <span className="block text-[9px] opacity-50 mt-0.5">{t.time?.substring(0, 5)}</span>
+                                    <span className="block text-[9px] opacity-50 mt-0.5">{t.time || ''}</span>
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
