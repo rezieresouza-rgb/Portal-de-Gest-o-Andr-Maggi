@@ -551,12 +551,11 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
     const renderMuralVistos = (task: MaintenanceTask) => {
         if (task.frequency === 'DIARIA') {
             return (
-                <div className="text-center w-full max-w-[180px] mx-auto">
+                <div className="w-full text-center leading-tight">
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                        <div key={day} className="inline-block mx-0.5 my-0.5 text-center align-top w-[14px]">
-                            <div className="w-3.5 h-3.5 border border-gray-400 bg-white mx-auto"></div>
-                            <div className="text-[5px] font-bold text-gray-500 leading-none mt-px">{day}</div>
-                        </div>
+                        <span key={day} className="inline-block text-[6px] font-bold text-gray-600 border border-gray-400 w-3.5 h-3.5 text-center align-middle mx-0.5 my-0.5 bg-white rounded-sm">
+                            {day}
+                        </span>
                     ))}
                 </div>
             );
