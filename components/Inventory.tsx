@@ -526,7 +526,7 @@ const Inventory: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm no-print">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm print:hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 pb-6 border-b border-gray-50">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-emerald-900 text-white rounded-3xl"><ClipboardCheck size={32} /></div>
@@ -589,7 +589,7 @@ const Inventory: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 no-print">
+            <div className="flex items-center gap-3 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 print:hidden">
               <Info size={16} className="text-emerald-600" />
               <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">O sistema carregará automaticamente todos os ingredientes únicos das 5 semanas do cardápio oficial.</p>
             </div>
@@ -654,7 +654,7 @@ const Inventory: React.FC = () => {
               <th className="sticky top-0 z-20 bg-emerald-800/95 px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center w-[15%]">Entradas</th>
               <th className="sticky top-0 z-20 bg-red-800/95 px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center w-[15%]">Saídas</th>
               <th className="sticky top-0 z-20 bg-gray-900 px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center w-[15%]">Saldo Final</th>
-              {viewMode === 'active' && <th className="sticky top-0 z-20 bg-gray-900 px-4 py-5 w-[5%] no-print rounded-tr-[2rem]"></th>}
+              {viewMode === 'active' && <th className="sticky top-0 z-20 bg-gray-900 px-4 py-5 w-[5%] print:hidden rounded-tr-[2rem]"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -691,7 +691,7 @@ const Inventory: React.FC = () => {
                           document.getElementById(`output-${index}`)?.focus();
                         }
                       }}
-                      className={`w-full bg-transparent text-center font-black outline-none no-print transition-all ${hasEntries ? 'text-emerald-700 scale-110' : 'text-emerald-600'}`} 
+                      className={`w-full bg-transparent text-center font-black outline-none print:hidden transition-all ${hasEntries ? 'text-emerald-700 scale-110' : 'text-emerald-600'}`} 
                     />
                     <span className="hidden pdf-show">{item.entries || '0'}</span>
                   </td>
@@ -708,7 +708,7 @@ const Inventory: React.FC = () => {
                           document.getElementById(`entry-${index + 1}`)?.focus();
                         }
                       }}
-                      className={`w-full bg-transparent text-center font-black outline-none no-print transition-all ${hasOutputs ? 'text-red-700 scale-110' : 'text-red-600'}`} 
+                      className={`w-full bg-transparent text-center font-black outline-none print:hidden transition-all ${hasOutputs ? 'text-red-700 scale-110' : 'text-red-600'}`} 
                     />
                     <span className="hidden pdf-show">{item.outputs || '0'}</span>
                   </td>
@@ -716,7 +716,7 @@ const Inventory: React.FC = () => {
                     {currentBalance.toLocaleString('pt-BR')}
                     {isCritical && <span className="block text-[8px] mt-1 text-red-500 animate-bounce">ABAIXO DO MÍNIMO ({item.min})</span>}
                   </td>
-                  {viewMode === 'active' && <td className="px-4 py-6 no-print text-right"><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button></td>}
+                  {viewMode === 'active' && <td className="px-4 py-6 print:hidden text-right"><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button></td>}
                 </tr>
               );
             })}
