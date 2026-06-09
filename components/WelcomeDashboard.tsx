@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { BirthdayPerson, SchoolAnnouncement, SchoolEvent, User } from '../types';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
+import { supabase } from '../supabaseClient';
 import CelebrationsWall from './CelebrationsWall';
 
 interface ModuleConfig {
@@ -60,11 +61,49 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
       ];
    });
 
-   const [birthdays] = useState<BirthdayPerson[]>([
-      { id: 'b1', name: 'ANA PAULA SILVA', role: 'PROFESSORA', day: new Date().getDate(), month: new Date().getMonth() + 1 },
-      { id: 'b2', name: 'CARLOS LIMA', role: 'ALMOXARIFE', day: (new Date().getDate() + 2), month: new Date().getMonth() + 1 },
-      { id: 'b3', name: 'BEATRIZ SOUZA', role: 'PSICÓLOGA', day: 15, month: new Date().getMonth() + 1 },
-   ]);
+   const [birthdays, setBirthdays] = useState<BirthdayPerson[]>([]);
+
+   useEffect(() => {
+      const fetchBirthdays = async () => {
+         try {
+            const { data: staffData, error } = await supabase
+               .from('staff')
+               .select('id, name, job_function, birth_date')
+               .eq('status', 'EM_ATIVIDADE');
+
+            if (error) throw error;
+
+            const currentMonth = new Date().getMonth() + 1;
+            const mapped: BirthdayPerson[] = [];
+
+            staffData?.forEach((s: any) => {
+               if (s.birth_date) {
+                  const parts = s.birth_date.split('-');
+                  if (parts.length >= 3) {
+                     const birthMonth = parseInt(parts[1], 10);
+                     const birthDay = parseInt(parts[2], 10);
+                     if (birthMonth === currentMonth) {
+                        mapped.push({
+                           id: s.id,
+                           name: s.name || 'Servidor',
+                           role: s.job_function || 'SERVIDOR',
+                           day: birthDay,
+                           month: birthMonth
+                        });
+                     }
+                  }
+               }
+            });
+
+            mapped.sort((a, b) => a.day - b.day);
+            setBirthdays(mapped);
+         } catch (e) {
+            console.error("Error fetching birthdays:", e);
+         }
+      };
+
+      fetchBirthdays();
+   }, []);
 
    const currentMonthIdx = new Date().getMonth();
    const currentMonthData = SCHOOL_CALENDAR_2026.meses[currentMonthIdx];
@@ -369,6 +408,11 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                                  </div>
                               </div>
                            ))}
+                           {birthdays.length === 0 && (
+                              <div className="py-8 text-center text-slate-400 text-[10px] font-bold uppercase">
+                                 Nenhum aniversariante este mês
+                              </div>
+                           )}
                         </div>
                      </div>
                   )}
