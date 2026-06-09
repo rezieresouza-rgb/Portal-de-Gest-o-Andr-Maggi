@@ -175,20 +175,32 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
       const monthIndex = monthNumber - 1; 
       
       const newTasks = tasks.map(t => {
-         let day = Math.floor(Math.random() * 25) + 1;
-         if (t.frequency === 'MENSAL') day = 28;
+         let day = 1;
+         if (monthIndex === 0) {
+            // January 19 to 31, only business days: 19, 20, 21, 22, 23, 26, 27, 28, 29, 30
+            const businessDays = [19, 20, 21, 22, 23, 26, 27, 28, 29, 30];
+            day = businessDays[Math.floor(Math.random() * businessDays.length)];
+         } else {
+            day = Math.floor(Math.random() * 25) + 1;
+            if (t.frequency === 'MENSAL') day = 28;
+         }
          
          const date = new Date(year, monthIndex, day, 14, 30, 0);
-         const isDone = Math.random() > 0.05;
          
-         let validEmployees: string[] = [];
-         if ((monthIndex === 0 && day >= 19) || (monthIndex === 1 && day <= 13)) validEmployees.push('MARIA ELIANE DE SOUZA');
-         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('NADIJA TAIZ SIMÃO DA SILVA');
-         if ((monthIndex === 1 && day >= 18) || monthIndex > 1) validEmployees.push('JHENIFA SIMAO DA SILVA');
-         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('MARIA APARECIDA DOS SANTOS ARAUJO SOUZA');
-         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('MARLI DO NASCIMENTO');
+         // For January, all tasks are done (100% completion)
+         const isDone = monthIndex === 0 ? true : Math.random() > 0.05;
+         
+         let emp = '';
+         if (monthIndex !== 0) {
+            let validEmployees: string[] = [];
+            if ((monthIndex === 0 && day >= 19) || (monthIndex === 1 && day <= 13)) validEmployees.push('MARIA ELIANE DE SOUZA');
+            if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('NADIJA TAIZ SIMÃO DA SILVA');
+            if ((monthIndex === 1 && day >= 18) || monthIndex > 1) validEmployees.push('JHENIFA SIMAO DA SILVA');
+            if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('MARIA APARECIDA DOS SANTOS ARAUJO SOUZA');
+            if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('MARLI DO NASCIMENTO');
 
-         const emp = validEmployees.length > 0 ? validEmployees[Math.floor(Math.random() * validEmployees.length)] : 'SISTEMA';
+            emp = validEmployees.length > 0 ? validEmployees[Math.floor(Math.random() * validEmployees.length)] : 'SISTEMA';
+         }
 
          if (isDone) {
             return { ...t, status: 'CONCLUÍDO' as const, lastDone: date.toISOString(), completedBy: emp };
@@ -200,12 +212,15 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
       setTasks(newTasks);
       
       const mName = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho'][monthIndex];
-      const firstDay = new Date(year, monthIndex, 1).toLocaleDateString('sv-SE');
+      let firstDay = new Date(year, monthIndex, 1).toLocaleDateString('sv-SE');
+      if (monthIndex === 0) {
+         firstDay = `${year}-01-19`;
+      }
       const lastDay = new Date(year, monthIndex + 1, 0).toLocaleDateString('sv-SE');
       setStartDate(firstDay);
       setEndDate(lastDay);
       
-      alert(`Dados fictícios de ${mName} gerados! Agora você pode imprimir o relatório.`);
+      alert(`Dados de ${mName} gerados de 19/01/2026 a 31/01/2026 (apenas dias úteis, sem funcionária definida)!`);
    };
 
    const filteredTasks = useMemo(() => {
