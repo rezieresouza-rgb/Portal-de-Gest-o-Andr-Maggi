@@ -132,7 +132,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     // Termo de Adequação de Conduta fields
     obrigacoesPrazo: '',
     gestorEducacional: '',
-    coordenadorName: ''
+    coordenadorName: '',
+    // Autorização Uniforme Incompleto fields
+    dataInicio: new Date().toISOString().split('T')[0],
+    dataFim: new Date().toISOString().split('T')[0],
+    motivoUniforme: '',
+    pecaFaltante: ''
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
 
@@ -152,6 +157,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       return d.template === 'termo_adequacao_conduta' && new Date(d.date).getFullYear() === currentYear;
     });
     return `${(tacesThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
+  }, [selectedDocTemplate, docHistory]);
+
+  const nextAutorizacaoNumber = useMemo(() => {
+    if (selectedDocTemplate !== 'autorizacao_uniforme') return '';
+    const currentYear = new Date().getFullYear();
+    const docsThisYear = docHistory.filter(d => {
+      return d.template === 'autorizacao_uniforme' && new Date(d.date).getFullYear() === currentYear;
+    });
+    return `${(docsThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
   }, [selectedDocTemplate, docHistory]);
 
   // Automatically infer Series/Year when a student is selected
@@ -990,7 +1004,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       template: selectedDocTemplate,
       templateLabel: selectedDocTemplate === 'termo_ciencia' 
         ? 'Termo de Ciência e Concordância' 
-        : (selectedDocTemplate === 'fato_observado' ? 'Relatório de Fato Observado' : 'Ficha de Medida Disciplinar'),
+        : selectedDocTemplate === 'fato_observado' ? 'Relatório de Fato Observado' 
+        : selectedDocTemplate === 'autorizacao_uniforme' ? 'Autorização de Uniforme Incompleto'
+        : selectedDocTemplate === 'termo_adequacao_conduta' ? 'Termo de Adequação de Conduta Escolar'
+        : 'Ficha de Medida Disciplinar',
       date: docFields.date,
       fields: { 
         ...docFields,
@@ -998,6 +1015,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           ? (docFields.documentNumber || nextFichaNumber) 
           : selectedDocTemplate === 'termo_adequacao_conduta'
           ? (docFields.documentNumber || nextTaceNumber)
+          : selectedDocTemplate === 'autorizacao_uniforme'
+          ? (docFields.documentNumber || nextAutorizacaoNumber)
           : docFields.documentNumber
       },
       timestamp: Date.now()
@@ -2024,6 +2043,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <option value="fato_observado">Relatório de Fato Observado</option>
                       <option value="ficha_medida_disciplinar">Ficha de Medida Disciplinar (Anexo III)</option>
                       <option value="termo_adequacao_conduta">Termo de Adequação de Conduta Escolar (TACE)</option>
+                      <option value="autorizacao_uniforme">Autorização Temporária de Uniforme Incompleto</option>
                     </select>
                   </div>
 
@@ -2448,6 +2468,74 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                           />
                         </div>
+                      </div>
+                    </div>
+                  ) : selectedDocTemplate === 'autorizacao_uniforme' ? (
+                    <div className="border-t border-slate-100 pt-5 space-y-4">
+                      <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Dados da Autorização</h4>
+                      
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Número do Documento</label>
+                        <input
+                          type="text"
+                          value={docFields.documentNumber}
+                          onChange={e => setDocFields(prev => ({ ...prev, documentNumber: e.target.value }))}
+                          placeholder={`Automático: ${nextAutorizacaoNumber}`}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Peça Faltante / Incompleta</label>
+                        <input
+                          type="text"
+                          value={docFields.pecaFaltante}
+                          onChange={e => setDocFields(prev => ({ ...prev, pecaFaltante: e.target.value }))}
+                          placeholder="Ex: Tênis preto padrão, Calça padrão..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Motivo / Justificativa</label>
+                        <textarea
+                          value={docFields.motivoUniforme}
+                          onChange={e => setDocFields(prev => ({ ...prev, motivoUniforme: e.target.value }))}
+                          placeholder="Motivo da ausência da peça..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[60px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Data de Início</label>
+                          <input
+                            type="date"
+                            value={docFields.dataInicio}
+                            onChange={e => setDocFields(prev => ({ ...prev, dataInicio: e.target.value }))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Data de Término</label>
+                          <input
+                            type="date"
+                            value={docFields.dataFim}
+                            onChange={e => setDocFields(prev => ({ ...prev, dataFim: e.target.value }))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Gestor Cívico-Militar / Escolar</label>
+                        <input
+                          type="text"
+                          value={docFields.gestorMilitar}
+                          onChange={e => setDocFields(prev => ({ ...prev, gestorMilitar: e.target.value }))}
+                          placeholder="Nome de quem assina"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        />
                       </div>
                     </div>
                   )}
@@ -2985,6 +3073,60 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           <p>
                             Recebido em {docFields.city ? docFields.city.split('-')[0].trim() : '________________'}, {formatDocDate(docFields.recebidoDate)}.
                           </p>
+                        </div>
+                      </>
+                    ) : selectedDocTemplate === 'autorizacao_uniforme' ? (
+                      <>
+                        <div className="text-center my-10">
+                          <h2 className="text-lg font-black text-gray-900 uppercase">AUTORIZAÇÃO TEMPORÁRIA PARA USO INCOMPLETO DO UNIFORME</h2>
+                          <p className="text-sm font-bold text-gray-900 mt-2">Nº {docFields.documentNumber || nextAutorizacaoNumber}</p>
+                        </div>
+
+                        <div className="text-sm text-gray-900 text-justify leading-relaxed space-y-6 mt-8">
+                          <p>
+                            Autorizo o(a) estudante <strong>{selectedStudentForDoc?.Nome || '____________________________________________________'}</strong>, 
+                            devidamente matriculado(a) na turma <strong>{selectedStudentForDoc?.Turma || '___________'}</strong>, 
+                            a frequentar as atividades escolares com o uniforme incompleto, devido à ausência da seguinte peça:
+                          </p>
+
+                          <div className="pl-8 font-bold italic">
+                            - {docFields.pecaFaltante || '____________________________________________________'}
+                          </div>
+
+                          <p>
+                            <strong>Justificativa / Motivo:</strong> {docFields.motivoUniforme || '_________________________________________________________________________________________'}
+                          </p>
+
+                          <p>
+                            <strong>Período de Validade:</strong> Esta autorização é válida do dia <strong>{formatDocDate(docFields.dataInicio)}</strong> ao dia <strong>{formatDocDate(docFields.dataFim)}</strong>.
+                          </p>
+                          
+                          <p className="mt-4 italic text-xs">
+                            * O uso incompleto do uniforme só é permitido mediante esta autorização devidamente assinada.
+                            O(a) estudante compromete-se a regularizar a situação após o término do período de validade estipulado acima.
+                          </p>
+                        </div>
+
+                        <div className="text-center mt-16 mb-20 text-sm">
+                          <p>{docFields.city ? docFields.city.split('-')[0].trim() : 'Colíder'}, {formatDocDate(docFields.date)}.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-16 text-sm text-gray-900 mt-16 pb-12">
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-2/3"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{selectedStudentForDoc?.Nome || 'NOME DO ESTUDANTE'}</p>
+                            <p className="text-center">Estudante</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-2/3"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.responsibleName || 'NOME DO RESPONSÁVEL'}</p>
+                            <p className="text-center">Responsável Legal</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-2/3"></div>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.gestorMilitar || 'NOME DO GESTOR CÍVICO-MILITAR / ESCOLAR'}</p>
+                            <p className="text-center">Gestor Cívico-Militar / Escolar</p>
+                          </div>
                         </div>
                       </>
                     )}
