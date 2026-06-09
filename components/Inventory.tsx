@@ -181,6 +181,82 @@ const Inventory: React.FC = () => {
     localStorage.setItem('seduc_inventory_v3', JSON.stringify(items));
   }, [items]);
 
+  // Carregamento automático do Registro Diário (Consumo) ao alterar data/turno
+  useEffect(() => {
+    if (viewMode !== 'active') return;
+
+    const autoImportDailyRegister = async () => {
+      try {
+        const selectedDate = data;
+        const selectedShift = turno.toUpperCase();
+        
+        // Se já houver um fechamento salvo no histórico para esta data/turno, não fazemos o auto-preenchimento
+        // para não sobrescrever o histórico consolidado.
+        const hasClosedHistory = history.some(h => h.date === selectedDate && h.turno === turno);
+        if (hasClosedHistory) return;
+
+        const { data: mealRecordData, error } = await supabase
+          .from('merenda_meal_records')
+          .select('*')
+          .eq('date', selectedDate)
+          .eq('shift', selectedShift)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        // Se não houver registro diário, resetamos as saídas para 0 para esta nova data
+        if (!mealRecordData) {
+          setItems(prev => prev.map(item => ({ ...item, outputs: 0 })));
+          return;
+        }
+
+        const entrada = typeof mealRecordData.entrada === 'string' ? JSON.parse(mealRecordData.entrada) : mealRecordData.entrada;
+        const principal = typeof mealRecordData.principal === 'string' ? JSON.parse(mealRecordData.principal) : mealRecordData.principal;
+
+        const mealIngredients: { name: string; quantity: number }[] = [];
+        
+        [entrada, principal].forEach((meal) => {
+          if (meal && Array.isArray(meal.ingredients)) {
+            meal.ingredients.forEach((ing: any) => {
+              const qty = parseFloat(ing.quantity);
+              if (ing.name && !isNaN(qty) && qty > 0) {
+                mealIngredients.push({
+                  name: ing.name.toUpperCase(),
+                  quantity: qty
+                });
+              }
+            });
+          }
+        });
+
+        // Atualiza as saídas nos itens ativos do estoque, zerando os que não estão no registro diário
+        setItems(prev => prev.map(invItem => {
+          const matches = mealIngredients.filter(ing => 
+            invItem.name === ing.name || 
+            invItem.name.includes(ing.name) || 
+            ing.name.includes(invItem.name)
+          );
+
+          if (matches.length > 0) {
+            const totalQty = matches.reduce((sum, m) => sum + m.quantity, 0);
+            return {
+              ...invItem,
+              outputs: totalQty
+            };
+          }
+          return {
+            ...invItem,
+            outputs: 0
+          };
+        }));
+      } catch (err) {
+        console.error("Erro no carregamento automático de consumo:", err);
+      }
+    };
+
+    autoImportDailyRegister();
+  }, [data, turno, viewMode, history]);
+
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
     const item: SeducInventoryItem = {
