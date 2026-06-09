@@ -340,30 +340,56 @@ const Inventory: React.FC = () => {
       setHistory([]);
       localStorage.removeItem('merenda_inventory_history_v1');
 
-      // 2. Buscar todas as guias de entrada para preencher os estoques
+      // 2. Buscar todas as guias de entrada e itens do contrato para preencher os estoques
       const { data: guidesData } = await supabase.from('payment_guides').select('*');
       const { data: guideItemsData } = await supabase.from('payment_guide_items').select('*, item:contract_items(*)');
+      const { data: contractItemsData } = await supabase.from('contract_items').select('*');
       
       const guides = guidesData || [];
       const guideItems = guideItemsData || [];
+      const contractItemsList = contractItemsData || [];
 
-      // 3. Montar inventário inicial com saldo zero
+      // Função auxiliar para calcular o saldo inicial baseado em 20% do volume total do contrato (Opção 2)
+      const getInitialBalance = (itemName: string): number => {
+        let totalQty = 0;
+        // Busca do banco de dados (tabela contract_items)
+        const dbItems = contractItemsList.filter(ci => ci.description?.toUpperCase() === itemName.toUpperCase());
+        if (dbItems.length > 0) {
+          dbItems.forEach(ci => {
+            totalQty += ci.contracted_quantity || 0;
+          });
+        } else {
+          // Fallback para constante local INITIAL_CONTRACTS
+          INITIAL_CONTRACTS.forEach(contract => {
+            contract.items.forEach(ci => {
+              if (ci.description?.toUpperCase() === itemName.toUpperCase()) {
+                totalQty += ci.contractedQuantity || 0;
+              }
+            });
+          });
+        }
+        // Retorna 20% do volume total contratado
+        return parseFloat((totalQty * 0.2).toFixed(2));
+      };
+
+      // 3. Montar inventário inicial com saldo proporcional (20% do contrato)
       // Pega todos os itens cadastrados no estado atual
       let currentInventory = items.map(i => ({
         ...i,
-        previousBalance: 0,
+        previousBalance: getInitialBalance(i.name),
         entries: 0,
         outputs: 0
       }));
 
       // Garante que os itens de contrato estejam na lista se não estiverem
       guideItems.forEach((gi: any) => {
-        if (!currentInventory.some(i => i.name === gi.item.description.toUpperCase())) {
+        if (gi.item && !currentInventory.some(i => i.name === gi.item.description.toUpperCase())) {
+           const itemName = gi.item.description.toUpperCase();
            currentInventory.push({
              id: `item-gen-${gi.item.id}`,
-             name: gi.item.description.toUpperCase(),
+             name: itemName,
              unit: gi.item.unit,
-             previousBalance: 0,
+             previousBalance: getInitialBalance(itemName),
              entries: 0,
              outputs: 0,
              min: 1
