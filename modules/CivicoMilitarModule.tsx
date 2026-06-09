@@ -333,10 +333,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
     // D. Document History
     try {
+      let currentDocs: any[] = [];
       const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
       if (savedDocs) {
-        setDocHistory(JSON.parse(savedDocs));
+        currentDocs = JSON.parse(savedDocs);
       }
+      
+      // Migrate v1 docs to v2
+      const oldDocs = localStorage.getItem('civico_militar_documentos_v1');
+      if (oldDocs) {
+        const oldParsed = JSON.parse(oldDocs);
+        const newOnes = oldParsed.filter((oldDoc: any) => !currentDocs.some((d: any) => d.id === oldDoc.id));
+        if (newOnes.length > 0) {
+          currentDocs = [...newOnes, ...currentDocs].sort((a, b) => b.timestamp - a.timestamp);
+          localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(currentDocs));
+        }
+        localStorage.removeItem('civico_militar_documentos_v1');
+      }
+
+      setDocHistory(currentDocs);
     } catch (e) {
       console.error(e);
     }
