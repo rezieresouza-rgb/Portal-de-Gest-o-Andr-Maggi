@@ -1077,6 +1077,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       d.date.startsWith(today)
     );
   }, [docHistory]);
+
+  const expiredAuthorizations = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return docHistory.filter(d => {
+      if (d.template !== 'autorizacao_uniforme' || !d.fields || !d.fields.dataFim) return false;
+      return d.fields.dataFim < today;
+    });
+  }, [docHistory]);
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
       {/* Sidebar do Módulo */}
@@ -1239,6 +1248,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                    </div>
                    <button onClick={() => setActiveTab('documentos')} className="px-5 py-3 bg-amber-500 text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-amber-600 transition-colors shadow-md">
                       Analisar Agora
+                   </button>
+                </div>
+              )}
+
+              {expiredAuthorizations.length > 0 && (
+                <div className="bg-red-50 border border-red-200 p-6 rounded-[2rem] flex items-center justify-between shadow-sm relative overflow-hidden animate-in slide-in-from-top-4">
+                   <div className="absolute top-0 left-0 bottom-0 w-2 bg-red-500"></div>
+                   <div className="flex items-center gap-4">
+                      <div className="p-3 bg-red-100 text-red-600 rounded-2xl">
+                         <AlertTriangle size={24} className="animate-pulse" />
+                      </div>
+                      <div>
+                         <h3 className="text-red-800 font-black text-sm uppercase">Autorizações de Uniforme Vencidas</h3>
+                         <p className="text-red-700/80 text-[10px] font-bold uppercase mt-1">Existem {expiredAuthorizations.length} autorizações temporárias que já passaram do prazo de validade.</p>
+                      </div>
+                   </div>
+                   <button onClick={() => setActiveTab('documentos')} className="px-5 py-3 bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-red-700 transition-colors shadow-md">
+                      Verificar Alunos
                    </button>
                 </div>
               )}
