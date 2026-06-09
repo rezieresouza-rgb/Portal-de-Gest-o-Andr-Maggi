@@ -172,17 +172,16 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 font-sans relative w-full overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 font-sans relative w-full overflow-x-hidden">
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-20 fixed"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-indigo-950 to-black fixed opacity-90"></div>
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite] fixed"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/20 fixed"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-200/10 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite] fixed"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-200/10 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
       </div>
 
       <div className="relative z-10 flex min-h-screen w-full min-w-0">
         {/* SIDEBAR NAVEGAÇÃO HUB (Glass) - Escondido em mobile, visível em lg */}
-        <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-24 bg-white/5 backdrop-blur-xl border-r border-white/10 flex-col items-center py-10 gap-8 no-print z-50">
+        <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-24 bg-white/80 backdrop-blur-xl border-r border-slate-200/80 flex-col items-center py-10 gap-8 no-print z-50 shadow-sm">
           <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-black border border-white/20">AM-v2</div>
 
           <nav className="flex-1 flex flex-col gap-4">
@@ -192,7 +191,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
           <div className="flex flex-col gap-4">
             <button
               onClick={() => setIsProfileOpen(true)}
-              className="p-4 rounded-2xl text-white/50 hover:text-indigo-400 hover:bg-white/10 transition-all"
+              className="p-4 rounded-2xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100/55 transition-all"
               title="Meu Perfil"
             >
               <UserIcon size={24} />
@@ -200,7 +199,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
             {isAdmin && (
               <button
                 onClick={() => onModuleSelect('settings')}
-                className="p-4 rounded-2xl text-white/50 hover:text-white hover:bg-white/10 transition-all"
+                className="p-4 rounded-2xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100/55 transition-all"
                 title="Configurações Gerais"
               >
                 <Settings size={24} />
@@ -208,7 +207,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
             )}
             <button
               onClick={onLogout}
-              className="p-4 rounded-2xl text-white/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
+              className="p-4 rounded-2xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
               title="Sair do Sistema"
             >
               <LogOut size={24} />
