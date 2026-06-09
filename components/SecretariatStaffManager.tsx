@@ -1164,6 +1164,24 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                            </div>
                         )}
 
+                        {(form.serverType === 'Apoio' || form.serverType === 'Técnico') && (
+                           <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 space-y-6 animate-in slide-in-from-top-2">
+                              <h4 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
+                                 <Clock size={16} /> Carga Horária Semanal
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">Carga Horária (Horas Semanais)</label>
+                                    <input 
+                                       type="number" 
+                                       value={form.workload} 
+                                       onChange={e => setForm({ ...form, workload: Number(e.target.value) })} 
+                                       className="w-full p-4 bg-white border border-emerald-200 rounded-2xl font-black text-lg text-center outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" 
+                                    />
+                                 </div>
+                              </div>
+                           </div>
+                        )}
 
                         {(isContratado) && (
                            <div className="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 space-y-4 animate-in slide-in-from-top-2">
