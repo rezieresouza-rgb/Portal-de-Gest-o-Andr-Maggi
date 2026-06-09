@@ -355,6 +355,54 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     } catch (e) {
       console.error(e);
     }
+
+    // Sync occurrences from Supabase directly
+    const fetchSupabaseOccurrences = async () => {
+       try {
+          const { data, error } = await supabase
+             .from('occurrences')
+             .select('*')
+             .eq('category', 'FATO OBSERVADO');
+
+          if (!error && data) {
+             const mapped = data.map(occ => ({
+                id: `occ-${occ.id}`,
+                studentId: 'AUTO_GEK',
+                studentName: occ.student_name,
+                className: occ.classroom_name,
+                shiftName: 'MATUTINO/VESPERTINO',
+                template: 'fato_observado',
+                templateLabel: 'Relatório de Fato Observado',
+                date: occ.date,
+                fields: {
+                   date: occ.date,
+                   recebidoDate: '',
+                   teacher: occ.responsible_name,
+                   monitor: '',
+                   series: occ.classroom_name,
+                   discipline: 'MÚLTIPLAS',
+                   achado: occ.description,
+                   city: 'Colíder - MT'
+                },
+                timestamp: new Date(occ.created_at || occ.date).getTime()
+             }));
+
+             setDocHistory(prev => {
+                const newDocs = mapped.filter(m => !prev.some(p => p.id === m.id || (p.studentName === m.studentName && p.date === m.date && p.fields.achado === m.fields.achado)));
+                if (newDocs.length > 0) {
+                   const combined = [...newDocs, ...prev].sort((a, b) => b.timestamp - a.timestamp);
+                   localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(combined));
+                   return combined;
+                }
+                return prev;
+             });
+          }
+       } catch (err) {
+          console.error('Error syncing Supabase occurrences:', err);
+       }
+    };
+    
+    fetchSupabaseOccurrences();
   }, []);
 
   // Sync state to local storage when state changes
