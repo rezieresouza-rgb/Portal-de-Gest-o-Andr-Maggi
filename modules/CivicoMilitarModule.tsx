@@ -2416,7 +2416,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         />
                       </div>
                     </div>
-                  ) : (
+                  ) : selectedDocTemplate === 'fato_observado' ? (
                     <div className="border-t border-slate-100 pt-5 space-y-4">
                       <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Dados do Fato Observado</h4>
                       
@@ -2565,7 +2565,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         />
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Detalhes Gerais */}
                   <div className="border-t border-slate-100 pt-5 grid grid-cols-2 gap-4">
@@ -2996,7 +2996,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         </div>
 
                       </>
-                    ) : (
+                    ) : selectedDocTemplate === 'fato_observado' ? (
                       <>
                         {/* Título do Fato Observado */}
                         <div className="text-center my-6">
@@ -3156,7 +3156,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           </div>
                         </div>
                       </>
-                    )}
+                    ) : null}
 
                   </div>
                 </div>
