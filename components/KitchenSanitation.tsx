@@ -562,7 +562,21 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-gray-200">
-                        {tasks.map((t, idx) => {
+                        {[...tasks].sort((a, b) => {
+                            const aCompleted = a.status === 'CONCLUÍDO' && a.lastDone && 
+                               a.lastDone.substring(0, 10) >= startDate && 
+                               a.lastDone.substring(0, 10) <= endDate;
+                            const bCompleted = b.status === 'CONCLUÍDO' && b.lastDone && 
+                               b.lastDone.substring(0, 10) >= startDate && 
+                               b.lastDone.substring(0, 10) <= endDate;
+                            
+                            if (aCompleted && bCompleted) {
+                               return new Date(a.lastDone!).getTime() - new Date(b.lastDone!).getTime();
+                            }
+                            if (aCompleted && !bCompleted) return -1;
+                            if (!aCompleted && bCompleted) return 1;
+                            return 0;
+                         }).map((t, idx) => {
                            const popMatch = t.title.match(/POP (\d+)/);
                            const popNumber = popMatch ? popMatch[1] : '--';
                            const titleClean = t.title.replace(/\(POP \d+\)/, '').trim();
