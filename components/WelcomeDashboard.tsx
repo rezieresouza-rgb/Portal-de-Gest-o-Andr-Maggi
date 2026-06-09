@@ -399,7 +399,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                                        {b.name[0]}
                                     </div>
                                     <div>
-                                       <p className="text-[10px] font-black text-slate-800 uppercase leading-none truncate w-20">{b.name.split(' ')[0]}</p>
+                                       <p className="text-[10px] font-black text-slate-800 uppercase leading-none truncate w-32">{b.name.split(' ').slice(0, 2).join(' ')}</p>
                                        <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">{b.role}</p>
                                     </div>
                                  </div>
