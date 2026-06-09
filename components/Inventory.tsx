@@ -138,6 +138,8 @@ const Inventory: React.FC = () => {
   }, []);
 
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [adjustmentItems, setAdjustmentItems] = useState<{id: string, name: string, newBalance: number}[]>([]);
   const [newItem, setNewItem] = useState({ name: '', unit: 'Kg', min: 0 });
 
   const [turno, setTurno] = useState('Matutino');
@@ -534,7 +536,13 @@ const Inventory: React.FC = () => {
           </div>
           <div className="flex gap-3">
             {viewMode === 'active' && (
-              <button onClick={() => setIsAddItemModalOpen(true)} className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Plus size={14} /> Novo Produto</button>
+              <>
+                <button onClick={() => setIsAddItemModalOpen(true)} className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Plus size={14} /> Novo Produto</button>
+                <button onClick={() => {
+                  setAdjustmentItems(items.map(i => ({ id: i.id, name: i.name, newBalance: i.previousBalance })));
+                  setIsAdjustmentModalOpen(true);
+                }} className="px-5 py-3 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-600 transition-all flex items-center gap-2"><Edit3 size={14} /> Ajuste Físico</button>
+              </>
             )}
             <button onClick={() => setViewMode(viewMode === 'active' ? 'history' : 'active')} className="px-5 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
               <History size={14} /> Histórico
@@ -734,6 +742,69 @@ const Inventory: React.FC = () => {
               </div>
               <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"><Save size={20} /> Cadastrar Alimento</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Ajuste de Estoque Físico */}
+      {isAdjustmentModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md">
+          <div className="bg-white rounded-[3rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-8 bg-amber-50 border-b border-amber-100 flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-xl font-black text-gray-900 uppercase">Ajuste de Estoque Físico</h3>
+                <p className="text-amber-700 font-bold text-xs mt-1">Atualize o saldo real encontrado na despensa.</p>
+              </div>
+              <button onClick={() => setIsAdjustmentModalOpen(false)}><X size={24} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+               <table className="w-full text-left border-collapse">
+                 <thead>
+                   <tr>
+                     <th className="pb-4 text-xs font-black uppercase tracking-widest text-gray-400">Produto</th>
+                     <th className="pb-4 text-xs font-black uppercase tracking-widest text-gray-400 w-48 text-center">Saldo Real Correto</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-50">
+                   {adjustmentItems.map((adj, index) => (
+                     <tr key={adj.id}>
+                       <td className="py-4 text-sm font-bold text-gray-700 uppercase">{adj.name}</td>
+                       <td className="py-4">
+                         <input 
+                           type="number" 
+                           step="0.01"
+                           value={adj.newBalance === 0 ? '' : adj.newBalance} 
+                           onChange={(e) => {
+                             const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                             setAdjustmentItems(prev => prev.map(p => p.id === adj.id ? { ...p, newBalance: val } : p));
+                           }}
+                           className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-black text-center outline-none focus:ring-2 focus:ring-amber-500/20"
+                         />
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+            </div>
+            <div className="p-8 bg-gray-50 border-t border-gray-100 shrink-0">
+               <button 
+                 onClick={() => {
+                   if (window.confirm("Isso irá sobrescrever o Saldo Inicial de todos os produtos editados. Confirmar?")) {
+                     setItems(prev => prev.map(item => {
+                       const adj = adjustmentItems.find(a => a.id === item.id);
+                       if (adj) {
+                         return { ...item, previousBalance: adj.newBalance };
+                       }
+                       return item;
+                     }));
+                     setIsAdjustmentModalOpen(false);
+                   }
+                 }}
+                 className="w-full py-5 bg-amber-500 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-amber-600 transition-all flex items-center justify-center gap-3"
+               >
+                 <CheckCircle2 size={20} /> Salvar Estoque Físico Real
+               </button>
+            </div>
           </div>
         </div>
       )}
