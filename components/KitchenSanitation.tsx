@@ -125,10 +125,13 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
    const [filterFreq, setFilterFreq] = useState<Frequency | 'TODOS'>('DIÁRIA');
    const [searchTerm, setSearchTerm] = useState('');
    const [isPrinting, setIsPrinting] = useState(false);
-   const [reportPeriod, setReportPeriod] = useState(() => {
-      const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-      const current = new Date();
-      return `${months[current.getMonth()]} de ${current.getFullYear()}`;
+   const [startDate, setStartDate] = useState(() => {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('sv-SE');
+   });
+   const [endDate, setEndDate] = useState(() => {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth() + 1, 0).toLocaleDateString('sv-SE');
    });
 
    useEffect(() => {
@@ -162,7 +165,6 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
          if (!dateString) {
             return { ...t, status: 'PENDENTE', lastDone: undefined, completedBy: undefined };
          }
-         // Use noon to avoid timezone shift issues making it the day before
          const newDate = new Date(`${dateString}T12:00:00`);
          return { ...t, status: 'CONCLUÍDO', lastDone: newDate.toISOString(), completedBy: activeEmployee };
       }));
@@ -173,68 +175,35 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
       const monthIndex = monthNumber - 1; 
       
       const newTasks = tasks.map(t => {
-         // Create a realistic date for the given month
-         // Diárias -> scattered throughout the month
-         // Mensais -> near the end of the month
          let day = Math.floor(Math.random() * 25) + 1;
          if (t.frequency === 'MENSAL') day = 28;
          
          const date = new Date(year, monthIndex, day, 14, 30, 0);
-         
-         // 95% complete to look realistic
          const isDone = Math.random() > 0.05;
          
-         // Pick employee based on user rules
          let validEmployees: string[] = [];
-         
-         // MATUTINO:
-         // MARIA ELIANE DE SOUZA (19/01 a 13/02)
-         if ((monthIndex === 0 && day >= 19) || (monthIndex === 1 && day <= 13)) {
-            validEmployees.push('MARIA ELIANE DE SOUZA');
-         }
-         // NADIJA TAIZ SIMÃO DA SILVA (19/01 a 29/05)
-         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) {
-            validEmployees.push('NADIJA TAIZ SIMÃO DA SILVA');
-         }
-         // JHENIFA SIMAO DA SILVA (A partir de 18/02)
-         if ((monthIndex === 1 && day >= 18) || monthIndex > 1) {
-            validEmployees.push('JHENIFA SIMAO DA SILVA');
-         }
-         
-         // VESPERTINO:
-         // MARIA APARECIDA DOS SANTOS ARAUJO SOUZA (19/01 a 29/05)
-         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) {
-            validEmployees.push('MARIA APARECIDA DOS SANTOS ARAUJO SOUZA');
-         }
-         // MARLI DO NASCIMENTO (19/01 a 29/05)
-         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) {
-            validEmployees.push('MARLI DO NASCIMENTO');
-         }
+         if ((monthIndex === 0 && day >= 19) || (monthIndex === 1 && day <= 13)) validEmployees.push('MARIA ELIANE DE SOUZA');
+         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('NADIJA TAIZ SIMÃO DA SILVA');
+         if ((monthIndex === 1 && day >= 18) || monthIndex > 1) validEmployees.push('JHENIFA SIMAO DA SILVA');
+         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('MARIA APARECIDA DOS SANTOS ARAUJO SOUZA');
+         if ((monthIndex === 0 && day >= 19) || (monthIndex > 0 && monthIndex < 4) || (monthIndex === 4 && day <= 29)) validEmployees.push('MARLI DO NASCIMENTO');
 
          const emp = validEmployees.length > 0 ? validEmployees[Math.floor(Math.random() * validEmployees.length)] : 'SISTEMA';
 
          if (isDone) {
-            return {
-               ...t,
-               status: 'CONCLUÍDO' as const,
-               lastDone: date.toISOString(),
-               completedBy: emp
-            };
+            return { ...t, status: 'CONCLUÍDO' as const, lastDone: date.toISOString(), completedBy: emp };
          } else {
-            return {
-               ...t,
-               status: 'PENDENTE' as const,
-               lastDone: undefined,
-               completedBy: undefined
-            };
+            return { ...t, status: 'PENDENTE' as const, lastDone: undefined, completedBy: undefined };
          }
       });
       
       setTasks(newTasks);
       
-      const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho'];
-      const mName = monthNames[monthIndex];
-      setReportPeriod(`${mName} de ${year}`);
+      const mName = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho'][monthIndex];
+      const firstDay = new Date(year, monthIndex, 1).toLocaleDateString('sv-SE');
+      const lastDay = new Date(year, monthIndex + 1, 0).toLocaleDateString('sv-SE');
+      setStartDate(firstDay);
+      setEndDate(lastDay);
       
       alert(`Dados fictícios de ${mName} gerados! Agora você pode imprimir o relatório.`);
    };
@@ -265,8 +234,8 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
       if (!element) return setIsPrinting(false);
 
       const filename = type === 'checklist'
-         ? `Checklist_Vazio_Cozinha_UANE_${new Date().getFullYear()}.pdf`
-         : `Relatorio_Execucao_Cozinha_UANE_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
+         ? `Checklist_Cozinha_UANE_${startDate}_${endDate}.pdf`
+         : `Relatorio_Cozinha_UANE_${startDate}_${endDate}.pdf`;
 
       try {
          // @ts-ignore
@@ -287,7 +256,6 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
    return (
       <div className="space-y-8 animate-in fade-in duration-500">
 
-         {/* PAINEL DE CONTROLE DA COZINHA */}
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col justify-between">
                <div className="flex items-center justify-between mb-8">
@@ -330,15 +298,25 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                   </div>
                </div>
                <div className="flex flex-col gap-3 mt-8 relative z-10">
-                  <div className="space-y-1">
-                     <label className="text-[9px] font-black uppercase text-orange-300 tracking-widest">Mês/Ano de Referência</label>
-                     <input
-                        type="text"
-                        value={reportPeriod}
-                        onChange={e => setReportPeriod(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white font-bold text-xs outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white/20 transition-all"
-                        placeholder="Ex: Maio de 2026"
-                     />
+                  <div className="grid grid-cols-2 gap-3">
+                     <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase text-orange-300 tracking-widest">Data Inicial</label>
+                        <input
+                           type="date"
+                           value={startDate}
+                           onChange={e => setStartDate(e.target.value)}
+                           className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white font-bold text-xs outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white/20 transition-all"
+                        />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase text-orange-300 tracking-widest">Data Final</label>
+                        <input
+                           type="date"
+                           value={endDate}
+                           onChange={e => setEndDate(e.target.value)}
+                           className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white font-bold text-xs outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white/20 transition-all"
+                        />
+                     </div>
                   </div>
                   <button
                      onClick={() => handlePrintKitchen('checklist')}
@@ -346,7 +324,7 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                      className="w-full py-4 bg-white text-orange-950 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2 border border-white/20 shadow-lg"
                   >
                      {isPrinting ? <Loader2 className="animate-spin" size={16} /> : <FileText size={16} />}
-                     Imprimir Checklist Vazio (Para Afixação)
+                     Imprimir Checklist Vazio
                   </button>
                   <button
                      onClick={() => handlePrintKitchen('report')}
@@ -354,13 +332,12 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                      className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all flex items-center justify-center gap-2 shadow-xl border border-orange-500"
                   >
                      {isPrinting ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
-                     Imprimir Relatório de Execução (Para Assinatura)
+                     Imprimir Relatório de Execução
                   </button>
                </div>
             </div>
          </div>
 
-         {/* SELEÇÃO DO SERVIDOR EXECUTANTE */}
          <div className="bg-orange-50 p-6 rounded-[2.5rem] border border-orange-200 shadow-inner flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-4">
                <div className="p-3 bg-orange-600 text-white rounded-2xl"><Users size={24} /></div>
@@ -381,7 +358,6 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
             </select>
          </div>
 
-         {/* ÁREA DE FILTROS E BUSCA */}
          <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center no-print">
             <div className="flex bg-gray-100 p-1.5 rounded-2xl">
                {['DIÁRIA', 'SEMANAL', 'MENSAL', 'PERIÓDICA', 'TODOS'].map(f => (
@@ -407,7 +383,6 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
             <button className="p-3 bg-gray-50 text-gray-400 hover:text-orange-600 rounded-xl transition-all border border-gray-100"><Filter size={20} /></button>
          </div>
 
-         {/* LISTAGEM DE TAREFAS EM CARDS */}
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map(task => (
                <div
@@ -473,49 +448,25 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
             ))}
          </div>
 
-         {/* GERADOR DE RELATÓRIOS RETROATIVOS */}
          <div className="bg-purple-50 p-8 rounded-[3rem] border border-purple-200 shadow-inner flex flex-col items-center justify-center space-y-5 no-print mt-10">
             <div className="text-center">
                <h4 className="text-lg font-black text-purple-900 uppercase tracking-tight">Gerador de Relatórios Antigos</h4>
                <p className="text-[10px] text-purple-700 font-bold uppercase tracking-widest mt-1">Clique para preencher as tarefas automaticamente e imprimir meses passados</p>
             </div>
             <div className="flex flex-wrap gap-4 justify-center">
-               <button 
-                  onClick={() => seedRetroactiveData(1)} 
-                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
-               >
-                  <History size={16} /> Relatório de Janeiro
-               </button>
-               <button 
-                  onClick={() => seedRetroactiveData(2)} 
-                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
-               >
-                  <History size={16} /> Relatório de Fevereiro
-               </button>
-               <button 
-                  onClick={() => seedRetroactiveData(3)} 
-                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
-               >
-                  <History size={16} /> Relatório de Março
-               </button>
-               <button 
-                  onClick={() => seedRetroactiveData(4)} 
-                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
-               >
-                  <History size={16} /> Relatório de Abril
-               </button>
-               <button 
-                  onClick={() => seedRetroactiveData(5)} 
-                  className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
-               >
-                  <History size={16} /> Relatório de Maio
-               </button>
+               {[1, 2, 3, 4, 5].map(m => (
+                  <button 
+                     key={m}
+                     onClick={() => seedRetroactiveData(m)} 
+                     className="px-6 py-3.5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-700 transition-all shadow-lg flex items-center gap-2 border border-purple-500"
+                  >
+                     <History size={16} /> {['Jan', 'Fev', 'Mar', 'Abr', 'Mai'][m-1]}
+                  </button>
+               ))}
             </div>
          </div>
 
-         {/* TEMPLATE OCULTO PARA IMPRESSÃO COZINHA */}
          <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
-            {/* 1. CHECKLIST VAZIO */}
             <div id="kitchen-print-checklist" className="p-10 space-y-6 text-gray-900 font-sans h-full bg-white">
                <div className="flex items-center justify-between border-b-2 border-gray-900 pb-6">
                   <div className="flex items-center gap-4">
@@ -526,7 +477,7 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                </div>
                <div className="text-right text-[10px] font-black uppercase">
                   <p>Checklist Mensal (Ficha de Afixação)</p>
-                  <p>Mês/Ano: {reportPeriod}</p>
+                  <p>Período: {new Date(startDate + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                </div>
 
                <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -564,30 +515,8 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                      </tbody>
                   </table>
                </div>
-
-               <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 flex flex-wrap justify-between gap-10">
-                  <div className="text-center space-y-2 flex-1 min-w-[200px]">
-                     <div className="border-t border-gray-400 pt-1 mt-6">
-                        <p className="text-[9px] font-black uppercase">__________________________________</p>
-                        <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
-                     </div>
-                  </div>
-                  <div className="text-center space-y-2 flex-1 min-w-[200px]">
-                     <div className="border-t border-gray-400 pt-1 mt-6">
-                        <p className="text-[9px] font-black uppercase">__________________________________</p>
-                        <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
-                     </div>
-                  </div>
-                  <div className="text-center space-y-2 flex-1 min-w-[200px]">
-                     <div className="border-t border-gray-400 pt-1 mt-6">
-                        <p className="text-[9px] font-black uppercase">Gestão Escolar / CDCE</p>
-                        <p className="text-[7px] uppercase text-gray-400 font-bold">Assinatura / Carimbo</p>
-                     </div>
-                  </div>
-               </div>
             </div>
 
-            {/* 2. RELATÓRIO DE EXECUÇÃO */}
             <div id="kitchen-print-report" className="p-10 space-y-6 text-gray-900 font-sans h-full bg-white">
                <div className="flex items-center justify-between border-b-2 border-gray-900 pb-6">
                   <div className="flex items-center gap-4">
@@ -598,7 +527,7 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                </div>
                <div className="text-right text-[10px] font-black uppercase">
                   <p>Relatório de Execução do Sistema</p>
-                  <p>Mês/Ano: {reportPeriod}</p>
+                  <p>Período: {new Date(startDate + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                </div>
 
                <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -622,6 +551,9 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                            const popMatch = t.title.match(/POP (\d+)/);
                            const popNumber = popMatch ? popMatch[1] : '--';
                            const titleClean = t.title.replace(/\(POP \d+\)/, '').trim();
+                           const isCompletedInPeriod = t.status === 'CONCLUÍDO' && t.lastDone && 
+                              t.lastDone.substring(0, 10) >= startDate && 
+                              t.lastDone.substring(0, 10) <= endDate;
 
                            return (
                               <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -629,7 +561,7 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                                  <td className="p-3 text-[10px] font-bold uppercase">{titleClean}</td>
                                  <td className="p-3 text-center text-[8px] font-black text-orange-600">{t.frequency}</td>
                                  <td className="p-3 text-[9px] font-bold text-gray-600">
-                                    {t.status === 'CONCLUÍDO' && t.lastDone ? (
+                                    {isCompletedInPeriod && t.lastDone ? (
                                        <>
                                           <div>{new Date(t.lastDone).toLocaleString('pt-BR')}</div>
                                           {t.completedBy && <div className="text-[7px] text-gray-400 mt-0.5">Por: {t.completedBy}</div>}
@@ -638,8 +570,8 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                                        '____/____/____'
                                     )}
                                  </td>
-                                 <td className={`p-3 text-center text-[9px] font-black uppercase ${t.status === 'CONCLUÍDO' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                    {t.status === 'CONCLUÍDO' ? 'OK' : 'PENDENTE'}
+                                 <td className={`p-3 text-center text-[9px] font-black uppercase ${isCompletedInPeriod ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                    {isCompletedInPeriod ? 'OK' : 'PENDENTE'}
                                  </td>
                               </tr>
                            );
@@ -649,24 +581,38 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
                </div>
 
                <div className="mt-10 pt-10 border-t-2 border-dashed border-gray-200 flex flex-wrap justify-between gap-10">
-                  {Array.from(new Set(tasks.filter(t => t.status === 'CONCLUÍDO' && t.completedBy && t.completedBy !== 'SISTEMA').map(t => t.completedBy))).length > 0 ? (
-                     Array.from(new Set(tasks.filter(t => t.status === 'CONCLUÍDO' && t.completedBy && t.completedBy !== 'SISTEMA').map(t => t.completedBy))).map(serverName => (
-                        <div key={serverName} className="text-center space-y-2 flex-1 min-w-[200px]">
-                           <div className="border-t border-gray-400 pt-1 mt-6">
-                              <p className="text-[9px] font-black uppercase">{serverName}</p>
-                              <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
+                  {(() => {
+                     const activeEmps = Array.from(new Set(
+                        tasks.filter(t => 
+                           t.status === 'CONCLUÍDO' && 
+                           t.lastDone && 
+                           t.lastDone.substring(0, 10) >= startDate && 
+                           t.lastDone.substring(0, 10) <= endDate &&
+                           t.completedBy && 
+                           t.completedBy !== 'SISTEMA'
+                        ).map(t => t.completedBy)
+                     ));
+                     
+                     if (activeEmps.length > 0) {
+                        return activeEmps.map(serverName => (
+                           <div key={serverName} className="text-center space-y-2 flex-1 min-w-[200px]">
+                              <div className="border-t border-gray-400 pt-1 mt-6">
+                                 <p className="text-[9px] font-black uppercase">{serverName}</p>
+                                 <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
+                              </div>
                            </div>
-                        </div>
-                     ))
-                  ) : (
-                     <div className="text-center space-y-2 flex-1 min-w-[200px]">
-                        <div className="border-t border-gray-400 pt-1 mt-6">
-                           <p className="text-[9px] font-black uppercase">Responsável pela Cozinha</p>
-                           <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
-                        </div>
-                     </div>
-                  )}
-
+                        ));
+                     } else {
+                        return (
+                           <div className="text-center space-y-2 flex-1 min-w-[200px]">
+                              <div className="border-t border-gray-400 pt-1 mt-6">
+                                 <p className="text-[9px] font-black uppercase">Responsável pela Cozinha</p>
+                                 <p className="text-[7px] uppercase text-gray-400 font-bold">Nutrição Escolar (AAE)</p>
+                              </div>
+                           </div>
+                        );
+                     }
+                  })()}
                   <div className="text-center space-y-2 flex-1 min-w-[200px]">
                      <div className="border-t border-gray-400 pt-1 mt-6">
                         <p className="text-[9px] font-black uppercase">Gestão Escolar / CDCE</p>
