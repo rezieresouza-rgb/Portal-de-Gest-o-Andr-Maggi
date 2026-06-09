@@ -176,7 +176,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
             if (error) throw error;
 
             // Inject into Cívico-Militar documents
-            const savedDocs = localStorage.getItem('civico_militar_documentos_v1');
+            const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
             let docsList = [];
             if (savedDocs) {
                try {
@@ -204,7 +204,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                },
                timestamp: Date.now()
             });
-            localStorage.setItem('civico_militar_documentos_v1', JSON.stringify(docsList));
+            localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(docsList));
 
             // Forward to Psychosocial if requested
             if (form.forwardToPsychosocial) {
