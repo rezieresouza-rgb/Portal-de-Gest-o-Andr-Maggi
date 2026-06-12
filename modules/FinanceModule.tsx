@@ -351,7 +351,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
   const getAvailableCategories = (group: string, fundId: string, type: 'ENTRY' | 'EXPENSE') => {
     if (type === 'ENTRY') {
-      return ['Repasse Federal', 'Repasse Estadual', 'Rendimento de Aplicação', 'Saldo Exercício Anterior'];
+      return ['Repasse Federal', 'Repasse Estadual', 'Rendimento de Aplicação', 'Saldo Exercício Ano Anterior'];
     }
     if (group === 'CAPITAL') {
       return ['Equipamentos e Material Permanente', 'Mobiliário Escolar', 'Equipamentos de Informática', 'Utensílios de Cozinha (Bens Permanentes)', 'Eletrodomésticos', 'Máquinas e Equipamentos'];
@@ -377,6 +377,20 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       } else if (newTx.fundingSource === 'FEDERAL') {
         setNewTx(prev => ({ ...prev, category: 'Repasse Federal' }));
       } else if (newTx.fundingSource === 'ESTADUAL') {
+        setNewTx(prev => ({ ...prev, category: 'Repasse Estadual' }));
+      }
+    } else if (activeTab === 'ru' && newTx.type === 'ENTRY') {
+      const descUpper = newTx.description.toUpperCase().trim();
+      if (descUpper.includes('SALDO EXERCÍCIO ANO ANTERIOR') || descUpper.includes('SALDO EXERCICIO ANO ANTERIOR')) {
+        setNewTx(prev => ({ ...prev, category: 'Saldo Exercício Ano Anterior' }));
+      } else if (descUpper === 'RENDIMENTO') {
+        setNewTx(prev => ({ ...prev, category: 'Rendimento de Aplicação' }));
+      } else if (
+        descUpper === '1ª PARCELA' ||
+        descUpper === '2ª PARCELA' ||
+        descUpper === '3ª PARCELA' ||
+        descUpper === '4ª PARCELA'
+      ) {
         setNewTx(prev => ({ ...prev, category: 'Repasse Estadual' }));
       }
     }
@@ -851,31 +865,65 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       </label>
                                       <div className="relative">
                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Tag size={18} /></div>
-                                        <input
-                                          type="text"
-                                          required
-                                          list={(activeTab === 'merenda' && newTx.type === 'EXPENSE') ? "contracts-list" : undefined}
-                                          value={newTx.description}
-                                          onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
-                                          placeholder={newTx.type === 'ENTRY' ? "Ex: Repasse FNDE Mês 05..." : "Ex: SILVA COMERCIO - Contrato 028/2026"}
-                                          className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
-                                        />
-                                        {newTx.description && (
-                                          <button
-                                            type="button"
-                                            onClick={() => setNewTx({ ...newTx, description: '' })}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-all"
-                                            title="Limpar fornecedor para escolher outro"
-                                          >
-                                            <X size={16} />
-                                          </button>
-                                        )}
-                                        {activeTab === 'merenda' && newTx.type === 'EXPENSE' && activeContracts.length > 0 && (
-                                          <datalist id="contracts-list">
-                                            {activeContracts.map(c => (
-                                              <option key={c.id} value={`${c.suppliers?.name} - Contrato ${c.number}`} />
-                                            ))}
-                                          </datalist>
+                                        {activeTab === 'ru' && newTx.type === 'ENTRY' ? (
+                                          <>
+                                            <select
+                                              required
+                                              value={newTx.description}
+                                              onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
+                                              className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 appearance-none outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all uppercase"
+                                            >
+                                              <option value="">Selecione uma opção</option>
+                                              {(() => {
+                                                const options = [
+                                                  'Saldo Exercício Ano Anterior',
+                                                  'Rendimento',
+                                                  '1ª Parcela',
+                                                  '2ª Parcela',
+                                                  '3ª Parcela',
+                                                  '4ª Parcela'
+                                                ];
+                                                if (newTx.description && !options.some(o => o.toUpperCase() === newTx.description.toUpperCase())) {
+                                                  options.push(newTx.description);
+                                                }
+                                                return options.map(o => (
+                                                  <option key={o} value={o}>{o}</option>
+                                                ));
+                                              })()}
+                                            </select>
+                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300">
+                                              <ChevronRight size={18} className="rotate-90" />
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <input
+                                              type="text"
+                                              required
+                                              list={(activeTab === 'merenda' && newTx.type === 'EXPENSE') ? "contracts-list" : undefined}
+                                              value={newTx.description}
+                                              onChange={(e) => setNewTx({ ...newTx, description: e.target.value })}
+                                              placeholder={newTx.type === 'ENTRY' ? "Ex: Repasse FNDE Mês 05..." : "Ex: SILVA COMERCIO - Contrato 028/2026"}
+                                              className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
+                                            />
+                                            {newTx.description && (
+                                              <button
+                                                type="button"
+                                                onClick={() => setNewTx({ ...newTx, description: '' })}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-all"
+                                                title="Limpar fornecedor para escolher outro"
+                                              >
+                                                <X size={16} />
+                                              </button>
+                                            )}
+                                            {activeTab === 'merenda' && newTx.type === 'EXPENSE' && activeContracts.length > 0 && (
+                                              <datalist id="contracts-list">
+                                                {activeContracts.map(c => (
+                                                  <option key={c.id} value={`${c.suppliers?.name} - Contrato ${c.number}`} />
+                                                ))}
+                                              </datalist>
+                                            )}
+                                          </>
                                         )}
                                       </div>
                                     </div>
