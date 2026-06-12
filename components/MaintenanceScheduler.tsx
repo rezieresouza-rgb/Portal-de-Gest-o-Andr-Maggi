@@ -577,6 +577,44 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
         )
     );
 
+    const recentDays = React.useMemo(() => {
+        const days = [];
+        const today = new Date();
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(today.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            
+            // Calculate status for this day
+            const dayRecords = records.filter(r => {
+                const recordDateStr = new Date(r.completed_at).toISOString().split('T')[0];
+                return recordDateStr === dateStr && dailyBathroomTasks.some(t => t.id === r.task_id);
+            });
+            
+            const totalExpected = dailyBathroomTasks.length * 2; // 2 shifts per bathroom
+            const completedCount = dayRecords.length;
+            
+            // Day name formatting
+            let label = '';
+            if (i === 0) label = 'Hoje';
+            else if (i === 1) label = 'Ontem';
+            else {
+                const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                label = weekdays[d.getDay()];
+            }
+            
+            days.push({
+                dateStr,
+                label,
+                formattedDate: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                completedCount,
+                totalExpected,
+                percent: totalExpected > 0 ? (completedCount / totalExpected) * 100 : 0
+            });
+        }
+        return days;
+    }, [records, dailyBathroomTasks]);
+
     return (
         <div className="space-y-6 w-full min-w-0">
             {/* Header / Filters */}
@@ -824,6 +862,62 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                             ))}
                                         </select>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Recent Days Status List */}
+                            <div className="space-y-2">
+                                <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Histórico de Registro Rápido (Últimos 7 Dias)</span>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                                    {recentDays.map(day => {
+                                        const isSelected = selectedCleanDate === day.dateStr;
+                                        
+                                        let bgClass = '';
+                                        let progressColor = '';
+                                        
+                                        if (day.percent === 100) {
+                                            bgClass = isSelected 
+                                                ? 'bg-emerald-500/30 border-emerald-500 text-emerald-200 ring-2 ring-emerald-500/20' 
+                                                : 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300';
+                                            progressColor = 'bg-emerald-500';
+                                        } else if (day.percent > 0) {
+                                            bgClass = isSelected 
+                                                ? 'bg-amber-500/30 border-amber-500 text-amber-200 ring-2 ring-amber-500/20' 
+                                                : 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 text-amber-300';
+                                            progressColor = 'bg-amber-500';
+                                        } else {
+                                            bgClass = isSelected 
+                                                ? 'bg-rose-500/20 border-rose-500 text-rose-200 ring-2 ring-rose-500/20' 
+                                                : 'bg-rose-500/5 border-rose-500/10 hover:bg-rose-500/10 text-rose-400';
+                                            progressColor = 'bg-rose-600/30';
+                                        }
+
+                                        return (
+                                            <button
+                                                key={day.dateStr}
+                                                type="button"
+                                                onClick={() => setSelectedCleanDate(day.dateStr)}
+                                                className={`flex flex-col items-center justify-between p-2.5 rounded-xl border text-center transition-all duration-300 cursor-pointer ${bgClass}`}
+                                            >
+                                                <div className="w-full flex justify-between items-center text-[9px] font-black uppercase tracking-wider">
+                                                    <span>{day.label}</span>
+                                                    <span className="opacity-60">{day.formattedDate}</span>
+                                                </div>
+                                                <div className="w-full mt-2">
+                                                    <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-tight mb-1">
+                                                        <span>Status:</span>
+                                                        <span>{day.completedCount}/{day.totalExpected}</span>
+                                                    </div>
+                                                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full ${progressColor} transition-all duration-500`} 
+                                                            style={{ width: `${day.percent}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
