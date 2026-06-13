@@ -1834,7 +1834,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                           <tr key={t.id} className="hover:bg-white/5 transition-all print:hover:bg-transparent">
                                             <td className="px-4 py-3 font-bold text-white/70 print:text-black">{new Date(t.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
                                             <td className="px-4 py-3 font-bold text-white/70 uppercase print:text-black text-[9px]">{t.fundName}</td>
-                                            <td className="px-4 py-3 font-black text-white uppercase print:text-black max-w-[200px] truncate" title={t.description}>{t.description}</td>
+                                            <td className="px-4 py-3 font-black text-white uppercase print:text-black max-w-[200px] truncate print:max-w-none print:whitespace-normal print:overflow-visible" title={t.description}>{t.description}</td>
                                             <td className="px-4 py-3 font-bold text-white/50 print:text-black">{t.invoiceNumber || '-'}</td>
                                             <td className="px-4 py-3 space-y-1">
                                                <span className={`px-2 py-1 rounded text-[8px] font-black uppercase inline-block ${t.type === 'ENTRY' ? 'bg-blue-500/20 text-blue-400 print:bg-transparent print:text-black print:border print:border-black' : 'bg-red-500/20 text-red-400 print:bg-transparent print:text-black print:border print:border-black'}`}>
@@ -1884,6 +1884,10 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
+        @media print {
+          body { background: white !important; color: black !important; }
+          tr { page-break-inside: avoid; }
+        }
       `}</style>
       </div>
     </div>
