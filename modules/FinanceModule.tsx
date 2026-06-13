@@ -359,7 +359,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     const commonCusteio = ['Material de Consumo', 'Serviços de Terceiros - Pessoa Jurídica', 'Serviços de Terceiros - Pessoa Física', 'Pequenos Reparos e Manutenção Predial', 'Material Pedagógico e Esportivo', 'Material de Expediente', 'Material de Limpeza e Higiene'];
     if (fundId === 'merenda') return ['Aquisição de Gêneros Alimentícios', 'Gás de Cozinha', 'Material de Higiene (Cozinha)', ...commonCusteio];
     if (fundId === 'pdde_qualidade') return ['Material de Apoio Pedagógico', 'Conectividade e Internet', 'Capacitação e Formação', ...commonCusteio];
-    if (fundId === 'ru') return ['Manutenção de Ar Condicionado', 'Pequenas Reformas', ...commonCusteio];
+    if (fundId === 'ru') return ['Manutenção de Ar Condicionado', 'Pequenas Reformas', 'Serviços de Informática', 'Material de Informática', ...commonCusteio];
     return commonCusteio;
   };
 
