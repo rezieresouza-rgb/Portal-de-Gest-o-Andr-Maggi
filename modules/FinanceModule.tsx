@@ -596,7 +596,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 font-sans relative overflow-hidden text-white">
+    <div className="min-h-screen bg-gray-900 font-sans relative overflow-hidden text-white print:overflow-visible print:h-auto print:bg-white print:text-black">
       {/* Animated Background */}
       <div className="absolute inset-0 z-0 print:hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-20 fixed"></div>
@@ -605,7 +605,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
       </div>
 
-      <div className="relative z-10 flex h-screen w-full min-w-0">
+      <div className="relative z-10 flex h-screen w-full min-w-0 print:h-auto print:overflow-visible print:block">
         <aside className="w-64 shrink-0 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col print:hidden">
           <div className="p-6">
             <h1 className="text-xl font-bold flex items-center gap-2">
@@ -680,7 +680,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
+        <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full print:h-auto print:overflow-visible print:block">
           <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-4 md:px-8 shrink-0 backdrop-blur-sm min-w-0 w-full gap-2 print:hidden">
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10 shrink-0"><Wallet size={20} /></div>
