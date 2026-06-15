@@ -53,6 +53,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
     // Filter tasks for the selected employee
     const employeeTasks = useMemo(() => {
         if (!selectedEmployeeName) return [];
+        if (selectedEmployeeName === 'TODOS') return tasks;
         return tasks.filter(t => 
             t.assigned_employee_name && 
             t.assigned_employee_name.toUpperCase().includes(selectedEmployeeName.toUpperCase())
@@ -75,9 +76,10 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
         setTimeout(async () => {
             const element = document.getElementById('work-plan-print');
             if (element) {
+                const nameStr = selectedEmployeeName === 'TODOS' ? 'Geral' : selectedEmployeeName.replace(/\s+/g, '_');
                 const opt = {
                     margin: 10,
-                    filename: `Plano_Trabalho_${selectedEmployeeName.replace(/\s+/g, '_')}.pdf`,
+                    filename: `Plano_Trabalho_${nameStr}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -115,6 +117,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                             className="w-full mt-1 p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500/20"
                         >
                             <option value="">-- Selecione um servidor --</option>
+                            <option value="TODOS">-- Toda a Equipe (Plano Geral) --</option>
                             {employees.map(emp => (
                                 <option key={emp.id} value={emp.name}>{emp.name}</option>
                             ))}
@@ -175,6 +178,11 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                                                 {freqTasks.map(t => (
                                                                     <li key={t.id} className="text-xs text-gray-600 font-medium leading-tight">
                                                                         {t.task_description}
+                                                                        {selectedEmployeeName === 'TODOS' && t.assigned_employee_name && (
+                                                                            <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md ml-1 inline-block uppercase">
+                                                                                {t.assigned_employee_name}
+                                                                            </span>
+                                                                        )}
                                                                     </li>
                                                                 ))}
                                                             </ul>
@@ -195,7 +203,9 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
             <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
                 <div id="work-plan-print" className="bg-white p-8 font-sans w-[210mm] min-h-[297mm]">
                     <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
-                        <h1 className="text-xl font-black uppercase text-gray-900">Plano de Trabalho Individual</h1>
+                        <h1 className="text-xl font-black uppercase text-gray-900">
+                            {selectedEmployeeName === 'TODOS' ? 'Plano de Trabalho Geral' : 'Plano de Trabalho Individual'}
+                        </h1>
                         <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual André Maggi</p>
                     </div>
 
@@ -203,7 +213,9 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <span className="text-[10px] font-black uppercase text-gray-500">Servidor(a) Responsável</span>
-                                <p className="text-base font-black text-gray-900 uppercase">{selectedEmployeeName}</p>
+                                <p className="text-base font-black text-gray-900 uppercase">
+                                    {selectedEmployeeName === 'TODOS' ? 'Toda a Equipe' : selectedEmployeeName}
+                                </p>
                             </div>
                             <div>
                                 <span className="text-[10px] font-black uppercase text-gray-500">Cargo / Função</span>
@@ -233,6 +245,11 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                                             {freqTasks.map(t => (
                                                                 <li key={t.id} className="text-[9px] text-gray-700 leading-tight mb-0.5">
                                                                     {t.task_description}
+                                                                    {selectedEmployeeName === 'TODOS' && t.assigned_employee_name && (
+                                                                        <span className="text-[8px] font-black text-indigo-700 uppercase ml-1">
+                                                                            ({t.assigned_employee_name})
+                                                                        </span>
+                                                                    )}
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -249,8 +266,10 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                     <div className="mt-16 pt-8 border-t border-gray-400 grid grid-cols-2 gap-12 text-center text-gray-800 break-inside-avoid">
                         <div>
                             <div className="border-t border-gray-800 w-4/5 mx-auto pt-2">
-                                <p className="text-[10px] font-black uppercase text-gray-900">{selectedEmployeeName}</p>
-                                <p className="text-[8px] text-gray-500 uppercase font-bold mt-1">Ciente das Atribuições</p>
+                                <p className="text-[10px] font-black uppercase text-gray-900">
+                                    {selectedEmployeeName === 'TODOS' ? 'Equipe de Limpeza / Zeladoria' : selectedEmployeeName}
+                                </p>
+                                <p className="text-[8px] text-gray-500 uppercase font-bold mt-1">Cientes das Atribuições</p>
                             </div>
                         </div>
                         <div>
