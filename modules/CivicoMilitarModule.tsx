@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   Plus,
   Search,
+  ChevronDown,
+  X,
   FileText,
   CalendarCheck,
   ClipboardList,
@@ -192,6 +194,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
   const [isBehaviorModalOpen, setIsBehaviorModalOpen] = useState(false);
   const [selectedStudentState, setSelectedStudentState] = useState<StudentBehaviorState | null>(null);
+
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isInspectionModalOpen) {
+      setStudentSearchTerm('');
+      setIsStudentDropdownOpen(false);
+    }
+  }, [isInspectionModalOpen]);
+
+  const filteredStudentsForInspection = useMemo(() => {
+    if (!studentSearchTerm) return dbStudents;
+    const term = studentSearchTerm.toLowerCase();
+    return dbStudents.filter(s =>
+      s.Nome.toLowerCase().includes(term) ||
+      s.Turma.toLowerCase().includes(term)
+    );
+  }, [dbStudents, studentSearchTerm]);
 
   // Form Fields
   const [newInspection, setNewInspection] = useState({
@@ -719,7 +740,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   // 3. Actions
   const handleAddInspection = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newInspection.studentId) return;
+    if (!newInspection.studentId) {
+      alert('Por favor, selecione um aluno válido da lista.');
+      return;
+    }
 
     const studentObj = dbStudents.find(s => s.CodigoAluno === newInspection.studentId);
     if (!studentObj) return;
@@ -3381,19 +3405,78 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Search className="h-4 w-4 text-gray-400" />
                   </div>
-                  <select
-                    value={newInspection.studentId}
-                    onChange={e => setNewInspection(prev => ({ ...prev, studentId: e.target.value }))}
-                    className="w-full pl-10 pr-3 bg-slate-50 border border-slate-200 rounded-xl py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                    required
-                  >
-                    <option value="">Selecionar Aluno...</option>
-                    {dbStudents.map(s => (
-                      <option key={s.CodigoAluno} value={s.CodigoAluno}>
-                        {s.Nome} ({s.Turma})
-                      </option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    placeholder={
+                      (() => {
+                        const selected = dbStudents.find(s => s.CodigoAluno === newInspection.studentId);
+                        return selected ? `${selected.Nome} (${selected.Turma})` : "Digitar nome do aluno...";
+                      })()
+                    }
+                    value={studentSearchTerm}
+                    onChange={e => {
+                      setStudentSearchTerm(e.target.value);
+                      setIsStudentDropdownOpen(true);
+                    }}
+                    onFocus={(e) => {
+                      setIsStudentDropdownOpen(true);
+                      const selected = dbStudents.find(s => s.CodigoAluno === newInspection.studentId);
+                      if (selected && !studentSearchTerm) {
+                        setStudentSearchTerm(selected.Nome);
+                      }
+                      setTimeout(() => {
+                        e.target.select();
+                      }, 50);
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => {
+                        setIsStudentDropdownOpen(false);
+                      }, 200);
+                    }}
+                    className="w-full pl-10 pr-10 bg-slate-50 border border-slate-200 rounded-xl py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                  />
+                  {newInspection.studentId ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewInspection(prev => ({ ...prev, studentId: '' }));
+                        setStudentSearchTerm('');
+                      }}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  ) : (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                      <ChevronDown size={16} />
+                    </div>
+                  )}
+
+                  {isStudentDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                      {filteredStudentsForInspection.length > 0 ? (
+                        filteredStudentsForInspection.map(s => (
+                          <button
+                            key={s.CodigoAluno}
+                            type="button"
+                            onMouseDown={() => {
+                              setNewInspection(prev => ({ ...prev, studentId: s.CodigoAluno }));
+                              setStudentSearchTerm(`${s.Nome} (${s.Turma})`);
+                              setIsStudentDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-xs hover:bg-slate-50 transition-colors flex flex-col ${
+                              newInspection.studentId === s.CodigoAluno ? 'bg-blue-50 font-semibold' : ''
+                            }`}
+                          >
+                            <span className="text-slate-900 font-semibold">{s.Nome}</span>
+                            <span className="text-slate-400 text-[10px] uppercase font-bold mt-0.5">{s.Turma}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-xs text-slate-400 text-center">Nenhum aluno encontrado</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
