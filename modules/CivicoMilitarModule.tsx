@@ -195,25 +195,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [isBehaviorModalOpen, setIsBehaviorModalOpen] = useState(false);
   const [selectedStudentState, setSelectedStudentState] = useState<StudentBehaviorState | null>(null);
 
-  const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isInspectionModalOpen) {
-      setStudentSearchTerm('');
-      setIsStudentDropdownOpen(false);
-    }
-  }, [isInspectionModalOpen]);
-
-  const filteredStudentsForInspection = useMemo(() => {
-    if (!studentSearchTerm) return dbStudents;
-    const term = studentSearchTerm.toLowerCase();
-    return dbStudents.filter(s =>
-      s.Nome.toLowerCase().includes(term) ||
-      s.Turma.toLowerCase().includes(term)
-    );
-  }, [dbStudents, studentSearchTerm]);
-
   // Form Fields
   const [newInspection, setNewInspection] = useState({
     studentId: '',
@@ -236,6 +217,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [routines, setRoutines] = useState<CivicRoutineRecord[]>([]);
   const [studentStates, setStudentStates] = useState<StudentBehaviorState[]>([]);
   const [dbStudents, setDbStudents] = useState<any[]>(INITIAL_STUDENTS);
+
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isInspectionModalOpen) {
+      setStudentSearchTerm('');
+      setIsStudentDropdownOpen(false);
+    }
+  }, [isInspectionModalOpen]);
+
+  const filteredStudentsForInspection = useMemo(() => {
+    if (!studentSearchTerm) return dbStudents;
+    const term = studentSearchTerm.toLowerCase();
+    return dbStudents.filter(s =>
+      s.Nome.toLowerCase().includes(term) ||
+      s.Turma.toLowerCase().includes(term)
+    );
+  }, [dbStudents, studentSearchTerm]);
 
   // Load students from Supabase
   useEffect(() => {
