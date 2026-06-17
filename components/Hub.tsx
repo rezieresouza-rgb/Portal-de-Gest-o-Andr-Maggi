@@ -97,6 +97,14 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['scheduling', 'library'].includes(mod.id);
     }
 
+    // Restrição específica para a professora Kamila da Silva Santos
+    const isKamila = user.name?.toUpperCase().includes('KAMILA DA SILVA SANTOS') || 
+                     user.login === '04713754110';
+    
+    if (isKamila) {
+      return ['teacher', 'scheduling'].includes(mod.id);
+    }
+
     const isDanubia = user.name?.toUpperCase().includes('DANUBIA') || 
                       user.name?.toUpperCase().includes('DANÚBIA') ||
                       user.login?.toUpperCase().includes('DANUBIA');
