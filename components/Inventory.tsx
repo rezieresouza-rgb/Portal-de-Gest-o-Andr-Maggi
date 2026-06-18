@@ -560,7 +560,7 @@ const Inventory: React.FC = () => {
         const dayName = diasSemanaMap[dayOfWeek];
 
         const menuWeekIndex = weekCounter % 5;
-        const currentMenuDay = OFFICIAL_MENUS[menuWeekIndex]?.days.find(d => d.dayName === dayName);
+        const currentMenuDay = OFFICIAL_MENUS[menuWeekIndex]?.days.find(d => d.day === dayName);
 
         // Turnos: Matutino e Vespertino
         const turnos = ['Matutino', 'Vespertino'];

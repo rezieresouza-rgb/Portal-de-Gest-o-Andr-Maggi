@@ -19,9 +19,11 @@ import {
   CalendarCheck,
   FileSpreadsheet,
   Menu,
-  X
+  X,
+  CalendarDays
 } from 'lucide-react';
 import TeacherAttendance from '../components/TeacherAttendance';
+import TeacherAssessmentSchedule from '../components/TeacherAssessmentSchedule';
 import TeacherOccurrences from '../components/TeacherOccurrences';
 import TeacherPerformance from '../components/TeacherPerformance';
 import TeacherLessonPlan from '../components/TeacherLessonPlan';
@@ -36,7 +38,7 @@ interface TeacherModuleProps {
   onExit: () => void;
 }
 
-type SubTab = 'attendance' | 'occurrences' | 'dashboard' | 'history' | 'lesson_plan' | 'grades' | 'material_requests' | 'calendar' | 'referrals';
+type SubTab = 'attendance' | 'occurrences' | 'dashboard' | 'history' | 'lesson_plan' | 'grades' | 'material_requests' | 'calendar' | 'referrals' | 'evaluations';
 
 const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('attendance');
@@ -87,6 +89,7 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
   const menuItems = [
     { id: 'attendance', label: 'Diário de Presença', icon: UserCheck },
     { id: 'grades', label: 'Lançar Notas', icon: GradeIcon },
+    { id: 'evaluations', label: 'Cronograma de Avaliações', icon: CalendarDays },
     { id: 'referrals', label: 'Encaminhamentos para Mediação', icon: FileSpreadsheet },
     { id: 'calendar', label: 'Calendário Letivo', icon: CalendarCheck },
     { id: 'material_requests', label: 'Solicitar Materiais', icon: Package },
@@ -104,6 +107,8 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
         return <UnifiedSchoolCalendar user={user} />;
       case 'grades':
         return <TeacherGrades user={user} />;
+      case 'evaluations':
+        return <TeacherAssessmentSchedule user={user} />;
       case 'referrals':
         return <PsychosocialReferralList role="PROFESSOR" user={user} />;
       case 'material_requests':
