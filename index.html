@@ -38,6 +38,85 @@
       background: rgba(0, 0, 0, 0.1);
       border-radius: 10px;
     }
+
+    @media print {
+      /* Hide navigation, sidebar, header, and buttons */
+      .no-print,
+      .print\:hidden,
+      aside,
+      header,
+      button,
+      nav {
+        display: none !important;
+      }
+
+      /* Reset page wrapper height and scrolling limits */
+      html, body, #root, #root > div {
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        width: 100% !important;
+      }
+
+      .overflow-y-auto, 
+      .overflow-x-hidden,
+      .custom-scrollbar {
+        overflow: visible !important;
+        height: auto !important;
+      }
+
+      /* Optimize the report sheet container */
+      .bg-white.p-8.rounded-\[3rem\] {
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      /* PDF Table design */
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 15px !important;
+      }
+
+      th, td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 8px 6px !important;
+        font-size: 10px !important;
+        color: #000 !important;
+        background: transparent !important;
+      }
+
+      th {
+        background-color: #f1f5f9 !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        font-size: 8px !important;
+        letter-spacing: 0.05em !important;
+      }
+
+      tr {
+        page-break-inside: avoid !important;
+      }
+    }
   </style>
 
 </head>
