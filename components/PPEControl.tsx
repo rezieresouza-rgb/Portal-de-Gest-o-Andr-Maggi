@@ -275,19 +275,24 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-center">
-        <div className="flex bg-gray-100 p-1.5 rounded-2xl no-print">
+      <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-center no-print">
+        <div className="flex bg-gray-100 p-1.5 rounded-2xl">
           <button onClick={() => setActiveSubTab('inventory')} className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${activeSubTab === 'inventory' ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}>Inventário</button>
           <button onClick={() => setActiveSubTab('deliveries')} className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${activeSubTab === 'deliveries' ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}>Termos de Entrega</button>
+          <button onClick={() => setActiveSubTab('ata')} className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${activeSubTab === 'ata' ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}>Ata de Treinamento</button>
         </div>
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-          <input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-orange-500/5 transition-all" />
-        </div>
-        <button onClick={() => setIsDeliveryModalOpen(true)} className="px-8 py-4 bg-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-orange-700 transition-all flex items-center gap-3 shrink-0"><FileText size={18} /> Novo Termo</button>
+        {activeSubTab !== 'ata' && (
+          <>
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+              <input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-orange-500/5 transition-all" />
+            </div>
+            <button onClick={() => setIsDeliveryModalOpen(true)} className="px-8 py-4 bg-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-orange-700 transition-all flex items-center gap-3 shrink-0"><FileText size={18} /> Novo Termo</button>
+          </>
+        )}
       </div>
 
-      {activeSubTab === 'inventory' ? (
+      {activeSubTab === 'inventory' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
           {filteredItems.map(item => (
             <div key={item.id} className={`p-6 rounded-[2.5rem] border-2 transition-all flex flex-col justify-between shadow-sm relative overflow-hidden group ${item.currentStock < item.minStock ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`}>
@@ -323,7 +328,9 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
             </div>
           ))}
         </div>
-      ) : (
+      )}
+
+      {activeSubTab === 'deliveries' && (
         <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -400,6 +407,89 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                 </tr>
               ))}</tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === 'ata' && (
+        <div className="space-y-8 animate-in fade-in">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm no-print">
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-orange-600 text-white rounded-3xl shadow-lg">
+                  <FileText size={32} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Ata de Treinamento e Entrega</h2>
+                  <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-1">Gere o documento oficial e lista de presença</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => window.print()}
+                className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all flex items-center gap-2"
+              >
+                🖨️ Imprimir Ata Oficial
+              </button>
+            </div>
+          </div>
+
+          <div id="ata-printable" className="bg-white p-12 rounded-[3rem] border border-gray-100 shadow-sm print:shadow-none print:border-none font-sans text-gray-950 max-w-4xl mx-auto space-y-8 leading-relaxed text-sm">
+            <div className="text-center border-b-2 border-black pb-6">
+              <h1 className="text-2xl font-black uppercase mb-2">Ata de Treinamento, Alinhamento e Entrega de EPI</h1>
+              <p className="text-base font-bold uppercase">Escola Estadual André Antônio Maggi</p>
+              <p className="text-xs uppercase text-gray-500">Zeladoria & Conservação Escolar • Ministério do Trabalho - NR-06 / NR-12</p>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-justify">
+                Aos vinte e dois dias do mês de junho do ano de dois mil e vinte e seis, às quatorze horas, no auditório da Escola Estadual André Antônio Maggi, reuniu-se a equipe gestora juntamente com os servidores da equipe de Apoio Administrativo Educacional (AAE) lotados na conservação, limpeza e jardinagem. A presente reunião teve por pauta: (i) apresentação detalhada do <strong>Protocolo Operacional de Zeladoria (11 Setores)</strong>; (ii) treinamento técnico sobre o uso adequado, diluição segura de saneantes e higienização diária dos ambientes; e (iii) entrega física do <strong>Kit Padrão de EPI (Limpeza e Jardinagem/Roçagem)</strong> de uso obrigatório, conforme preconiza a Norma Regulamentadora NR-06.
+              </p>
+              <p className="text-justify">
+                Durante o encontro, foram instruídas as rotinas diárias, semanais, mensais e trimestrais estabelecidas no manual de procedimentos da escola. Foi frisada a obrigatoriedade da guarda e zelo individual de cada item do kit recebido. Os servidores foram cientificados de que o descumprimento do uso dos EPIs fornecidos gratuitamente constitui ato faltoso passível de punições administrativas regulamentadas.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-black uppercase text-gray-400 tracking-wider mb-3">Lista de Presença e Recebimento de EPIs</h3>
+              <table className="w-full text-left border-collapse border border-gray-300 text-[11px]">
+                <thead>
+                  <tr className="bg-gray-100 text-gray-900 font-bold">
+                    <th className="p-3 border border-gray-300 uppercase">Servidor(a)</th>
+                    <th className="p-3 border border-gray-300 uppercase">Função</th>
+                    <th className="p-3 border border-gray-300 uppercase text-center w-28">Matrícula</th>
+                    <th className="p-3 border border-gray-300 w-48 text-center">Assinatura de Recebimento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staff
+                    .filter(s => {
+                      const isSupportType = s.server_type?.toUpperCase() === 'APOIO';
+                      const isCleaningRole = s.role === 'AAE_LIMPEZA' || s.role === 'AEE_NUTRICAO' || s.role === 'MANUTENCAO';
+                      const isActive = s.status === 'EM_ATIVIDADE';
+                      return (isSupportType || isCleaningRole) && isActive && s.role !== 'AEE_NUTRICAO';
+                    })
+                    .map((emp, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50/50">
+                        <td className="p-3 border border-gray-300 font-bold uppercase">{emp.name}</td>
+                        <td className="p-3 border border-gray-300 uppercase text-gray-600 text-[10px]">{emp.scope || 'AAE / LIMPEZA'}</td>
+                        <td className="p-3 border border-gray-300 text-center uppercase text-gray-500 font-bold">{emp.registration || '---'}</td>
+                        <td className="p-3 border border-gray-300 font-bold text-center">___________________________</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pt-16 grid grid-cols-2 gap-12 text-center text-xs">
+              <div>
+                <div className="border-t border-black pt-2 uppercase font-black">Direção / Gestão Escolar</div>
+                <p className="text-[10px] text-gray-500 mt-1">EE André Antônio Maggi</p>
+              </div>
+              <div>
+                <div className="border-t border-black pt-2 uppercase font-black">Responsável Técnico / Zeladoria</div>
+                <p className="text-[10px] text-gray-500 mt-1">Almoxarifado & Infraestrutura</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
