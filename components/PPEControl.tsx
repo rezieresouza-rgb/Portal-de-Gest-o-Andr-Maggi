@@ -131,6 +131,50 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
     setDeliveryItems(deliveryItems.filter((_, i) => i !== idx));
   };
 
+  const loadPresetKit = (type: 'cleaning' | 'kitchen') => {
+    const kitPpes = type === 'cleaning' ? [
+      { ppeId: 'ppe-c1', ppeName: 'AVENTAL DE PVC (IMPERMEÁVEL)', quantity: 1 },
+      { ppeId: 'ppe-c2', ppeName: 'LUVAS DE PVC (CURTAS E LONGAS)', quantity: 1 },
+      { ppeId: 'ppe-c3', ppeName: 'LUVAS NITRÍLICAS (BORRACHA)', quantity: 1 },
+      { ppeId: 'ppe-c4', ppeName: 'ÓCULOS DE PROTEÇÃO', quantity: 1 },
+      { ppeId: 'ppe-c5', ppeName: 'BOTAS DE BORRACHA', quantity: 1 },
+      { ppeId: 'ppe-g2', ppeName: 'MÁSCARA PFF2 (N95) PROTEÇÃO RESPIRATÓRIA', quantity: 10 }
+    ] : [
+      { ppeId: 'ppe-k1', ppeName: 'TOUCA DESCARTÁVEL OU DE ALGODÃO', quantity: 1 },
+      { ppeId: 'ppe-k2', ppeName: 'UNIFORME BRANCO (ALGODÃO)', quantity: 2 },
+      { ppeId: 'ppe-k3', ppeName: 'AVENTAL DE ALGODÃO', quantity: 2 },
+      { ppeId: 'ppe-k6', ppeName: 'LUVAS (VINIL, LÁTEX OU POLIETILENO)', quantity: 1 },
+      { ppeId: 'ppe-k8', ppeName: 'SAPATO FECHADO ANTIDERRAPANTE', quantity: 1 },
+      { ppeId: 'ppe-k9', ppeName: 'CALÇA COMPRIDA E CAMISETA MANGA CURTA', quantity: 2 },
+      { ppeId: 'ppe-g1', ppeName: 'MÁSCARA DESCARTÁVEL (CX C/ 50)', quantity: 1 }
+    ];
+
+    const finalItems: PPEDeliveryItem[] = [];
+    const lowStockItems: string[] = [];
+
+    kitPpes.forEach(kp => {
+      const ppe = items.find(i => i.id === kp.ppeId);
+      if (ppe) {
+        if (ppe.currentStock === 0) {
+          lowStockItems.push(`- ${ppe.name} (Estoque zerado)`);
+        } else if (ppe.currentStock < kp.quantity) {
+          finalItems.push({ ppeId: kp.ppeId, ppeName: ppe.name, quantity: ppe.currentStock });
+          lowStockItems.push(`- ${ppe.name} (Adicionado apenas ${ppe.currentStock} de ${kp.quantity} disponíveis)`);
+        } else {
+          finalItems.push({ ppeId: kp.ppeId, ppeName: ppe.name, quantity: kp.quantity });
+        }
+      }
+    });
+
+    if (lowStockItems.length > 0) {
+      alert(`Atenção: Alguns itens do kit estão com estoque limitado ou zerado no inventário:\n\n` + 
+            lowStockItems.join('\n') + 
+            `\n\nPor favor, atualize o estoque no painel do Inventário antes de finalizar, se necessário.`);
+    }
+
+    setDeliveryItems(finalItems);
+  };
+
   const handleConfirmDelivery = () => {
     if (!employeeName) return alert("Selecione um funcionário.");
     if (deliveryItems.length === 0) return alert("Adicione ao menos um EPI no termo.");
@@ -368,6 +412,32 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                   </div>
                   <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Cargo</label>
                     <input disabled value={employeeRole} className="w-full p-4 bg-gray-100 border border-gray-100 rounded-2xl font-black text-xs text-gray-500 uppercase" />
+                  </div>
+                </div>
+
+                <hr className="border-gray-100" />
+
+                {/* Atalho para Preenchimento de Kits de EPI */}
+                <div className="bg-orange-50/50 p-6 rounded-[2rem] border border-orange-100/50 space-y-4">
+                  <div>
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Preenchimento Automático</h4>
+                    <p className="text-[9px] text-gray-500 font-bold uppercase mt-1">Insira os itens padrão do kit com um clique:</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => loadPresetKit('cleaning')}
+                      className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5"
+                    >
+                      🧹 Carregar Kit Limpeza Padrão
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadPresetKit('kitchen')}
+                      className="px-4 py-2.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5"
+                    >
+                      🍳 Carregar Kit Cozinha Padrão
+                    </button>
                   </div>
                 </div>
 
