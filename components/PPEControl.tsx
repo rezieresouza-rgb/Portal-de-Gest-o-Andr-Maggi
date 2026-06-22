@@ -494,10 +494,11 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                 <tbody>
                   {staff
                     .filter(s => {
-                      const isSupportType = s.server_type?.toUpperCase() === 'APOIO';
-                      const isCleaningRole = s.role === 'AAE_LIMPEZA' || s.role === 'AEE_NUTRICAO' || s.role === 'MANUTENCAO';
-                      const isActive = s.status === 'EM_ATIVIDADE';
-                      return (isSupportType || isCleaningRole) && isActive && s.role !== 'AEE_NUTRICAO';
+                      // O array 'staff' (employees) já vem filtrado da base apenas com funcionários de Apoio (AAE) ativos.
+                      // O filtro abaixo remove os servidores da Nutrição (Cozinha) e técnicos, mantendo apenas a equipe de limpeza e infraestrutura.
+                      const isNutrition = s.scope?.toUpperCase().includes('NUTRIÇÃO') || s.scope?.toUpperCase().includes('ALIMENTOS');
+                      const isTechnician = s.scope?.toUpperCase().includes('TECNICO') || s.scope?.toUpperCase().includes('ADMINISTRATIVO EDUCACIONAL');
+                      return !isNutrition && !isTechnician;
                     })
                     .map((emp, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
