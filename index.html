@@ -56,13 +56,15 @@
       }
 
       /* Reset page wrapper height and scrolling limits */
-      html, body, #root, #root > div {
+      html, body, #root, #root div {
         height: auto !important;
         min-height: auto !important;
         overflow: visible !important;
-        display: block !important;
         background: white !important;
         color: black !important;
+      }
+
+      html, body, #root {
         margin: 0 !important;
         padding: 0 !important;
       }
@@ -77,12 +79,17 @@
         width: 100% !important;
       }
 
+      /* Release scrolling limits on all layout helpers */
+      .h-screen, 
+      .min-h-screen, 
+      .overflow-hidden, 
       .overflow-y-auto, 
       .overflow-x-hidden,
       .overflow-x-auto,
       .custom-scrollbar {
         overflow: visible !important;
         height: auto !important;
+        min-height: auto !important;
       }
 
       /* Optimize the report sheet container */
