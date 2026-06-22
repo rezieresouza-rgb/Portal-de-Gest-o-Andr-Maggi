@@ -52,11 +52,31 @@ interface PPEControlProps {
 }
 
 const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'inventory' | 'deliveries'>('inventory');
+  const [activeSubTab, setActiveSubTab] = useState<'inventory' | 'deliveries' | 'ata'>('inventory');
   const [activeCategory, setActiveCategory] = useState<PPECategory | 'TODOS'>('TODOS');
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  const [ataDate, setAtaDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toLocaleDateString('sv-SE'); // YYYY-MM-DD
+  });
+
+  const ataDateDetails = useMemo(() => {
+    if (!ataDate) return { day: '____', monthName: '________________', year: '________', fullDateStr: '____/____/____' };
+    const [year, month, day] = ataDate.split('-');
+    const months = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    return {
+      day: parseInt(day).toString(),
+      monthName: months[parseInt(month) - 1],
+      year: year,
+      fullDateStr: `${day}/${month}/${year}`
+    };
+  }, [ataDate]);
 
   const [items, setItems] = useState<PPEItem[]>(() => {
     const saved = localStorage.getItem('school_ppe_items_v6');
@@ -424,12 +444,23 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                   <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-1">Gere o documento oficial e lista de presença</p>
                 </div>
               </div>
-              <button 
-                onClick={() => window.print()}
-                className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all flex items-center gap-2"
-              >
-                🖨️ Imprimir Ata Oficial
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                <div className="flex flex-col gap-1 w-full sm:w-auto">
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Data da Reunião</label>
+                  <input 
+                    type="date" 
+                    value={ataDate} 
+                    onChange={e => setAtaDate(e.target.value)} 
+                    className="p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs outline-none focus:bg-white text-gray-700 uppercase"
+                  />
+                </div>
+                <button 
+                  onClick={() => window.print()}
+                  className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all flex items-center gap-2 w-full sm:w-auto justify-center"
+                >
+                  🖨️ Imprimir Ata Oficial
+                </button>
+              </div>
             </div>
           </div>
 
@@ -442,7 +473,7 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
 
             <div className="space-y-4">
               <p className="text-justify">
-                Aos vinte e dois dias do mês de junho do ano de dois mil e vinte e seis, às quatorze horas, no auditório da Escola Estadual André Antônio Maggi, reuniu-se a equipe gestora juntamente com os servidores da equipe de Apoio Administrativo Educacional (AAE) lotados na conservação, limpeza e jardinagem. A presente reunião teve por pauta: (i) apresentação detalhada do <strong>Protocolo Operacional de Zeladoria (11 Setores)</strong>; (ii) treinamento técnico sobre o uso adequado, diluição segura de saneantes e higienização diária dos ambientes; e (iii) entrega física do <strong>Kit Padrão de EPI (Limpeza e Jardinagem/Roçagem)</strong> de uso obrigatório, conforme preconiza a Norma Regulamentadora NR-06.
+                Aos {ataDateDetails.day} dias do mês de {ataDateDetails.monthName} do ano de {ataDateDetails.year}, às quatorze horas, no auditório da Escola Estadual André Antônio Maggi, reuniu-se a equipe gestora juntamente com os servidores da equipe de Apoio Administrativo Educacional (AAE) lotados na conservação, limpeza e jardinagem. A presente reunião teve por pauta: (i) apresentação detalhada do <strong>Protocolo Operacional de Zeladoria (11 Setores)</strong>; (ii) treinamento técnico sobre o uso adequado, diluição segura de saneantes e higienização diária dos ambientes; e (iii) entrega física do <strong>Kit Padrão de EPI (Limpeza e Jardinagem/Roçagem)</strong> de uso obrigatório, conforme preconiza a Norma Regulamentadora NR-06.
               </p>
               <p className="text-justify">
                 Durante o encontro, foram instruídas as rotinas diárias, semanais, mensais e trimestrais estabelecidas no manual de procedimentos da escola. Foi frisada a obrigatoriedade da guarda e zelo individual de cada item do kit recebido. Os servidores foram cientificados de que o descumprimento do uso dos EPIs fornecidos gratuitamente constitui ato faltoso passível de punições administrativas regulamentadas.
