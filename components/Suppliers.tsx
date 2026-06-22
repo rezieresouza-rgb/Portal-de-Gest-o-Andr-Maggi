@@ -249,7 +249,6 @@ const Suppliers: React.FC = () => {
                   <th className="px-6 py-4 text-center">Unid.</th>
                   <th className="px-6 py-4 text-right">Preço Unit.</th>
                   <th className="px-6 py-4 text-right">Qtd. Contratada</th>
-                  <th className="px-6 py-4 text-right">Qtd. Entregue</th>
                   <th className="px-6 py-4 text-right">Total Contratado</th>
                   <th className="px-6 py-4 text-right print:hidden">Progresso</th>
                 </tr>
@@ -267,7 +266,6 @@ const Suppliers: React.FC = () => {
                     <td className="px-6 py-4 text-center"><span className="px-2 py-1 bg-gray-100 rounded-lg text-[9px] font-black text-gray-600 print:bg-transparent print:p-0">{item.unit}</span></td>
                     <td className="px-6 py-4 text-right font-bold text-emerald-600">R$ {item.unit_price.toFixed(2)}</td>
                     <td className="px-6 py-4 text-right font-bold">{item.contracted_quantity.toLocaleString('pt-BR')}</td>
-                    <td className="px-6 py-4 text-right font-bold text-blue-600">{item.acquired_quantity.toLocaleString('pt-BR')}</td>
                     <td className="px-6 py-4 text-right font-black text-gray-950">R$ {item.totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="px-6 py-4 print:hidden">
                       <div className="flex items-center gap-2 justify-end">
@@ -348,7 +346,6 @@ const Suppliers: React.FC = () => {
                           <th className="px-6 py-4 text-center">Unidade</th>
                           <th className="px-6 py-4 text-right">Preço Unitário</th>
                           <th className="px-6 py-4 text-right">Qtd. Contratada</th>
-                          <th className="px-6 py-4 text-right">Qtd. Entregue</th>
                           <th className="px-6 py-4 text-right">Progresso</th>
                         </tr>
                       </thead>
@@ -362,7 +359,6 @@ const Suppliers: React.FC = () => {
                               <td className="px-6 py-4 text-center text-xs font-black bg-gray-50 border border-gray-100 rounded-lg w-fit mx-auto">{item.unit}</td>
                               <td className="px-6 py-4 text-right font-bold text-emerald-600">R$ {item.unit_price.toFixed(2)}</td>
                               <td className="px-6 py-4 text-right font-bold">{item.contracted_quantity}</td>
-                              <td className="px-6 py-4 text-right font-bold text-blue-600">{item.acquired_quantity}</td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2 justify-end">
                                   <div className="w-16 bg-gray-100 h-2 rounded-full overflow-hidden">
