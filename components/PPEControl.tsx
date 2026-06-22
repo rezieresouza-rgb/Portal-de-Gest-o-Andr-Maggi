@@ -131,23 +131,39 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
     setDeliveryItems(deliveryItems.filter((_, i) => i !== idx));
   };
 
-  const loadPresetKit = (type: 'cleaning' | 'kitchen') => {
-    const kitPpes = type === 'cleaning' ? [
-      { ppeId: 'ppe-c1', ppeName: 'AVENTAL DE PVC (IMPERMEÁVEL)', quantity: 1 },
-      { ppeId: 'ppe-c2', ppeName: 'LUVAS DE PVC (CURTAS E LONGAS)', quantity: 1 },
-      { ppeId: 'ppe-c3', ppeName: 'LUVAS NITRÍLICAS (BORRACHA)', quantity: 1 },
-      { ppeId: 'ppe-c4', ppeName: 'ÓCULOS DE PROTEÇÃO', quantity: 1 },
-      { ppeId: 'ppe-c5', ppeName: 'BOTAS DE BORRACHA', quantity: 1 },
-      { ppeId: 'ppe-g2', ppeName: 'MÁSCARA PFF2 (N95) PROTEÇÃO RESPIRATÓRIA', quantity: 10 }
-    ] : [
-      { ppeId: 'ppe-k1', ppeName: 'TOUCA DESCARTÁVEL OU DE ALGODÃO', quantity: 1 },
-      { ppeId: 'ppe-k2', ppeName: 'UNIFORME BRANCO (ALGODÃO)', quantity: 2 },
-      { ppeId: 'ppe-k3', ppeName: 'AVENTAL DE ALGODÃO', quantity: 2 },
-      { ppeId: 'ppe-k6', ppeName: 'LUVAS (VINIL, LÁTEX OU POLIETILENO)', quantity: 1 },
-      { ppeId: 'ppe-k8', ppeName: 'SAPATO FECHADO ANTIDERRAPANTE', quantity: 1 },
-      { ppeId: 'ppe-k9', ppeName: 'CALÇA COMPRIDA E CAMISETA MANGA CURTA', quantity: 2 },
-      { ppeId: 'ppe-g1', ppeName: 'MÁSCARA DESCARTÁVEL (CX C/ 50)', quantity: 1 }
-    ];
+  const loadPresetKit = (type: 'cleaning' | 'kitchen' | 'mowing') => {
+    let kitPpes = [];
+    if (type === 'cleaning') {
+      kitPpes = [
+        { ppeId: 'ppe-c1', ppeName: 'AVENTAL DE PVC (IMPERMEÁVEL)', quantity: 1 },
+        { ppeId: 'ppe-c2', ppeName: 'LUVAS DE PVC (CURTAS E LONGAS)', quantity: 1 },
+        { ppeId: 'ppe-c3', ppeName: 'LUVAS NITRÍLICAS (BORRACHA)', quantity: 1 },
+        { ppeId: 'ppe-c4', ppeName: 'ÓCULOS DE PROTEÇÃO', quantity: 1 },
+        { ppeId: 'ppe-c5', ppeName: 'BOTAS DE BORRACHA', quantity: 1 },
+        { ppeId: 'ppe-g2', ppeName: 'MÁSCARA PFF2 (N95) PROTEÇÃO RESPIRATÓRIA', quantity: 10 }
+      ];
+    } else if (type === 'kitchen') {
+      kitPpes = [
+        { ppeId: 'ppe-k1', ppeName: 'TOUCA DESCARTÁVEL OU DE ALGODÃO', quantity: 1 },
+        { ppeId: 'ppe-k2', ppeName: 'UNIFORME BRANCO (ALGODÃO)', quantity: 2 },
+        { ppeId: 'ppe-k3', ppeName: 'AVENTAL DE ALGODÃO', quantity: 2 },
+        { ppeId: 'ppe-k6', ppeName: 'LUVAS (VINIL, LÁTEX OU POLIETILENO)', quantity: 1 },
+        { ppeId: 'ppe-k8', ppeName: 'SAPATO FECHADO ANTIDERRAPANTE', quantity: 1 },
+        { ppeId: 'ppe-k9', ppeName: 'CALÇA COMPRIDA E CAMISETA MANGA CURTA', quantity: 2 },
+        { ppeId: 'ppe-g1', ppeName: 'MÁSCARA DESCARTÁVEL (CX C/ 50)', quantity: 1 }
+      ];
+    } else if (type === 'mowing') {
+      kitPpes = [
+        { ppeId: 'ppe-m3', ppeName: 'PERNEIRA DE PROTEÇÃO (PAR)', quantity: 1 },
+        { ppeId: 'ppe-m1', ppeName: 'PROTETOR AURICULAR (ABAFADOR)', quantity: 1 },
+        { ppeId: 'ppe-m2', ppeName: 'PROTETOR FACIAL (VISEIRA POLICARBONATO)', quantity: 1 },
+        { ppeId: 'ppe-m4', ppeName: 'LUVA DE VAQUETA (COURO)', quantity: 1 },
+        { ppeId: 'ppe-m5', ppeName: 'COLETE REFLETIVO', quantity: 1 },
+        { ppeId: 'ppe-g3', ppeName: 'MÁSCARA PFF2 COM VÁLVULA (QUÍMICOS)', quantity: 5 },
+        { ppeId: 'ppe-c4', ppeName: 'ÓCULOS DE PROTEÇÃO', quantity: 1 },
+        { ppeId: 'ppe-c5', ppeName: 'BOTAS DE BORRACHA', quantity: 1 }
+      ];
+    }
 
     const finalItems: PPEDeliveryItem[] = [];
     const lowStockItems: string[] = [];
@@ -437,6 +453,13 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                       className="px-4 py-2.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5"
                     >
                       🍳 Carregar Kit Cozinha Padrão
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadPresetKit('mowing')}
+                      className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5"
+                    >
+                      🌱 Carregar Kit Roçagem/Grama
                     </button>
                   </div>
                 </div>
