@@ -112,8 +112,16 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     const isVeraLucia = user.name?.toUpperCase().includes('VERA LUCIA ARQUINO') || 
                         user.name?.toUpperCase().includes('VERA LÚCIA ARQUINO');
 
+    const isAnaiara = user.name?.toUpperCase().includes('ANAIARA') || 
+                      user.login?.replace(/\D/g, '') === '04589046199' ||
+                      user.cpf?.replace(/\D/g, '') === '04589046199';
+
     if (mod.adminOnly && !isAdmin) return false;
     if (isAdmin) return true;
+
+    if (isAnaiara && ['scheduling', 'psychosocial'].includes(mod.id)) {
+      return true;
+    }
 
     if (isDanubia && ['teacher', 'scheduling'].includes(mod.id)) {
       return true;
