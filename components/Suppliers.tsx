@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, ExternalLink, ShieldCheck, Sprout, Star, Plus, Trash2, X, Save, Building2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Mail, Phone, MapPin, ExternalLink, ShieldCheck, Sprout, Star, Plus, Trash2, X, Save, Building2, Printer } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 export interface Supplier {
@@ -43,6 +43,23 @@ const Suppliers: React.FC = () => {
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  const [activeView, setActiveView] = useState<'cards' | 'unified-list'>('cards');
+
+  const allSupplierItems = useMemo(() => {
+    return contractItems.map(item => {
+      const contract = contracts.find(c => c.id === item.contract_id) || {};
+      const supplier = suppliers.find(s => s.id === contract.supplier_id) || {};
+      return {
+        ...item,
+        contractNumber: contract.number || 'N/A',
+        supplierName: supplier.name || 'Desconhecido',
+        supplierCnpj: supplier.cnpj || 'N/A',
+        totalVal: item.contracted_quantity * item.unit_price,
+        progress: item.contracted_quantity > 0 ? Math.min(100, Math.round((item.acquired_quantity / item.contracted_quantity) * 100)) : 0
+      };
+    }).sort((a, b) => a.description.localeCompare(b.description));
+  }, [contractItems, contracts, suppliers]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({
@@ -93,20 +110,47 @@ const Suppliers: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
-          <h2 className="text-2xl font-black text-gray-800 tracking-tight uppercase">Fornecedores Homologados</h2>
-          <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mt-1">Diretório de Parceiros da Unidade</p>
+          <h2 className="text-2xl font-black text-gray-800 tracking-tight uppercase">Fornecedores & Licitados</h2>
+          <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mt-1">Diretório e Relatório Unificado de Alimentos</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg flex items-center gap-2"
-        >
-          <Plus size={18} /> Novo Fornecedor
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200">
+            <button
+              onClick={() => setActiveView('cards')}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${activeView === 'cards' ? 'bg-white text-emerald-700 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Fornecedores
+            </button>
+            <button
+              onClick={() => setActiveView('unified-list')}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${activeView === 'unified-list' ? 'bg-white text-emerald-700 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Lista Única (Relatório)
+            </button>
+          </div>
+
+          {activeView === 'unified-list' && (
+            <button
+              onClick={() => window.print()}
+              className="bg-gray-900 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2"
+            >
+              <Printer size={18} /> Imprimir
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg flex items-center gap-2"
+          >
+            <Plus size={18} /> Novo Fornecedor
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {activeView === 'cards' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {suppliers.map((s) => {
           const sItems = contractItems.filter(item => {
             const contract = contracts.find(c => c.id === item.contract_id);
@@ -182,6 +226,64 @@ const Suppliers: React.FC = () => {
           </div>
         )}
       </div>
+      ) : (
+        <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-xl space-y-6 print:p-0 print:border-none print:shadow-none animate-in fade-in duration-300">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-6 print:hidden">
+            <div>
+              <h3 className="text-xl font-black text-gray-900 uppercase">Relatório Geral Licitado</h3>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">Todos os alimentos licitados de todos os fornecedores</p>
+            </div>
+            <div className="text-xs font-black uppercase bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-100">
+              Total: {allSupplierItems.length} itens licitados
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-3xl border border-gray-100 print:border-none">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 print:bg-transparent print:border-b-2 print:border-black">
+                  <th className="px-6 py-4">Alimento</th>
+                  <th className="px-6 py-4">Fornecedor</th>
+                  <th className="px-6 py-4">Contrato</th>
+                  <th className="px-6 py-4">Marca</th>
+                  <th className="px-6 py-4 text-center">Unid.</th>
+                  <th className="px-6 py-4 text-right">Preço Unit.</th>
+                  <th className="px-6 py-4 text-right">Qtd. Contratada</th>
+                  <th className="px-6 py-4 text-right">Qtd. Entregue</th>
+                  <th className="px-6 py-4 text-right">Total Contratado</th>
+                  <th className="px-6 py-4 text-right print:hidden">Progresso</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 text-xs font-medium text-gray-700 print:divide-y print:divide-gray-300">
+                {allSupplierItems.map(item => (
+                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors print:hover:bg-transparent animate-in fade-in duration-200">
+                    <td className="px-6 py-4 font-black uppercase text-gray-950">{item.description}</td>
+                    <td className="px-6 py-4 uppercase text-gray-700">
+                      <div>{item.supplierName}</div>
+                      <div className="text-[9px] text-gray-400 font-bold">{item.supplierCnpj}</div>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-gray-500">{item.contractNumber}</td>
+                    <td className="px-6 py-4 text-gray-500 uppercase">{item.brand || '-'}</td>
+                    <td className="px-6 py-4 text-center"><span className="px-2 py-1 bg-gray-100 rounded-lg text-[9px] font-black text-gray-600 print:bg-transparent print:p-0">{item.unit}</span></td>
+                    <td className="px-6 py-4 text-right font-bold text-emerald-600">R$ {item.unit_price.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-right font-bold">{item.contracted_quantity.toLocaleString('pt-BR')}</td>
+                    <td className="px-6 py-4 text-right font-bold text-blue-600">{item.acquired_quantity.toLocaleString('pt-BR')}</td>
+                    <td className="px-6 py-4 text-right font-black text-gray-950">R$ {item.totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-4 print:hidden">
+                      <div className="flex items-center gap-2 justify-end">
+                        <div className="w-12 bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${item.progress}%` }}></div>
+                        </div>
+                        <span className="text-[9px] font-black text-gray-400">{item.progress}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Modal Cadastro */}
       {isModalOpen && (
