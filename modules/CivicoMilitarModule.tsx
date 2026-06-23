@@ -745,7 +745,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       return;
     }
 
-    const studentObj = dbStudents.find(s => s.CodigoAluno === newInspection.studentId);
+    const studentObj = dbStudents.find(s => String(s.CodigoAluno) === String(newInspection.studentId)) || 
+                       INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(newInspection.studentId));
     if (!studentObj) return;
 
     const record: InspectionRecord = {
@@ -879,7 +880,21 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const handleGenerateMeasureDoc = (occ: BehaviorOccurrence, studentId: string) => {
     // 1. Encontrar o aluno na base da secretaria
-    const student = dbStudents.find(s => s.CodigoAluno === studentId);
+    let student = dbStudents.find(s => String(s.CodigoAluno) === String(studentId));
+    if (!student && selectedStudentState && String(selectedStudentState.studentId) === String(studentId)) {
+      const initStudent = INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(studentId));
+      student = {
+        CodigoAluno: selectedStudentState.studentId,
+        Nome: selectedStudentState.studentName,
+        Turma: selectedStudentState.className,
+        Turno: initStudent?.Turno || 'MATUTINO',
+        DataNascimento: initStudent?.DataNascimento || '',
+        PAED: initStudent?.PAED || 'Não',
+        TransporteEscolar: initStudent?.TransporteEscolar || 'Não',
+        NomeResponsavel: (initStudent as any)?.NomeResponsavel || '',
+        TelefoneContato: (initStudent as any)?.TelefoneContato || ''
+      };
+    }
     if (!student) return;
 
     // 2. Setar aba de documentos e template
@@ -1100,7 +1115,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const handleLoadDocFromHistory = (record: any) => {
     setSelectedDocTemplate(record.template);
-    const student = dbStudents.find(s => s.CodigoAluno === record.studentId) || {
+    const student = dbStudents.find(s => String(s.CodigoAluno) === String(record.studentId)) || {
       Nome: record.studentName,
       Turma: record.className,
       Turno: record.shiftName,
@@ -2003,7 +2018,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                             <td className="py-4 font-bold uppercase text-slate-900 truncate max-w-[280px]">
                               <div>{student.studentName}</div>
                               {(() => {
-                                const dbStudent = dbStudents.find(s => s.CodigoAluno === student.studentId);
+                                const dbStudent = dbStudents.find(s => String(s.CodigoAluno) === String(student.studentId)) ||
+                                                  INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(student.studentId));
                                 if (dbStudent && (dbStudent.NomeResponsavel || dbStudent.TelefoneContato)) {
                                   return (
                                     <div className="text-[8px] text-slate-400 mt-0.5 flex items-center gap-1 font-semibold normal-case tracking-wider">
@@ -3409,7 +3425,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     type="text"
                     placeholder={
                       (() => {
-                        const selected = dbStudents.find(s => s.CodigoAluno === newInspection.studentId);
+                        const selected = dbStudents.find(s => String(s.CodigoAluno) === String(newInspection.studentId)) ||
+                                         INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(newInspection.studentId));
                         return selected ? `${selected.Nome} (${selected.Turma})` : "Digitar nome do aluno...";
                       })()
                     }
@@ -3420,7 +3437,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     }}
                     onFocus={(e) => {
                       setIsStudentDropdownOpen(true);
-                      const selected = dbStudents.find(s => s.CodigoAluno === newInspection.studentId);
+                      const selected = dbStudents.find(s => String(s.CodigoAluno) === String(newInspection.studentId)) ||
+                                       INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(newInspection.studentId));
                       if (selected && !studentSearchTerm) {
                         setStudentSearchTerm(selected.Nome);
                       }
@@ -3555,7 +3573,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     Turma: {selectedStudentState.className} • Código: {selectedStudentState.studentId}
                   </p>
                   {(() => {
-                    const studentFull = dbStudents.find(s => s.CodigoAluno === selectedStudentState.studentId);
+                    const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
                     if (studentFull && (studentFull.NomeResponsavel || studentFull.TelefoneContato)) {
                       return (
                         <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
