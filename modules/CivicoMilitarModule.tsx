@@ -58,6 +58,7 @@ interface BehaviorOccurrence {
   id: string;
   type: 'MERIT' | 'DEMERIT';
   category: string;
+  categories?: string[];
   points: number;
   date: string;
   observations: string;
@@ -206,11 +207,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [newOccurrence, setNewOccurrence] = useState({
     type: 'DEMERIT' as 'MERIT' | 'DEMERIT',
     category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
+    selectedCategories: ['1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme'] as string[],
     date: new Date().toISOString().split('T')[0],
     observations: '',
     disciplinaryMeasure: 'Advertência Oral',
     suspensionDays: 1
   });
+
+  const [categorySearchTerm, setCategorySearchTerm] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
   // Main lists loaded from LocalStorage
   const [inspections, setInspections] = useState<InspectionRecord[]>([]);
@@ -650,6 +655,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     return { label: 'INCOMPATÍVEL', color: 'text-red-600 bg-red-50 border-red-100' };
   };
 
+  const getOccurrenceSeverity = (occ: any): string => {
+    if (occ.type === 'MERIT') return 'LEVE';
+    const cats = occ.categories && occ.categories.length > 0 ? occ.categories : [occ.category];
+    let maxSeverity = 'LEVE';
+    for (const cat of cats) {
+      const dem = demeritOptions.find(d => d.category === cat);
+      if (dem) {
+        if (dem.severity === 'GRAVE') maxSeverity = 'GRAVE';
+        else if (dem.severity === 'MÉDIA' && maxSeverity !== 'GRAVE') maxSeverity = 'MÉDIA';
+      }
+    }
+    return maxSeverity;};
+
   // Dashboard Advanced Stats
   const advancedStats = useMemo(() => {
     // 1. Top 10 Honra
@@ -696,10 +714,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
           if (o.type === 'MERIT') elogios++;
           else {
-            const def = demeritOptions.find(dOpt => dOpt.category === o.category);
-            if (def?.severity === 'LEVE') leves++;
-            else if (def?.severity === 'MÉDIA') medias++;
-            else if (def?.severity === 'GRAVE') graves++;
+            const severity = getOccurrenceSeverity(o);
+            if (severity === 'LEVE') leves++;
+            else if (severity === 'MÉDIA') medias++;
+            else if (severity === 'GRAVE') graves++;
           }
         }
       });
@@ -793,8 +811,21 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       const merit = meritOptions.find(o => o.category === newOccurrence.category);
       points = merit ? merit.points : 0.5;
     } else {
-      const dem = demeritOptions.find(o => o.category === newOccurrence.category);
-      const originalSeverity = dem ? dem.severity : 'LEVE';
+      const selectedCats = newOccurrence.selectedCategories || [];
+      if (selectedCats.length === 0) {
+        alert('Por favor, selecione pelo menos uma falta disciplinar.');
+        return;
+      }
+
+      // The original severity is the maximum severity among selected categories
+      let originalSeverity = 'LEVE';
+      for (const cat of selectedCats) {
+        const dem = demeritOptions.find(o => o.category === cat);
+        if (dem) {
+          if (dem.severity === 'GRAVE') originalSeverity = 'GRAVE';
+          else if (dem.severity === 'MÉDIA' && originalSeverity !== 'GRAVE') originalSeverity = 'MÉDIA';
+        }
+      }
 
       // Calculate points based on the Disciplinary Measure (Art 46)
       switch (newOccurrence.disciplinaryMeasure) {
@@ -802,13 +833,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         case 'Advertência Escrita': points = 0.3; break;
         case 'Suspensão de Sala de Aula': points = 0.5 * (newOccurrence.suspensionDays || 1); break;
         case 'Ações Educativas': points = 1.0; break;
-        case 'Transferência Educativa': points = 2.0; break; // Assumed severe deduction
+        case 'Transferência Educativa': points = 2.0; break; 
         case 'Estudo Orientado de Caráter Educativo': points = 0.5; break;
         default: points = 0.1;
       }
 
-      const prevLeves = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'LEVE').length;
-      const prevMediasBase = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'MÉDIA').length;
+      const prevLeves = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'LEVE').length;
+      const prevMediasBase = selectedStudentState.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'MÉDIA').length;
       const prevEscalatedLeves = Math.floor(prevLeves / 3);
       
       effectiveSeverity = originalSeverity;
@@ -836,7 +867,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     const occurrence: BehaviorOccurrence = {
       id: `occ-${Date.now()}`,
       type: newOccurrence.type,
-      category: newOccurrence.category,
+      category: newOccurrence.type === 'MERIT' 
+        ? newOccurrence.category 
+        : (newOccurrence.selectedCategories || []).join('\n'),
+      categories: newOccurrence.type === 'MERIT'
+        ? [newOccurrence.category]
+        : (newOccurrence.selectedCategories || []),
       points,
       date: newOccurrence.date,
       observations: newOccurrence.observations,
@@ -871,6 +907,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setNewOccurrence({
       type: 'DEMERIT',
       category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
+      selectedCategories: ['1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme'],
       date: new Date().toISOString().split('T')[0],
       observations: '',
       disciplinaryMeasure: 'Advertência Oral',
@@ -903,9 +940,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setSelectedStudentForDoc(student);
 
     // 3. Descobrir a gravidade original (LEVE/MÉDIA/GRAVE)
-    let severity = 'LEVE';
-    const def = demeritOptions.find(d => d.category === occ.category);
-    if (def) severity = def.severity;
+    let severity = getOccurrenceSeverity(occ);
     
     // Se foi agravada por reincidência, subir um nível
     if (occ.isEscalated) {
@@ -1155,8 +1190,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       default: points = 0.1;
     }
 
-    const prevLeves = studentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'LEVE').length;
-    const prevMediasBase = studentState.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'MÉDIA').length;
+    const prevLeves = studentState.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'LEVE').length;
+    const prevMediasBase = studentState.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'MÉDIA').length;
     const prevEscalatedLeves = Math.floor(prevLeves / 3);
     
     effectiveSeverity = originalSeverity;
@@ -1184,6 +1219,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       id: `occ-${Date.now()}`,
       type: 'DEMERIT',
       category: category,
+      categories: [category],
       points,
       date: retroDate,
       observations: observations,
@@ -1558,7 +1594,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                   {occ.studentName} 
                                   <span className="text-slate-400 font-medium normal-case ml-2">• {occ.className}</span>
                                 </div>
-                                <div className="text-[10px] font-bold text-slate-600 mt-1">{occ.category}</div>
+                                <div className="text-[10px] font-bold text-slate-600 mt-1 whitespace-pre-line">{occ.category}</div>
                                 <div className="text-[9px] text-slate-400 uppercase tracking-wider mt-2 flex items-center gap-2">
                                    <Clock size={10} /> {formatSimpleDate(occ.date)} • Por: {occ.responsible.split(' ')[0]}
                                 </div>
@@ -2061,9 +2097,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                  {student.occurrences.length > 0 && (
                                    <div className="flex gap-1">
                                       {(() => {
-                                        const leves = student.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'LEVE').length;
-                                        const medias = student.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'MÉDIA').length;
-                                        const graves = student.occurrences.filter(o => o.type === 'DEMERIT' && demeritOptions.find(d => d.category === o.category)?.severity === 'GRAVE').length;
+                                        const leves = student.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'LEVE').length;
+                                        const medias = student.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'MÉDIA').length;
+                                        const graves = student.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'GRAVE').length;
                                         const agravadas = student.occurrences.filter(o => o.isEscalated).length;
                                         
                                         return (
@@ -2517,27 +2553,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold text-slate-500 uppercase">Enquadramento no Regulamento (Itens)</label>
-                        <select
+                        <textarea
                           value={docFields.itensEnquadramento}
-                          onChange={e => {
-                            const value = e.target.value;
-                            setDocFields(prev => ({
-                              ...prev,
-                              itensEnquadramento: value,
-                              // clear outroEnquadramento when not 'Outro'
-                              outroEnquadramento: value !== 'Outro' ? '' : prev.outroEnquadramento,
-                            }));
-                          }}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="Advertência Oral">Advertência Oral</option>
-                          <option value="Advertência Escrita">Advertência Escrita</option>
-                          <option value="Suspensão de Sala de Aula">Suspensão de Sala de Aula</option>
-                          <option value="Ações Educativas">Ações Educativas</option>
-                          <option value="Transferência Educativa">Transferência Educativa</option>
-                          <option value="Outro">Outro</option>
-                        </select>
+                          onChange={e => setDocFields(prev => ({ ...prev, itensEnquadramento: e.target.value }))}
+                          placeholder="Descreva as infrações cometidas (itens de enquadramento)..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                        />
                         {docFields.itensEnquadramento === 'Outro' && (
                           <input
                             type="text"
@@ -3054,7 +3075,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                             será efetivada ou arquivada conforme despacho do gestor competente. O estudante supracitado 
                             cometeu a seguinte falta disciplinar no dia <span className="font-bold underline decoration-dotted underline-offset-4">{formatSimpleDate(docFields.faltaDate)}</span>: <span className="font-bold uppercase">{docFields.falta || '___________________________________________________________________________________'}</span>, 
                             sendo enquadrado no(s) item(ns) abaixo, conforme Apêndice I Regulamento Disciplinar das EECM-MT: 
-                            <span className="font-bold ml-1 uppercase">{docFields.itensEnquadramento === 'Outro' ? (docFields.outroEnquadramento || '_____________________________________________________') : (docFields.itensEnquadramento || '_____________________________________________________')}</span>.
+                            <span className="font-bold ml-1 uppercase whitespace-pre-line">{docFields.itensEnquadramento === 'Outro' ? (docFields.outroEnquadramento || '_____________________________________________________') : (docFields.itensEnquadramento || '_____________________________________________________')}</span>.
                           </p>
                         </div>
 
@@ -3611,7 +3632,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       setNewOccurrence(prev => ({
                         ...prev,
                         type: 'DEMERIT',
-                        category: demeritOptions[0].category
+                        category: demeritOptions[0].category,
+                        selectedCategories: prev.selectedCategories && prev.selectedCategories.length > 0 ? prev.selectedCategories : [demeritOptions[0].category]
                       }));
                     }}
                     className={`py-2 rounded-xl text-[9px] font-black uppercase border transition-all flex items-center justify-center gap-1.5 ${
@@ -3628,7 +3650,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       setNewOccurrence(prev => ({
                         ...prev,
                         type: 'MERIT',
-                        category: meritOptions[0].category
+                        category: meritOptions[0].category,
+                        selectedCategories: []
                       }));
                     }}
                     className={`py-2 rounded-xl text-[9px] font-black uppercase border transition-all flex items-center justify-center gap-1.5 ${
@@ -3643,25 +3666,93 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                 <div>
                   <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Enquadramento / Categoria</label>
-                  <select
-                    value={newOccurrence.category}
-                    onChange={e => setNewOccurrence(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                  >
-                    {newOccurrence.type === 'MERIT' ? (
-                      meritOptions.map(m => (
+                  {newOccurrence.type === 'DEMERIT' ? (
+                    <div className="space-y-3 relative">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Clique para ver todas ou busque falta disciplinar..."
+                          value={categorySearchTerm}
+                          onChange={e => setCategorySearchTerm(e.target.value)}
+                          onFocus={() => setIsCategoryDropdownOpen(true)}
+                          onBlur={() => setTimeout(() => setIsCategoryDropdownOpen(false), 200)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        />
+                        {isCategoryDropdownOpen && (
+                          <div className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-2xl divide-y divide-slate-100 text-slate-800">
+                            {demeritOptions
+                              .filter(d => !categorySearchTerm || d.category.toLowerCase().includes(categorySearchTerm.toLowerCase()))
+                              .map(d => {
+                                const isSelected = (newOccurrence.selectedCategories || []).includes(d.category);
+                                return (
+                                  <button
+                                    key={d.category}
+                                    type="button"
+                                    onClick={() => {
+                                      setNewOccurrence(prev => {
+                                        const current = prev.selectedCategories || [];
+                                        const updated = current.includes(d.category)
+                                          ? current.filter(c => c !== d.category)
+                                          : [...current, d.category];
+                                        return { ...prev, selectedCategories: updated };
+                                      });
+                                      setCategorySearchTerm('');
+                                    }}
+                                    className="w-full text-left p-3 hover:bg-blue-50 text-[10px] font-bold uppercase transition-colors flex justify-between items-center"
+                                  >
+                                    <span className="flex-1 pr-2">{`[${d.severity}] ${d.category}`}</span>
+                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                      {isSelected ? 'Selecionado' : 'Adicionar'}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* List of Selected Categories */}
+                      <div className="flex flex-col gap-1.5 mt-2 max-h-36 overflow-y-auto pr-1">
+                        {(newOccurrence.selectedCategories || []).map(cat => {
+                          const dem = demeritOptions.find(d => d.category === cat);
+                          const severityColor = dem?.severity === 'GRAVE' ? 'bg-red-50 text-red-700 border-red-100' : dem?.severity === 'MÉDIA' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100';
+                          return (
+                            <div key={cat} className={`flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-bold uppercase tracking-wider ${severityColor}`}>
+                              <span className="leading-snug">{cat}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewOccurrence(prev => ({
+                                    ...prev,
+                                    selectedCategories: (prev.selectedCategories || []).filter(c => c !== cat)
+                                  }));
+                                }}
+                                className="hover:text-slate-950 font-bold shrink-0 ml-1 p-0.5 bg-white/60 hover:bg-white rounded-full w-4 h-4 flex items-center justify-center border border-current"
+                                title="Remover"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                        {(newOccurrence.selectedCategories || []).length === 0 && (
+                          <p className="text-[9px] text-red-500 font-black uppercase tracking-wider italic">Nenhuma falta selecionada. Selecione pelo menos uma falta disciplinar.</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <select
+                      value={newOccurrence.category}
+                      onChange={e => setNewOccurrence(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                    >
+                      {meritOptions.map(m => (
                         <option key={m.category} value={m.category}>
                           {m.category} (+{m.points.toFixed(2)})
                         </option>
-                      ))
-                    ) : (
-                      demeritOptions.map(d => (
-                        <option key={d.category} value={d.category}>
-                          [{d.severity}] {d.category}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div>
@@ -3763,7 +3854,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         </span>
                         <span className="text-[8px] font-bold text-slate-500">{new Date(occ.date).toLocaleDateString('pt-BR')}</span>
                       </div>
-                      <h5 className="text-[10px] font-black text-slate-800 uppercase">{occ.category}</h5>
+                      <h5 className="text-[10px] font-black text-slate-800 uppercase whitespace-pre-line">{occ.category}</h5>
                       <p className="text-[9px] text-slate-600 mt-1 italic">"{occ.observations}"</p>
                       
                       {occ.disciplinaryMeasure && (
