@@ -177,10 +177,11 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
     const handleAutofillMural = () => {
         const rows: EscalaRow[] = [];
         
-        // Filter out nutrition/kitchen staff
+        // Only include requested servers: Renato, Marisa, Edina/Édina, Keila, and Camilia/Camila
+        const ALLOWED_NAMES = ['RENATO', 'MARISA', 'EDINA', 'ÉDINA', 'KEILA', 'CAMILIA', 'CAMILA'];
         const cleaningStaff = employees.filter(e => {
-            const isNutrition = e.scope?.toUpperCase().includes('NUTRIÇÃO') || e.scope?.toUpperCase().includes('ALIMENTOS');
-            return !isNutrition;
+            const nameUpper = e.name?.toUpperCase() || '';
+            return ALLOWED_NAMES.some(allowed => nameUpper.includes(allowed));
         });
 
         cleaningStaff.forEach(emp => {
