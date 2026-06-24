@@ -195,35 +195,20 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
             const areas = Array.from(new Set(empTasks.map(t => t.area_name))).join(', ');
             
             // Unique activities grouped by frequency
-            const daily = Array.from(new Set(empTasks.filter(t => t.frequency === 'DIARIA').map(t => t.task_description)));
-            const weekly = Array.from(new Set(empTasks.filter(t => t.frequency === 'SEMANAL').map(t => t.task_description)));
-            const monthly = Array.from(new Set(empTasks.filter(t => t.frequency === 'MENSAL').map(t => t.task_description)));
-            const quarterly = Array.from(new Set(empTasks.filter(t => t.frequency === 'TRIMESTRAL').map(t => t.task_description)));
+            const daily = Array.from(new Set(empTasks.filter(t => t.frequency === 'DIARIA').map(t => t.task_description))).join(', ');
+            const weekly = Array.from(new Set(empTasks.filter(t => t.frequency === 'SEMANAL').map(t => t.task_description))).join(', ');
+            const monthly = Array.from(new Set(empTasks.filter(t => t.frequency === 'MENSAL').map(t => t.task_description))).join(', ');
+            const quarterly = Array.from(new Set(empTasks.filter(t => t.frequency === 'TRIMESTRAL').map(t => t.task_description))).join(', ');
 
             const activityParts: string[] = [];
-            if (daily.length > 0) {
-                activityParts.push("DIÁRIA:");
-                daily.forEach(t => activityParts.push(`• ${t}`));
-            }
-            if (weekly.length > 0) {
-                if (activityParts.length > 0) activityParts.push("");
-                activityParts.push("SEMANAL:");
-                weekly.forEach(t => activityParts.push(`• ${t}`));
-            }
-            if (monthly.length > 0) {
-                if (activityParts.length > 0) activityParts.push("");
-                activityParts.push("MENSAL:");
-                monthly.forEach(t => activityParts.push(`• ${t}`));
-            }
-            if (quarterly.length > 0) {
-                if (activityParts.length > 0) activityParts.push("");
-                activityParts.push("TRIMESTRAL:");
-                quarterly.forEach(t => activityParts.push(`• ${t}`));
-            }
+            if (daily) activityParts.push(`DIÁRIA: ${daily}`);
+            if (weekly) activityParts.push(`SEMANAL: ${weekly}`);
+            if (monthly) activityParts.push(`MENSAL: ${monthly}`);
+            if (quarterly) activityParts.push(`TRIMESTRAL: ${quarterly}`);
 
             const activities = activityParts.length > 0 
                 ? activityParts.join('\n') 
-                : 'DIÁRIA:\n• Zeladoria geral, varrer, passar pano, recolher lixo';
+                : 'DIÁRIA: Zeladoria geral, varrer, passar pano, recolher lixo';
 
             // Frequencies
             const freqs = Array.from(new Set(empTasks.map(t => FREQUENCY_LABEL[t.frequency] || t.frequency))).join(', ');
@@ -675,21 +660,17 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                                 {row.atividades.split('\n').map((line, lIdx) => {
                                                     const trimmed = line.trim();
                                                     if (!trimmed) {
-                                                        return <div key={lIdx} className="h-1.5" />;
+                                                        return <div key={lIdx} className="h-1" />;
                                                     }
-                                                    const headerMatch = trimmed.match(/^(DIÁRIA|SEMANAL|MENSAL|TRIMESTRAL|DIARIA):?$/i);
-                                                    if (headerMatch) {
+                                                    const match = trimmed.match(/^(DIÁRIA|SEMANAL|MENSAL|TRIMESTRAL|DIARIA):\s*(.*)$/i);
+                                                    if (match) {
                                                         return (
-                                                            <div key={lIdx} className="font-bold text-gray-900 mt-2 first:mt-0 uppercase tracking-wide text-[9.5px]">
-                                                                {headerMatch[1].toUpperCase()}:
+                                                            <div key={lIdx} className="mb-0.5 last:mb-0 text-gray-800">
+                                                                <strong className="text-gray-900">{match[1].toUpperCase()}:</strong> {match[2]}
                                                             </div>
                                                         );
                                                     }
-                                                    return (
-                                                        <div key={lIdx} className="pl-2 text-gray-800">
-                                                            {trimmed}
-                                                        </div>
-                                                    );
+                                                    return <div key={lIdx} className="mb-0.5 last:mb-0 text-gray-800">{trimmed}</div>;
                                                 })}
                                             </td>
                                             <td className="p-2 border border-gray-800 uppercase text-center text-[9px]">{row.frequencia}</td>
