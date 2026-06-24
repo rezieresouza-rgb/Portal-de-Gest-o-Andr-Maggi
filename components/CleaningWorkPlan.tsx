@@ -210,8 +210,11 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                 ? activityParts.join('\n') 
                 : 'DIÁRIA: Zeladoria geral, varrer, passar pano, recolher lixo';
 
-            // Frequencies
-            const freqs = Array.from(new Set(empTasks.map(t => FREQUENCY_LABEL[t.frequency] || t.frequency))).join(', ');
+            // Frequencies sorted logically
+            const ORDER = ['Diária', 'Semanal', 'Mensal', 'Trimestral'];
+            const freqs = Array.from(new Set(empTasks.map(t => FREQUENCY_LABEL[t.frequency] || t.frequency)))
+                .sort((a, b) => ORDER.indexOf(a as string) - ORDER.indexOf(b as string))
+                .join(', ');
 
             // Default horario based on shift
             const shiftUpper = emp.shift?.toUpperCase();
@@ -673,7 +676,19 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                                     return <div key={lIdx} className="mb-0.5 last:mb-0 text-gray-800">{trimmed}</div>;
                                                 })}
                                             </td>
-                                            <td className="p-2 border border-gray-800 uppercase text-center text-[9px]">{row.frequencia}</td>
+                                            <td className="p-2 border border-gray-800 uppercase text-center text-[9.5px] whitespace-pre-line leading-relaxed font-bold">
+                                                {row.frequencia
+                                                    .split(/[\n,]+/)
+                                                    .map(f => f.trim())
+                                                    .filter(Boolean)
+                                                    .sort((a, b) => {
+                                                        const order = ['DIÁRIA', 'DIARIA', 'SEMANAL', 'MENSAL', 'TRIMESTRAL'];
+                                                        const idxA = order.indexOf(a.toUpperCase());
+                                                        const idxB = order.indexOf(b.toUpperCase());
+                                                        return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+                                                    })
+                                                    .join('\n')}
+                                            </td>
                                             <td className="p-2 border border-gray-800 text-center font-bold text-[9px]">{row.horario}</td>
                                         </tr>
                                     ))}
