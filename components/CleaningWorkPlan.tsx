@@ -193,8 +193,21 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
             // Unique areas
             const areas = Array.from(new Set(empTasks.map(t => t.area_name))).join(', ');
             
-            // Unique activities
-            const activities = Array.from(new Set(empTasks.map(t => t.task_description))).join(', ');
+            // Unique activities grouped by frequency
+            const daily = Array.from(new Set(empTasks.filter(t => t.frequency === 'DIARIA').map(t => t.task_description))).join(', ');
+            const weekly = Array.from(new Set(empTasks.filter(t => t.frequency === 'SEMANAL').map(t => t.task_description))).join(', ');
+            const monthly = Array.from(new Set(empTasks.filter(t => t.frequency === 'MENSAL').map(t => t.task_description))).join(', ');
+            const quarterly = Array.from(new Set(empTasks.filter(t => t.frequency === 'TRIMESTRAL').map(t => t.task_description))).join(', ');
+
+            const activityParts: string[] = [];
+            if (daily) activityParts.push(`DIÁRIA: ${daily}`);
+            if (weekly) activityParts.push(`SEMANAL: ${weekly}`);
+            if (monthly) activityParts.push(`MENSAL: ${monthly}`);
+            if (quarterly) activityParts.push(`TRIMESTRAL: ${quarterly}`);
+
+            const activities = activityParts.length > 0 
+                ? activityParts.join('\n') 
+                : 'DIÁRIA: Zeladoria geral, varrer, passar pano, recolher lixo';
 
             // Frequencies
             const freqs = Array.from(new Set(empTasks.map(t => FREQUENCY_LABEL[t.frequency] || t.frequency))).join(', ');
@@ -212,7 +225,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                 servidor: emp.name.toUpperCase(),
                 turno: emp.shift?.toUpperCase() || 'MATUTINO',
                 ambientes: areas || 'Salas de Aula e Corredores',
-                atividades: activities || 'Zeladoria geral, varrer, passar pano, recolher lixo',
+                atividades: activities,
                 frequencia: freqs || 'Diária',
                 horario: defaultHorario
             });
@@ -480,11 +493,11 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                             />
                                         </td>
                                         <td className="p-2 border border-gray-200">
-                                            <input 
-                                                type="text" 
+                                            <textarea 
                                                 value={row.atividades} 
                                                 onChange={(e) => handleUpdateRowField(idx, 'atividades', e.target.value)} 
-                                                className="w-full bg-transparent border-none outline-none font-medium text-[10px] text-gray-600 focus:bg-white focus:ring-1 focus:ring-indigo-500/20 p-1.5 rounded"
+                                                rows={5}
+                                                className="w-full bg-transparent border-none outline-none font-medium text-[10px] text-gray-600 focus:bg-white focus:ring-1 focus:ring-indigo-500/20 p-1.5 rounded resize-y"
                                             />
                                         </td>
                                         <td className="p-2 border border-gray-200">
@@ -642,7 +655,19 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                             <td className="p-2 border border-gray-800 font-bold uppercase text-[9px]">{row.servidor}</td>
                                             <td className="p-2 border border-gray-800 uppercase text-center text-[9px]">{row.turno}</td>
                                             <td className="p-2 border border-gray-800 text-[9px]">{row.ambientes}</td>
-                                            <td className="p-2 border border-gray-800 text-[9px]">{row.atividades}</td>
+                                            <td className="p-2 border border-gray-800 text-[9px] whitespace-pre-line leading-normal">
+                                                {row.atividades.split('\n').map((line, lIdx) => {
+                                                    const match = line.match(/^(DIÁRIA|SEMANAL|MENSAL|TRIMESTRAL|DIARIA):\s*(.*)$/i);
+                                                    if (match) {
+                                                        return (
+                                                            <div key={lIdx} className="mb-1 last:mb-0">
+                                                                <strong className="text-gray-900">{match[1].toUpperCase()}:</strong> {match[2]}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return <div key={lIdx} className="mb-1 last:mb-0">{line}</div>;
+                                                })}
+                                            </td>
                                             <td className="p-2 border border-gray-800 uppercase text-center text-[9px]">{row.frequencia}</td>
                                             <td className="p-2 border border-gray-800 text-center font-bold text-[9px]">{row.horario}</td>
                                         </tr>
