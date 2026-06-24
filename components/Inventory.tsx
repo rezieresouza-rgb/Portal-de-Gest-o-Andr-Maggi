@@ -101,7 +101,7 @@ const Inventory: React.FC = () => {
             const missingLocally = parsedLocal.filter(r => !cloudIds.has(r.id));
 
             if (missingLocally.length > 0) {
-              await supabase.from('merenda_inventory_history').upsert(missingLocally.map(r => ({
+              const { error: syncError } = await supabase.from('merenda_inventory_history').upsert(missingLocally.map(r => ({
                 id: r.id,
                 date: r.date,
                 turno: r.turno,
@@ -110,22 +110,26 @@ const Inventory: React.FC = () => {
                 timestamp: r.timestamp
               })));
 
-              // Recarrega tudo para garantir que o estado reflete a nuvem completa
-              const { data: refreshedData } = await supabase
-                .from('merenda_inventory_history')
-                .select('*')
-                .order('timestamp', { ascending: false });
-              
-              if (refreshedData) {
-                setHistory(refreshedData.map((row: any) => ({
-                  id: row.id,
-                  date: row.date,
-                  turno: row.turno,
-                  responsavel: row.responsavel,
-                  items: typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
-                  timestamp: row.timestamp
-                })));
-                return;
+              if (syncError) {
+                console.error("Erro ao sincronizar histórico local com o Supabase:", syncError.message);
+              } else {
+                // Recarrega tudo para garantir que o estado reflete a nuvem completa
+                const { data: refreshedData } = await supabase
+                  .from('merenda_inventory_history')
+                  .select('*')
+                  .order('timestamp', { ascending: false });
+                
+                if (refreshedData) {
+                  setHistory(refreshedData.map((row: any) => ({
+                    id: row.id,
+                    date: row.date,
+                    turno: row.turno,
+                    responsavel: row.responsavel,
+                    items: typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
+                    timestamp: row.timestamp
+                  })));
+                  return;
+                }
               }
             }
           }
@@ -367,7 +371,7 @@ const Inventory: React.FC = () => {
       // Salva no Supabase
       const saveSnapshot = async () => {
         try {
-          await supabase.from('merenda_inventory_history').upsert({
+          const { error } = await supabase.from('merenda_inventory_history').upsert({
             id: snapshot.id,
             date: snapshot.date,
             turno: snapshot.turno,
@@ -375,6 +379,10 @@ const Inventory: React.FC = () => {
             items: snapshot.items,
             timestamp: snapshot.timestamp
           });
+          if (error) {
+            console.error("Erro ao salvar fechamento no Supabase:", error.message);
+            alert("Erro ao salvar o fechamento na nuvem (Supabase): " + error.message);
+          }
         } catch (err) {
           console.error("Erro ao salvar fechamento no banco:", err);
         }
@@ -423,7 +431,13 @@ const Inventory: React.FC = () => {
     setIsSaving(true);
     try {
       // 1. Apagar histórico atual no Supabase para datas anteriores à data ativa (preservando hoje)
-      await supabase.from('merenda_inventory_history').delete().lt('date', data);
+      const { error: deleteError } = await supabase.from('merenda_inventory_history').delete().lt('date', data);
+      if (deleteError) {
+        console.error("Erro ao apagar histórico anterior no Supabase:", deleteError.message);
+        alert("Erro no banco de dados ao apagar histórico simulado anterior: " + deleteError.message);
+        setIsSaving(false);
+        return;
+      }
       
       // Preservar o histórico local do dia ativo em diante
       const preservedHistory = history.filter(h => h.date >= data);
@@ -694,7 +708,7 @@ const Inventory: React.FC = () => {
       // 5. Salvar na Nuvem (Em lotes de 50)
       for (let i = 0; i < generatedSnapshots.length; i += 50) {
         const batch = generatedSnapshots.slice(i, i + 50);
-        await supabase.from('merenda_inventory_history').insert(
+        const { error: insertError } = await supabase.from('merenda_inventory_history').insert(
           batch.map(s => ({
             id: s.id,
             date: s.date,
@@ -704,6 +718,12 @@ const Inventory: React.FC = () => {
             timestamp: s.timestamp
           }))
         );
+        if (insertError) {
+          console.error("Erro ao salvar lote de histórico simulado no Supabase:", insertError.message);
+          alert("Erro no Supabase ao salvar histórico simulado: " + insertError.message);
+          setIsSaving(false);
+          return;
+        }
       }
 
       // 6. Atualizar Estados Locais (Unindo simulação ao histórico preservado de hoje em diante)
@@ -976,7 +996,11 @@ const Inventory: React.FC = () => {
                         const updated = history.filter(item => item.id !== h.id);
                         setHistory(updated);
                         localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updated));
-                        await supabase.from('merenda_inventory_history').delete().eq('id', h.id);
+                        const { error: deleteError } = await supabase.from('merenda_inventory_history').delete().eq('id', h.id);
+                        if (deleteError) {
+                          console.error("Erro ao excluir do Supabase:", deleteError.message);
+                          alert("Erro no Supabase ao excluir o fechamento: " + deleteError.message);
+                        }
                       }
                     }} className="text-gray-300 hover:text-red-500 p-2"><Trash2 size={16} /></button>
                   </div>
