@@ -24,7 +24,7 @@ interface TrainingModuleProps {
   onExit: () => void;
 }
 
-type TabType = 'dashboard' | 'my_courses' | 'catalog' | 'certificates' | 'admin_reports';
+type TabType = 'dashboard' | 'my_courses' | 'catalog' | 'certificates' | 'admin_reports' | 'manage_courses';
 
 interface Course {
   id: string;
@@ -122,6 +122,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [myCourses, setMyCourses] = useState<Course[]>([]);
+  const [catalogCourses, setCatalogCourses] = useState<Course[]>([]);
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
   const [activeLessonIndex, setActiveLessonIndex] = useState<number>(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -129,7 +130,77 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [filterCategory, setFilterCategory] = useState<string>('Todos');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Load courses
+  // Course creation form states
+  const [newCourseTitle, setNewCourseTitle] = useState('');
+  const [newCourseCategory, setNewCourseCategory] = useState<'Pedagógico' | 'Tecnologia' | 'Gestão' | 'Inclusão' | 'Saúde'>('Pedagógico');
+  const [newCourseHours, setNewCourseHours] = useState(20);
+  const [newCourseDescription, setNewCourseDescription] = useState('');
+  const [newCourseLessons, setNewCourseLessons] = useState<string[]>(['']);
+
+  const handleAddLessonInput = () => {
+    setNewCourseLessons([...newCourseLessons, '']);
+  };
+
+  const handleLessonInputChange = (index: number, value: string) => {
+    const updated = [...newCourseLessons];
+    updated[index] = value;
+    setNewCourseLessons(updated);
+  };
+
+  const handleRemoveLessonInput = (index: number) => {
+    if (newCourseLessons.length > 1) {
+      const updated = newCourseLessons.filter((_, i) => i !== index);
+      setNewCourseLessons(updated);
+    }
+  };
+
+  // Create course
+  const handleCreateCourse = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCourseTitle.trim() || !newCourseDescription.trim()) {
+      showToast('Aviso', 'Preencha o título e a descrição do curso!', 'warning');
+      return;
+    }
+    const filteredLessons = newCourseLessons.filter(l => l.trim() !== '');
+    if (filteredLessons.length === 0) {
+      showToast('Aviso', 'Adicione pelo menos uma aula!', 'warning');
+      return;
+    }
+
+    const newCourse: Course = {
+      id: `c-${Date.now()}`,
+      title: newCourseTitle.trim(),
+      category: newCourseCategory,
+      hours: Number(newCourseHours) || 10,
+      description: newCourseDescription.trim(),
+      progress: 0,
+      lessons: filteredLessons,
+      completed: false
+    };
+
+    const updatedCatalog = [...catalogCourses, newCourse];
+    localStorage.setItem('portal_training_catalog_v1', JSON.stringify(updatedCatalog));
+    setCatalogCourses(updatedCatalog);
+
+    // Reset form
+    setNewCourseTitle('');
+    setNewCourseCategory('Pedagógico');
+    setNewCourseHours(20);
+    setNewCourseDescription('');
+    setNewCourseLessons(['']);
+
+    showToast('Sucesso', 'Novo curso criado e publicado no catálogo!', 'success');
+  };
+
+  // Delete course
+  const handleDeleteCourse = (courseId: string) => {
+    const updatedCatalog = catalogCourses.filter(c => c.id !== courseId);
+    localStorage.setItem('portal_training_catalog_v1', JSON.stringify(updatedCatalog));
+    setCatalogCourses(updatedCatalog);
+    showToast('Removido', 'Curso removido do catálogo com sucesso.', 'success');
+  };
+
+  // Load courses and catalog
   useEffect(() => {
     const saved = localStorage.getItem(`portal_training_courses_${user.id}`);
     if (saved) {
@@ -141,6 +212,18 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     } else {
       localStorage.setItem(`portal_training_courses_${user.id}`, JSON.stringify(INITIAL_COURSES));
       setMyCourses(INITIAL_COURSES);
+    }
+
+    const savedCatalog = localStorage.getItem('portal_training_catalog_v1');
+    if (savedCatalog) {
+      try {
+        setCatalogCourses(JSON.parse(savedCatalog));
+      } catch (e) {
+        setCatalogCourses(CATALOG_COURSES);
+      }
+    } else {
+      localStorage.setItem('portal_training_catalog_v1', JSON.stringify(CATALOG_COURSES));
+      setCatalogCourses(CATALOG_COURSES);
     }
   }, [user.id]);
 
@@ -245,7 +328,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const progressPercent = Math.min(100, Math.round((totalCompletedHours / totalHoursGoal) * 100));
 
   // Filter Catalog Courses
-  const filteredCatalog = CATALOG_COURSES.filter(c => {
+  const filteredCatalog = catalogCourses.filter(c => {
     const matchesCategory = filterCategory === 'Todos' || c.category === filterCategory;
     const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           c.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -263,6 +346,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const isAdmin = user.role === 'GESTAO' || user.role === 'ADMINISTRADOR';
   if (isAdmin) {
     menuItems.push({ id: 'admin_reports', label: 'Relatórios de Equipe', icon: Users });
+    menuItems.push({ id: 'manage_courses', label: 'Gerenciar Cursos', icon: Plus });
   }
 
   return (
@@ -846,6 +930,158 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           })}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'manage_courses' && isAdmin && (
+                <div className="space-y-8 animate-in fade-in duration-500 text-left">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Gerenciamento de Cursos</h3>
+                    <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Crie novos cursos e gerencie o catálogo da escola</p>
+                  </div>
+
+                  {/* Create Course Form */}
+                  <form onSubmit={handleCreateCourse} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+                    <h4 className="text-sm font-black text-slate-800 uppercase border-b border-slate-100 pb-3 flex items-center gap-2">
+                      <Plus size={18} className="text-violet-600" /> Criar Novo Curso
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nome do Curso</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCourseTitle}
+                          onChange={(e) => setNewCourseTitle(e.target.value)}
+                          placeholder="Ex: Metodologias Ativas na Prática"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Categoria</label>
+                        <select
+                          value={newCourseCategory}
+                          onChange={(e) => setNewCourseCategory(e.target.value as any)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
+                        >
+                          <option value="Pedagógico">Pedagógico</option>
+                          <option value="Tecnologia">Tecnologia</option>
+                          <option value="Gestão">Gestão</option>
+                          <option value="Inclusão">Inclusão</option>
+                          <option value="Saúde">Saúde</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Carga Horária (Horas)</label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          max="200"
+                          value={newCourseHours}
+                          onChange={(e) => setNewCourseHours(Number(e.target.value))}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Descrição do Curso</label>
+                      <textarea
+                        required
+                        rows={3}
+                        value={newCourseDescription}
+                        onChange={(e) => setNewCourseDescription(e.target.value)}
+                        placeholder="Descreva brevemente o conteúdo programático e os objetivos do curso..."
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all resize-none"
+                      />
+                    </div>
+
+                    {/* Lesson/Modules Creation Section */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Aulas / Módulos do Curso</label>
+                        <button
+                          type="button"
+                          onClick={handleAddLessonInput}
+                          className="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center gap-1"
+                        >
+                          <Plus size={12} /> Adicionar Aula
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {newCourseLessons.map((lesson, idx) => (
+                          <div key={idx} className="flex gap-2 items-center">
+                            <span className="text-[10px] font-black text-slate-400 w-5">{idx + 1}.</span>
+                            <input
+                              type="text"
+                              required
+                              value={lesson}
+                              onChange={(e) => handleLessonInputChange(idx, e.target.value)}
+                              placeholder={`Nome da Aula ${idx + 1}`}
+                              className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                            />
+                            {newCourseLessons.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveLessonInput(idx)}
+                                className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-4 bg-violet-600 text-white rounded-2xl hover:bg-violet-700 font-black uppercase tracking-wider text-xs shadow-lg shadow-violet-600/10 transition-all"
+                    >
+                      Salvar e Publicar Curso no Catálogo
+                    </button>
+                  </form>
+
+                  {/* Catalog Management List */}
+                  <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-slate-100">
+                      <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">Cursos Disponíveis no Catálogo</h4>
+                    </div>
+
+                    <div className="divide-y divide-slate-100">
+                      {catalogCourses.map((c) => (
+                        <div key={c.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-slate-50/50 transition-colors">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 bg-violet-50 text-violet-600 border border-violet-100/50 rounded text-[8px] font-black uppercase">{c.category}</span>
+                              <span className="text-[10px] text-slate-400 font-bold">{c.hours} horas • {c.lessons.length} aulas</span>
+                            </div>
+                            <h5 className="text-sm font-black text-slate-800 uppercase">{c.title}</h5>
+                            <p className="text-xs text-slate-400 max-w-2xl line-clamp-2 leading-relaxed">{c.description}</p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCourse(c.id)}
+                            className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1 self-end md:self-center"
+                          >
+                            <X size={12} /> Remover Curso
+                          </button>
+                        </div>
+                      ))}
+
+                      {catalogCourses.length === 0 && (
+                        <div className="py-12 text-center text-slate-400 text-xs font-bold uppercase">
+                          Nenhum curso cadastrado no catálogo.
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
