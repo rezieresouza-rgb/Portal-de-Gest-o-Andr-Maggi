@@ -14,6 +14,7 @@ import PsychosocialModule from './modules/PsychosocialModule';
 import SecretariatModule from './modules/SecretariatModule';
 import SpecialEducationModule from './modules/SpecialEducationModule';
 import CivicoMilitarModule from './modules/CivicoMilitarModule';
+import TrainingModule from './modules/TrainingModule';
 import Settings from './components/Settings';
 import Hub from './components/Hub';
 import Login from './components/Login';
@@ -22,7 +23,7 @@ import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { INITIAL_STUDENTS } from './constants/initialData';
 
-export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'busca_ativa' | 'psychosocial' | 'secretariat' | 'special_education' | 'civico_militar' | 'settings';
+export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'busca_ativa' | 'psychosocial' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'settings';
 
 const App: React.FC = () => {
   const [isPending, startTransition] = useTransition();
@@ -56,7 +57,7 @@ const App: React.FC = () => {
       const validModules: ModuleTypeExtended[] = [
         'hub', 'merenda', 'finance', 'library', 'scheduling', 'teacher',
         'pedagogical', 'almoxarifado', 'patrimonio', 'limpeza',
-        'busca_ativa', 'psychosocial', 'secretariat', 'special_education', 'civico_militar', 'settings'
+        'busca_ativa', 'psychosocial', 'secretariat', 'special_education', 'civico_militar', 'training', 'settings'
       ];
       if (validModules.includes(saved as ModuleTypeExtended)) {
         return saved as ModuleTypeExtended;
@@ -220,6 +221,7 @@ const App: React.FC = () => {
       case 'secretariat': return <SecretariatModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'special_education': return <SpecialEducationModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'civico_militar': return <CivicoMilitarModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'training': return <TrainingModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'settings': return (
         <div className="min-h-screen bg-gray-50 p-8 lg:p-12">
           <div className="max-w-7xl mx-auto space-y-8">

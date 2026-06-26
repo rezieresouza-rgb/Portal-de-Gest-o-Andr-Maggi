@@ -15,7 +15,8 @@ import {
   Landmark,
   LogOut,
   User as UserIcon,
-  Settings
+  Settings,
+  GraduationCap
 } from 'lucide-react';
 import { ModuleTypeExtended } from '../App';
 import { User, AccessLog } from '../types';
@@ -36,7 +37,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   useEffect(() => {
     const loadPermissions = () => {
       try {
-        const saved = localStorage.getItem('portal_module_permissions_v3');
+        const saved = localStorage.getItem('portal_module_permissions_v4');
         const parsed = saved ? JSON.parse(saved) : null;
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           setDynamicPermissions(parsed);
@@ -48,17 +49,17 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
       // Permissões Padrão Iniciais
       const defaults = {
-        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'patrimonio', 'special_education', 'civico_militar'],
-        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar'],
-        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar'],
-        'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher'],
-        'MANUTENCAO': ['limpeza'],
-        'AAE': ['merenda', 'limpeza', 'almoxarifado'],
-        'AAE_LIMPEZA': ['limpeza', 'almoxarifado'],
-        'AEE_NUTRICAO': ['merenda', 'almoxarifado'],
-        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar']
+        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'patrimonio', 'special_education', 'civico_militar', 'training'],
+        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
+        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar', 'training'],
+        'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+        'MANUTENCAO': ['limpeza', 'training'],
+        'AAE': ['merenda', 'limpeza', 'almoxarifado', 'training'],
+        'AAE_LIMPEZA': ['limpeza', 'almoxarifado', 'training'],
+        'AEE_NUTRICAO': ['merenda', 'almoxarifado', 'training'],
+        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar', 'training']
       };
-      localStorage.setItem('portal_module_permissions_v3', JSON.stringify(defaults));
+      localStorage.setItem('portal_module_permissions_v4', JSON.stringify(defaults));
       setDynamicPermissions(defaults);
     };
 
@@ -82,6 +83,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     { id: 'patrimonio', title: 'Patrimônio', status: 'Auditado', statusColor: 'blue', icon: <ShieldCheck size={20} /> },
     { id: 'special_education', title: 'Sala de Recursos e APA', status: 'AEE', statusColor: 'pink', icon: <UserIcon size={20} /> },
     { id: 'civico_militar', title: 'Cívico-Militar', status: 'Rotina OK', statusColor: 'blue', icon: <ShieldCheck size={20} /> },
+    { id: 'training', title: 'Formação & Cursos', status: 'Capacitação', statusColor: 'violet', icon: <GraduationCap size={20} /> },
     { id: 'settings', title: 'Configurações', status: 'Administração', statusColor: 'indigo', icon: <Settings size={20} />, adminOnly: true },
   ];
 
