@@ -37,6 +37,7 @@ interface Course {
   completed: boolean;
   enrollmentDate?: string;
   completionDate?: string;
+  instructor?: string;
 }
 
 const INITIAL_COURSES: Course[] = [
@@ -49,7 +50,8 @@ const INITIAL_COURSES: Course[] = [
     progress: 80,
     lessons: ['Introdução à BNCC', 'As Dez Competências Gerais', 'Metodologias Ativas na BNCC', 'Avaliação Formativa e Competências', 'Avaliação Final'],
     completed: false,
-    enrollmentDate: '2026-05-10'
+    enrollmentDate: '2026-05-10',
+    instructor: 'Prof. Dr. Ricardo Silva'
   },
   {
     id: 'c2',
@@ -61,7 +63,8 @@ const INITIAL_COURSES: Course[] = [
     lessons: ['O que é IA Generativa?', 'Engenharia de Prompt para Professores', 'Criando Planos de Aula com IA', 'Ética e Plágio no uso de IAs', 'Quiz de Certificação'],
     completed: true,
     enrollmentDate: '2026-05-15',
-    completionDate: '2026-06-20'
+    completionDate: '2026-06-20',
+    instructor: 'Esp. Mariana Costa'
   },
   {
     id: 'c3',
@@ -72,7 +75,8 @@ const INITIAL_COURSES: Course[] = [
     progress: 30,
     lessons: ['Introdução à Educação Especial', 'O Plano de Desenvolvimento Individual (PDI)', 'Adaptação de Atividades Pedagógicas', 'Comunicação Alternativa na Sala de Aula', 'Estudos de Caso e Avaliação'],
     completed: false,
-    enrollmentDate: '2026-06-01'
+    enrollmentDate: '2026-06-01',
+    instructor: 'Dra. Patrícia Santos'
   }
 ];
 
@@ -85,7 +89,8 @@ const CATALOG_COURSES: Course[] = [
     description: 'Gestão administrativa, de pessoas e pedagógica para diretores, coordenadores e futuros gestores escolares.',
     progress: 0,
     lessons: ['Fundamentos de Gestão Escolar', 'Gestão Democrática e Colegiados', 'Liderança e Clima Organizacional', 'Planejamento Estratégico', 'Avaliação Final'],
-    completed: false
+    completed: false,
+    instructor: 'Prof. Alexandre Rodrigues'
   },
   {
     id: 'c5',
@@ -95,7 +100,8 @@ const CATALOG_COURSES: Course[] = [
     description: 'Capacitação teórica e prática sobre primeiros socorros em ambiente escolar, conforme exigências da Lei 13.722/18.',
     progress: 0,
     lessons: ['Conceitos Básicos de Socorro', 'Engasgos e Desobstrução de Vias Aéreas', 'Desmaios e Convulsões', 'Fraturas e Pequenos Traumas', 'Simulado e Certificado'],
-    completed: false
+    completed: false,
+    instructor: 'Bombeiro Civil Marcos Souza'
   },
   {
     id: 'c6',
@@ -105,7 +111,8 @@ const CATALOG_COURSES: Course[] = [
     description: 'Domine plataformas de ensino virtual (Google Classroom, MS Teams) e ferramentas colaborativas para o engajamento dos estudantes.',
     progress: 0,
     lessons: ['Configurando a Sala Virtual', 'Criação de Atividades Interativas', 'Rubricas e Avaliação Digital', 'Comunicação com Pais e Alunos', 'Prova do Módulo'],
-    completed: false
+    completed: false,
+    instructor: 'Téc. Luciana Dias'
   }
 ];
 
@@ -135,6 +142,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [newCourseCategory, setNewCourseCategory] = useState<'Pedagógico' | 'Tecnologia' | 'Gestão' | 'Inclusão' | 'Saúde'>('Pedagógico');
   const [newCourseHours, setNewCourseHours] = useState(20);
   const [newCourseDescription, setNewCourseDescription] = useState('');
+  const [newCourseInstructor, setNewCourseInstructor] = useState('');
   const [newCourseLessons, setNewCourseLessons] = useState<string[]>(['']);
 
   const handleAddLessonInput = () => {
@@ -175,7 +183,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       description: newCourseDescription.trim(),
       progress: 0,
       lessons: filteredLessons,
-      completed: false
+      completed: false,
+      instructor: newCourseInstructor.trim() || 'EE André Maggi'
     };
 
     const updatedCatalog = [...catalogCourses, newCourse];
@@ -187,6 +196,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setNewCourseCategory('Pedagógico');
     setNewCourseHours(20);
     setNewCourseDescription('');
+    setNewCourseInstructor('');
     setNewCourseLessons(['']);
 
     showToast('Sucesso', 'Novo curso criado e publicado no catálogo!', 'success');
@@ -665,7 +675,10 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                               <span className="text-[10px] text-slate-400 font-bold">{c.hours} horas</span>
                             </div>
                             <h4 className="text-sm font-black text-slate-800 uppercase">{c.title}</h4>
-                            <p className="text-xs text-slate-400 leading-normal line-clamp-2">{c.description}</p>
+                            {c.instructor && (
+                              <p className="text-[10px] text-violet-600 font-bold uppercase mt-1 text-left">Palestrante: {c.instructor}</p>
+                            )}
+                            <p className="text-xs text-slate-400 leading-normal line-clamp-2 mt-1">{c.description}</p>
                           </div>
 
                           <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
@@ -723,7 +736,10 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                             <span className="text-[10px] text-slate-400 font-bold">{c.hours}h</span>
                           </div>
                           <h4 className="text-sm font-black text-slate-800 uppercase leading-snug">{c.title}</h4>
-                          <p className="text-xs text-slate-400 line-clamp-3 leading-normal">{c.description}</p>
+                          {c.instructor && (
+                            <p className="text-[10px] text-violet-600 font-bold uppercase mt-1 text-left">Palestrante: {c.instructor}</p>
+                          )}
+                          <p className="text-xs text-slate-400 line-clamp-3 leading-normal mt-1">{c.description}</p>
                         </div>
 
                         <div className="mt-6 pt-4 border-t border-slate-100 space-y-4">
@@ -808,7 +824,10 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                             <span className="text-[10px] text-slate-400 font-bold">{c.hours}h</span>
                           </div>
                           <h4 className="text-sm font-black text-slate-800 uppercase leading-snug">{c.title}</h4>
-                          <p className="text-xs text-slate-400 leading-normal line-clamp-3">{c.description}</p>
+                          {c.instructor && (
+                            <p className="text-[10px] text-violet-600 font-bold uppercase mt-1 text-left">Palestrante: {c.instructor}</p>
+                          )}
+                          <p className="text-xs text-slate-400 leading-normal line-clamp-3 mt-1">{c.description}</p>
                         </div>
 
                         <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -948,7 +967,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                       <Plus size={18} className="text-violet-600" /> Criar Novo Curso
                     </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nome do Curso</label>
                         <input
@@ -957,6 +976,18 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           value={newCourseTitle}
                           onChange={(e) => setNewCourseTitle(e.target.value)}
                           placeholder="Ex: Metodologias Ativas na Prática"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Palestrante / Instrutor</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCourseInstructor}
+                          onChange={(e) => setNewCourseInstructor(e.target.value)}
+                          placeholder="Ex: Prof. Dr. Ricardo Silva"
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
                         />
                       </div>
@@ -1123,7 +1154,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider text-center">Certificamos que o(a) docente/servidor(a)</p>
                 <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight text-center">{user.name || 'Servidor André Maggi'}</h2>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-xl mx-auto font-medium text-center">
-                  concluiu com êxito o programa de formação continuada em <strong>{showCertificateModal.title}</strong>, correspondente a uma carga horária total de <strong>{showCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas.
+                  concluiu com êxito o programa de formação continuada em <strong>{showCertificateModal.title}</strong>, {showCertificateModal.instructor ? `ministrado por ${showCertificateModal.instructor},` : ''} correspondente a uma carga horária total de <strong>{showCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas.
                 </p>
               </div>
 
