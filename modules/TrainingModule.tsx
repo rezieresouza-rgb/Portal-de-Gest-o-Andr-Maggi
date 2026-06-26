@@ -1113,10 +1113,10 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
               <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-violet-300"></div>
 
               {/* Certificate content */}
-              <div className="space-y-2">
-                <span className="text-4xl">🎓</span>
+              <div className="space-y-2 flex flex-col items-center">
+                <img src="/logo-escola-oficial.png" alt="Brasão" className="w-20 h-20 object-contain mb-3" />
                 <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-violet-800">Certificado de Conclusão</h1>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Escola Estadual André Maggi</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Escola Estadual Cívico-Militar André Antônio Maggi</p>
               </div>
 
               <div className="space-y-4 py-4">
@@ -1131,7 +1131,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 <div className="space-y-1">
                   <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
                   <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Diretoria Pedagógica</p>
-                  <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">EE André Maggi</p>
+                  <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">EE Cívico-Militar André Antônio Maggi</p>
                 </div>
                 <div className="space-y-1">
                   <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
