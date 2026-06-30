@@ -154,7 +154,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
             const element = document.getElementById('escala-mural-print');
             if (element) {
                 const opt = {
-                    margin: 10,
+                    margin: 0,
                     filename: `Escala_Limpeza_Mural_${muralStartDate}_${muralEndDate}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
