@@ -150,12 +150,31 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
       let resolvedAt = null;
 
       if (nextStatus === 'RESOLVIDO') {
+        const todayBr = new Date().toLocaleDateString('pt-BR');
         const inputDate = window.prompt(
-          "Para marcar como RESOLVIDO, informe a data de resolução (AAAA-MM-DD):", 
-          new Date().toLocaleDateString('sv-SE')
+          "Para marcar como RESOLVIDO, informe a data de resolução (DD/MM/AAAA):", 
+          todayBr
         );
         if (inputDate === null) return; // Cancela a alteração
-        resolvedAt = inputDate ? new Date(inputDate + 'T12:00:00').toISOString() : new Date().toISOString();
+        
+        if (inputDate) {
+          const parts = inputDate.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            const d = new Date(year, month, day, 12, 0, 0);
+            if (!isNaN(d.getTime())) {
+              resolvedAt = d.toISOString();
+            } else {
+              resolvedAt = new Date().toISOString();
+            }
+          } else {
+            resolvedAt = new Date().toISOString();
+          }
+        } else {
+          resolvedAt = new Date().toISOString();
+        }
       }
 
       const { error } = await supabase.from('cleaning_occurrences').update({
