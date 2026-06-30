@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Monitor,
@@ -20,10 +19,133 @@ import {
   QrCode,
   Download,
   Maximize,
-  Edit2
+  Edit2,
+  Calendar,
+  Users,
+  CheckSquare,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  Check
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Asset, AssetCondition } from '../types';
+
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+interface Phase {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'ATRASADO';
+  weight: number;
+  tasks: Task[];
+}
+
+interface CommissionMembers {
+  president: { name: string; role: string; register: string };
+  secretary: { name: string; role: string; register: string };
+  member: { name: string; role: string; register: string };
+}
+
+interface InventorySchedule {
+  id?: string;
+  year: number;
+  title: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  commissionMembers: CommissionMembers;
+  phases: Phase[];
+}
+
+const defaultPhases = (year: number): Phase[] => [
+  {
+    id: 1,
+    name: 'Fase I: Planejamento e Portaria da Comissão',
+    startDate: `${year}-10-01`,
+    endDate: `${year}-10-15`,
+    status: 'EM_ANDAMENTO',
+    weight: 15,
+    tasks: [
+      { id: '1_1', title: 'Designação da comissão inventariante por portaria', completed: false },
+      { id: '1_2', title: 'Definição do calendário e cronograma detalhado de varredura', completed: false },
+      { id: '1_3', title: 'Publicação da Portaria no mural ou Diário Oficial', completed: false }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Fase II: Levantamento Físico e Varredura',
+    startDate: `${year}-10-16`,
+    endDate: `${year}-11-15`,
+    status: 'PENDENTE',
+    weight: 30,
+    tasks: [
+      { id: '2_1', title: 'Vistoria in loco e contagem física dos bens permanentes', completed: false },
+      { id: '2_2', title: 'Colagem de etiquetas de identificação e novos QR Codes', completed: false },
+      { id: '2_3', title: 'Identificação e catalogação do estado de conservação dos bens', completed: false }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Fase III: Conciliação Patrimonial e Cargas',
+    startDate: `${year}-11-16`,
+    endDate: `${year}-11-30`,
+    status: 'PENDENTE',
+    weight: 20,
+    tasks: [
+      { id: '3_1', title: 'Confronto entre inventário físico e os dados do sistema', completed: false },
+      { id: '3_2', title: 'Elaboração de lista de bens não localizados ou sobressalentes', completed: false },
+      { id: '3_3', title: 'Emissão e assinatura de Termos de Responsabilidade atualizados', completed: false }
+    ]
+  },
+  {
+    id: 4,
+    name: 'Fase IV: Saneamento e Regularização',
+    startDate: `${year}-12-01`,
+    endDate: `${year}-12-10`,
+    status: 'PENDENTE',
+    weight: 20,
+    tasks: [
+      { id: '4_1', title: 'Processamento de termos de transferência interna de bens', completed: false },
+      { id: '4_2', title: 'Abertura de laudo de inservibilidade para itens em estado péssimo', completed: false },
+      { id: '4_3', title: 'Regularização e acerto das divergências patrimoniais', completed: false }
+    ]
+  },
+  {
+    id: 5,
+    name: 'Fase V: Encerramento e Homologação',
+    startDate: `${year}-12-11`,
+    endDate: `${year}-12-20`,
+    status: 'PENDENTE',
+    weight: 15,
+    tasks: [
+      { id: '5_1', title: 'Elaboração da minuta do Relatório Final Circunstanciado', completed: false },
+      { id: '5_2', title: 'Assinatura do relatório pela comissão inventariante', completed: false },
+      { id: '5_3', title: 'Envio formal à DRE e arquivamento do processo de inventário', completed: false }
+    ]
+  }
+];
+
+const defaultSchedule = (year: number): InventorySchedule => ({
+  year,
+  title: `Inventário de Bens Móveis e Imóveis - Exercício ${year}`,
+  startDate: `${year}-10-01`,
+  endDate: `${year}-12-20`,
+  status: 'PLANEJAMENTO',
+  commissionMembers: {
+    president: { name: '', role: '', register: '' },
+    secretary: { name: '', role: '', register: '' },
+    member: { name: '', role: '', register: '' }
+  },
+  phases: defaultPhases(year)
+});
 
 interface AssetInventoryModuleProps {
   user?: any;
@@ -33,13 +155,116 @@ interface AssetInventoryModuleProps {
 import { supabase } from '../supabaseClient';
 
 const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes' | 'relatorios'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes' | 'relatorios' | 'cronograma'>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState<Asset | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
+
+  // Estados do Cronograma de Inventário Anual
+  const [schedule, setSchedule] = useState<InventorySchedule>(defaultSchedule(new Date().getFullYear()));
+  const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
+  const [expandedPhaseId, setExpandedPhaseId] = useState<number | null>(1);
+  const [selectedDocument, setSelectedDocument] = useState<'portaria' | 'abertura' | 'relatorio' | 'encerramento' | null>(null);
+  const [commissionForm, setCommissionForm] = useState<CommissionMembers>({
+    president: { name: '', role: '', register: '' },
+    secretary: { name: '', role: '', register: '' },
+    member: { name: '', role: '', register: '' }
+  });
+
+  const fetchSchedule = async () => {
+    setIsLoadingSchedule(true);
+    const currentYear = new Date().getFullYear();
+    try {
+      const { data, error } = await supabase
+        .from('asset_inventory_schedules')
+        .select('*')
+        .eq('year', currentYear)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        const loadedSchedule: InventorySchedule = {
+          id: data.id,
+          year: data.year,
+          title: data.title,
+          startDate: data.start_date,
+          endDate: data.end_date,
+          status: data.status,
+          commissionMembers: data.commission_members,
+          phases: data.phases
+        };
+        setSchedule(loadedSchedule);
+        setCommissionForm(loadedSchedule.commissionMembers);
+      } else {
+        const local = localStorage.getItem(`inventory_schedule_${currentYear}`);
+        if (local) {
+          const parsed = JSON.parse(local);
+          setSchedule(parsed);
+          setCommissionForm(parsed.commissionMembers);
+        } else {
+          const initial = defaultSchedule(currentYear);
+          setSchedule(initial);
+          setCommissionForm(initial.commissionMembers);
+        }
+      }
+    } catch (e) {
+      console.warn("Erro ao buscar cronograma no Supabase (usando localStorage como fallback):", e);
+      const local = localStorage.getItem(`inventory_schedule_${currentYear}`);
+      if (local) {
+        const parsed = JSON.parse(local);
+        setSchedule(parsed);
+        setCommissionForm(parsed.commissionMembers);
+      } else {
+        const initial = defaultSchedule(currentYear);
+        setSchedule(initial);
+        setCommissionForm(initial.commissionMembers);
+      }
+    } finally {
+      setIsLoadingSchedule(false);
+    }
+  };
+
+  const saveSchedule = async (updatedSchedule: InventorySchedule) => {
+    const currentYear = updatedSchedule.year;
+    try {
+      localStorage.setItem(`inventory_schedule_${currentYear}`, JSON.stringify(updatedSchedule));
+      
+      const payload = {
+        year: updatedSchedule.year,
+        title: updatedSchedule.title,
+        start_date: updatedSchedule.startDate,
+        end_date: updatedSchedule.endDate,
+        status: updatedSchedule.status,
+        commission_members: updatedSchedule.commissionMembers,
+        phases: updatedSchedule.phases,
+        updated_at: new Date().toISOString()
+      };
+
+      if (updatedSchedule.id) {
+        const { error } = await supabase
+          .from('asset_inventory_schedules')
+          .update(payload)
+          .eq('id', updatedSchedule.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from('asset_inventory_schedules')
+          .insert([payload])
+          .select()
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setSchedule(prev => ({ ...prev, id: data.id }));
+        }
+      }
+    } catch (e) {
+      console.warn("Erro ao salvar cronograma no Supabase (salvo localmente no navegador):", e);
+    }
+  };
 
   // Filtros do Submódulo de Relatório
   const [reportLocation, setReportLocation] = useState('');
@@ -117,6 +342,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
   useEffect(() => {
     fetchAssets();
+    fetchSchedule();
     const sub = supabase.channel('assets_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, fetchAssets).subscribe();
 
     // Ler filtros de QR Code passados pela URL/App
@@ -338,6 +564,20 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     }).from(element).save();
   };
 
+  const handleExportPortraitPDF = async (elementId: string, filename: string) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    // @ts-ignore
+    await window.html2pdf().set({
+      margin: 15,
+      filename: `${filename}_${new Date().getFullYear()}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(element).save();
+  };
+
   const downloadQRCode = (location: string) => {
     const svg = document.getElementById(`qr-${location}`);
     if (!svg) return;
@@ -356,6 +596,194 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       downloadLink.click();
     };
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
+  };
+
+  const getPortariaText = () => {
+    const p = schedule.commissionMembers.president;
+    const s = schedule.commissionMembers.secretary;
+    const m = schedule.commissionMembers.member;
+    return (
+      <div className="space-y-6 text-sm text-justify leading-relaxed text-black font-serif">
+        <div className="text-center font-bold">
+          <p className="text-base uppercase">Portaria de Designação nº 0{schedule.year % 100}/{schedule.year} - EEAM</p>
+          <p className="text-[10px] text-gray-500 font-sans normal-case font-medium mt-1">Institui a Comissão Especial de Inventário Patrimonial para o Exercício de {schedule.year}.</p>
+        </div>
+
+        <p className="mt-6">
+          O Gestor Escolar da <strong>Escola Estadual André Antonio Maggi</strong>, no uso de suas atribuições legais e em conformidade com o Decreto Estadual nº 194/2015 e a Instrução Normativa nº 03/2015/SEGES-MT, que disciplinam os procedimentos relativos à gestão e inventário de bens móveis e imóveis das unidades do Poder Executivo de Mato Grosso,
+        </p>
+
+        <p className="font-bold">RESOLVE:</p>
+
+        <p>
+          <strong>Art. 1º</strong> - Constituir a Comissão Especial de Inventário Patrimonial de Bens Móveis e Imóveis pertencentes à carga física desta unidade de ensino, para o encerramento do exercício financeiro de {schedule.year}.
+        </p>
+
+        <p>
+          <strong>Art. 2º</strong> - Designar para integrar a referida Comissão os seguintes servidores sob a presidência do primeiro:
+        </p>
+
+        <ul className="list-disc pl-8 space-y-2">
+          <li><strong>Presidente:</strong> {p.name || '___________'} - Cargo: {p.role || '___________'} - Matrícula: {p.register || '___________'}</li>
+          <li><strong>Secretário:</strong> {s.name || '___________'} - Cargo: {s.role || '___________'} - Matrícula: {s.register || '___________'}</li>
+          <li><strong>Membro:</strong> {m.name || '___________'} - Cargo: {m.role || '___________'} - Matrícula: {m.register || '___________'}</li>
+        </ul>
+
+        <p>
+          <strong>Art. 3º</strong> - A comissão terá o prazo estipulado no cronograma homologado para a conclusão dos trabalhos e apresentação do Relatório Final Circunstanciado.
+        </p>
+
+        <p>
+          <strong>Art. 4º</strong> - Esta Portaria entra em vigor na data de sua assinatura, revogadas as disposições em contrário.
+        </p>
+
+        <p className="text-right mt-10">
+          André Maggi/MT, {new Date(schedule.startDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.
+        </p>
+      </div>
+    );
+  };
+
+  const getAberturaText = () => {
+    const p = schedule.commissionMembers.president;
+    const s = schedule.commissionMembers.secretary;
+    return (
+      <div className="space-y-6 text-sm text-justify leading-relaxed text-black font-serif">
+        <div className="text-center font-bold">
+          <p className="text-base uppercase">Termo de Abertura do Inventário Patrimonial</p>
+          <p className="text-[10px] text-gray-500 font-sans normal-case font-medium mt-1">Exercício de {schedule.year}</p>
+        </div>
+
+        <p className="mt-6">
+          Aos {new Date(schedule.startDate + 'T00:00:00').getDate()} dias do mês de {new Date(schedule.startDate + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'long' })} de {schedule.year}, na Escola Estadual André Antonio Maggi, em consonância com a Portaria de Designação nº 0{schedule.year % 100}/{schedule.year} - EEAM, reuniram-se os membros da comissão nomeada sob a presidência de {p.name || '___________'} para dar início formal aos trabalhos de levantamento físico patrimonial de bens permanentes móveis e imóveis desta escola.
+        </p>
+
+        <p>
+          Os trabalhos constarão de vistoria física em todos os ambientes e salas da escola, verificação e fixação de plaquetas patrimoniais, atualização do estado de conservação física dos bens móveis e eletrônicos, e identificação de bens ociosos ou inservíveis para futura baixa patrimonial.
+        </p>
+
+        <p>
+          Após a varredura física in loco, os dados levantados serão confrontados com a base de dados oficial no sistema a fim de identificar eventuais inconsistências ou bens sobressalentes.
+        </p>
+
+        <p>
+          Para constar, eu, {s.name || '___________'}, na qualidade de secretário(a) da comissão, lavrei o presente termo que segue assinado por todos os integrantes presentes.
+        </p>
+
+        <p className="text-right mt-10">
+          André Maggi/MT, {new Date(schedule.startDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.
+        </p>
+      </div>
+    );
+  };
+
+  const getRelatorioText = () => {
+    const totalAssets = assets.length;
+    const inserviveis = assets.filter(a => a.isUnserviceable).length;
+    const excelentes = assets.filter(a => a.condition === 'EXCELENTE' && !a.isUnserviceable).length;
+    const bons = assets.filter(a => a.condition === 'BOM' && !a.isUnserviceable).length;
+    const regulares = assets.filter(a => a.condition === 'REGULAR' && !a.isUnserviceable).length;
+
+    return (
+      <div className="space-y-5 text-xs text-justify leading-relaxed text-black font-serif">
+        <div className="text-center font-bold">
+          <p className="text-sm uppercase">Relatório Final Circunstanciado do Inventário Patrimonial</p>
+          <p className="text-[10px] text-gray-500 font-sans normal-case font-medium mt-0.5">Encerramento do Exercício de {schedule.year}</p>
+        </div>
+
+        <p>
+          A <strong>Comissão Especial de Inventário Patrimonial</strong>, instituída pela Portaria nº 0{schedule.year % 100}/{schedule.year} - EEAM, apresenta a esta Diretoria e à Secretaria de Estado de Educação de Mato Grosso (SEDUC-MT) o relatório conclusivo das atividades de levantamento físico dos bens patrimoniais permanentes desta unidade escolar realizadas no presente exercício.
+        </p>
+
+        <p className="font-bold uppercase tracking-wider text-[10px] text-gray-900 border-b border-gray-200 pb-1 mt-4">1. Do Procedimento Executado</p>
+        <p>
+          Os membros da comissão efetuaram vistoria física e varredura minuciosa em todos os ambientes pedagógicos, administrativos e de apoio da escola, verificando a presença física e o estado de conservação de cada bem permanente catalogado. Foram verificadas as etiquetas patrimoniais e efetuada a colagem de códigos de identificação digital (QR Codes) para facilitar o acompanhamento em tempo real via sistema.
+        </p>
+
+        <p className="font-bold uppercase tracking-wider text-[10px] text-gray-900 border-b border-gray-200 pb-1 mt-4">2. Dos Resultados Obtidos</p>
+        <p>
+          O levantamento físico registrou o seguinte balanço de bens permanentes e móveis desta unidade de ensino:
+        </p>
+
+        <table className="w-full text-[10px] border-collapse border border-gray-300 font-sans my-4 text-black text-black">
+          <thead>
+            <tr className="bg-gray-100 border border-gray-300 font-bold">
+              <th className="p-2 border border-gray-300 text-left">Indicador Patrimonial</th>
+              <th className="p-2 border border-gray-300 text-right">Quantidade de Itens</th>
+              <th className="p-2 border border-gray-300 text-right">Representação %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="p-2 border border-gray-300">Bens Ativos em Estado Excelente</td>
+              <td className="p-2 border border-gray-300 text-right font-bold">{excelentes}</td>
+              <td className="p-2 border border-gray-300 text-right">{(totalAssets > 0 ? (excelentes / totalAssets) * 100 : 0).toFixed(1)}%</td>
+            </tr>
+            <tr>
+              <td className="p-2 border border-gray-300">Bens Ativos em Estado Bom</td>
+              <td className="p-2 border border-gray-300 text-right font-bold">{bons}</td>
+              <td className="p-2 border border-gray-300 text-right">{(totalAssets > 0 ? (bons / totalAssets) * 100 : 0).toFixed(1)}%</td>
+            </tr>
+            <tr>
+              <td className="p-2 border border-gray-300">Bens Ativos em Estado Regular</td>
+              <td className="p-2 border border-gray-300 text-right font-bold">{regulares}</td>
+              <td className="p-2 border border-gray-300 text-right">{(totalAssets > 0 ? (regulares / totalAssets) * 100 : 0).toFixed(1)}%</td>
+            </tr>
+            <tr className="text-red-600 font-bold">
+              <td className="p-2 border border-gray-300">Bens Inservíveis / Propostos para Baixa (Péssimo)</td>
+              <td className="p-2 border border-gray-300 text-right font-bold">{inserviveis}</td>
+              <td className="p-2 border border-gray-300 text-right">{(totalAssets > 0 ? (inserviveis / totalAssets) * 100 : 0).toFixed(1)}%</td>
+            </tr>
+            <tr className="bg-gray-50 font-bold border-t-2 border-gray-400">
+              <td className="p-2 border border-gray-300">Total Geral de Bens Auditados</td>
+              <td className="p-2 border border-gray-300 text-right">{totalAssets}</td>
+              <td className="p-2 border border-gray-300 text-right">100.0%</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p className="font-bold uppercase tracking-wider text-[10px] text-gray-900 border-b border-gray-200 pb-1 mt-4">3. Das Recomendações e Medidas de Saneamento</p>
+        <p>
+          A comissão recomenda a abertura imediata de processo administrativo de baixa e descarte ecologicamente correto dos {inserviveis} bens identificados em estado inservível (PÉSSIMO), conforme previsto na legislação estadual. Para os bens classificados como Regulares, recomenda-se manutenção preventiva para prolongamento de sua vida útil.
+        </p>
+
+        <p>
+          Diante do exposto, os membros da comissão assinam o presente relatório, submetendo-o à homologação do Gestor Escolar.
+        </p>
+
+        <p className="text-right mt-6">
+          André Maggi/MT, {new Date(schedule.endDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.
+        </p>
+      </div>
+    );
+  };
+
+  const getEncerramentoText = () => {
+    const s = schedule.commissionMembers.secretary;
+    return (
+      <div className="space-y-6 text-sm text-justify leading-relaxed text-black font-serif">
+        <div className="text-center font-bold">
+          <p className="text-base uppercase">Termo de Encerramento do Inventário Patrimonial</p>
+          <p className="text-[10px] text-gray-500 font-sans normal-case font-medium mt-1">Exercício de {schedule.year}</p>
+        </div>
+
+        <p className="mt-6">
+          Aos {new Date(schedule.endDate + 'T00:00:00').getDate()} dias do mês de {new Date(schedule.endDate + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'long' })} de {schedule.year}, declaram-se formalmente encerrados os trabalhos da Comissão Especial de Inventário Patrimonial referente ao exercício vigente, tendo sido cumpridas todas as etapas de varredura física, conciliação contábil, lavratura de termos de responsabilidade e regularização das baixas necessárias.
+        </p>
+
+        <p>
+          O Relatório Final Circunstanciado foi devidamente aprovado por unanimidade pelos membros da comissão e segue anexo a este termo para encaminhamento aos órgãos competentes da Secretaria de Estado de Educação de Mato Grosso.
+        </p>
+
+        <p>
+          Para constar, eu, {s.name || '___________'}, lavrei o presente termo que segue datado e assinado por todos os envolvidos.
+        </p>
+
+        <p className="text-right mt-10">
+          André Maggi/MT, {new Date(schedule.endDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.
+        </p>
+      </div>
+    );
   };
 
   return (
@@ -379,6 +807,9 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           </button>
           <button onClick={() => setActiveTab('relatorios')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'relatorios' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <ClipboardList size={18} /> Emissão de Relatório
+          </button>
+          <button onClick={() => setActiveTab('cronograma')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'cronograma' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+            <Calendar size={18} /> Cronograma do Processo
           </button>
         </nav>
         <div className="p-6 border-t border-blue-800">
@@ -750,6 +1181,445 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   </div>
                 </div>
               </div>
+            ) : activeTab === 'cronograma' ? (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                {/* 1. DASHBOARD DE CONTROLE */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Cronograma de Inventário Anual</h3>
+                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">
+                      Acompanhamento de prazos, comissão e geração de laudos oficiais SEDUC-MT
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={fetchSchedule}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase transition-all"
+                    >
+                      Atualizar Dados
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm("Deseja reiniciar o cronograma para o padrão deste ano? Isso apagará o progresso atual.")) {
+                          const initial = defaultSchedule(new Date().getFullYear());
+                          setSchedule(initial);
+                          setCommissionForm(initial.commissionMembers);
+                          saveSchedule(initial);
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl text-[10px] font-black uppercase transition-all"
+                    >
+                      Reiniciar Ciclo
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI CARDS & PROGRESS */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Card Progresso */}
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 text-blue-600">
+                      <TrendingUp size={120} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Progresso do Inventário</span>
+                      <div className="flex items-baseline gap-2 mt-4">
+                        <span className="text-5xl font-black text-blue-600">
+                          {Math.round(
+                            schedule.phases.reduce((acc, phase) => {
+                              const completed = phase.tasks.filter(t => t.completed).length;
+                              const pProgress = phase.tasks.length > 0 ? (completed / phase.tasks.length) * 100 : 0;
+                              return acc + (pProgress * (phase.weight / 100));
+                            }, 0)
+                          )}%
+                        </span>
+                        <span className="text-xs font-bold text-gray-400 uppercase">Concluído</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-100 h-3.5 rounded-full overflow-hidden mt-6">
+                      <div
+                        className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.round(
+                            schedule.phases.reduce((acc, phase) => {
+                              const completed = phase.tasks.filter(t => t.completed).length;
+                              const pProgress = phase.tasks.length > 0 ? (completed / phase.tasks.length) * 100 : 0;
+                              return acc + (pProgress * (phase.weight / 100));
+                            }, 0)
+                          )}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Card Exercício */}
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Período Vigente</span>
+                      <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight mt-3">
+                        Exercício {schedule.year}
+                      </h4>
+                      <p className="text-xs font-bold text-gray-400 mt-1">
+                        Início: {new Date(schedule.startDate + 'T00:00:00').toLocaleDateString('pt-BR')} <br />
+                        Término: {new Date(schedule.endDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <span className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[10px] font-black uppercase w-max">
+                      <Calendar size={12} /> Status: {schedule.status}
+                    </span>
+                  </div>
+
+                  {/* Card Estatísticas Rápidas */}
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Informações de Apoio</span>
+                      <div className="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                          <span className="text-[9px] font-black text-gray-400 uppercase">Ambientes Cadastrados</span>
+                          <p className="text-xl font-black text-gray-800">{uniqueLocations.length}</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-black text-gray-400 uppercase">Total de Itens</span>
+                          <p className="text-xl font-black text-gray-800">{assets.length}</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-black text-gray-400 uppercase">Bens Inservíveis</span>
+                          <p className="text-xl font-black text-red-600">
+                            {assets.filter(a => a.isUnserviceable).length}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-black text-gray-400 uppercase">Carga Patrimonial OK</span>
+                          <p className="text-xl font-black text-emerald-600">
+                            {assets.filter(a => !a.isUnserviceable).length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* GESTÃO DE COMISSÃO & CHECKLIST DAS FASES */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Checklist das Fases (Coluna da Esquerda / Meio) */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100/80 shadow-sm">
+                      <div className="flex items-center gap-2 pb-4 border-b border-gray-50 mb-6">
+                        <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
+                        <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Fases do Inventário (Checklist)</h4>
+                      </div>
+
+                      <div className="space-y-4">
+                        {schedule.phases.map(phase => {
+                          const completedTasks = phase.tasks.filter(t => t.completed).length;
+                          const totalTasks = phase.tasks.length;
+                          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                          const isExpanded = expandedPhaseId === phase.id;
+
+                          return (
+                            <div
+                              key={phase.id}
+                              className={`border rounded-3xl transition-all overflow-hidden ${
+                                isExpanded ? 'border-blue-200 bg-blue-50/10 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200'
+                              }`}
+                            >
+                              {/* Header da Fase */}
+                              <div
+                                onClick={() => setExpandedPhaseId(isExpanded ? null : phase.id)}
+                                className="p-5 flex items-center justify-between cursor-pointer select-none"
+                              >
+                                <div className="flex-1 min-w-0 pr-4">
+                                  <div className="flex items-center gap-2.5 flex-wrap">
+                                    <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                      {phase.weight}% Peso
+                                    </span>
+                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase ${
+                                      progress === 100 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                      progress > 0 ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-gray-50 text-gray-400 border-gray-100'
+                                    }`}>
+                                      {progress === 100 ? 'CONCLUÍDA' : progress > 0 ? 'EM ANDAMENTO' : 'PENDENTE'}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 font-bold">
+                                      Período: {new Date(phase.startDate + 'T00:00:00').toLocaleDateString('pt-BR')} - {new Date(phase.endDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                    </span>
+                                  </div>
+                                  <h5 className="text-sm font-black text-gray-800 uppercase tracking-tight mt-2 truncate">
+                                    {phase.name}
+                                  </h5>
+                                </div>
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <div className="text-right">
+                                    <span className="text-xs font-black text-gray-700">{completedTasks}/{totalTasks} Tarefas</span>
+                                    <p className="text-[9px] font-bold text-gray-400">{progress}% concluído</p>
+                                  </div>
+                                  {isExpanded ? <ChevronUp className="text-gray-400" size={18} /> : <ChevronDown className="text-gray-400" size={18} />}
+                                </div>
+                              </div>
+
+                              {/* Lista de Tarefas da Fase */}
+                              {isExpanded && (
+                                <div className="border-t border-gray-100 p-6 bg-white space-y-4">
+                                  {phase.tasks.map(task => (
+                                    <label
+                                      key={task.id}
+                                      className="flex items-start gap-4 p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-gray-100"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={task.completed}
+                                        onChange={() => {
+                                          const updatedPhases = schedule.phases.map(p => {
+                                            if (p.id === phase.id) {
+                                              const updatedTasks = p.tasks.map(t => {
+                                                if (t.id === task.id) {
+                                                  return { ...t, completed: !t.completed };
+                                                }
+                                                return t;
+                                              });
+                                              // Atualiza status da fase com base nas tarefas
+                                              const doneCount = updatedTasks.filter(t => t.completed).length;
+                                              const pStatus = doneCount === updatedTasks.length ? 'CONCLUIDO' : doneCount > 0 ? 'EM_ANDAMENTO' : 'PENDENTE';
+                                              return { ...p, tasks: updatedTasks, status: pStatus as any };
+                                            }
+                                            return p;
+                                          });
+
+                                          // Atualiza status global do cronograma com base nas fases concluídas
+                                          const allDone = updatedPhases.every(p => p.status === 'CONCLUIDO');
+                                          const anyStarted = updatedPhases.some(p => p.status !== 'PENDENTE');
+                                          const newGlobalStatus = allDone ? 'HOMOLOGADO' : anyStarted ? 'EM_EXECUCAO' : 'PLANEJAMENTO';
+
+                                          const updated = {
+                                            ...schedule,
+                                            status: newGlobalStatus,
+                                            phases: updatedPhases
+                                          };
+                                          setSchedule(updated);
+                                          saveSchedule(updated);
+                                        }}
+                                        className="mt-1 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <p className={`text-xs font-bold text-gray-700 leading-normal ${task.completed ? 'line-through text-gray-400' : ''}`}>
+                                          {task.title}
+                                        </p>
+                                      </div>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Coluna da Direita (Comissão e Documentos) */}
+                  <div className="space-y-6">
+                    {/* Comissão Card */}
+                    <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100/80 shadow-sm space-y-6">
+                      <div className="flex items-center gap-2 pb-4 border-b border-gray-50">
+                        <Users className="text-blue-600" size={16} />
+                        <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Comissão Inventariante</h4>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-gray-400 uppercase">Presidente da Comissão</label>
+                          <input
+                            type="text"
+                            placeholder="Nome Completo"
+                            value={commissionForm.president.name}
+                            onChange={e => setCommissionForm({
+                              ...commissionForm,
+                              president: { ...commissionForm.president, name: e.target.value.toUpperCase() }
+                            })}
+                            className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                          />
+                          <div className="grid grid-cols-2 gap-2 mt-1">
+                            <input
+                              type="text"
+                              placeholder="Cargo/Função"
+                              value={commissionForm.president.role}
+                              onChange={e => setCommissionForm({
+                                ...commissionForm,
+                                president: { ...commissionForm.president, role: e.target.value.toUpperCase() }
+                              })}
+                              className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Matrícula"
+                              value={commissionForm.president.register}
+                              onChange={e => setCommissionForm({
+                                ...commissionForm,
+                                president: { ...commissionForm.president, register: e.target.value.toUpperCase() }
+                              })}
+                              className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-gray-400 uppercase">Secretário da Comissão</label>
+                          <input
+                            type="text"
+                            placeholder="Nome Completo"
+                            value={commissionForm.secretary.name}
+                            onChange={e => setCommissionForm({
+                              ...commissionForm,
+                              secretary: { ...commissionForm.secretary, name: e.target.value.toUpperCase() }
+                            })}
+                            className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                          />
+                          <div className="grid grid-cols-2 gap-2 mt-1">
+                            <input
+                              type="text"
+                              placeholder="Cargo/Função"
+                              value={commissionForm.secretary.role}
+                              onChange={e => setCommissionForm({
+                                ...commissionForm,
+                                secretary: { ...commissionForm.secretary, role: e.target.value.toUpperCase() }
+                              })}
+                              className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Matrícula"
+                              value={commissionForm.secretary.register}
+                              onChange={e => setCommissionForm({
+                                ...commissionForm,
+                                secretary: { ...commissionForm.secretary, register: e.target.value.toUpperCase() }
+                              })}
+                              className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-gray-400 uppercase">Membro da Comissão</label>
+                          <input
+                            type="text"
+                            placeholder="Nome Completo"
+                            value={commissionForm.member.name}
+                            onChange={e => setCommissionForm({
+                              ...commissionForm,
+                              member: { ...commissionForm.member, name: e.target.value.toUpperCase() }
+                            })}
+                            className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                          />
+                          <div className="grid grid-cols-2 gap-2 mt-1">
+                            <input
+                              type="text"
+                              placeholder="Cargo/Função"
+                              value={commissionForm.member.role}
+                              onChange={e => setCommissionForm({
+                                ...commissionForm,
+                                member: { ...commissionForm.member, role: e.target.value.toUpperCase() }
+                              })}
+                              className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Matrícula"
+                              value={commissionForm.member.register}
+                              onChange={e => setCommissionForm({
+                                ...commissionForm,
+                                member: { ...commissionForm.member, register: e.target.value.toUpperCase() }
+                              })}
+                              className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const updated = {
+                            ...schedule,
+                            commissionMembers: commissionForm
+                          };
+                          setSchedule(updated);
+                          saveSchedule(updated);
+                          alert("Membros da comissão salvos com sucesso!");
+                        }}
+                        className="w-full py-4 bg-gray-900 text-white hover:bg-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2"
+                      >
+                        <Check size={14} /> Salvar Comissão
+                      </button>
+                    </div>
+
+                    {/* Documentos Oficiais Card */}
+                    <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100/80 shadow-sm space-y-6">
+                      <div className="flex items-center gap-2 pb-4 border-b border-gray-50">
+                        <FileText className="text-blue-600" size={16} />
+                        <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Documentação Oficial</h4>
+                      </div>
+
+                      <div className="space-y-3">
+                        <button
+                          onClick={() => setSelectedDocument('portaria')}
+                          disabled={!commissionForm.president.name}
+                          className={`w-full text-left p-4 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between ${
+                            commissionForm.president.name
+                              ? 'bg-blue-50/30 border-blue-100 text-blue-700 hover:bg-blue-50'
+                              : 'bg-gray-50 border-gray-50 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <span>Portaria de Designação</span>
+                          <ChevronRight size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedDocument('abertura')}
+                          disabled={!commissionForm.president.name}
+                          className={`w-full text-left p-4 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between ${
+                            commissionForm.president.name
+                              ? 'bg-blue-50/30 border-blue-100 text-blue-700 hover:bg-blue-50'
+                              : 'bg-gray-50 border-gray-50 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <span>Termo de Abertura</span>
+                          <ChevronRight size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedDocument('relatorio')}
+                          disabled={!commissionForm.president.name}
+                          className={`w-full text-left p-4 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between ${
+                            commissionForm.president.name
+                              ? 'bg-blue-50/30 border-blue-100 text-blue-700 hover:bg-blue-50'
+                              : 'bg-gray-50 border-gray-50 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <span>Relatório Final Circunstanciado</span>
+                          <ChevronRight size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedDocument('encerramento')}
+                          disabled={!commissionForm.president.name}
+                          className={`w-full text-left p-4 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between ${
+                            commissionForm.president.name
+                              ? 'bg-blue-50/30 border-blue-100 text-blue-700 hover:bg-blue-50'
+                              : 'bg-gray-50 border-gray-50 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <span>Termo de Encerramento</span>
+                          <ChevronRight size={16} />
+                        </button>
+
+                        {!commissionForm.president.name && (
+                          <p className="text-[9px] text-red-500 font-bold uppercase mt-1 leading-normal text-center">
+                            ⚠️ Preencha os dados da comissão e salve para liberar a geração de documentos.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="space-y-6 min-w-0 w-full">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0 w-full">
@@ -975,6 +1845,103 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-10 py-5 bg-gray-100 text-gray-500 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all">Cancelar</button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE VISUALIZAÇÃO DE DOCUMENTOS OFICIAIS */}
+      {selectedDocument && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300 no-print">
+          <div className="bg-white rounded-[2rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+            {/* Toolbar */}
+            <div className="p-6 bg-gray-50 border-b border-gray-100 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <FileText className="text-blue-600" size={20} />
+                <span className="text-xs font-black text-gray-900 uppercase tracking-widest">Visualização de Documento Oficial</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleExportPortraitPDF('document-print-container', `Inventario_${selectedDocument.toUpperCase()}`)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-md"
+                >
+                  <FileDown size={14} /> Exportar PDF (A4 Retrato)
+                </button>
+                <button
+                  onClick={() => setSelectedDocument(null)}
+                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Document body preview */}
+            <div className="flex-1 overflow-y-auto p-10 bg-gray-100 flex justify-center custom-scrollbar">
+              <div
+                id="document-print-container"
+                className="bg-white shadow-lg p-16 font-serif border border-gray-200 text-black w-[210mm] min-h-[297mm] relative flex flex-col justify-between"
+                style={{ contentVisibility: 'auto' }}
+              >
+                {/* Header timbrado */}
+                <div>
+                  <div className="text-center border-b-2 border-double border-gray-400 pb-4 mb-6 font-sans">
+                    <h1 className="text-base font-bold uppercase tracking-tight text-gray-900">Estado de Mato Grosso</h1>
+                    <h2 className="text-sm font-bold uppercase text-gray-700">Secretaria de Estado de Educação</h2>
+                    <h3 className="text-xs font-bold uppercase text-gray-500">Escola Estadual André Antonio Maggi</h3>
+                    <p className="text-[8px] text-gray-400 font-bold mt-1">Cód. U.O. 22201 - André Maggi / MT - CEP: 78530-000</p>
+                  </div>
+
+                  {/* Document dynamic body */}
+                  <div className="text-left font-serif">
+                    {selectedDocument === 'portaria' && getPortariaText()}
+                    {selectedDocument === 'abertura' && getAberturaText()}
+                    {selectedDocument === 'relatorio' && getRelatorioText()}
+                    {selectedDocument === 'encerramento' && getEncerramentoText()}
+                  </div>
+                </div>
+
+                {/* Signatures */}
+                <div className="mt-16 font-sans">
+                  {selectedDocument === 'portaria' ? (
+                    <div className="text-center text-xs font-bold uppercase text-gray-700 tracking-wider">
+                      <div className="space-y-1">
+                        <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                        <p>DIRETORIA ESCOLAR</p>
+                        <p className="text-[10px] text-gray-400">Autoridade Designante</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-10">
+                      <div className="grid grid-cols-3 gap-6 text-center text-[9px] font-bold uppercase text-gray-700 tracking-wider">
+                        <div className="space-y-1">
+                          <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                          <p>{schedule.commissionMembers.president.name || 'PRESIDENTE DA COMISSÃO'}</p>
+                          <p className="text-[8px] text-gray-400">Presidente</p>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                          <p>{schedule.commissionMembers.secretary.name || 'SECRETÁRIO(A)'}</p>
+                          <p className="text-[8px] text-gray-400">Secretário(a)</p>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                          <p>{schedule.commissionMembers.member.name || 'MEMBRO DA COMISSÃO'}</p>
+                          <p className="text-[8px] text-gray-400">Membro</p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-center text-xs font-bold uppercase text-gray-700 tracking-wider pt-4">
+                        <div className="space-y-1">
+                          <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                          <p>DIRETORIA ESCOLAR</p>
+                          <p className="text-[10px] text-gray-400">Homologador</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
