@@ -167,7 +167,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [schedule, setSchedule] = useState<InventorySchedule>(defaultSchedule(new Date().getFullYear()));
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
   const [expandedPhaseId, setExpandedPhaseId] = useState<number | null>(1);
-  const [selectedDocument, setSelectedDocument] = useState<'portaria' | 'abertura' | 'relatorio' | 'encerramento' | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<'portaria' | 'abertura' | 'relatorio' | 'encerramento' | 'cronograma_seduc' | null>(null);
+  const [seducActions, setSeducActions] = useState<Array<{ id: number; date: string; action: string; situation: string }>>([]);
   const [commissionForm, setCommissionForm] = useState<CommissionMembers>({
     president: { name: '', role: '', register: '' },
     secretary: { name: '', role: '', register: '' },
@@ -265,6 +266,65 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       console.warn("Erro ao salvar cronograma no Supabase (salvo localmente no navegador):", e);
     }
   };
+
+  const getSeducActionSituation = (id: number, currentSchedule: InventorySchedule) => {
+    const getPhaseProgress = (phaseId: number) => {
+      const phase = currentSchedule.phases.find(p => p.id === phaseId);
+      if (!phase) return 0;
+      const done = phase.tasks.filter(t => t.completed).length;
+      return phase.tasks.length > 0 ? (done / phase.tasks.length) * 100 : 0;
+    };
+
+    const isTaskDone = (phaseId: number, taskId: string) => {
+      const phase = currentSchedule.phases.find(p => p.id === phaseId);
+      const task = phase?.tasks.find(t => t.id === taskId);
+      return task ? task.completed : false;
+    };
+
+    switch (id) {
+      case 1:
+        return isTaskDone(1, '1_1') || isTaskDone(1, '1_3') ? 'CONCLUÍDO' : 'PENDENTE';
+      case 2:
+        return currentSchedule.commissionMembers.president.name ? 'CONCLUÍDO' : 'PENDENTE';
+      case 3:
+        return isTaskDone(3, '3_1') ? 'CONCLUÍDO' : 'PENDENTE';
+      case 4: {
+        const prog = getPhaseProgress(2);
+        return prog === 100 ? 'CONCLUÍDO' : prog > 0 ? 'EM ANDAMENTO' : 'PENDENTE';
+      }
+      case 5: {
+        const prog = getPhaseProgress(3);
+        return prog === 100 ? 'CONCLUÍDO' : prog > 0 ? 'EM ANDAMENTO' : 'PENDENTE';
+      }
+      case 6:
+        return isTaskDone(5, '5_1') || isTaskDone(5, '5_2') ? 'CONCLUÍDO' : 'PENDENTE';
+      case 7:
+        return isTaskDone(5, '5_3') ? 'CONCLUÍDO' : 'PENDENTE';
+      case 8:
+        return isTaskDone(4, '4_2') ? 'CONCLUÍDO' : 'PENDENTE';
+      case 9:
+        return isTaskDone(4, '4_3') ? 'CONCLUÍDO' : 'PENDENTE';
+      default:
+        return 'PENDENTE';
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDocument === 'cronograma_seduc') {
+      const year = schedule.year;
+      setSeducActions([
+        { id: 1, date: `01/10/${year}`, action: 'Ata de Abertura de Inventário Anual de Bens Móveis e Imóveis', situation: getSeducActionSituation(1, schedule) },
+        { id: 2, date: `05/10/${year}`, action: 'Formação/ substituição de membros da Subcomissão local (se necessário)', situation: getSeducActionSituation(2, schedule) },
+        { id: 3, date: `15/10/${year}`, action: 'Verificação se todas Notas Fiscais foram enviadas para tombamento (Bens móveis)', situation: getSeducActionSituation(3, schedule) },
+        { id: 4, date: `16/10/${year} a 15/11/${year}`, action: 'Levantamento físico dos bens móveis e Preenchimento da ficha de levantamento cadastral de imóveis', situation: getSeducActionSituation(4, schedule) },
+        { id: 5, date: `16/11/${year} a 30/11/${year}`, action: 'Período de ajuste patrimonial pela subcomissão Local', situation: getSeducActionSituation(5, schedule) },
+        { id: 6, date: `11/12/${year}`, action: 'Elaboração de relatório final e ata de encerramento', situation: getSeducActionSituation(6, schedule) },
+        { id: 7, date: `20/12/${year}`, action: 'Tramitar o processo de Inventário a DRE', situation: getSeducActionSituation(7, schedule) },
+        { id: 8, date: `01/12/${year} a 10/12/${year}`, action: 'Elaboração da lista de classificação bens móveis inservíveis', situation: getSeducActionSituation(8, schedule) },
+        { id: 9, date: `10/12/${year}`, action: 'Tramitar o processo de desfazimento a DRE', situation: getSeducActionSituation(9, schedule) }
+      ]);
+    }
+  }, [selectedDocument, schedule]);
 
   // Filtros do Submódulo de Relatório
   const [reportLocation, setReportLocation] = useState('');
@@ -782,6 +842,102 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
         <p className="text-right mt-10">
           André Maggi/MT, {new Date(schedule.endDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.
         </p>
+      </div>
+    );
+  };
+
+  const getCronogramaSeducText = () => {
+    const p = schedule.commissionMembers.president;
+    const s = schedule.commissionMembers.secretary;
+    const m = schedule.commissionMembers.member;
+    const subcomissao = [p.name, s.name, m.name].filter(Boolean).join(', ');
+
+    return (
+      <div className="space-y-6 text-sm text-justify leading-relaxed text-black font-sans w-full">
+        {/* Title */}
+        <div className="border-b-2 border-blue-800 pb-2 mb-4 text-left">
+          <h1 className="text-xl font-bold text-blue-900 leading-tight">Cronograma de Inventário Anual de Bens Móveis e Imóveis</h1>
+        </div>
+
+        {/* Sub-header */}
+        <div className="text-left text-xs font-semibold text-gray-700 space-y-1">
+          <p>Rede Estadual de Ensino – Mato Grosso</p>
+          <p>Setor de Patrimônio</p>
+          <p>Unidade Escolar: <span className="font-bold text-gray-900 border-b border-gray-300 pb-0.5 px-2">Escola Estadual André Antonio Maggi</span></p>
+          <p>Subcomissão: <span className="font-bold text-gray-900 border-b border-gray-300 pb-0.5 px-2">{subcomissao || 'Não definida'}</span></p>
+        </div>
+
+        {/* I. Objetivo */}
+        <div className="space-y-1 mt-4">
+          <h2 className="text-sm font-bold text-blue-900 uppercase">I. Objetivo</h2>
+          <p className="text-xs text-gray-700 leading-relaxed text-justify">
+            Este documento tem como finalidade estabelecer um cronograma padronizado das atividades de Inventário anual de bens móveis, imóveis e desfazimento de bens móveis inservíveis, garantindo o planejamento da execução. O cronograma é uma ferramenta de planejamento que organiza e estabelece o tempo necessário para cada ação assegurando a eficácia e a organização do tempo de cada etapa.
+          </p>
+        </div>
+
+        {/* II. Avaliador */}
+        <div className="space-y-1">
+          <h2 className="text-sm font-bold text-blue-900 uppercase">II. Avaliador</h2>
+          <p className="text-xs text-gray-700 leading-relaxed text-justify">
+            Analisar o preenchimento correto do cronograma elaborado e a situação do correto preenchido.
+          </p>
+        </div>
+
+        {/* III. Observações Gerais */}
+        <div className="space-y-1">
+          <h2 className="text-sm font-bold text-blue-900 uppercase">III. Observações Gerais</h2>
+          <p className="text-xs text-gray-700 leading-relaxed text-justify">
+            "A elaboração deste documento deve ocorrer dentro do prazo estipulado pela comissão central, conforme as Portarias 657/2024 e 804/2024, ou quando houver a necessidade de um inventário tempestivo."
+          </p>
+        </div>
+
+        {/* IV. Cronograma de execução */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-blue-900 uppercase">IV. Cronograma de execução</h2>
+          
+          <table className="w-full text-xs border-collapse border border-black font-sans text-black">
+            <thead>
+              <tr className="bg-gray-50 font-bold border border-black">
+                <th className="p-2 border border-black text-center w-[25%] uppercase tracking-wider">Data</th>
+                <th className="p-2 border border-black text-left w-[55%] uppercase tracking-wider">Ação</th>
+                <th className="p-2 border border-black text-center w-[20%] uppercase tracking-wider">Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seducActions.map((action, idx) => (
+                <tr key={action.id} className="border border-black">
+                  <td className="p-1 border border-black text-center">
+                    <input
+                      type="text"
+                      value={action.date}
+                      onChange={e => {
+                        const updated = [...seducActions];
+                        updated[idx].date = e.target.value;
+                        setSeducActions(updated);
+                      }}
+                      className="w-full bg-transparent border-none text-center outline-none text-xs text-gray-800 font-medium"
+                    />
+                  </td>
+                  <td className="p-2 border border-black text-left leading-snug">
+                    {action.action}
+                  </td>
+                  <td className="p-1 border border-black text-center">
+                    <input
+                      type="text"
+                      value={action.situation}
+                      onChange={e => {
+                        const updated = [...seducActions];
+                        updated[idx].situation = e.target.value.toUpperCase();
+                        setSeducActions(updated);
+                      }}
+                      className="w-full bg-transparent border-none text-center outline-none text-xs text-gray-800 font-bold uppercase"
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -1610,6 +1766,19 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           <ChevronRight size={16} />
                         </button>
 
+                        <button
+                          onClick={() => setSelectedDocument('cronograma_seduc')}
+                          disabled={!commissionForm.president.name}
+                          className={`w-full text-left p-4 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between ${
+                            commissionForm.president.name
+                              ? 'bg-blue-50/30 border-blue-100 text-blue-700 hover:bg-blue-50'
+                              : 'bg-gray-50 border-gray-50 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <span>Ficha de Cronograma (SEDUC-MT)</span>
+                          <ChevronRight size={16} />
+                        </button>
+
                         {!commissionForm.president.name && (
                           <p className="text-[9px] text-red-500 font-bold uppercase mt-1 leading-normal text-center">
                             ⚠️ Preencha os dados da comissão e salve para liberar a geração de documentos.
@@ -1898,21 +2067,22 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                     {selectedDocument === 'abertura' && getAberturaText()}
                     {selectedDocument === 'relatorio' && getRelatorioText()}
                     {selectedDocument === 'encerramento' && getEncerramentoText()}
+                    {selectedDocument === 'cronograma_seduc' && getCronogramaSeducText()}
                   </div>
                 </div>
 
-                {/* Signatures */}
-                <div className="mt-16 font-sans">
-                  {selectedDocument === 'portaria' ? (
-                    <div className="text-center text-xs font-bold uppercase text-gray-700 tracking-wider">
-                      <div className="space-y-1">
-                        <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
-                        <p>DIRETORIA ESCOLAR</p>
-                        <p className="text-[10px] text-gray-400">Autoridade Designante</p>
+                {/* Signatures & Footer */}
+                <div>
+                  <div className="mt-8 font-sans">
+                    {selectedDocument === 'portaria' ? (
+                      <div className="text-center text-xs font-bold uppercase text-gray-700 tracking-wider">
+                        <div className="space-y-1">
+                          <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                          <p>DIRETORIA ESCOLAR</p>
+                          <p className="text-[10px] text-gray-400">Autoridade Designante</p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-10">
+                    ) : selectedDocument === 'cronograma_seduc' ? (
                       <div className="grid grid-cols-3 gap-6 text-center text-[9px] font-bold uppercase text-gray-700 tracking-wider">
                         <div className="space-y-1">
                           <div className="border-t border-gray-400 w-full pt-1.5"></div>
@@ -1930,12 +2100,58 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           <p className="text-[8px] text-gray-400">Membro</p>
                         </div>
                       </div>
-                      
-                      <div className="text-center text-xs font-bold uppercase text-gray-700 tracking-wider pt-4">
-                        <div className="space-y-1">
-                          <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
-                          <p>DIRETORIA ESCOLAR</p>
-                          <p className="text-[10px] text-gray-400">Homologador</p>
+                    ) : (
+                      <div className="space-y-10">
+                        <div className="grid grid-cols-3 gap-6 text-center text-[9px] font-bold uppercase text-gray-700 tracking-wider">
+                          <div className="space-y-1">
+                            <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                            <p>{schedule.commissionMembers.president.name || 'PRESIDENTE DA COMISSÃO'}</p>
+                            <p className="text-[8px] text-gray-400">Presidente</p>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                            <p>{schedule.commissionMembers.secretary.name || 'SECRETÁRIO(A)'}</p>
+                            <p className="text-[8px] text-gray-400">Secretário(a)</p>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                            <p>{schedule.commissionMembers.member.name || 'MEMBRO DA COMISSÃO'}</p>
+                            <p className="text-[8px] text-gray-400">Membro</p>
+                          </div>
+                        </div>
+                        
+                        <div className="text-center text-xs font-bold uppercase text-gray-700 tracking-wider pt-4">
+                          <div className="space-y-1">
+                            <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                            <p>DIRETORIA ESCOLAR</p>
+                            <p className="text-[10px] text-gray-400">Homologador</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SEDUC-MT Official Logo Footer */}
+                  {selectedDocument === 'cronograma_seduc' && (
+                    <div className="flex items-center justify-between border-t-2 border-gray-300 pt-4 mt-8 font-sans select-none">
+                      {/* Left Badge */}
+                      <div className="flex items-center justify-center bg-blue-900 text-white rounded-lg p-2 w-28 h-10 text-center text-[6px] font-black uppercase leading-tight shrink-0 border border-blue-955">
+                        <div>
+                          <p className="text-[4px] text-blue-300">3ª Convenção</p>
+                          <p>Gestão Escolar</p>
+                          <p className="tracking-[0.15em]">Conectada</p>
+                        </div>
+                      </div>
+                      {/* Center Logo */}
+                      <div className="flex items-center justify-center">
+                        <img src="/SEDUC 2.jpg" alt="SEDUC" className="h-8 object-contain max-w-[120px]" />
+                      </div>
+                      {/* Right Logo */}
+                      <div className="flex items-center justify-center gap-1">
+                        <img src="/brasao_mt.png" alt="Brasão MT" className="h-8 object-contain" />
+                        <div className="text-[6px] font-black text-gray-900 leading-none text-left uppercase">
+                          <p>Governo de</p>
+                          <p className="text-[8px]">Mato Grosso</p>
                         </div>
                       </div>
                     </div>
