@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { CleaningEmployee, SchoolEnvironment } from '../types';
-import { AlertTriangle, Plus, Search, Trash2, CheckCircle2, Clock, X, Loader2, Printer, History } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Trash2, CheckCircle2, Clock, X, Loader2, Printer, History, Edit2 } from 'lucide-react';
 
 interface Occurrence {
   id: string;
@@ -34,6 +34,8 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     category: 'OUTROS',
     reported_at: new Date().toLocaleDateString('sv-SE')
   });
+  const [editingOcc, setEditingOcc] = useState<Occurrence | null>(null);
+  const [resolvedAtInput, setResolvedAtInput] = useState<string>('');
 
   useEffect(() => {
     fetchOccurrences();
@@ -107,16 +109,39 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     }
 
     try {
-      const { error } = await supabase.from('cleaning_occurrences').insert([{
-        reported_by: newOcc.reported_by,
-        location: newOcc.location,
-        description: newOcc.description,
-        category: newOcc.category,
-        status: 'PENDENTE',
-        reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString()
-      }]);
+      if (editingOcc) {
+        // Atualiza a ocorrência existente
+        const payload: any = {
+          reported_by: newOcc.reported_by,
+          location: newOcc.location,
+          description: newOcc.description,
+          category: newOcc.category,
+          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString()
+        };
 
-      if (error) throw error;
+        if (editingOcc.status === 'RESOLVIDO') {
+          payload.resolved_at = resolvedAtInput ? new Date(resolvedAtInput + 'T12:00:00').toISOString() : null;
+        }
+
+        const { error } = await supabase
+          .from('cleaning_occurrences')
+          .update(payload)
+          .eq('id', editingOcc.id);
+
+        if (error) throw error;
+      } else {
+        // Insere nova ocorrência
+        const { error } = await supabase.from('cleaning_occurrences').insert([{
+          reported_by: newOcc.reported_by,
+          location: newOcc.location,
+          description: newOcc.description,
+          category: newOcc.category,
+          status: 'PENDENTE',
+          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString()
+        }]);
+
+        if (error) throw error;
+      }
       
       setNewOcc({ 
         reported_by: '', 
@@ -125,6 +150,8 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
         category: 'OUTROS',
         reported_at: new Date().toLocaleDateString('sv-SE')
       });
+      setResolvedAtInput('');
+      setEditingOcc(null);
       setIsModalOpen(false);
       fetchOccurrences();
     } catch (error) {
@@ -187,6 +214,19 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
     }
+  };
+
+  const handleEdit = (occ: Occurrence) => {
+    setEditingOcc(occ);
+    setNewOcc({
+      reported_by: occ.reported_by,
+      location: occ.location,
+      description: occ.description,
+      category: occ.category,
+      reported_at: occ.reported_at ? new Date(occ.reported_at).toLocaleDateString('sv-SE') : new Date().toLocaleDateString('sv-SE')
+    });
+    setResolvedAtInput(occ.resolved_at ? new Date(occ.resolved_at).toLocaleDateString('sv-SE') : '');
+    setIsModalOpen(true);
   };
 
   const filteredData = occurrences.filter(o => {
@@ -275,7 +315,18 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
             <Printer size={18} />
           </button>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingOcc(null);
+              setNewOcc({
+                reported_by: '',
+                location: '',
+                description: '',
+                category: 'OUTROS',
+                reported_at: new Date().toLocaleDateString('sv-SE')
+              });
+              setResolvedAtInput('');
+              setIsModalOpen(true);
+            }}
             className="px-6 py-3 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2 whitespace-nowrap"
           >
             <Plus size={16} /> <span className="hidden sm:inline">Nova</span>
@@ -320,7 +371,18 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                     {occ.status === 'RESOLVIDO' ? <CheckCircle2 size={14} /> : occ.status === 'EM_ANDAMENTO' ? <Clock size={14} /> : <AlertTriangle size={14} />}
                     {occ.status}
                   </button>
-                  <button onClick={() => deleteOccurrence(occ.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors no-print">
+                  <button 
+                    onClick={() => handleEdit(occ)} 
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors no-print"
+                    title="Editar ocorrência"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button 
+                    onClick={() => deleteOccurrence(occ.id)} 
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors no-print"
+                    title="Excluir ocorrência"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -395,7 +457,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-sm">
           <div className="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 bg-red-50 border-b border-red-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-gray-900 uppercase">Nova Ocorrência</h3>
+              <h3 className="text-xl font-black text-gray-900 uppercase">{editingOcc ? 'Editar Ocorrência' : 'Nova Ocorrência'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:text-red-500 rounded-xl transition-colors"><X size={24} /></button>
             </div>
             
@@ -469,8 +531,21 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 />
               </div>
 
+              {editingOcc && editingOcc.status === 'RESOLVIDO' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Data de Resolução</label>
+                  <input 
+                    type="date"
+                    required
+                    value={resolvedAtInput}
+                    onChange={e => setResolvedAtInput(e.target.value)}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/20"
+                  />
+                </div>
+              )}
+
               <button type="submit" className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-black transition-all shadow-xl">
-                Registrar Ocorrência
+                {editingOcc ? 'Salvar Alterações' : 'Registrar Ocorrência'}
               </button>
             </form>
           </div>
