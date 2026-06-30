@@ -147,7 +147,16 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
   const toggleStatus = async (id: string, currentStatus: string) => {
     try {
       const nextStatus = currentStatus === 'PENDENTE' ? 'EM_ANDAMENTO' : currentStatus === 'EM_ANDAMENTO' ? 'RESOLVIDO' : 'PENDENTE';
-      const resolvedAt = nextStatus === 'RESOLVIDO' ? new Date().toISOString() : null;
+      let resolvedAt = null;
+
+      if (nextStatus === 'RESOLVIDO') {
+        const inputDate = window.prompt(
+          "Para marcar como RESOLVIDO, informe a data de resolução (AAAA-MM-DD):", 
+          new Date().toLocaleDateString('sv-SE')
+        );
+        if (inputDate === null) return; // Cancela a alteração
+        resolvedAt = inputDate ? new Date(inputDate + 'T12:00:00').toISOString() : new Date().toISOString();
+      }
 
       const { error } = await supabase.from('cleaning_occurrences').update({
         status: nextStatus,
@@ -280,11 +289,15 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 </span>
                 
                 <div className="flex items-center gap-2">
-                  <button onClick={() => toggleStatus(occ.id, occ.status)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    occ.status === 'RESOLVIDO' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                    occ.status === 'EM_ANDAMENTO' ? 'bg-amber-200 text-amber-800 hover:bg-amber-300' :
-                    'bg-red-100 text-red-700 hover:bg-red-200'
-                  }`}>
+                  <button 
+                    onClick={() => toggleStatus(occ.id, occ.status)} 
+                    title="Clique para atualizar o status (Pendente -> Em Andamento -> Resolvido)"
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      occ.status === 'RESOLVIDO' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                      occ.status === 'EM_ANDAMENTO' ? 'bg-amber-200 text-amber-800 hover:bg-amber-300' :
+                      'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                  >
                     {occ.status === 'RESOLVIDO' ? <CheckCircle2 size={14} /> : occ.status === 'EM_ANDAMENTO' ? <Clock size={14} /> : <AlertTriangle size={14} />}
                     {occ.status}
                   </button>
