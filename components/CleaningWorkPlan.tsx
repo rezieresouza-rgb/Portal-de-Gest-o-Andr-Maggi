@@ -157,7 +157,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                     margin: 10,
                     filename: `Escala_Limpeza_Mural_${muralStartDate}_${muralEndDate}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2 },
+                    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
                 };
                 try {
@@ -645,12 +645,12 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                             <table className="w-full text-left border-collapse border border-gray-800 text-[10px]">
                                 <thead>
                                     <tr className="bg-gray-50 font-bold">
-                                        <th className="p-2 border border-gray-800 uppercase w-[22%]">Servidor(a)</th>
-                                        <th className="p-2 border border-gray-800 uppercase w-[10%] text-center">Turno</th>
-                                        <th className="p-2 border border-gray-800 uppercase w-[22%]">Ambientes Atendidos</th>
-                                        <th className="p-2 border border-gray-800 uppercase w-[26%]">Principais Atividades</th>
-                                        <th className="p-2 border border-gray-800 uppercase w-[10%] text-center">Frequência</th>
-                                        <th className="p-2 border border-gray-800 text-center w-[10%]">Horário</th>
+                                        <th className="p-2 border border-gray-800 uppercase w-[18%]">Servidor(a)</th>
+                                        <th className="p-2 border border-gray-800 uppercase w-[8%] text-center">Turno</th>
+                                        <th className="p-2 border border-gray-800 uppercase w-[18%]">Ambientes Atendidos</th>
+                                        <th className="p-2 border border-gray-800 uppercase w-[36%]">Principais Atividades</th>
+                                        <th className="p-2 border border-gray-800 uppercase w-[8%] text-center">Frequência</th>
+                                        <th className="p-2 border border-gray-800 text-center w-[12%] whitespace-nowrap">Horário</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -689,7 +689,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                                     })
                                                     .join('\n')}
                                             </td>
-                                            <td className="p-2 border border-gray-800 text-center font-bold text-[9px]">{row.horario}</td>
+                                            <td className="p-2 border border-gray-800 text-center font-bold text-[9px] whitespace-nowrap">{row.horario}</td>
                                         </tr>
                                     ))}
                                 </tbody>
