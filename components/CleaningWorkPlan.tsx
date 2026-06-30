@@ -420,7 +420,22 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                                 <input 
                                     type="date" 
                                     value={muralStartDate} 
-                                    onChange={e => setMuralStartDate(e.target.value)} 
+                                    onChange={e => {
+                                        const newStart = e.target.value;
+                                        setMuralStartDate(newStart);
+                                        const d = new Date(newStart + 'T12:00:00');
+                                        d.setDate(d.getDate() + 30);
+                                        setMuralEndDate(d.toLocaleDateString('sv-SE'));
+                                    }} 
+                                    className="w-full mt-1 p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none text-xs"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Fim da Vigência</label>
+                                <input 
+                                    type="date" 
+                                    value={muralEndDate} 
+                                    onChange={e => setMuralEndDate(e.target.value)} 
                                     className="w-full mt-1 p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none text-xs"
                                 />
                             </div>
