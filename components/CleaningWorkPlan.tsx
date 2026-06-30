@@ -52,7 +52,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
         return d.toLocaleDateString('sv-SE');
     });
     const [dreName, setDreName] = useState('SINOP');
-    const [schoolNameCode, setSchoolNameCode] = useState('EE ANDRÉ ANTÔNIO MAGGI - CÓDIGO 24045890');
+    const [schoolNameCode, setSchoolNameCode] = useState('EE ANDRÉ ANTÔNIO MAGGI - CÓDIGO 158330');
 
     useEffect(() => {
         fetchTasks();
