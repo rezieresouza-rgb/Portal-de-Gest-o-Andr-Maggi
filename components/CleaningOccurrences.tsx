@@ -31,7 +31,8 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     reported_by: '',
     location: '',
     description: '',
-    category: 'OUTROS'
+    category: 'OUTROS',
+    reported_at: new Date().toLocaleDateString('sv-SE')
   });
 
   useEffect(() => {
@@ -100,7 +101,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newOcc.reported_by || !newOcc.location || !newOcc.description) {
+    if (!newOcc.reported_by || !newOcc.location || !newOcc.description || !newOcc.reported_at) {
       alert("Preencha todos os campos obrigatórios.");
       return;
     }
@@ -111,12 +112,19 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
         location: newOcc.location,
         description: newOcc.description,
         category: newOcc.category,
-        status: 'PENDENTE'
+        status: 'PENDENTE',
+        reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString()
       }]);
 
       if (error) throw error;
       
-      setNewOcc({ reported_by: '', location: '', description: '', category: 'OUTROS' });
+      setNewOcc({ 
+        reported_by: '', 
+        location: '', 
+        description: '', 
+        category: 'OUTROS',
+        reported_at: new Date().toLocaleDateString('sv-SE')
+      });
       setIsModalOpen(false);
       fetchOccurrences();
     } catch (error) {
@@ -390,19 +398,32 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Categoria</label>
-                <select 
-                  value={newOcc.category}
-                  onChange={e => setNewOcc({...newOcc, category: e.target.value})}
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/20"
-                >
-                  <option value="ELETRICA">ELÉTRICA (Lâmpada, tomada...)</option>
-                  <option value="HIDRAULICA">HIDRÁULICA (Vazamento, torneira...)</option>
-                  <option value="ESTRUTURAL">ESTRUTURAL (Porta, fechadura, piso...)</option>
-                  <option value="EQUIPAMENTOS">EQUIPAMENTOS (Máquinas, ferramentas...)</option>
-                  <option value="OUTROS">OUTROS</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Categoria</label>
+                  <select 
+                    value={newOcc.category}
+                    onChange={e => setNewOcc({...newOcc, category: e.target.value})}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/20"
+                  >
+                    <option value="ELETRICA">ELÉTRICA (Lâmpada...)</option>
+                    <option value="HIDRAULICA">HIDRÁULICA (Torneira...)</option>
+                    <option value="ESTRUTURAL">ESTRUTURAL (Piso...)</option>
+                    <option value="EQUIPAMENTOS">EQUIPAMENTOS (Máquinas...)</option>
+                    <option value="OUTROS">OUTROS</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Data da Ocorrência</label>
+                  <input 
+                    type="date"
+                    required
+                    value={newOcc.reported_at}
+                    onChange={e => setNewOcc({...newOcc, reported_at: e.target.value})}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/20"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
