@@ -158,7 +158,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                     filename: `Escala_Limpeza_Mural_${muralStartDate}_${muralEndDate}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
                 };
                 try {
                     // @ts-ignore
@@ -621,7 +621,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
 
             {/* MURAL PRINTABLE ESCALA (IDENTICAL TO SCREENSHOT) */}
             <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
-                <div id="escala-mural-print" className="bg-white p-12 font-serif w-[210mm] min-h-[297mm] text-gray-950 flex flex-col justify-between">
+                <div id="escala-mural-print" className="bg-white p-12 font-serif w-[297mm] min-h-[210mm] text-gray-950 flex flex-col justify-between">
                     <div className="space-y-8">
                         {/* SEDUC Header */}
                         <div className="text-center space-y-1">
