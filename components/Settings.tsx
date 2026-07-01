@@ -66,26 +66,38 @@ const FUNCTIONS_LIST = [
 const Settings: React.FC = () => {
 
    const [permissions, setPermissions] = useState<Record<string, string[]>>(() => {
+      const defaultPerms = {
+         'DIRETOR': MODULES_LIST.map(m => m.id),
+         'OFICIAL DE GESTÃO CIVICO-MILITAR': ['civico_militar', 'scheduling', 'training'],
+         'OFICIAL DE GESTÃO EDUCACIONAL': ['civico_militar', 'scheduling', 'training'],
+         'COORDENADOR PEDAGÓGICO': MODULES_LIST.map(m => m.id),
+         'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar', 'training'],
+         'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
+         'MONITOR': ['civico_militar', 'scheduling', 'training'],
+         'BUSCA ATIVA': ['busca_ativa', 'secretariat'],
+         'MEDIADOR': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+         'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+         'BIBLIOTECA': ['library', 'scheduling'],
+         'LIMPEZA': ['limpeza', 'training'],
+         'NUTRIÇÃO': ['merenda', 'training'],
+         'AUXILIAR DE PÁTIO': ['training'],
+         'AUXILIAR DE COORDENAÇÃO PEDAGÓGICA': ['pedagogical', 'scheduling', 'training'],
+         'ASSISTENTE DE EDUCAÇÃO ESPECIAL': ['special_education', 'training'],
+         'APA': ['special_education', 'training'],
+         'SALA DE RECURSOS': ['special_education', 'training']
+      };
+
       try {
          const saved = localStorage.getItem('portal_module_permissions_v5');
          const parsed = saved ? JSON.parse(saved) : null;
          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            return parsed;
+            // Garante que cargos novos ou não salvos recebam os defaults
+            return { ...defaultPerms, ...parsed };
          }
       } catch (e) {
          console.error("Error parsing permissions:", e);
       }
-      return {
-         'DIRETOR': MODULES_LIST.map(m => m.id),
-         'COORDENADOR PEDAGÓGICO': MODULES_LIST.map(m => m.id),
-         'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado'],
-         'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
-         'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
-         'MEDIADOR': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
-         'BUSCA ATIVA': ['busca_ativa', 'secretariat'],
-         'LIMPEZA': ['limpeza'],
-         'NUTRIÇÃO': ['merenda']
-      };
+      return defaultPerms;
    });
 
    useEffect(() => {
