@@ -304,7 +304,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     if (user.role === 'GESTAO' || user.role === 'ADMINISTRADOR') {
       const fetchStaff = async () => {
         try {
-          const { data } = await supabase.from('staff').select('id, name, cpf, registration').eq('status', 'ATIVO').order('name');
+          const { data } = await supabase.from('staff').select('id, name, cpf, registration').in('status', ['ATIVO', 'EM_ATIVIDADE']).order('name');
           if (data) setStaffList(data);
         } catch (e) {
           console.error(e);
