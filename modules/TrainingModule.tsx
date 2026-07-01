@@ -1087,6 +1087,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           <option value="CRP">CRP (Psicologia)</option>
                           <option value="COREN">COREN (Enfermagem)</option>
                           <option value="CREA">CREA (Engenharia/Agronomia)</option>
+                          <option value="TST/MTE">TST/MTE (Seg. do Trabalho)</option>
                           <option value="OAB">OAB (Direito)</option>
                           <option value="CREF">CREF (Educação Física)</option>
                           <option value="CRESS">CRESS (Serviço Social)</option>
