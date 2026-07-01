@@ -1166,16 +1166,18 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         />
                       </div>
 
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Palestrante / Instrutor</label>
-                        <input
-                          type="text"
-                          value={newCourseInstructor}
-                          onChange={(e) => setNewCourseInstructor(e.target.value)}
-                          placeholder="Ex: Prof. Dr. Ricardo Silva"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
-                        />
-                      </div>
+                      {newCourseType === 'curso' && (
+                        <>
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Palestrante / Instrutor</label>
+                            <input
+                              type="text"
+                              value={newCourseInstructor}
+                              onChange={(e) => setNewCourseInstructor(e.target.value)}
+                              placeholder="Ex: Prof. Dr. Ricardo Silva"
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                            />
+                          </div>
 
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Formação / Titulação do Palestrante</label>
@@ -1211,65 +1213,70 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         </select>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nº do Conselho (Opcional)</label>
-                        <input
-                          type="text"
-                          value={newCourseInstructorCouncilNumber}
-                          onChange={(e) => setNewCourseInstructorCouncilNumber(e.target.value)}
-                          placeholder="Ex: 12345/MT"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
-                        />
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nº do Conselho (Opcional)</label>
+                          <input
+                            type="text"
+                            value={newCourseInstructorCouncilNumber}
+                            onChange={(e) => setNewCourseInstructorCouncilNumber(e.target.value)}
+                            placeholder="Ex: 12345/MT"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Descrição do Curso</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        {newCourseType === 'curso' ? 'Descrição do Curso' : newCourseType === 'reuniao' ? 'Pauta / Assunto' : 'Observações'}
+                      </label>
                       <textarea
                         required
                         rows={3}
                         value={newCourseDescription}
                         onChange={(e) => setNewCourseDescription(e.target.value)}
-                        placeholder="Descreva brevemente o conteúdo programático e os objetivos do curso..."
+                        placeholder={newCourseType === 'curso' ? "Descreva brevemente o conteúdo programático e os objetivos do curso..." : "Detalhes adicionais..."}
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all resize-none"
                       />
                     </div>
 
-                    {/* Lesson/Modules Creation Section */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Aulas / Módulos do Curso</label>
-                        <button
-                          type="button"
-                          onClick={handleAddLessonInput}
-                          className="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center gap-1"
-                        >
-                          <Plus size={12} /> Adicionar Aula
-                        </button>
-                      </div>
+                    {newCourseType === 'curso' && (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Aulas / Módulos do Curso</label>
+                          <button
+                            type="button"
+                            onClick={handleAddLessonInput}
+                            className="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center gap-1"
+                          >
+                            <Plus size={12} /> Adicionar Aula
+                          </button>
+                        </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {newCourseLessons.map((lesson, idx) => (
-                          <div key={idx} className="flex gap-2 items-center">
-                            <span className="text-[10px] font-black text-slate-400 w-5">{idx + 1}.</span>
-                            <input
-                              type="text"
-                              value={lesson}
-                              onChange={(e) => handleLessonInputChange(idx, e.target.value)}
-                              placeholder={`Nome da Aula ${idx + 1} (opcional)`}
-                              className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveLessonInput(idx)}
-                              className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {newCourseLessons.map((lesson, idx) => (
+                            <div key={idx} className="flex gap-2 items-center">
+                              <span className="text-[10px] font-black text-slate-400 w-5">{idx + 1}.</span>
+                              <input
+                                type="text"
+                                value={lesson}
+                                onChange={(e) => handleLessonInputChange(idx, e.target.value)}
+                                placeholder={`Nome da Aula ${idx + 1} (opcional)`}
+                                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveLessonInput(idx)}
+                                className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <button
                       type="submit"
