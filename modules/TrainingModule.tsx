@@ -41,6 +41,8 @@ interface Course {
   completionDate?: string;
   instructor?: string;
   instructorDegree?: string;
+  instructorCouncil?: string;
+  instructorCouncilNumber?: string;
 }
 
 const INITIAL_COURSES: Course[] = [
@@ -157,6 +159,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [newCourseDescription, setNewCourseDescription] = useState('');
   const [newCourseInstructor, setNewCourseInstructor] = useState('');
   const [newCourseInstructorDegree, setNewCourseInstructorDegree] = useState('');
+  const [newCourseInstructorCouncil, setNewCourseInstructorCouncil] = useState('');
+  const [newCourseInstructorCouncilNumber, setNewCourseInstructorCouncilNumber] = useState('');
   const [newCourseLessons, setNewCourseLessons] = useState<string[]>(['']);
 
   const handleAddLessonInput = () => {
@@ -198,7 +202,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       lessons: filteredLessons,
       completed: false,
       instructor: newCourseInstructor.trim() || 'EE André Maggi',
-      instructorDegree: newCourseInstructorDegree.trim() || 'Instrutor'
+      instructorDegree: newCourseInstructorDegree.trim() || 'Instrutor',
+      instructorCouncil: newCourseInstructorCouncil.trim() || undefined,
+      instructorCouncilNumber: newCourseInstructorCouncilNumber.trim() || undefined
     };
 
     const updatedCatalog = [...catalogCourses, newCourse];
@@ -212,6 +218,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setNewCourseDescription('');
     setNewCourseInstructor('');
     setNewCourseInstructorDegree('');
+    setNewCourseInstructorCouncil('');
+    setNewCourseInstructorCouncilNumber('');
     setNewCourseLessons(['']);
 
     showToast('Sucesso', 'Novo curso criado e publicado no catálogo!', 'success');
@@ -1066,6 +1074,39 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
                         />
                       </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Conselho (Opcional)</label>
+                        <select
+                          value={newCourseInstructorCouncil}
+                          onChange={(e) => setNewCourseInstructorCouncil(e.target.value)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                        >
+                          <option value="">Nenhum / Não aplicável</option>
+                          <option value="CRM">CRM (Medicina)</option>
+                          <option value="CRP">CRP (Psicologia)</option>
+                          <option value="COREN">COREN (Enfermagem)</option>
+                          <option value="CREA">CREA (Engenharia/Agronomia)</option>
+                          <option value="OAB">OAB (Direito)</option>
+                          <option value="CREF">CREF (Educação Física)</option>
+                          <option value="CRESS">CRESS (Serviço Social)</option>
+                          <option value="CRAS">CRAS / Assistência</option>
+                          <option value="CRB">CRB (Biblioteconomia)</option>
+                          <option value="CRA">CRA (Administração)</option>
+                          <option value="CRC">CRC (Contabilidade)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nº do Conselho (Opcional)</label>
+                        <input
+                          type="text"
+                          value={newCourseInstructorCouncilNumber}
+                          onChange={(e) => setNewCourseInstructorCouncilNumber(e.target.value)}
+                          placeholder="Ex: 12345/MT"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -1356,6 +1397,11 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                   <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5 truncate max-w-[150px] mx-auto" title={showAdminCertificateModal.instructor}>
                     {showAdminCertificateModal.instructor || 'Do Curso'}
                   </p>
+                  {showAdminCertificateModal.instructorCouncil && showAdminCertificateModal.instructorCouncilNumber && (
+                    <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">
+                      {showAdminCertificateModal.instructorCouncil} {showAdminCertificateModal.instructorCouncilNumber}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
@@ -1437,6 +1483,11 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                   <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5 truncate max-w-[150px] mx-auto" title={showCertificateModal.instructor}>
                     {showCertificateModal.instructor || 'Do Curso'}
                   </p>
+                  {showCertificateModal.instructorCouncil && showCertificateModal.instructorCouncilNumber && (
+                    <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">
+                      {showCertificateModal.instructorCouncil} {showCertificateModal.instructorCouncilNumber}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
