@@ -1187,6 +1187,91 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
         </div>
       </main>
 
+      {/* Record Form Modal */}
+      {showRecordModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[3rem] shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col">
+            <button
+              onClick={() => setShowRecordModal(null)}
+              className="absolute top-6 right-6 p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors z-10 print:hidden"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Record Form Printed Layout */}
+            <div className="p-8 md:p-12 overflow-y-auto custom-scrollbar flex-1 bg-white print:p-0 print:overflow-visible text-slate-800">
+              <div className="flex items-center gap-4 border-b-2 border-slate-800 pb-4 mb-6">
+                <img src="/logo-escola-oficial.png" alt="Brasão" className="w-16 h-16 object-contain" />
+                <div>
+                  <h1 className="text-xl font-bold uppercase tracking-widest text-slate-900">Ficha de Registro de Treinamento</h1>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Escola Estadual Cívico-Militar André Antônio Maggi</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-8 text-sm">
+                <div className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Título do Curso / Treinamento</span>
+                  <span className="font-bold text-slate-800 uppercase">{showRecordModal.title}</span>
+                </div>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Instrutor / Palestrante</span>
+                  <span className="font-bold text-slate-800 uppercase">{showRecordModal.instructor} {showRecordModal.instructorDegree ? `(${showRecordModal.instructorDegree})` : ''}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Carga Horária</span>
+                    <span className="font-bold text-slate-800 uppercase">{showRecordModal.hours} Horas</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Data de Realização</span>
+                    <span className="font-bold text-slate-800 uppercase text-slate-300">____/____/______</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-4 text-xs text-justify text-slate-600 font-medium border-l-4 border-slate-300 pl-4">
+                Declaro, pela minha assinatura, ter participado do treinamento especificado acima, tendo recebido as instruções, conteúdos programáticos e avaliações pertinentes, estando ciente das práticas e procedimentos abordados.
+              </div>
+
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="border border-slate-300 p-2 text-center w-12 font-bold">Nº</th>
+                    <th className="border border-slate-300 p-2 text-left font-bold">NOME DO PARTICIPANTE</th>
+                    <th className="border border-slate-300 p-2 text-center font-bold w-40">CPF / MATRÍCULA</th>
+                    <th className="border border-slate-300 p-2 text-left font-bold w-48">ASSINATURA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="border border-slate-300 p-2 text-center text-slate-400">{i + 1}</td>
+                      <td className="border border-slate-300 p-2"></td>
+                      <td className="border border-slate-300 p-2"></td>
+                      <td className="border border-slate-300 p-2"></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              <div className="mt-12 text-center space-y-2">
+                <div className="h-px w-64 bg-slate-400 mx-auto"></div>
+                <p className="text-[10px] font-black uppercase text-slate-600">Assinatura do Instrutor / Responsável</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 border-t border-slate-100 flex justify-end gap-3 print:hidden shrink-0">
+              <button
+                onClick={() => window.print()}
+                className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold uppercase text-[10px] shadow-md shadow-blue-600/10 transition-all flex items-center gap-1.5"
+              >
+                <Download size={14} /> Imprimir Ficha
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin Certificate Issue Modal */}
       {showAdminCertificateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
