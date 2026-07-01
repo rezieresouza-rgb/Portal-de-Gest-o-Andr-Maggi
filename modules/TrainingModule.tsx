@@ -42,9 +42,10 @@ interface Course {
   completionDate?: string;
   instructor?: string;
   instructorDegree?: string;
-  instructorCouncil?: string;
   instructorCouncilNumber?: string;
   date?: string;
+  location?: string;
+  scheduleTime?: string;
 }
 
 const INITIAL_COURSES: Course[] = [
@@ -172,6 +173,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [newCourseInstructorCouncil, setNewCourseInstructorCouncil] = useState('');
   const [newCourseInstructorCouncilNumber, setNewCourseInstructorCouncilNumber] = useState('');
   const [newCourseDate, setNewCourseDate] = useState('');
+  const [newCourseLocation, setNewCourseLocation] = useState('');
+  const [newCourseScheduleTime, setNewCourseScheduleTime] = useState('');
   const [newCourseLessons, setNewCourseLessons] = useState<string[]>(['']);
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
 
@@ -186,6 +189,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setNewCourseInstructorCouncil(course.instructorCouncil || '');
     setNewCourseInstructorCouncilNumber(course.instructorCouncilNumber || '');
     setNewCourseDate(course.date || '');
+    setNewCourseLocation(course.location || '');
+    setNewCourseScheduleTime(course.scheduleTime || '');
     setNewCourseLessons(course.lessons.length > 0 && course.lessons[0] !== 'Palestra / Treinamento Único' ? course.lessons : ['']);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -232,7 +237,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       instructorDegree: newCourseInstructorDegree.trim() || 'Instrutor',
       instructorCouncil: newCourseInstructorCouncil.trim() || undefined,
       instructorCouncilNumber: newCourseInstructorCouncilNumber.trim() || undefined,
-      date: newCourseDate || undefined
+      date: newCourseDate || undefined,
+      location: newCourseLocation.trim() || undefined,
+      scheduleTime: newCourseScheduleTime.trim() || undefined
     };
 
     let updatedCatalog;
@@ -258,6 +265,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setNewCourseInstructorCouncil('');
     setNewCourseInstructorCouncilNumber('');
     setNewCourseDate('');
+    setNewCourseLocation('');
+    setNewCourseScheduleTime('');
     setNewCourseLessons(['']);
   };
 
@@ -1058,6 +1067,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           setNewCourseInstructorCouncil('');
                           setNewCourseInstructorCouncilNumber('');
                           setNewCourseDate('');
+                          setNewCourseLocation('');
+                          setNewCourseScheduleTime('');
                           setNewCourseLessons(['']);
                         }} className="text-[10px] text-slate-400 hover:text-slate-600 font-bold uppercase transition-colors">Cancelar Edição</button>
                       )}
@@ -1110,6 +1121,28 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           type="date"
                           value={newCourseDate}
                           onChange={(e) => setNewCourseDate(e.target.value)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Horário (Opcional)</label>
+                        <input
+                          type="text"
+                          value={newCourseScheduleTime}
+                          onChange={(e) => setNewCourseScheduleTime(e.target.value)}
+                          placeholder="Ex: 08:00 às 12:00"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
+                        />
+                      </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Local de Realização (Opcional)</label>
+                        <input
+                          type="text"
+                          value={newCourseLocation}
+                          onChange={(e) => setNewCourseLocation(e.target.value)}
+                          placeholder="Ex: Auditório Principal da Escola"
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
                         />
                       </div>
@@ -1368,25 +1401,40 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-8 text-sm">
-                <div className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <div className="grid grid-cols-1 gap-4 mb-8 text-sm">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                   <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Título do Curso / Treinamento</span>
                   <span className="font-bold text-slate-800 uppercase">{showRecordModal.title}</span>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                   <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Instrutor / Palestrante</span>
-                  <span className="font-bold text-slate-800 uppercase">{showRecordModal.instructor} {showRecordModal.instructorDegree ? `(${showRecordModal.instructorDegree})` : ''}</span>
+                  <span className="font-bold text-slate-800 uppercase">
+                    {showRecordModal.instructor} {showRecordModal.instructorDegree ? `(${showRecordModal.instructorDegree})` : ''}
+                    {showRecordModal.instructorCouncil && showRecordModal.instructorCouncilNumber ? ` - ${showRecordModal.instructorCouncil}: ${showRecordModal.instructorCouncilNumber}` : ''}
+                  </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-4 gap-4">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Carga Horária</span>
-                    <span className="font-bold text-slate-800 uppercase">{showRecordModal.hours} Horas</span>
-                  </div>
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Data de Realização</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Data</span>
                     <span className={`font-bold uppercase ${showRecordModal.date ? 'text-slate-800' : 'text-slate-300'}`}>
                       {showRecordModal.date ? new Date(showRecordModal.date + 'T12:00:00').toLocaleDateString('pt-BR') : '____/____/______'}
                     </span>
+                  </div>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Horário</span>
+                    <span className={`font-bold uppercase ${showRecordModal.scheduleTime ? 'text-slate-800' : 'text-slate-300'}`}>
+                      {showRecordModal.scheduleTime || '___:___ às ___:___'}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Local</span>
+                    <span className={`font-bold uppercase ${showRecordModal.location ? 'text-slate-800' : 'text-slate-300'}`}>
+                      {showRecordModal.location || '_________________'}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Carga Horária</span>
+                    <span className="font-bold text-slate-800 uppercase">{showRecordModal.hours} Horas</span>
                   </div>
                 </div>
               </div>
