@@ -150,6 +150,13 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [showAdminCertificateModal, setShowAdminCertificateModal] = useState<Course | null>(null);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [selectedStaffForCert, setSelectedStaffForCert] = useState<any>(null);
+  const [selectedStaffIdsForRecord, setSelectedStaffIdsForRecord] = useState<Set<string>>(new Set());
+  
+  useEffect(() => {
+    if (showRecordModal) {
+      setSelectedStaffIdsForRecord(new Set(staffList.map(s => s.id)));
+    }
+  }, [showRecordModal, staffList]);
   const [filterCategory, setFilterCategory] = useState<string>('Todos');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -1250,6 +1257,38 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
               <X size={20} />
             </button>
 
+            {/* Participants Selection (Print Hidden) */}
+            <div className="p-6 bg-slate-50 border-b border-slate-200 print:hidden shrink-0 max-h-64 overflow-y-auto custom-scrollbar">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Selecione os Convocados</h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Apenas os selecionados aparecerão na lista impressa</p>
+                </div>
+                <div className="flex gap-4">
+                  <button onClick={() => setSelectedStaffIdsForRecord(new Set(staffList.map(s => s.id)))} className="text-[10px] font-black text-violet-600 uppercase hover:underline">Marcar Todos</button>
+                  <button onClick={() => setSelectedStaffIdsForRecord(new Set())} className="text-[10px] font-black text-slate-400 uppercase hover:underline">Limpar Seleção</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {staffList.map(staff => (
+                  <label key={staff.id} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-violet-300 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      className="rounded text-violet-600 focus:ring-violet-500 w-3 h-3"
+                      checked={selectedStaffIdsForRecord.has(staff.id)}
+                      onChange={(e) => {
+                        const newSet = new Set(selectedStaffIdsForRecord);
+                        if (e.target.checked) newSet.add(staff.id);
+                        else newSet.delete(staff.id);
+                        setSelectedStaffIdsForRecord(newSet);
+                      }}
+                    />
+                    <span className="text-[9px] font-bold text-slate-700 uppercase truncate" title={staff.name}>{staff.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {/* Record Form Printed Layout */}
             <div className="p-8 md:p-12 overflow-y-auto custom-scrollbar flex-1 bg-white print:p-0 print:overflow-visible text-slate-800">
               <div className="flex items-center gap-4 border-b-2 border-slate-800 pb-4 mb-6">
@@ -1297,7 +1336,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {staffList.map((staff, i) => (
+                  {staffList.filter(s => selectedStaffIdsForRecord.has(s.id)).map((staff, i) => (
                     <tr key={staff.id}>
                       <td className="border border-slate-300 p-2 text-center text-slate-400">{i + 1}</td>
                       <td className="border border-slate-300 p-2 uppercase text-[10px] font-semibold text-slate-700">{staff.name}</td>
@@ -1305,9 +1344,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                       <td className="border border-slate-300 p-2"></td>
                     </tr>
                   ))}
-                  {Array.from({ length: Math.max(5, 20 - staffList.length) }).map((_, i) => (
+                  {Array.from({ length: Math.max(5, 20 - staffList.filter(s => selectedStaffIdsForRecord.has(s.id)).length) }).map((_, i) => (
                     <tr key={`empty-${i}`}>
-                      <td className="border border-slate-300 p-2 text-center text-slate-400">{staffList.length + i + 1}</td>
+                      <td className="border border-slate-300 p-2 text-center text-slate-400">{staffList.filter(s => selectedStaffIdsForRecord.has(s.id)).length + i + 1}</td>
                       <td className="border border-slate-300 p-2"></td>
                       <td className="border border-slate-300 p-2"></td>
                       <td className="border border-slate-300 p-2"></td>
