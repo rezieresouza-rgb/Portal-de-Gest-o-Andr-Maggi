@@ -219,65 +219,74 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   // Create course
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newCourseType === 'curso' && (!newCourseTitle.trim() || !newCourseDescription.trim())) {
-      showToast('Aviso', 'Preencha o título e a descrição do curso!', 'warning');
-      return;
-    }
-    if (newCourseType !== 'curso' && !newCourseTitle.trim()) {
-      showToast('Aviso', 'Preencha o nome do registro!', 'warning');
-      return;
-    }
-    let filteredLessons = newCourseLessons.filter(l => l.trim() !== '');
-    if (filteredLessons.length === 0) {
-      filteredLessons = ['Palestra / Treinamento Único'];
-    }
+    
+    try {
+      if (newCourseType === 'curso' && (!newCourseTitle.trim() || !newCourseDescription.trim())) {
+        showToast('Aviso', 'Preencha o título e a descrição do curso!', 'warning');
+        return;
+      }
+      if (newCourseType !== 'curso' && !newCourseTitle.trim()) {
+        showToast('Aviso', 'Preencha o nome do registro!', 'warning');
+        return;
+      }
+      
+      let filteredLessons = newCourseLessons.filter(l => l.trim() !== '');
+      if (filteredLessons.length === 0) {
+        filteredLessons = ['Palestra / Treinamento Único'];
+      }
 
-    const newCourse: Course = {
-      id: editingCourseId || `c${Date.now()}`,
-      type: newCourseType,
-      title: newCourseTitle.trim(),
-      category: newCourseCategory,
-      hours: Number(newCourseHours) || 10,
-      description: newCourseDescription.trim(),
-      progress: 0,
-      lessons: filteredLessons,
-      completed: false,
-      instructor: newCourseInstructor.trim() || 'EE André Maggi',
-      instructorDegree: newCourseInstructorDegree.trim() || 'Instrutor',
-      instructorCouncil: newCourseInstructorCouncil.trim() || undefined,
-      instructorCouncilNumber: newCourseInstructorCouncilNumber.trim() || undefined,
-      date: newCourseDate || undefined,
-      location: newCourseLocation.trim() || undefined,
-      scheduleTime: newCourseScheduleTime.trim() || undefined
-    };
+      const newCourse: Course = {
+        id: editingCourseId || `c${Date.now()}`,
+        type: newCourseType,
+        title: newCourseTitle.trim(),
+        category: newCourseCategory,
+        hours: Number(newCourseHours) || 10,
+        description: newCourseDescription.trim(),
+        progress: 0,
+        lessons: filteredLessons,
+        completed: false,
+        instructor: newCourseInstructor.trim() || 'EE André Maggi',
+        instructorDegree: newCourseInstructorDegree.trim() || 'Instrutor',
+        instructorCouncil: newCourseInstructorCouncil.trim() || undefined,
+        instructorCouncilNumber: newCourseInstructorCouncilNumber.trim() || undefined,
+        date: newCourseDate || undefined,
+        location: newCourseLocation.trim() || undefined,
+        scheduleTime: newCourseScheduleTime.trim() || undefined
+      };
 
-    let updatedCatalog;
-    if (editingCourseId) {
-      updatedCatalog = catalogCourses.map(c => c.id === editingCourseId ? newCourse : c);
-      showToast('Sucesso', 'Curso atualizado com sucesso!', 'success');
-      setEditingCourseId(null);
-    } else {
-      updatedCatalog = [...catalogCourses, newCourse];
-      showToast('Sucesso', 'Novo curso criado e publicado no catálogo!', 'success');
+      let updatedCatalog;
+      if (editingCourseId) {
+        updatedCatalog = catalogCourses.map(c => c.id === editingCourseId ? newCourse : c);
+        showToast('Sucesso', 'Curso atualizado com sucesso!', 'success');
+        setEditingCourseId(null);
+      } else {
+        updatedCatalog = [...catalogCourses, newCourse];
+        showToast('Sucesso', 'Novo registro criado e publicado no catálogo!', 'success');
+      }
+
+      localStorage.setItem('portal_training_catalog_v1', JSON.stringify(updatedCatalog));
+      setCatalogCourses(updatedCatalog);
+
+      // Reset form
+      setNewCourseType('curso');
+      setNewCourseTitle('');
+      setNewCourseCategory('Pedagógico');
+      setNewCourseHours(20);
+      setNewCourseDescription('');
+      setNewCourseInstructor('');
+      setNewCourseInstructorDegree('');
+      setNewCourseInstructorCouncil('');
+      setNewCourseInstructorCouncilNumber('');
+      setNewCourseDate('');
+      setNewCourseLocation('');
+      setNewCourseScheduleTime('');
+      setNewCourseLessons(['']);
+      
+    } catch (error: any) {
+      console.error("Erro ao salvar curso:", error);
+      alert("Ocorreu um erro ao tentar salvar: " + error.message);
+      showToast('Erro', 'Ocorreu um erro ao salvar o registro.', 'error');
     }
-
-    localStorage.setItem('portal_training_catalog_v1', JSON.stringify(updatedCatalog));
-    setCatalogCourses(updatedCatalog);
-
-    // Reset form
-    setNewCourseType('curso');
-    setNewCourseTitle('');
-    setNewCourseCategory('Pedagógico');
-    setNewCourseHours(20);
-    setNewCourseDescription('');
-    setNewCourseInstructor('');
-    setNewCourseInstructorDegree('');
-    setNewCourseInstructorCouncil('');
-    setNewCourseInstructorCouncilNumber('');
-    setNewCourseDate('');
-    setNewCourseLocation('');
-    setNewCourseScheduleTime('');
-    setNewCourseLessons(['']);
   };
 
   // Delete course
