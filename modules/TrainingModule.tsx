@@ -1445,7 +1445,6 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                   </div>
                 )}
               </div>
-              </div>
 
               <div className="mb-4 text-xs text-justify text-slate-600 font-medium border-l-4 border-slate-300 pl-4">
                 Declaro, pela minha assinatura, ter participado do treinamento especificado acima, tendo recebido as instruções, conteúdos programáticos e avaliações pertinentes, estando ciente das práticas e procedimentos abordados.
