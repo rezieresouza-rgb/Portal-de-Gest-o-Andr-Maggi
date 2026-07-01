@@ -67,7 +67,7 @@ const Settings: React.FC = () => {
 
    const [permissions, setPermissions] = useState<Record<string, string[]>>(() => {
       try {
-         const saved = localStorage.getItem('portal_module_permissions_v1');
+         const saved = localStorage.getItem('portal_module_permissions_v5');
          const parsed = saved ? JSON.parse(saved) : null;
          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             return parsed;
@@ -80,8 +80,8 @@ const Settings: React.FC = () => {
          'COORDENADOR PEDAGÓGICO': MODULES_LIST.map(m => m.id),
          'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado'],
          'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education'],
-         'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
-         'MEDIADOR': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education'],
+         'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+         'MEDIADOR': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
          'BUSCA ATIVA': ['busca_ativa', 'secretariat'],
          'LIMPEZA': ['limpeza'],
          'NUTRIÇÃO': ['merenda']
@@ -93,7 +93,7 @@ const Settings: React.FC = () => {
    });
 
    useEffect(() => {
-      localStorage.setItem('portal_module_permissions_v1', JSON.stringify(permissions));
+      localStorage.setItem('portal_module_permissions_v5', JSON.stringify(permissions));
       window.dispatchEvent(new Event('storage'));
    }, [permissions]);
 
