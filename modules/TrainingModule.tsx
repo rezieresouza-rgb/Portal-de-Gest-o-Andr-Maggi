@@ -1170,7 +1170,6 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Palestrante / Instrutor</label>
                         <input
                           type="text"
-                          required
                           value={newCourseInstructor}
                           onChange={(e) => setNewCourseInstructor(e.target.value)}
                           placeholder="Ex: Prof. Dr. Ricardo Silva"
@@ -1182,7 +1181,6 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Formação / Titulação do Palestrante</label>
                         <input
                           type="text"
-                          required
                           value={newCourseInstructorDegree}
                           onChange={(e) => setNewCourseInstructorDegree(e.target.value)}
                           placeholder="Ex: Doutor em Educação pela USP"
