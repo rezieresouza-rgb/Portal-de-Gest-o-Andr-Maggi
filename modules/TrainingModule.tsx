@@ -1089,7 +1089,6 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nome do Registro</label>
                         <input
                           type="text"
-                          required
                           value={newCourseTitle}
                           onChange={(e) => setNewCourseTitle(e.target.value)}
                           placeholder={newCourseType === 'protocolo' ? "Ex: Entrega de Protocolos Covid" : newCourseType === 'reuniao' ? "Ex: Reunião de Alinhamento" : "Ex: Metodologias Ativas na Prática"}
