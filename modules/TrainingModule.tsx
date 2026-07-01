@@ -1186,16 +1186,31 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-100 max-w-md mx-auto text-center">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-slate-100 max-w-3xl mx-auto text-center">
                 <div className="space-y-1">
                   <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
-                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Diretoria Pedagógica</p>
+                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Diretor Escolar</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5">Reziere de Souza</p>
                   <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">EE Cívico-Militar André Antônio Maggi</p>
                 </div>
                 <div className="space-y-1">
                   <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
                   <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Secretaria Escolar</p>
                   <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">Seduc GS</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
+                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Instrutor(a)</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5 truncate max-w-[150px] mx-auto" title={showCertificateModal.instructor}>
+                    {showCertificateModal.instructor || 'Do Curso'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
+                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Participante</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5 truncate max-w-[150px] mx-auto" title={user.name}>
+                    {user.name || 'Servidor(a)'}
+                  </p>
                 </div>
               </div>
 
