@@ -448,9 +448,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative w-full">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative w-full print:h-auto print:overflow-visible">
       {/* Sidebar - Violet Theme */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-violet-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-violet-950 text-white flex flex-col print:hidden transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="p-6 flex items-center justify-between">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-violet-600 p-1.5 rounded-lg shadow-lg">🎓</span>
@@ -509,7 +509,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className={`flex-1 flex flex-col overflow-hidden ${showRecordModal ? 'print:hidden' : ''}`}>
         {/* Header */}
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0">
           <div className="flex items-center gap-3 lg:gap-4">
