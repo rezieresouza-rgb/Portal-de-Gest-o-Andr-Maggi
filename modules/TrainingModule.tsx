@@ -16,7 +16,8 @@ import {
   BookOpenCheck,
   Plus,
   Users,
-  FileText
+  FileText,
+  Edit
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { supabase } from '../supabaseClient';
@@ -171,6 +172,22 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [newCourseInstructorCouncilNumber, setNewCourseInstructorCouncilNumber] = useState('');
   const [newCourseDate, setNewCourseDate] = useState('');
   const [newCourseLessons, setNewCourseLessons] = useState<string[]>(['']);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+
+  const handleEditCourseClick = (course: Course) => {
+    setEditingCourseId(course.id);
+    setNewCourseTitle(course.title);
+    setNewCourseCategory(course.category);
+    setNewCourseHours(course.hours);
+    setNewCourseDescription(course.description);
+    setNewCourseInstructor(course.instructor || '');
+    setNewCourseInstructorDegree(course.instructorDegree || '');
+    setNewCourseInstructorCouncil(course.instructorCouncil || '');
+    setNewCourseInstructorCouncilNumber(course.instructorCouncilNumber || '');
+    setNewCourseDate(course.date || '');
+    setNewCourseLessons(course.lessons.length > 0 && course.lessons[0] !== 'Palestra / Treinamento Único' ? course.lessons : ['']);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleAddLessonInput = () => {
     setNewCourseLessons([...newCourseLessons, '']);
@@ -202,7 +219,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     }
 
     const newCourse: Course = {
-      id: `c-${Date.now()}`,
+      id: editingCourseId || `c-${Date.now()}`,
       title: newCourseTitle.trim(),
       category: newCourseCategory,
       hours: Number(newCourseHours) || 10,
@@ -217,7 +234,16 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       date: newCourseDate || undefined
     };
 
-    const updatedCatalog = [...catalogCourses, newCourse];
+    let updatedCatalog;
+    if (editingCourseId) {
+      updatedCatalog = catalogCourses.map(c => c.id === editingCourseId ? newCourse : c);
+      showToast('Sucesso', 'Curso atualizado com sucesso!', 'success');
+      setEditingCourseId(null);
+    } else {
+      updatedCatalog = [...catalogCourses, newCourse];
+      showToast('Sucesso', 'Novo curso criado e publicado no catálogo!', 'success');
+    }
+
     localStorage.setItem('portal_training_catalog_v1', JSON.stringify(updatedCatalog));
     setCatalogCourses(updatedCatalog);
 
@@ -232,8 +258,6 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setNewCourseInstructorCouncilNumber('');
     setNewCourseDate('');
     setNewCourseLessons(['']);
-
-    showToast('Sucesso', 'Novo curso criado e publicado no catálogo!', 'success');
   };
 
   // Delete course
@@ -1015,10 +1039,27 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                     <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Crie novos cursos e gerencie o catálogo da escola</p>
                   </div>
 
-                  {/* Create Course Form */}
-                  <form onSubmit={handleCreateCourse} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
-                    <h4 className="text-sm font-black text-slate-800 uppercase border-b border-slate-100 pb-3 flex items-center gap-2">
-                      <Plus size={18} className="text-violet-600" /> Criar Novo Curso
+                  <form onSubmit={handleCreateCourse} className={`bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6 transition-all ${editingCourseId ? 'ring-2 ring-violet-500' : ''}`}>
+                    <h4 className="text-sm font-black text-slate-800 uppercase border-b border-slate-100 pb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {editingCourseId ? <Edit size={18} className="text-violet-600" /> : <Plus size={18} className="text-violet-600" />} 
+                        {editingCourseId ? 'Editar Curso' : 'Criar Novo Curso'}
+                      </div>
+                      {editingCourseId && (
+                        <button type="button" onClick={() => {
+                          setEditingCourseId(null);
+                          setNewCourseTitle('');
+                          setNewCourseCategory('Pedagógico');
+                          setNewCourseHours(20);
+                          setNewCourseDescription('');
+                          setNewCourseInstructor('');
+                          setNewCourseInstructorDegree('');
+                          setNewCourseInstructorCouncil('');
+                          setNewCourseInstructorCouncilNumber('');
+                          setNewCourseDate('');
+                          setNewCourseLessons(['']);
+                        }} className="text-[10px] text-slate-400 hover:text-slate-600 font-bold uppercase transition-colors">Cancelar Edição</button>
+                      )}
                     </h4>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
@@ -1183,7 +1224,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                       type="submit"
                       className="w-full py-4 bg-violet-600 text-white rounded-2xl hover:bg-violet-700 font-black uppercase tracking-wider text-xs shadow-lg shadow-violet-600/10 transition-all"
                     >
-                      Salvar e Publicar Curso no Catálogo
+                      {editingCourseId ? 'Salvar Alterações do Curso' : 'Salvar e Publicar Curso no Catálogo'}
                     </button>
                   </form>
 
@@ -1208,6 +1249,13 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           <div className="flex gap-2 self-end md:self-center shrink-0">
                             <button
                               type="button"
+                              onClick={() => handleEditCourseClick(c)}
+                              className="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
+                            >
+                              <Edit size={12} /> Editar
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => setShowAdminCertificateModal(c)}
                               className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
                             >
@@ -1225,7 +1273,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                               onClick={() => handleDeleteCourse(c.id)}
                               className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
                             >
-                              <X size={12} /> Remover Curso
+                              <X size={12} /> Remover
                             </button>
                           </div>
                         </div>
