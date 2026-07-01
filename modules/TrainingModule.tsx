@@ -19,6 +19,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { supabase } from '../supabaseClient';
 
 interface TrainingModuleProps {
   user: any;
@@ -143,6 +144,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showCertificateModal, setShowCertificateModal] = useState<Course | null>(null);
   const [showRecordModal, setShowRecordModal] = useState<Course | null>(null);
+  const [showAdminCertificateModal, setShowAdminCertificateModal] = useState<Course | null>(null);
+  const [staffList, setStaffList] = useState<any[]>([]);
+  const [selectedStaffForCert, setSelectedStaffForCert] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState<string>('Todos');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -253,6 +257,20 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     localStorage.setItem(`portal_training_courses_${user.id}`, JSON.stringify(updatedCourses));
     setMyCourses(updatedCourses);
   };
+
+  useEffect(() => {
+    if (user.role === 'GESTAO' || user.role === 'ADMINISTRADOR') {
+      const fetchStaff = async () => {
+        try {
+          const { data } = await supabase.from('staff').select('id, name').eq('status', 'ATIVO').order('name');
+          if (data) setStaffList(data);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchStaff();
+    }
+  }, [user.role]);
 
   // Enroll in a new course
   const handleEnroll = (course: Course) => {
@@ -1131,6 +1149,13 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           <div className="flex gap-2 self-end md:self-center shrink-0">
                             <button
                               type="button"
+                              onClick={() => setShowAdminCertificateModal(c)}
+                              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
+                            >
+                              <Award size={12} /> Certificados
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => setShowRecordModal(c)}
                               className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
                             >
@@ -1161,6 +1186,122 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
           )}
         </div>
       </main>
+
+      {/* Admin Certificate Issue Modal */}
+      {showAdminCertificateModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[3rem] shadow-2xl max-w-3xl w-full border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col">
+            <button
+              onClick={() => { setShowAdminCertificateModal(null); setSelectedStaffForCert(null); }}
+              className="absolute top-6 right-6 p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors z-10 print:hidden"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="p-8 border-b border-slate-100 print:hidden shrink-0">
+              <h2 className="text-xl font-black uppercase tracking-tight text-slate-800">Emitir Certificado Avulso</h2>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-1">Selecione um participante para gerar o certificado do curso</p>
+              
+              <div className="mt-6 flex flex-col md:flex-row gap-4">
+                <div className="flex-1 space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Selecione o Participante (Base de Servidores)</label>
+                  <select 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                    onChange={(e) => {
+                      const st = staffList.find(s => s.id === e.target.value);
+                      setSelectedStaffForCert(st || null);
+                    }}
+                    value={selectedStaffForCert?.id || ''}
+                  >
+                    <option value="">-- Selecione ou digite manualmente --</option>
+                    {staffList.map(st => (
+                      <option key={st.id} value={st.id}>{st.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex-1 space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Ou Digite Manualmente</label>
+                  <input
+                    type="text"
+                    placeholder="Nome do Participante"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                    value={selectedStaffForCert?.name || ''}
+                    onChange={(e) => setSelectedStaffForCert({ id: 'manual', name: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Certificate Printed Layout */}
+            <div className="p-8 md:p-12 border-[16px] border-double border-violet-100 m-2 rounded-[2.5rem] bg-amber-50/5 relative text-center space-y-6 overflow-y-auto print:border-none print:m-0 print:overflow-visible flex-1">
+              
+              {/* Decorative elements */}
+              <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-violet-300"></div>
+              <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-violet-300"></div>
+              <div className="absolute bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-violet-300"></div>
+              <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-violet-300"></div>
+
+              {/* Certificate content */}
+              <div className="space-y-2 flex flex-col items-center">
+                <img src="/logo-escola-oficial.png" alt="Brasão" className="w-20 h-20 object-contain mb-3" />
+                <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-violet-800">Certificado de Conclusão</h1>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Escola Estadual Cívico-Militar André Antônio Maggi</p>
+              </div>
+
+              <div className="space-y-4 py-4">
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider text-center">Certificamos que o(a) docente/servidor(a)</p>
+                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight text-center">{selectedStaffForCert?.name || 'NOME DO PARTICIPANTE'}</h2>
+                <p className="text-xs text-slate-500 leading-relaxed max-w-xl mx-auto font-medium text-center">
+                  concluiu com êxito o programa de formação continuada em <strong>{showAdminCertificateModal.title}</strong>, {showAdminCertificateModal.instructor ? `ministrado por ${showAdminCertificateModal.instructor}${showAdminCertificateModal.instructorDegree ? ` (${showAdminCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showAdminCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-slate-100 max-w-3xl mx-auto text-center">
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
+                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Diretor Escolar</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5">Reziere de Souza</p>
+                  <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">EE Cívico-Militar André Antônio Maggi</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
+                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Secretaria Escolar</p>
+                  <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">Seduc GS</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
+                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Instrutor(a)</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5 truncate max-w-[150px] mx-auto" title={showAdminCertificateModal.instructor}>
+                    {showAdminCertificateModal.instructor || 'Do Curso'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-300 max-w-[120px] mx-auto"></div>
+                  <p className="text-[9px] font-black text-slate-700 uppercase leading-none">Participante</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5 truncate max-w-[150px] mx-auto" title={selectedStaffForCert?.name}>
+                    {selectedStaffForCert?.name || 'Servidor(a)'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-[8px] text-slate-400 font-bold uppercase tracking-widest pt-4 text-center">
+                Registrado sob o código de validação institucional nº {showAdminCertificateModal.id.toUpperCase()}-{(selectedStaffForCert?.id || 'MNUL').substring(0, 4).toUpperCase()}-{Date.now().toString().substring(8)}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 border-t border-slate-100 flex justify-end gap-3 print:hidden shrink-0">
+              <button
+                disabled={!selectedStaffForCert?.name}
+                onClick={() => window.print()}
+                className="px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold uppercase text-[10px] shadow-md shadow-violet-600/10 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Download size={14} /> Imprimir Certificado
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Certificate Modal */}
       {showCertificateModal && (
