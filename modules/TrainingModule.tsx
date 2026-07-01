@@ -43,6 +43,7 @@ interface Course {
   instructorDegree?: string;
   instructorCouncil?: string;
   instructorCouncilNumber?: string;
+  date?: string;
 }
 
 const INITIAL_COURSES: Course[] = [
@@ -161,6 +162,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [newCourseInstructorDegree, setNewCourseInstructorDegree] = useState('');
   const [newCourseInstructorCouncil, setNewCourseInstructorCouncil] = useState('');
   const [newCourseInstructorCouncilNumber, setNewCourseInstructorCouncilNumber] = useState('');
+  const [newCourseDate, setNewCourseDate] = useState('');
   const [newCourseLessons, setNewCourseLessons] = useState<string[]>(['']);
 
   const handleAddLessonInput = () => {
@@ -204,7 +206,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       instructor: newCourseInstructor.trim() || 'EE André Maggi',
       instructorDegree: newCourseInstructorDegree.trim() || 'Instrutor',
       instructorCouncil: newCourseInstructorCouncil.trim() || undefined,
-      instructorCouncilNumber: newCourseInstructorCouncilNumber.trim() || undefined
+      instructorCouncilNumber: newCourseInstructorCouncilNumber.trim() || undefined,
+      date: newCourseDate || undefined
     };
 
     const updatedCatalog = [...catalogCourses, newCourse];
@@ -220,6 +223,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setNewCourseInstructorDegree('');
     setNewCourseInstructorCouncil('');
     setNewCourseInstructorCouncilNumber('');
+    setNewCourseDate('');
     setNewCourseLessons(['']);
 
     showToast('Sucesso', 'Novo curso criado e publicado no catálogo!', 'success');
@@ -1051,6 +1055,16 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         />
                       </div>
 
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Data de Realização (Opcional)</label>
+                        <input
+                          type="date"
+                          value={newCourseDate}
+                          onChange={(e) => setNewCourseDate(e.target.value)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
+                        />
+                      </div>
+
                       <div className="space-y-2 md:col-span-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Palestrante / Instrutor</label>
                         <input
@@ -1262,7 +1276,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                   </div>
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                     <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Data de Realização</span>
-                    <span className="font-bold text-slate-800 uppercase text-slate-300">____/____/______</span>
+                    <span className={`font-bold uppercase ${showRecordModal.date ? 'text-slate-800' : 'text-slate-300'}`}>
+                      {showRecordModal.date ? new Date(showRecordModal.date + 'T12:00:00').toLocaleDateString('pt-BR') : '____/____/______'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1384,7 +1400,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider text-center">Certificamos que o(a) docente/servidor(a)</p>
                 <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight text-center">{selectedStaffForCert?.name || 'NOME DO PARTICIPANTE'}</h2>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-xl mx-auto font-medium text-center">
-                  concluiu com êxito o programa de formação continuada em <strong>{showAdminCertificateModal.title}</strong>, {showAdminCertificateModal.instructor ? `ministrado por ${showAdminCertificateModal.instructor}${showAdminCertificateModal.instructorDegree ? ` (${showAdminCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showAdminCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas.
+                  concluiu com êxito o programa de formação continuada em <strong>{showAdminCertificateModal.title}</strong>, {showAdminCertificateModal.instructor ? `ministrado por ${showAdminCertificateModal.instructor}${showAdminCertificateModal.instructorDegree ? ` (${showAdminCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showAdminCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas{showAdminCertificateModal.date ? `, realizado em ${new Date(showAdminCertificateModal.date + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}.
                 </p>
               </div>
 
@@ -1470,7 +1486,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider text-center">Certificamos que o(a) docente/servidor(a)</p>
                 <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight text-center">{user.name || 'Servidor André Maggi'}</h2>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-xl mx-auto font-medium text-center">
-                  concluiu com êxito o programa de formação continuada em <strong>{showCertificateModal.title}</strong>, {showCertificateModal.instructor ? `ministrado por ${showCertificateModal.instructor}${showCertificateModal.instructorDegree ? ` (${showCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas.
+                  concluiu com êxito o programa de formação continuada em <strong>{showCertificateModal.title}</strong>, {showCertificateModal.instructor ? `ministrado por ${showCertificateModal.instructor}${showCertificateModal.instructorDegree ? ` (${showCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas{showCertificateModal.date ? `, realizado em ${new Date(showCertificateModal.date + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}.
                 </p>
               </div>
 
