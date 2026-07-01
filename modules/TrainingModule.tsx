@@ -1059,7 +1059,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                     <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Crie novos cursos e gerencie o catálogo da escola</p>
                   </div>
 
-                  <form onSubmit={handleCreateCourse} className={`bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6 transition-all ${editingCourseId ? 'ring-2 ring-violet-500' : ''}`}>
+                  <div className={`bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6 transition-all ${editingCourseId ? 'ring-2 ring-violet-500' : ''}`}>
                     <h4 className="text-sm font-black text-slate-800 uppercase border-b border-slate-100 pb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         {editingCourseId ? <Edit size={18} className="text-violet-600" /> : <Plus size={18} className="text-violet-600" />} 
@@ -1284,12 +1284,13 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                     )}
 
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={handleCreateCourse}
                       className="w-full py-4 bg-violet-600 text-white rounded-2xl hover:bg-violet-700 font-black uppercase tracking-wider text-xs shadow-lg shadow-violet-600/10 transition-all"
                     >
                       {editingCourseId ? 'Salvar Alterações do Curso' : 'Salvar e Publicar Curso no Catálogo'}
                     </button>
-                  </form>
+                  </div>
 
                   {/* Catalog Management List */}
                   <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
