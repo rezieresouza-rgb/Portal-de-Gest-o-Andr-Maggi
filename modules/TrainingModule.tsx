@@ -219,8 +219,12 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   // Create course
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCourseTitle.trim() || !newCourseDescription.trim()) {
+    if (newCourseType === 'curso' && (!newCourseTitle.trim() || !newCourseDescription.trim())) {
       showToast('Aviso', 'Preencha o título e a descrição do curso!', 'warning');
+      return;
+    }
+    if (newCourseType !== 'curso' && !newCourseTitle.trim()) {
+      showToast('Aviso', 'Preencha o nome do registro!', 'warning');
       return;
     }
     let filteredLessons = newCourseLessons.filter(l => l.trim() !== '');
@@ -1106,33 +1110,36 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         </select>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Categoria</label>
-                        <select
-                          value={newCourseCategory}
-                          onChange={(e) => setNewCourseCategory(e.target.value as any)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
-                        >
-                          <option value="Pedagógico">Pedagógico</option>
-                          <option value="Tecnologia">Tecnologia</option>
-                          <option value="Gestão">Gestão</option>
-                          <option value="Inclusão">Inclusão</option>
-                          <option value="Saúde">Saúde</option>
-                        </select>
-                      </div>
+                      {newCourseType === 'curso' && (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Categoria</label>
+                            <select
+                              value={newCourseCategory}
+                              onChange={(e) => setNewCourseCategory(e.target.value as any)}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
+                            >
+                              <option value="Pedagógico">Pedagógico</option>
+                              <option value="Tecnologia">Tecnologia</option>
+                              <option value="Gestão">Gestão</option>
+                              <option value="Inclusão">Inclusão</option>
+                              <option value="Saúde">Saúde</option>
+                            </select>
+                          </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Carga Horária (Horas)</label>
-                        <input
-                          type="number"
-                          required
-                          min="1"
-                          max="200"
-                          value={newCourseHours}
-                          onChange={(e) => setNewCourseHours(Number(e.target.value))}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
-                        />
-                      </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Carga Horária (Horas)</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="200"
+                              value={newCourseHours}
+                              onChange={(e) => setNewCourseHours(Number(e.target.value))}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+                            />
+                          </div>
+                        </>
+                      )}
 
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Data de Realização (Opcional)</label>
@@ -1232,7 +1239,6 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                         {newCourseType === 'curso' ? 'Descrição do Curso' : newCourseType === 'reuniao' ? 'Pauta / Assunto' : 'Observações'}
                       </label>
                       <textarea
-                        required
                         rows={3}
                         value={newCourseDescription}
                         onChange={(e) => setNewCourseDescription(e.target.value)}
