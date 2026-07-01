@@ -1438,6 +1438,13 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                     <span className="font-bold text-slate-800 uppercase">{showRecordModal.hours} Horas</span>
                   </div>
                 </div>
+                {showRecordModal.description && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg mt-0">
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Conteúdo Programático / Descrição</span>
+                    <span className="font-bold text-slate-800 text-xs">{showRecordModal.description}</span>
+                  </div>
+                )}
+              </div>
               </div>
 
               <div className="mb-4 text-xs text-justify text-slate-600 font-medium border-l-4 border-slate-300 pl-4">
