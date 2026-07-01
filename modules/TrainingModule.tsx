@@ -166,6 +166,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [newCourseCategory, setNewCourseCategory] = useState<'Pedagógico' | 'Tecnologia' | 'Gestão' | 'Inclusão' | 'Saúde'>('Pedagógico');
   const [newCourseHours, setNewCourseHours] = useState(20);
   const [newCourseDescription, setNewCourseDescription] = useState('');
+  const [recordStaffSearchTerm, setRecordStaffSearchTerm] = useState('');
   const [newCourseInstructor, setNewCourseInstructor] = useState('');
   const [newCourseInstructorDegree, setNewCourseInstructorDegree] = useState('');
   const [newCourseInstructorCouncil, setNewCourseInstructorCouncil] = useState('');
@@ -1312,13 +1313,33 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Selecione os Convocados</h3>
                   <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Apenas os selecionados aparecerão na lista impressa</p>
                 </div>
-                <div className="flex gap-4">
-                  <button onClick={() => setSelectedStaffIdsForRecord(new Set(staffList.map(s => s.id)))} className="text-[10px] font-black text-violet-600 uppercase hover:underline">Marcar Todos</button>
-                  <button onClick={() => setSelectedStaffIdsForRecord(new Set())} className="text-[10px] font-black text-slate-400 uppercase hover:underline">Limpar Seleção</button>
+                <div className="flex gap-4 items-center">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 w-3 h-3" />
+                    <input
+                      type="text"
+                      placeholder="Buscar servidor..."
+                      value={recordStaffSearchTerm}
+                      onChange={(e) => setRecordStaffSearchTerm(e.target.value)}
+                      className="pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-violet-500 transition-all w-48"
+                    />
+                  </div>
+                  <button onClick={() => {
+                    const filtered = staffList.filter(s => s.name.toLowerCase().includes(recordStaffSearchTerm.toLowerCase()));
+                    const newSet = new Set(selectedStaffIdsForRecord);
+                    filtered.forEach(s => newSet.add(s.id));
+                    setSelectedStaffIdsForRecord(newSet);
+                  }} className="text-[10px] font-black text-violet-600 uppercase hover:underline whitespace-nowrap">{recordStaffSearchTerm ? 'Marcar Filtrados' : 'Marcar Todos'}</button>
+                  <button onClick={() => {
+                    const filtered = staffList.filter(s => s.name.toLowerCase().includes(recordStaffSearchTerm.toLowerCase()));
+                    const newSet = new Set(selectedStaffIdsForRecord);
+                    filtered.forEach(s => newSet.delete(s.id));
+                    setSelectedStaffIdsForRecord(newSet);
+                  }} className="text-[10px] font-black text-slate-400 uppercase hover:underline whitespace-nowrap">{recordStaffSearchTerm ? 'Limpar Filtrados' : 'Limpar Seleção'}</button>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {staffList.map(staff => (
+                {staffList.filter(s => s.name.toLowerCase().includes(recordStaffSearchTerm.toLowerCase())).map(staff => (
                   <label key={staff.id} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-violet-300 transition-colors">
                     <input 
                       type="checkbox" 
