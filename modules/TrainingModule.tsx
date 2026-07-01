@@ -269,7 +269,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     if (user.role === 'GESTAO' || user.role === 'ADMINISTRADOR') {
       const fetchStaff = async () => {
         try {
-          const { data } = await supabase.from('staff').select('id, name').eq('status', 'ATIVO').order('name');
+          const { data } = await supabase.from('staff').select('id, name, cpf, registration').eq('status', 'ATIVO').order('name');
           if (data) setStaffList(data);
         } catch (e) {
           console.error(e);
@@ -1281,9 +1281,17 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <tr key={i}>
+                  {staffList.map((staff, i) => (
+                    <tr key={staff.id}>
                       <td className="border border-slate-300 p-2 text-center text-slate-400">{i + 1}</td>
+                      <td className="border border-slate-300 p-2 uppercase text-[10px] font-semibold text-slate-700">{staff.name}</td>
+                      <td className="border border-slate-300 p-2 text-center text-[10px] text-slate-600">{staff.cpf || staff.registration || ''}</td>
+                      <td className="border border-slate-300 p-2"></td>
+                    </tr>
+                  ))}
+                  {Array.from({ length: Math.max(5, 20 - staffList.length) }).map((_, i) => (
+                    <tr key={`empty-${i}`}>
+                      <td className="border border-slate-300 p-2 text-center text-slate-400">{staffList.length + i + 1}</td>
                       <td className="border border-slate-300 p-2"></td>
                       <td className="border border-slate-300 p-2"></td>
                       <td className="border border-slate-300 p-2"></td>
