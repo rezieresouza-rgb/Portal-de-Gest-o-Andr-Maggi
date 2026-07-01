@@ -183,10 +183,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       showToast('Aviso', 'Preencha o título e a descrição do curso!', 'warning');
       return;
     }
-    const filteredLessons = newCourseLessons.filter(l => l.trim() !== '');
+    let filteredLessons = newCourseLessons.filter(l => l.trim() !== '');
     if (filteredLessons.length === 0) {
-      showToast('Aviso', 'Adicione pelo menos uma aula!', 'warning');
-      return;
+      filteredLessons = ['Palestra / Treinamento Único'];
     }
 
     const newCourse: Course = {
@@ -1100,21 +1099,18 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                             <span className="text-[10px] font-black text-slate-400 w-5">{idx + 1}.</span>
                             <input
                               type="text"
-                              required
                               value={lesson}
                               onChange={(e) => handleLessonInputChange(idx, e.target.value)}
-                              placeholder={`Nome da Aula ${idx + 1}`}
+                              placeholder={`Nome da Aula ${idx + 1} (opcional)`}
                               className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
                             />
-                            {newCourseLessons.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveLessonInput(idx)}
-                                className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all"
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLessonInput(idx)}
+                              className="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all"
+                            >
+                              <X size={14} />
+                            </button>
                           </div>
                         ))}
                       </div>
