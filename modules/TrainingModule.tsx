@@ -40,6 +40,7 @@ interface Course {
   completed: boolean;
   enrollmentDate?: string;
   completionDate?: string;
+  type?: 'curso' | 'reuniao' | 'protocolo';
   instructor?: string;
   instructorDegree?: string;
   instructorCouncil?: string;
@@ -164,6 +165,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Course creation form states
+  const [newCourseType, setNewCourseType] = useState<'curso' | 'reuniao' | 'protocolo'>('curso');
   const [newCourseTitle, setNewCourseTitle] = useState('');
   const [newCourseCategory, setNewCourseCategory] = useState<'Pedagógico' | 'Tecnologia' | 'Gestão' | 'Inclusão' | 'Saúde'>('Pedagógico');
   const [newCourseHours, setNewCourseHours] = useState(20);
@@ -181,8 +183,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
 
   const handleEditCourseClick = (course: Course) => {
     setEditingCourseId(course.id);
+    setNewCourseType(course.type || 'curso');
     setNewCourseTitle(course.title);
-    setNewCourseCategory(course.category);
+    setNewCourseCategory(course.category as any);
     setNewCourseHours(course.hours);
     setNewCourseDescription(course.description);
     setNewCourseInstructor(course.instructor || '');
@@ -226,7 +229,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     }
 
     const newCourse: Course = {
-      id: editingCourseId || `c-${Date.now()}`,
+      id: editingCourseId || `c${Date.now()}`,
+      type: newCourseType,
       title: newCourseTitle.trim(),
       category: newCourseCategory,
       hours: Number(newCourseHours) || 10,
@@ -257,6 +261,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setCatalogCourses(updatedCatalog);
 
     // Reset form
+    setNewCourseType('curso');
     setNewCourseTitle('');
     setNewCourseCategory('Pedagógico');
     setNewCourseHours(20);
@@ -1077,15 +1082,28 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nome do Curso</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nome do Registro</label>
                         <input
                           type="text"
                           required
                           value={newCourseTitle}
                           onChange={(e) => setNewCourseTitle(e.target.value)}
-                          placeholder="Ex: Metodologias Ativas na Prática"
+                          placeholder={newCourseType === 'protocolo' ? "Ex: Entrega de Protocolos Covid" : newCourseType === 'reuniao' ? "Ex: Reunião de Alinhamento" : "Ex: Metodologias Ativas na Prática"}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
                         />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Tipo de Registro</label>
+                        <select
+                          value={newCourseType}
+                          onChange={(e) => setNewCourseType(e.target.value as any)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
+                        >
+                          <option value="curso">Curso / Treinamento</option>
+                          <option value="reuniao">Reunião Interna</option>
+                          <option value="protocolo">Entrega de Protocolos</option>
+                        </select>
                       </div>
 
                       <div className="space-y-2">
@@ -1397,18 +1415,24 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
               <div className="flex items-center gap-4 border-b-2 border-slate-800 pb-4 mb-6">
                 <img src="/logo-escola-oficial.png" alt="Brasão" className="w-16 h-16 object-contain" />
                 <div>
-                  <h1 className="text-xl font-bold uppercase tracking-widest text-slate-900">Ficha de Registro de Treinamento</h1>
+                  <h1 className="text-xl font-bold uppercase tracking-widest text-slate-900">
+                    {showRecordModal.type === 'reuniao' ? 'Ficha de Registro de Reunião' : showRecordModal.type === 'protocolo' ? 'Termo de Recebimento e Ciência' : 'Ficha de Registro de Treinamento'}
+                  </h1>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Escola Estadual Cívico-Militar André Antônio Maggi</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 mb-8 text-sm">
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Título do Curso / Treinamento</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">
+                    {showRecordModal.type === 'reuniao' ? 'Título da Reunião' : showRecordModal.type === 'protocolo' ? 'Documento / Protocolo Entregue' : 'Título do Curso / Treinamento'}
+                  </span>
                   <span className="font-bold text-slate-800 uppercase">{showRecordModal.title}</span>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Instrutor / Palestrante</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">
+                    {showRecordModal.type === 'reuniao' ? 'Responsável / Mediador' : showRecordModal.type === 'protocolo' ? 'Entregue por' : 'Instrutor / Palestrante'}
+                  </span>
                   <span className="font-bold text-slate-800 uppercase">
                     {showRecordModal.instructor} {showRecordModal.instructorDegree ? `(${showRecordModal.instructorDegree})` : ''}
                     {showRecordModal.instructorCouncil && showRecordModal.instructorCouncilNumber ? ` - ${showRecordModal.instructorCouncil}: ${showRecordModal.instructorCouncilNumber}` : ''}
@@ -1447,7 +1471,11 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
               </div>
 
               <div className="mb-4 text-xs text-justify text-slate-600 font-medium border-l-4 border-slate-300 pl-4">
-                Declaro, pela minha assinatura, ter participado do treinamento especificado acima, tendo recebido as instruções, conteúdos programáticos e avaliações pertinentes, estando ciente das práticas e procedimentos abordados.
+                {showRecordModal.type === 'protocolo' 
+                  ? 'Declaro, pela minha assinatura, ter recebido os protocolos, documentos, equipamentos ou orientações referentes ao item especificado acima, estando ciente de minhas responsabilidades e das normas adotadas.'
+                  : showRecordModal.type === 'reuniao'
+                    ? 'Declaro, pela minha assinatura, ter participado da reunião especificada acima, tendo ciência das pautas, informes e orientações abordadas, estando ciente das práticas e procedimentos definidos.'
+                    : 'Declaro, pela minha assinatura, ter participado do treinamento especificado acima, tendo recebido as instruções, conteúdos programáticos e avaliações pertinentes, estando ciente das práticas e procedimentos abordados.'}
               </div>
 
               <table className="w-full border-collapse text-xs">
