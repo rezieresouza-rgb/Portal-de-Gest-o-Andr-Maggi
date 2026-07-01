@@ -144,6 +144,16 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return true;
     }
 
+    const isCivicoTeam = user.name?.toUpperCase().includes('RAUL') || 
+                         user.name?.toUpperCase().includes('JOÃO VITOR') ||
+                         user.name?.toUpperCase().includes('JOAO VITOR') ||
+                         user.name?.toUpperCase().includes('ELIEZER') ||
+                         user.name?.toUpperCase().includes('MARCELO');
+
+    if (isCivicoTeam && ['civico_militar', 'scheduling', 'training'].includes(mod.id)) {
+      return true;
+    }
+
     // Prioriza a Função para permissões dinâmicas, fallback para Role
     const permissionKey = user.jobFunction || user.role;
     const rolePermissions = dynamicPermissions[permissionKey] || [];
