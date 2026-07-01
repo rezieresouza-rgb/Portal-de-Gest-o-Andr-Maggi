@@ -54,9 +54,12 @@ import { extractStaffInfo } from '../geminiService';
 
 const STAFF_FUNCTIONS = [
    "DIRETOR",
+   "GESTOR CÍVICO-MILITAR",
+   "GESTOR EDUCACIONAL MILITAR",
    "COORDENADOR PEDAGÓGICO",
    "SECRETÁRIO",
    "REGÊNCIA",
+   "MONITOR",
    "BUSCA ATIVA",
    "MEDIADOR",
    "PSICOSSOCIAL",
