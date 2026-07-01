@@ -1331,8 +1331,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
 
       {/* Record Form Modal */}
       {showRecordModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[3rem] shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 print:static print:block print:bg-white print:p-0">
+          <div className="bg-white rounded-[3rem] shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col print:shadow-none print:border-none print:overflow-visible print:max-h-none print:rounded-none print:max-w-none print:w-full print:block">
             <button
               onClick={() => setShowRecordModal(null)}
               className="absolute top-6 right-6 p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors z-10 print:hidden"
