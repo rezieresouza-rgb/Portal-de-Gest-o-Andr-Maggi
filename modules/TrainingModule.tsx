@@ -42,6 +42,7 @@ interface Course {
   completionDate?: string;
   instructor?: string;
   instructorDegree?: string;
+  instructorCouncil?: string;
   instructorCouncilNumber?: string;
   date?: string;
   location?: string;
