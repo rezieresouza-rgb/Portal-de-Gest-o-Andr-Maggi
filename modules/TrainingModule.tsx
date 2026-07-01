@@ -15,7 +15,8 @@ import {
   X,
   BookOpenCheck,
   Plus,
-  Users
+  Users,
+  FileText
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
@@ -141,6 +142,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [activeLessonIndex, setActiveLessonIndex] = useState<number>(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showCertificateModal, setShowCertificateModal] = useState<Course | null>(null);
+  const [showRecordModal, setShowRecordModal] = useState<Course | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('Todos');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -1126,13 +1128,22 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                             <p className="text-xs text-slate-400 max-w-2xl line-clamp-2 leading-relaxed">{c.description}</p>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCourse(c.id)}
-                            className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1 self-end md:self-center"
-                          >
-                            <X size={12} /> Remover Curso
-                          </button>
+                          <div className="flex gap-2 self-end md:self-center shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setShowRecordModal(c)}
+                              className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
+                            >
+                              <FileText size={12} /> Imprimir Ficha
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCourse(c.id)}
+                              className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
+                            >
+                              <X size={12} /> Remover Curso
+                            </button>
+                          </div>
                         </div>
                       ))}
 
