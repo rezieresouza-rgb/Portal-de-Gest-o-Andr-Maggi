@@ -115,6 +115,38 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
     }
   };
 
+  const handleSuggestActivities = async () => {
+    try {
+      const { data, error } = await supabase.from('maintenance_tasks').select('task_description, frequency');
+      if (error) throw error;
+      if (!data || data.length === 0) return;
+
+      // Extract unique tasks for each frequency
+      const extractUnique = (freq: string) => {
+        const tasks = data.filter(t => t.frequency === freq).map(t => t.task_description);
+        return Array.from(new Set(tasks));
+      };
+
+      const mensais = extractUnique('MENSAL');
+      const trimestrais = extractUnique('TRIMESTRAL');
+
+      let suggestedText = `SECRETARIA:\n- Atendimento ao público\n- Organização de arquivos\n\nZELADORIA / LIMPEZA:\n- Atividades diárias e semanais de rotina nos blocos.\n`;
+      
+      if (mensais.length > 0) {
+        suggestedText += `- Tarefas Mensais: ${mensais.join(', ')}.\n`;
+      }
+      if (trimestrais.length > 0) {
+        suggestedText += `- Tarefas Trimestrais: ${trimestrais.join(', ')}.\n`;
+      }
+
+      suggestedText += `\nCOZINHA / MERENDA:\n- Limpeza pesada da cozinha e despensa\n- Organização do estoque de alimentos\n- Descongelamento e limpeza de freezers/geladeiras`;
+
+      setActivities(suggestedText);
+    } catch (err) {
+      console.error("Erro ao buscar atividades sugeridas:", err);
+    }
+  };
+
   const formatDateBr = (dateStr: string) => {
     if (!dateStr) return '';
     return dateStr.split('-').reverse().join('/');
@@ -277,7 +309,15 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
 
               {/* Atividades */}
               <div className="bg-white p-4 rounded-2xl border border-gray-200">
-                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Atividades a serem desenvolvidas no recesso (Opcional)</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase">Atividades a serem desenvolvidas no recesso (Opcional)</label>
+                  <button 
+                    onClick={handleSuggestActivities}
+                    className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold uppercase hover:bg-indigo-100 transition-colors"
+                  >
+                    + Importar do Cronograma
+                  </button>
+                </div>
                 <textarea
                   value={activities}
                   onChange={(e) => setActivities(e.target.value)}
