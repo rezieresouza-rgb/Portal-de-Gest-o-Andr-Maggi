@@ -151,11 +151,40 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       const trimestrais = extractUnique('TRIMESTRAL');
       const pesadasZeladoria = [...mensais, ...trimestrais];
 
+      const atividadesSecretaria = [
+        "Atendimento ao público (pais, alunos, comunidade)",
+        "Organização e atualização de arquivos e prontuários",
+        "Emissão de declarações, históricos e boletins",
+        "Atualização do sistema de gestão escolar",
+        "Recebimento e expedição de documentos",
+        "Atendimento telefônico e organização da recepção",
+        "Auxílio na matrícula e rematrícula",
+        "Verificação de diários de classe e documentação de turmas",
+        "Organização do almoxarifado da secretaria"
+      ];
+
+      const atividadesCozinha = [
+        "Limpeza pesada da cozinha e despensa",
+        "Organização do estoque de alimentos",
+        "Descongelamento e higienização de freezers/geladeiras",
+        "Higienização profunda de prateleiras e armários",
+        "Limpeza detalhada de fogões e fornos industriais",
+        "Higienização de panelões e bancadas",
+        "Levantamento de inventário e validade dos alimentos"
+      ];
+
       const newDailyActivities = { ...dailyActivities };
       
       // Distribute tasks across available days
       currentWorkingDays.forEach((day, index) => {
-        let text = `SECRETARIA:\n- Atendimento ao público\n- Organização de arquivos\n\nCOZINHA / MERENDA:\n- Limpeza pesada\n- Organização do estoque`;
+        // Pega 2 tarefas de secretaria diferentes a cada dia
+        const sec1 = atividadesSecretaria[(index * 2) % atividadesSecretaria.length];
+        const sec2 = atividadesSecretaria[((index * 2) + 1) % atividadesSecretaria.length];
+        
+        // Pega 1 tarefa de cozinha diferente a cada dia
+        const coz = atividadesCozinha[index % atividadesCozinha.length];
+
+        let text = `SECRETARIA (Técnicos Adm.):\n- ${sec1}\n- ${sec2}\n\nCOZINHA / MERENDA:\n- ${coz}`;
         
         text += `\n\nZELADORIA / LIMPEZA:\n- Rotina diária/semanal`;
         
