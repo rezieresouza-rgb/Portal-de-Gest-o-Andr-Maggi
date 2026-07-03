@@ -15,9 +15,11 @@ import {
     Users,
     X,
     Settings2,
-    History
+    History,
+    Palmtree
 } from 'lucide-react';
 import { User } from '../types';
+import RecessScheduleModal from './RecessScheduleModal';
 
 interface MaintenanceTask {
     id: string;
@@ -51,6 +53,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
     });
     const [filterFrequency, setFilterFrequency] = useState<string>('ALL');
     const [viewMode, setViewMode] = useState<'schedule' | 'history'>('schedule');
+    const [isRecessModalOpen, setIsRecessModalOpen] = useState(false);
 
     // History filters
     const [historyFilterEmployee, setHistoryFilterEmployee] = useState('');
@@ -660,6 +663,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                         />
                     </div>
                     <button
+                        onClick={() => setIsRecessModalOpen(true)}
+                        className="px-3 sm:px-5 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-lg shrink-0"
+                    >
+                        <Palmtree size={14} className="shrink-0" /> <span className="truncate">Escala de Recesso</span>
+                    </button>
+                    <button
                         onClick={() => setShowReportConfig(!showReportConfig)}
                         className={`p-2 rounded-xl border transition-all shrink-0 ${
                             showReportConfig 
@@ -798,14 +807,20 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                             </div>
                             <button
                                 onClick={generateWeeklyReport}
-                                className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md transition-all flex items-center justify-center gap-1.5"
+                                className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg"
                             >
-                                <Printer size={14} /> Gerar e Imprimir Relatório
+                                <Printer size={14} /> Imprimir Relatório
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            <RecessScheduleModal 
+                isOpen={isRecessModalOpen}
+                onClose={() => setIsRecessModalOpen(false)}
+                employees={employees}
+            />
 
             {/* MONITOR DE LIMPEZA DE BANHEIROS */}
             {!loading && dailyBathroomTasks.length > 0 && (
