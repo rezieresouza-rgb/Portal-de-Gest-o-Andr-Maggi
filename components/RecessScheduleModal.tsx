@@ -15,6 +15,7 @@ interface RecessScheduleModalProps {
 
 const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClose, employees }) => {
   const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [team1, setTeam1] = useState<Employee[]>([]);
   const [team2, setTeam2] = useState<Employee[]>([]);
   const [unassigned, setUnassigned] = useState<Employee[]>([]);
@@ -60,26 +61,25 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
     if (to === 'team2') setTeam2(prev => [...prev, emp]);
   };
 
-  const getWorkingDays = (start: string, totalDays: number = 15) => {
+  const getWorkingDays = (start: string, end: string) => {
     const days = [];
-    let current = new Date(start + 'T12:00:00');
-    let count = 0;
+    const currentDate = new Date(start + 'T12:00:00');
+    const endDate = new Date(end + 'T12:00:00');
     
-    // 15 continuous days, but we only list weekdays as working days
-    for (let i = 0; i < totalDays; i++) {
-      const day = new Date(current);
-      day.setDate(current.getDate() + i);
-      const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+    while (currentDate <= endDate) {
+      const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
       if (!isWeekend) {
-        days.push(day.toISOString().split('T')[0]);
+        days.push(currentDate.toISOString().split('T')[0]);
       }
+      currentDate.setDate(currentDate.getDate() + 1);
     }
+    
     return days;
   };
 
   const handleSave = async () => {
-    if (!startDate) {
-      alert("Por favor, selecione a data de início.");
+    if (!startDate || !endDate) {
+      alert("Por favor, selecione a data de início e a data final.");
       return;
     }
     
@@ -88,12 +88,13 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       return;
     }
 
-    const workingDays = getWorkingDays(startDate, 15);
+    const workingDays = getWorkingDays(startDate, endDate);
     
     setLoading(true);
     try {
       const { data, error } = await supabase.from('maintenance_recess_schedules').insert([{
         start_date: startDate,
+        end_date: endDate,
         team_1_members: team1,
         team_2_members: team2,
         recess_team: recessTeam,
@@ -174,14 +175,26 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
             <div className="space-y-6">
               {/* Configurações Iniciais */}
               <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-end">
-                <div className="w-full md:w-1/3">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Data de Início do Recesso (15 dias)</label>
-                  <input 
-                    type="date" 
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-500" 
-                  />
+                <div className="w-full md:w-1/3 flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Data Inicial</label>
+                    <input 
+                      type="date" 
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-500" 
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Data Final</label>
+                    <input 
+                      type="date" 
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      min={startDate}
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-500" 
+                    />
+                  </div>
                 </div>
                 <div className="w-full md:w-2/3 flex flex-col">
                   <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Qual equipe estará de recesso?</label>
@@ -295,9 +308,9 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                   return (
                     <div key={schedule.id} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
                       <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="text-sm font-black text-gray-900 uppercase">Escala de Recesso</h4>
-                          <p className="text-xs text-gray-500 mt-1">Início: {formatDateBr(schedule.start_date)}</p>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-black uppercase text-gray-900">Período de {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}</h4>
+                          <p className="text-xs text-gray-500 mt-1">Escala salva em {new Date(schedule.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
                         <button 
                           onClick={() => handlePrint(schedule)}
@@ -327,7 +340,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                         <div id={`print-recess-${schedule.id}`} className="p-8 bg-white text-gray-900 font-sans">
                           <div className="text-center mb-6">
                             <h1 className="text-2xl font-black uppercase border-b-2 border-gray-900 pb-2">Escala de Trabalho - Recesso Escolar</h1>
-                            <p className="text-sm font-bold mt-2">Data de Início: {formatDateBr(schedule.start_date)} (Período de 15 dias)</p>
+                            <p className="text-sm font-bold mt-2">Período: {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}</p>
                           </div>
                           
                           <div className="flex gap-8 mb-8">

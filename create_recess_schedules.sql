@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.maintenance_recess_schedules (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     start_date date NOT NULL,
+    end_date date,
     team_1_members jsonb NOT NULL,
     team_2_members jsonb NOT NULL,
     recess_team integer NOT NULL CHECK (recess_team IN (1, 2)),
@@ -11,11 +12,15 @@ CREATE TABLE IF NOT EXISTS public.maintenance_recess_schedules (
     updated_at timestamp with time zone DEFAULT now()
 );
 
--- Add activities column if the table was already created before
+-- Add activities and end_date column if the table was already created before
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='maintenance_recess_schedules' AND column_name='activities') THEN
         ALTER TABLE public.maintenance_recess_schedules ADD COLUMN activities text;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='maintenance_recess_schedules' AND column_name='end_date') THEN
+        ALTER TABLE public.maintenance_recess_schedules ADD COLUMN end_date date;
     END IF;
 END $$;
 
