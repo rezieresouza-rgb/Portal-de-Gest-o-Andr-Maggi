@@ -14,19 +14,42 @@ interface RecessScheduleModalProps {
 }
 
 const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClose, employees }) => {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [t1Start, setT1Start] = useState('');
+  const [t1End, setT1End] = useState('');
+  const [t2Start, setT2Start] = useState('');
+  const [t2End, setT2End] = useState('');
   const [team1, setTeam1] = useState<Employee[]>([]);
   const [team2, setTeam2] = useState<Employee[]>([]);
   const [unassigned, setUnassigned] = useState<Employee[]>([]);
-  const [recessTeam, setRecessTeam] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [savedSchedules, setSavedSchedules] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'create' | 'saved'>('create');
   const [dailyActivities, setDailyActivities] = useState<Record<string, string>>({});
   
+  function getWorkingDays(start: string, end: string) {
+    if (!start || !end) return [];
+    const days = [];
+    const currentDate = new Date(start + 'T12:00:00');
+    const endDateObj = new Date(end + 'T12:00:00');
+    
+    while (currentDate <= endDateObj) {
+      const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+      if (!isWeekend) {
+        days.push(currentDate.toISOString().split('T')[0]);
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return days;
+  }
+
   // Calculate working days dynamically for the UI
-  const currentWorkingDays = startDate && endDate ? getWorkingDays(startDate, endDate) : [];
+  const currentWorkingDays = React.useMemo(() => {
+    const days = new Set<string>();
+    getWorkingDays(t1Start, t1End).forEach(d => days.add(d));
+    getWorkingDays(t2Start, t2End).forEach(d => days.add(d));
+    return Array.from(days).sort();
+  }, [t1Start, t1End, t2Start, t2End]);
 
   // Initialize empty text for new days
   useEffect(() => {
@@ -39,7 +62,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       });
       return newActivities;
     });
-  }, [startDate, endDate]);
+  }, [currentWorkingDays]);
 
   useEffect(() => {
     if (isOpen) {
@@ -77,25 +100,9 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
     if (to === 'team2') setTeam2(prev => [...prev, emp]);
   };
 
-  function getWorkingDays(start: string, end: string) {
-    const days = [];
-    const currentDate = new Date(start + 'T12:00:00');
-    const endDate = new Date(end + 'T12:00:00');
-    
-    while (currentDate <= endDate) {
-      const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
-      if (!isWeekend) {
-        days.push(currentDate.toISOString().split('T')[0]);
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    
-    return days;
-  }
-
   const handleSave = async () => {
-    if (!startDate || !endDate) {
-      alert("Por favor, selecione a data de início e a data final.");
+    if ((!t1Start || !t1End) && (!t2Start || !t2End)) {
+      alert("Por favor, selecione as datas para pelo menos uma das equipes.");
       return;
     }
     
@@ -104,17 +111,18 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       return;
     }
 
-    const workingDays = getWorkingDays(startDate, endDate);
-    
     setLoading(true);
     try {
       const { data, error } = await supabase.from('maintenance_recess_schedules').insert([{
-        start_date: startDate,
-        end_date: endDate,
+        start_date: t1Start || t2Start,
+        end_date: t2End || t1End,
+        t1_work_start: t1Start || null,
+        t1_work_end: t1End || null,
+        t2_work_start: t2Start || null,
+        t2_work_end: t2End || null,
         team_1_members: team1,
         team_2_members: team2,
-        recess_team: recessTeam,
-        working_days: workingDays,
+        working_days: currentWorkingDays,
         daily_activities: dailyActivities
       }]).select();
       
@@ -262,45 +270,59 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
           {activeTab === 'create' ? (
             <div className="space-y-6">
               {/* Configurações Iniciais */}
-              <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-end">
-                <div className="w-full md:w-1/3 flex gap-4">
-                  <div className="flex-1">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Data Inicial</label>
-                    <input 
-                      type="date" 
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-500" 
-                    />
+              <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Período Equipe 1 */}
+                  <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4">
+                    <h4 className="text-xs font-black uppercase text-emerald-800 mb-4">Dias Trabalhados pela Equipe 1</h4>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-black text-emerald-700 uppercase mb-2">Data Inicial</label>
+                        <input 
+                          type="date" 
+                          value={t1Start}
+                          onChange={(e) => setT1Start(e.target.value)}
+                          className="w-full p-3 bg-white border border-emerald-200 rounded-xl font-bold text-sm outline-none focus:border-emerald-500" 
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-black text-emerald-700 uppercase mb-2">Data Final</label>
+                        <input 
+                          type="date" 
+                          value={t1End}
+                          onChange={(e) => setT1End(e.target.value)}
+                          min={t1Start}
+                          className="w-full p-3 bg-white border border-emerald-200 rounded-xl font-bold text-sm outline-none focus:border-emerald-500" 
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Data Final</label>
-                    <input 
-                      type="date" 
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      min={startDate}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-500" 
-                    />
+
+                  {/* Período Equipe 2 */}
+                  <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
+                    <h4 className="text-xs font-black uppercase text-blue-800 mb-4">Dias Trabalhados pela Equipe 2</h4>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-black text-blue-700 uppercase mb-2">Data Inicial</label>
+                        <input 
+                          type="date" 
+                          value={t2Start}
+                          onChange={(e) => setT2Start(e.target.value)}
+                          className="w-full p-3 bg-white border border-blue-200 rounded-xl font-bold text-sm outline-none focus:border-blue-500" 
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-black text-blue-700 uppercase mb-2">Data Final</label>
+                        <input 
+                          type="date" 
+                          value={t2End}
+                          onChange={(e) => setT2End(e.target.value)}
+                          min={t2Start}
+                          className="w-full p-3 bg-white border border-blue-200 rounded-xl font-bold text-sm outline-none focus:border-blue-500" 
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="w-full md:w-2/3 flex flex-col">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Qual equipe estará de recesso?</label>
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={() => setRecessTeam(1)}
-                      className={`flex-1 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-2 border ${recessTeam === 1 ? 'bg-indigo-100 border-indigo-300 text-indigo-700 shadow-sm' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                    >
-                      {recessTeam === 1 && <CheckCircle2 size={16} />} Equipe 1 em Recesso
-                    </button>
-                    <button 
-                      onClick={() => setRecessTeam(2)}
-                      className={`flex-1 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-2 border ${recessTeam === 2 ? 'bg-indigo-100 border-indigo-300 text-indigo-700 shadow-sm' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                    >
-                      {recessTeam === 2 && <CheckCircle2 size={16} />} Equipe 2 em Recesso
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-2 italic">* A outra equipe trabalhará nos dias úteis desse período.</p>
                 </div>
               </div>
 
@@ -327,14 +349,13 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                 </div>
 
                 {/* Equipe 1 */}
-                <div className={`rounded-2xl border flex flex-col overflow-hidden ${recessTeam === 1 ? 'bg-red-50 border-red-200' : 'bg-white border-emerald-200'}`}>
-                  <div className={`p-3 border-b flex justify-between items-center ${recessTeam === 1 ? 'bg-red-100 border-red-200 text-red-800' : 'bg-emerald-100 border-emerald-200 text-emerald-800'}`}>
+                <div className={`rounded-2xl border flex flex-col overflow-hidden bg-white border-emerald-200`}>
+                  <div className={`p-3 border-b flex justify-between items-center bg-emerald-100 border-emerald-200 text-emerald-800`}>
                     <h4 className="text-xs font-black uppercase flex items-center gap-2">Equipe 1 ({team1.length})</h4>
-                    <span className="text-[9px] font-black uppercase px-2 py-1 rounded bg-white/50">{recessTeam === 1 ? 'Em Recesso' : 'Trabalhando'}</span>
                   </div>
                   <div className="p-3 flex-1 min-h-[200px] overflow-y-auto space-y-2">
                     {team1.map(emp => (
-                      <div key={emp.id} className="bg-white p-2 rounded-lg border border-gray-100 flex justify-between items-center shadow-sm">
+                      <div key={emp.id} className="bg-white p-2 rounded-lg border border-emerald-100 flex justify-between items-center shadow-sm">
                         <button onClick={() => moveEmployee(emp, 'team1', 'unassigned')} className="p-1 hover:text-red-500"><ChevronLeft size={12} /></button>
                         <span className="text-xs font-bold text-gray-700 uppercase truncate px-2">{emp.name}</span>
                         <button onClick={() => moveEmployee(emp, 'team1', 'team2')} className="p-1 hover:text-indigo-500"><ChevronRight size={12} /></button>
@@ -345,14 +366,13 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                 </div>
 
                 {/* Equipe 2 */}
-                <div className={`rounded-2xl border flex flex-col overflow-hidden ${recessTeam === 2 ? 'bg-red-50 border-red-200' : 'bg-white border-emerald-200'}`}>
-                  <div className={`p-3 border-b flex justify-between items-center ${recessTeam === 2 ? 'bg-red-100 border-red-200 text-red-800' : 'bg-emerald-100 border-emerald-200 text-emerald-800'}`}>
+                <div className={`rounded-2xl border flex flex-col overflow-hidden bg-white border-blue-200`}>
+                  <div className={`p-3 border-b flex justify-between items-center bg-blue-100 border-blue-200 text-blue-800`}>
                     <h4 className="text-xs font-black uppercase flex items-center gap-2">Equipe 2 ({team2.length})</h4>
-                    <span className="text-[9px] font-black uppercase px-2 py-1 rounded bg-white/50">{recessTeam === 2 ? 'Em Recesso' : 'Trabalhando'}</span>
                   </div>
                   <div className="p-3 flex-1 min-h-[200px] overflow-y-auto space-y-2">
                     {team2.map(emp => (
-                      <div key={emp.id} className="bg-white p-2 rounded-lg border border-gray-100 flex justify-between items-center shadow-sm">
+                      <div key={emp.id} className="bg-white p-2 rounded-lg border border-blue-100 flex justify-between items-center shadow-sm">
                         <button onClick={() => moveEmployee(emp, 'team2', 'team1')} className="p-1 hover:text-indigo-500"><ChevronLeft size={12} /></button>
                         <span className="text-xs font-bold text-gray-700 uppercase truncate px-2">{emp.name}</span>
                         <button onClick={() => moveEmployee(emp, 'team2', 'unassigned')} className="p-1 hover:text-red-500"><ChevronRight size={12} /></button>
@@ -414,35 +434,44 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                 </div>
               ) : (
                 savedSchedules.map(schedule => {
-                  const workingTeam = schedule.recess_team === 1 ? schedule.team_2_members : schedule.team_1_members;
-                  const recessTeamMembers = schedule.recess_team === 1 ? schedule.team_1_members : schedule.team_2_members;
-                  
                   return (
                     <div key={schedule.id} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h4 className="text-sm font-black uppercase text-gray-900">Período de {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}</h4>
-                          <p className="text-xs text-gray-500 mt-1">Escala salva em {new Date(schedule.created_at).toLocaleDateString('pt-BR')}</p>
+                          <h4 className="text-sm font-black uppercase text-gray-900">
+                            Escala Consolidada: {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}
+                          </h4>
+                          <p className="text-xs text-gray-500 mt-1">Criada em {new Date(schedule.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
                         <button 
                           onClick={() => handlePrint(schedule)}
                           className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2"
                         >
-                          <Printer size={14} /> Imprimir
+                          <Printer size={14} /> Imprimir PDF Único
                         </button>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                          <p className="text-[10px] font-black text-emerald-800 uppercase mb-2">Trabalhando (Equipe {schedule.recess_team === 1 ? '2' : '1'})</p>
+                          <p className="text-[10px] font-black text-emerald-800 uppercase mb-2">
+                            Equipe 1
+                            {schedule.t1_work_start && schedule.t1_work_end && 
+                              <span className="ml-1 text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded">Trabalha de {formatDateBr(schedule.t1_work_start)} a {formatDateBr(schedule.t1_work_end)}</span>
+                            }
+                          </p>
                           <ul className="list-disc pl-4 text-xs font-bold text-gray-700 space-y-1 uppercase">
-                            {workingTeam.map((m: any) => <li key={m.id}>{m.name}</li>)}
+                            {schedule.team_1_members.map((m: any) => <li key={m.id}>{m.name}</li>)}
                           </ul>
                         </div>
-                        <div className="bg-red-50 p-3 rounded-xl border border-red-100">
-                          <p className="text-[10px] font-black text-red-800 uppercase mb-2">Em Recesso (Equipe {schedule.recess_team})</p>
+                        <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                          <p className="text-[10px] font-black text-blue-800 uppercase mb-2">
+                            Equipe 2
+                            {schedule.t2_work_start && schedule.t2_work_end && 
+                              <span className="ml-1 text-blue-600 bg-blue-100 px-2 py-0.5 rounded">Trabalha de {formatDateBr(schedule.t2_work_start)} a {formatDateBr(schedule.t2_work_end)}</span>
+                            }
+                          </p>
                           <ul className="list-disc pl-4 text-xs font-bold text-gray-700 space-y-1 uppercase">
-                            {recessTeamMembers.map((m: any) => <li key={m.id}>{m.name}</li>)}
+                            {schedule.team_2_members.map((m: any) => <li key={m.id}>{m.name}</li>)}
                           </ul>
                         </div>
                       </div>
@@ -457,15 +486,21 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                           
                           <div className="flex gap-8 mb-8">
                             <div className="flex-1">
-                              <h2 className="text-sm font-black uppercase bg-gray-200 p-2 text-center mb-2">Equipe Trabalhando (Dias Úteis)</h2>
-                              <ul className="text-xs uppercase border border-gray-300 p-2 min-h-[100px]">
-                                {workingTeam.map((m: any) => <li key={m.id} className="py-1 border-b border-dashed border-gray-300 last:border-0">{m.name}</li>)}
+                              <h2 className="text-[11px] font-black uppercase bg-gray-200 p-2 text-center mb-2">
+                                Equipe 1 
+                                {schedule.t1_work_start && schedule.t1_work_end && ` (Trabalha de ${formatDateBr(schedule.t1_work_start)} a ${formatDateBr(schedule.t1_work_end)})`}
+                              </h2>
+                              <ul className="text-[10px] uppercase border border-gray-300 p-2 min-h-[60px]">
+                                {schedule.team_1_members.map((m: any) => <li key={m.id} className="py-1 border-b border-dashed border-gray-300 last:border-0">{m.name}</li>)}
                               </ul>
                             </div>
                             <div className="flex-1">
-                              <h2 className="text-sm font-black uppercase bg-gray-200 p-2 text-center mb-2">Equipe em Recesso</h2>
-                              <ul className="text-xs uppercase border border-gray-300 p-2 min-h-[100px]">
-                                {recessTeamMembers.map((m: any) => <li key={m.id} className="py-1 border-b border-dashed border-gray-300 last:border-0">{m.name}</li>)}
+                              <h2 className="text-[11px] font-black uppercase bg-gray-200 p-2 text-center mb-2">
+                                Equipe 2
+                                {schedule.t2_work_start && schedule.t2_work_end && ` (Trabalha de ${formatDateBr(schedule.t2_work_start)} a ${formatDateBr(schedule.t2_work_end)})`}
+                              </h2>
+                              <ul className="text-[10px] uppercase border border-gray-300 p-2 min-h-[60px]">
+                                {schedule.team_2_members.map((m: any) => <li key={m.id} className="py-1 border-b border-dashed border-gray-300 last:border-0">{m.name}</li>)}
                               </ul>
                             </div>
                           </div>
@@ -474,20 +509,26 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                           <table className="w-full border-collapse text-xs mb-8">
                             <thead>
                               <tr className="bg-gray-100">
-                                <th className="border border-gray-400 p-2 w-20">Data</th>
-                                <th className="border border-gray-400 p-2 w-16">Dia</th>
-                                <th className="border border-gray-400 p-2 text-left w-1/2">Atividades Programadas</th>
+                                <th className="border border-gray-400 p-2 w-16">Data</th>
+                                <th className="border border-gray-400 p-2 w-12">Dia</th>
+                                <th className="border border-gray-400 p-2 w-20">Turno</th>
+                                <th className="border border-gray-400 p-2 text-left w-[40%]">Atividades Programadas</th>
                                 <th className="border border-gray-400 p-2 text-left">Assinatura dos Servidores Trabalhando</th>
                               </tr>
                             </thead>
                             <tbody>
                               {schedule.working_days.map((day: string, idx: number) => {
                                 const dayActivities = schedule.daily_activities ? schedule.daily_activities[day] : schedule.activities;
+                                let activeTeam = '';
+                                if (schedule.t1_work_start && schedule.t1_work_end && day >= schedule.t1_work_start && day <= schedule.t1_work_end) activeTeam = 'Equipe 1';
+                                if (schedule.t2_work_start && schedule.t2_work_end && day >= schedule.t2_work_start && day <= schedule.t2_work_end) activeTeam = activeTeam ? 'Ambas' : 'Equipe 2';
+
                                 return (
                                   <tr key={idx}>
                                     <td className="border border-gray-400 p-2 text-center font-bold align-top">{formatDateBr(day)}</td>
                                     <td className="border border-gray-400 p-2 text-center align-top">{getDayOfWeek(day)}</td>
-                                    <td className="border border-gray-400 p-2 align-top whitespace-pre-wrap text-[10px]">
+                                    <td className="border border-gray-400 p-2 text-center font-black text-[9px] uppercase align-top">{activeTeam}</td>
+                                    <td className="border border-gray-400 p-2 align-top whitespace-pre-wrap text-[9px]">
                                       {dayActivities || ''}
                                     </td>
                                     <td className="border border-gray-400 p-2 align-top"></td>
