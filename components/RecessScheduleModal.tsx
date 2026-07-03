@@ -23,7 +23,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
   const [loading, setLoading] = useState(false);
   const [savedSchedules, setSavedSchedules] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'create' | 'saved'>('create');
-  const [activities, setActivities] = useState<string>('Atividades a serem desenvolvidas:\n- Atendimento ao público (pais, alunos e comunidade)\n- Organização e atualização de arquivos e prontuários\n- Emissão de declarações, históricos e boletins\n- Atualização do sistema de gestão escolar\n- Atendimento telefônico e recepção\n- Recebimento e expedição de documentos\n- Auxílio na matrícula e rematrícula');
+  const [activities, setActivities] = useState<string>('SECRETARIA:\n- Atendimento ao público\n- Organização de arquivos\n\nZELADORIA / LIMPEZA:\n- Higienização profunda dos espaços\n- Limpeza de vidros e esquadrias\n- Organização de depósitos\n\nCOZINHA / MERENDA:\n- Limpeza pesada da cozinha e despensa\n- Organização do estoque de alimentos\n- Descongelamento e limpeza de freezers/geladeiras');
 
   useEffect(() => {
     if (isOpen) {
