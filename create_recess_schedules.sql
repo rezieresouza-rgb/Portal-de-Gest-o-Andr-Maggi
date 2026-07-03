@@ -8,11 +8,12 @@ CREATE TABLE IF NOT EXISTS public.maintenance_recess_schedules (
     recess_team integer NOT NULL CHECK (recess_team IN (1, 2)),
     working_days jsonb NOT NULL,
     activities text,
+    daily_activities jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
 );
 
--- Add activities and end_date column if the table was already created before
+-- Add activities, end_date and daily_activities column if the table was already created before
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='maintenance_recess_schedules' AND column_name='activities') THEN
@@ -21,6 +22,10 @@ BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='maintenance_recess_schedules' AND column_name='end_date') THEN
         ALTER TABLE public.maintenance_recess_schedules ADD COLUMN end_date date;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='maintenance_recess_schedules' AND column_name='daily_activities') THEN
+        ALTER TABLE public.maintenance_recess_schedules ADD COLUMN daily_activities jsonb;
     END IF;
 END $$;
 

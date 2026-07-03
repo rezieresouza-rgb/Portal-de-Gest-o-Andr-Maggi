@@ -23,7 +23,23 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
   const [loading, setLoading] = useState(false);
   const [savedSchedules, setSavedSchedules] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'create' | 'saved'>('create');
-  const [activities, setActivities] = useState<string>('SECRETARIA:\n- Atendimento ao público\n- Organização de arquivos\n\nZELADORIA / LIMPEZA:\n- Higienização profunda dos espaços\n- Limpeza de vidros e esquadrias\n- Organização de depósitos\n\nCOZINHA / MERENDA:\n- Limpeza pesada da cozinha e despensa\n- Organização do estoque de alimentos\n- Descongelamento e limpeza de freezers/geladeiras');
+  const [dailyActivities, setDailyActivities] = useState<Record<string, string>>({});
+  
+  // Calculate working days dynamically for the UI
+  const currentWorkingDays = startDate && endDate ? getWorkingDays(startDate, endDate) : [];
+
+  // Initialize empty text for new days
+  useEffect(() => {
+    setDailyActivities(prev => {
+      const newActivities = { ...prev };
+      currentWorkingDays.forEach(day => {
+        if (!newActivities[day]) {
+          newActivities[day] = '';
+        }
+      });
+      return newActivities;
+    });
+  }, [startDate, endDate]);
 
   useEffect(() => {
     if (isOpen) {
@@ -99,7 +115,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
         team_2_members: team2,
         recess_team: recessTeam,
         working_days: workingDays,
-        activities: activities
+        daily_activities: dailyActivities
       }]).select();
       
       if (error) throw error;
@@ -116,32 +132,43 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
   };
 
   const handleSuggestActivities = async () => {
+    if (currentWorkingDays.length === 0) {
+      alert("Por favor, preencha as datas de início e fim primeiro.");
+      return;
+    }
+
     try {
       const { data, error } = await supabase.from('maintenance_tasks').select('task_description, frequency');
       if (error) throw error;
-      if (!data || data.length === 0) return;
-
-      // Extract unique tasks for each frequency
+      
       const extractUnique = (freq: string) => {
+        if (!data) return [];
         const tasks = data.filter(t => t.frequency === freq).map(t => t.task_description);
         return Array.from(new Set(tasks));
       };
 
       const mensais = extractUnique('MENSAL');
       const trimestrais = extractUnique('TRIMESTRAL');
+      const pesadasZeladoria = [...mensais, ...trimestrais];
 
-      let suggestedText = `SECRETARIA:\n- Atendimento ao público\n- Organização de arquivos\n\nZELADORIA / LIMPEZA:\n- Atividades diárias e semanais de rotina nos blocos.\n`;
+      const newDailyActivities = { ...dailyActivities };
       
-      if (mensais.length > 0) {
-        suggestedText += `- Tarefas Mensais: ${mensais.join(', ')}.\n`;
-      }
-      if (trimestrais.length > 0) {
-        suggestedText += `- Tarefas Trimestrais: ${trimestrais.join(', ')}.\n`;
-      }
+      // Distribute tasks across available days
+      currentWorkingDays.forEach((day, index) => {
+        let text = `SECRETARIA:\n- Atendimento ao público\n- Organização de arquivos\n\nCOZINHA / MERENDA:\n- Limpeza pesada\n- Organização do estoque`;
+        
+        text += `\n\nZELADORIA / LIMPEZA:\n- Rotina diária/semanal`;
+        
+        // Add one or two heavy tasks if available
+        if (pesadasZeladoria.length > 0) {
+          const taskIndex = index % pesadasZeladoria.length;
+          text += `\n- TAREFA DO DIA: ${pesadasZeladoria[taskIndex]}`;
+        }
 
-      suggestedText += `\nCOZINHA / MERENDA:\n- Limpeza pesada da cozinha e despensa\n- Organização do estoque de alimentos\n- Descongelamento e limpeza de freezers/geladeiras`;
+        newDailyActivities[day] = text;
+      });
 
-      setActivities(suggestedText);
+      setDailyActivities(newDailyActivities);
     } catch (err) {
       console.error("Erro ao buscar atividades sugeridas:", err);
     }
@@ -309,21 +336,37 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
 
               {/* Atividades */}
               <div className="bg-white p-4 rounded-2xl border border-gray-200">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase">Atividades a serem desenvolvidas no recesso (Opcional)</label>
+                <div className="flex justify-between items-center mb-4">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase">Atividades por Dia (Opcional)</label>
                   <button 
                     onClick={handleSuggestActivities}
-                    className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold uppercase hover:bg-indigo-100 transition-colors"
+                    className="text-[10px] bg-indigo-50 text-indigo-600 px-3 py-2 rounded font-black uppercase tracking-wider hover:bg-indigo-100 transition-colors shadow-sm"
                   >
                     + Importar do Cronograma
                   </button>
                 </div>
-                <textarea
-                  value={activities}
-                  onChange={(e) => setActivities(e.target.value)}
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs text-gray-700 outline-none focus:border-indigo-500 min-h-[100px] resize-y"
-                  placeholder="Liste as atividades que serão realizadas pela equipe que está trabalhando..."
-                />
+                
+                {currentWorkingDays.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic text-center py-4 border border-dashed rounded-xl">
+                    Selecione a data inicial e final para preencher as atividades.
+                  </p>
+                ) : (
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    {currentWorkingDays.map((day) => (
+                      <div key={day} className="flex flex-col gap-1">
+                        <span className="text-[10px] font-black uppercase text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit">
+                          {formatDateBr(day)} - {getDayOfWeek(day)}
+                        </span>
+                        <textarea
+                          value={dailyActivities[day] || ''}
+                          onChange={(e) => setDailyActivities(prev => ({ ...prev, [day]: e.target.value }))}
+                          className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs text-gray-700 outline-none focus:border-indigo-500 min-h-[80px] resize-y"
+                          placeholder={`Atividades programadas para ${getDayOfWeek(day)}...`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button 
@@ -398,34 +441,32 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                             </div>
                           </div>
 
-                          <h2 className="text-sm font-black uppercase mb-3">Dias de Trabalho (Folha de Ponto)</h2>
+                          <h2 className="text-sm font-black uppercase mb-3">Dias de Trabalho (Folha de Ponto e Cronograma)</h2>
                           <table className="w-full border-collapse text-xs mb-8">
                             <thead>
                               <tr className="bg-gray-100">
-                                <th className="border border-gray-400 p-2 w-24">Data</th>
-                                <th className="border border-gray-400 p-2 w-24">Dia</th>
+                                <th className="border border-gray-400 p-2 w-20">Data</th>
+                                <th className="border border-gray-400 p-2 w-16">Dia</th>
+                                <th className="border border-gray-400 p-2 text-left w-1/2">Atividades Programadas</th>
                                 <th className="border border-gray-400 p-2 text-left">Assinatura dos Servidores Trabalhando</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {schedule.working_days.map((day: string, idx: number) => (
-                                <tr key={idx}>
-                                  <td className="border border-gray-400 p-2 text-center font-bold">{formatDateBr(day)}</td>
-                                  <td className="border border-gray-400 p-2 text-center">{getDayOfWeek(day)}</td>
-                                  <td className="border border-gray-400 p-2"></td>
-                                </tr>
-                              ))}
+                              {schedule.working_days.map((day: string, idx: number) => {
+                                const dayActivities = schedule.daily_activities ? schedule.daily_activities[day] : schedule.activities;
+                                return (
+                                  <tr key={idx}>
+                                    <td className="border border-gray-400 p-2 text-center font-bold align-top">{formatDateBr(day)}</td>
+                                    <td className="border border-gray-400 p-2 text-center align-top">{getDayOfWeek(day)}</td>
+                                    <td className="border border-gray-400 p-2 align-top whitespace-pre-wrap text-[10px]">
+                                      {dayActivities || ''}
+                                    </td>
+                                    <td className="border border-gray-400 p-2 align-top"></td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
-
-                          {schedule.activities && schedule.activities.trim() !== '' && (
-                            <div className="mb-8">
-                              <h2 className="text-sm font-black uppercase bg-gray-200 p-2 mb-2">Atividades a serem desenvolvidas</h2>
-                              <div className="border border-gray-300 p-4 text-xs uppercase whitespace-pre-wrap">
-                                {schedule.activities}
-                              </div>
-                            </div>
-                          )}
 
                           <div className="flex justify-around mt-16 pt-8">
                             <div className="text-center w-64">
