@@ -77,7 +77,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
     if (to === 'team2') setTeam2(prev => [...prev, emp]);
   };
 
-  const getWorkingDays = (start: string, end: string) => {
+  function getWorkingDays(start: string, end: string) {
     const days = [];
     const currentDate = new Date(start + 'T12:00:00');
     const endDate = new Date(end + 'T12:00:00');
@@ -91,7 +91,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
     }
     
     return days;
-  };
+  }
 
   const handleSave = async () => {
     if (!startDate || !endDate) {
