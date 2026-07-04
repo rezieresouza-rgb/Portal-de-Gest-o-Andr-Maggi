@@ -134,6 +134,7 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
+  const [allActiveEmployees, setAllActiveEmployees] = useState<CleaningEmployee[]>([]);
   const [tasks, setTasks] = useState<CleaningTask[]>([]);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -240,6 +241,18 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
             }));
 
           setEmployees(supportStaff as any);
+
+          const allActive = staffData
+            .filter(s => s.status === 'EM_ATIVIDADE')
+            .map(s => ({
+              id: s.id,
+              name: s.name,
+              shift: s.shift === 'INTEGRAL' ? 'MATUTINO' : s.shift,
+              scope: s.job_function,
+              isFixed: true,
+              registration: s.registration
+            }));
+          setAllActiveEmployees(allActive as any);
         }
       } catch (err) {
         console.error("Error loading staff from Supabase:", err);
@@ -379,7 +392,7 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
           {activeTab === 'protocol_official' && <CleaningOfficialManual />}
           {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
 
-          {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} currentUser={user} />}
+          {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} allStaff={allActiveEmployees} currentUser={user} />}
           {activeTab === 'work_plan' && <CleaningWorkPlan employees={employees} />}
           {activeTab === 'occurrences' && <CleaningOccurrences employees={employees} environments={environments} />}
 

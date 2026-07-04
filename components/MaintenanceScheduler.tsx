@@ -35,6 +35,7 @@ interface MaintenanceTask {
 
 interface MaintenanceSchedulerProps {
     employees: { id: string, name: string }[];
+    allStaff?: { id: string, name: string }[];
     currentUser?: User;
 }
 
@@ -45,7 +46,7 @@ const FREQUENCY_ORDER: Record<string, number> = {
     'TRIMESTRAL': 4
 };
 
-const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, currentUser }) => {
+const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, allStaff, currentUser }) => {
     const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({
@@ -819,7 +820,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
             <RecessScheduleModal 
                 isOpen={isRecessModalOpen}
                 onClose={() => setIsRecessModalOpen(false)}
-                employees={employees}
+                employees={allStaff && allStaff.length > 0 ? allStaff : employees}
             />
 
             {/* MONITOR DE LIMPEZA DE BANHEIROS */}
