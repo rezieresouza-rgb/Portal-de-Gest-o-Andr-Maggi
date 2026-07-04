@@ -18,6 +18,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
   const [t1End, setT1End] = useState('');
   const [t2Start, setT2Start] = useState('');
   const [t2End, setT2End] = useState('');
+  const [department, setDepartment] = useState<'Todos' | 'Zeladoria/Limpeza' | 'Cozinha/Merenda' | 'Secretaria'>('Todos');
   const [team1, setTeam1] = useState<Employee[]>([]);
   const [team2, setTeam2] = useState<Employee[]>([]);
   const [unassigned, setUnassigned] = useState<Employee[]>([]);
@@ -69,6 +70,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       setUnassigned([...employees]);
       setTeam1([]);
       setTeam2([]);
+      setDepartment('Todos');
       fetchSavedSchedules();
     }
   }, [isOpen, employees]);
@@ -120,6 +122,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
         t1_work_end: t1End || null,
         t2_work_start: t2Start || null,
         t2_work_end: t2End || null,
+        department: department,
         team_1_members: team1,
         team_2_members: team2,
         working_days: currentWorkingDays,
@@ -185,24 +188,34 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       
       // Distribute tasks across available days
       currentWorkingDays.forEach((day, index) => {
-        // Pega 2 tarefas de secretaria diferentes a cada dia
-        const sec1 = atividadesSecretaria[(index * 2) % atividadesSecretaria.length];
-        const sec2 = atividadesSecretaria[((index * 2) + 1) % atividadesSecretaria.length];
+        let text = '';
         
-        // Pega 1 tarefa de cozinha diferente a cada dia
-        const coz = atividadesCozinha[index % atividadesCozinha.length];
+        const includeSecretaria = department === 'Todos' || department === 'Secretaria';
+        const includeCozinha = department === 'Todos' || department === 'Cozinha/Merenda';
+        const includeZeladoria = department === 'Todos' || department === 'Zeladoria/Limpeza';
 
-        let text = `SECRETARIA (Técnicos Adm.):\n- ${sec1}\n- ${sec2}\n\nCOZINHA / MERENDA:\n- ${coz}`;
+        if (includeSecretaria) {
+          const sec1 = atividadesSecretaria[(index * 2) % atividadesSecretaria.length];
+          const sec2 = atividadesSecretaria[((index * 2) + 1) % atividadesSecretaria.length];
+          text += `SECRETARIA (Técnicos Adm.):\n- ${sec1}\n- ${sec2}\n\n`;
+        }
         
-        text += `\n\nZELADORIA / LIMPEZA:\n- Rotina diária/semanal`;
+        if (includeCozinha) {
+          const coz = atividadesCozinha[index % atividadesCozinha.length];
+          text += `COZINHA / MERENDA:\n- ${coz}\n\n`;
+        }
         
-        // Add one or two heavy tasks if available
-        if (pesadasZeladoria.length > 0) {
-          const taskIndex = index % pesadasZeladoria.length;
-          text += `\n- TAREFA DO DIA: ${pesadasZeladoria[taskIndex]}`;
+        if (includeZeladoria) {
+          text += `ZELADORIA / LIMPEZA:\n- Rotina diária/semanal`;
+          // Add one or two heavy tasks if available
+          if (pesadasZeladoria.length > 0) {
+            const taskIndex = index % pesadasZeladoria.length;
+            text += `\n- TAREFA DO DIA: ${pesadasZeladoria[taskIndex]}`;
+          }
+          text += '\n\n';
         }
 
-        newDailyActivities[day] = text;
+        newDailyActivities[day] = text.trim();
       });
 
       setDailyActivities(newDailyActivities);
@@ -271,6 +284,25 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
             <div className="space-y-6">
               {/* Configurações Iniciais */}
               <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-6">
+                
+                {/* Seleção do Setor */}
+                <div className="border border-purple-200 bg-purple-50 rounded-xl p-4">
+                  <label className="block text-xs font-black text-purple-800 uppercase mb-2">Setor da Escala</label>
+                  <select 
+                    value={department}
+                    onChange={(e: any) => setDepartment(e.target.value)}
+                    className="w-full p-3 bg-white border border-purple-200 rounded-xl font-bold text-sm text-gray-700 outline-none focus:border-purple-500"
+                  >
+                    <option value="Todos">Todos os Setores Juntos</option>
+                    <option value="Zeladoria/Limpeza">Apenas Zeladoria / Limpeza</option>
+                    <option value="Cozinha/Merenda">Apenas Cozinha / Merenda</option>
+                    <option value="Secretaria">Apenas Secretaria</option>
+                  </select>
+                  <p className="text-[10px] text-purple-600 mt-2 italic">
+                    * O botão "Importar do Cronograma" trará apenas as atividades do setor escolhido.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Período Equipe 1 */}
                   <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4">
@@ -438,8 +470,11 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                     <div key={schedule.id} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h4 className="text-sm font-black uppercase text-gray-900">
+                          <h4 className="text-sm font-black uppercase text-gray-900 flex items-center gap-2">
                             Escala Consolidada: {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}
+                            {schedule.department && schedule.department !== 'Todos' && (
+                              <span className="text-[10px] bg-purple-100 text-purple-800 px-2 py-1 rounded">{schedule.department}</span>
+                            )}
                           </h4>
                           <p className="text-xs text-gray-500 mt-1">Criada em {new Date(schedule.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
@@ -480,7 +515,10 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                       <div className="hidden">
                         <div id={`print-recess-${schedule.id}`} className="p-8 bg-white text-gray-900 font-sans">
                           <div className="text-center mb-6">
-                            <h1 className="text-2xl font-black uppercase border-b-2 border-gray-900 pb-2">Escala de Trabalho - Recesso Escolar</h1>
+                            <h1 className="text-2xl font-black uppercase border-b-2 border-gray-900 pb-2">
+                              Escala de Trabalho - Recesso Escolar
+                              {schedule.department && schedule.department !== 'Todos' && ` (${schedule.department})`}
+                            </h1>
                             <p className="text-sm font-bold mt-2">Período: {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}</p>
                           </div>
                           

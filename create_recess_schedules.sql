@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.maintenance_recess_schedules (
     t1_work_end date,
     t2_work_start date,
     t2_work_end date,
+    department text DEFAULT 'Todos',
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
 );
@@ -36,6 +37,10 @@ BEGIN
         ALTER TABLE public.maintenance_recess_schedules ADD COLUMN t2_work_start date;
         ALTER TABLE public.maintenance_recess_schedules ADD COLUMN t2_work_end date;
         ALTER TABLE public.maintenance_recess_schedules ALTER COLUMN recess_team DROP NOT NULL;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='maintenance_recess_schedules' AND column_name='department') THEN
+        ALTER TABLE public.maintenance_recess_schedules ADD COLUMN department text DEFAULT 'Todos';
     END IF;
 END $$;
 
