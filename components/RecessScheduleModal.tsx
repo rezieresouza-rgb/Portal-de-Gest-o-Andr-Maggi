@@ -14,10 +14,9 @@ interface RecessScheduleModalProps {
 }
 
 const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClose, employees }) => {
-  const [t1Start, setT1Start] = useState('');
-  const [t1End, setT1End] = useState('');
-  const [t2Start, setT2Start] = useState('');
-  const [t2End, setT2End] = useState('');
+  const [globalStart, setGlobalStart] = useState('');
+  const [globalEnd, setGlobalEnd] = useState('');
+  const [teamSchedules, setTeamSchedules] = useState<Record<string, string[]>>({});
   const [department, setDepartment] = useState<'Todos' | 'Zeladoria/Limpeza' | 'Cozinha/Merenda' | 'Secretaria' | 'Civico-Militar' | 'Vigias'>('Todos');
   const [team1, setTeam1] = useState<Employee[]>([]);
   const [team2, setTeam2] = useState<Employee[]>([]);
@@ -46,11 +45,19 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
 
   // Calculate working days dynamically for the UI
   const currentWorkingDays = React.useMemo(() => {
-    const days = new Set<string>();
-    getWorkingDays(t1Start, t1End).forEach(d => days.add(d));
-    getWorkingDays(t2Start, t2End).forEach(d => days.add(d));
-    return Array.from(days).sort();
-  }, [t1Start, t1End, t2Start, t2End]);
+    return getWorkingDays(globalStart, globalEnd).sort();
+  }, [globalStart, globalEnd]);
+
+  // Handle toggling a team on a specific day
+  const toggleTeamDay = (day: string, team: 'team1' | 'team2') => {
+    setTeamSchedules(prev => {
+      const current = prev[day] || [];
+      const updated = current.includes(team) 
+        ? current.filter(t => t !== team) 
+        : [...current, team];
+      return { ...prev, [day]: updated };
+    });
+  };
 
   // Initialize empty text for new days
   useEffect(() => {
@@ -103,8 +110,8 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
   };
 
   const handleSave = async () => {
-    if ((!t1Start || !t1End) && (!t2Start || !t2End)) {
-      alert("Por favor, selecione as datas para pelo menos uma das equipes.");
+    if (!globalStart || !globalEnd) {
+      alert("Por favor, defina o período geral da escala.");
       return;
     }
     
@@ -116,17 +123,14 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
     setLoading(true);
     try {
       const { data, error } = await supabase.from('maintenance_recess_schedules').insert([{
-        start_date: t1Start || t2Start,
-        end_date: t2End || t1End,
-        t1_work_start: t1Start || null,
-        t1_work_end: t1End || null,
-        t2_work_start: t2Start || null,
-        t2_work_end: t2End || null,
+        start_date: globalStart,
+        end_date: globalEnd,
         department: department,
         team_1_members: team1,
         team_2_members: team2,
         working_days: currentWorkingDays,
-        daily_activities: dailyActivities
+        daily_activities: dailyActivities,
+        team_schedules: teamSchedules
       }]).select();
       
       if (error) throw error;
@@ -206,6 +210,12 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       
       // Distribute tasks across available days
       currentWorkingDays.forEach((day, index) => {
+        // Skip days where no teams are scheduled
+        if (!teamSchedules[day] || teamSchedules[day].length === 0) {
+          newDailyActivities[day] = '';
+          return;
+        }
+
         let text = '';
         
         const includeSecretaria = department === 'Todos' || department === 'Secretaria';
@@ -337,59 +347,66 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Período Equipe 1 */}
-                  <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4">
-                    <h4 className="text-xs font-black uppercase text-emerald-800 mb-4">Dias Trabalhados pela Equipe 1</h4>
-                    <div className="flex gap-4">
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-black text-emerald-700 uppercase mb-2">Data Inicial</label>
-                        <input 
-                          type="date" 
-                          value={t1Start}
-                          onChange={(e) => setT1Start(e.target.value)}
-                          className="w-full p-3 bg-white border border-emerald-200 rounded-xl font-bold text-sm outline-none focus:border-emerald-500" 
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-black text-emerald-700 uppercase mb-2">Data Final</label>
-                        <input 
-                          type="date" 
-                          value={t1End}
-                          onChange={(e) => setT1End(e.target.value)}
-                          min={t1Start}
-                          className="w-full p-3 bg-white border border-emerald-200 rounded-xl font-bold text-sm outline-none focus:border-emerald-500" 
-                        />
-                      </div>
+                <div className="border border-indigo-200 bg-indigo-50 rounded-xl p-4">
+                  <h4 className="text-xs font-black uppercase text-indigo-800 mb-4">Período Geral do Recesso</h4>
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-black text-indigo-700 uppercase mb-2">Data Inicial (Global)</label>
+                      <input 
+                        type="date" 
+                        value={globalStart}
+                        onChange={(e) => setGlobalStart(e.target.value)}
+                        className="w-full p-3 bg-white border border-indigo-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-500" 
+                      />
                     </div>
-                  </div>
-
-                  {/* Período Equipe 2 */}
-                  <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
-                    <h4 className="text-xs font-black uppercase text-blue-800 mb-4">Dias Trabalhados pela Equipe 2</h4>
-                    <div className="flex gap-4">
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-black text-blue-700 uppercase mb-2">Data Inicial</label>
-                        <input 
-                          type="date" 
-                          value={t2Start}
-                          onChange={(e) => setT2Start(e.target.value)}
-                          className="w-full p-3 bg-white border border-blue-200 rounded-xl font-bold text-sm outline-none focus:border-blue-500" 
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-black text-blue-700 uppercase mb-2">Data Final</label>
-                        <input 
-                          type="date" 
-                          value={t2End}
-                          onChange={(e) => setT2End(e.target.value)}
-                          min={t2Start}
-                          className="w-full p-3 bg-white border border-blue-200 rounded-xl font-bold text-sm outline-none focus:border-blue-500" 
-                        />
-                      </div>
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-black text-indigo-700 uppercase mb-2">Data Final (Global)</label>
+                      <input 
+                        type="date" 
+                        value={globalEnd}
+                        onChange={(e) => setGlobalEnd(e.target.value)}
+                        min={globalStart}
+                        className="w-full p-3 bg-white border border-indigo-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-500" 
+                      />
                     </div>
                   </div>
                 </div>
+
+                {/* Grid de Escolha de Dias ("Pingados") */}
+                {currentWorkingDays.length > 0 && (
+                  <div className="border border-gray-200 bg-white rounded-xl p-4">
+                    <h4 className="text-xs font-black uppercase text-gray-800 mb-4">Quais dias as equipes trabalham?</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                      {currentWorkingDays.map(day => (
+                        <div key={day} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-100">
+                          <span className="text-[10px] font-black uppercase text-gray-600">
+                            {formatDateBr(day)} ({getDayOfWeek(day)})
+                          </span>
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-1 cursor-pointer" title="Equipe 1 trabalha neste dia?">
+                              <input 
+                                type="checkbox" 
+                                checked={(teamSchedules[day] || []).includes('team1')}
+                                onChange={() => toggleTeamDay(day, 'team1')}
+                                className="w-3 h-3 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                              />
+                              <span className="text-[9px] font-bold text-emerald-700 uppercase">Eq.1</span>
+                            </label>
+                            <label className="flex items-center gap-1 cursor-pointer" title="Equipe 2 trabalha neste dia?">
+                              <input 
+                                type="checkbox" 
+                                checked={(teamSchedules[day] || []).includes('team2')}
+                                onChange={() => toggleTeamDay(day, 'team2')}
+                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className="text-[9px] font-bold text-blue-700 uppercase">Eq.2</span>
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Divisão de Equipes */}
@@ -524,9 +541,6 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                         <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
                           <p className="text-[10px] font-black text-emerald-800 uppercase mb-2">
                             Equipe 1
-                            {schedule.t1_work_start && schedule.t1_work_end && 
-                              <span className="ml-1 text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded">Trabalha de {formatDateBr(schedule.t1_work_start)} a {formatDateBr(schedule.t1_work_end)}</span>
-                            }
                           </p>
                           <ul className="list-disc pl-4 text-xs font-bold text-gray-700 space-y-1 uppercase">
                             {schedule.team_1_members.map((m: any) => <li key={m.id}>{m.name}</li>)}
@@ -535,9 +549,6 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                         <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
                           <p className="text-[10px] font-black text-blue-800 uppercase mb-2">
                             Equipe 2
-                            {schedule.t2_work_start && schedule.t2_work_end && 
-                              <span className="ml-1 text-blue-600 bg-blue-100 px-2 py-0.5 rounded">Trabalha de {formatDateBr(schedule.t2_work_start)} a {formatDateBr(schedule.t2_work_end)}</span>
-                            }
                           </p>
                           <ul className="list-disc pl-4 text-xs font-bold text-gray-700 space-y-1 uppercase">
                             {schedule.team_2_members.map((m: any) => <li key={m.id}>{m.name}</li>)}
@@ -560,7 +571,6 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                             <div className="flex-1">
                               <h2 className="text-[11px] font-black uppercase bg-gray-200 p-2 text-center mb-2">
                                 Equipe 1 
-                                {schedule.t1_work_start && schedule.t1_work_end && ` (Trabalha de ${formatDateBr(schedule.t1_work_start)} a ${formatDateBr(schedule.t1_work_end)})`}
                               </h2>
                               <ul className="text-[10px] uppercase border border-gray-300 p-2 min-h-[60px]">
                                 {schedule.team_1_members.map((m: any) => <li key={m.id} className="py-1 border-b border-dashed border-gray-300 last:border-0">{m.name}</li>)}
@@ -569,7 +579,6 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                             <div className="flex-1">
                               <h2 className="text-[11px] font-black uppercase bg-gray-200 p-2 text-center mb-2">
                                 Equipe 2
-                                {schedule.t2_work_start && schedule.t2_work_end && ` (Trabalha de ${formatDateBr(schedule.t2_work_start)} a ${formatDateBr(schedule.t2_work_end)})`}
                               </h2>
                               <ul className="text-[10px] uppercase border border-gray-300 p-2 min-h-[60px]">
                                 {schedule.team_2_members.map((m: any) => <li key={m.id} className="py-1 border-b border-dashed border-gray-300 last:border-0">{m.name}</li>)}
@@ -591,9 +600,19 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                             <tbody>
                               {schedule.working_days.map((day: string, idx: number) => {
                                 const dayActivities = schedule.daily_activities ? schedule.daily_activities[day] : schedule.activities;
+                                
                                 let activeTeam = '';
-                                if (schedule.t1_work_start && schedule.t1_work_end && day >= schedule.t1_work_start && day <= schedule.t1_work_end) activeTeam = 'Equipe 1';
-                                if (schedule.t2_work_start && schedule.t2_work_end && day >= schedule.t2_work_start && day <= schedule.t2_work_end) activeTeam = activeTeam ? 'Ambas' : 'Equipe 2';
+                                if (schedule.team_schedules && schedule.team_schedules[day]) {
+                                  const eq1 = schedule.team_schedules[day].includes('team1');
+                                  const eq2 = schedule.team_schedules[day].includes('team2');
+                                  if (eq1 && eq2) activeTeam = 'Ambas';
+                                  else if (eq1) activeTeam = 'Equipe 1';
+                                  else if (eq2) activeTeam = 'Equipe 2';
+                                } else {
+                                  // Legacy fallback
+                                  if (schedule.t1_work_start && schedule.t1_work_end && day >= schedule.t1_work_start && day <= schedule.t1_work_end) activeTeam = 'Equipe 1';
+                                  if (schedule.t2_work_start && schedule.t2_work_end && day >= schedule.t2_work_start && day <= schedule.t2_work_end) activeTeam = activeTeam ? 'Ambas' : 'Equipe 2';
+                                }
 
                                 return (
                                   <tr key={idx}>
