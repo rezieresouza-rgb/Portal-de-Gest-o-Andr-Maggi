@@ -126,7 +126,6 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
         end_date: globalEnd,
         team_1_members: team1,
         team_2_members: team2,
-        unassigned_members: unassigned,
         working_days: currentWorkingDays,
         team_schedules: teamSchedules,
         department: department,
