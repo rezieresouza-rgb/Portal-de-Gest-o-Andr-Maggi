@@ -665,18 +665,24 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                       {/* Elemento Oculto para Impressão */}
                       <div className="hidden">
                         <div id={`print-recess-${schedule.id}`} className="p-8 bg-white text-gray-900 font-sans">
-                          <div className="flex justify-between items-center mb-6 border-b-2 border-gray-900 pb-4">
-                            <img src="/brasao_mt.png" alt="Governo de MT" className="h-16 object-contain" />
-                            <div className="text-center flex-1 px-4">
-                              <h1 className="text-lg font-black uppercase text-gray-900 leading-tight">Secretaria de Estado de Educação - SEDUC/MT</h1>
-                              <h2 className="text-sm font-bold uppercase text-gray-800 leading-tight mt-1">Escola Estadual da Polícia Militar Tiradentes "Cb PM André Avelino Machado"</h2>
-                              <h3 className="text-base font-black uppercase mt-3 bg-gray-200 inline-block px-4 py-1 rounded">
-                                Escala de Trabalho - Recesso
-                                {schedule.department && schedule.department !== 'Todos' && ` (${schedule.department})`}
-                              </h3>
-                              <p className="text-xs font-bold mt-2">Período: {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}</p>
+                          <div className="flex justify-between items-center border-b-2 border-gray-900 pb-2 mb-4 gap-4">
+                            <div className="flex items-center justify-start flex-1">
+                              <img src="/logo-escola-oficial.png" alt="Escola Logo" className="h-16 w-auto object-contain" />
                             </div>
-                            <img src="/logo-escola-oficial.png" alt="Escola" className="h-16 object-contain" />
+                            <div className="flex-[2] flex justify-center px-4">
+                              <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-16 w-full object-contain" />
+                            </div>
+                            <div className="flex items-center justify-end flex-1">
+                              <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-14 w-auto object-contain" />
+                            </div>
+                          </div>
+                          
+                          <div className="text-center mb-6">
+                            <h3 className="text-base font-black uppercase mt-1 inline-block px-4 py-1 rounded border border-gray-300 bg-gray-50">
+                              Escala de Trabalho - Recesso
+                              {schedule.department && schedule.department !== 'Todos' && ` (${schedule.department})`}
+                            </h3>
+                            <p className="text-xs font-bold mt-2">Período: {formatDateBr(schedule.start_date)} a {formatDateBr(schedule.end_date || schedule.start_date)}</p>
                           </div>
                           
                           <div className="flex gap-8 mb-8">
