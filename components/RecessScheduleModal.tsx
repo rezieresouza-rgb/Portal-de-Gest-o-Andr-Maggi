@@ -343,6 +343,25 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
     await window.html2pdf().set(opt).from(element).save();
   };
 
+  const handlePrintAll = async () => {
+    const originalContents = document.body.innerHTML;
+    let combinedHtml = '';
+
+    savedSchedules.forEach((schedule, index) => {
+      const printContent = document.getElementById(`print-recess-${schedule.id}`);
+      if (printContent) {
+        combinedHtml += `<div style="${index < savedSchedules.length - 1 ? 'page-break-after: always;' : ''}">${printContent.innerHTML}</div>`;
+      }
+    });
+
+    if (combinedHtml) {
+      document.body.innerHTML = combinedHtml;
+      window.print();
+      document.body.innerHTML = originalContents;
+      window.location.reload();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -572,6 +591,21 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
             </div>
           ) : (
             <div className="space-y-6">
+              {savedSchedules.length > 1 && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex justify-between items-center shadow-sm">
+                  <div>
+                    <h3 className="text-sm font-black text-indigo-900 uppercase">Imprimir Todas as Escalas</h3>
+                    <p className="text-[10px] text-indigo-700 font-medium mt-1">Gera um único arquivo PDF contendo todas as escalas salvas abaixo, uma em cada página.</p>
+                  </div>
+                  <button 
+                    onClick={handlePrintAll}
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-md"
+                  >
+                    <Printer size={16} /> Imprimir Todas ({savedSchedules.length})
+                  </button>
+                </div>
+              )}
+
               {savedSchedules.length === 0 ? (
                 <div className="text-center py-10 bg-white rounded-2xl border border-gray-200">
                   <p className="text-gray-500 font-bold">Nenhuma escala salva encontrada.</p>
