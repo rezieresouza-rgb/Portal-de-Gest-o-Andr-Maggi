@@ -25,6 +25,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
   const [savedSchedules, setSavedSchedules] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'create' | 'saved'>('create');
   const [dailyActivities, setDailyActivities] = useState<Record<string, string>>({});
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
   
   function getWorkingDays(start: string, end: string) {
     if (!start || !end) return [];
@@ -74,10 +75,13 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
 
   useEffect(() => {
     if (isOpen) {
-      setUnassigned([...employees]);
-      setTeam1([]);
-      setTeam2([]);
-      setDepartment('Todos');
+      if (!editingScheduleId) {
+        setUnassigned([...employees]);
+        setTeam1([]);
+        setTeam2([]);
+        setDepartment('Todos');
+        setTeamSchedules({});
+      }
       fetchSavedSchedules();
     }
   }, [isOpen, employees]);
@@ -111,39 +115,87 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
 
   const handleSave = async () => {
     if (!globalStart || !globalEnd) {
-      alert("Por favor, defina o período geral da escala.");
-      return;
-    }
-    
-    if (team1.length === 0 && team2.length === 0) {
-      alert("Distribua os servidores nas equipes antes de salvar.");
+      alert("Defina o período global (inicial e final).");
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('maintenance_recess_schedules').insert([{
+      const payload = {
         start_date: globalStart,
         end_date: globalEnd,
-        department: department,
         team_1_members: team1,
         team_2_members: team2,
+        unassigned_members: unassigned,
         working_days: currentWorkingDays,
+        team_schedules: teamSchedules,
+        department: department,
         daily_activities: dailyActivities,
-        team_schedules: teamSchedules
-      }]).select();
+        created_at: new Date().toISOString()
+      };
+
+      if (editingScheduleId) {
+        const { error } = await supabase
+          .from('maintenance_recess_schedules')
+          .update(payload)
+          .eq('id', editingScheduleId);
+        if (error) throw error;
+        alert("Escala atualizada com sucesso!");
+      } else {
+        const { error } = await supabase
+          .from('maintenance_recess_schedules')
+          .insert([payload]);
+        if (error) throw error;
+        alert("Escala salva com sucesso!");
+      }
       
-      if (error) throw error;
-      
-      alert("Escala de recesso salva com sucesso!");
+      setGlobalStart('');
+      setGlobalEnd('');
+      setTeamSchedules({});
+      setDailyActivities({});
+      setDepartment('Todos');
+      setEditingScheduleId(null);
       fetchSavedSchedules();
       setActiveTab('saved');
     } catch (err) {
       console.error("Erro ao salvar escala:", err);
-      alert("Erro ao salvar. Verifique se a coluna 'activities' foi criada na tabela do banco de dados.");
+      alert("Ocorreu um erro ao salvar. Tente novamente.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (schedule: any) => {
+    setEditingScheduleId(schedule.id);
+    setGlobalStart(schedule.start_date);
+    setGlobalEnd(schedule.end_date || schedule.start_date);
+    setDepartment(schedule.department || 'Todos');
+    
+    setTeamSchedules(schedule.team_schedules || {});
+    setDailyActivities(schedule.daily_activities || {});
+    
+    const t1 = schedule.team_1_members || [];
+    const t2 = schedule.team_2_members || [];
+    setTeam1(t1);
+    setTeam2(t2);
+    
+    // Unassigned should be all active employees minus t1 and t2
+    const usedIds = new Set([...t1.map((e:any)=>e.id), ...t2.map((e:any)=>e.id)]);
+    setUnassigned(employees.filter(e => !usedIds.has(e.id)));
+    
+    setActiveTab('create');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingScheduleId(null);
+    setGlobalStart('');
+    setGlobalEnd('');
+    setTeamSchedules({});
+    setDailyActivities({});
+    setDepartment('Todos');
+    setTeam1([]);
+    setTeam2([]);
+    setUnassigned([...employees]);
   };
 
   const handleSuggestActivities = async () => {
@@ -500,13 +552,24 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                 )}
               </div>
 
-              <button 
-                onClick={handleSave}
-                disabled={loading}
-                className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {loading ? 'Salvando...' : <><Save size={18} /> Salvar Escala</>}
-              </button>
+              <div className="flex gap-4">
+                <button 
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? 'Salvando...' : <><Save size={18} /> {editingScheduleId ? 'Atualizar Escala' : 'Salvar Escala'}</>}
+                </button>
+                {editingScheduleId && (
+                  <button 
+                    onClick={handleCancelEdit}
+                    disabled={loading}
+                    className="flex-1 py-4 bg-red-50 text-red-600 border border-red-200 rounded-xl font-black uppercase tracking-widest hover:bg-red-100 transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    Cancelar Edição
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
@@ -528,12 +591,20 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                           </h4>
                           <p className="text-xs text-gray-500 mt-1">Criada em {new Date(schedule.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
-                        <button 
-                          onClick={() => handlePrint(schedule)}
-                          className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2"
-                        >
-                          <Printer size={14} /> Imprimir PDF Único
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleEdit(schedule)}
+                            className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center gap-2 border border-indigo-200"
+                          >
+                            Editar
+                          </button>
+                          <button 
+                            onClick={() => handlePrint(schedule)}
+                            className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2"
+                          >
+                            <Printer size={14} /> Imprimir PDF Único
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
