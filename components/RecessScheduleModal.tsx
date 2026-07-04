@@ -242,6 +242,9 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       ];
 
       const atividadesCivico = [
+        "Estudo e revisão do Regimento Escolar e Manual do Aluno Cívico-Militar",
+        "Planejamento das instruções cívico-militares e ordem unida do próximo semestre",
+        "Atualização e manutenção das fichas disciplinares e pranchetas de acompanhamento",
         "Monitoramento e ronda ostensiva das instalações",
         "Controle de acesso de pessoas e prestadores de serviço",
         "Verificação de segurança de portas, portões e cadeados",
