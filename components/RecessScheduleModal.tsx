@@ -152,19 +152,21 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       return;
     }
 
+    let pesadasZeladoria: string[] = [];
     try {
       const { data, error } = await supabase.from('maintenance_tasks').select('task_description, frequency');
-      if (error) throw error;
-      
-      const extractUnique = (freq: string) => {
-        if (!data) return [];
-        const tasks = data.filter(t => t.frequency === freq).map(t => t.task_description);
-        return Array.from(new Set(tasks));
-      };
-
-      const mensais = extractUnique('MENSAL');
-      const trimestrais = extractUnique('TRIMESTRAL');
-      const pesadasZeladoria = [...mensais, ...trimestrais];
+      if (!error && data) {
+        const extractUnique = (freq: string) => {
+          const tasks = data.filter(t => t.frequency === freq).map(t => t.task_description);
+          return Array.from(new Set(tasks));
+        };
+        const mensais = extractUnique('MENSAL');
+        const trimestrais = extractUnique('TRIMESTRAL');
+        pesadasZeladoria = [...mensais, ...trimestrais];
+      }
+    } catch (err) {
+      console.error("Erro ao buscar tarefas pesadas de zeladoria:", err);
+    }
 
       const atividadesSecretaria = [
         "Atendimento ao público (pais, alunos, comunidade)",
@@ -261,9 +263,6 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
       });
 
       setDailyActivities(newDailyActivities);
-    } catch (err) {
-      console.error("Erro ao buscar atividades sugeridas:", err);
-    }
   };
 
   const formatDateBr = (dateStr: string) => {
