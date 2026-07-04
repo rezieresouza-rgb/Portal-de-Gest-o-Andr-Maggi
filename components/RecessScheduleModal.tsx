@@ -18,7 +18,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
   const [t1End, setT1End] = useState('');
   const [t2Start, setT2Start] = useState('');
   const [t2End, setT2End] = useState('');
-  const [department, setDepartment] = useState<'Todos' | 'Zeladoria/Limpeza' | 'Cozinha/Merenda' | 'Secretaria' | 'Civico-Militar'>('Todos');
+  const [department, setDepartment] = useState<'Todos' | 'Zeladoria/Limpeza' | 'Cozinha/Merenda' | 'Secretaria' | 'Civico-Militar' | 'Vigias'>('Todos');
   const [team1, setTeam1] = useState<Employee[]>([]);
   const [team2, setTeam2] = useState<Employee[]>([]);
   const [unassigned, setUnassigned] = useState<Employee[]>([]);
@@ -193,6 +193,15 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
         "Ronda no perímetro escolar e quadras"
       ];
 
+      const atividadesVigia = [
+        "Controle rigoroso de entrada e saída pela portaria",
+        "Ronda periódica noturna/diurna em todo o perímetro escolar",
+        "Verificação do travamento de todas as portas e janelas",
+        "Acompanhamento e registro de entrada de prestadores de serviços",
+        "Acionamento e verificação do sistema de alarmes/câmeras",
+        "Registro de ocorrências no livro de plantão"
+      ];
+
       const newDailyActivities = { ...dailyActivities };
       
       // Distribute tasks across available days
@@ -203,6 +212,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
         const includeCozinha = department === 'Todos' || department === 'Cozinha/Merenda';
         const includeZeladoria = department === 'Todos' || department === 'Zeladoria/Limpeza';
         const includeCivico = department === 'Todos' || department === 'Civico-Militar';
+        const includeVigia = department === 'Todos' || department === 'Vigias';
 
         if (includeSecretaria) {
           const sec1 = atividadesSecretaria[(index * 2) % atividadesSecretaria.length];
@@ -219,6 +229,12 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
           const civ1 = atividadesCivico[(index * 2) % atividadesCivico.length];
           const civ2 = atividadesCivico[((index * 2) + 1) % atividadesCivico.length];
           text += `EQUIPE CÍVICO-MILITAR:\n- ${civ1}\n- ${civ2}\n\n`;
+        }
+
+        if (includeVigia) {
+          const vig1 = atividadesVigia[(index * 2) % atividadesVigia.length];
+          const vig2 = atividadesVigia[((index * 2) + 1) % atividadesVigia.length];
+          text += `VIGIAS / SEGURANÇA:\n- ${vig1}\n- ${vig2}\n\n`;
         }
         
         if (includeZeladoria) {
@@ -314,6 +330,7 @@ const RecessScheduleModal: React.FC<RecessScheduleModalProps> = ({ isOpen, onClo
                     <option value="Cozinha/Merenda">Apenas Cozinha / Merenda</option>
                     <option value="Secretaria">Apenas Secretaria</option>
                     <option value="Civico-Militar">Apenas Equipe Cívico-Militar</option>
+                    <option value="Vigias">Apenas Vigias</option>
                   </select>
                   <p className="text-[10px] text-purple-600 mt-2 italic">
                     * O botão "Importar do Cronograma" trará apenas as atividades do setor escolhido.
