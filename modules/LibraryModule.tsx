@@ -44,7 +44,6 @@ import { Book, Reader, Loan, StaffMember } from '../types';
 import { suggestBooks, fetchBookSynopsis, fetchBookCover } from '../geminiService';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
-import { APALabBooksSubmodule } from '../components/APALabBooksSubmodule';
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return '-';
@@ -446,7 +445,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     setBookForm({ 
       title: '', 
       author: '', 
-      category: 'Literatura Brasileira', 
+      category: activeTab === 'apa' ? 'Laboratório APA' : 'Literatura Brasileira', 
       isbn: '', 
       totalCopies: 1, 
       location: '', 
@@ -1302,18 +1301,30 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           </div>
         );
       case 'catalog':
+      case 'apa':
+        const isApa = activeTab === 'apa';
+        const displayGroupedBooks = groupedBooks.filter(gb => 
+          isApa ? gb.category === 'Laboratório APA' : gb.category !== 'Laboratório APA'
+        );
+
         return (
           <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center justify-between gap-4">
+              {isApa && (
+                <div className="hidden md:flex items-center gap-2 px-4 border-r border-gray-100">
+                  <BookMarked className="text-emerald-500" size={24} />
+                  <h3 className="font-black text-gray-800 uppercase tracking-tight leading-none text-sm">Laboratório<br/>APA</h3>
+                </div>
+              )}
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                 <input type="text" placeholder="Título, autor ou registro interno..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-3 bg-gray-50 border-none rounded-2xl text-xs font-bold outline-none" />
               </div>
-              <button onClick={handleAddBookClick} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition-all"><Plus size={16} /> Adicionar Obra</button>
+              <button onClick={handleAddBookClick} className={`px-6 py-3 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg transition-all ${isApa ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}><Plus size={16} /> Adicionar Obra</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {groupedBooks.filter(gb => 
+              {displayGroupedBooks.filter(gb => 
                 gb.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                 gb.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 gb.copies.some(c => c.internalRegistration && c.internalRegistration.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -1840,8 +1851,6 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             </div>
           </div>
         );
-      case 'apa':
-        return <APALabBooksSubmodule />;
       default: return null;
     }
   };
@@ -1985,7 +1994,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-gray-400 uppercase ml-1">Categoria</label>
-                        <select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option></select>
+                        <select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Laboratório APA</option><option>Outros</option></select>
                       </div>
                     </div>
 
