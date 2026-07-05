@@ -89,7 +89,7 @@ interface GroupedBook {
 }
 
 const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai' | 'reports' | 'apa'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai' | 'reports' | 'apa' | 'apa-loans'>('dashboard');
 
   /*
    * MIGRAÇÃO SUPABASE: Biblioteca
@@ -1349,6 +1349,12 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
         return (
           <div className="space-y-6 animate-in fade-in duration-500">
+            {isApa && (
+              <div className="flex bg-white rounded-2xl shadow-sm p-1.5 w-fit gap-1 border border-gray-100">
+                <button onClick={() => setActiveTab('apa')} className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-emerald-600 text-white shadow-md">Acervo</button>
+                <button onClick={() => setActiveTab('apa-loans')} className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-gray-50">Empréstimos</button>
+              </div>
+            )}
             <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center justify-between gap-4">
               {isApa && (
                 <div className="hidden md:flex items-center gap-2 px-4 border-r border-gray-100">
@@ -1531,16 +1537,29 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           </div>
         );
       case 'loans':
+      case 'apa-loans':
+        const isApaLoansTab = activeTab === 'apa-loans';
+        const tabLoans = loans.filter(l => isApaLoansTab ? l.isApaLoan : !l.isApaLoan);
+        const tabActiveLoans = tabLoans.filter(l => l.status === 'ATIVO').length;
+        const tabDelayedLoans = tabLoans.filter(l => l.status === 'ATIVO' && l.dueDate < stats.todayStr).length;
+
         return (
-          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in duration-500">
-            <div className="p-8 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 gap-4">
-              <div className="flex items-center gap-4">
-                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Registro de Circulação</h3>
-                <div className="flex gap-2">
-                  <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase border border-blue-100">{stats.activeLoans} Ativos</span>
-                  <span className="px-3 py-1 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase border border-red-100">{stats.delayedLoans.length} Atrasados</span>
-                </div>
+          <div className="space-y-6 animate-in fade-in duration-500">
+            {isApaLoansTab && (
+              <div className="flex bg-white rounded-2xl shadow-sm p-1.5 w-fit gap-1 border border-gray-100">
+                <button onClick={() => setActiveTab('apa')} className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-gray-50">Acervo</button>
+                <button onClick={() => setActiveTab('apa-loans')} className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all bg-emerald-600 text-white shadow-md">Empréstimos</button>
               </div>
+            )}
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in duration-500">
+              <div className="p-8 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 gap-4">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">{isApaLoansTab ? 'Circulação APA' : 'Registro de Circulação'}</h3>
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase border border-blue-100">{tabActiveLoans} Ativos</span>
+                    <span className="px-3 py-1 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase border border-red-100">{tabDelayedLoans} Atrasados</span>
+                  </div>
+                </div>
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <input
                   type="text"
@@ -1569,7 +1588,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {loans.filter(loan => {
+                  {tabLoans.filter(loan => {
                     if (!loanSearch) return true;
                     const search = loanSearch.toLowerCase();
                     const reader = readers.find(r => r.id === loan.readerId);
@@ -1606,6 +1625,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         );
       case 'ai':
@@ -1908,11 +1928,14 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             { id: 'apa', label: 'Laboratório APA', icon: BookMarked },
             { id: 'ai', label: 'IA Consultor', icon: BrainCircuit },
             { id: 'reports', label: 'Relatórios', icon: Filter },
-          ].map((item) => (
-            <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-indigo-800 text-white shadow-lg' : 'text-indigo-100 hover:bg-indigo-800/50'}`}>
-              <item.icon size={18} /> {item.label}
-            </button>
-          ))}
+          ].map((item) => {
+            const isActive = activeTab === item.id || (item.id === 'apa' && activeTab === 'apa-loans');
+            return (
+              <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${isActive ? 'bg-indigo-800 text-white shadow-lg' : 'text-indigo-100 hover:bg-indigo-800/50'}`}>
+                <item.icon size={18} /> {item.label}
+              </button>
+            )
+          })}
         </nav>
         <div className="p-6 border-t border-indigo-900 space-y-3">
           <button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest transition-all"><ArrowLeft size={16} /> Voltar</button>
