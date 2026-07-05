@@ -44,6 +44,7 @@ import { Book, Reader, Loan, StaffMember } from '../types';
 import { suggestBooks, fetchBookSynopsis, fetchBookCover } from '../geminiService';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
+import { APALabBooksSubmodule } from '../components/APALabBooksSubmodule';
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return '-';
@@ -89,7 +90,7 @@ interface GroupedBook {
 }
 
 const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai' | 'reports' | 'apa'>('dashboard');
 
   /*
    * MIGRAÇÃO SUPABASE: Biblioteca
@@ -1839,6 +1840,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             </div>
           </div>
         );
+      case 'apa':
+        return <APALabBooksSubmodule />;
       default: return null;
     }
   };
@@ -1853,6 +1856,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             { id: 'catalog', label: 'Acervo Digital', icon: BookOpen },
             { id: 'loans', label: 'Empréstimos', icon: Clock },
             { id: 'readers', label: 'Leitores (School)', icon: Users },
+            { id: 'apa', label: 'Laboratório APA', icon: BookMarked },
             { id: 'ai', label: 'IA Consultor', icon: BrainCircuit },
             { id: 'reports', label: 'Relatórios', icon: Filter },
           ].map((item) => (
