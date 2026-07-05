@@ -102,31 +102,40 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const fetchData = async () => {
     try {
       // 1. Fetch Books
-      const { data: booksData } = await supabase
-        .from('library_books')
-        .select('*')
-        .order('title');
+      const [
+        { data: booksData },
+        { data: apaBooksData }
+      ] = await Promise.all([
+        supabase.from('library_books').select('*').order('title'),
+        supabase.from('library_apa_books').select('*').order('title')
+      ]);
 
-      if (booksData) {
-        setBooks(booksData.map(b => ({
-          id: b.id,
-          title: b.title,
-          author: b.author,
-          category: b.category,
-          isbn: b.isbn,
-          totalCopies: b.total_copies,
-          availableCopies: b.available_copies,
-          location: b.location,
-          internalRegistration: b.internal_registration,
-          registrationDate: b.registration_date,
-          bookType: b.book_type,
-          volumeNumber: b.volume_number,
-          subtitle: b.subtitle,
-          colorTag: b.color_tag,
-          coverUrl: b.cover_url,
-          synopsis: b.synopsis
-        })));
-      }
+      let allBooks: Book[] = [];
+
+      const mapBook = (b: any, isApa: boolean): Book => ({
+        id: b.id,
+        title: b.title,
+        author: b.author,
+        category: b.category,
+        isbn: b.isbn,
+        totalCopies: b.total_copies,
+        availableCopies: b.available_copies,
+        location: b.location,
+        internalRegistration: b.internal_registration,
+        registrationDate: b.registration_date,
+        bookType: b.book_type,
+        volumeNumber: b.volume_number,
+        subtitle: b.subtitle,
+        colorTag: b.color_tag,
+        coverUrl: b.cover_url,
+        synopsis: b.synopsis,
+        isApaBook: isApa
+      });
+
+      if (booksData) allBooks = [...allBooks, ...booksData.map(b => mapBook(b, false))];
+      if (apaBooksData) allBooks = [...allBooks, ...apaBooksData.map(b => mapBook(b, true))];
+      
+      setBooks(allBooks);
 
       // 2. Fetch Readers
       const { data: readersData } = await supabase
@@ -145,28 +154,33 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       }
 
       // 3. Fetch Loans
-      const { data: loansData } = await supabase
-        .from('library_loans')
-        .select(`
-          *,
-          library_books (title),
-          library_readers (name)
-        `)
-        .order('loan_date', { ascending: false });
+      const [
+        { data: loansData },
+        { data: apaLoansData }
+      ] = await Promise.all([
+        supabase.from('library_loans').select(`*, library_books (title), library_readers (name)`).order('loan_date', { ascending: false }),
+        supabase.from('library_apa_loans').select(`*, library_apa_books (title), library_readers (name)`).order('loan_date', { ascending: false })
+      ]);
 
-      if (loansData) {
-        setLoans(loansData.map(l => ({
-          id: l.id,
-          bookId: l.book_id,
-          bookTitle: l.library_books?.title || 'Livro Removido',
-          readerId: l.reader_id,
-          readerName: l.library_readers?.name || 'Leitor Removido',
-          loanDate: l.loan_date,
-          dueDate: l.due_date,
-          returnDate: l.return_date,
-          status: l.status as any
-        })));
-      }
+      let allLoans: Loan[] = [];
+
+      const mapLoan = (l: any, isApa: boolean): Loan => ({
+        id: l.id,
+        bookId: l.book_id,
+        bookTitle: isApa ? (l.library_apa_books?.title || 'Livro Removido') : (l.library_books?.title || 'Livro Removido'),
+        readerId: l.reader_id,
+        readerName: l.library_readers?.name || 'Leitor Removido',
+        loanDate: l.loan_date,
+        dueDate: l.due_date,
+        returnDate: l.return_date,
+        status: l.status as any,
+        isApaLoan: isApa
+      });
+
+      if (loansData) allLoans = [...allLoans, ...loansData.map(l => mapLoan(l, false))];
+      if (apaLoansData) allLoans = [...allLoans, ...apaLoansData.map(l => mapLoan(l, true))];
+
+      setLoans(allLoans.sort((a, b) => new Date(b.loanDate).getTime() - new Date(a.loanDate).getTime()));
 
     } catch (error) {
       console.error("Erro ao buscar dados da biblioteca:", error);
@@ -566,17 +580,23 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         synopsis: bookForm.synopsis
       };
 
+      const isApaTarget = editingBookId 
+        ? books.find(b => b.id === editingBookId)?.isApaBook 
+        : activeTab === 'apa';
+      
+      const targetTable = isApaTarget ? 'library_apa_books' : 'library_books';
+
       if (editingBookId) {
         // UPDATE
         const { error } = await supabase
-          .from('library_books')
+          .from(targetTable)
           .update(bookData)
           .eq('id', editingBookId);
         if (error) throw error;
       } else {
         // INSERT
         const { error } = await supabase
-          .from('library_books')
+          .from(targetTable)
           .insert([bookData]);
         if (error) throw error;
       }
@@ -598,9 +618,14 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
 
     try {
+      const bookToDelete = books.find(b => b.id === bookId);
+      const isApa = bookToDelete?.isApaBook;
+      const loanTable = isApa ? 'library_apa_loans' : 'library_loans';
+      const bookTable = isApa ? 'library_apa_books' : 'library_books';
+
       // Check if there are active loans pointing to this book
       const { data: activeLoans, error: countError } = await supabase
-        .from('library_loans')
+        .from(loanTable)
         .select('id')
         .eq('book_id', bookId)
         .eq('status', 'ATIVO');
@@ -614,7 +639,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
       // Proceed to Delete
       const { error: deleteError } = await supabase
-        .from('library_books')
+        .from(bookTable)
         .delete()
         .eq('id', bookId);
 
@@ -697,10 +722,16 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
 
     try {
+      const isApa = book.isApaBook;
+      const loanTable = isApa ? 'library_apa_loans' : 'library_loans';
+      const bookTable = isApa ? 'library_apa_books' : 'library_books';
+
       // 1. Create Loan
-      const { error: loanError } = await supabase.from('library_loans').insert([{
+      const { error: loanError } = await supabase.from(loanTable).insert([{
         book_id: book.id,
+        book_title: book.title, // APA table requirement
         reader_id: reader.id,
+        reader_name: reader.name, // APA table requirement
         loan_date: new Date().toLocaleDateString('en-CA'),
         due_date: loanForm.dueDate,
         status: 'ATIVO'
@@ -708,11 +739,17 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       if (loanError) throw loanError;
 
       // 2. Decrement Available Copies
-      const { error: bookError } = await supabase.rpc('decrement_book_copies', { book_id: book.id });
-      // Fallback if RPC doesn't exist (basic update)
-      if (bookError) {
+      if (!isApa) {
+        const { error: bookError } = await supabase.rpc('decrement_book_copies', { book_id: book.id });
+        if (bookError) {
+          await supabase
+            .from(bookTable)
+            .update({ available_copies: book.availableCopies - 1 })
+            .eq('id', book.id);
+        }
+      } else {
         await supabase
-          .from('library_books')
+          .from(bookTable)
           .update({ available_copies: book.availableCopies - 1 })
           .eq('id', book.id);
       }
@@ -737,9 +774,12 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const handleReturn = async (loan: Loan) => {
     if (!window.confirm("Confirmar devolução do livro?")) return;
     try {
+      const loanTable = loan.isApaLoan ? 'library_apa_loans' : 'library_loans';
+      const bookTable = loan.isApaLoan ? 'library_apa_books' : 'library_books';
+
       // 1. Update Loan
       const { error: loanError } = await supabase
-        .from('library_loans')
+        .from(loanTable)
         .update({
           status: 'DEVOLVIDO',
           return_date: new Date().toLocaleDateString('en-CA')
@@ -748,12 +788,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       if (loanError) throw loanError;
 
       // 2. Increment Copies
-      // We need to fetch the book to get current copies if we don't use RPC
-      // But let's try a simple increment approach or just fetch fresh data
       const book = books.find(b => b.id === loan.bookId);
       if (book) {
         await supabase
-          .from('library_books')
+          .from(bookTable)
           .update({ available_copies: book.availableCopies + 1 })
           .eq('id', book.id);
       }
@@ -772,12 +810,11 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       const currentDueDate = new Date(loan.dueDate);
       const newDueDate = new Date(currentDueDate.getTime() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA');
 
+      const loanTable = loan.isApaLoan ? 'library_apa_loans' : 'library_loans';
       const { error } = await supabase
-        .from('library_loans')
+        .from(loanTable)
         .update({ due_date: newDueDate })
         .eq('id', loan.id);
-
-      if (error) throw error;
 
       if (error) throw error;
  
@@ -798,6 +835,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (!window.confirm(confirmMsg)) return;
 
     try {
+      const loanTable = loan.isApaLoan ? 'library_apa_loans' : 'library_loans';
+      const bookTable = loan.isApaLoan ? 'library_apa_books' : 'library_books';
+
       // If active, we should probably ask if they want to return the book to stock first
       if (loan.status === 'ATIVO') {
         const restoreStock = window.confirm("Deseja retornar o livro ao estoque (disponível para novo empréstimo)?");
@@ -805,7 +845,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           const book = books.find(b => b.id === loan.bookId);
           if (book) {
             await supabase
-              .from('library_books')
+              .from(bookTable)
               .update({ available_copies: book.availableCopies + 1 })
               .eq('id', book.id);
           }
@@ -813,7 +853,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       }
 
       const { error } = await supabase
-        .from('library_loans')
+        .from(loanTable)
         .delete()
         .eq('id', loan.id);
 
