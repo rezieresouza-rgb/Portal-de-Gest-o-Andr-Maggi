@@ -114,7 +114,7 @@ export const INITIAL_CONTRACTS: Contract[] = [
     status: ContractStatus.ACTIVE,
     type: 'Pregão Presencial',
     items: [
-      { id: 'ivan-i1', description: 'ARROZ BRANCO', contractedQuantity: 534, acquiredQuantity: 0, unit: 'UNID 5KG', unitPrice: 15.75, brand: 'YUMAI' },
+      { id: 'ivan-i1', description: 'ARROZ BRANCO', contractedQuantity: 534, acquiredQuantity: 0, unit: 'UNID 5KG', unitPrice: 21.83, brand: 'YUMAI' },
       { id: 'ivan-i2', description: 'FILÉ DE PEITO DE FRANGO', contractedQuantity: 1227, acquiredQuantity: 0, unit: 'KG', unitPrice: 24.90, brand: 'SEARA' },
       { id: 'ivan-i3', description: 'SAL', contractedQuantity: 105, acquiredQuantity: 0, unit: 'KG', unitPrice: 2.10, brand: 'MASTER' }
     ]
