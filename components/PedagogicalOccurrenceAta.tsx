@@ -154,7 +154,21 @@ const PedagogicalOccurrenceAta: React.FC<PedagogicalOccurrenceAtaProps> = ({ occ
                   <div ref={printRef} className="space-y-12 text-gray-900 font-sans pdf-export-view">
 
                      {/* CABEÇALHO OFICIAL PDF */}
-                     <div className="text-center border-b-2 border-black pb-8 space-y-2">
+                     <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-6 gap-4">
+                        <div className="flex items-center justify-start flex-1">
+                           <img src="/brasao_mt.png" alt="Brasão MT" className="h-20 w-auto object-contain" />
+                        </div>
+                        <div className="flex-[2] flex flex-col justify-center text-center">
+                           <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Governo do Estado de Mato Grosso</p>
+                           <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Secretaria de Estado de Educação</p>
+                           <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Diretoria Regional de Ensino de Sinop</p>
+                           <p className="text-[11px] font-black uppercase leading-tight text-gray-900">EECM André Antônio Maggi</p>
+                        </div>
+                        <div className="flex items-center justify-end flex-1">
+                           <img src="/logo-escola-oficial.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
+                        </div>
+                     </div>
+                     <div className="text-center pb-8 space-y-2">
                         <h1 className="text-2xl font-black uppercase text-red-950">Ata de Ocorrência Pedagógica</h1>
                         <p className="text-[10px] font-bold uppercase text-red-900/60 tracking-widest">Registro Oficial de Fatos e Deliberações</p>
                      </div>

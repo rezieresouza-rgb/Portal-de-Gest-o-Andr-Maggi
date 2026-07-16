@@ -171,13 +171,18 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
                 {/* TEMPLATE PARA PDF (HIDDEN NO DOM) */}
                 <div className="hidden">
                   <div id={`print-ata-${ata.id}`} className="p-16 space-y-12 text-gray-900 font-sans bg-white border-[1px] border-gray-200 min-h-[297mm]">
-                    <div className="flex justify-between items-start border-b-2 border-black pb-8">
-                       <div className="flex flex-col gap-1">
-                          <p className="text-[10px] font-black uppercase tracking-widest leading-none">SEDUC</p>
-                          <p className="text-[8px] font-bold uppercase text-gray-500 leading-tight">Secretaria de Estado<br/>de Educação</p>
+                    <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-8 gap-4">
+                       <div className="flex items-center justify-start flex-1">
+                          <img src="/brasao_mt.png" alt="Brasão MT" className="h-20 w-auto object-contain" />
                        </div>
-                       <div className="text-right flex flex-col gap-1">
-                          <p className="text-[10px] font-black uppercase tracking-widest leading-none">Governo de<br/>Mato Grosso</p>
+                       <div className="flex-[2] flex flex-col justify-center text-center">
+                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Governo do Estado de Mato Grosso</p>
+                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Secretaria de Estado de Educação</p>
+                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Diretoria Regional de Ensino de Sinop</p>
+                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">EECM André Antônio Maggi</p>
+                       </div>
+                       <div className="flex items-center justify-end flex-1">
+                          <img src="/logo-escola-oficial.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
                        </div>
                     </div>
 

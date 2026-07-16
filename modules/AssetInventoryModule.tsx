@@ -27,7 +27,8 @@ import {
   ChevronDown,
   ChevronUp,
   TrendingUp,
-  Check
+  Check,
+  Table2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Asset, AssetCondition } from '../types';
@@ -331,6 +332,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [reportCondition, setReportCondition] = useState('');
   const [reportYear, setReportYear] = useState('');
   const [reportSearch, setReportSearch] = useState('');
+  const [reportType, setReportType] = useState<'padrao' | 'levantamento'>('padrao');
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -1077,10 +1079,37 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                     <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Gere relatórios customizados com filtros avançados</p>
                   </div>
                   <button
-                    onClick={() => handleExportPDF('report-print-container', `Relatorio_Patrimonial`)}
+                    onClick={() => reportType === 'levantamento'
+                      ? handleExportPDF('levantamento-print-container', 'Planilha_Levantamento_Fisico')
+                      : handleExportPDF('report-print-container', 'Relatorio_Patrimonial')
+                    }
                     className="px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center gap-2 transition-all shrink-0"
                   >
-                    <FileDown size={16} /> Emitir Relatório (PDF)
+                    <FileDown size={16} /> {reportType === 'levantamento' ? 'Emitir Planilha (PDF)' : 'Emitir Relatório (PDF)'}
+                  </button>
+                </div>
+
+                {/* Report Type Selector */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setReportType('padrao')}
+                    className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${
+                      reportType === 'padrao'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200'
+                        : 'bg-white text-gray-500 border-gray-100 hover:border-blue-200 hover:text-blue-600'
+                    }`}
+                  >
+                    <ClipboardList size={18} /> Relatório Padrão
+                  </button>
+                  <button
+                    onClick={() => setReportType('levantamento')}
+                    className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${
+                      reportType === 'levantamento'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200'
+                        : 'bg-white text-gray-500 border-gray-100 hover:border-indigo-200 hover:text-indigo-600'
+                    }`}
+                  >
+                    <Table2 size={18} /> Planilha de Levantamento Físico
                   </button>
                 </div>
 
@@ -1193,149 +1222,392 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   </div>
                 </div>
 
-                {/* Report Preview Table */}
-                <div className="bg-white rounded-[2.5rem] border border-gray-100/80 shadow-sm overflow-hidden">
-                  <div className="p-8 border-b border-gray-50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
-                      <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Prévia do Relatório</h4>
-                    </div>
-                    <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-3 py-1 rounded-xl">
-                      {reportAssets.length} registros correspondentes
-                    </span>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100">
-                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nº Patrimônio</th>
-                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Descrição</th>
-                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ambiente</th>
-                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
-                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Doc. Aquisição</th>
-                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ano</th>
-                          <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Data Cadastro</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50 font-bold text-xs text-gray-700">
-                        {reportAssets.length === 0 ? (
-                          <tr>
-                            <td colSpan={7} className="p-10 text-center text-gray-400 uppercase font-black tracking-widest">
-                              Nenhum bem móvel encontrado com os filtros aplicados.
-                            </td>
-                          </tr>
-                        ) : (
-                          reportAssets.map(asset => (
-                            <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="p-6 font-black text-gray-900">PAT: {asset.heritageNumber}</td>
-                              <td className="p-6 uppercase">{asset.description}</td>
-                              <td className="p-6 uppercase">{asset.location}</td>
-                              <td className="p-6">
-                                <span className={`px-2 py-1 rounded text-[8px] font-black border ${getConditionColor(asset.condition)}`}>
-                                  {asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}
-                                </span>
-                              </td>
-                              <td className="p-6 uppercase">{asset.acquisitionDocument || '-'}</td>
-                              <td className="p-6">{asset.acquisitionYear || '-'}</td>
-                              <td className="p-6 text-gray-400">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</td>
+                {/* Report Preview Table — Conditional Rendering */}
+                {reportType === 'padrao' ? (
+                  /* === RELATÓRIO PADRÃO (existente) === */
+                  <>
+                    <div className="bg-white rounded-[2.5rem] border border-gray-100/80 shadow-sm overflow-hidden">
+                      <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
+                          <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Prévia do Relatório</h4>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-3 py-1 rounded-xl">
+                          {reportAssets.length} registros correspondentes
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nº Patrimônio</th>
+                              <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Descrição</th>
+                              <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ambiente</th>
+                              <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
+                              <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Doc. Aquisição</th>
+                              <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ano</th>
+                              <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Data Cadastro</th>
                             </tr>
-                          ))
+                          </thead>
+                          <tbody className="divide-y divide-gray-50 font-bold text-xs text-gray-700">
+                            {reportAssets.length === 0 ? (
+                              <tr>
+                                <td colSpan={7} className="p-10 text-center text-gray-400 uppercase font-black tracking-widest">
+                                  Nenhum bem móvel encontrado com os filtros aplicados.
+                                </td>
+                              </tr>
+                            ) : (
+                              reportAssets.map(asset => (
+                                <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
+                                  <td className="p-6 font-black text-gray-900">PAT: {asset.heritageNumber}</td>
+                                  <td className="p-6 uppercase">{asset.description}</td>
+                                  <td className="p-6 uppercase">{asset.location}</td>
+                                  <td className="p-6">
+                                    <span className={`px-2 py-1 rounded text-[8px] font-black border ${getConditionColor(asset.condition)}`}>
+                                      {asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}
+                                    </span>
+                                  </td>
+                                  <td className="p-6 uppercase">{asset.acquisitionDocument || '-'}</td>
+                                  <td className="p-6">{asset.acquisitionYear || '-'}</td>
+                                  <td className="p-6 text-gray-400">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Printable container hidden visually but read by html2pdf */}
+                    <div className="hidden">
+                      <div id="report-print-container" className="p-10 bg-white text-black font-sans space-y-8" style={{ width: '297mm' }}>
+                        {/* Header */}
+                        <div className="border-b-4 border-blue-900 pb-6 flex items-center justify-between">
+                          <div className="space-y-1">
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Escola Estadual André Antonio Maggi</h1>
+                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Secretaria de Estado de Educação de Mato Grosso</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Relatório Oficial de Inventário de Bens Móveis</p>
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-right space-y-1 text-xs font-bold text-gray-600">
+                              <p>Emitido em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+                              <p>Responsável: {user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</p>
+                            </div>
+                            <div className="flex flex-col items-center gap-1 bg-gray-50 p-2 rounded-xl border border-gray-200 shrink-0">
+                              <QRCodeSVG
+                                value={`${window.location.origin}/?location=${encodeURIComponent(reportLocation || 'TODOS')}`}
+                                size={64}
+                                level="H"
+                                includeMargin={true}
+                              />
+                              <span className="text-[7px] font-black text-gray-500 uppercase tracking-tighter">Inventário Digital</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Filter Summary */}
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-4 gap-4 text-[10px] font-black text-gray-500 uppercase">
+                          <div>
+                            <span>Local:</span>
+                            <p className="text-xs text-gray-900 font-bold mt-0.5">{reportLocation || 'TODOS OS AMBIENTES'}</p>
+                          </div>
+                          <div>
+                            <span>Estado:</span>
+                            <p className="text-xs text-gray-900 font-bold mt-0.5">{reportCondition || 'TODOS OS ESTADOS'}</p>
+                          </div>
+                          <div>
+                            <span>Ano Aquisição:</span>
+                            <p className="text-xs text-gray-900 font-bold mt-0.5">{reportYear || 'TODOS OS ANOS'}</p>
+                          </div>
+                          <div>
+                            <span>Registros:</span>
+                            <p className="text-xs text-gray-900 font-bold mt-0.5">{reportAssets.length} itens encontrados</p>
+                          </div>
+                        </div>
+
+                        {/* Table */}
+                        <table className="w-full text-left border-collapse text-[10px]">
+                          <thead>
+                            <tr className="bg-blue-900 text-white font-bold border border-blue-900">
+                              <th className="p-3 border-r border-blue-800">Nº PATRIMÔNIO</th>
+                              <th className="p-3 border-r border-blue-800">DESCRIÇÃO DO BEM</th>
+                              <th className="p-3 border-r border-blue-800">AMBIENTE</th>
+                              <th className="p-3 border-r border-blue-800">ESTADO</th>
+                              <th className="p-3 border-r border-blue-800">DOCUMENTO</th>
+                              <th className="p-3 border-r border-blue-800">ANO</th>
+                              <th className="p-3">DATA CADASTRO</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200 border border-gray-200 font-bold text-gray-800 uppercase">
+                            {reportAssets.map(asset => (
+                              <tr key={asset.id} className="hover:bg-gray-50">
+                                <td className="p-3 border-r border-gray-200 font-black">PAT: {asset.heritageNumber}</td>
+                                <td className="p-3 border-r border-gray-200">{asset.description}</td>
+                                <td className="p-3 border-r border-gray-200">{asset.location}</td>
+                                <td className="p-3 border-r border-gray-200">{asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}</td>
+                                <td className="p-3 border-r border-gray-200">{asset.acquisitionDocument || '-'}</td>
+                                <td className="p-3 border-r border-gray-200">{asset.acquisitionYear || '-'}</td>
+                                <td className="p-3">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        {/* Signatures */}
+                        <div className="pt-16 grid grid-cols-2 gap-16 text-center text-xs font-black uppercase text-gray-700 tracking-wider">
+                          <div className="space-y-1">
+                            <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                            <p>{user?.name ? user.name.toUpperCase() : 'GESTOR DE PATRIMÔNIO'}</p>
+                            <p className="text-[10px] text-gray-400">Responsável pelo Inventário</p>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
+                            <p>DIRETORIA ESCOLAR</p>
+                            <p className="text-[10px] text-gray-400">Assinatura e Carimbo</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* === PLANILHA DE LEVANTAMENTO FÍSICO DE BENS MÓVEIS (NOVO) === */
+                  <>
+                    {/* Preview Table */}
+                    <div className="bg-white rounded-[2.5rem] border border-gray-100/80 shadow-sm overflow-hidden">
+                      <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></div>
+                          <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Prévia — Planilha de Levantamento Físico</h4>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">
+                          {reportAssets.length} bens levantados
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center w-12">Nº</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nº Patrimônio</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Descrição do Bem</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Localização</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado de Conservação</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Situação</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ano Aquisição</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Doc. Aquisição</th>
+                              <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Observações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50 font-bold text-xs text-gray-700">
+                            {reportAssets.length === 0 ? (
+                              <tr>
+                                <td colSpan={9} className="p-10 text-center text-gray-400 uppercase font-black tracking-widest">
+                                  Nenhum bem móvel encontrado com os filtros aplicados.
+                                </td>
+                              </tr>
+                            ) : (
+                              reportAssets.map((asset, index) => (
+                                <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
+                                  <td className="p-4 text-center text-gray-400 font-black">{index + 1}</td>
+                                  <td className="p-4 font-black text-gray-900">{asset.heritageNumber}</td>
+                                  <td className="p-4 uppercase">{asset.description}</td>
+                                  <td className="p-4 uppercase">{asset.location}</td>
+                                  <td className="p-4">
+                                    <span className={`px-2 py-1 rounded text-[8px] font-black border ${getConditionColor(asset.condition)}`}>
+                                      {asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}
+                                    </span>
+                                  </td>
+                                  <td className="p-4">
+                                    <span className={`px-2 py-1 rounded text-[8px] font-black border ${
+                                      asset.isUnserviceable
+                                        ? 'bg-red-50 text-red-700 border-red-200'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    }`}>
+                                      {asset.isUnserviceable ? 'INSERVÍVEL' : 'EM USO'}
+                                    </span>
+                                  </td>
+                                  <td className="p-4">{asset.acquisitionYear || '-'}</td>
+                                  <td className="p-4 uppercase">{asset.acquisitionDocument || '-'}</td>
+                                  <td className="p-4 text-gray-400 text-[10px]">
+                                    {asset.isUnserviceable && asset.unserviceableData?.reason
+                                      ? asset.unserviceableData.reason
+                                      : '-'}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Hidden Printable Container — Planilha de Levantamento Físico */}
+                    <div className="hidden">
+                      <div id="levantamento-print-container" className="p-8 bg-white text-black font-sans" style={{ width: '297mm' }}>
+                        {/* === CABEÇALHO OFICIAL === */}
+                        <div className="text-center space-y-1 pb-4 border-b-2 border-gray-800 mb-6">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-gray-600">Estado de Mato Grosso</p>
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-gray-600">Secretaria de Estado de Educação</p>
+                          <p className="text-base font-black uppercase tracking-wide text-gray-900">Escola Estadual André Antonio Maggi</p>
+                          <div className="pt-3">
+                            <p className="text-lg font-black uppercase tracking-wider text-gray-900 bg-gray-100 inline-block px-6 py-2 rounded">
+                              Planilha de Levantamento Físico de Bens Móveis
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* === INFORMAÇÕES DO LEVANTAMENTO === */}
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[10px] font-bold text-gray-800 mb-4 border border-gray-300 p-4">
+                          <div className="flex gap-1">
+                            <span className="text-gray-500 uppercase">Exercício / Ano:</span>
+                            <span className="font-black">{schedule.year}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <span className="text-gray-500 uppercase">Data do Levantamento:</span>
+                            <span className="font-black">{new Date().toLocaleDateString('pt-BR')}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <span className="text-gray-500 uppercase">Unidade Gestora (UG):</span>
+                            <span className="font-black">E.E. ANDRÉ ANTONIO MAGGI</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <span className="text-gray-500 uppercase">Responsável:</span>
+                            <span className="font-black">{user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</span>
+                          </div>
+                          {reportLocation && (
+                            <div className="flex gap-1 col-span-2">
+                              <span className="text-gray-500 uppercase">Ambiente Filtrado:</span>
+                              <span className="font-black">{reportLocation}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* === COMISSÃO DE INVENTÁRIO === */}
+                        {(schedule.commissionMembers.president.name || schedule.commissionMembers.secretary.name || schedule.commissionMembers.member.name) && (
+                          <div className="border border-gray-300 p-4 mb-4 text-[10px] font-bold text-gray-800">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Comissão de Inventário</p>
+                            <div className="grid grid-cols-3 gap-4">
+                              {schedule.commissionMembers.president.name && (
+                                <div>
+                                  <p className="text-gray-500 uppercase text-[8px]">Presidente</p>
+                                  <p className="font-black uppercase">{schedule.commissionMembers.president.name}</p>
+                                  {schedule.commissionMembers.president.role && <p className="text-gray-400">{schedule.commissionMembers.president.role}</p>}
+                                </div>
+                              )}
+                              {schedule.commissionMembers.secretary.name && (
+                                <div>
+                                  <p className="text-gray-500 uppercase text-[8px]">Secretário(a)</p>
+                                  <p className="font-black uppercase">{schedule.commissionMembers.secretary.name}</p>
+                                  {schedule.commissionMembers.secretary.role && <p className="text-gray-400">{schedule.commissionMembers.secretary.role}</p>}
+                                </div>
+                              )}
+                              {schedule.commissionMembers.member.name && (
+                                <div>
+                                  <p className="text-gray-500 uppercase text-[8px]">Membro</p>
+                                  <p className="font-black uppercase">{schedule.commissionMembers.member.name}</p>
+                                  {schedule.commissionMembers.member.role && <p className="text-gray-400">{schedule.commissionMembers.member.role}</p>}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
 
-                {/* Printable container hidden visually but read by html2pdf */}
-                <div className="hidden">
-                  <div id="report-print-container" className="p-10 bg-white text-black font-sans space-y-8" style={{ width: '297mm' }}>
-                    {/* Header */}
-                    <div className="border-b-4 border-blue-900 pb-6 flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Escola Estadual André Antonio Maggi</h1>
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Secretaria de Estado de Educação de Mato Grosso</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">Relatório Oficial de Inventário de Bens Móveis</p>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-right space-y-1 text-xs font-bold text-gray-600">
-                          <p>Emitido em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
-                          <p>Responsável: {user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</p>
+                        {/* === TABELA PRINCIPAL === */}
+                        <table className="w-full border-collapse text-[9px] mb-6">
+                          <thead>
+                            <tr className="bg-gray-800 text-white font-bold">
+                              <th className="p-2 border border-gray-700 text-center w-8">Nº</th>
+                              <th className="p-2 border border-gray-700">Nº PATRIMÔNIO</th>
+                              <th className="p-2 border border-gray-700">DESCRIÇÃO DO BEM</th>
+                              <th className="p-2 border border-gray-700">LOCALIZAÇÃO / AMBIENTE</th>
+                              <th className="p-2 border border-gray-700">ESTADO DE CONSERVAÇÃO</th>
+                              <th className="p-2 border border-gray-700">SITUAÇÃO</th>
+                              <th className="p-2 border border-gray-700">ANO AQUISIÇÃO</th>
+                              <th className="p-2 border border-gray-700">DOC. AQUISIÇÃO</th>
+                              <th className="p-2 border border-gray-700">OBSERVAÇÕES</th>
+                            </tr>
+                          </thead>
+                          <tbody className="font-bold text-gray-800 uppercase">
+                            {reportAssets.map((asset, index) => (
+                              <tr key={asset.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <td className="p-2 border border-gray-300 text-center font-black">{index + 1}</td>
+                                <td className="p-2 border border-gray-300 font-black">{asset.heritageNumber}</td>
+                                <td className="p-2 border border-gray-300">{asset.description}</td>
+                                <td className="p-2 border border-gray-300">{asset.location}</td>
+                                <td className="p-2 border border-gray-300 text-center">{asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}</td>
+                                <td className="p-2 border border-gray-300 text-center">{asset.isUnserviceable ? 'INSERVÍVEL' : 'EM USO'}</td>
+                                <td className="p-2 border border-gray-300 text-center">{asset.acquisitionYear || '-'}</td>
+                                <td className="p-2 border border-gray-300">{asset.acquisitionDocument || '-'}</td>
+                                <td className="p-2 border border-gray-300 text-[8px] normal-case">
+                                  {asset.isUnserviceable && asset.unserviceableData?.reason
+                                    ? asset.unserviceableData.reason
+                                    : '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        {/* === RESUMO / TOTALIZADORES === */}
+                        <div className="border border-gray-300 p-4 mb-8">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Resumo do Levantamento</p>
+                          <div className="grid grid-cols-5 gap-3 text-[10px] font-bold">
+                            <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
+                              <p className="text-gray-500 uppercase text-[8px]">Total de Bens</p>
+                              <p className="text-xl font-black text-gray-900 mt-1">{reportAssets.length}</p>
+                            </div>
+                            <div className="bg-emerald-50 p-3 rounded border border-emerald-200 text-center">
+                              <p className="text-emerald-600 uppercase text-[8px]">Excelente</p>
+                              <p className="text-xl font-black text-emerald-700 mt-1">{reportAssets.filter(a => a.condition === 'EXCELENTE' && !a.isUnserviceable).length}</p>
+                            </div>
+                            <div className="bg-blue-50 p-3 rounded border border-blue-200 text-center">
+                              <p className="text-blue-600 uppercase text-[8px]">Bom</p>
+                              <p className="text-xl font-black text-blue-700 mt-1">{reportAssets.filter(a => a.condition === 'BOM' && !a.isUnserviceable).length}</p>
+                            </div>
+                            <div className="bg-amber-50 p-3 rounded border border-amber-200 text-center">
+                              <p className="text-amber-600 uppercase text-[8px]">Regular</p>
+                              <p className="text-xl font-black text-amber-700 mt-1">{reportAssets.filter(a => a.condition === 'REGULAR' && !a.isUnserviceable).length}</p>
+                            </div>
+                            <div className="bg-red-50 p-3 rounded border border-red-200 text-center">
+                              <p className="text-red-600 uppercase text-[8px]">Inservíveis</p>
+                              <p className="text-xl font-black text-red-700 mt-1">{reportAssets.filter(a => a.isUnserviceable).length}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-center gap-1 bg-gray-50 p-2 rounded-xl border border-gray-200 shrink-0">
-                          <QRCodeSVG
-                            value={`${window.location.origin}/?location=${encodeURIComponent(reportLocation || 'TODOS')}`}
-                            size={64}
-                            level="H"
-                            includeMargin={true}
-                          />
-                          <span className="text-[7px] font-black text-gray-500 uppercase tracking-tighter">Inventário Digital</span>
+
+                        {/* === ASSINATURAS === */}
+                        <div className="pt-8">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-6 text-center">Assinaturas da Comissão Inventariante</p>
+                          <div className="grid grid-cols-2 gap-x-16 gap-y-12 text-center text-[10px] font-bold uppercase text-gray-800 tracking-wider">
+                            <div className="space-y-1">
+                              <div className="border-t border-gray-600 w-56 mx-auto pt-2"></div>
+                              <p className="font-black">{schedule.commissionMembers.president.name ? schedule.commissionMembers.president.name.toUpperCase() : '________________________________'}</p>
+                              <p className="text-[8px] text-gray-400">Presidente da Comissão</p>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="border-t border-gray-600 w-56 mx-auto pt-2"></div>
+                              <p className="font-black">{schedule.commissionMembers.secretary.name ? schedule.commissionMembers.secretary.name.toUpperCase() : '________________________________'}</p>
+                              <p className="text-[8px] text-gray-400">Secretário(a) da Comissão</p>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="border-t border-gray-600 w-56 mx-auto pt-2"></div>
+                              <p className="font-black">{schedule.commissionMembers.member.name ? schedule.commissionMembers.member.name.toUpperCase() : '________________________________'}</p>
+                              <p className="text-[8px] text-gray-400">Membro da Comissão</p>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="border-t border-gray-600 w-56 mx-auto pt-2"></div>
+                              <p className="font-black">DIRETORIA ESCOLAR</p>
+                              <p className="text-[8px] text-gray-400">Assinatura e Carimbo</p>
+                            </div>
+                          </div>
+                          <div className="text-center mt-8 text-[9px] text-gray-400 font-bold">
+                            <p>Lucas do Rio Verde - MT, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Filter Summary */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-4 gap-4 text-[10px] font-black text-gray-500 uppercase">
-                      <div>
-                        <span>Local:</span>
-                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportLocation || 'TODOS OS AMBIENTES'}</p>
-                      </div>
-                      <div>
-                        <span>Estado:</span>
-                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportCondition || 'TODOS OS ESTADOS'}</p>
-                      </div>
-                      <div>
-                        <span>Ano Aquisição:</span>
-                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportYear || 'TODOS OS ANOS'}</p>
-                      </div>
-                      <div>
-                        <span>Registros:</span>
-                        <p className="text-xs text-gray-900 font-bold mt-0.5">{reportAssets.length} itens encontrados</p>
-                      </div>
-                    </div>
-
-                    {/* Table */}
-                    <table className="w-full text-left border-collapse text-[10px]">
-                      <thead>
-                        <tr className="bg-blue-900 text-white font-bold border border-blue-900">
-                          <th className="p-3 border-r border-blue-800">Nº PATRIMÔNIO</th>
-                          <th className="p-3 border-r border-blue-800">DESCRIÇÃO DO BEM</th>
-                          <th className="p-3 border-r border-blue-800">AMBIENTE</th>
-                          <th className="p-3 border-r border-blue-800">ESTADO</th>
-                          <th className="p-3 border-r border-blue-800">DOCUMENTO</th>
-                          <th className="p-3 border-r border-blue-800">ANO</th>
-                          <th className="p-3">DATA CADASTRO</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 border border-gray-200 font-bold text-gray-800 uppercase">
-                        {reportAssets.map(asset => (
-                          <tr key={asset.id} className="hover:bg-gray-50">
-                            <td className="p-3 border-r border-gray-200 font-black">PAT: {asset.heritageNumber}</td>
-                            <td className="p-3 border-r border-gray-200">{asset.description}</td>
-                            <td className="p-3 border-r border-gray-200">{asset.location}</td>
-                            <td className="p-3 border-r border-gray-200">{asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}</td>
-                            <td className="p-3 border-r border-gray-200">{asset.acquisitionDocument || '-'}</td>
-                            <td className="p-3 border-r border-gray-200">{asset.acquisitionYear || '-'}</td>
-                            <td className="p-3">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    {/* Signatures */}
-                    <div className="pt-16 grid grid-cols-2 gap-16 text-center text-xs font-black uppercase text-gray-700 tracking-wider">
-                      <div className="space-y-1">
-                        <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
-                        <p>{user?.name ? user.name.toUpperCase() : 'GESTOR DE PATRIMÔNIO'}</p>
-                        <p className="text-[10px] text-gray-400">Responsável pelo Inventário</p>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
-                        <p>DIRETORIA ESCOLAR</p>
-                        <p className="text-[10px] text-gray-400">Assinatura e Carimbo</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             ) : activeTab === 'cronograma' ? (
               <div className="space-y-8 animate-in fade-in duration-500">
