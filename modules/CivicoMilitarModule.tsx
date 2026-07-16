@@ -645,6 +645,122 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     { category: '[OUTROS] Falta Grave (Descrever na observação)', severity: 'GRAVE', points: 1.0 }
   ];
 
+  // Suggestion text map for each category number (demerit)
+  const demeritSuggestionMap: Record<string, string> = {
+    '1': 'O(A) aluno(a) apresentou-se com uniforme em desacordo com o regulamento. ',
+    '2': 'O aluno apresentou-se com barba ou bigode sem fazer. ',
+    '3': 'O(A) aluno(a) compareceu à EECM com cabelo em desalinho ou fora do padrão. ',
+    '4': 'O(A) aluno(a) chegou atrasado(a) para o início das atividades escolares. ',
+    '5': 'O(A) aluno(a) compareceu à EECM sem levar o material necessário. ',
+    '6': 'O(A) aluno(a) adentrou ou permaneceu em dependência da EECM sem autorização. ',
+    '7': 'O(A) aluno(a) consumiu alimentos/balas/chicletes durante atividade escolar sem autorização. ',
+    '8': 'O(A) aluno(a) conversou ou se mexeu estando em forma. ',
+    '9': 'O(A) aluno(a) deixou de entregar objeto encontrado que não lhe pertencia. ',
+    '10': 'O(A) aluno(a) deixou de retribuir cumprimentos ou prestar sinais de respeito regulamentares. ',
+    '11': 'O(A) aluno(a) deixou material escolar ou peças de uniforme em locais inapropriados. ',
+    '12': 'O(A) aluno(a) descartou lixo no chão ou fora de locais apropriados. ',
+    '13': 'O(A) aluno(a) dobrou peça de uniforme desfigurando sua originalidade. ',
+    '14': 'O(A) aluno(a) debruçou-se sobre a carteira e dormiu durante o horário de aula. ',
+    '15': 'O(A) aluno(a) executou movimentos de ordem unida de forma displicente. ',
+    '16': 'O(A) aluno(a) fez ou provocou excessivo barulho nas dependências da EECM. ',
+    '17': 'O(A) aluno(a) não levou ao conhecimento da autoridade competente falta ou irregularidade presenciada. ',
+    '18': 'O(A) aluno(a) perturbou o estudo do(s) colega(s) com ruídos ou brincadeiras. ',
+    '19': 'O(A) aluno(a) utilizou publicação estranha à atividade escolar sem autorização. ',
+    '20': 'O(A) aluno(a) retardou ou contribuiu para o atraso da execução de atividade sem justo motivo. ',
+    '21': 'O(A) aluno(a) sentou-se no chão, atentando contra a postura, estando uniformizado(a). ',
+    '22': 'O(A) aluno(a) utilizou jogo/brinquedo/figurinhas no interior da EECM. ',
+    '23': 'A aluna usou piercings/brinco fora do padrão/alargador durante atividade escolar. ',
+    '24': 'O aluno usou piercings/brinco/alargador quando uniformizado durante atividade escolar. ',
+    '25': 'O(A) aluno(a) usou boné/capuz ou outros adornos estando uniformizado(a) durante atividade escolar. ',
+    '26': 'O(A) aluno(a) ficou na sala de aula durante os intervalos e as formaturas diárias. ',
+    '27': 'O(A) aluno(a) atrasou ou deixou de atender ao chamado de autoridade escolar. ',
+    '28': 'O(A) aluno(a) deixou de comparecer a atividade extraclasse para a qual havia sido designado(a). ',
+    '29': 'O(A) aluno(a) deixou de comparecer ou se ausentou de atividade escolar/formatura sem autorização. ',
+    '30': 'O(A) aluno(a) deixou de cumprir ou se esquivou de medida disciplinar imposta. ',
+    '31': 'O(A) aluno(a) deixou de devolver à EECM documento assinado dentro do prazo estipulado. ',
+    '32': 'O(A) aluno(a) deixou de devolver livros da biblioteca ou materiais da EECM no prazo fixado. ',
+    '33': 'O(A) aluno(a) deixou de entregar ao responsável documento encaminhado pela EECM. ',
+    '34': 'O(A) aluno(a) deixou de executar tarefa atribuída por autoridade escolar. ',
+    '35': 'O(A) aluno(a) deixou de zelar por sua apresentação pessoal. ',
+    '36': 'O(A) aluno(a) dirigiu memoriais ou petições sobre assuntos da alçada da Diretoria. ',
+    '37': 'O(A) aluno(a) entrou ou saiu da EECM por local não permitido. ',
+    '38': 'O(A) aluno(a) espalhou boatos ou notícias tendenciosas. ',
+    '39': 'O(A) aluno(a) tocou a sirene sem ordem para tal. ',
+    '40': 'O(A) aluno(a) foi flagrado(a) fumando dentro/nas imediações da EECM ou uniformizado(a). ',
+    '41': 'O(A) aluno(a) ingressou/saiu da EECM sem uniforme regulamentar ou trocou de roupa dentro da EECM. ',
+    '42': 'O(A) aluno(a) leu ou distribuiu publicações que atentam contra a disciplina/moral dentro da EECM. ',
+    '43': 'O(A) aluno(a) manteve contato físico de cunho amoroso estando uniformizado(a) dentro da EECM. ',
+    '44': 'O(A) aluno(a) não zelou pelo nome da Instituição, portando-se inadequadamente. ',
+    '45': 'O(A) aluno(a) negou-se a colaborar/participar em evento/formatura/solenidade da EECM. ',
+    '46': 'O(A) aluno(a) ofendeu a moral de colega ou membro da Comunidade Escolar por atos, gestos ou palavras. ',
+    '47': 'O(A) aluno(a) portou-se de forma inconveniente em sala de aula ou local de instrução. ',
+    '48': 'O(A) aluno(a) portou-se de maneira desrespeitosa em evento social ou esportivo da EECM. ',
+    '49': 'O(A) aluno(a) proferiu palavras de baixo calão, incompatíveis com as normas da boa educação. ',
+    '50': 'O(A) aluno(a) propôs ou aceitou transação pecuniária no interior da EECM sem autorização. ',
+    '51': 'O(A) aluno(a) provocou ou disseminou discórdia entre colegas. ',
+    '52': 'O(A) aluno(a) publicou/contribuiu para publicação de conteúdo que expõe integrante da EECM. ',
+    '53': 'O(A) aluno(a) retirou ou tentou retirar objeto de dependência da EECM sem autorização. ',
+    '54': 'O(A) aluno(a) saiu de forma sem autorização. ',
+    '55': 'O(A) aluno(a) saiu, entrou ou permaneceu na sala de aula sem permissão. ',
+    '56': 'O(A) aluno(a) foi retirado(a) por mau comportamento de sala de aula ou ambiente de atividade. ',
+    '57': 'O(A) aluno(a) simulou doença para esquivar-se de obrigações escolares. ',
+    '58': 'O(A) aluno(a) tomou parte em jogos de azar ou apostas na unidade escolar. ',
+    '59': 'O(A) aluno(a) usou instalações/equipamentos esportivos sem uniforme adequado ou sem autorização. ',
+    '60': 'O(A) aluno(a) usou o uniforme ou o nome da EECM em ambiente inapropriado. ',
+    '61': 'O(A) aluno(a) utilizou celular ou aparelho eletrônico sem autorização durante atividade escolar. ',
+    '62': 'O(A) aluno(a) usou indevidamente distintivos ou insígnias. ',
+    '63': 'O(A) aluno(a) assinou pelo responsável documento a ser entregue à unidade escolar. ',
+    '64': 'O(A) aluno(a) causou danos ao patrimônio da unidade escolar. ',
+    '65': 'O(A) aluno(a) causou ou contribuiu para a ocorrência de acidente. ',
+    '66': 'O(A) aluno(a) comunicou-se com outro aluno ou utilizou meio não permitido durante avaliação. ',
+    '67': 'O(A) aluno(a) denegriu o nome da EECM ou de membro da comunidade escolar. ',
+    '68': 'O(A) aluno(a) desrespeitou/desobedeceu/desafiou autoridade escolar. ',
+    '69': 'O(A) aluno(a) divulgou ou concorreu para divulgação de conteúdo de apologia às drogas/violência/pornografia. ',
+    '70': 'O(A) aluno(a) entrou ou se ausentou da unidade escolar sem autorização. ',
+    '71': 'O(A) aluno(a) extraviou documentos sob sua responsabilidade. ',
+    '72': 'O(A) aluno(a) faltou com a verdade ou utilizou-se do anonimato para prática de falta disciplinar. ',
+    '73': 'O(A) aluno(a) fez uso, portou ou distribuiu substância proibida no interior da EECM. ',
+    '74': 'O(A) aluno(a) hasteou ou arriou bandeira/estandarte sem autorização. ',
+    '75': 'O(A) aluno(a) instigou colegas a cometer faltas disciplinares. ',
+    '76': 'O(A) aluno(a) manteve contato físico com denotação libidinosa no ambiente da EECM. ',
+    '77': 'O(A) aluno(a) obteve ou fez uso de conteúdo difamatório contra membro da Comunidade Escolar. ',
+    '78': 'O(A) aluno(a) praticou Bullying/Cyberbullying contra membro da Comunidade Escolar. ',
+    '79': 'O(A) aluno(a) pichou ou causou poluição visual/sonora dentro ou nas proximidades da EECM. ',
+    '80': 'O(A) aluno(a) portou objeto que ameaça a segurança individual e/ou coletiva. ',
+    '81': 'O(A) aluno(a) praticou ato contrário ao culto e respeito aos símbolos nacionais. ',
+    '82': 'O(A) aluno(a) promoveu ou tomou parte de manifestação coletiva prejudicial à EECM. ',
+    '83': 'O(A) aluno(a) promoveu trote. ',
+    '84': 'O(A) aluno(a) promoveu, incitou ou envolveu-se em rixa/luta corporal. ',
+    '85': 'O(A) aluno(a) provocou ou tomou parte em manifestação de natureza política estando uniformizado(a). ',
+    '86': 'O(A) aluno(a) rasurou, violou ou alterou documento. ',
+    '87': 'O(A) aluno(a) representou a EECM sem autorização. ',
+    '88': 'O(A) aluno(a) portou/distribuiu publicações que atentam contra a disciplina/moral na EECM. ',
+    '89': 'O(A) aluno(a) utilizou ou subtraiu indevidamente objetos ou valores alheios. ',
+    '90': 'O(A) aluno(a) utilizou-se de processos fraudulentos em trabalho pedagógico. ',
+    '91': 'O(A) aluno(a) utilizou indevidamente ou causou avaria/destruição ao patrimônio da EECM. '
+  };
+
+  const meritSuggestionMap: Record<string, string> = {
+    'Elogio Individual': 'O(A) aluno(a) destacou-se positivamente por sua conduta exemplar, demonstrando comprometimento e disciplina. ',
+    'Elogio Coletivo': 'A turma/grupo destacou-se positivamente por sua conduta exemplar durante atividade escolar. ',
+    'Média Bimestral >= 8,0 (Art. 50)': 'O(A) aluno(a) alcançou média bimestral igual ou superior a 8,0, conforme Art. 50 do regulamento. ',
+    '2 Meses sem Medida Disciplinar (Art. 51)': 'O(A) aluno(a) completou 2 meses consecutivos sem nenhuma medida disciplinar, conforme Art. 51 do regulamento. '
+  };
+
+  // Generate observation suggestion based on selected categories
+  const generateObservationSuggestion = (categories: string[], type: 'MERIT' | 'DEMERIT'): string => {
+    if (type === 'MERIT') {
+      return meritSuggestionMap[categories[0]] || '';
+    }
+    // DEMERIT: concatenate suggestions for each selected category
+    return categories.map(cat => {
+      const num = cat.match(/^(\d+)\./)?.[1];
+      if (num && demeritSuggestionMap[num]) return demeritSuggestionMap[num];
+      if (cat.startsWith('[OUTROS]')) return 'Descrever detalhes da falta observada: ';
+      return '';
+    }).filter(Boolean).join('\n');
+  };
+
   // Behavior Categories depending on score
   const getBehaviorStatus = (score: number) => {
     if (score >= 10.0) return { label: 'EXCEPCIONAL', color: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
@@ -3694,7 +3810,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                         const updated = current.includes(d.category)
                                           ? current.filter(c => c !== d.category)
                                           : [...current, d.category];
-                                        return { ...prev, selectedCategories: updated };
+                                        const suggestion = generateObservationSuggestion(updated, 'DEMERIT');
+                                        return { ...prev, selectedCategories: updated, observations: suggestion };
                                       });
                                       setCategorySearchTerm('');
                                     }}
@@ -3722,10 +3839,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setNewOccurrence(prev => ({
-                                    ...prev,
-                                    selectedCategories: (prev.selectedCategories || []).filter(c => c !== cat)
-                                  }));
+                                  setNewOccurrence(prev => {
+                                    const updated = (prev.selectedCategories || []).filter(c => c !== cat);
+                                    const suggestion = generateObservationSuggestion(updated, 'DEMERIT');
+                                    return { ...prev, selectedCategories: updated, observations: suggestion };
+                                  });
                                 }}
                                 className="hover:text-slate-950 font-bold shrink-0 ml-1 p-0.5 bg-white/60 hover:bg-white rounded-full w-4 h-4 flex items-center justify-center border border-current"
                                 title="Remover"
@@ -3743,7 +3861,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   ) : (
                     <select
                       value={newOccurrence.category}
-                      onChange={e => setNewOccurrence(prev => ({ ...prev, category: e.target.value }))}
+                      onChange={e => {
+                        const cat = e.target.value;
+                        const suggestion = generateObservationSuggestion([cat], 'MERIT');
+                        setNewOccurrence(prev => ({ ...prev, category: cat, observations: suggestion }));
+                      }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                     >
                       {meritOptions.map(m => (
