@@ -363,6 +363,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [includeCover, setIncludeCover] = useState(true);
   const [coverTitle, setCoverTitle] = useState('INVENTÁRIO ANUAL DE BENS MÓVEIS');
   const [coverSubtitle, setCoverSubtitle] = useState('Secretaria de Estado de Educação - SEDUC/MT');
+  const [includeSummary, setIncludeSummary] = useState(true);
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -1363,17 +1364,31 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
-                      <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex items-center gap-3 pt-4 border-t border-gray-50">
-                        <input
-                          type="checkbox"
-                          id="includeCover"
-                          checked={includeCover}
-                          onChange={e => setIncludeCover(e.target.checked)}
-                          className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
-                        />
-                        <label htmlFor="includeCover" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
-                          Incluir Capa Oficial do Inventário no PDF
-                        </label>
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-6 pt-4 border-t border-gray-50">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeCover"
+                            checked={includeCover}
+                            onChange={e => setIncludeCover(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeCover" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Capa Oficial no PDF
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeSummary"
+                            checked={includeSummary}
+                            onChange={e => setIncludeSummary(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeSummary" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Sumário no PDF
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1607,6 +1622,61 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               <div>
                                 <p className="text-gray-600">{headerMunicipio || 'LUCAS DO RIO VERDE'} - MT</p>
                                 <p className="text-gray-400 font-bold mt-1">{schedule.year}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* === SUMÁRIO OFICIAL (PÁGINA 2) === */}
+                        {includeSummary && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black">
+                              {/* Título do Sumário */}
+                              <h2 className="text-center text-sm font-black uppercase tracking-[0.2em] mb-12 border-b border-black pb-4 text-gray-900">
+                                SUMÁRIO
+                              </h2>
+                              {/* Lista de Itens do Sumário */}
+                              <div className="space-y-4 text-xs font-bold text-gray-800 tracking-wider">
+                                <div className="flex justify-between items-end">
+                                  <span>1. APRESENTAÇÃO</span>
+                                  <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
+                                  <span className="font-black">03</span>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                  <span>2. TERMO DE RESPONSABILIDADE</span>
+                                  <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
+                                  <span className="font-black">03</span>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                  <span>3. ATA DE ABERTURA DO INVENTÁRIO</span>
+                                  <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
+                                  <span className="font-black">04</span>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                  <span>4. DOS TRABALHOS  METODOLOGIA</span>
+                                  <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
+                                  <span className="font-black">06</span>
+                                </div>
+                                <div className="flex justify-between items-end text-blue-900 font-black">
+                                  <span>5. PLANILHA DE LEVANTAMENTO FÍSICO</span>
+                                  <span className="border-b border-dotted border-blue-900 flex-1 mx-2 mb-1"></span>
+                                  <span>07</span>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                  <span>6. RELATÓRIO FINAL DE INVENTÁRIO</span>
+                                  <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
+                                  <span className="font-black">13</span>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                  <span>7. REGISTRO FOTOGRÁFICO DE BENS</span>
+                                  <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
+                                  <span className="font-black">16</span>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                  <span>8. ATA DE ENCERRAMENTO DE INVENTÁRIO</span>
+                                  <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
+                                  <span className="font-black">17</span>
+                                </div>
                               </div>
                             </div>
                           </div>
