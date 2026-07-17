@@ -1981,7 +1981,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                 2. TERMO DE RESPONSABILIDADE
                               </h2>
                               {/* Conteúdo */}
-                              <div className="space-y-3 text-[9px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
+                              <div className="space-y-3 text-[11px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
                                 <p>
                                   O Diretor da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, <span className="text-red-600 uppercase font-black">{headerMunicipio || 'LUCAS DO RIO VERDE'}</span> do Estado de Mato Grosso, no uso das atribuições que lhe confere a Instrução Normativa nº <span className="text-red-600 uppercase font-black">{headerResponsibilityNormativeInstruction}</span> e,
                                 </p>
@@ -2029,7 +2029,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         {includeResponsibility && (
                           <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ width: '210mm', height: '280mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
-                              <div className="space-y-1.5 text-[8px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
+                              <div className="space-y-1.5 text-[10.5px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
                                 <p className="font-black text-gray-950">
                                   Art. 3º Compete à Subcomissão de Inventário da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>:
                                 </p>
@@ -2063,26 +2063,26 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                               {/* Assinaturas do Termo */}
                               <div className="mt-4 font-sans">
-                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[7px] font-bold uppercase text-gray-700 tracking-wider">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[9px] font-bold uppercase text-gray-700 tracking-wider">
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{headerDirectorName || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Diretor da Escola Estadual</p>
+                                    <p className="text-[8px] text-gray-400">Diretor da Escola Estadual</p>
                                   </div>
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Presidente da Subcomissão Inventariante</p>
+                                    <p className="text-[8px] text-gray-400">Presidente da Subcomissão Inventariante</p>
                                   </div>
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                    <p className="text-[8px] text-gray-400">Membro da Subcomissão Inventariante</p>
                                   </div>
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                    <p className="text-[8px] text-gray-400">Membro da Subcomissão Inventariante</p>
                                   </div>
                                 </div>
                               </div>
@@ -2114,22 +2114,22 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{headerDirectorName || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Diretor da Escola Estadual {headerUA || 'ANDRÉ ANTONIO MAGGI'}</p>
+                                    <p className="text-[8px] text-gray-400">Diretor da Escola Estadual {headerUA || 'ANDRÉ ANTONIO MAGGI'}</p>
                                   </div>
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Presidente da Subcomissão Inventariante</p>
+                                    <p className="text-[8px] text-gray-400">Presidente da Subcomissão Inventariante</p>
                                   </div>
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                    <p className="text-[8px] text-gray-400">Membro da Subcomissão Inventariante</p>
                                   </div>
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</p>
-                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                    <p className="text-[8px] text-gray-400">Membro da Subcomissão Inventariante</p>
                                   </div>
                                 </div>
                               </div>
@@ -2342,7 +2342,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                               {/* Assinaturas */}
                               <div className="mt-4 font-sans">
-                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[7px] font-bold uppercase text-gray-700 tracking-wider">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[9px] font-bold uppercase text-gray-700 tracking-wider">
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1"></div>
                                     <p>{headerDirectorName || 'NOME COMPLETO'}</p>
@@ -2431,7 +2431,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                               {/* Assinaturas */}
                               <div className="mt-8 font-sans">
-                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[7px] font-bold uppercase text-gray-700 tracking-wider">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[9px] font-bold uppercase text-gray-700 tracking-wider">
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1"></div>
                                     <p>{headerDirectorName || 'NOME COMPLETO'}</p>
