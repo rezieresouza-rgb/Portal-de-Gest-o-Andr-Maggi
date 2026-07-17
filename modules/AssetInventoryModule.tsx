@@ -169,6 +169,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
   const [expandedPhaseId, setExpandedPhaseId] = useState<number | null>(1);
   const [selectedDocument, setSelectedDocument] = useState<'portaria' | 'abertura' | 'relatorio' | 'encerramento' | 'cronograma_seduc' | null>(null);
+  const [isEditingDoc, setIsEditingDoc] = useState(false);
   const [seducActions, setSeducActions] = useState<Array<{ id: number; date: string; action: string; situation: string }>>([]);
   const [commissionForm, setCommissionForm] = useState<CommissionMembers>({
     president: { name: '', role: '', register: '' },
@@ -2388,13 +2389,26 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
               </div>
               <div className="flex items-center gap-3">
                 <button
+                  onClick={() => setIsEditingDoc(!isEditingDoc)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-md border ${
+                    isEditingDoc
+                      ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white'
+                      : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-700'
+                  }`}
+                >
+                  {isEditingDoc ? 'Concluir Edição' : 'Editar Texto'}
+                </button>
+                <button
                   onClick={() => handleExportPortraitPDF('document-print-container', `Inventario_${selectedDocument.toUpperCase()}`)}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-md"
                 >
                   <FileDown size={14} /> Exportar PDF (A4 Retrato)
                 </button>
                 <button
-                  onClick={() => setSelectedDocument(null)}
+                  onClick={() => {
+                    setSelectedDocument(null);
+                    setIsEditingDoc(false);
+                  }}
                   className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                 >
                   <X size={20} />
@@ -2419,7 +2433,13 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   </div>
 
                   {/* Document dynamic body */}
-                  <div className="text-left font-serif">
+                  <div
+                    className={`text-left font-serif outline-none p-4 rounded-xl transition-all ${
+                      isEditingDoc ? 'bg-amber-50/20 border border-dashed border-amber-300' : ''
+                    }`}
+                    contentEditable={isEditingDoc}
+                    suppressContentEditableWarning={true}
+                  >
                     {selectedDocument === 'portaria' && getPortariaText()}
                     {selectedDocument === 'abertura' && getAberturaText()}
                     {selectedDocument === 'relatorio' && getRelatorioText()}
