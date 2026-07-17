@@ -1981,7 +1981,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                 2. TERMO DE RESPONSABILIDADE
                               </h2>
                               {/* Conteúdo */}
-                              <div className="space-y-3 text-[11px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
+                              <div className="space-y-1.5 text-[9.5px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
                                 <p>
                                   O Diretor da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, <span className="text-red-600 uppercase font-black">{headerMunicipio || 'LUCAS DO RIO VERDE'}</span> do Estado de Mato Grosso, no uso das atribuições que lhe confere a Instrução Normativa nº <span className="text-red-600 uppercase font-black">{headerResponsibilityNormativeInstruction}</span> e,
                                 </p>
@@ -2021,15 +2021,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                   </p>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* === TERMO DE RESPONSABILIDADE OFICIAL - PARTE 2 (PÁGINA 5) === */}
-                        {includeResponsibility && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ width: '210mm', height: '280mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
-                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
-                              <div className="space-y-1.5 text-[10.5px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
+                              <div className="border-t border-gray-100 my-2 pt-2 space-y-1.5 text-[9.5px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
                                 <p className="font-black text-gray-950">
                                   Art. 3º Compete à Subcomissão de Inventário da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>:
                                 </p>
