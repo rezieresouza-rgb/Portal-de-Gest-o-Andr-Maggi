@@ -367,6 +367,10 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [includePresentation, setIncludePresentation] = useState(true);
   const [headerDataInicio, setHeaderDataInicio] = useState('16/10/' + new Date().getFullYear());
   const [headerPortaria, setHeaderPortaria] = useState('657/GS/SEDUC/MT');
+  const [includeResponsibility, setIncludeResponsibility] = useState(true);
+  const [headerResponsibilityOriginalPortaria, setHeaderResponsibilityOriginalPortaria] = useState('569/2022');
+  const [headerResponsibilityAlterationPortaria, setHeaderResponsibilityAlterationPortaria] = useState('657/2024');
+  const [headerResponsibilityNormativeInstruction, setHeaderResponsibilityNormativeInstruction] = useState('05/2017');
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -1391,6 +1395,33 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Original Portaria (Termo)</label>
+                        <input
+                          type="text"
+                          value={headerResponsibilityOriginalPortaria}
+                          onChange={e => setHeaderResponsibilityOriginalPortaria(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Portaria Alteração (Termo)</label>
+                        <input
+                          type="text"
+                          value={headerResponsibilityAlterationPortaria}
+                          onChange={e => setHeaderResponsibilityAlterationPortaria(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Instrução Normativa</label>
+                        <input
+                          type="text"
+                          value={headerResponsibilityNormativeInstruction}
+                          onChange={e => setHeaderResponsibilityNormativeInstruction(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
                       <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-6 pt-4 border-t border-gray-50">
                         <div className="flex items-center gap-3">
                           <input
@@ -1426,6 +1457,18 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           />
                           <label htmlFor="includePresentation" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
                             Incluir Apresentação no PDF
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeResponsibility"
+                            checked={includeResponsibility}
+                            onChange={e => setIncludeResponsibility(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeResponsibility" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Termo de Responsabilidade no PDF
                           </label>
                         </div>
                       </div>
@@ -1743,6 +1786,56 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                 <p>
                                   O resultado do trabalho, as orientações e as recomendações serão destacadas de forma simples e legível, com a finalidade de apontar as deficiências e apontar as melhorias nos controles e manutenção do patrimônio da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, além de apontar os bens considerados inservíveis.
                                 </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* === TERMO DE RESPONSABILIDADE OFICIAL (PÁGINA 4) === */}
+                        {includeResponsibility && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              {/* Título */}
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
+                                2. TERMO DE RESPONSABILIDADE
+                              </h2>
+                              {/* Conteúdo */}
+                              <div className="space-y-4 text-[10px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
+                                <p>
+                                  O Diretor da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, <span className="text-red-600 uppercase font-black">{headerMunicipio || 'LUCAS DO RIO VERDE'}</span> do Estado de Mato Grosso, no uso das atribuições que lhe confere a Instrução Normativa nº <span className="text-red-600 uppercase font-black">{headerResponsibilityNormativeInstruction}</span> e,
+                                </p>
+                                <p>
+                                  CONSIDERANDO a Lei Federal nº 4.320 de 17 de março de 1964, Art. 94 que determina que haverá registros analíticos de todos os bens de caráter permanente, com indicação dos elementos necessários para a perfeita caracterização de cada um deles e dos agentes responsáveis pela sua guarda e administração, isto é, obrigatoriedade da realização do Inventário;
+                                </p>
+                                <p>
+                                  CONSIDERANDO a necessidade de atualizar as informações patrimonial da Unidade Escolar, assim como de regularizar as informações daqueles bens adquiridos por meio do Programa Dinheiro Direto nas Escolas – PDDE, que ainda não se encontram registradas no Sistema SIGPAT e/ou emplaquetadas,
+                                </p>
+                                <p>
+                                  CONSIDERANDO a necessidade de relacionar os bens móveis considerados inservíveis para que sejam dadas as destinações adequadas, conforme determina a legislação;
+                                </p>
+                                <p>
+                                  CONSIDERANDO a necessidade de manter atualizado a carga patrimonial da Unidade Escolar para fins de controle e planejamento de novas aquisições de bens móveis permanentes.
+                                </p>
+                                <p>
+                                  CONSIDERANDO ainda, o disposto na portaria nº <span className="text-red-600 uppercase font-black">{headerResponsibilityOriginalPortaria}</span> com alteração nos membro pela portaria nº <span className="text-red-600 uppercase font-black">{headerResponsibilityAlterationPortaria}</span> que instituiu a subcomissão para realização do Inventário Fisico Financeiro dos Bens móveis da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>.
+                                </p>
+                                <p className="font-black pt-2 text-gray-900">
+                                  Estabelece:
+                                </p>
+                                <p>
+                                  Art. 1º A referida Subcomissão será composta pelos servidores abaixo descritos.
+                                </p>
+                                <div className="pl-4 space-y-2 pt-1">
+                                  <p>
+                                    <span className="font-black text-gray-950">Presidente:</span> <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.president.role || 'CARGO DO SERVIDOR'}</span>, matrícula nº <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.president.register || '00000'}</span>.
+                                  </p>
+                                  <p>
+                                    <span className="font-black text-gray-950">Secretário(a):</span> <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.role || 'CARGO DO SERVIDOR'}</span>, matrícula nº <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.register || '00000'}</span>.
+                                  </p>
+                                  <p>
+                                    <span className="font-black text-gray-950">Membro:</span> <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.member.role || 'CARGO DO SERVIDOR'}</span>, matrícula nº <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.member.register || '00000'}</span>.
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
