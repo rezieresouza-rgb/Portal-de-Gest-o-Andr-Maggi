@@ -1806,7 +1806,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                   A Comissão Central de Inventário da SEDUC encaminha a unidade Escolar, o Modelo do Processo de Inventário, juntamente com o Guia de Levantamento Patrimonial, contendo as orientações necessárias à realização do inventário.
                                 </p>
                                 <p>
-                                  O resultado do trabalho, as orientações e as recomendações serão destacadas de forma simples e legível, com a finalidade de apontar as deficiências e apontar as melhorias nos controles e manutenção do patrimônio da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, além de apontar os bens considerados inservíveis.
+                                  O resultado do trabalho, as orientações e as recomendações serão destacadas de forma simples e legível, com a finalidade de apontar as deficiências e apontar as melhorias nos controles e manutenção do patrimônio da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, além de apontar os bens considerados inservíveis, bens que não estão mais em condição de uso.
                                 </p>
                               </div>
                             </div>
