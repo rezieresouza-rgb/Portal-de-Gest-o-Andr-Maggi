@@ -371,6 +371,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [headerResponsibilityOriginalPortaria, setHeaderResponsibilityOriginalPortaria] = useState('569/2022');
   const [headerResponsibilityAlterationPortaria, setHeaderResponsibilityAlterationPortaria] = useState('657/2024');
   const [headerResponsibilityNormativeInstruction, setHeaderResponsibilityNormativeInstruction] = useState('05/2017');
+  const [headerDirectorName, setHeaderDirectorName] = useState('');
+  const [headerDirectorRegister, setHeaderDirectorRegister] = useState('');
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -1422,6 +1424,26 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Nome do Diretor</label>
+                        <input
+                          type="text"
+                          value={headerDirectorName}
+                          onChange={e => setHeaderDirectorName(e.target.value.toUpperCase())}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                          placeholder="Ex: JOÃO DA SILVA"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Matrícula do Diretor</label>
+                        <input
+                          type="text"
+                          value={headerDirectorRegister}
+                          onChange={e => setHeaderDirectorRegister(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                          placeholder="Ex: 123456"
+                        />
+                      </div>
                       <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-6 pt-4 border-t border-gray-50">
                         <div className="flex items-center gap-3">
                           <input
@@ -1791,16 +1813,16 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           </div>
                         )}
 
-                        {/* === TERMO DE RESPONSABILIDADE OFICIAL (PÁGINA 4) === */}
+                        {/* === TERMO DE RESPONSABILIDADE OFICIAL - PARTE 1 (PÁGINA 4) === */}
                         {includeResponsibility && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
-                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-4 border-b border-black pb-2 text-gray-900">
                                 2. TERMO DE RESPONSABILIDADE
                               </h2>
                               {/* Conteúdo */}
-                              <div className="space-y-4 text-[10px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
+                              <div className="space-y-3 text-[9px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
                                 <p>
                                   O Diretor da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, <span className="text-red-600 uppercase font-black">{headerMunicipio || 'LUCAS DO RIO VERDE'}</span> do Estado de Mato Grosso, no uso das atribuições que lhe confere a Instrução Normativa nº <span className="text-red-600 uppercase font-black">{headerResponsibilityNormativeInstruction}</span> e,
                                 </p>
@@ -1808,33 +1830,101 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                   CONSIDERANDO a Lei Federal nº 4.320 de 17 de março de 1964, Art. 94 que determina que haverá registros analíticos de todos os bens de caráter permanente, com indicação dos elementos necessários para a perfeita caracterização de cada um deles e dos agentes responsáveis pela sua guarda e administração, isto é, obrigatoriedade da realização do Inventário;
                                 </p>
                                 <p>
-                                  CONSIDERANDO a necessidade de atualizar as informações patrimonial da Unidade Escolar, assim como de regularizar as informações daqueles bens adquiridos por meio do Programa Dinheiro Direto nas Escolas – PDDE, que ainda não se encontram registradas no Sistema SIGPAT e/ou emplaquetadas,
+                                  CONSIDERANDO a necessidade de atualizar as informações patrimonial da Unidade Escolar, assim como de regularizar as informações daqueles adquiridos por meio do Programa Dinheiro Direto nas Escolas - PDDE, que ainda não se encontram registradas no Sistema SIGPAT e/ou emplaquetadas,
                                 </p>
                                 <p>
-                                  CONSIDERANDO a necessidade de relacionar os bens móveis considerados inservíveis para que sejam dadas as destinações adequadas, conforme determina a legislação;
+                                  CONSIDERANDO a necessidade relacionar os bens móveis considerados inservíveis para que sejam dadas as destinações adequadas, conforme determina a legislação;
                                 </p>
                                 <p>
                                   CONSIDERANDO a necessidade de manter atualizado a carga patrimonial da Unidade Escolar para fins de controle e planejamento de novas aquisições de bens móveis permanentes.
                                 </p>
                                 <p>
-                                  CONSIDERANDO ainda, o disposto na portaria nº <span className="text-red-600 uppercase font-black">{headerResponsibilityOriginalPortaria}</span> com alteração nos membro pela portaria nº <span className="text-red-600 uppercase font-black">{headerResponsibilityAlterationPortaria}</span> que instituiu a subcomissão para realização do Inventário Fisico Financeiro dos Bens móveis da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>.
+                                  CONSIDERANDO ainda, o disposto na portaria nº <span className="text-red-600 uppercase font-black">{headerResponsibilityOriginalPortaria}</span> com alteração nos membro pela portaria nº <span className="text-red-600 uppercase font-black">{headerResponsibilityAlterationPortaria}</span> que instituiu a subcomissão para realização do Inventário Físico Financeiro dos Bens móveis da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>.
                                 </p>
-                                <p className="font-black pt-2 text-gray-900">
+                                <p className="font-black pt-2 text-gray-950">
                                   Estabelece:
                                 </p>
                                 <p>
-                                  Art. 1º A referida Subcomissão será composta pelos servidores abaixo descritos.
+                                  Art. 1º A referida Subcomissão será composta pelos servidores abaixo descritos:
                                 </p>
-                                <div className="pl-4 space-y-2 pt-1">
+                                <div className="pl-4 space-y-1.5 pt-1">
                                   <p>
                                     <span className="font-black text-gray-950">Presidente:</span> <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.president.role || 'CARGO DO SERVIDOR'}</span>, matrícula nº <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.president.register || '00000'}</span>.
                                   </p>
                                   <p>
-                                    <span className="font-black text-gray-950">Secretário(a):</span> <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.role || 'CARGO DO SERVIDOR'}</span>, matrícula nº <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.register || '00000'}</span>.
+                                    <span className="font-black text-gray-950">Diretor da unidade escolar:</span> <span className="text-red-600 uppercase font-black">{headerDirectorName || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">DIRETOR ESCOLAR</span>, matrícula nº <span className="text-red-600 uppercase font-black">{headerDirectorRegister || '00000'}</span>.
+                                  </p>
+                                  <p>
+                                    <span className="font-black text-gray-950">Membro:</span> <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.role || 'CARGO DO SERVIDOR'}</span>, matrícula nº <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.secretary.register || '00000'}</span>.
                                   </p>
                                   <p>
                                     <span className="font-black text-gray-950">Membro:</span> <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</span>, <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.member.role || 'CARGO DO SERVIDOR'}</span>, matrícula nº <span className="text-red-600 uppercase font-black">{schedule.commissionMembers.member.register || '00000'}</span>.
                                   </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* === TERMO DE RESPONSABILIDADE OFICIAL - PARTE 2 (PÁGINA 5) === */}
+                        {includeResponsibility && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              <div className="space-y-3 text-[9px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
+                                <p className="font-black text-gray-950">
+                                  Art. 3º Compete à Subcomissão de Inventário da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>:
+                                </p>
+                                <div className="pl-4 space-y-1">
+                                  <p>I - Solicitar ao responsável pela unidade, livre acesso a qualquer espaço físico para efetuar o levantamento dos bens;</p>
+                                  <p>II - Requisitar os recursos necessários para a realização do levantamento;</p>
+                                  <p>III - Realizar "in loco" o levantamento dos bens patrimoniais móveis da unidade, com apoio e orientação da Comissão Central de Inventário;</p>
+                                  <p>IV - Solicitar ao responsável pela unidade levantada, quando necessário, auxílio, informações e documentos para identificação e quantificação dos bens;</p>
+                                  <p>V - Verificar a integridade e a fixação do registro patrimonial de cada bem e em caso de avaria ou descolamento da plaqueta do modelo atualmente adotado, identificá-los com numeração provisória para posterior regularização;</p>
+                                  <p>VI - Identificar na Planilha de Levantamento Físico o estado de conservação dos bens levantados, descrevendo suas características e informando os suscetíveis de desfazimento para ciência do Setor de Patrimônio;</p>
+                                  <p>VII - Assinar as Planilhas de Levantamento Físico de Bens Móveis, juntamente com o responsável pela unidade.</p>
+                                  <p>VIII - Elaborar Relatório Final de Levantamento da unidade, apresentando-o ao responsável para validação;</p>
+                                  <p>IX - Solicitar à direção da Unidade Escolar, informações sobre os bens móveis adquiridos com recursos do PDDE, para que possam ser incorporados no SIGPAT e emplaquetados;</p>
+                                  <p>XV - Registrar todas as ocorrências na realização dos trabalhos;</p>
+                                </div>
+                                <p>
+                                  Art. 4º Quando convocados os membros da comissão ficarão à disposição para o desenvolvimento dos trabalhos instituídos nesta Portaria.
+                                </p>
+                                <p>
+                                  Art. 5º O inventário deverá ser entregue a direção da unidade escolar para homologação e coleta de assinaturas o documento deverá ser encaminhado via em PDF no e-mail (inventario.mobiliario@educacao.mt.gov.br).
+                                </p>
+                                <p>
+                                  Art. 6º Deverão ser inventariados TODOS OS BENS MÓVEIS PERMANENTES existentes nas unidades escolares e unidades vinculadas à SEDUC (Ex: Geladeira, ar condicionado, fogão, mesa, cadeira, projetor de imagens, televisão, aparelho de som, armário, liquidificar, CPU, notebook, etc), com a indicação dos elementos necessários à sua perfeita caracterização (número do registro patrimonial, descrição detalhada do bem, cor, marca, potência, estado de conservação.</p>
+                                <p>
+                                  Parágrafo único. Fazer registro fotográfico dos bens que não possuem a plaqueta com número de patrimônio, plaquetas antigas (verdes), helpdesk. Os bens sem patrimônios serão incorporados ou tombados caso tenham nota fiscal, fazendo-se necessário as imagens para instrução processual de incorporação quando necessário.
+                                </p>
+                                <p>
+                                  Declaro, para os devidos fins, que fica sob a RESPONSABILIDADE desta subcomissão, devidamente instituída, a realização do inventário de bens móveis conforme descrito nesse documento, comprometo-me a realizar os trabalhos conforme orientação da Comissão Central de Inventário, da Direção da Unidade Escolar, assim como no disposto no Guia de Levantamento Patrimonial.
+                                </p>
+                              </div>
+
+                              {/* Assinaturas do Termo */}
+                              <div className="mt-8 font-sans">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-6 text-center text-[8px] font-bold uppercase text-gray-700 tracking-wider">
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{headerDirectorName || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Diretor da Escola Estadual</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Presidente da Subcomissão Inventariante</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
