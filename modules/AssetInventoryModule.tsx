@@ -1296,7 +1296,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                     {/* Printable container hidden visually but read by html2pdf */}
                     <div className="hidden">
-                      <div id="report-print-container" className="p-10 bg-white text-black font-sans space-y-8" style={{ width: '297mm' }}>
+                      <div id="report-print-container" className="p-10 bg-white text-black font-sans space-y-8" style={{ width: '275mm' }}>
                         {/* Header */}
                         <div className="border-b-4 border-blue-900 pb-6 flex items-center justify-between">
                           <div className="space-y-1">
@@ -1441,7 +1441,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                     {/* Hidden Printable Container — Planilha de Levantamento Físico */}
                     <div className="hidden">
-                      <div id="levantamento-print-container" className="p-8 bg-white text-black font-sans" style={{ width: '297mm' }}>
+                      <div id="levantamento-print-container" className="p-8 bg-white text-black font-sans" style={{ width: '275mm' }}>
                         
                         {/* === CABEÇALHO OFICIAL (De Acordo Com O Modelo) === */}
                         <div className="flex border border-gray-800 text-[10px] items-stretch">
