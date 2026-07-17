@@ -350,6 +350,16 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     }
   };
 
+  const [headerUG, setHeaderUG] = useState('SEDUC/MT');
+  const [headerCodUG, setHeaderCodUG] = useState('14101');
+  const [headerUA, setHeaderUA] = useState('E.E. ANDRÉ ANTONIO MAGGI');
+  const [headerCodUA, setHeaderCodUA] = useState('');
+  const [headerMunicipio, setHeaderMunicipio] = useState('LUCAS DO RIO VERDE');
+  const [headerCodUL, setHeaderCodUL] = useState('');
+  const [headerResponsavel, setHeaderResponsavel] = useState(user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA');
+  const [headerMatricula, setHeaderMatricula] = useState('');
+  const [headerCPF, setHeaderCPF] = useState('');
+
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
     description: '',
@@ -372,6 +382,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
         ...prev,
         responsible: `GESTOR ${user.name.toUpperCase()}`
       }));
+      setHeaderResponsavel(user.name.toUpperCase());
     }
   }, [user]);
 
@@ -1238,6 +1249,102 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   </div>
                 </div>
 
+                {/* Form de preenchimento do cabeçalho (Apenas para Planilha de Levantamento Físico) */}
+                {reportType === 'levantamento' && (
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100/80 shadow-sm space-y-6 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 pb-4 border-b border-gray-50">
+                      <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full"></div>
+                      <h4 className="text-xs font-black uppercase text-gray-800 tracking-widest">Dados do Cabeçalho da Planilha</h4>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Unidade Gestora</label>
+                        <input
+                          type="text"
+                          value={headerUG}
+                          onChange={e => setHeaderUG(e.target.value.toUpperCase())}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Código UG</label>
+                        <input
+                          type="text"
+                          value={headerCodUG}
+                          onChange={e => setHeaderCodUG(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Unidade ADM</label>
+                        <input
+                          type="text"
+                          value={headerUA}
+                          onChange={e => setHeaderUA(e.target.value.toUpperCase())}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Código UA</label>
+                        <input
+                          type="text"
+                          value={headerCodUA}
+                          onChange={e => setHeaderCodUA(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                          placeholder="Ex: 14101"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Município</label>
+                        <input
+                          type="text"
+                          value={headerMunicipio}
+                          onChange={e => setHeaderMunicipio(e.target.value.toUpperCase())}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Código UL</label>
+                        <input
+                          type="text"
+                          value={headerCodUL}
+                          onChange={e => setHeaderCodUL(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Responsável</label>
+                        <input
+                          type="text"
+                          value={headerResponsavel}
+                          onChange={e => setHeaderResponsavel(e.target.value.toUpperCase())}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Matrícula</label>
+                        <input
+                          type="text"
+                          value={headerMatricula}
+                          onChange={e => setHeaderMatricula(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                          placeholder="Digite a matrícula"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">CPF</label>
+                        <input
+                          type="text"
+                          value={headerCPF}
+                          onChange={e => setHeaderCPF(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                          placeholder="Digite o CPF"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Report Preview Table — Conditional Rendering */}
                 {reportType === 'padrao' ? (
                   /* === RELATÓRIO PADRÃO (existente) === */
@@ -1471,41 +1578,41 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           <tbody>
                             <tr className="border-b border-gray-800">
                               <td className="p-2 border-r border-gray-800 uppercase w-1/2">
-                                UNIDADE GESTORA: <span className="font-black">SEDUC/MT</span>
+                                UNIDADE GESTORA: <span className="font-black">{headerUG}</span>
                               </td>
                               <td className="p-2 uppercase w-1/2">
-                                CÓDIGO UG: <span className="font-black">14101</span>
+                                CÓDIGO UG: <span className="font-black">{headerCodUG}</span>
                               </td>
                             </tr>
                             <tr className="border-b border-gray-800">
                               <td className="p-2 border-r border-gray-800 uppercase">
-                                UNIDADE ADM: <span className="font-black">E.E. ANDRÉ ANTONIO MAGGI</span>
+                                UNIDADE ADM: <span className="font-black">{headerUA}</span>
                               </td>
                               <td className="p-2 uppercase">
-                                CÓDIGO UA: <span className="font-black"></span>
+                                CÓDIGO UA: <span className="font-black">{headerCodUA}</span>
                               </td>
                             </tr>
                             <tr className="border-b border-gray-800">
                               <td className="p-2 border-r border-gray-800 uppercase">
-                                MUNICÍPIO: <span className="font-black">LUCAS DO RIO VERDE</span>
+                                MUNICÍPIO: <span className="font-black">{headerMunicipio}</span>
                               </td>
                               <td className="p-2 uppercase">
-                                CÓDIGO UL: <span className="font-black"></span>
+                                CÓDIGO UL: <span className="font-black">{headerCodUL}</span>
                               </td>
                             </tr>
                             <tr className="border-b border-gray-800">
                               <td className="p-2 border-r border-gray-800 uppercase">
-                                RESPONSÁVEL: <span className="font-black">{user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</span>
+                                RESPONSÁVEL: <span className="font-black">{headerResponsavel}</span>
                               </td>
                               <td className="p-2 uppercase">
                               </td>
                             </tr>
                             <tr>
                               <td className="p-2 border-r border-gray-800 uppercase">
-                                MATRICULA: <span className="font-black"></span>
+                                MATRICULA: <span className="font-black">{headerMatricula}</span>
                               </td>
                               <td className="p-2 uppercase">
-                                CPF: <span className="font-black"></span>
+                                CPF: <span className="font-black">{headerCPF}</span>
                               </td>
                             </tr>
                           </tbody>
