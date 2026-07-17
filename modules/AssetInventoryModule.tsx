@@ -360,6 +360,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [headerResponsavel, setHeaderResponsavel] = useState(user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA');
   const [headerMatricula, setHeaderMatricula] = useState('');
   const [headerCPF, setHeaderCPF] = useState('');
+  const [includeCover, setIncludeCover] = useState(true);
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -1342,6 +1343,18 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           placeholder="Digite o CPF"
                         />
                       </div>
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex items-center gap-3 pt-4 border-t border-gray-50">
+                        <input
+                          type="checkbox"
+                          id="includeCover"
+                          checked={includeCover}
+                          onChange={e => setIncludeCover(e.target.checked)}
+                          className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                        />
+                        <label htmlFor="includeCover" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                          Incluir Capa Oficial do Inventário no PDF
+                        </label>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1551,6 +1564,34 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                     <div className="hidden">
                       <div id="levantamento-print-container" className="p-8 bg-white text-black font-sans" style={{ width: '275mm' }}>
                         
+                        {/* === CAPA OFICIAL (PÁGINA 1) === */}
+                        {includeCover && (
+                          <div className="w-full bg-white flex flex-col justify-center relative border border-gray-300 mb-12" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            {/* Bloco azul vertical na esquerda */}
+                            <div className="absolute left-0 top-0 bottom-0 w-[120mm] bg-[#1b365d] flex flex-col justify-center px-12">
+                              <div className="bg-white border-2 border-white p-8 shadow-lg w-[96mm]">
+                                <h1 className="text-base font-black uppercase text-gray-900 tracking-wide leading-tight">
+                                  INVENTÁRIO ANUAL DE BENS MÓVEIS <span className="text-red-600">{schedule.year}</span>
+                                </h1>
+                                <div className="mt-8 text-xs font-bold text-gray-900 uppercase">
+                                  <p>Escola Estadual <span className="text-red-600">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span></p>
+                                </div>
+                              </div>
+                            </div>
+                            {/* Informações na direita */}
+                            <div className="absolute right-0 top-0 bottom-0 left-[120mm] bg-white flex flex-col justify-between p-16 text-right font-black uppercase text-gray-400 text-[9px] tracking-widest">
+                              <div>
+                                <p className="text-gray-600 font-black text-[10px]">Secretaria de Estado de Educação - SEDUC/MT</p>
+                                <p className="text-[8px] text-gray-400 font-bold mt-1">Secretaria Adjunta de Patrimônio e Serviços</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">{headerMunicipio || 'LUCAS DO RIO VERDE'} - MT</p>
+                                <p className="text-gray-400 font-bold mt-1">{schedule.year}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* === CABEÇALHO OFICIAL (De Acordo Com O Modelo) === */}
                         <div className="flex border border-gray-800 text-[10px] items-stretch">
                           {/* Logo Esquerda */}
