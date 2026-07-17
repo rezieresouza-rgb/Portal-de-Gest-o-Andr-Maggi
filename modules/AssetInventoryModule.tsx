@@ -374,6 +374,26 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [headerDirectorName, setHeaderDirectorName] = useState('');
   const [headerDirectorRegister, setHeaderDirectorRegister] = useState('');
 
+  const [includeAbertura, setIncludeAbertura] = useState(true);
+  const [includeMetodologia, setIncludeMetodologia] = useState(true);
+  const [includeRelatorio, setIncludeRelatorio] = useState(true);
+  const [includeFoto, setIncludeFoto] = useState(true);
+  const [includeEncerramento, setIncludeEncerramento] = useState(true);
+
+  const [headerAberturaAtaDataTexto, setHeaderAberturaAtaDataTexto] = useState('14 (quatorze) dias do mês de dezembro');
+  const [headerAberturaAtaAno, setHeaderAberturaAtaAno] = useState(new Date().getFullYear().toString());
+  const [headerAberturaColegiadoData, setHeaderAberturaColegiadoData] = useState('14/12/' + new Date().getFullYear());
+
+  const [headerRelatorioPeriodo, setHeaderRelatorioPeriodo] = useState('16/10/' + new Date().getFullYear() + ' a 15/11/' + new Date().getFullYear());
+  const [headerSchoolEmail, setHeaderSchoolEmail] = useState('ESCOLA@edu.mt.gov.br');
+  const [headerSchoolPhone, setHeaderSchoolPhone] = useState('(XX) 0000-0000');
+  const [headerRelatorioData, setHeaderRelatorioData] = useState('LUCAS DO RIO VERDE - MT, 15 de novembro de ' + new Date().getFullYear());
+  const [headerComissaoNumero, setHeaderComissaoNumero] = useState('01/' + new Date().getFullYear());
+
+  const [headerEncerramentoAtaDataTexto, setHeaderEncerramentoAtaDataTexto] = useState('dois dias do mês de Julho do ano dois mil e vinte cinco');
+  const [headerEncerramentoAtaAno, setHeaderEncerramentoAtaAno] = useState(new Date().getFullYear().toString());
+  const [headerEncerramentoData, setHeaderEncerramentoData] = useState('LUCAS DO RIO VERDE - MT, 02 de julho de ' + new Date().getFullYear());
+
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
     description: '',
@@ -403,6 +423,13 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   useEffect(() => {
     if (schedule.year) {
       setHeaderDataInicio('16/10/' + schedule.year);
+      setHeaderAberturaAtaAno(schedule.year.toString());
+      setHeaderAberturaColegiadoData(`14/12/${schedule.year}`);
+      setHeaderRelatorioPeriodo(`16/10/${schedule.year} a 15/11/${schedule.year}`);
+      setHeaderRelatorioData(`LUCAS DO RIO VERDE - MT, 15 de novembro de ${schedule.year}`);
+      setHeaderComissaoNumero(`01/${schedule.year}`);
+      setHeaderEncerramentoAtaAno(schedule.year.toString());
+      setHeaderEncerramentoData(`LUCAS DO RIO VERDE - MT, 02 de julho de ${schedule.year}`);
     }
   }, [schedule.year]);
 
@@ -1444,6 +1471,78 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           placeholder="Ex: 123456"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Nº Comissão Anual</label>
+                        <input
+                          type="text"
+                          value={headerComissaoNumero}
+                          onChange={e => setHeaderComissaoNumero(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Data Ata de Abertura</label>
+                        <input
+                          type="text"
+                          value={headerAberturaAtaDataTexto}
+                          onChange={e => setHeaderAberturaAtaDataTexto(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Período de Inventário</label>
+                        <input
+                          type="text"
+                          value={headerRelatorioPeriodo}
+                          onChange={e => setHeaderRelatorioPeriodo(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">E-mail da Escola</label>
+                        <input
+                          type="text"
+                          value={headerSchoolEmail}
+                          onChange={e => setHeaderSchoolEmail(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Telefone da Escola</label>
+                        <input
+                          type="text"
+                          value={headerSchoolPhone}
+                          onChange={e => setHeaderSchoolPhone(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Data/Local Relatório</label>
+                        <input
+                          type="text"
+                          value={headerRelatorioData}
+                          onChange={e => setHeaderRelatorioData(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Ata Encerramento (Texto)</label>
+                        <input
+                          type="text"
+                          value={headerEncerramentoAtaDataTexto}
+                          onChange={e => setHeaderEncerramentoAtaDataTexto(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Data/Local Encerramento</label>
+                        <input
+                          type="text"
+                          value={headerEncerramentoData}
+                          onChange={e => setHeaderEncerramentoData(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
                       <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-6 pt-4 border-t border-gray-50">
                         <div className="flex items-center gap-3">
                           <input
@@ -1454,7 +1553,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
                           />
                           <label htmlFor="includeCover" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
-                            Incluir Capa Oficial no PDF
+                            Incluir Capa
                           </label>
                         </div>
                         <div className="flex items-center gap-3">
@@ -1466,7 +1565,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
                           />
                           <label htmlFor="includeSummary" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
-                            Incluir Sumário no PDF
+                            Incluir Sumário
                           </label>
                         </div>
                         <div className="flex items-center gap-3">
@@ -1478,7 +1577,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
                           />
                           <label htmlFor="includePresentation" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
-                            Incluir Apresentação no PDF
+                            Incluir Apresentação
                           </label>
                         </div>
                         <div className="flex items-center gap-3">
@@ -1490,7 +1589,67 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
                           />
                           <label htmlFor="includeResponsibility" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
-                            Incluir Termo de Responsabilidade no PDF
+                            Incluir Termo Responsabilidade
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeAbertura"
+                            checked={includeAbertura}
+                            onChange={e => setIncludeAbertura(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeAbertura" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Ata Abertura
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeMetodologia"
+                            checked={includeMetodologia}
+                            onChange={e => setIncludeMetodologia(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeMetodologia" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Metodologia
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeRelatorio"
+                            checked={includeRelatorio}
+                            onChange={e => setIncludeRelatorio(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeRelatorio" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Relatório Final
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeFoto"
+                            checked={includeFoto}
+                            onChange={e => setIncludeFoto(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeFoto" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Ficha Foto
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includeEncerramento"
+                            checked={includeEncerramento}
+                            onChange={e => setIncludeEncerramento(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includeEncerramento" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Ata Encerramento
                           </label>
                         </div>
                       </div>
@@ -1931,6 +2090,95 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           </div>
                         )}
 
+                        {/* === 3. ATA DE ABERTURA DO INVENTÁRIO (PÁGINA 6) === */}
+                        {includeAbertura && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              {/* Título */}
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
+                                3. ATA DE ABERTURA DO INVENTÁRIO
+                              </h2>
+                              {/* Conteúdo */}
+                              <div className="space-y-4 text-[9px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
+                                <p className="font-black text-gray-900 uppercase">
+                                  Ata de abertura da realização da etapa preliminar do inventário anual de bens móveis permanentes de {headerAberturaAtaAno} da Escola Estadual <span className="text-red-600 font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>.
+                                </p>
+                                <p>
+                                  Aos {headerAberturaAtaDataTexto} de {headerAberturaAtaAno} ({headerAberturaAtaAno === '2025' ? 'dois mil e vinte e cinco' : 'dois mil e vinte e seis'}), reuniu-se nas dependências da Escola Estadual <span className="text-red-600 font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span> a Subcomissão Inventariante, composta conforme descrito na ata da reunião do Colegiado Escolar de {headerAberturaColegiadoData}, pelos servidores <span className="text-red-600 font-black">{schedule.commissionMembers.president.name || 'PRESIDENTE'}</span>, <span className="text-red-600 font-black">{schedule.commissionMembers.secretary.name || 'SECRETÁRIO(A)'}</span> e <span className="text-red-600 font-black">{schedule.commissionMembers.member.name || 'MEMBRO'}</span>, para, sob a presidência da primeira, iniciar a realização do Inventário Anual de Bens Móveis - Exercício - Ano-Base {headerAberturaAtaAno}, referente aos bens patrimoniais móveis permanentes, no âmbito da Escola Estadual <span className="text-red-600 font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, de acordo com a Portaria nº <span className="text-red-600 font-black">{headerPortaria}</span>, publicada em 15 de julho de 2024 da Secretaria de Estado de Educação de Mato Grosso, e demais informações repassadas pelo Setor da Coordenadoria de Mobiliário e Comissão Central de Inventário da Secretaria de Estado de Educação - MT. Os trabalhos de levantamento dos bens patrimoniais móveis serão realizados conforme as orientações encaminhadas pela Coordenadoria de Mobiliário. Não havendo nada mais a tratar, eu, <span className="text-red-600 font-black">{schedule.commissionMembers.president.name || 'NOME PRESIDENTE'}</span>, lavrei a presente ata, assinada por todos os presentes.
+                                </p>
+                              </div>
+
+                              {/* Assinaturas */}
+                              <div className="mt-12 font-sans pt-6">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-6 text-center text-[8px] font-bold uppercase text-gray-700 tracking-wider">
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{headerDirectorName || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Diretor da Escola Estadual {headerUA || 'ANDRÉ ANTONIO MAGGI'}</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Presidente da Subcomissão Inventariante</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1.5"></div>
+                                    <p>{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[7px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* === 4. DOS TRABALHOS - METODOLOGIA (PÁGINA 7) === */}
+                        {includeMetodologia && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              {/* Título */}
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
+                                4. DOS TRABALHOS - METODOLOGIA
+                              </h2>
+                              {/* Conteúdo */}
+                              <div className="space-y-3 text-[10px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
+                                <p>
+                                  Os trabalhos foram realizados tendo por base os relatórios extraídos no sistema de gestão patrimonial, contendo a relação de bens registrados na carga patrimonial da Escola Estadual <span className="text-red-600 font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>. De posse desses relatórios, passou-se a conferência dos bens móveis, item a item.
+                                </p>
+                                <p>
+                                  Foram inventariados TODOS OS BENS MÓVEIS PERMANENTES existentes na escola (Ex: Geladeira, ar condicionado, fogão, mesa, cadeira, projetor de imagens, televisão, aparelho de som, armário, liquidificar, CPU, notebook, etc), com a indicação dos elementos necessários à sua perfeita caracterização (número do registro patrimonial, descrição detalhada do bem, cor, estado de conservação e indicação se possui ou não plaqueta).
+                                </p>
+                                <p>
+                                  As carteiras e conjuntos escolares (mesa e cadeira) de sala de aula também foram lançadas no Inventário, contendo sua descrição, estado de conservação e quantidade (por orientação da Comissão Central de Inventário, não foi necessário informar o número do registro patrimonial, apenas a quantidade).
+                                </p>
+                                <p>
+                                  Os dados foram relacionados em formulário de inventário padronizado, de acordo com as orientações da Comissão Central de Inventário.
+                                </p>
+                                <p>
+                                  Conforme orientado, foram identificados algumas pendências e divergências existentes em relação à carga patrimonial, sendo sugeridos as providências a serem adotadas para solução das mesmas.
+                                </p>
+                                <p>
+                                  Foram relacionados em uma planilha à parte os bens móveis permanentes que encontram-se sem número de registro patrimonial. Em outra planilha foram relacionados os bens inservíveis, sucateados, obsoletos, para as providências necessárias à sua baixa.
+                                </p>
+                                <p>
+                                  Além disso, foram catalogados os bens móveis permanentes adquiridos com recursos do Programa Dinheiro Direto na Escola - PDDE.
+                                </p>
+                                <p>
+                                  Durante o levantamento observou-se a existência de bens patrimoniais sem plaquetas e/ou bens identificados com mais de uma plaqueta.
+                                </p>
+                                <p>
+                                  Para a correta descrição dos bens foram realizadas consultas no Guia de Levantamento Patrimonial disponibilizado pela Comissão Central de Inventário.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* === CABEÇALHO OFICIAL (De Acordo Com O Modelo) === */}
                         <div className="flex border border-gray-800 text-[10px] items-stretch">
                           {/* Logo Esquerda */}
@@ -2040,35 +2288,172 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           </tbody>
                         </table>
 
-                        {/* Quadro de Assinaturas */}
-                        <div className="pt-12">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-6 text-center">Assinaturas da Comissão Inventariante</p>
-                          <div className="grid grid-cols-2 gap-x-16 gap-y-10 text-center text-[9px] font-bold uppercase text-gray-800 tracking-wider">
-                            <div className="space-y-1">
-                              <div className="border-t border-gray-600 w-48 mx-auto pt-1"></div>
-                              <p className="font-black">{schedule.commissionMembers.president.name ? schedule.commissionMembers.president.name.toUpperCase() : '________________________________'}</p>
-                              <p className="text-[7px] text-gray-400">Presidente da Comissão</p>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="border-t border-gray-600 w-48 mx-auto pt-1"></div>
-                              <p className="font-black">{schedule.commissionMembers.secretary.name ? schedule.commissionMembers.secretary.name.toUpperCase() : '________________________________'}</p>
-                              <p className="text-[7px] text-gray-400">Secretário(a) da Comissão</p>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="border-t border-gray-600 w-48 mx-auto pt-1"></div>
-                              <p className="font-black">{schedule.commissionMembers.member.name ? schedule.commissionMembers.member.name.toUpperCase() : '________________________________'}</p>
-                              <p className="text-[7px] text-gray-400">Membro da Comissão</p>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="border-t border-gray-600 w-48 mx-auto pt-1"></div>
-                              <p className="font-black">DIRETORIA ESCOLAR</p>
-                              <p className="text-[7px] text-gray-400">Assinatura e Carimbo</p>
+                        {/* === 6. RELATÓRIO FINAL DE INVENTÁRIO (PÁGINA APÓS TABELA) === */}
+                        {includeRelatorio && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 mt-12 relative animate-in fade-in" style={{ height: '175mm', breakBefore: 'page', pageBreakBefore: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              {/* Título */}
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-4 border-b border-black pb-2 text-gray-900">
+                                6. RELATÓRIO FINAL DE INVENTÁRIO
+                              </h2>
+                              <div className="space-y-3 text-[8px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
+                                <div className="text-center font-black uppercase text-gray-900 pb-2">
+                                  Modelo de Relatório Final de Inventário de Bens móveis do exercício {headerAberturaAtaAno}
+                                  <p className="text-red-600 text-[10px] mt-0.5">Escola Estadual {headerUA}</p>
+                                </div>
+                                <p>
+                                  A "Comissão de Inventário de Bens móveis" nomeada pela Portaria nº <span className="text-red-600 font-black">{headerPortaria}</span>, designada para a realização do Inventário de Bens móveis no período de <span className="text-red-600 font-black">{headerRelatorioPeriodo}</span>, apresenta o relatório de conclusão dos trabalhos.
+                                </p>
+                                <p className="font-black text-gray-900">6.1 - OBJETIVO</p>
+                                <p className="pl-4">
+                                  Realizar o inventário Anual dos bens móveis da Escola Estadual <span className="text-red-600 font-black">{headerUA}</span>, unidade vinculada à SEDUC/MT para o exercício {headerAberturaAtaAno}, apresentando a ata de abertura, cópia da portaria que instituiu a comissão, planilhas de levantamento patrimonial, e demais documentos que seguem assinados pelo diretor da unidade escolar, bem como, pelos membros da subcomissão.
+                                </p>
+                                <p className="font-black text-gray-900">6.2 - DESENVOLVIMENTO/ METODOLOGIA DO TRABALHO</p>
+                                <p className="pl-4">
+                                  Os trabalhos foram realizados tendo por base os relatórios extraídos no sistema de gestão patrimonial, contendo a relação de bens registrados na carga patrimonial da Escola Estadual <span className="text-red-600 font-black">{headerUA}</span>. De posse desses relatórios, passou-se a conferência dos bens móveis, item a item. Foram inventariados todos os bens móveis permanentes existentes na escola (Ex: Geladeira, ar condicionado, fogão, mesa, cadeira, etc).
+                                </p>
+                                
+                                <p className="font-black text-gray-900">6.3 - DADOS DA SUBCOMISSÃO</p>
+                                <div className="pl-4 space-y-1 text-[7.5px]">
+                                  <p><span className="font-black">Nº da Comissão:</span> {headerComissaoNumero}</p>
+                                  <p>
+                                    <span className="font-black">Presidente:</span> {schedule.commissionMembers.president.name || 'NOME COMPLETO'}, Matrícula: {schedule.commissionMembers.president.register || '000000'} | E-mail: {headerSchoolEmail} | Fone: {headerSchoolPhone}
+                                  </p>
+                                  <p>
+                                    <span className="font-black">Membro 1:</span> {schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}, Matrícula: {schedule.commissionMembers.secretary.register || '000000'} | E-mail: {headerSchoolEmail} | Fone: {headerSchoolPhone}
+                                  </p>
+                                  <p>
+                                    <span className="font-black">Membro 2:</span> {schedule.commissionMembers.member.name || 'NOME COMPLETO'}, Matrícula: {schedule.commissionMembers.member.register || '000000'} | E-mail: {headerSchoolEmail} | Fone: {headerSchoolPhone}
+                                  </p>
+                                </div>
+
+                                <p className="font-black text-gray-900">6.4 - RESPONSÁVEL PELA UNIDADE ESCOLAR</p>
+                                <p className="pl-4 text-[7.5px]">
+                                  <span className="font-black">DIRETOR:</span> {headerDirectorName} | Matrícula: {headerDirectorRegister} | E-mail: {headerSchoolEmail} | Fone: {headerSchoolPhone}
+                                </p>
+
+                                <p className="text-right font-black pt-2 text-[8px] text-gray-900">
+                                  {headerRelatorioData}
+                                </p>
+                              </div>
+
+                              {/* Assinaturas */}
+                              <div className="mt-4 font-sans">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[7px] font-bold uppercase text-gray-700 tracking-wider">
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{headerDirectorName || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Diretor da Unidade Escolar</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Presidente da Subcomissão de Inventário</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Demais membros da Subcomissão</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Demais membros da Subcomissão</p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div className="text-center mt-6 text-[8px] text-gray-400 font-bold">
-                            <p>Lucas do Rio Verde - MT, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                        )}
+
+                        {/* === 7. REGISTRO FOTOGRÁFICO DE BENS (PÁGINA APÓS RELATÓRIO) === */}
+                        {includeFoto && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              {/* Título */}
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
+                                7. REGISTRO FOTOGRÁFICO DE BENS
+                              </h2>
+                              {/* Conteúdo */}
+                              <div className="space-y-6 text-[10px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
+                                <p className="bg-gray-50 border border-gray-200 p-4 rounded-xl font-black text-gray-800">
+                                  Preencher planilha auxiliar na aba "Registro Fotográfico". Inserindo na descrição a ser utilizada na imagem, a mesma descrição que foi colocada no processo de levantamento físico.
+                                </p>
+                                <div className="space-y-2 border-l-4 border-blue-600 pl-4">
+                                  <p className="font-bold text-gray-900">Exemplo prático de padronização:</p>
+                                  <p><span className="font-black text-gray-950">Levantamento Físico:</span> Ar condicionado Samsung 24.000 btus</p>
+                                  <p><span className="font-black text-gray-950">Registro fotográfico:</span> Ar condicionado Samsung 24.000 btus.</p>
+                                </div>
+                                <p className="text-amber-700 font-bold bg-amber-50/50 border border-amber-200/50 p-4 rounded-xl">
+                                  <span className="font-black">OBSERVAÇÃO IMPORTANTE:</span> Somente é necessário fazer o registro fotográfico de bens que não possuem a plaqueta com número de patrimônio, plaquetas antigas (verdes) ou etiquetas de Helpdesk (azuis).
+                                </p>
+                                
+                                {/* Placeholder de fotos */}
+                                <div className="grid grid-cols-2 gap-6 pt-4">
+                                  <div className="border-2 border-dashed border-gray-300 rounded-2xl h-36 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                                    <span className="text-[8px] font-black uppercase tracking-wider">Espaço para Foto 01</span>
+                                    <span className="text-[6px] text-gray-400/80 mt-1 font-bold">Colar imagem do bem sem plaqueta</span>
+                                  </div>
+                                  <div className="border-2 border-dashed border-gray-300 rounded-2xl h-36 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                                    <span className="text-[8px] font-black uppercase tracking-wider">Espaço para Foto 02</span>
+                                    <span className="text-[6px] text-gray-400/80 mt-1 font-bold">Colar imagem do bem com plaqueta antiga</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* === 8. ATA DE ENCERRAMENTO (PÁGINA APÓS FOTO) === */}
+                        {includeEncerramento && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              {/* Título */}
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-4 border-b border-black pb-2 text-gray-900">
+                                8. ATA DE ENCERRAMENTO DE INVENTÁRIO
+                              </h2>
+                              {/* Conteúdo */}
+                              <div className="space-y-4 text-[9px] font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
+                                <div className="text-center font-black uppercase text-gray-900 pb-1">
+                                  Ata de Encerramento do Inventário dos Bens Patrimoniais da Escola Estadual {headerUA || 'ANDRÉ ANTONIO MAGGI'} em {headerMunicipio || 'LUCAS DO RIO VERDE'}.
+                                  <p className="text-red-600 font-bold mt-0.5">ATA Nº {headerComissaoNumero}</p>
+                                </div>
+                                <p>
+                                  Aos {headerEncerramentoAtaDataTexto}, na sede da Escola Estadual <span className="text-red-600 font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, encerrou-se o levantamento e o processo de inventário físico de bens móveis. Os serviços foram realizados pela Subcomissão de Inventário, legalmente instituída pela Portaria nº <span className="text-red-600 font-black">{headerPortaria}</span>, com o intuito de realizar a conferência, levantamento e preenchimento da ficha de levantamento patrimonial. No andamento dos trabalhos constatou-se a existência de bens que encontram-se sem o número de Registro Patrimonial - RP, bens com dois números de RP, e ainda bens considerados inservíveis, que foram relacionados, para as devidas providências. Foram identificados e relacionados bens móveis permanentes adquiridos com recursos do PDDE/PDE, e que não estavam registrados no sistema de gestão patrimonial, nem emplaquetados. Assim sendo, segue anexo o relatório geral dos bens inventariados da Escola Estadual <span className="text-red-600 font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, para o ano de {headerEncerramentoAtaAno}. Assim encerra-se o inventário de {headerEncerramentoAtaAno}, que vai assinado por mim, presidente da Subcomissão de Inventário, pelo Diretor da Unidade Escolar e demais membros da Subcomissão.
+                                </p>
+                                <p className="text-right font-black pt-2 text-[8px] text-gray-900">
+                                  {headerEncerramentoData}
+                                </p>
+                              </div>
+
+                              {/* Assinaturas */}
+                              <div className="mt-8 font-sans">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[7px] font-bold uppercase text-gray-700 tracking-wider">
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{headerDirectorName || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Diretor da Escola Estadual</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{schedule.commissionMembers.president.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Presidente da Subcomissão Inventariante</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{schedule.commissionMembers.secretary.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="border-t border-gray-400 w-full pt-1"></div>
+                                    <p>{schedule.commissionMembers.member.name || 'NOME COMPLETO'}</p>
+                                    <p className="text-[6px] text-gray-400">Membro da Subcomissão Inventariante</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                       </div>
                     </div>
