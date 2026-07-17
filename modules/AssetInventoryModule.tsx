@@ -1868,13 +1868,13 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === TERMO DE RESPONSABILIDADE OFICIAL - PARTE 2 (PÁGINA 5) === */}
                         {includeResponsibility && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white pt-8 pb-4 px-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
-                              <div className="space-y-3 text-[9px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
+                              <div className="space-y-1.5 text-[8px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
                                 <p className="font-black text-gray-950">
                                   Art. 3º Compete à Subcomissão de Inventário da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>:
                                 </p>
-                                <div className="pl-4 space-y-1">
+                                <div className="pl-4 space-y-0.5">
                                   <p>I - Solicitar ao responsável pela unidade, livre acesso a qualquer espaço físico para efetuar o levantamento dos bens;</p>
                                   <p>II - Requisitar os recursos necessários para a realização do levantamento;</p>
                                   <p>III - Realizar "in loco" o levantamento dos bens patrimoniais móveis da unidade, com apoio e orientação da Comissão Central de Inventário;</p>
@@ -1893,7 +1893,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                   Art. 5º O inventário deverá ser entregue a direção da unidade escolar para homologação e coleta de assinaturas o documento deverá ser encaminhado via em PDF no e-mail (inventario.mobiliario@educacao.mt.gov.br).
                                 </p>
                                 <p>
-                                  Art. 6º Deverão ser inventariados TODOS OS BENS MÓVEIS PERMANENTES existentes nas unidades escolares e unidades vinculadas à SEDUC (Ex: Geladeira, ar condicionado, fogão, mesa, cadeira, projetor de imagens, televisão, aparelho de som, armário, liquidificar, CPU, notebook, etc), com a indicação dos elementos necessários à sua perfeita caracterização (número do registro patrimonial, descrição detalhada do bem, cor, marca, potência, estado de conservação.</p>
+                                  Art. 6º Deverão ser inventariados TODOS OS BENS MÓVEIS PERMANENTES existentes nas unidades escolares e unidades vinculadas à SEDUC (Ex: Geladeira, ar condicionado, fogão, mesa, cadeira, projetor de imagens, televisão, aparelho de som, armário, liquidificar, CPU, notebook, etc), com a indicação dos elements necessários à sua perfeita caracterização (número do registro patrimonial, descrição detalhada do bem, cor, marca, potência, estado de conservação.</p>
                                 <p>
                                   Parágrafo único. Fazer registro fotográfico dos bens que não possuem a plaqueta com número de patrimônio, plaquetas antigas (verdes), helpdesk. Os bens sem patrimônios serão incorporados ou tombados caso tenham nota fiscal, fazendo-se necessário as imagens para instrução processual de incorporação quando necessário.
                                 </p>
@@ -1903,8 +1903,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               </div>
 
                               {/* Assinaturas do Termo */}
-                              <div className="mt-8 font-sans">
-                                <div className="grid grid-cols-2 gap-x-12 gap-y-6 text-center text-[8px] font-bold uppercase text-gray-700 tracking-wider">
+                              <div className="mt-4 font-sans">
+                                <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center text-[7px] font-bold uppercase text-gray-700 tracking-wider">
                                   <div className="space-y-1">
                                     <div className="border-t border-gray-400 w-full pt-1.5"></div>
                                     <p>{headerDirectorName || 'NOME COMPLETO'}</p>
