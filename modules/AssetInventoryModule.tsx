@@ -1154,7 +1154,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   </div>
                   <button
                     onClick={() => reportType === 'levantamento'
-                      ? handleExportPDF('levantamento-print-container', 'Planilha_Levantamento_Fisico')
+                      ? handleExportPortraitPDF('levantamento-print-container', 'Planilha_Levantamento_Fisico')
                       : handleExportPDF('report-print-container', 'Relatorio_Patrimonial')
                     }
                     className="px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center gap-2 transition-all shrink-0"
@@ -1864,7 +1864,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         
                         {/* === CAPA OFICIAL (PÁGINA 1) === */}
                         {includeCover && (
-                          <div className="w-full bg-white flex flex-col justify-center relative border border-gray-300 mb-12" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white flex flex-col justify-center relative border border-gray-300 mb-12" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             {/* Bloco azul vertical na esquerda */}
                             <div className="absolute left-0 top-0 bottom-0 w-[120mm] bg-[#1b365d] flex flex-col justify-center px-12">
                               <div className="bg-white border-2 border-white p-8 shadow-lg w-[96mm]">
@@ -1892,7 +1892,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === SUMÁRIO OFICIAL (PÁGINA 2) === */}
                         {includeSummary && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black">
                               {/* Título do Sumário */}
                               <h2 className="text-center text-sm font-black uppercase tracking-[0.2em] mb-12 border-b border-black pb-4 text-gray-900">
@@ -1947,7 +1947,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === APRESENTAÇÃO OFICIAL (PÁGINA 3) === */}
                         {includePresentation && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
                               <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-8 border-b border-black pb-4 text-gray-900">
@@ -1974,7 +1974,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === TERMO DE RESPONSABILIDADE OFICIAL - PARTE 1 (PÁGINA 4) === */}
                         {includeResponsibility && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
                               <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-4 border-b border-black pb-2 text-gray-900">
@@ -2027,7 +2027,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === TERMO DE RESPONSABILIDADE OFICIAL - PARTE 2 (PÁGINA 5) === */}
                         {includeResponsibility && (
-                          <div className="w-full bg-white pt-8 pb-4 px-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white pt-8 pb-4 px-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               <div className="space-y-1.5 text-[8px] font-medium text-gray-700 leading-normal text-justify tracking-wide">
                                 <p className="font-black text-gray-950">
@@ -2092,7 +2092,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === 3. ATA DE ABERTURA DO INVENTÁRIO (PÁGINA 6) === */}
                         {includeAbertura && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
                               <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
@@ -2139,7 +2139,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === 4. DOS TRABALHOS - METODOLOGIA (PÁGINA 7) === */}
                         {includeMetodologia && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
                               <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
@@ -2290,7 +2290,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === 6. RELATÓRIO FINAL DE INVENTÁRIO (PÁGINA APÓS TABELA) === */}
                         {includeRelatorio && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 mt-12 relative animate-in fade-in" style={{ height: '175mm', breakBefore: 'page', pageBreakBefore: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 mt-12 relative animate-in fade-in" style={{ height: '260mm', breakBefore: 'page', pageBreakBefore: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
                               <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-4 border-b border-black pb-2 text-gray-900">
@@ -2368,7 +2368,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === 7. REGISTRO FOTOGRÁFICO DE BENS (PÁGINA APÓS RELATÓRIO) === */}
                         {includeFoto && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
                               <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-6 border-b border-black pb-4 text-gray-900">
@@ -2406,7 +2406,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         {/* === 8. ATA DE ENCERRAMENTO (PÁGINA APÓS FOTO) === */}
                         {includeEncerramento && (
-                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                          <div className="w-full bg-white p-16 flex flex-col justify-between border border-gray-300 mb-12 relative" style={{ height: '260mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
                             <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
                               {/* Título */}
                               <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-4 border-b border-black pb-2 text-gray-900">
