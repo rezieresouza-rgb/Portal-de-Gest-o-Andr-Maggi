@@ -364,6 +364,9 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [coverTitle, setCoverTitle] = useState('INVENTÁRIO ANUAL DE BENS MÓVEIS');
   const [coverSubtitle, setCoverSubtitle] = useState('Secretaria de Estado de Educação - SEDUC/MT');
   const [includeSummary, setIncludeSummary] = useState(true);
+  const [includePresentation, setIncludePresentation] = useState(true);
+  const [headerDataInicio, setHeaderDataInicio] = useState('16/10/' + new Date().getFullYear());
+  const [headerPortaria, setHeaderPortaria] = useState('657/GS/SEDUC/MT');
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -390,6 +393,12 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       setHeaderResponsavel(user.name.toUpperCase());
     }
   }, [user]);
+
+  useEffect(() => {
+    if (schedule.year) {
+      setHeaderDataInicio('16/10/' + schedule.year);
+    }
+  }, [schedule.year]);
 
   const fetchAssets = async () => {
     try {
@@ -1364,6 +1373,24 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Portaria da Apresentação</label>
+                        <input
+                          type="text"
+                          value={headerPortaria}
+                          onChange={e => setHeaderPortaria(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Data Início dos Trabalhos</label>
+                        <input
+                          type="text"
+                          value={headerDataInicio}
+                          onChange={e => setHeaderDataInicio(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
                       <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-6 pt-4 border-t border-gray-50">
                         <div className="flex items-center gap-3">
                           <input
@@ -1387,6 +1414,18 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           />
                           <label htmlFor="includeSummary" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
                             Incluir Sumário no PDF
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="includePresentation"
+                            checked={includePresentation}
+                            onChange={e => setIncludePresentation(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-200 rounded focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor="includePresentation" className="text-xs font-black text-gray-700 uppercase tracking-widest cursor-pointer select-none">
+                            Incluir Apresentação no PDF
                           </label>
                         </div>
                       </div>
@@ -1677,6 +1716,33 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                                   <span className="border-b border-dotted border-gray-400 flex-1 mx-2 mb-1"></span>
                                   <span className="font-black">17</span>
                                 </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* === APRESENTAÇÃO OFICIAL (PÁGINA 3) === */}
+                        {includePresentation && (
+                          <div className="w-full bg-white p-16 flex flex-col justify-center border border-gray-300 mb-12 relative" style={{ height: '175mm', breakAfter: 'page', pageBreakAfter: 'always' }}>
+                            <div className="max-w-xl mx-auto w-full font-sans text-black text-left">
+                              {/* Título */}
+                              <h2 className="text-left text-sm font-black uppercase tracking-[0.2em] mb-8 border-b border-black pb-4 text-gray-900">
+                                1. APRESENTAÇÃO
+                              </h2>
+                              {/* Parágrafos da Apresentação */}
+                              <div className="space-y-6 text-xs font-medium text-gray-700 leading-relaxed text-justify tracking-wide">
+                                <p>
+                                  A Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span> em <span className="text-red-600 uppercase font-black">{headerMunicipio || 'LUCAS DO RIO VERDE'}</span>, em cumprimento ao disposto na Portaria nº <span className="text-red-600 uppercase font-black">{headerPortaria}</span>, instituiu Subcomissão com o objetivo de realizar o Inventário de bens móveis permanentes da unidade escolar. A referida Subcomissão foi instituída com a finalidade de realizar o levantamento físico dos bens patrimoniais da unidade, no intuito de atualizar as informações patrimonial da Unidade Escolar, assim como de regularizar as informações daqueles bens adquiridos por meio do Programa Dinheiro Direto nas Escolas – PDDE, que ainda não se encontram registradas no Sistema SIGPAT e/ou emplaquetadas, e ao final dos trabalhos elaborar o Relatório Final de Inventário da Unidade.
+                                </p>
+                                <p>
+                                  Após reunião com a direção da unidade Escolar, membros do CDCE e subcomissão devidamente instituída, planejou-se as ações e, em <span className="text-red-600 uppercase font-black">{headerDataInicio}</span>, a comissão iniciou os trabalhos.
+                                </p>
+                                <p>
+                                  A Comissão Central de Inventário da SEDUC encaminha a unidade Escolar, o Modelo do Processo de Inventário, juntamente com o Guia de Levantamento Patrimonial, contendo as orientações necessárias à realização do inventário.
+                                </p>
+                                <p>
+                                  O resultado do trabalho, as orientações e as recomendações serão destacadas de forma simples e legível, com a finalidade de apontar as deficiências e apontar as melhorias nos controles e manutenção do patrimônio da Escola Estadual <span className="text-red-600 uppercase font-black">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span>, além de apontar os bens considerados inservíveis.
+                                </p>
                               </div>
                             </div>
                           </div>
