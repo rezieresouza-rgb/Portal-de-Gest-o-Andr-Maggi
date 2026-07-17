@@ -361,6 +361,8 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [headerMatricula, setHeaderMatricula] = useState('');
   const [headerCPF, setHeaderCPF] = useState('');
   const [includeCover, setIncludeCover] = useState(true);
+  const [coverTitle, setCoverTitle] = useState('INVENTÁRIO ANUAL DE BENS MÓVEIS');
+  const [coverSubtitle, setCoverSubtitle] = useState('Secretaria de Estado de Educação - SEDUC/MT');
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -1343,6 +1345,24 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           placeholder="Digite o CPF"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Título da Capa</label>
+                        <input
+                          type="text"
+                          value={coverTitle}
+                          onChange={e => setCoverTitle(e.target.value.toUpperCase())}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Subtítulo da Capa</label>
+                        <input
+                          type="text"
+                          value={coverSubtitle}
+                          onChange={e => setCoverSubtitle(e.target.value)}
+                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
+                        />
+                      </div>
                       <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex items-center gap-3 pt-4 border-t border-gray-50">
                         <input
                           type="checkbox"
@@ -1571,7 +1591,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             <div className="absolute left-0 top-0 bottom-0 w-[120mm] bg-[#1b365d] flex flex-col justify-center px-12">
                               <div className="bg-white border-2 border-white p-8 shadow-lg w-[96mm]">
                                 <h1 className="text-base font-black uppercase text-gray-900 tracking-wide leading-tight">
-                                  INVENTÁRIO ANUAL DE BENS MÓVEIS <span className="text-red-600">{schedule.year}</span>
+                                  {coverTitle} <span className="text-red-600">{schedule.year}</span>
                                 </h1>
                                 <div className="mt-8 text-xs font-bold text-gray-900 uppercase">
                                   <p>Escola Estadual <span className="text-red-600">{headerUA || 'ANDRÉ ANTONIO MAGGI'}</span></p>
@@ -1581,7 +1601,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             {/* Informações na direita */}
                             <div className="absolute right-0 top-0 bottom-0 left-[120mm] bg-white flex flex-col justify-between p-16 text-right font-black uppercase text-gray-400 text-[9px] tracking-widest">
                               <div>
-                                <p className="text-gray-600 font-black text-[10px]">Secretaria de Estado de Educação - SEDUC/MT</p>
+                                <p className="text-gray-600 font-black text-[10px]">{coverSubtitle}</p>
                                 <p className="text-[8px] text-gray-400 font-bold mt-1">Secretaria Adjunta de Patrimônio e Serviços</p>
                               </div>
                               <div>
