@@ -690,28 +690,38 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     const element = document.getElementById(elementId);
     if (!element) return;
 
-    // @ts-ignore
-    await window.html2pdf().set({
-      margin: 10,
-      filename: `${filename}_${new Date().getFullYear()}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    }).from(element).save();
+    element.classList.add('pdf-print-mode');
+    try {
+      // @ts-ignore
+      await window.html2pdf().set({
+        margin: 10,
+        filename: `${filename}_${new Date().getFullYear()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      }).from(element).save();
+    } finally {
+      element.classList.remove('pdf-print-mode');
+    }
   };
 
   const handleExportPortraitPDF = async (elementId: string, filename: string) => {
     const element = document.getElementById(elementId);
     if (!element) return;
 
-    // @ts-ignore
-    await window.html2pdf().set({
-      margin: 0,
-      filename: `${filename}_${new Date().getFullYear()}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(element).save();
+    element.classList.add('pdf-print-mode');
+    try {
+      // @ts-ignore
+      await window.html2pdf().set({
+        margin: 0,
+        filename: `${filename}_${new Date().getFullYear()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(element).save();
+    } finally {
+      element.classList.remove('pdf-print-mode');
+    }
   };
 
   const downloadQRCode = (location: string) => {
@@ -1309,7 +1319,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <input
                           type="text"
                           value={headerUG}
-                          onChange={e => setHeaderUG(e.target.value.toUpperCase())}
+                          onChange={e => setHeaderUG(e.target.value)}
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
@@ -1327,7 +1337,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <input
                           type="text"
                           value={headerUA}
-                          onChange={e => setHeaderUA(e.target.value.toUpperCase())}
+                          onChange={e => setHeaderUA(e.target.value)}
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
@@ -1346,7 +1356,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <input
                           type="text"
                           value={headerMunicipio}
-                          onChange={e => setHeaderMunicipio(e.target.value.toUpperCase())}
+                          onChange={e => setHeaderMunicipio(e.target.value)}
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
@@ -1364,7 +1374,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <input
                           type="text"
                           value={headerResponsavel}
-                          onChange={e => setHeaderResponsavel(e.target.value.toUpperCase())}
+                          onChange={e => setHeaderResponsavel(e.target.value)}
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
@@ -1393,7 +1403,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <input
                           type="text"
                           value={coverTitle}
-                          onChange={e => setCoverTitle(e.target.value.toUpperCase())}
+                          onChange={e => setCoverTitle(e.target.value)}
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                         />
                       </div>
@@ -1456,7 +1466,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <input
                           type="text"
                           value={headerDirectorName}
-                          onChange={e => setHeaderDirectorName(e.target.value.toUpperCase())}
+                          onChange={e => setHeaderDirectorName(e.target.value)}
                           className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800"
                           placeholder="Ex: JOÃO DA SILVA"
                         />
@@ -2707,7 +2717,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             value={commissionForm.president.name}
                             onChange={e => setCommissionForm({
                               ...commissionForm,
-                              president: { ...commissionForm.president, name: e.target.value.toUpperCase() }
+                              president: { ...commissionForm.president, name: e.target.value }
                             })}
                             className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
                           />
@@ -2718,7 +2728,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               value={commissionForm.president.role}
                               onChange={e => setCommissionForm({
                                 ...commissionForm,
-                                president: { ...commissionForm.president, role: e.target.value.toUpperCase() }
+                                president: { ...commissionForm.president, role: e.target.value }
                               })}
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
                             />
@@ -2728,7 +2738,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               value={commissionForm.president.register}
                               onChange={e => setCommissionForm({
                                 ...commissionForm,
-                                president: { ...commissionForm.president, register: e.target.value.toUpperCase() }
+                                president: { ...commissionForm.president, register: e.target.value }
                               })}
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
                             />
@@ -2743,7 +2753,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             value={commissionForm.secretary.name}
                             onChange={e => setCommissionForm({
                               ...commissionForm,
-                              secretary: { ...commissionForm.secretary, name: e.target.value.toUpperCase() }
+                              secretary: { ...commissionForm.secretary, name: e.target.value }
                             })}
                             className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
                           />
@@ -2754,7 +2764,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               value={commissionForm.secretary.role}
                               onChange={e => setCommissionForm({
                                 ...commissionForm,
-                                secretary: { ...commissionForm.secretary, role: e.target.value.toUpperCase() }
+                                secretary: { ...commissionForm.secretary, role: e.target.value }
                               })}
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
                             />
@@ -2764,7 +2774,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               value={commissionForm.secretary.register}
                               onChange={e => setCommissionForm({
                                 ...commissionForm,
-                                secretary: { ...commissionForm.secretary, register: e.target.value.toUpperCase() }
+                                secretary: { ...commissionForm.secretary, register: e.target.value }
                               })}
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
                             />
@@ -2779,7 +2789,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             value={commissionForm.member.name}
                             onChange={e => setCommissionForm({
                               ...commissionForm,
-                              member: { ...commissionForm.member, name: e.target.value.toUpperCase() }
+                              member: { ...commissionForm.member, name: e.target.value }
                             })}
                             className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
                           />
@@ -2790,7 +2800,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               value={commissionForm.member.role}
                               onChange={e => setCommissionForm({
                                 ...commissionForm,
-                                member: { ...commissionForm.member, role: e.target.value.toUpperCase() }
+                                member: { ...commissionForm.member, role: e.target.value }
                               })}
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
                             />
@@ -2800,7 +2810,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                               value={commissionForm.member.register}
                               onChange={e => setCommissionForm({
                                 ...commissionForm,
-                                member: { ...commissionForm.member, register: e.target.value.toUpperCase() }
+                                member: { ...commissionForm.member, register: e.target.value }
                               })}
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold outline-none"
                             />
@@ -3304,6 +3314,14 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        @media print, .pdf-print-mode {
+          .text-red-600, .text-red-500, .text-red-700 {
+            color: #000000 !important;
+          }
+          span.text-red-600, span.text-red-500, span.text-red-700 {
+            color: #000000 !important;
+          }
+        }
       `}</style>
     </div>
   );
