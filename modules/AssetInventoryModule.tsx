@@ -1871,6 +1871,12 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                     {/* Hidden Printable Container — Planilha de Levantamento Físico */}
                     <div className="hidden">
                       <div id="levantamento-print-container" className="p-0 bg-white text-black font-sans" style={{ width: '210mm' }}>
+                        <style>{`
+                          @media print, .pdf-print-mode {
+                            .text-red-600, .text-red-500, .text-red-700 { color: #000000 !important; --tw-text-opacity: 1 !important; }
+                            span.text-red-600, span.text-red-500, span.text-red-700 { color: #000000 !important; --tw-text-opacity: 1 !important; }
+                          }
+                        `}</style>
                         
                         {/* === CAPA OFICIAL (PÁGINA 1) === */}
                         {includeCover && (
@@ -3193,6 +3199,12 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                 className="bg-white shadow-lg p-16 font-serif border border-gray-200 text-black w-[210mm] min-h-[297mm] relative flex flex-col justify-between"
                 style={{ contentVisibility: 'auto' }}
               >
+                <style>{`
+                  @media print, .pdf-print-mode {
+                    .text-red-600, .text-red-500, .text-red-700 { color: #000000 !important; --tw-text-opacity: 1 !important; }
+                    span.text-red-600, span.text-red-500, span.text-red-700 { color: #000000 !important; --tw-text-opacity: 1 !important; }
+                  }
+                `}</style>
                 {/* Header timbrado */}
                 <div>
                   <div className="text-center border-b-2 border-double border-gray-400 pb-4 mb-6 font-sans">
