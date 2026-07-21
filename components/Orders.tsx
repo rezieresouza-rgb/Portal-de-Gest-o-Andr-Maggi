@@ -165,14 +165,20 @@ const Orders: React.FC = () => {
           // html2pdf usually works on hidden elements if display is not none, but visibility hidden or off-screen.
           // But 'pdf-hidden' class usually handles this.
 
-          await (window as any).html2pdf().set({
+          const blob = await (window as any).html2pdf().set({
             margin: [8, 8, 8, 8],
             filename: `Guia_Pedido_Merenda_${order.orderNumber}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', '.signature-container'] }
-          }).from(element).save();
+          }).from(element).output('blob');
+
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank');
+          if (!newWindow) {
+            alert("Bloqueador de pop-ups ativo! Por favor, ative os pop-ups para abrir a guia.");
+          }
 
           setPdfData(null); // Clear after download
         }
