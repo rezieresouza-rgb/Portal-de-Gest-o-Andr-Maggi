@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { CleaningEmployee, SchoolEnvironment } from '../types';
-import { AlertTriangle, Plus, Search, Trash2, CheckCircle2, Clock, X, Loader2, Printer, History, Edit2 } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Trash2, CheckCircle2, Clock, X, Loader2, Printer, History, Edit2, Sparkles, CheckSquare, ListTodo, Target } from 'lucide-react';
+import { generateMaintenanceActionPlan } from '../geminiService';
 
 interface Occurrence {
   id: string;
@@ -36,6 +37,40 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
   });
   const [editingOcc, setEditingOcc] = useState<Occurrence | null>(null);
   const [resolvedAtInput, setResolvedAtInput] = useState<string>('');
+
+  // Estados para o Plano de Ação de Melhorias (IA)
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [actionPlan, setActionPlan] = useState<{
+    diagnosis: string;
+    actions: { action: string; category: string; responsible: string; priority: string }[];
+    preventiveSchedule: { task: string; frequency: string }[];
+    goals: { description: string; target: string }[];
+  } | null>(null);
+
+  const handleGeneratePlan = async () => {
+    if (occurrences.length === 0) {
+      alert("Não há ocorrências registradas para gerar um plano de ação de melhorias.");
+      return;
+    }
+    setPlanLoading(true);
+    setIsPlanModalOpen(true);
+    try {
+      const plan = await generateMaintenanceActionPlan(occurrences);
+      if (plan) {
+        setActionPlan(plan);
+      } else {
+        alert("Não foi possível gerar o plano de ação no momento.");
+        setIsPlanModalOpen(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao processar plano de ação.");
+      setIsPlanModalOpen(false);
+    } finally {
+      setPlanLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchOccurrences();
@@ -315,6 +350,13 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
             <Printer size={18} />
           </button>
           <button 
+            onClick={handleGeneratePlan}
+            className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+            title="Gerar Plano de Ação de Melhorias via IA"
+          >
+            <Sparkles size={16} /> Plano de Ação (IA)
+          </button>
+          <button 
             onClick={() => {
               setEditingOcc(null);
               setNewOcc({
@@ -548,6 +590,225 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 {editingOcc ? 'Salvar Alterações' : 'Registrar Ocorrência'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PLANO DE AÇÃO (IA) */}
+      {isPlanModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[85vh] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+            <div className="p-6 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-600 text-white rounded-xl">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 uppercase">Plano de Ação de Melhorias (IA)</h3>
+                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest leading-none mt-1">Gerado a partir das ocorrências de manutenção</p>
+                </div>
+              </div>
+              <button onClick={() => setIsPlanModalOpen(false)} className="p-2 text-gray-400 hover:text-indigo-600 rounded-xl transition-colors"><X size={24} /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+              {planLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <Loader2 className="animate-spin text-indigo-600" size={48} />
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest animate-pulse">Analisando ocorrências e traçando estratégias...</p>
+                </div>
+              ) : actionPlan ? (
+                <div className="space-y-8">
+                  {/* DIAGNÓSTICO */}
+                  <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100/50 space-y-2">
+                    <h4 className="text-[11px] font-black text-indigo-700 uppercase tracking-widest">Diagnóstico Geral</h4>
+                    <p className="text-sm text-gray-700 leading-relaxed font-medium">{actionPlan.diagnosis}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* AÇÕES RECOMENDADAS */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                        <CheckSquare className="text-indigo-600" size={18} />
+                        <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">Ações Corretivas e Preventivas</h4>
+                      </div>
+                      <div className="space-y-3">
+                        {actionPlan.actions.map((act, idx) => (
+                          <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                            <div className="flex justify-between items-start gap-2">
+                              <span className={`px-2.5 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-full ${
+                                act.priority === 'ALTA' ? 'bg-red-100 text-red-800' :
+                                act.priority === 'MEDIA' ? 'bg-amber-100 text-amber-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {act.priority}
+                              </span>
+                              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{act.category}</span>
+                            </div>
+                            <p className="text-xs font-bold text-gray-800">{act.action}</p>
+                            <p className="text-[9px] font-medium text-gray-500 uppercase">Responsável sugerido: {act.responsible}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-8">
+                      {/* CRONOGRAMA PREVENTIVO */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                          <ListTodo className="text-indigo-600" size={18} />
+                          <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">Cronograma Preventivo Recomendado</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {actionPlan.preventiveSchedule.map((sched, idx) => (
+                            <div key={idx} className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center gap-4">
+                              <span className="text-xs font-semibold text-gray-700">{sched.task}</span>
+                              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-lg shrink-0">{sched.frequency}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* METAS */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                          <Target className="text-indigo-600" size={18} />
+                          <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">Metas para o Próximo Período</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {actionPlan.goals.map((goal, idx) => (
+                            <div key={idx} className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center gap-4">
+                              <span className="text-xs font-semibold text-gray-700">{goal.description}</span>
+                              <span className="text-xs font-black text-indigo-600 uppercase shrink-0">{goal.target}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setIsPlanModalOpen(false)}
+                className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-gray-50 transition-all"
+              >
+                Fechar
+              </button>
+              {actionPlan && (
+                <button 
+                  onClick={async () => {
+                    const printPlanWindow = window.open('', '_blank');
+                    if (printPlanWindow) {
+                      printPlanWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>Plano de Ação de Melhorias - Manutenção</title>
+                            <style>
+                              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 40px; line-height: 1.6; }
+                              h1 { text-transform: uppercase; font-size: 20px; border-b: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+                              h2 { font-size: 14px; text-transform: uppercase; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #4f46e5; }
+                              p { font-size: 12px; }
+                              .meta-box { background: #f9fafb; border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                              table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+                              th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+                              th { background: #f3f4f6; text-transform: uppercase; }
+                              .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+                              .badge-alta { background: #fee2e2; color: #991b1b; }
+                              .badge-media { background: #fef3c7; color: #92400e; }
+                              .badge-baixa { background: #d1fae5; color: #065f46; }
+                              .footer { margin-top: 40px; text-align: center; font-size: 9px; color: #9ca3af; text-transform: uppercase; font-weight: bold; }
+                            </style>
+                          </head>
+                          <body>
+                            <h1>Plano de Ação de Melhorias de Manutenção</h1>
+                            <p><strong>Gerado em:</strong> \${new Date().toLocaleDateString('pt-BR')}</p>
+                            
+                            <h2>1. Diagnóstico Geral</h2>
+                            <div class="meta-box">
+                              <p>\${actionPlan.diagnosis}</p>
+                            </div>
+                            
+                            <h2>2. Ações Corretivas e Preventivas Recomendadas</h2>
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Ação</th>
+                                  <th>Categoria</th>
+                                  <th>Responsável</th>
+                                  <th>Prioridade</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                \${actionPlan.actions.map(a => \`
+                                  <tr>
+                                    <td><strong>\${a.action}</strong></td>
+                                    <td>\${a.category}</td>
+                                    <td>\${a.responsible}</td>
+                                    <td><span class="badge \${a.priority === 'ALTA' ? 'badge-alta' : a.priority === 'MEDIA' ? 'badge-media' : 'badge-baixa'}">\${a.priority}</span></td>
+                                  </tr>
+                                \`).join('')}
+                              </tbody>
+                            </table>
+
+                            <h2>3. Cronograma Preventivo Sugerido</h2>
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Tarefa Preventiva</th>
+                                  <th>Frequência Recomendada</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                \${actionPlan.preventiveSchedule.map(s => \`
+                                  <tr>
+                                    <td>\${s.task}</td>
+                                    <td><strong>\${s.frequency}</strong></td>
+                                  </tr>
+                                \`).join('')}
+                              </tbody>
+                            </table>
+
+                            <h2>4. Metas de Melhoria para o Próximo Período</h2>
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Descrição da Meta</th>
+                                  <th>Indicador de Sucesso</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                \${actionPlan.goals.map(g => \`
+                                  <tr>
+                                    <td>\${g.description}</td>
+                                    <td><strong>\${g.target}</strong></td>
+                                  </tr>
+                                \`).join('')}
+                              </tbody>
+                            </table>
+                            
+                            <div class="footer">
+                              Gerado automaticamente com IA pelo Portal de Gestão André Antônio Maggi
+                            </div>
+                            <script>
+                              window.onload = function() {
+                                window.print();
+                              };
+                            </script>
+                          </body>
+                        </html>
+                      `);
+                      printPlanWindow.document.close();
+                    }
+                  }}
+                  className="px-6 py-3 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-indigo-700 transition-all flex items-center gap-2"
+                >
+                  <Printer size={14} /> Imprimir Plano
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -1062,3 +1062,100 @@ export const parseLessonPlanWithAI = async (rawText: string) => {
 
 
 
+/**
+ * Gera um plano de ação de melhoria para zeladoria/manutenção com base em ocorrências registradas.
+ */
+export const generateMaintenanceActionPlan = async (occurrences: any[]) => {
+  const ai = getAIClient();
+  if (!ai) return null;
+  try {
+    const formattedOccurrences = occurrences.map(o => ({
+      location: o.location,
+      description: o.description,
+      category: o.category,
+      status: o.status,
+      reported_at: o.reported_at
+    }));
+
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Você é um gestor predial especialista em manutenção e conservação escolar de alto padrão.
+      
+      Analise a lista de ocorrências registradas na escola para formular um PLANO DE AÇÃO DE MELHORIAS PREVENTIVAS E CORRETIVAS:
+      ${JSON.stringify(formattedOccurrences)}
+      
+      Gere um plano de ação estruturado contendo:
+      1. **Diagnóstico Geral**: Uma síntese dos principais gargalos detectados (por exemplo, problemas recorrentes de elétrica, hidráulica, etc.).
+      2. **Ações Corretivas e Preventivas Recomendadas**: Para cada principal categoria com problemas, defina uma ação clara, o responsável sugerido (Ex: Eletricista, Encanador, Equipe de Apoio, etc.) e o nível de prioridade (BAIXA, MÉDIA, ALTA).
+      3. **Cronograma Sugerido**: Frequência ou período ideal de vistorias preventivas para evitar que tais problemas voltem a ocorrer (Ex: Semanal, Mensal, Bimestral).
+      4. **Metas de Melhoria**: Indicadores de sucesso para o próximo período (Ex: Redução de 30% em vazamentos, 100% de lâmpadas LED instaladas, etc.).
+
+      Responda estritamente em formato JSON seguindo este esquema:
+      {
+        \"diagnosis\": \"Diagnóstico resumido e insights...\",
+        \"actions\": [
+          { \"action\": \"Ação recomendada\", \"category\": \"Categoria da ocorrência relacionada\", \"responsible\": \"Responsável sugerido\", \"priority\": \"ALTA/MEDIA/BAIXA\" }
+        ],
+        \"preventiveSchedule\": [
+          { \"task\": \"Atividade preventiva\", \"frequency\": \"Frequência recomendada (Semanal, Mensal...)\" }
+        ],
+        \"goals\": [
+          { \"description\": \"Descrição da meta\", \"target\": \"Valor/Indicador de sucesso\" }
+        ]
+      }
+      
+      Responda em formato JSON.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            diagnosis: { type: Type.STRING },
+            actions: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  action: { type: Type.STRING },
+                  category: { type: Type.STRING },
+                  responsible: { type: Type.STRING },
+                  priority: { type: Type.STRING }
+                },
+                required: ["action", "category", "responsible", "priority"]
+              }
+            },
+            preventiveSchedule: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  task: { type: Type.STRING },
+                  frequency: { type: Type.STRING }
+                },
+                required: ["task", "frequency"]
+              }
+            },
+            goals: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  description: { type: Type.STRING },
+                  target: { type: Type.STRING }
+                },
+                required: ["description", "target"]
+              }
+            }
+          },
+          required: ["diagnosis", "actions", "preventiveSchedule", "goals"]
+        },
+        temperature: 0.2
+      }
+    }));
+
+    return JSON.parse(response.text || '{}');
+  } catch (e) {
+    console.error("Erro ao gerar plano de ação via IA", e);
+    return null;
+  }
+};
