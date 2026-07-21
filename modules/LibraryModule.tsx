@@ -727,15 +727,20 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       const bookTable = isApa ? 'library_apa_books' : 'library_books';
 
       // 1. Create Loan
-      const { error: loanError } = await supabase.from(loanTable).insert([{
+      const loanData: Record<string, any> = {
         book_id: book.id,
-        book_title: book.title, // APA table requirement
         reader_id: reader.id,
-        reader_name: reader.name, // APA table requirement
         loan_date: new Date().toLocaleDateString('en-CA'),
         due_date: loanForm.dueDate,
         status: 'ATIVO'
-      }]);
+      };
+
+      if (isApa) {
+        loanData.book_title = book.title;
+        loanData.reader_name = reader.name;
+      }
+
+      const { error: loanError } = await supabase.from(loanTable).insert([loanData]);
       if (loanError) throw loanError;
 
       // 2. Decrement Available Copies
