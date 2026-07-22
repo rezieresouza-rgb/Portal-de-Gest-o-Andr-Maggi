@@ -10,7 +10,7 @@ interface Occurrence {
   location: string;
   description: string;
   category: string;
-  status: 'PENDENTE' | 'EM_ANDAMENTO' | 'RESOLVIDO';
+  status: 'PENDENTE' | 'AGENDADA' | 'EM_ANDAMENTO' | 'RESOLVIDO';
   reported_at: string;
   resolved_at?: string;
 }
@@ -33,6 +33,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     location: '',
     description: '',
     category: 'OUTROS',
+    status: 'PENDENTE' as 'PENDENTE' | 'AGENDADA' | 'EM_ANDAMENTO' | 'RESOLVIDO',
     reported_at: new Date().toLocaleDateString('sv-SE')
   });
   const [editingOcc, setEditingOcc] = useState<Occurrence | null>(null);
@@ -151,19 +152,23 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
           location: newOcc.location,
           description: newOcc.description,
           category: newOcc.category,
-          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString()
+          status: newOcc.status,
+          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString(),
+          resolved_at: newOcc.status === 'RESOLVIDO' ? (resolvedAtInput ? new Date(resolvedAtInput + 'T12:00:00').toISOString() : new Date().toISOString()) : null
         };
-
-        if (editingOcc.status === 'RESOLVIDO') {
-          payload.resolved_at = resolvedAtInput ? new Date(resolvedAtInput + 'T12:00:00').toISOString() : null;
-        }
 
         const { error } = await supabase
           .from('cleaning_occurrences')
           .update(payload)
           .eq('id', editingOcc.id);
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === '23514') {
+            alert("Aviso: O status 'AGENDADA' não está habilitado no banco de dados do seu Supabase. Entre em contato com o suporte ou execute o script SQL correspondente.");
+            return;
+          }
+          throw error;
+        }
       } else {
         // Insere nova ocorrência
         const { error } = await supabase.from('cleaning_occurrences').insert([{
@@ -171,11 +176,18 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
           location: newOcc.location,
           description: newOcc.description,
           category: newOcc.category,
-          status: 'PENDENTE',
-          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString()
+          status: newOcc.status,
+          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString(),
+          resolved_at: newOcc.status === 'RESOLVIDO' ? new Date().toISOString() : null
         }]);
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === '23514') {
+            alert("Aviso: O status 'AGENDADA' não está habilitado no banco de dados do seu Supabase. Entre em contato com o suporte ou execute o script SQL correspondente.");
+            return;
+          }
+          throw error;
+        }
       }
       
       setNewOcc({ 
@@ -183,6 +195,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
         location: '', 
         description: '', 
         category: 'OUTROS',
+        status: 'PENDENTE',
         reported_at: new Date().toLocaleDateString('sv-SE')
       });
       setResolvedAtInput('');
@@ -206,15 +219,13 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     }
   };
 
-  const toggleStatus = async (id: string, currentStatus: string) => {
+  const handleStatusChange = async (id: string, newStatus: 'PENDENTE' | 'AGENDADA' | 'EM_ANDAMENTO' | 'RESOLVIDO') => {
     try {
-      const nextStatus = currentStatus === 'PENDENTE' ? 'EM_ANDAMENTO' : currentStatus === 'EM_ANDAMENTO' ? 'RESOLVIDO' : 'PENDENTE';
       let resolvedAt = null;
-
-      if (nextStatus === 'RESOLVIDO') {
+      if (newStatus === 'RESOLVIDO') {
         const todayBr = new Date().toLocaleDateString('pt-BR');
         const inputDate = window.prompt(
-          "Para marcar como RESOLVIDO, informe a data de resolução (DD/MM/AAAA):", 
+          "Para marcar como CONCLUÍDA, informe a data de resolução (DD/MM/AAAA):", 
           todayBr
         );
         if (inputDate === null) return; // Cancela a alteração
@@ -240,14 +251,21 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
       }
 
       const { error } = await supabase.from('cleaning_occurrences').update({
-        status: nextStatus,
+        status: newStatus,
         resolved_at: resolvedAt
       }).eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23514') {
+          alert("Aviso: O status 'AGENDADA' não está habilitado no banco de dados do seu Supabase. Entre em contato com o suporte ou execute o script SQL correspondente.");
+          return;
+        }
+        throw error;
+      }
       fetchOccurrences();
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
+      alert("Erro ao atualizar o status da ocorrência.");
     }
   };
 
@@ -258,6 +276,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
       location: occ.location,
       description: occ.description,
       category: occ.category,
+      status: occ.status,
       reported_at: occ.reported_at ? new Date(occ.reported_at).toLocaleDateString('sv-SE') : new Date().toLocaleDateString('sv-SE')
     });
     setResolvedAtInput(occ.resolved_at ? new Date(occ.resolved_at).toLocaleDateString('sv-SE') : '');
@@ -388,7 +407,12 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
           </div>
         ) : (
           filteredData.map(occ => (
-            <div key={occ.id} className={`p-6 rounded-[2rem] border transition-all ${occ.status === 'RESOLVIDO' ? 'bg-gray-50 border-gray-200 opacity-70' : occ.status === 'EM_ANDAMENTO' ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-white border-red-100 shadow-md'}`}>
+            <div key={occ.id} className={`p-6 rounded-[2rem] border transition-all ${
+              occ.status === 'RESOLVIDO' ? 'bg-gray-50 border-gray-200 opacity-70' :
+              occ.status === 'EM_ANDAMENTO' ? 'bg-amber-50 border-amber-200 shadow-sm' :
+              occ.status === 'AGENDADA' ? 'bg-blue-50 border-blue-100 shadow-sm' :
+              'bg-white border-red-100 shadow-md'
+            }`}>
               <div className="flex justify-between items-start mb-4">
                 <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${
                   occ.category === 'ELETRICA' ? 'bg-yellow-100 text-yellow-800' :
@@ -401,18 +425,21 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 </span>
                 
                 <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => toggleStatus(occ.id, occ.status)} 
-                    title="Clique para atualizar o status (Pendente -> Em Andamento -> Resolvido)"
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      occ.status === 'RESOLVIDO' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                      occ.status === 'EM_ANDAMENTO' ? 'bg-amber-200 text-amber-800 hover:bg-amber-300' :
-                      'bg-red-100 text-red-700 hover:bg-red-200'
+                  <select 
+                    value={occ.status}
+                    onChange={(e) => handleStatusChange(occ.id, e.target.value as any)}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none border cursor-pointer transition-all focus:ring-2 focus:ring-offset-1 ${
+                      occ.status === 'RESOLVIDO' ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' :
+                      occ.status === 'EM_ANDAMENTO' ? 'bg-amber-200 text-amber-800 border-amber-300 hover:bg-amber-300' :
+                      occ.status === 'AGENDADA' ? 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200' :
+                      'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
                     }`}
                   >
-                    {occ.status === 'RESOLVIDO' ? <CheckCircle2 size={14} /> : occ.status === 'EM_ANDAMENTO' ? <Clock size={14} /> : <AlertTriangle size={14} />}
-                    {occ.status}
-                  </button>
+                    <option value="PENDENTE">PENDENTE</option>
+                    <option value="AGENDADA">AGENDADA</option>
+                    <option value="EM_ANDAMENTO">EM ANDAMENTO</option>
+                    <option value="RESOLVIDO">CONCLUÍDA</option>
+                  </select>
                   <button 
                     onClick={() => handleEdit(occ)} 
                     className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors no-print"
@@ -483,7 +510,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 <td className="p-3 border border-gray-300">{occ.description}</td>
                 <td className="p-3 border border-gray-300 uppercase text-xs">{occ.reported_by}</td>
                 <td className="p-3 border border-gray-300 font-bold uppercase text-xs">
-                  {occ.status === 'RESOLVIDO' ? 'RESOLVIDO' : occ.status === 'EM_ANDAMENTO' ? 'EM ANDAMENTO' : 'PENDENTE'}
+                  {occ.status === 'RESOLVIDO' ? 'RESOLVIDO' : occ.status === 'EM_ANDAMENTO' ? 'EM ANDAMENTO' : occ.status === 'AGENDADA' ? 'AGENDADA' : 'PENDENTE'}
                 </td>
               </tr>
             ))}
@@ -534,7 +561,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Categoria</label>
                   <select 
@@ -547,6 +574,20 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                     <option value="ESTRUTURAL">ESTRUTURAL (Piso...)</option>
                     <option value="EQUIPAMENTOS">EQUIPAMENTOS (Máquinas...)</option>
                     <option value="OUTROS">OUTROS</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Status</label>
+                  <select 
+                    value={newOcc.status}
+                    onChange={e => setNewOcc({...newOcc, status: e.target.value as any})}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/20"
+                  >
+                    <option value="PENDENTE">PENDENTE</option>
+                    <option value="AGENDADA">AGENDADA</option>
+                    <option value="EM_ANDAMENTO">EM ANDAMENTO</option>
+                    <option value="RESOLVIDO">CONCLUÍDA</option>
                   </select>
                 </div>
 
@@ -573,7 +614,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
                 />
               </div>
 
-              {editingOcc && editingOcc.status === 'RESOLVIDO' && (
+              {newOcc.status === 'RESOLVIDO' && (
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Data de Resolução</label>
                   <input 
