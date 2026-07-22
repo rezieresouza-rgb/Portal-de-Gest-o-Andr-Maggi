@@ -310,7 +310,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: type === 'ANEXO_II' ? 'landscape' : 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: { mode: ['css', 'legacy'] }
         }).from(element).save();
     };
 
