@@ -78,12 +78,91 @@ const MANUAL_ITEMS: Omit<PreventiveMaintenanceItem, 'id' | 'status'>[] = [
     { category: 'EQUIPAMENTOS', item: 'Computadores', intervention: 'Limpeza Externa', description: 'Remover poeira de gabinete e periféricos.', frequency: 'ANUAL' },
 ];
 
+const MONTHS_NAMES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
+const QUARTERS_NAMES = [
+    '1º Trimestre (Jan-Mar)',
+    '2º Trimestre (Abr-Jun)',
+    '3º Trimestre (Jul-Set)',
+    '4º Trimestre (Out-Dez)'
+];
+
+const parseDescription = (desc: string) => {
+    if (!desc) return { text: '', dates: {} as Record<number, string> };
+    const parts = desc.split('||');
+    const text = parts[0].trim();
+    let dates: Record<number, string> = {};
+    if (parts[1]) {
+        try {
+            dates = JSON.parse(parts[1].trim());
+        } catch (e) {
+            console.error('Failed to parse dates:', e);
+        }
+    }
+    return { text, dates };
+};
+
+const serializeDescription = (text: string, dates: Record<number, string>) => {
+    return `${text} || ${JSON.stringify(dates)}`;
+};
+
 const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }) => {
     const [items, setItems] = useState<PreventiveMaintenanceItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState<string>('TODOS');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+    const toggleExpandItem = (id: string) => {
+        setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+    const isExpanded = (id: string) => !!expandedItems[id];
+
+    const getCompletedDatesCount = (item: PreventiveMaintenanceItem) => {
+        const { dates } = parseDescription(item.description);
+        const filled = Object.values(dates).filter(d => !!d).length;
+        const total = item.frequency === 'MENSAL' ? 12 : 4;
+        return `${filled}/${total}`;
+    };
+
+    const handleMultiDateChange = async (item: PreventiveMaintenanceItem, index: number, value: string) => {
+        const { text, dates } = parseDescription(item.description);
+        const newDates = { ...dates, [index]: value };
+        const serialized = serializeDescription(text, newDates);
+        
+        // Optimistic update
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, description: serialized } : i));
+        
+        // Find latest execution date to set as lastExecutionDate and status
+        const allDateValues = Object.values(newDates).filter(d => !!d);
+        const latestDate = allDateValues.length > 0 ? allDateValues.sort().pop() : undefined;
+        
+        const totalExpected = item.frequency === 'MENSAL' ? 12 : 4;
+        const isFullyCompleted = allDateValues.length === totalExpected;
+        
+        const updates: Partial<PreventiveMaintenanceItem> = {
+            description: serialized,
+            status: isFullyCompleted ? 'CONCLUIDO' : allDateValues.length > 0 ? 'EM_EXECUCAO' : 'PENDENTE'
+        };
+        
+        if (latestDate) {
+            updates.lastExecutionDate = latestDate;
+            updates.nextDueDate = calculateNextDue(latestDate, item.frequency);
+        } else {
+            updates.lastExecutionDate = undefined;
+            updates.nextDueDate = undefined;
+        }
+
+        try {
+            await supabase.from('preventive_maintenance_plan').update(updates).eq('id', item.id);
+        } catch (err) {
+            console.error("Failed to update multi-date item:", err);
+        }
+    };
 
     // Initialize Data
     useEffect(() => {
@@ -136,7 +215,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
     const filteredItems = useMemo(() => {
         return items.filter(item => {
             const matchesSearch = item.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchTerm.toLowerCase());
+                parseDescription(item.description).text.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesCategory = filterCategory === 'TODOS' || item.category === filterCategory;
             return matchesSearch && matchesCategory;
         });
@@ -367,70 +446,145 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                         {catItems.map(item => {
                                             const urgency = getUrgency(item.nextDueDate);
                                             return (
-                                                <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-orange-50/10 transition-colors group">
-                                                    <td className="py-4 pl-2 font-medium">
-                                                        <p className="font-black text-gray-900 text-sm">{item.item}</p>
-                                                        <p className="text-[10px] text-gray-500 mt-0.5">{item.intervention}</p>
-                                                        <p className="text-[10px] text-gray-400 mt-0.5 italic max-w-xs">{item.description}</p>
-                                                    </td>
-                                                    <td className="py-4">
-                                                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-[10px] font-bold">{item.frequency}</span>
-                                                    </td>
-                                                    <td className="py-4">
-                                                        <select
-                                                            value={item.status}
-                                                            onChange={(e) => updateItem(item.id, { status: e.target.value as PreventiveStatus })}
-                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase outline-none border ${getStatusColor(item.status)} cursor-pointer transition-all focus:ring-2 focus:ring-offset-1`}
-                                                        >
-                                                            <option value="PENDENTE">Pendente</option>
-                                                            <option value="AGENDADO">Agendado</option>
-                                                            <option value="EM_EXECUCAO">Em Execução</option>
-                                                            <option value="CONCLUIDO">Concluído</option>
-                                                        </select>
-                                                    </td>
-                                                    <td className="py-4 space-y-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[9px] font-bold text-gray-400 w-10">REALIZ:</span>
-                                                            <input
-                                                                type="date"
-                                                                value={item.lastExecutionDate || ''}
-                                                                onChange={(e) => handleExecutionChange(item.id, e.target.value, item.frequency)}
-                                                                className="bg-white border border-gray-200 rounded px-2 py-1 text-[10px] outline-none focus:border-orange-300 transition-colors"
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[9px] font-bold text-gray-400 w-10">VENC:</span>
-                                                            <div className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] bg-white border ${urgency === 'overdue' ? 'border-red-300 text-red-600 bg-red-50' : urgency === 'urgent' ? 'border-amber-300 text-amber-600 bg-amber-50' : 'border-gray-200'}`}>
-                                                                {item.nextDueDate ? new Date(item.nextDueDate).toLocaleDateString('pt-BR') : '-'}
-                                                                {urgency === 'overdue' && <AlertTriangle size={12} />}
+                                                <React.Fragment key={item.id}>
+                                                    <tr className="border-b border-gray-50 last:border-0 hover:bg-orange-50/10 transition-colors group">
+                                                        <td className="py-4 pl-2 font-medium">
+                                                            <p className="font-black text-gray-900 text-sm">{item.item}</p>
+                                                            <p className="text-[10px] text-gray-500 mt-0.5">{item.intervention}</p>
+                                                            <p className="text-[10px] text-gray-400 mt-0.5 italic max-w-xs">{parseDescription(item.description).text}</p>
+                                                        </td>
+                                                        <td className="py-4">
+                                                            <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-[10px] font-bold">{item.frequency}</span>
+                                                        </td>
+                                                        <td className="py-4">
+                                                            <select
+                                                                value={item.status}
+                                                                onChange={(e) => updateItem(item.id, { status: e.target.value as PreventiveStatus })}
+                                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase outline-none border ${getStatusColor(item.status)} cursor-pointer transition-all focus:ring-2 focus:ring-offset-1`}
+                                                            >
+                                                                <option value="PENDENTE">Pendente</option>
+                                                                <option value="AGENDADO">Agendado</option>
+                                                                <option value="EM_EXECUCAO">Em Execução</option>
+                                                                <option value="CONCLUIDO">Concluído</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="py-4 space-y-2">
+                                                            {item.frequency === 'MENSAL' || item.frequency === 'TRIMESTRAL' ? (
+                                                                <div className="space-y-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => toggleExpandItem(item.id)}
+                                                                        className="flex items-center gap-1 px-1.5 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded text-[9px] font-black uppercase transition-all"
+                                                                    >
+                                                                        <Calendar size={10} />
+                                                                        {isExpanded(item.id) ? 'Fechar Datas' : 'Definir Datas'}
+                                                                        <span className="ml-1 bg-orange-200 text-orange-800 px-1 rounded-full text-[8px]">
+                                                                            {getCompletedDatesCount(item)}
+                                                                        </span>
+                                                                    </button>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-[9px] font-bold text-gray-400 w-10">VENC:</span>
+                                                                        <div className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] bg-white border ${urgency === 'overdue' ? 'border-red-300 text-red-600 bg-red-50' : urgency === 'urgent' ? 'border-amber-300 text-amber-600 bg-amber-50' : 'border-gray-200'}`}>
+                                                                            {item.nextDueDate ? new Date(item.nextDueDate).toLocaleDateString('pt-BR') : '-'}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-[9px] font-bold text-gray-400 w-10">REALIZ:</span>
+                                                                        <input
+                                                                            type="date"
+                                                                            value={item.lastExecutionDate || ''}
+                                                                            onChange={(e) => handleExecutionChange(item.id, e.target.value, item.frequency)}
+                                                                            className="bg-white border border-gray-200 rounded px-2 py-1 text-[10px] outline-none focus:border-orange-300 transition-colors"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-[9px] font-bold text-gray-400 w-10">VENC:</span>
+                                                                        <div className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] bg-white border ${urgency === 'overdue' ? 'border-red-300 text-red-600 bg-red-50' : urgency === 'urgent' ? 'border-amber-300 text-amber-600 bg-amber-50' : 'border-gray-200'}`}>
+                                                                            {item.nextDueDate ? new Date(item.nextDueDate).toLocaleDateString('pt-BR') : '-'}
+                                                                            {urgency === 'overdue' && <AlertTriangle size={12} />}
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-4">
+                                                            <select
+                                                                value={item.responsibleId || ''}
+                                                                onChange={(e) => updateItem(item.id, { responsibleId: e.target.value })}
+                                                                className="w-32 bg-white border border-gray-200 rounded px-2 py-1 text-[10px] outline-none focus:border-orange-300 transition-colors"
+                                                            >
+                                                                <option value="">Selecione...</option>
+                                                                {employees.map(emp => (
+                                                                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td className="py-4">
+                                                            <div className="relative w-24">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">R$</span>
+                                                                <input
+                                                                    type="number"
+                                                                    value={item.cost || ''}
+                                                                    onChange={(e) => updateItem(item.id, { cost: parseFloat(e.target.value) })}
+                                                                    placeholder="0,00"
+                                                                    className="w-full pl-6 pr-2 py-1 bg-white border border-gray-200 rounded text-[10px] outline-none focus:border-orange-300 transition-colors"
+                                                                />
                                                             </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-4">
-                                                        <select
-                                                            value={item.responsibleId || ''}
-                                                            onChange={(e) => updateItem(item.id, { responsibleId: e.target.value })}
-                                                            className="w-32 bg-white border border-gray-200 rounded px-2 py-1 text-[10px] outline-none focus:border-orange-300 transition-colors"
-                                                        >
-                                                            <option value="">Selecione...</option>
-                                                            {employees.map(emp => (
-                                                                <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </td>
-                                                    <td className="py-4">
-                                                        <div className="relative w-24">
-                                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">R$</span>
-                                                            <input
-                                                                type="number"
-                                                                value={item.cost || ''}
-                                                                onChange={(e) => updateItem(item.id, { cost: parseFloat(e.target.value) })}
-                                                                placeholder="0,00"
-                                                                className="w-full pl-6 pr-2 py-1 bg-white border border-gray-200 rounded text-[10px] outline-none focus:border-orange-300 transition-colors"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                </tr>
+                                                        </td>
+                                                    </tr>
+                                                    {isExpanded(item.id) && (
+                                                        <tr className="bg-orange-50/5 border-b border-gray-100">
+                                                            <td colSpan={6} className="p-4 pl-8">
+                                                                <div className="bg-white border border-orange-100 rounded-2xl p-6 shadow-sm">
+                                                                    <h4 className="text-xs font-black text-gray-900 uppercase mb-4 flex items-center gap-2">
+                                                                        <Calendar size={14} className="text-orange-500" />
+                                                                        Cronograma de Datas - {item.item} ({item.frequency === 'MENSAL' ? 'Mensal' : 'Trimestral'})
+                                                                    </h4>
+                                                                    {item.frequency === 'MENSAL' ? (
+                                                                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                                                                            {MONTHS_NAMES.map((monthName, index) => {
+                                                                                const { text, dates } = parseDescription(item.description);
+                                                                                const dateValue = dates[index] || '';
+                                                                                return (
+                                                                                    <div key={monthName} className="space-y-1">
+                                                                                        <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">{monthName}</label>
+                                                                                        <input
+                                                                                            type="date"
+                                                                                            value={dateValue}
+                                                                                            onChange={(e) => handleMultiDateChange(item, index, e.target.value)}
+                                                                                            className="w-full bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 text-[10px] outline-none focus:bg-white focus:border-orange-300 transition-all font-medium text-gray-700"
+                                                                                        />
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                            {QUARTERS_NAMES.map((quarterName, index) => {
+                                                                                const { text, dates } = parseDescription(item.description);
+                                                                                const dateValue = dates[index] || '';
+                                                                                return (
+                                                                                    <div key={quarterName} className="space-y-1">
+                                                                                        <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">{quarterName}</label>
+                                                                                        <input
+                                                                                            type="date"
+                                                                                            value={dateValue}
+                                                                                            onChange={(e) => handleMultiDateChange(item, index, e.target.value)}
+                                                                                            className="w-full bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 text-[10px] outline-none focus:bg-white focus:border-orange-300 transition-all font-medium text-gray-700"
+                                                                                        />
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
                                             );
                                         })}
                                     </tbody>
@@ -482,13 +636,32 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                     return interval > 0 && (monthIndex % interval === 0);
                                 };
 
+                                const isExecuted = (monthIndex: number) => {
+                                    const { dates } = parseDescription(item.description);
+                                    if (item.frequency === 'MENSAL') {
+                                        return !!dates[monthIndex];
+                                    }
+                                    if (item.frequency === 'TRIMESTRAL' && monthIndex % 3 === 0) {
+                                        return !!dates[monthIndex / 3];
+                                    }
+                                    if (item.lastExecutionDate) {
+                                        const execMonth = new Date(item.lastExecutionDate).getMonth();
+                                        return execMonth === monthIndex;
+                                    }
+                                    return false;
+                                };
+
                                 return (
-                                    <tr key={item.id}>
+                                    <tr key={item.id} style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                                         <td className="border border-gray-800 p-1 font-bold truncate max-w-xs">{item.item}</td>
                                         <td className="border border-gray-800 p-1 text-center">{item.frequency.substring(0, 3)}</td>
                                         {Array.from({ length: 12 }).map((_, i) => (
-                                            <td key={i} className="border border-gray-800 p-1 text-center">
-                                                {isScheduledMonth(i) && <div className="w-2 h-2 bg-gray-600 rounded-full mx-auto"></div>}
+                                            <td key={i} className="border border-gray-800 p-1 text-center font-bold">
+                                                {isExecuted(i) ? (
+                                                    <span className="text-[10px] text-gray-900">X</span>
+                                                ) : isScheduledMonth(i) ? (
+                                                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full mx-auto"></div>
+                                                ) : null}
                                             </td>
                                         ))}
                                     </tr>
@@ -513,7 +686,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                 </div>
                                 <div className="p-4 grid grid-cols-2 gap-4 text-xs">
                                     <div>
-                                        <p className="mb-2"><strong>Problema / Condição:</strong> {item.description}</p>
+                                        <p className="mb-2"><strong>Problema / Condição:</strong> {parseDescription(item.description).text}</p>
                                         <p className="mb-2"><strong>Ação Necessária:</strong> {item.intervention}</p>
                                         <p><strong>Prazo:</strong> {item.nextDueDate ? new Date(item.nextDueDate).toLocaleDateString('pt-BR') : 'A definir'}</p>
                                     </div>
@@ -547,7 +720,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                         <tbody>
                             {items.filter(i => i.status === 'CONCLUIDO').map(item => (
                                 <tr key={item.id}>
-                                    <td className="border border-gray-800 p-2">{item.item} - {item.description}</td>
+                                    <td className="border border-gray-800 p-2">{item.item} - {parseDescription(item.description).text}</td>
                                     <td className="border border-gray-800 p-2 uppercase">{item.intervention}</td>
                                     <td className="border border-gray-800 p-2 text-center">
                                         {item.lastExecutionDate ? new Date(item.lastExecutionDate).toLocaleDateString('pt-BR') : '-'}
