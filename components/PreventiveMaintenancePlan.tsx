@@ -230,7 +230,8 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
             filename: `${type}_SEDUC_2025.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: type === 'ANEXO_II' ? 'landscape' : 'portrait' }
+            jsPDF: { unit: 'mm', format: 'a4', orientation: type === 'ANEXO_II' ? 'landscape' : 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         }).from(element).save();
     };
 
@@ -442,6 +443,18 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
 
             {/* HIDDEN REPORT TEMPLATES FOR PDF GENERATION */}
             <div className="fixed top-0 left-0 w-full h-0 overflow-hidden">
+                <style>{`
+                    @media print {
+                        tr {
+                            page-break-inside: avoid !important;
+                            break-inside: avoid !important;
+                        }
+                    }
+                    #report-ANEXO_II tr, #report-ANEXO_III tr, #report-ANEXO_IV tr, #report-ANEXO_III .break-inside-avoid {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                `}</style>
 
                 {/* ANEXO II - CRONOGRAMA */}
                 <div id="report-ANEXO_II" className="p-8 bg-white" style={{ width: '297mm', minHeight: '210mm' }}>
