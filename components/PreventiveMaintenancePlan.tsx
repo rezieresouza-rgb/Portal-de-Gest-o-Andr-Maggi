@@ -305,12 +305,12 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
 
         // @ts-ignore
         window.html2pdf().set({
-            margin: 0,
+            margin: 10,
             filename: `${type}_SEDUC_2025.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: type === 'ANEXO_II' ? 'landscape' : 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
+            pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.break-inside-avoid'] }
         }).from(element).save();
     };
 
@@ -611,7 +611,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                 `}</style>
 
                 {/* ANEXO II - CRONOGRAMA */}
-                <div id="report-ANEXO_II" className="p-8 bg-white" style={{ width: '297mm', minHeight: '210mm' }}>
+                <div id="report-ANEXO_II" className="p-8 bg-white w-full">
                     <div className="mb-6 text-center border-b-2 border-gray-900 pb-4">
                         <h1 className="text-xl font-bold uppercase">ANEXO II – CRONOGRAMA DE MANUTENÇÃO PREVENTIVA</h1>
                         <p className="text-sm">Planejamento Anual - Unidade Escolar</p>
@@ -672,7 +672,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                 </div>
 
                 {/* ANEXO III - DEMANDAS */}
-                <div id="report-ANEXO_III" className="p-8 bg-white" style={{ width: '210mm', minHeight: '297mm' }}>
+                <div id="report-ANEXO_III" className="p-8 bg-white w-full">
                     <div className="mb-6 text-center border-b-2 border-gray-900 pb-4">
                         <h1 className="text-xl font-bold uppercase">ANEXO III – RELATÓRIO DE DEMANDA</h1>
                         <p className="text-sm">Levantamento de Necessidades de Manutenção</p>
@@ -703,7 +703,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                 </div>
 
                 {/* ANEXO IV - INTERVENÇÕES */}
-                <div id="report-ANEXO_IV" className="p-8 bg-white" style={{ width: '210mm', minHeight: '297mm' }}>
+                <div id="report-ANEXO_IV" className="p-8 bg-white w-full">
                     <div className="mb-6 text-center border-b-2 border-gray-900 pb-4">
                         <h1 className="text-xl font-bold uppercase">ANEXO IV – IDENTIFICAÇÃO DE INTERVENÇÕES</h1>
                         <p className="text-sm">Relatório Financeiro e Executivo</p>
