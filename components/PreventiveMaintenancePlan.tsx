@@ -17,7 +17,9 @@ import {
     Download,
     PieChart,
     TrendingUp,
-    AlertCircle
+    AlertCircle,
+    Camera,
+    X
 } from 'lucide-react';
 import { PreventiveMaintenanceItem, MaintenanceFrequency, PreventiveStatus, StaffMember } from '../types';
 import { supabase } from '../supabaseClient';
@@ -91,10 +93,12 @@ const QUARTERS_NAMES = [
 ];
 
 const parseDescription = (desc: string) => {
-    if (!desc) return { text: '', dates: {} as Record<number, string> };
+    if (!desc) return { text: '', dates: {} as Record<number, string>, photo: '' };
     const parts = desc.split('||');
     const text = parts[0].trim();
     let dates: Record<number, string> = {};
+    let photo = '';
+    
     if (parts[1]) {
         try {
             dates = JSON.parse(parts[1].trim());
@@ -102,11 +106,55 @@ const parseDescription = (desc: string) => {
             console.error('Failed to parse dates:', e);
         }
     }
-    return { text, dates };
+    
+    if (parts[2]) {
+        photo = parts[2].trim();
+    }
+    
+    return { text, dates, photo };
 };
 
-const serializeDescription = (text: string, dates: Record<number, string>) => {
-    return `${text} || ${JSON.stringify(dates)}`;
+const serializeDescription = (text: string, dates: Record<number, string>, photo: string) => {
+    return `${text} || ${JSON.stringify(dates)} || ${photo}`;
+};
+
+const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 300;
+                const MAX_HEIGHT = 200;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                resolve(dataUrl);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
 };
 
 const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }) => {
@@ -129,10 +177,40 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
         return `${filled}/${total}`;
     };
 
-    const handleMultiDateChange = async (item: PreventiveMaintenanceItem, index: number, value: string) => {
+    const handlePhotoChange = async (item: PreventiveMaintenanceItem, photoUrl: string) => {
         const { text, dates } = parseDescription(item.description);
+        const serialized = serializeDescription(text, dates, photoUrl);
+        
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, description: serialized } : i));
+
+        try {
+            await supabase.from('preventive_maintenance_plan').update({
+                description: serialized
+            }).eq('id', item.id);
+        } catch (err) {
+            console.error("Failed to update item photo:", err);
+        }
+    };
+
+    const handlePhotoRemove = async (item: PreventiveMaintenanceItem) => {
+        const { text, dates } = parseDescription(item.description);
+        const serialized = serializeDescription(text, dates, '');
+        
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, description: serialized } : i));
+
+        try {
+            await supabase.from('preventive_maintenance_plan').update({
+                description: serialized
+            }).eq('id', item.id);
+        } catch (err) {
+            console.error("Failed to remove item photo:", err);
+        }
+    };
+
+    const handleMultiDateChange = async (item: PreventiveMaintenanceItem, index: number, value: string) => {
+        const { text, dates, photo } = parseDescription(item.description);
         const newDates = { ...dates, [index]: value };
-        const serialized = serializeDescription(text, newDates);
+        const serialized = serializeDescription(text, newDates, photo);
         
         // Optimistic update
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, description: serialized } : i));
@@ -452,6 +530,13 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                                             <p className="font-black text-gray-900 text-sm">{item.item}</p>
                                                             <p className="text-[10px] text-gray-500 mt-0.5">{item.intervention}</p>
                                                             <p className="text-[10px] text-gray-400 mt-0.5 italic max-w-xs">{parseDescription(item.description).text}</p>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => toggleExpandItem(item.id)}
+                                                                className="mt-2 flex items-center gap-1 text-[9px] font-black text-orange-600 hover:text-orange-700 uppercase tracking-wider transition-colors"
+                                                            >
+                                                                {isExpanded(item.id) ? '▲ Ocultar Detalhes/Foto' : '▼ Fotos e Detalhes'}
+                                                            </button>
                                                         </td>
                                                         <td className="py-4">
                                                             <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-[10px] font-bold">{item.frequency}</span>
@@ -538,48 +623,115 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                                     {isExpanded(item.id) && (
                                                         <tr className="bg-orange-50/5 border-b border-gray-100">
                                                             <td colSpan={6} className="p-4 pl-8">
-                                                                <div className="bg-white border border-orange-100 rounded-2xl p-6 shadow-sm">
-                                                                    <h4 className="text-xs font-black text-gray-900 uppercase mb-4 flex items-center gap-2">
-                                                                        <Calendar size={14} className="text-orange-500" />
-                                                                        Cronograma de Datas - {item.item} ({item.frequency === 'MENSAL' ? 'Mensal' : 'Trimestral'})
-                                                                    </h4>
-                                                                    {item.frequency === 'MENSAL' ? (
-                                                                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-                                                                            {MONTHS_NAMES.map((monthName, index) => {
-                                                                                const { text, dates } = parseDescription(item.description);
-                                                                                const dateValue = dates[index] || '';
-                                                                                return (
-                                                                                    <div key={monthName} className="space-y-1">
-                                                                                        <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">{monthName}</label>
-                                                                                        <input
-                                                                                            type="date"
-                                                                                            value={dateValue}
-                                                                                            onChange={(e) => handleMultiDateChange(item, index, e.target.value)}
-                                                                                            className="w-full bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 text-[10px] outline-none focus:bg-white focus:border-orange-300 transition-all font-medium text-gray-700"
-                                                                                        />
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                                            {QUARTERS_NAMES.map((quarterName, index) => {
-                                                                                const { text, dates } = parseDescription(item.description);
-                                                                                const dateValue = dates[index] || '';
-                                                                                return (
-                                                                                    <div key={quarterName} className="space-y-1">
-                                                                                        <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">{quarterName}</label>
-                                                                                        <input
-                                                                                            type="date"
-                                                                                            value={dateValue}
-                                                                                            onChange={(e) => handleMultiDateChange(item, index, e.target.value)}
-                                                                                            className="w-full bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 text-[10px] outline-none focus:bg-white focus:border-orange-300 transition-all font-medium text-gray-700"
-                                                                                        />
-                                                                                    </div>
-                                                                                );
-                                                                            })}
+                                                                <div className="bg-white border border-orange-100 rounded-2xl p-6 shadow-sm space-y-6">
+                                                                    {/* Calendar for MENSAL/TRIMESTRAL */}
+                                                                    {(item.frequency === 'MENSAL' || item.frequency === 'TRIMESTRAL') && (
+                                                                        <div>
+                                                                            <h4 className="text-xs font-black text-gray-900 uppercase mb-4 flex items-center gap-2">
+                                                                                <Calendar size={14} className="text-orange-500" />
+                                                                                Cronograma de Datas - {item.item} ({item.frequency === 'MENSAL' ? 'Mensal' : 'Trimestral'})
+                                                                            </h4>
+                                                                            {item.frequency === 'MENSAL' ? (
+                                                                                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                                                                                    {MONTHS_NAMES.map((monthName, index) => {
+                                                                                        const { text, dates } = parseDescription(item.description);
+                                                                                        const dateValue = dates[index] || '';
+                                                                                        return (
+                                                                                            <div key={monthName} className="space-y-1">
+                                                                                                <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">{monthName}</label>
+                                                                                                <input
+                                                                                                    type="date"
+                                                                                                    value={dateValue}
+                                                                                                    onChange={(e) => handleMultiDateChange(item, index, e.target.value)}
+                                                                                                    className="w-full bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 text-[10px] outline-none focus:bg-white focus:border-orange-300 transition-all font-medium text-gray-700"
+                                                                                                />
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                                    {QUARTERS_NAMES.map((quarterName, index) => {
+                                                                                        const { text, dates } = parseDescription(item.description);
+                                                                                        const dateValue = dates[index] || '';
+                                                                                        return (
+                                                                                            <div key={quarterName} className="space-y-1">
+                                                                                                <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">{quarterName}</label>
+                                                                                                <input
+                                                                                                    type="date"
+                                                                                                    value={dateValue}
+                                                                                                    onChange={(e) => handleMultiDateChange(item, index, e.target.value)}
+                                                                                                    className="w-full bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 text-[10px] outline-none focus:bg-white focus:border-orange-300 transition-all font-medium text-gray-700"
+                                                                                                />
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     )}
+
+                                                                    {/* Photo Upload Section */}
+                                                                    <div className="border-t border-gray-100 pt-6">
+                                                                        <h4 className="text-xs font-black text-gray-900 uppercase mb-4 flex items-center gap-2">
+                                                                            <Camera size={14} className="text-orange-500" />
+                                                                            Foto da Ocorrência / Local
+                                                                        </h4>
+                                                                        <div className="flex flex-col sm:flex-row items-start gap-6">
+                                                                            <div className="w-full sm:w-48 h-32 border border-gray-200 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden relative group">
+                                                                                {parseDescription(item.description).photo ? (
+                                                                                    <>
+                                                                                        <img 
+                                                                                            src={parseDescription(item.description).photo} 
+                                                                                            alt="Foto do local" 
+                                                                                            className="w-full h-full object-cover"
+                                                                                        />
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => handlePhotoRemove(item)}
+                                                                                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                        >
+                                                                                            <X size={12} />
+                                                                                        </button>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <span className="text-[10px] text-gray-400 uppercase font-black">Sem Foto</span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-1 space-y-4">
+                                                                                <div className="space-y-1.5">
+                                                                                    <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">Fazer Upload de Imagem</label>
+                                                                                    <input 
+                                                                                        type="file"
+                                                                                        accept="image/*"
+                                                                                        onChange={async (e) => {
+                                                                                            const file = e.target.files?.[0];
+                                                                                            if (file) {
+                                                                                                try {
+                                                                                                    const compressed = await compressImage(file);
+                                                                                                    handlePhotoChange(item, compressed);
+                                                                                                } catch (err) {
+                                                                                                    console.error("Compression error:", err);
+                                                                                                    alert("Erro ao processar imagem.");
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                        className="text-[10px] text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="space-y-1.5">
+                                                                                    <label className="text-[9px] font-black text-gray-400 uppercase block tracking-wider">Ou colar Link/URL da Imagem</label>
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={parseDescription(item.description).photo.startsWith('data:') ? '' : parseDescription(item.description).photo}
+                                                                                        placeholder="https://exemplo.com/imagem.jpg"
+                                                                                        onChange={(e) => handlePhotoChange(item, e.target.value)}
+                                                                                        className="w-full bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 text-[10px] outline-none focus:bg-white focus:border-orange-300 transition-all font-medium text-gray-700"
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -690,8 +842,16 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                         <p className="mb-2"><strong>Ação Necessária:</strong> {item.intervention}</p>
                                         <p><strong>Prazo:</strong> {item.nextDueDate ? new Date(item.nextDueDate).toLocaleDateString('pt-BR') : 'A definir'}</p>
                                     </div>
-                                    <div className="h-24 border border-gray-300 border-dashed flex items-center justify-center text-gray-400 text-[10px]">
-                                        FOTO DO LOCAL
+                                    <div className="h-24 border border-gray-300 rounded flex items-center justify-center overflow-hidden bg-gray-50">
+                                        {parseDescription(item.description).photo ? (
+                                            <img 
+                                                src={parseDescription(item.description).photo} 
+                                                alt="Foto do local" 
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-gray-400 text-[9px] font-bold uppercase tracking-wider">FOTO DO LOCAL (NÃO ENVIADA)</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
