@@ -226,7 +226,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
 
         // @ts-ignore
         window.html2pdf().set({
-            margin: 10,
+            margin: 0,
             filename: `${type}_SEDUC_2025.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
