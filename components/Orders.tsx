@@ -158,15 +158,27 @@ const Orders: React.FC = () => {
         items: pdfItems
       });
 
-      // 3. Abrir caixa de impressão do navegador
-      setTimeout(() => {
-        window.print();
+      // 3. Gerar e baixar arquivo PDF usando html2pdf (Modelo Oficial)
+      setTimeout(async () => {
+        const element = document.getElementById('hidden-printable-area');
+        if (element) {
+          await (window as any).html2pdf().set({
+            margin: [8, 8, 8, 8],
+            filename: `Guia_Pedido_Merenda_${order.orderNumber}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', '.signature-container'] }
+          }).from(element).save();
+
+          setPdfData(null);
+        }
         setIsProcessing(false);
-      }, 400);
+      }, 500);
 
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Erro ao gerar PDF.");
+      alert("Erro ao gerar arquivo PDF.");
       setIsProcessing(false);
     }
   };
@@ -629,12 +641,21 @@ const Orders: React.FC = () => {
         date: new Date().toISOString()
       }]);
 
-      // 4. Trigger print modal (allows user to choose between printing or saving as PDF)
-      setTimeout(() => {
-        window.print();
-      }, 400);
+      // 4. Gerar e baixar arquivo PDF do Pedido (Modelo Oficial)
+      const element = document.getElementById('printable-area');
+      if (element) {
+        // @ts-ignore
+        await (window as any).html2pdf().set({
+          margin: [8, 8, 8, 8],
+          filename: `Guia_Pedido_Merenda_${finalOrderNumber}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', '.signature-container'] }
+        }).from(element).save();
+      }
 
-      alert(`Pedido #${finalOrderNumber} finalizado com sucesso! A caixa de impressão foi aberta.`);
+      alert(`Pedido #${finalOrderNumber} finalizado e PDF gerado com sucesso!`);
 
       // Refresh data
       await fetchData();

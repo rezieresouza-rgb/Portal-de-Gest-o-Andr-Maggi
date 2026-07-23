@@ -223,13 +223,34 @@ const OrderHistory: React.FC = () => {
 
           <div className="flex gap-4 no-print mt-12">
             <button
-              onClick={() => window.print()}
+              onClick={async () => {
+                const element = document.querySelector('.print-container');
+                if (element && (window as any).html2pdf) {
+                  try {
+                    await (window as any).html2pdf().set({
+                      margin: [8, 8, 8, 8],
+                      filename: `Guia_Pedido_Merenda_${selectedOrder.orderNumber}.pdf`,
+                      image: { type: 'jpeg', quality: 0.98 },
+                      html2canvas: { scale: 2, useCORS: true },
+                      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    }).from(element).save();
+                  } catch (e) {
+                    console.error(e);
+                    window.print();
+                  }
+                } else {
+                  window.print();
+                }
+              }}
               className="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
             >
-              <FileDown size={18} /> Imprimir Guia
+              <FileDown size={18} /> Baixar PDF / Imprimir Guia
             </button>
-            <button className="flex-1 bg-white border border-gray-200 text-gray-700 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-3">
-              <FileText size={18} /> Exportar CSV
+            <button
+              onClick={() => window.print()}
+              className="flex-1 bg-gray-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all flex items-center justify-center gap-3"
+            >
+              <Printer size={18} /> Imprimir na Impressora
             </button>
           </div>
         </div>
