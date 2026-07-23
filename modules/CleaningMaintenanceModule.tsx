@@ -42,6 +42,7 @@ import MaintenanceScheduler from '../components/MaintenanceScheduler';
 import PreventiveMaintenancePlan from '../components/PreventiveMaintenancePlan';
 import CleaningOccurrences from '../components/CleaningOccurrences';
 import CleaningWorkPlan from '../components/CleaningWorkPlan';
+import MaintenanceDashboard from '../components/MaintenanceDashboard';
 
 const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
   { id: 'env-1', name: 'SALAS DE AULA', category: 'SALA_AULA', complianceRate: 100 },
@@ -130,7 +131,7 @@ const DETAILED_PROTOCOLS: Record<string, Record<CleaningFrequency, string[]>> = 
 import { supabase } from '../supabaseClient';
 
 const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tasks' | 'team' | 'predial' | 'kitchen' | 'ppe' | 'materials' | 'protocol_official' | 'scheduler' | 'preventive_plan' | 'occurrences' | 'work_plan'>('scheduler');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'tasks' | 'team' | 'predial' | 'kitchen' | 'ppe' | 'materials' | 'protocol_official' | 'scheduler' | 'preventive_plan' | 'occurrences' | 'work_plan'>('dashboard');
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
@@ -342,6 +343,7 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
           </h1>
         </div>
         <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><LayoutDashboard size={18} className="shrink-0" /> <span className="truncate">Painel Geral</span></button>
           <button onClick={() => setActiveTab('protocol_official')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'protocol_official' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><BookOpen size={18} className="shrink-0" /> <span className="truncate">Protocolo Manual</span></button>
           <button onClick={() => setActiveTab('preventive_plan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'preventive_plan' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><ShieldCheck size={18} className="shrink-0" /> <span className="truncate">Plano SEDUC</span></button>
 
@@ -389,6 +391,7 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
         </header>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar min-w-0">
+          {activeTab === 'dashboard' && <MaintenanceDashboard employees={employees} onNavigateToPlan={() => setActiveTab('preventive_plan')} />}
           {activeTab === 'protocol_official' && <CleaningOfficialManual />}
           {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
 
