@@ -28,7 +28,8 @@ import {
   ChevronUp,
   TrendingUp,
   Check,
-  Table2
+  Table2,
+  Printer
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Asset, AssetCondition } from '../types';
@@ -744,6 +745,162 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
+  const printQRCodeLabel = (location: string) => {
+    const svg = document.getElementById(`qr-${location}`);
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Etiqueta de Ambiente - ${location}</title>
+          <style>
+            @page {
+              size: A5 landscape;
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+              background-color: #f8fafc;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+            }
+            .label-card {
+              width: 180mm;
+              height: 120mm;
+              background: white;
+              border: 4px solid #1e3a8a;
+              border-radius: 20px;
+              box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+              padding: 24px;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              align-items: center;
+              position: relative;
+              overflow: hidden;
+            }
+            .header-accent {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 10px;
+              background: linear-gradient(90deg, #1e3a8a, #2563eb);
+            }
+            .header {
+              text-align: center;
+              margin-top: 8px;
+            }
+            .school-name {
+              font-size: 14px;
+              font-weight: 800;
+              color: #1e3a8a;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin: 0;
+            }
+            .system-title {
+              font-size: 9px;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 1.5px;
+              margin: 4px 0 0 0;
+            }
+            .qr-container {
+              padding: 10px;
+              background: white;
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .qr-container svg {
+              width: 130px;
+              height: 130px;
+            }
+            .location-title {
+              font-size: 22px;
+              font-weight: 900;
+              color: #0f172a;
+              text-transform: uppercase;
+              margin: 0;
+              letter-spacing: 0.5px;
+              text-align: center;
+            }
+            .instruction {
+              font-size: 9px;
+              font-weight: 600;
+              color: #475569;
+              text-align: center;
+              max-width: 320px;
+              margin: 0;
+              line-height: 1.4;
+            }
+            .footer {
+              font-size: 8px;
+              font-weight: 700;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 2px;
+            }
+            @media print {
+              body {
+                background-color: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .label-card {
+                box-shadow: none;
+                border-width: 4px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label-card">
+            <div class="header-accent"></div>
+            <div class="header">
+              <p class="school-name">Escola Estadual André Antonio Maggi</p>
+              <p class="system-title">Controle Patrimonial & Zeladoria</p>
+            </div>
+            
+            <div class="qr-container">
+              ${svgData}
+            </div>
+            
+            <h2 class="location-title">${location}</h2>
+            
+            <p class="instruction">
+              Escaneie este QR Code para consultar o inventário deste ambiente ou registrar uma ocorrência de manutenção predial.
+            </p>
+            
+            <div class="footer">
+              Portal de Gestão Escolar EEAM
+            </div>
+          </div>
+          <script>
+            window.onload = () => {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const getPortariaText = () => {
     const p = schedule.commissionMembers.president;
     const s = schedule.commissionMembers.secretary;
@@ -1136,19 +1293,27 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           )}
                         </div>
 
-                        <div className="w-full grid grid-cols-1 gap-3">
+                        <div className="w-full space-y-2">
                           <button
-                            onClick={() => downloadQRCode(loc)}
-                            className="w-full py-4 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg"
+                            onClick={() => printQRCodeLabel(loc)}
+                            className="w-full py-3.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg"
                           >
-                            <Download size={14} /> Baixar Etiqueta QR
+                            <Printer size={14} /> Imprimir Etiqueta QR
                           </button>
-                          <button
-                            onClick={() => { setLocationFilter(loc); setActiveTab('inventory'); }}
-                            className="w-full py-4 bg-blue-50 text-blue-700 rounded-2xl text-[10px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
-                          >
-                            <Search size={14} /> Abrir Inventário
-                          </button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => downloadQRCode(loc)}
+                              className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-all"
+                            >
+                              <Download size={12} /> Salvar Imagem
+                            </button>
+                            <button
+                              onClick={() => { setLocationFilter(loc); setActiveTab('inventory'); }}
+                              className="w-full py-3 bg-blue-50 text-blue-700 rounded-xl text-[9px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all flex items-center justify-center gap-1.5"
+                            >
+                              <Search size={12} /> Inventário
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
