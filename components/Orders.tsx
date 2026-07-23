@@ -25,7 +25,8 @@ import {
   PackageSearch,
   Check,
   X,
-  Save
+  Save,
+  Printer
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { Contract, Order, ContractStatus } from '../types';
@@ -157,38 +158,41 @@ const Orders: React.FC = () => {
         items: pdfItems
       });
 
-      // 3. Wait for Render and Print
-      setTimeout(async () => {
-        const element = document.getElementById('hidden-printable-area');
-        if (element) {
-          // Temporarily make it visible for html2pdf if needed, or just standard hidden rendering
-          // html2pdf usually works on hidden elements if display is not none, but visibility hidden or off-screen.
-          // But 'pdf-hidden' class usually handles this.
-
-          const blob = await (window as any).html2pdf().set({
-            margin: [8, 8, 8, 8],
-            filename: `Guia_Pedido_Merenda_${order.orderNumber}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', '.signature-container'] }
-          }).from(element).output('blob');
-
-          const blobUrl = URL.createObjectURL(blob);
-          const newWindow = window.open(blobUrl, '_blank');
-          if (!newWindow) {
-            alert("Bloqueador de pop-ups ativo! Por favor, ative os pop-ups para abrir a guia.");
-          }
-
-          setPdfData(null); // Clear after download
-        }
+      // 3. Abrir caixa de impressão do navegador
+      setTimeout(() => {
+        window.print();
         setIsProcessing(false);
-      }, 500);
+      }, 400);
 
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Erro ao gerar PDF.");
       setIsProcessing(false);
+    }
+  };
+
+  const handlePrintCurrentGuide = () => {
+    window.print();
+  };
+
+  const handleDownloadCurrentGuidePdf = async () => {
+    const element = document.getElementById('printable-area');
+    if (element) {
+      setIsProcessing(true);
+      try {
+        await (window as any).html2pdf().set({
+          margin: [8, 8, 8, 8],
+          filename: `Guia_Pedido_Merenda_${nextOrderNumber || 'Atual'}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', '.signature-container'] }
+        }).from(element).save();
+      } catch (e) {
+        console.error("Erro ao baixar PDF:", e);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -625,21 +629,12 @@ const Orders: React.FC = () => {
         date: new Date().toISOString()
       }]);
 
-      // 4. Generate PDF
-      const element = document.getElementById('printable-area');
-      if (element) {
-        // @ts-ignore
-        await (window as any).html2pdf().set({
-          margin: [8, 8, 8, 8],
-          filename: `Guia_Pedido_Merenda_${finalOrderNumber}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', '.signature-container'] }
-        }).from(element).save();
-      }
+      // 4. Trigger print modal (allows user to choose between printing or saving as PDF)
+      setTimeout(() => {
+        window.print();
+      }, 400);
 
-      alert("Pedido finalizado com sucesso!");
+      alert(`Pedido #${finalOrderNumber} finalizado com sucesso! A caixa de impressão foi aberta.`);
 
       // Refresh data
       await fetchData();
@@ -789,6 +784,30 @@ const Orders: React.FC = () => {
                   className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none h-[54px]"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 no-print bg-emerald-50/80 p-4 rounded-2xl border border-emerald-100 mb-2">
+            <div className="flex items-center gap-2">
+              <Printer className="text-emerald-600" size={18} />
+              <span className="text-xs font-black uppercase text-emerald-900">Guia de Pedido de Gêneros</span>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handlePrintCurrentGuide}
+                className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+              >
+                <Printer size={14} /> Abrir Caixa de Impressão (Imprimir / Salvar PDF)
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadCurrentGuidePdf}
+                disabled={isProcessing}
+                className="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50 active:scale-95"
+              >
+                <FileDown size={14} /> Baixar PDF Direto
+              </button>
             </div>
           </div>
 
@@ -1026,6 +1045,7 @@ const Orders: React.FC = () => {
           .pdf-show { display: block !important; }
           .printable-guide { border: none !important; box-shadow: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
           body { background: white !important; }
+          .print-history-area { position: static !important; top: 0 !important; left: 0 !important; width: 100% !important; display: block !important; }
         }
         tr, tfoot, thead {
           page-break-inside: avoid !important;
@@ -1040,7 +1060,7 @@ const Orders: React.FC = () => {
       {/* HIDDEN PRINTABLE AREA FOR HISTORY PDFS */}
       {
         pdfData && (
-          <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
+          <div className="print-history-area" style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
             <div id="hidden-printable-area" className="bg-white p-12 rounded-[2.5rem] border border-gray-200 shadow-2xl max-w-5xl mx-auto printable-guide relative">
               <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
                 <div className="flex items-center justify-start flex-1">

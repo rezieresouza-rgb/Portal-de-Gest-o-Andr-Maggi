@@ -13,7 +13,8 @@ import {
   PackageCheck,
   FileDown,
   Lock,
-  Loader2
+  Loader2,
+  Printer
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { Order } from '../types';
@@ -98,11 +99,12 @@ const OrderHistory: React.FC = () => {
           const { error: itemsError } = await supabase.from('order_items').delete().eq('order_id', id);
           if (itemsError) throw itemsError;
 
-          const { error } = await supabase.from('orders').delete().eq('id', id);
-          if (error) throw error;
+          const { error: orderError } = await supabase.from('orders').delete().eq('id', id);
+          if (orderError) throw orderError;
 
           setHistory(prev => prev.filter(o => o.id !== id));
-          if (selectedOrderId === id) setSelectedOrderId(null);
+          setSelectedOrderId(null);
+          alert("Pedido excluído com sucesso!");
         } catch (error) {
           console.error("Erro ao excluir pedido:", error);
           alert("Erro ao excluir pedido.");
@@ -123,14 +125,23 @@ const OrderHistory: React.FC = () => {
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao histórico
           </button>
 
-          <button
-            onClick={(e) => deleteOrder(selectedOrder.id, e)}
-            className={`flex items-center gap-2 font-black uppercase text-[10px] tracking-widest px-4 py-2 rounded-xl transition-all ${isSystemLocked ? 'text-gray-300 cursor-not-allowed' : 'text-red-500 hover:bg-red-50'
-              }`}
-          >
-            {isSystemLocked ? <Lock size={14} /> : <Trash2 size={14} />}
-            Excluir Registro Permanente
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 font-black uppercase text-[10px] tracking-widest px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all"
+            >
+              <Printer size={14} /> Imprimir / Salvar PDF
+            </button>
+
+            <button
+              onClick={(e) => deleteOrder(selectedOrder.id, e)}
+              className={`flex items-center gap-2 font-black uppercase text-[10px] tracking-widest px-4 py-2 rounded-xl transition-all ${isSystemLocked ? 'text-gray-300 cursor-not-allowed' : 'text-red-500 hover:bg-red-50'
+                }`}
+            >
+              {isSystemLocked ? <Lock size={14} /> : <Trash2 size={14} />}
+              Excluir Registro Permanente
+            </button>
+          </div>
         </div>
 
         <div className="bg-white p-10 md:p-12 rounded-[2.5rem] border border-gray-100 shadow-xl max-w-4xl mx-auto print:shadow-none print:border-none print:p-0 print:m-0 print-container">
