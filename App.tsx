@@ -18,6 +18,7 @@ import TrainingModule from './modules/TrainingModule';
 import Settings from './components/Settings';
 import Hub from './components/Hub';
 import Login from './components/Login';
+import PublicEnvironmentView from './components/PublicEnvironmentView';
 import { User } from './types';
 import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
@@ -96,22 +97,26 @@ const App: React.FC = () => {
     };
   }, [user, logout]);
 
+  const [publicLocation, setPublicLocation] = useState<string | null>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('location') || params.get('public_ambiente') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
   // Escuta query parameters para ler redirecionamentos de QR Code
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const queryLocation = params.get('location');
+      const queryLocation = params.get('location') || params.get('public_ambiente');
       const queryPatrimonio = params.get('patrimonio');
-      if (queryLocation || queryPatrimonio) {
-        if (queryLocation) {
-          localStorage.setItem('qr_location_filter', queryLocation);
-        }
-        if (queryPatrimonio) {
-          localStorage.setItem('qr_patrimonio_filter', queryPatrimonio);
-        }
+      if (queryLocation) {
+        setPublicLocation(queryLocation);
+      } else if (queryPatrimonio) {
+        localStorage.setItem('qr_patrimonio_filter', queryPatrimonio);
         setActiveModule('patrimonio');
-        // Limpar parâmetros da URL para manter a barra limpa
-        window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
       }
     } catch (e) {
       console.error("Erro ao ler QR Code da URL:", e);
@@ -193,6 +198,24 @@ const App: React.FC = () => {
       setActiveModule(module);
     });
   };
+
+  if (publicLocation) {
+    return (
+      <ErrorBoundary>
+        <PublicEnvironmentView
+          location={publicLocation}
+          user={user}
+          onClose={() => setPublicLocation(null)}
+          onOpenLogin={() => setPublicLocation(null)}
+          onNavigateToModule={() => {
+            localStorage.setItem('qr_location_filter', publicLocation);
+            setActiveModule('patrimonio');
+            setPublicLocation(null);
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
 
   if (!user) {
     return (

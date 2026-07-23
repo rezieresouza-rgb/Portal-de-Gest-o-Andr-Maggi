@@ -107,6 +107,14 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['teacher', 'scheduling'].includes(mod.id);
     }
 
+    // Restrição específica para o servidor Genivaldo conforme solicitado (Manutenção, Formação e Patrimônio)
+    const isGenivaldo = user.name?.toUpperCase().includes('GENIVALDO') || 
+                        user.login?.toUpperCase().includes('GENIVALDO');
+    
+    if (isGenivaldo) {
+      return ['limpeza', 'training', 'patrimonio'].includes(mod.id);
+    }
+
     const isDanubia = user.name?.toUpperCase().includes('DANUBIA') || 
                       user.name?.toUpperCase().includes('DANÚBIA') ||
                       user.login?.toUpperCase().includes('DANUBIA');

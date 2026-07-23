@@ -543,7 +543,7 @@ export const AssetProcessesManager: React.FC<AssetProcessesManagerProps> = ({ us
               setorDestino: r['SETOR DESTINO'] || '',
               observacao: r['OBSERVAÇÃO'] || r['OBSERVACOES'] || '',
               quemLancou: r['Nome de quem lancou'] || r['Nome de quem lançou'] || 'Importação Excel',
-              status: 'EM_ANDAMENTO'
+              status: (r['STATUS'] || r['SITUAÇÃO'] || 'EM_ANDAMENTO') as 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO'
             })).filter(item => item.processo && item.processo !== 'PROCESSOS');
 
             if (parsedGerais.length > 0) {

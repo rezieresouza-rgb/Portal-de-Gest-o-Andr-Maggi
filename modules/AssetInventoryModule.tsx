@@ -1328,6 +1328,12 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           >
                             <Printer size={14} /> Imprimir Etiqueta QR
                           </button>
+                          <button
+                            onClick={() => window.open(`/?location=${encodeURIComponent(loc)}`, '_blank')}
+                            className="w-full py-3 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                          >
+                            <FileText size={12} /> Abrir Página Pública / PDF
+                          </button>
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               onClick={() => downloadQRCode(loc)}
@@ -3311,7 +3317,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         </div>
                       </div>
                       <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100">
-                        <QRCodeSVG value={`patrimonio://local/${form.location}`} size={48} />
+                        <QRCodeSVG value={`${window.location.origin}/?location=${encodeURIComponent(form.location)}`} size={48} />
                       </div>
                     </div>
                   )}
