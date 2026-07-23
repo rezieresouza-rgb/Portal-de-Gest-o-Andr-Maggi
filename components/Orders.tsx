@@ -960,7 +960,7 @@ const Orders: React.FC = () => {
         </div>
       ) : (
         /* ABA DE HISTÓRICO */
-        <div className="space-y-6">
+        <div className="space-y-6 no-print">
           <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
@@ -1040,12 +1040,42 @@ const Orders: React.FC = () => {
 
       <style>{`
         .pdf-show { display: none; }
-        @media print, .pdf-mode {
-          .no-print { display: none !important; }
-          .pdf-show { display: block !important; }
-          .printable-guide { border: none !important; box-shadow: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-          body { background: white !important; }
-          .print-history-area { position: static !important; top: 0 !important; left: 0 !important; width: 100% !important; display: block !important; }
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-area, #printable-area *,
+          #hidden-printable-area, #hidden-printable-area * {
+            visibility: visible !important;
+          }
+          #printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          #hidden-printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .pdf-show {
+            display: block !important;
+          }
         }
         tr, tfoot, thead {
           page-break-inside: avoid !important;
