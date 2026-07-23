@@ -137,26 +137,70 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
     }
   };
 
+const parseSafeIsoDate = (dateStr?: string | null): string => {
+  if (!dateStr || !dateStr.trim()) {
+    return new Date().toISOString();
+  }
+  const cleanStr = dateStr.trim();
+
+  // YYYY-MM-DD format (standard html date input)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
+    const d = new Date(`${cleanStr}T12:00:00`);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+
+  // DD/MM/YYYY format
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(cleanStr)) {
+    const [day, month, year] = cleanStr.split('/');
+    const d = new Date(`${year}-${month}-${day}T12:00:00`);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+
+  const fallback = new Date(cleanStr);
+  if (!isNaN(fallback.getTime())) {
+    return fallback.toISOString();
+  }
+
+  return new Date().toISOString();
+};
+
+const getTodayYmd = () => {
+  try {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    return new Date().toISOString().split('T')[0];
+  }
+};
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newOcc.reported_by || !newOcc.location || !newOcc.description || !newOcc.reported_at) {
+    if (!newOcc.reported_by || !newOcc.location || !newOcc.description) {
       alert("Preencha todos os campos obrigatórios.");
       return;
     }
 
     try {
+      const safeReportedAt = parseSafeIsoDate(newOcc.reported_at);
+      const safeResolvedAt = newOcc.status === 'RESOLVIDO' 
+        ? parseSafeIsoDate(resolvedAtInput || new Date().toISOString())
+        : null;
+
+      const payload: any = {
+        reported_by: newOcc.reported_by,
+        location: newOcc.location,
+        description: newOcc.description,
+        category: newOcc.category || 'OUTROS',
+        status: newOcc.status || 'PENDENTE',
+        reported_at: safeReportedAt,
+        resolved_at: safeResolvedAt
+      };
+
       if (editingOcc) {
         // Atualiza a ocorrência existente
-        const payload: any = {
-          reported_by: newOcc.reported_by,
-          location: newOcc.location,
-          description: newOcc.description,
-          category: newOcc.category,
-          status: newOcc.status,
-          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString(),
-          resolved_at: newOcc.status === 'RESOLVIDO' ? (resolvedAtInput ? new Date(resolvedAtInput + 'T12:00:00').toISOString() : new Date().toISOString()) : null
-        };
-
         const { error } = await supabase
           .from('cleaning_occurrences')
           .update(payload)
@@ -164,26 +208,18 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
 
         if (error) {
           if (error.code === '23514') {
-            alert("Aviso: O status 'AGENDADA' não está habilitado no banco de dados do seu Supabase. Entre em contato com o suporte ou execute o script SQL correspondente.");
+            alert("Aviso: O status 'AGENDADA' não está habilitado no banco de dados. Altere para PENDENTE ou EM ANDAMENTO.");
             return;
           }
           throw error;
         }
       } else {
         // Insere nova ocorrência
-        const { error } = await supabase.from('cleaning_occurrences').insert([{
-          reported_by: newOcc.reported_by,
-          location: newOcc.location,
-          description: newOcc.description,
-          category: newOcc.category,
-          status: newOcc.status,
-          reported_at: new Date(newOcc.reported_at + 'T12:00:00').toISOString(),
-          resolved_at: newOcc.status === 'RESOLVIDO' ? new Date().toISOString() : null
-        }]);
+        const { error } = await supabase.from('cleaning_occurrences').insert([payload]);
 
         if (error) {
           if (error.code === '23514') {
-            alert("Aviso: O status 'AGENDADA' não está habilitado no banco de dados do seu Supabase. Entre em contato com o suporte ou execute o script SQL correspondente.");
+            alert("Aviso: O status 'AGENDADA' não está habilitado no banco de dados. Altere para PENDENTE ou EM ANDAMENTO.");
             return;
           }
           throw error;
@@ -196,15 +232,15 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
         description: '', 
         category: 'OUTROS',
         status: 'PENDENTE',
-        reported_at: new Date().toLocaleDateString('sv-SE')
+        reported_at: getTodayYmd()
       });
       setResolvedAtInput('');
       setEditingOcc(null);
       setIsModalOpen(false);
       fetchOccurrences();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao registrar ocorrência:", error);
-      alert("Erro ao registrar. Verifique se a tabela foi criada no banco de dados.");
+      alert("Erro ao registrar ocorrência: " + (error?.message || "Verifique os dados informados e a conexão."));
     }
   };
 
