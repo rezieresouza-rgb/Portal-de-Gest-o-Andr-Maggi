@@ -1044,9 +1044,33 @@ const Orders: React.FC = () => {
           body * {
             visibility: hidden !important;
           }
+          .print-history-area, .print-history-area *,
+          .print-container, .print-container *,
           #printable-area, #printable-area *,
           #hidden-printable-area, #hidden-printable-area * {
             visibility: visible !important;
+          }
+          .print-history-area {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            z-index: 99999 !important;
+          }
+          .print-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
           }
           #printable-area {
             position: absolute !important;
@@ -1060,9 +1084,7 @@ const Orders: React.FC = () => {
             background: white !important;
           }
           #hidden-printable-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;

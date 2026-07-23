@@ -237,13 +237,26 @@ const OrderHistory: React.FC = () => {
         <style>{`
           .pdf-signature-row { display: none; }
           @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            .print-container, .print-container * {
+              visibility: visible !important;
+            }
             .print-container {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
               width: 100% !important;
               max-width: none !important;
               padding: 0 !important;
               margin: 0 !important;
               box-shadow: none !important;
               border: none !important;
+              background: white !important;
+            }
+            .no-print {
+              display: none !important;
             }
             .pdf-signature-row { display: grid !important; }
             body, html { height: auto !important; }
