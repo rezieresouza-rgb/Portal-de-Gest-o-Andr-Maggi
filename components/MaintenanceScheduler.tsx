@@ -1306,7 +1306,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                 <div id="history-report-print" className="bg-white p-8 font-sans w-[210mm]">
                     <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
                         <h1 className="text-2xl font-bold uppercase text-gray-900">Relatório de Histórico de Lançamentos</h1>
-                        <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual André Maggi</p>
+                        <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual Cívico-Militar André Antônio Maggi</p>
                         <p className="text-xs text-gray-500 mt-2 font-bold bg-gray-100 inline-block px-3 py-1 rounded">Referência: {reportPeriod}</p>
                     </div>
                     <table className="w-full text-left text-[9px] border-collapse">
@@ -1367,7 +1367,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                          filterFrequency === 'TRIMESTRAL' ? 'Relatório Trimestral de Manutenção' :
                          'Relatório Geral de Manutenção'}
                     </h1>
-                    <p className="text-sm text-gray-600 uppercase">Escola Estadual André Maggi</p>
+                    <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual Cívico-Militar André Antônio Maggi</p>
                     <p className="text-xs text-gray-500 mt-2">Referência: {reportPeriod}</p>
                 </div>
 
@@ -1488,7 +1488,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                         <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4 mb-4">
                             <div>
                                 <h1 className="text-base font-black uppercase tracking-tight">Planilha de Controle de Higienização de Sanitários</h1>
-                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-0.5">Escola Estadual André Maggi | Manutenção</p>
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi | Manutenção</p>
                             </div>
                             <div className="text-right text-[8px] font-black uppercase">
                                 <p className="text-indigo-600 font-black">Zeladoria e Limpeza</p>
@@ -1560,7 +1560,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                     <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4 mb-4">
                         <div>
                             <h1 className="text-lg font-black uppercase tracking-tight">Checklist de Rotina de Zeladoria e Manutenção</h1>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">Escola Estadual André Maggi</p>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</p>
                         </div>
                         <div className="text-right text-[10px] font-black uppercase">
                             <p className="text-indigo-600 font-black">MURAL DE AFIXAÇÃO</p>

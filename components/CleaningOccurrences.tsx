@@ -307,7 +307,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
           <div className="hidden print:block">
             <h2 className="text-xl font-black text-gray-900 uppercase">Relatório de Ocorrências de Manutenção</h2>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-              Escola Estadual André Antônio Maggi - {viewMode === 'HISTORICO' ? 'Histórico de Resolvidos' : 'Ocorrências Ativas'}
+              Escola Estadual Cívico-Militar André Antônio Maggi - {viewMode === 'HISTORICO' ? 'Histórico de Resolvidos' : 'Ocorrências Ativas'}
             </p>
           </div>
         </div>
@@ -482,7 +482,7 @@ const CleaningOccurrences: React.FC<CleaningOccurrencesProps> = ({ employees, en
       <div id="occurrences-report" className="hidden w-full bg-white p-8">
         <div className="text-center border-b-2 border-black pb-6 mb-8">
           <h1 className="text-2xl font-black uppercase mb-2">Relatório de Ocorrências de Manutenção</h1>
-          <p className="text-base font-bold uppercase">Escola Estadual André Antônio Maggi</p>
+          <p className="text-base font-bold uppercase">Escola Estadual Cívico-Militar André Antônio Maggi</p>
           <p className="text-xs uppercase text-gray-600 mt-2">
             Status: {viewMode === 'HISTORICO' ? 'HISTÓRICO DE RESOLVIDOS' : 'OCORRÊNCIAS ATIVAS'}
           </p>

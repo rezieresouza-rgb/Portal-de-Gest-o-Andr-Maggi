@@ -2081,7 +2081,7 @@ const Contracts: React.FC = () => {
               <div className="flex items-center gap-6">
                 <img src="/logo-escola.png" alt="Logo Escola" className="w-24 h-auto" />
                 <div>
-                  <h2 className="text-lg font-black uppercase tracking-tight">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</h2>
+                  <h2 className="text-lg font-black uppercase tracking-tight">ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI</h2>
                   <p className="text-[9px] font-black text-gray-600 uppercase">CDCE DA ESC. EST. DE ENS. FUN. ANDRÉ A. MAGGI</p>
                   <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">CNPJ: 11.906.357/0001-50</p>
                   <p className="text-[8px] font-medium text-gray-400 uppercase mt-0.5">Avenida Borba Gato, nº 80, Colíder-MT - CEP 78500-000</p>
@@ -2147,7 +2147,7 @@ const Contracts: React.FC = () => {
                   <p className="text-[8px] font-bold text-gray-400 uppercase">Entregue por (Fornecedor)</p>
                 </div>
                 <div className="text-center pt-8 border-t border-gray-400">
-                  <p className="text-[10px] font-black uppercase">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</p>
+                  <p className="text-[10px] font-black uppercase">ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI</p>
                   <p className="text-[8px] font-bold text-gray-400 uppercase">Recebido por (Fiel Almocharife)</p>
                 </div>
               </div>
@@ -2282,7 +2282,7 @@ const Contracts: React.FC = () => {
               <div className="flex items-center gap-6">
                 <img src="/logo-escola.png" alt="Logo Escola" className="w-24 h-auto" />
                 <div>
-                  <h2 className="text-lg font-black uppercase tracking-tight">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</h2>
+                  <h2 className="text-lg font-black uppercase tracking-tight">ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI</h2>
                   <p className="text-[9px] font-black text-gray-600 uppercase">CDCE DA ESC. EST. DE ENS. FUN. ANDRÉ A. MAGGI</p>
                   <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">CNPJ: 11.906.357/0001-50</p>
                   <p className="text-[8px] font-medium text-gray-400 uppercase mt-0.5">Avenida Borba Gato, nº 80, Colíder-MT - CEP 78500-000</p>
@@ -2380,7 +2380,7 @@ const Contracts: React.FC = () => {
                   <p className="text-[8px] font-bold text-gray-400 uppercase">Representante Legal (Fornecedor)</p>
                 </div>
                 <div className="text-center pt-8 border-t border-gray-400">
-                  <p className="text-[10px] font-black uppercase">ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI</p>
+                  <p className="text-[10px] font-black uppercase">ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI</p>
                   <p className="text-[8px] font-bold text-gray-400 uppercase">Gestor Escolar / CDCE</p>
                 </div>
               </div>

@@ -354,7 +354,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
   const [headerUG, setHeaderUG] = useState('SEDUC/MT');
   const [headerCodUG, setHeaderCodUG] = useState('14101');
-  const [headerUA, setHeaderUA] = useState('E.E. ANDRÉ ANTONIO MAGGI');
+  const [headerUA, setHeaderUA] = useState('E.E. CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI');
   const [headerCodUA, setHeaderCodUA] = useState('');
   const [headerMunicipio, setHeaderMunicipio] = useState('LUCAS DO RIO VERDE');
   const [headerCodUL, setHeaderCodUL] = useState('');
@@ -796,11 +796,27 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
               background: linear-gradient(90deg, #1e3a8a, #2563eb);
             }
             .header {
+              width: 100%;
+              margin-top: 4px;
+            }
+            .logo-container {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              width: 100%;
+              gap: 12px;
+            }
+            .header-logo {
+              height: 36px;
+              width: auto;
+              object-fit: contain;
+            }
+            .header-text {
+              flex: 1;
               text-align: center;
-              margin-top: 8px;
             }
             .school-name {
-              font-size: 14px;
+              font-size: 11px;
               font-weight: 800;
               color: #1e3a8a;
               text-transform: uppercase;
@@ -808,12 +824,12 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
               margin: 0;
             }
             .system-title {
-              font-size: 9px;
+              font-size: 8px;
               font-weight: 700;
               color: #64748b;
               text-transform: uppercase;
-              letter-spacing: 1.5px;
-              margin: 4px 0 0 0;
+              letter-spacing: 1px;
+              margin: 2px 0 0 0;
             }
             .qr-container {
               padding: 10px;
@@ -871,8 +887,14 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           <div class="label-card">
             <div class="header-accent"></div>
             <div class="header">
-              <p class="school-name">Escola Estadual André Antonio Maggi</p>
-              <p class="system-title">Controle Patrimonial & Zeladoria</p>
+              <div class="logo-container">
+                <img src="/brasao_mt.png" alt="MT" class="header-logo" />
+                <div class="header-text">
+                  <p class="school-name">Escola Estadual Cívico-Militar André Antônio Maggi</p>
+                  <p class="system-title">Controle Patrimonial & Zeladoria</p>
+                </div>
+                <img src="/logo-escola-oficial.png" alt="Escola" class="header-logo" />
+              </div>
             </div>
             
             <div class="qr-container">
@@ -913,7 +935,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
         </div>
 
         <p className="mt-6">
-          O Gestor Escolar da <strong>Escola Estadual André Antonio Maggi</strong>, no uso de suas atribuições legais e em conformidade com o Decreto Estadual nº 194/2015 e a Instrução Normativa nº 03/2015/SEGES-MT, que disciplinam os procedimentos relativos à gestão e inventário de bens móveis e imóveis das unidades do Poder Executivo de Mato Grosso,
+          O Gestor Escolar da <strong>Escola Estadual Cívico-Militar André Antônio Maggi</strong>, no uso de suas atribuições legais e em conformidade com o Decreto Estadual nº 194/2015 e a Instrução Normativa nº 03/2015/SEGES-MT, que disciplinam os procedimentos relativos à gestão e inventário de bens móveis e imóveis das unidades do Poder Executivo de Mato Grosso,
         </p>
 
         <p className="font-bold">RESOLVE:</p>
@@ -958,7 +980,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
         </div>
 
         <p className="mt-6">
-          Aos {new Date(schedule.startDate + 'T00:00:00').getDate()} dias do mês de {new Date(schedule.startDate + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'long' })} de {schedule.year}, na Escola Estadual André Antonio Maggi, em consonância com a Portaria de Designação nº 0{schedule.year % 100}/{schedule.year} - EEAM, reuniram-se os membros da comissão nomeada sob a presidência de {p.name || '___________'} para dar início formal aos trabalhos de levantamento físico patrimonial de bens permanentes móveis e imóveis desta escola.
+          Aos {new Date(schedule.startDate + 'T00:00:00').getDate()} dias do mês de {new Date(schedule.startDate + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'long' })} de {schedule.year}, na Escola Estadual Cívico-Militar André Antônio Maggi, em consonância com a Portaria de Designação nº 0{schedule.year % 100}/{schedule.year} - EEAM, reuniram-se os membros da comissão nomeada sob a presidência de {p.name || '___________'} para dar início formal aos trabalhos de levantamento físico patrimonial de bens permanentes móveis e imóveis desta escola.
         </p>
 
         <p>
@@ -1106,7 +1128,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
         <div className="text-left text-xs font-semibold text-gray-700 space-y-1">
           <p>Rede Estadual de Ensino – Mato Grosso</p>
           <p>Setor de Patrimônio</p>
-          <p>Unidade Escolar: <span className="font-bold text-gray-900 border-b border-gray-300 pb-0.5 px-2">Escola Estadual André Antonio Maggi</span></p>
+          <p>Unidade Escolar: <span className="font-bold text-gray-900 border-b border-gray-300 pb-0.5 px-2">Escola Estadual Cívico-Militar André Antônio Maggi</span></p>
           <p>Subcomissão: <span className="font-bold text-gray-900 border-b border-gray-300 pb-0.5 px-2">{subcomissao || 'Não definida'}</span></p>
         </div>
 
@@ -1894,7 +1916,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         {/* Header */}
                         <div className="border-b-4 border-blue-900 pb-6 flex items-center justify-between">
                           <div className="space-y-1">
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Escola Estadual André Antonio Maggi</h1>
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Escola Estadual Cívico-Militar André Antônio Maggi</h1>
                             <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Secretaria de Estado de Educação de Mato Grosso</p>
                             <p className="text-[10px] text-gray-400 font-bold uppercase">Relatório Oficial de Inventário de Bens Móveis</p>
                           </div>
@@ -3375,7 +3397,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   <div className="text-center border-b-2 border-double border-gray-400 pb-4 mb-6 font-sans">
                     <h1 className="text-base font-bold uppercase tracking-tight text-gray-900">Estado de Mato Grosso</h1>
                     <h2 className="text-sm font-bold uppercase text-gray-700">Secretaria de Estado de Educação</h2>
-                    <h3 className="text-xs font-bold uppercase text-gray-500">Escola Estadual André Antonio Maggi</h3>
+                    <h3 className="text-xs font-bold uppercase text-gray-500">Escola Estadual Cívico-Militar André Antônio Maggi</h3>
                     <p className="text-[8px] text-gray-400 font-bold mt-1">Cód. U.O. 22201 - André Maggi / MT - CEP: 78530-000</p>
                   </div>
 

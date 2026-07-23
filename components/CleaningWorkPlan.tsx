@@ -558,7 +558,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                         <h1 className="text-xl font-black uppercase text-gray-900">
                             {selectedEmployeeName === 'TODOS' ? 'Plano de Trabalho Geral' : 'Plano de Trabalho Individual'}
                         </h1>
-                        <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual André Maggi</p>
+                        <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual Cívico-Militar André Antônio Maggi</p>
                     </div>
 
                     <div className="bg-gray-100 p-4 rounded-xl border border-gray-300 mb-8">

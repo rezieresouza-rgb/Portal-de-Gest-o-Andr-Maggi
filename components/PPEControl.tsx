@@ -366,13 +366,13 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
                       <div className="p-12 space-y-6 text-gray-900 font-sans text-sm leading-relaxed max-w-4xl mx-auto">
                         <div className="text-center border-b-2 border-black pb-6 mb-8">
                           <h1 className="text-2xl font-black uppercase mb-2">Termo de Responsabilidade e Recibo de EPI</h1>
-                          <p className="text-base font-bold uppercase">Escola Estadual André Antônio Maggi</p>
+                          <p className="text-base font-bold uppercase">Escola Estadual Cívico-Militar André Antônio Maggi</p>
                           <p className="text-xs uppercase text-gray-600">Ministério do Trabalho e Emprego - NR-06</p>
                         </div>
                         
                         <div className="space-y-4">
                           <p className="text-justify">
-                            Declaramos para os devidos fins que o(a) servidor(a) <strong>{del.employeeName}</strong>, ocupante do cargo/função de <strong>{del.employeeRole}</strong>, recebeu da ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI os Equipamentos de Proteção Individual (EPIs) abaixo especificados, de forma gratuita, adequados ao risco e em perfeito estado de conservação e funcionamento.
+                            Declaramos para os devidos fins que o(a) servidor(a) <strong>{del.employeeName}</strong>, ocupante do cargo/função de <strong>{del.employeeRole}</strong>, recebeu da ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI os Equipamentos de Proteção Individual (EPIs) abaixo especificados, de forma gratuita, adequados ao risco e em perfeito estado de conservação e funcionamento.
                           </p>
                           
                           <div className="my-6">
@@ -467,13 +467,13 @@ const PPEControl: React.FC<PPEControlProps> = ({ employees: staff }) => {
           <div id="ata-printable" className="bg-white p-12 rounded-[3rem] border border-gray-100 shadow-sm print:shadow-none print:border-none font-sans text-gray-950 max-w-4xl mx-auto space-y-8 leading-relaxed text-sm">
             <div className="text-center border-b-2 border-black pb-6">
               <h1 className="text-2xl font-black uppercase mb-2">Ata de Treinamento, Alinhamento e Entrega de EPI</h1>
-              <p className="text-base font-bold uppercase">Escola Estadual André Antônio Maggi</p>
+              <p className="text-base font-bold uppercase">Escola Estadual Cívico-Militar André Antônio Maggi</p>
               <p className="text-xs uppercase text-gray-500">Zeladoria & Conservação Escolar • Ministério do Trabalho - NR-06 / NR-12</p>
             </div>
 
             <div className="space-y-4">
               <p className="text-justify">
-                Aos {ataDateDetails.day} dias do mês de {ataDateDetails.monthName} do ano de {ataDateDetails.year}, às quatorze horas, no auditório da Escola Estadual André Antônio Maggi, reuniu-se a equipe gestora juntamente com os servidores da equipe de Apoio Administrativo Educacional (AAE) lotados na conservação, limpeza e jardinagem. A presente reunião teve por pauta: (i) apresentação detalhada do <strong>Protocolo Operacional de Zeladoria (11 Setores)</strong>; (ii) treinamento técnico sobre o uso adequado, diluição segura de saneantes e higienização diária dos ambientes; e (iii) entrega física do <strong>Kit Padrão de EPI (Limpeza e Jardinagem/Roçagem)</strong> de uso obrigatório, conforme preconiza a Norma Regulamentadora NR-06.
+                Aos {ataDateDetails.day} dias do mês de {ataDateDetails.monthName} do ano de {ataDateDetails.year}, às quatorze horas, no auditório da Escola Estadual Cívico-Militar André Antônio Maggi, reuniu-se a equipe gestora juntamente com os servidores da equipe de Apoio Administrativo Educacional (AAE) lotados na conservação, limpeza e jardinagem. A presente reunião teve por pauta: (i) apresentação detalhada do <strong>Protocolo Operacional de Zeladoria (11 Setores)</strong>; (ii) treinamento técnico sobre o uso adequado, diluição segura de saneantes e higienização diária dos ambientes; e (iii) entrega física do <strong>Kit Padrão de EPI (Limpeza e Jardinagem/Roçagem)</strong> de uso obrigatório, conforme preconiza a Norma Regulamentadora NR-06.
               </p>
               <p className="text-justify">
                 Durante o encontro, foram instruídas as rotinas diárias, semanais, mensais e trimestrais estabelecidas no manual de procedimentos da escola. Foi frisada a obrigatoriedade da guarda e zelo individual de cada item do kit recebido. Os servidores foram cientificados de que o descumprimento do uso dos EPIs fornecidos gratuitamente constitui ato faltoso passível de punições administrativas regulamentadas.

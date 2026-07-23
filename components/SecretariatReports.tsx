@@ -293,7 +293,7 @@ export default function SecretariatReports() {
                 
                 {/* SCHOOL HEADER - ONLY FOR PRINT OR PREVIEW */}
                 <div className="hidden print:flex flex-col items-center justify-center mb-10 text-center border-b-2 border-gray-900 pb-8">
-                    <h1 className="text-2xl font-black uppercase tracking-tighter">Escola Estadual André Antônio Maggi</h1>
+                    <h1 className="text-2xl font-black uppercase tracking-tighter">Escola Estadual Cívico-Militar André Antônio Maggi</h1>
                     <p className="text-xs font-bold uppercase tracking-widest mt-1">Secretaria Acadêmica - Relatório de Alunos</p>
                     <div className="flex gap-10 mt-4 text-[10px] font-black uppercase">
                         <p>Emitido em: {new Date().toLocaleDateString('pt-BR')}</p>
@@ -374,7 +374,7 @@ export default function SecretariatReports() {
                 </div>
 
                 <div className="hidden print:block mt-12 pt-8 border-t border-gray-100 text-[8px] font-black uppercase text-gray-400 text-center tracking-widest">
-                    Escola Estadual André Antônio Maggi - Documento Gerado Via Portal de Gestão
+                    Escola Estadual Cívico-Militar André Antônio Maggi - Documento Gerado Via Portal de Gestão
                 </div>
             </div>
 

@@ -42,7 +42,7 @@ interface ReportData {
 const DEFAULT_DATA: ReportData = {
     referenceYear: new Date().getFullYear(),
     city: 'Colíder-MT',
-    schoolName: 'ESCOLA ESTADUAL ANDRÉ ANTÔNIO MAGGI',
+    schoolName: 'ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
     maintenances: [
         {
             id: '1',

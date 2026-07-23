@@ -164,7 +164,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                   <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-slate-800 tracking-tighter leading-tight">
                      Olá, <button onClick={onProfileOpen} className="text-indigo-600 hover:underline">{(user.name || 'Usuário').split(' ')[0]}</button>.
                   </h1>
-                  <p className="text-slate-500 font-bold uppercase text-[9px] md:text-xs tracking-[0.15em]">Portal de Gestão André Maggi</p>
+                  <p className="text-slate-500 font-bold uppercase text-[9px] md:text-xs tracking-[0.15em]">Portal de Gestão Cívico-Militar André Antônio Maggi</p>
                </div>
 
                <div className="md:hidden no-print">
@@ -345,12 +345,9 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
 
                         {/* CABEÇALHO APENAS PARA PDF (Escondido na tela) */}
                         <div id="pdf-header" className="hidden flex-row items-center gap-4 border-b border-gray-200 pb-4 mb-4">
-                           {/* LOGO PLACEHOLDER */}
-                           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
-                              <Landmark size={32} />
-                           </div>
+                           <img src="/logo-escola.png" alt="Logo" className="w-16 h-16 object-contain" />
                            <div>
-                              <h1 className="text-xl font-bold text-gray-900 uppercase">Escola Estadual André Maggi</h1>
+                              <h1 className="text-xl font-bold text-gray-900 uppercase">Escola Estadual Cívico-Militar André Antônio Maggi</h1>
                               <p className="text-xs text-gray-500 uppercase">Portal de Gestão Escolar - Agenda Semanal</p>
                            </div>
                         </div>
