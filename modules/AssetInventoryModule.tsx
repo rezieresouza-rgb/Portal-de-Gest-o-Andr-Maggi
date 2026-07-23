@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Asset, AssetCondition } from '../types';
+import { AssetProcessesManager } from '../components/AssetProcessesManager';
 
 interface Task {
   id: string;
@@ -157,7 +158,7 @@ interface AssetInventoryModuleProps {
 import { supabase } from '../supabaseClient';
 
 const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes' | 'relatorios' | 'cronograma'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes' | 'relatorios' | 'cronograma' | 'processos'>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState<Asset | null>(null);
@@ -1232,6 +1233,9 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           <button onClick={() => setActiveTab('cronograma')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'cronograma' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <Calendar size={18} /> Cronograma do Processo
           </button>
+          <button onClick={() => setActiveTab('processos')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'processos' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+            <FileText size={18} /> Processos Patrimoniais
+          </button>
         </nav>
         <div className="p-6 border-t border-blue-800">
           <button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
@@ -1277,7 +1281,9 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 w-full">
           <div className="space-y-6">
 
-            {activeTab === 'ambientes' ? (
+            {activeTab === 'processos' ? (
+              <AssetProcessesManager user={user} />
+            ) : activeTab === 'ambientes' ? (
               <div className="space-y-8 animate-in fade-in duration-500">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                   <div>
