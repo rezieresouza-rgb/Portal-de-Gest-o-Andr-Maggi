@@ -141,7 +141,10 @@ const MOCK_STAFF_TRAINING = [
 ];
 
 const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
-  const { showToast } = useToast();
+  const { addToast } = useToast();
+  const showToast = (_title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    addToast(message, type);
+  };
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [myCourses, setMyCourses] = useState<Course[]>([]);
