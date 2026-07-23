@@ -109,7 +109,9 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
     // Restrição específica para o servidor Genivaldo conforme solicitado (Manutenção, Formação e Patrimônio)
     const isGenivaldo = user.name?.toUpperCase().includes('GENIVALDO') || 
-                        user.login?.toUpperCase().includes('GENIVALDO');
+                        user.login?.toUpperCase().includes('GENIVALDO') ||
+                        user.login?.replace(/\D/g, '') === '89436296134' ||
+                        user.cpf?.replace(/\D/g, '') === '89436296134';
     
     if (isGenivaldo) {
       return ['limpeza', 'training', 'patrimonio'].includes(mod.id);
