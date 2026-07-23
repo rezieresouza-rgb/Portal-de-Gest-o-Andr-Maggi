@@ -602,6 +602,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                                                 className="w-32 bg-white border border-gray-200 rounded px-2 py-1 text-[10px] outline-none focus:border-orange-300 transition-colors"
                                                             >
                                                                 <option value="">Selecione...</option>
+                                                                <option value="00000000-0000-0000-0000-000000000000">Terceirizado</option>
                                                                 {employees.map(emp => (
                                                                     <option key={emp.id} value={emp.id}>{emp.name}</option>
                                                                 ))}

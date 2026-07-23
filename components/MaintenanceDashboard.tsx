@@ -46,6 +46,7 @@ const MaintenanceDashboard: React.FC<MaintenanceDashboardProps> = ({ employees, 
     // Get helper names
     const getEmployeeName = (id?: string) => {
         if (!id) return 'Não atribuído';
+        if (id === '00000000-0000-0000-0000-000000000000') return 'Terceirizado';
         const emp = employees.find(e => e.id === id);
         return emp ? emp.name : 'Não atribuído';
     };
