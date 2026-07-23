@@ -46,6 +46,8 @@ interface Course {
   instructorCouncil?: string;
   instructorCouncilNumber?: string;
   date?: string;
+  startDate?: string;
+  endDate?: string;
   location?: string;
   scheduleTime?: string;
 }
@@ -179,6 +181,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [newCourseInstructorCouncil, setNewCourseInstructorCouncil] = useState('');
   const [newCourseInstructorCouncilNumber, setNewCourseInstructorCouncilNumber] = useState('');
   const [newCourseDate, setNewCourseDate] = useState('');
+  const [newCourseStartDate, setNewCourseStartDate] = useState('');
+  const [newCourseEndDate, setNewCourseEndDate] = useState('');
   const [newCourseLocation, setNewCourseLocation] = useState('');
   const [newCourseScheduleTime, setNewCourseScheduleTime] = useState('');
   const [newCourseLessons, setNewCourseLessons] = useState<string[]>(['']);
@@ -195,7 +199,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
     setNewCourseInstructorDegree(course.instructorDegree || '');
     setNewCourseInstructorCouncil(course.instructorCouncil || '');
     setNewCourseInstructorCouncilNumber(course.instructorCouncilNumber || '');
-    setNewCourseDate(course.date || '');
+    setNewCourseDate(course.date || course.startDate || '');
+    setNewCourseStartDate(course.startDate || course.date || '');
+    setNewCourseEndDate(course.endDate || '');
     setNewCourseLocation(course.location || '');
     setNewCourseScheduleTime(course.scheduleTime || '');
     setNewCourseLessons(course.lessons.length > 0 && course.lessons[0] !== 'Palestra / Treinamento Único' ? course.lessons : ['']);
@@ -252,7 +258,9 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
         instructorDegree: newCourseInstructorDegree.trim() || 'Instrutor',
         instructorCouncil: newCourseInstructorCouncil.trim() || undefined,
         instructorCouncilNumber: newCourseInstructorCouncilNumber.trim() || undefined,
-        date: newCourseDate || undefined,
+        startDate: newCourseStartDate || undefined,
+        endDate: newCourseEndDate || undefined,
+        date: newCourseStartDate || newCourseDate || undefined,
         location: newCourseLocation.trim() || undefined,
         scheduleTime: newCourseScheduleTime.trim() || undefined
       };
@@ -281,6 +289,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
       setNewCourseInstructorCouncil('');
       setNewCourseInstructorCouncilNumber('');
       setNewCourseDate('');
+      setNewCourseStartDate('');
+      setNewCourseEndDate('');
       setNewCourseLocation('');
       setNewCourseScheduleTime('');
       setNewCourseLessons(['']);
@@ -1089,6 +1099,8 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                           setNewCourseInstructorCouncil('');
                           setNewCourseInstructorCouncilNumber('');
                           setNewCourseDate('');
+                          setNewCourseStartDate('');
+                          setNewCourseEndDate('');
                           setNewCourseLocation('');
                           setNewCourseScheduleTime('');
                           setNewCourseLessons(['']);
@@ -1153,11 +1165,21 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                       )}
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Data de Realização (Opcional)</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Data Inicial (Início)</label>
                         <input
                           type="date"
-                          value={newCourseDate}
-                          onChange={(e) => setNewCourseDate(e.target.value)}
+                          value={newCourseStartDate}
+                          onChange={(e) => setNewCourseStartDate(e.target.value)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Data Final (Término)</label>
+                        <input
+                          type="date"
+                          value={newCourseEndDate}
+                          onChange={(e) => setNewCourseEndDate(e.target.value)}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:border-violet-500 focus:bg-white transition-all text-slate-700"
                         />
                       </div>
@@ -1463,9 +1485,13 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 </div>
                 <div className="grid grid-cols-4 gap-4">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Data</span>
-                    <span className={`font-bold uppercase ${showRecordModal.date ? 'text-slate-800' : 'text-slate-300'}`}>
-                      {showRecordModal.date ? new Date(showRecordModal.date + 'T12:00:00').toLocaleDateString('pt-BR') : '____/____/______'}
+                    <span className="text-[10px] font-black text-slate-400 uppercase block mb-1">Período / Data</span>
+                    <span className={`font-bold uppercase ${(showRecordModal.startDate || showRecordModal.date) ? 'text-slate-800' : 'text-slate-300'}`}>
+                      {showRecordModal.startDate && showRecordModal.endDate
+                        ? `${new Date(showRecordModal.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(showRecordModal.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}`
+                        : (showRecordModal.startDate || showRecordModal.date)
+                        ? new Date((showRecordModal.startDate || showRecordModal.date) + 'T12:00:00').toLocaleDateString('pt-BR')
+                        : '____/____/______'}
                     </span>
                   </div>
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
@@ -1614,7 +1640,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider text-center">Certificamos que o(a) docente/servidor(a)</p>
                 <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight text-center">{selectedStaffForCert?.name || 'NOME DO PARTICIPANTE'}</h2>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-xl mx-auto font-medium text-center">
-                  concluiu com êxito o programa de formação continuada em <strong>{showAdminCertificateModal.title}</strong>, {showAdminCertificateModal.instructor ? `ministrado por ${showAdminCertificateModal.instructor}${showAdminCertificateModal.instructorDegree ? ` (${showAdminCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showAdminCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas{showAdminCertificateModal.date ? `, realizado em ${new Date(showAdminCertificateModal.date + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}.
+                  concluiu com êxito o programa de formação continuada em <strong>{showAdminCertificateModal.title}</strong>, {showAdminCertificateModal.instructor ? `ministrado por ${showAdminCertificateModal.instructor}${showAdminCertificateModal.instructorDegree ? ` (${showAdminCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showAdminCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas{showAdminCertificateModal.startDate && showAdminCertificateModal.endDate ? `, realizado no período de ${new Date(showAdminCertificateModal.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(showAdminCertificateModal.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}` : (showAdminCertificateModal.startDate || showAdminCertificateModal.date) ? `, realizado em ${new Date((showAdminCertificateModal.startDate || showAdminCertificateModal.date) + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}.
                 </p>
               </div>
 
@@ -1700,7 +1726,7 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider text-center">Certificamos que o(a) docente/servidor(a)</p>
                 <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight text-center">{user.name || 'Servidor André Maggi'}</h2>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-xl mx-auto font-medium text-center">
-                  concluiu com êxito o programa de formação continuada em <strong>{showCertificateModal.title}</strong>, {showCertificateModal.instructor ? `ministrado por ${showCertificateModal.instructor}${showCertificateModal.instructorDegree ? ` (${showCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas{showCertificateModal.date ? `, realizado em ${new Date(showCertificateModal.date + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}.
+                  concluiu com êxito o programa de formação continuada em <strong>{showCertificateModal.title}</strong>, {showCertificateModal.instructor ? `ministrado por ${showCertificateModal.instructor}${showCertificateModal.instructorDegree ? ` (${showCertificateModal.instructorDegree})` : ''},` : ''} correspondente a uma carga horária total de <strong>{showCertificateModal.hours} horas</strong> de estudo teórico e atividades práticas{showCertificateModal.startDate && showCertificateModal.endDate ? `, realizado no período de ${new Date(showCertificateModal.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(showCertificateModal.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}` : (showCertificateModal.startDate || showCertificateModal.date) ? `, realizado em ${new Date((showCertificateModal.startDate || showCertificateModal.date) + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}.
                 </p>
               </div>
 
