@@ -375,7 +375,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
         });
     };
 
-    const generatePDF = (type: 'ANEXO_II' | 'ANEXO_III' | 'ANEXO_IV' | 'FICHA_INSPECOES') => {
+    const generatePDF = (type: 'ANEXO_II' | 'ANEXO_III' | 'ANEXO_IV' | 'FICHA_INSPECOES' | 'CHECKLIST_INTERVENCOES') => {
         const reportId = `report-${type}`;
         const element = document.getElementById(reportId);
 
@@ -384,7 +384,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
         // @ts-ignore
         window.html2pdf().set({
             margin: 10,
-            filename: `${type === 'FICHA_INSPECOES' ? 'Ficha_de_Inspecoes' : type}_SEDUC_2025.pdf`,
+            filename: `${type === 'FICHA_INSPECOES' ? 'Ficha_de_Inspecoes' : type === 'CHECKLIST_INTERVENCOES' ? 'Checklist_de_Intervencoes' : type}_SEDUC_2025.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: type === 'ANEXO_II' ? 'landscape' : 'portrait' },
@@ -413,6 +413,9 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                     <div className="flex flex-wrap gap-2">
                         <button onClick={() => generatePDF('FICHA_INSPECOES')} className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-purple-100 transition-all border border-purple-200 shadow-sm">
                             <FileText size={14} /> Ficha de Inspeções (Relatório 2)
+                        </button>
+                        <button onClick={() => generatePDF('CHECKLIST_INTERVENCOES')} className="flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-teal-100 transition-all border border-teal-200 shadow-sm">
+                            <ClipboardCheck size={14} /> Checklist de Intervenções (Relatório 4)
                         </button>
                         <button onClick={() => generatePDF('ANEXO_II')} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-200">
                             <Calendar size={14} /> Anexo II (Cronograma)
@@ -1038,6 +1041,150 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                                 <tr>
                                     <td className="border border-gray-900 p-2 font-medium">C – Quantidade de itens inspecionados</td>
                                     <td className="border border-gray-900 p-2 text-center font-bold">29</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* ASSINATURAS */}
+                    <div className="mt-8 pt-4 border-t-2 border-gray-900 text-xs break-inside-avoid">
+                        <p className="text-center font-bold mb-8 text-gray-800">
+                            Colíder - MT, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.
+                        </p>
+                        <p className="font-black text-center mb-6 uppercase tracking-wider text-gray-900">Responsáveis pela Unidade Escolar</p>
+                        
+                        <div className="grid grid-cols-2 gap-8 text-center">
+                            <div className="space-y-6">
+                                <p className="font-black text-[10px] uppercase tracking-wider text-gray-500">Nome</p>
+                                <div className="pt-8 border-b border-black text-xs font-bold uppercase text-left">Diretor(a): _________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs font-bold uppercase text-left">Coordenador(a): _________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs font-bold uppercase text-left">Coordenador(a): _________________________________</div>
+                            </div>
+                            <div className="space-y-6">
+                                <p className="font-black text-[10px] uppercase tracking-wider text-gray-500">Assinatura</p>
+                                <div className="pt-8 border-b border-black text-xs">_________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs">_________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs">_________________________________</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* RELATÓRIO 4 - CHECKLIST DE INTERVENÇÕES (SEDUC-MT) */}
+                <div id="report-CHECKLIST_INTERVENCOES" className="p-8 bg-white w-full text-black font-sans">
+                    {/* CABEÇALHO OFICIAL */}
+                    <div className="mb-6 text-center border-b-2 border-gray-900 pb-4">
+                        <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-800">Governo do Estado de Mato Grosso • SECRETARIA DE ESTADO DE EDUCAÇÃO</h2>
+                        <h1 className="text-xl font-black uppercase text-gray-900 mt-1">4 – CHECKLIST DE INTERVENÇÕES</h1>
+                        <p className="text-xs font-semibold text-gray-600 mt-0.5">Plano de Manutenção Preventiva Escolar</p>
+                    </div>
+
+                    {/* IDENTIFICAÇÃO DA UNIDADE */}
+                    <div className="mb-6 border border-gray-900 p-4 rounded text-xs space-y-2 bg-gray-50/40">
+                        <h3 className="font-black uppercase text-gray-900 border-b border-gray-300 pb-1 mb-2">Identificação da Unidade Escolar</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <p><strong>Nome da escola:</strong> E.E. CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI</p>
+                                <p><strong>Código da escola:</strong> 51084220</p>
+                                <p><strong>Município:</strong> COLÍDER - MT</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p><strong>DRE:</strong> SINOP</p>
+                                <p><strong>Equipe Gestora:</strong> Diretor(a), Coordenadores(as), Secretário(a)</p>
+                                <p><strong>Data de Impressão:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* INSTRUÇÕES */}
+                    <div className="mb-6 text-[10px] text-gray-800 border border-gray-400 p-3 rounded bg-amber-50/30 leading-relaxed">
+                        <p>Após a elaboração do relatório de demanda, a realização de um Checklist de Intervenções visa organizar e acompanhar a execução das ações de manutenção preventiva e corretiva. O planejamento considera o grau de risco e o orçamento do Recurso Único.</p>
+                    </div>
+
+                    {/* TABELA DE INTERVENÇÕES */}
+                    <table className="w-full border-collapse border border-gray-900 text-[10px] mb-6">
+                        <thead>
+                            <tr className="bg-gray-200 text-gray-900 font-black uppercase">
+                                <th className="border border-gray-900 p-2 text-left w-1/3">ITEM / SISTEMA</th>
+                                <th className="border border-gray-900 p-2 text-center w-28">DATA DA INSPEÇÃO</th>
+                                <th className="border border-gray-900 p-2 text-left">TIPO DE MANUTENÇÃO REALIZADA</th>
+                                <th className="border border-gray-900 p-2 text-right w-28">VALOR INVESTIDO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items.map(item => {
+                                const dateStr = item.lastExecutionDate 
+                                    ? new Date(item.lastExecutionDate).toLocaleDateString('pt-BR') 
+                                    : new Date().toLocaleDateString('pt-BR');
+                                
+                                const { text } = parseDescription(item.description);
+                                const maintType = item.status === 'CONCLUIDO'
+                                    ? `${item.intervention} - ${text || 'Serviço Concluído'}`
+                                    : item.status === 'EM_EXECUCAO'
+                                    ? `${item.intervention} - Em execução (${text || 'Manutenção em andamento'})`
+                                    : `${item.intervention} - Item em condições adequadas de utilização`;
+
+                                return (
+                                    <tr key={item.id} className="break-inside-avoid">
+                                        <td className="border border-gray-900 p-2 font-bold uppercase">{item.item} ({item.category})</td>
+                                        <td className="border border-gray-900 p-2 text-center">{dateStr}</td>
+                                        <td className="border border-gray-900 p-2">{maintType}</td>
+                                        <td className="border border-gray-900 p-2 text-right font-bold">
+                                            {item.cost ? `R$ ${item.cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        <tfoot>
+                            <tr className="bg-gray-100 font-black">
+                                <td colSpan={3} className="border border-gray-900 p-2 text-right uppercase">Total Investido em Intervenções:</td>
+                                <td className="border border-gray-900 p-2 text-right text-emerald-800 font-black">
+                                    R$ {items.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    {/* OPCIONAIS AUSENTES & ESPECIFICAÇÃO QUANTITATIVA (A, B, A+B, C, D, E) */}
+                    <div className="mb-6 border border-gray-900 p-4 text-xs space-y-3 break-inside-avoid">
+                        <p className="font-black uppercase text-gray-900">Itens opcionais que a unidade escolar não possui:</p>
+                        <div className="p-3 border border-dashed border-gray-400 bg-gray-50 rounded text-[10px] text-gray-600 font-mono">
+                            Nenhum item opcional ausente (todos os itens listados aplicáveis).
+                        </div>
+
+                        <h4 className="font-bold text-gray-900 pt-2 uppercase">Especifiquem as quantidades a seguir:</h4>
+                        <table className="w-full border-collapse border border-gray-900 text-[11px]">
+                            <thead>
+                                <tr className="bg-gray-100 font-bold uppercase text-gray-900">
+                                    <th className="border border-gray-900 p-2 text-left">Especificação Quantitativa</th>
+                                    <th className="border border-gray-900 p-2 text-center w-28">Quantidade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">A – Quantidade de itens que possui</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">29</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">B – Quantidade de itens opcionais que não possui</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">0</td>
+                                </tr>
+                                <tr className="bg-gray-100 font-bold">
+                                    <td className="border border-gray-900 p-2">Total de itens (A + B)</td>
+                                    <td className="border border-gray-900 p-2 text-center font-black">29</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">C – Quantidade de itens inspecionados</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">29</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">D – Quantidade de itens que indicam necessidade de manutenção</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">{items.filter(i => i.status !== 'CONCLUIDO').length}</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">E – Quantidade de itens que receberam manutenção</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">{items.filter(i => i.status === 'CONCLUIDO').length}</td>
                                 </tr>
                             </tbody>
                         </table>
