@@ -254,6 +254,9 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                         if (i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda'))) {
                             return { ...i, status: 'EM_EXECUCAO' as PreventiveStatus, cost: 6500 };
                         }
+                        if (i.item === 'Controle de Pragas' || i.intervention === 'Dedetização') {
+                            return { ...i, status: 'EM_EXECUCAO' as PreventiveStatus, cost: 2800 };
+                        }
                         return i;
                     });
                     setItems(formatted);
@@ -265,11 +268,19 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                             cost: 6500
                         }).eq('id', acItem.id);
                     }
+
+                    const pragasItem = data.find(i => i.item === 'Controle de Pragas' || i.intervention === 'Dedetização');
+                    if (pragasItem) {
+                        await supabase.from('preventive_maintenance_plan').update({
+                            status: 'EM_EXECUCAO',
+                            cost: 2800
+                        }).eq('id', pragasItem.id);
+                    }
                 } else {
                     const seedData = MANUAL_ITEMS.map(m => ({
                         ...m,
-                        status: (m.item === 'Ar Condicionado' && m.intervention === 'Limpeza Interna') ? ('EM_EXECUCAO' as PreventiveStatus) : ('PENDENTE' as PreventiveStatus),
-                        cost: (m.item === 'Ar Condicionado' && m.intervention === 'Limpeza Interna') ? 6500 : undefined,
+                        status: (m.item === 'Ar Condicionado' && m.intervention === 'Limpeza Interna') || (m.item === 'Controle de Pragas') ? ('EM_EXECUCAO' as PreventiveStatus) : ('PENDENTE' as PreventiveStatus),
+                        cost: (m.item === 'Ar Condicionado' && m.intervention === 'Limpeza Interna') ? 6500 : (m.item === 'Controle de Pragas') ? 2800 : undefined,
                         created_at: new Date().toISOString()
                     }));
 
