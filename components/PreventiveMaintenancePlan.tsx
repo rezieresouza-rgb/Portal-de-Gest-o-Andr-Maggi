@@ -375,7 +375,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
         });
     };
 
-    const generatePDF = (type: 'ANEXO_II' | 'ANEXO_III' | 'ANEXO_IV') => {
+    const generatePDF = (type: 'ANEXO_II' | 'ANEXO_III' | 'ANEXO_IV' | 'FICHA_INSPECOES') => {
         const reportId = `report-${type}`;
         const element = document.getElementById(reportId);
 
@@ -384,7 +384,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
         // @ts-ignore
         window.html2pdf().set({
             margin: 10,
-            filename: `${type}_SEDUC_2025.pdf`,
+            filename: `${type === 'FICHA_INSPECOES' ? 'Ficha_de_Inspecoes' : type}_SEDUC_2025.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: type === 'ANEXO_II' ? 'landscape' : 'portrait' },
@@ -411,6 +411,9 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                        <button onClick={() => generatePDF('FICHA_INSPECOES')} className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-purple-100 transition-all border border-purple-200 shadow-sm">
+                            <FileText size={14} /> Ficha de Inspeções (Relatório 2)
+                        </button>
                         <button onClick={() => generatePDF('ANEXO_II')} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-200">
                             <Calendar size={14} /> Anexo II (Cronograma)
                         </button>
@@ -902,6 +905,165 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                     <div className="mt-8 pt-8 border-t border-gray-400 flex justify-between text-xs text-center">
                         <div className="w-1/3 border-t border-black pt-2">DIRETOR(A) ESCOLAR</div>
                         <div className="w-1/3 border-t border-black pt-2">RESPONSÁVEL TÉCNICO</div>
+                    </div>
+                </div>
+
+                {/* RELATÓRIO 2 - FICHA DE INSPEÇÕES (SEDUC-MT) */}
+                <div id="report-FICHA_INSPECOES" className="p-8 bg-white w-full text-black font-sans">
+                    {/* CABEÇALHO OFICIAL */}
+                    <div className="mb-6 text-center border-b-2 border-gray-900 pb-4">
+                        <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-800">Governo do Estado de Mato Grosso • SECRETARIA DE ESTADO DE EDUCAÇÃO</h2>
+                        <h1 className="text-xl font-black uppercase text-gray-900 mt-1">2 – FICHA DE INSPEÇÕES</h1>
+                        <p className="text-xs font-semibold text-gray-600 mt-0.5">Plano de Manutenção Preventiva Escolar</p>
+                    </div>
+
+                    {/* IDENTIFICAÇÃO DA UNIDADE */}
+                    <div className="mb-6 border border-gray-900 p-4 rounded text-xs space-y-2 bg-gray-50/40">
+                        <h3 className="font-black uppercase text-gray-900 border-b border-gray-300 pb-1 mb-2">Identificação da Unidade Escolar</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <p><strong>Nome da escola:</strong> E.E. CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI</p>
+                                <p><strong>Código da escola:</strong> 51084220</p>
+                                <p><strong>Município:</strong> COLÍDER - MT</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p><strong>DRE:</strong> SINOP</p>
+                                <p><strong>Equipe Gestora:</strong> Diretor(a), Coordenadores(as), Secretário(a)</p>
+                                <p><strong>Data de Impressão:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* INSTRUÇÕES */}
+                    <div className="mb-6 text-[10px] text-gray-800 border border-gray-400 p-3 rounded bg-amber-50/30 leading-relaxed">
+                        <p>Para a identificação das condições em cada item verificado, descrever o que foi observado. Deve ser realizado o registro fotográfico para a elaboração do Relatório de Demanda (para a próxima etapa). Caso o item verificado estiver em condições adequadas de utilização, escrever: <strong>“Item em condições adequadas de utilização”</strong>.</p>
+                    </div>
+
+                    {/* TABELA DOS 29 ITENS DE INSPEÇÃO */}
+                    <table className="w-full border-collapse border border-gray-900 text-[10px] mb-6">
+                        <thead>
+                            <tr className="bg-gray-200 text-gray-900 font-black uppercase">
+                                <th className="border border-gray-900 p-2 text-center w-10">Nº</th>
+                                <th className="border border-gray-900 p-2 text-left w-2/5">ITEM</th>
+                                <th className="border border-gray-900 p-2 text-center w-28">DATA DA INSPEÇÃO</th>
+                                <th className="border border-gray-900 p-2 text-left">CONDIÇÃO OBSERVADA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {[
+                                { num: 1, name: 'SISTEMA CONSTRUTIVO (IDENTIFICAÇÃO DE PATOLOGIAS)', kw: 'ESTRUTURA' },
+                                { num: 2, name: 'COBERTURA', kw: 'TELHAS' },
+                                { num: 3, name: 'FORRO (OPCIONAL)', kw: 'FORRO' },
+                                { num: 4, name: 'PISOS E REVESTIMENTOS', kw: 'PISOS' },
+                                { num: 5, name: 'PINTURA', kw: 'PINTURA' },
+                                { num: 6, name: 'ESQUADRIAS', kw: 'ESQUADRIAS' },
+                                { num: 7, name: 'INSTALAÇÕES ELÉTRICAS BAIXA TENSÃO', kw: 'ELÉTRICA' },
+                                { num: 8, name: 'INSTALAÇÕES HIDROSSANITÁRIAS CAIXA D’ÁGUA E CISTERNA (RESERVATÓRIOS)', kw: 'RESERVATÓRIOS' },
+                                { num: 9, name: 'INSTALAÇÕES HIDROSSANITÁRIAS RALOS E SIFÕES', kw: 'RALOS' },
+                                { num: 10, name: 'INSTALAÇÕES HIDROSSANITÁRIAS VÁLVULAS E REGISTROS', kw: 'VÁLVULAS' },
+                                { num: 11, name: 'INSTALAÇÕES HIDROSSANITÁRIAS SISTEMA DE TRATAMENTO DE ESGOTO (STE)', kw: 'ESGOTO' },
+                                { num: 12, name: 'INSTALAÇÕES HIDROSSANITÁRIAS CAIXA DE GORDURA', kw: 'GORDURA' },
+                                { num: 13, name: 'INSTALAÇÕES HIDROSSANITÁRIAS INSTALAÇÕES DE GÁS (OPCIONAL)', kw: 'GÁS' },
+                                { num: 14, name: 'INSTALAÇÕES DE COMBATE A INCÊNDIO EXTINTORES', kw: 'EXTINTORES' },
+                                { num: 15, name: 'INSTALAÇÕES DE COMBATE A INCÊNDIO HIDRANTES E MANGUEIRAS (OPCIONAL)', kw: 'HIDRANTES' },
+                                { num: 16, name: 'INSTALAÇÕES DE COMBATE A INCÊNDIO SINALIZAÇÃO DE EMERGÊNCIA E ROTAS DE FUGA (OPCIONAL)', kw: 'SINALIZAÇÃO' },
+                                { num: 17, name: 'INSTALAÇÕES DE COMBATE A INCÊNDIO ACIONAMENTOS (OPCIONAL)', kw: 'ACIONAMENTOS' },
+                                { num: 18, name: 'ÁREAS MOLHADAS (LOUÇAS, METAIS, BANCADAS E DIVISÓRIAS)', kw: 'MOLHADAS' },
+                                { num: 19, name: 'PINTURA DE DEMARCAÇÃO – QUADRA POLIESPORTIVA (OPCIONAL)', kw: 'QUADRA' },
+                                { num: 20, name: 'PISCINA E CASA DE MÁQUINAS (OPCIONAL)', kw: 'PISCINA' },
+                                { num: 21, name: 'IMPLANTAÇÃO PÓRTICO (OPCIONAL)', kw: 'PÓRTICO' },
+                                { num: 22, name: 'IMPLANTAÇÃO MURO E GRADIL', kw: 'MUROS' },
+                                { num: 23, name: 'IMPLANTAÇÃO DEPÓSITO DE RESÍDUOS SÓLIDOS (OPCIONAL)', kw: 'LIXO' },
+                                { num: 24, name: 'IMPLANTAÇÃO CALÇAMENTOS', kw: 'CALÇAMENTOS' },
+                                { num: 25, name: 'IMPLANTAÇÃO PAISAGISMO (OPCIONAL)', kw: 'PAISAGISMO' },
+                                { num: 26, name: 'IMPLANTAÇÃO SISTEMA DE DRENAGEM (OPCIONAL)', kw: 'DRENAGEM' },
+                                { num: 27, name: 'ACESSIBILIDADE ESCADA E RAMPA (OPCIONAL)', kw: 'RAMPA' },
+                                { num: 28, name: 'ACESSIBILIDADE CORRIMÃO, GUARDA-CORPO E BARRAS DE APOIO (OPCIONAL)', kw: 'CORRIMÃO' },
+                                { num: 29, name: 'ACESSIBILIDADE PLACA DE SINALIZAÇÃO, MAPA E PISO TÁTIL (OPCIONAL)', kw: 'TÁTIL' },
+                            ].map(row => {
+                                const matchedDbItem = items.find(i => 
+                                    i.item.toUpperCase().includes(row.kw) || 
+                                    i.category.toUpperCase().includes(row.kw) ||
+                                    row.name.toUpperCase().includes(i.item.toUpperCase())
+                                );
+
+                                const dateStr = matchedDbItem?.lastExecutionDate 
+                                    ? new Date(matchedDbItem.lastExecutionDate).toLocaleDateString('pt-BR') 
+                                    : new Date().toLocaleDateString('pt-BR');
+
+                                const parsedDesc = matchedDbItem ? parseDescription(matchedDbItem.description).text : '';
+                                const condStr = parsedDesc.trim() || 'Item em condições adequadas de utilização';
+
+                                return (
+                                    <tr key={row.num} className="break-inside-avoid">
+                                        <td className="border border-gray-900 p-2 text-center font-bold">{row.num}</td>
+                                        <td className="border border-gray-900 p-2 font-bold uppercase">{row.name}</td>
+                                        <td className="border border-gray-900 p-2 text-center">{dateStr}</td>
+                                        <td className="border border-gray-900 p-2">{condStr}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+
+                    {/* QUADRO DE ITENS OPCIONAIS & RESUMO QUANTITATIVO */}
+                    <div className="mb-6 border border-gray-900 p-4 text-xs space-y-3 break-inside-avoid">
+                        <p className="font-black uppercase text-gray-900">Total de itens: 29</p>
+                        <p className="text-[11px] text-gray-700">Algumas unidades escolares não possuem determinados itens. Identifiquem aqui quais <strong>ITENS OPCIONAIS</strong> a unidade escolar não possui:</p>
+                        <div className="p-3 border border-dashed border-gray-400 bg-gray-50 rounded text-[10px] text-gray-600 font-mono">
+                            Nenhum item opcional ausente (todos os itens listados aplicáveis).
+                        </div>
+
+                        <h4 className="font-bold text-gray-900 pt-2 uppercase">Especifiquem as quantidades a seguir:</h4>
+                        <table className="w-full border-collapse border border-gray-900 text-[11px]">
+                            <thead>
+                                <tr className="bg-gray-100 font-bold uppercase text-gray-900">
+                                    <th className="border border-gray-900 p-2 text-left">Especificação Quantitativa</th>
+                                    <th className="border border-gray-900 p-2 text-center w-28">Quantidade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">A – Quantidade de itens que possui</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">29</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">B – Quantidade de itens opcionais que não possui</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">0</td>
+                                </tr>
+                                <tr className="bg-gray-100 font-bold">
+                                    <td className="border border-gray-900 p-2">Quantidade total de itens (A + B)</td>
+                                    <td className="border border-gray-900 p-2 text-center font-black">29</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-900 p-2 font-medium">C – Quantidade de itens inspecionados</td>
+                                    <td className="border border-gray-900 p-2 text-center font-bold">29</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* ASSINATURAS */}
+                    <div className="mt-8 pt-4 border-t-2 border-gray-900 text-xs break-inside-avoid">
+                        <p className="text-center font-bold mb-8 text-gray-800">
+                            Colíder - MT, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.
+                        </p>
+                        <p className="font-black text-center mb-6 uppercase tracking-wider text-gray-900">Responsáveis pela Unidade Escolar</p>
+                        
+                        <div className="grid grid-cols-2 gap-8 text-center">
+                            <div className="space-y-6">
+                                <p className="font-black text-[10px] uppercase tracking-wider text-gray-500">Nome</p>
+                                <div className="pt-8 border-b border-black text-xs font-bold uppercase text-left">Diretor(a): _________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs font-bold uppercase text-left">Coordenador(a): _________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs font-bold uppercase text-left">Coordenador(a): _________________________________</div>
+                            </div>
+                            <div className="space-y-6">
+                                <p className="font-black text-[10px] uppercase tracking-wider text-gray-500">Assinatura</p>
+                                <div className="pt-8 border-b border-black text-xs">_________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs">_________________________________</div>
+                                <div className="pt-8 border-b border-black text-xs">_________________________________</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
