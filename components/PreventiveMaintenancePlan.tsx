@@ -50,8 +50,6 @@ const MANUAL_ITEMS: Omit<PreventiveMaintenanceItem, 'id' | 'status'>[] = [
     // 7.7 INSTALAÇÕES ELÉTRICAS
     { category: 'ELÉTRICA', item: 'Fiação e Cabos', intervention: 'Inspeção Visual', description: 'Identificar desgastes, superaquecimento, fios expostos.', frequency: 'ANUAL' },
     { category: 'ELÉTRICA', item: 'Quadros de Energia', intervention: 'Limpeza', description: 'Remover poeira (por especialista) para evitar superaquecimento.', frequency: 'TRIMESTRAL' },
-    { category: 'ELÉTRICA', item: 'SPDA (Para-raios)', intervention: 'Inspeção Visual', description: 'Verificar integridade de captores e descidas.', frequency: 'ANUAL' },
-    { category: 'ELÉTRICA', item: 'Aterramento', intervention: 'Teste', description: 'Medição de resistência de terra (Especialista).', frequency: 'ANUAL' },
 
     // 7.8 HIDROSSANITÁRIAS
     { category: 'HIDRÁULICA', item: 'Caixa d\'água / Cisterna', intervention: 'Inspeção Visual', description: 'Verificar rachaduras na estrutura e vedação da tampa.', frequency: 'ANUAL' },
@@ -250,7 +248,13 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                 if (error) throw error;
 
                 if (data && data.length > 0) {
-                    const formatted = data.map(i => {
+                    const cleanData = data.filter(i => 
+                        !i.item.toUpperCase().includes('SPDA') && 
+                        !i.item.toUpperCase().includes('ATERRAMENTO') &&
+                        !i.item.toUpperCase().includes('PARA-RAIOS')
+                    );
+
+                    const formatted = cleanData.map(i => {
                         if (i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda'))) {
                             return { ...i, status: 'EM_EXECUCAO' as PreventiveStatus, cost: 6500 };
                         }
@@ -261,7 +265,18 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                     });
                     setItems(formatted);
 
-                    const acItem = data.find(i => i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda')));
+                    // Delete removed items from Supabase if present
+                    const removedIds = data.filter(i => 
+                        i.item.toUpperCase().includes('SPDA') || 
+                        i.item.toUpperCase().includes('ATERRAMENTO') ||
+                        i.item.toUpperCase().includes('PARA-RAIOS')
+                    ).map(i => i.id);
+
+                    if (removedIds.length > 0) {
+                        await supabase.from('preventive_maintenance_plan').delete().in('id', removedIds);
+                    }
+
+                    const acItem = cleanData.find(i => i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda')));
                     if (acItem) {
                         await supabase.from('preventive_maintenance_plan').update({
                             status: 'EM_EXECUCAO',
@@ -269,7 +284,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                         }).eq('id', acItem.id);
                     }
 
-                    const pragasItem = data.find(i => i.item === 'Controle de Pragas' || i.intervention === 'Dedetização');
+                    const pragasItem = cleanData.find(i => i.item === 'Controle de Pragas' || i.intervention === 'Dedetização');
                     if (pragasItem) {
                         await supabase.from('preventive_maintenance_plan').update({
                             status: 'EM_EXECUCAO',
