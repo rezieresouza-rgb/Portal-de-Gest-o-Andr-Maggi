@@ -1,11 +1,11 @@
 
 -- ==============================================================================
--- SCHEMA DE BANCO DE DADOS: PORTAL DE GESTÃO ANDRÉ MAGGI
+-- SCHEMA DE BANCO DE DADOS: PORTAL DE GESTﾃグ ANDRﾃ� MAGGI
 -- DIALETO: POSTGRESQL / SUPABASE
--- VERSÃO: 1.0 (PRODUÇÃO)
+-- VERSﾃグ: 1.0 (PRODUﾃ�グ)
 -- ==============================================================================
 
--- 1. EXTENSÕES E ENUMS
+-- 1. EXTENSﾃ髭S E ENUMS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TYPE user_role AS ENUM ('GESTAO', 'SECRETARIA', 'PROFESSOR', 'PSICOSSOCIAL', 'AAE_LIMPEZA', 'AEE_NUTRICAO');
@@ -15,7 +15,7 @@ CREATE TYPE tx_type AS ENUM ('ENTRY', 'EXPENSE');
 CREATE TYPE tx_group AS ENUM ('CUSTEIO', 'CAPITAL');
 CREATE TYPE plan_status AS ENUM ('RASCUNHO', 'EM_ANALISE', 'VALIDADO', 'CORRECAO_SOLICITADA');
 
--- 2. MÓDULO CORE & USUÁRIOS
+-- 2. Mﾃ泥ULO CORE & USUﾃヽIOS
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE users (
     last_login TIMESTAMP WITH TIME ZONE
 );
 
--- 3. MÓDULO SECRETARIA (BASE DE ALUNOS E TURMAS)
+-- 3. Mﾃ泥ULO SECRETARIA (BASE DE ALUNOS E TURMAS)
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE students (
 
 CREATE TABLE classrooms (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) NOT NULL, -- Ex: 9º ANO A
+    name VARCHAR(100) NOT NULL, -- Ex: 9ﾂｺ ANO A
     year CHAR(4) NOT NULL,
     shift shift_type NOT NULL,
     teacher_id UUID REFERENCES users(id),
@@ -58,7 +58,7 @@ CREATE TABLE enrollments (
     UNIQUE(student_id, classroom_id)
 );
 
--- 4. MÓDULO MERENDA & CONTRATOS
+-- 4. Mﾃ泥ULO MERENDA & CONTRATOS
 CREATE TABLE suppliers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE suppliers (
     cnpj VARCHAR(20) UNIQUE NOT NULL,
     email VARCHAR(255),
     phone VARCHAR(20),
-    category VARCHAR(100), -- Agricultura Familiar, Gêneros Secos, etc
+    category VARCHAR(100), -- Agricultura Familiar, Gﾃｪneros Secos, etc
     score DECIMAL(3,2) DEFAULT 5.0
 );
 
@@ -74,7 +74,7 @@ CREATE TABLE contracts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     number VARCHAR(50) UNIQUE NOT NULL,
     supplier_id UUID REFERENCES suppliers(id),
-    type VARCHAR(50) NOT NULL, -- Pregão, AF, Dispensa
+    type VARCHAR(50) NOT NULL, -- Pregﾃ｣o, AF, Dispensa
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status contract_status DEFAULT 'ATIVO',
@@ -112,7 +112,7 @@ CREATE TABLE order_items (
     unit_price DECIMAL(12,2) NOT NULL
 );
 
--- 5. MÓDULO FINANCEIRO
+-- 5. Mﾃ泥ULO FINANCEIRO
 CREATE TABLE funds (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(50) NOT NULL, -- RU, PNAE, PDDE
@@ -130,13 +130,13 @@ CREATE TABLE transactions (
     type tx_type NOT NULL,
     tx_group tx_group NOT NULL,
     gross_value DECIMAL(12,2) NOT NULL,
-    tax_value DECIMAL(12,2) DEFAULT 0, -- Retenção Lei 15.226/25 (1.5%)
+    tax_value DECIMAL(12,2) DEFAULT 0, -- Retenﾃｧﾃ｣o Lei 15.226/25 (1.5%)
     net_value DECIMAL(12,2) NOT NULL,
     category VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. MÓDULO PEDAGÓGICO
+-- 6. Mﾃ泥ULO PEDAGﾃ敵ICO
 CREATE TABLE lesson_plans (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     teacher_id UUID REFERENCES users(id),
@@ -166,7 +166,7 @@ CREATE TABLE grades (
     assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     score DECIMAL(5,2) NOT NULL,
-    proficiency_level VARCHAR(50) -- ALTO, MÉDIO, BAIXO
+    proficiency_level VARCHAR(50) -- ALTO, Mﾃ吋IO, BAIXO
 );
 
 CREATE TABLE occurrences (
@@ -183,7 +183,7 @@ CREATE TABLE occurrences (
     status VARCHAR(20) DEFAULT 'REGISTRADO' -- REGISTRADO, ATA_GERADA, ARQUIVADO
 );
 
--- 7. MÓDULO PSICOSSOCIAL & BUSCA ATIVA
+-- 7. Mﾃ泥ULO PSICOSSOCIAL & BUSCA ATIVA
 CREATE TABLE referrals (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     student_id UUID REFERENCES students(id),
@@ -205,20 +205,20 @@ CREATE TABLE mediation_cases (
     description TEXT,
     involved_parties TEXT[],
     steps JSONB,
-    feedback TEXT, -- [NOVO] Devolutiva da Mediação
+    feedback TEXT, -- [NOVO] Devolutiva da Mediaﾃｧﾃ｣o
     opened_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     closed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 8. INDEXAÇÃO PARA PERFORMANCE
+-- 8. INDEXAﾃ�グ PARA PERFORMANCE
 CREATE INDEX idx_student_name ON students(name);
 CREATE INDEX idx_order_contract ON orders(contract_id);
 CREATE INDEX idx_tx_date ON transactions(date);
 CREATE INDEX idx_grades_student ON grades(student_id);
 CREATE INDEX idx_occ_student ON occurrences(student_id);
 
--- TABELA DE AÇÕES DA BUSCA ATIVA (ART. 23)
+-- TABELA DE Aﾃ�髭S DA BUSCA ATIVA (ART. 23)
 CREATE TABLE active_search_actions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     student_id UUID REFERENCES students(id),
@@ -232,16 +232,16 @@ CREATE TABLE active_search_actions (
 
 CREATE INDEX idx_active_search_student ON active_search_actions(student_id);
 
--- COMENTÁRIO TÉCNICO:
+-- COMENTﾃヽIO Tﾃ韻NICO:
 -- A tabela `contract_items` deve ser atualizada via TRIGGER ou Service sempre que um `order_item` for inserido.
--- A retenção de 1.5% da Lei 15.226/25 está mapeada na tabela `transactions` como `tax_value`.
+-- A retenﾃｧﾃ｣o de 1.5% da Lei 15.226/25 estﾃ｡ mapeada na tabela `transactions` como `tax_value`.
 
--- 9. MÓDULO PATRIMÔNIO (BENS MÓVEIS)
+-- 9. Mﾃ泥ULO PATRIMﾃ年IO (BENS Mﾃ天EIS)
 CREATE TABLE assets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     description TEXT NOT NULL,
     location VARCHAR(255) NOT NULL,
-    heritage_number VARCHAR(100) UNIQUE NOT NULL,
+    heritage_number VARCHAR(100) NOT NULL,
     condition VARCHAR(50) DEFAULT 'BOM',
     is_unserviceable BOOLEAN DEFAULT FALSE,
     photo TEXT,
@@ -266,7 +266,7 @@ CREATE INDEX idx_assets_location ON assets(location);
 CREATE INDEX idx_asset_history_asset_id ON asset_history(asset_id);
 
  
- - -   1 0 .   M � D U L O   O C O R R � N C I A S   D E   L I M P E Z A   E   M A N U T E N � � O  
+ - -   1 0 .   M ﾓ D U L O   O C O R R ﾊ N C I A S   D E   L I M P E Z A   E   M A N U T E N ﾇ ﾃ O  
  C R E A T E   T A B L E   c l e a n i n g _ o c c u r r e n c e s   (  
          i d   U U I D   P R I M A R Y   K E Y   D E F A U L T   u u i d _ g e n e r a t e _ v 4 ( ) ,  
          r e p o r t e d _ b y   V A R C H A R ( 2 5 5 )   N O T   N U L L ,  

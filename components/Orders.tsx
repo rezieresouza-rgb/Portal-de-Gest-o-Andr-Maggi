@@ -30,8 +30,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { Contract, Order, ContractStatus } from '../types';
-import { ContractItem } from '../types'; // Ensure imported if needed 
-// Removed INITIAL data imports as we fetch from DB
+import { ContractItem } from '../types';
+import { useToast } from './Toast';
 
 // Dados da escola removidos a pedido do usuário
 
@@ -59,6 +59,7 @@ const formatQuantity = (val: number) => {
 };
 
 const Orders: React.FC = () => {
+  const { addToast } = useToast();
   const [viewMode, setViewMode] = useState<'form' | 'history'>('form');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -339,11 +340,22 @@ const Orders: React.FC = () => {
     );
   }, [orderHistory, searchTerm]);
 
+  const depletedCount = useMemo(() => {
+    if (!selectedContract) return 0;
+    return selectedContract.items.filter(ci => {
+      const isException = selectedContract.number === '01/2026/SEDUC/MT' && ci.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+      const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === ci.id);
+      const originalQty = originalItem ? originalItem.quantity : 0;
+      const available = (ci.contractedQuantity - ci.acquiredQuantity) + originalQty;
+      return available <= 0 && !isException;
+    }).length;
+  }, [selectedContract, originalItemsSnapshot]);
+
   const handleContractChange = (id: string, highlightItemId?: string) => {
     setSelectedContractId(id);
     const contract = contracts.find(c => c.id === id);
     if (contract) {
-      setLocalItems(contract.items.map(item => ({
+      const itemsList = contract.items.map(item => ({
         contractItemId: item.id,
         description: item.description,
         unit: item.unit,
@@ -351,7 +363,20 @@ const Orders: React.FC = () => {
         requestedQuantity: 0,
         brand: item.brand || "",
         selected: item.id === highlightItemId
-      })));
+      }));
+
+      // Check if there are depleted items in this contract
+      const depletedItems = contract.items.filter(item => {
+        const remaining = item.contractedQuantity - item.acquiredQuantity;
+        const isException = contract.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+        return remaining <= 0 && !isException;
+      });
+
+      if (depletedItems.length > 0) {
+        addToast(`⚠️ ALERTA DO CONTRATO: O contrato CT ${contract.number} possui ${depletedItems.length} produto(s) com saldo zerado/esgotado!`, 'warning', 6000);
+      }
+
+      setLocalItems(itemsList);
       setGlobalProductSearch("");
       if (highlightItemId) setItemSearchTerm("");
     } else {
@@ -423,7 +448,17 @@ const Orders: React.FC = () => {
             const available = (contractItem.contractedQuantity - contractItem.acquiredQuantity) + originalQty;
             const isException = selectedContract?.number === '01/2026/SEDUC/MT' && contractItem.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
 
+            // ALERTA 1: Tentar solicitar item com saldo totalmente esgotado no contrato
+            if (available <= 0 && numericValue > 0 && !isException) {
+              addToast(`⚠️ ALERTA DE CONTRATO: O produto "${contractItem.description}" teve seu saldo esgotado no contrato CT ${selectedContract?.number}! Saldo restante: 0 ${contractItem.unit}.`, 'error', 6000);
+              alert(`⚠️ ALERTA DE SALDO ESGOTADO NO CONTRATO:\n\nO produto "${contractItem.description}" está com o saldo esgotado (0 ${contractItem.unit}) no contrato CT ${selectedContract?.number}.\n\nNão é possível solicitar este item.`);
+              return { ...item, requestedQuantity: 0, selected: false };
+            }
+
+            // ALERTA 2: Tentar solicitar quantidade maior que o saldo restante no contrato
             if (numericValue > available && !isException) {
+              addToast(`⚠️ LIMITE DE CONTRATO: A quantidade informada para "${contractItem.description}" (${numericValue.toLocaleString('pt-BR')} ${contractItem.unit}) ultrapassa o saldo restante (${available.toLocaleString('pt-BR')} ${contractItem.unit}). A quantidade foi ajustada para o saldo máximo.`, 'warning', 7000);
+              alert(`⚠️ ALERTA DE SALDO DE CONTRATO:\n\nA quantidade informada para "${contractItem.description}" (${numericValue.toLocaleString('pt-BR')} ${contractItem.unit}) excede o saldo disponível no contrato CT ${selectedContract?.number}.\n\nSaldo disponível restante: ${available.toLocaleString('pt-BR')} ${contractItem.unit}\nA quantidade foi ajustada automaticamente para o saldo limite.`);
               return { ...item, [field]: available, selected: true };
             }
           }
@@ -436,9 +471,28 @@ const Orders: React.FC = () => {
   };
 
   const toggleItemSelection = (id: string) => {
-    setLocalItems(prev => prev.map(item =>
-      item.contractItemId === id ? { ...item, selected: !item.selected } : item
-    ));
+    setLocalItems(prev => prev.map(item => {
+      if (item.contractItemId === id) {
+        const nextSelected = !item.selected;
+        if (nextSelected) {
+          const contractItem = selectedContract?.items.find(i => i.id === id);
+          if (contractItem) {
+            const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === id);
+            const originalQty = originalItem ? originalItem.quantity : 0;
+            const available = (contractItem.contractedQuantity - contractItem.acquiredQuantity) + originalQty;
+            const isException = selectedContract?.number === '01/2026/SEDUC/MT' && contractItem.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+
+            if (available <= 0 && !isException) {
+              addToast(`⚠️ ATENÇÃO: O item "${contractItem.description}" está com o saldo esgotado (0 ${contractItem.unit}) no contrato CT ${selectedContract?.number}!`, 'error', 6000);
+              alert(`⚠️ ALERTA DE CONTRATO:\n\nO produto "${contractItem.description}" está com o saldo esgotado (0 ${contractItem.unit}) no contrato CT ${selectedContract?.number}.\n\nNão é possível selecionar este produto.`);
+              return { ...item, selected: false, requestedQuantity: 0 };
+            }
+          }
+        }
+        return { ...item, selected: nextSelected };
+      }
+      return item;
+    }));
   };
 
   const removeItemFromOrder = (id: string, e: React.MouseEvent) => {
@@ -752,22 +806,41 @@ const Orders: React.FC = () => {
                 {allAvailableProducts.length > 0 && (
                   <div className="absolute z-[110] left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="divide-y divide-gray-50 max-h-[300px] overflow-y-auto">
-                      {allAvailableProducts.map((p) => (
-                        <button
-                          key={`${p.contractId}-${p.id}`}
-                          onClick={() => handleContractChange(p.contractId, p.id)}
-                          className="w-full text-left p-4 hover:bg-emerald-50 transition-colors flex items-center justify-between group"
-                        >
-                          <div>
-                            <p className="text-sm font-black text-gray-900 uppercase">{p.description}</p>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
-                              {p.supplierName} • CT {p.contractNumber}
-                            </p>
-                            <p className="text-[9px] text-emerald-600 font-black mt-1">DISPONÍVEL: {formatQuantity(p.remaining)} {p.unit}</p>
-                          </div>
-                          <ChevronRight size={16} className="text-gray-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
-                        </button>
-                      ))}
+                      {allAvailableProducts.map((p) => {
+                        const isDepleted = p.remaining <= 0 && !(p.contractNumber === '01/2026/SEDUC/MT' && p.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA');
+                        return (
+                          <button
+                            key={`${p.contractId}-${p.id}`}
+                            onClick={() => {
+                              if (isDepleted) {
+                                addToast(`⚠️ O produto "${p.description}" no contrato CT ${p.contractNumber} está esgotado (saldo 0).`, 'error', 6000);
+                              }
+                              handleContractChange(p.contractId, p.id);
+                            }}
+                            className={`w-full text-left p-4 transition-colors flex items-center justify-between group ${isDepleted ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-emerald-50'}`}
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className={`text-sm font-black uppercase ${isDepleted ? 'text-red-900' : 'text-gray-900'}`}>{p.description}</p>
+                                {isDepleted && (
+                                  <span className="text-[8px] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded border border-red-300 uppercase flex items-center gap-1 shrink-0">
+                                    <AlertTriangle size={10} /> Saldo Esgotado
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
+                                {p.supplierName} • CT {p.contractNumber}
+                              </p>
+                              {isDepleted ? (
+                                <p className="text-[9px] text-red-600 font-black mt-1 uppercase">SALDO ESGOTADO NO CONTRATO (0 {p.unit})</p>
+                              ) : (
+                                <p className="text-[9px] text-emerald-600 font-black mt-1">DISPONÍVEL: {formatQuantity(p.remaining)} {p.unit}</p>
+                              )}
+                            </div>
+                            <ChevronRight size={16} className={`group-hover:translate-x-1 transition-all ${isDepleted ? 'text-red-400 group-hover:text-red-600' : 'text-gray-300 group-hover:text-emerald-500'}`} />
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -884,6 +957,21 @@ const Orders: React.FC = () => {
               </div>
             </div>
 
+            {/* BANNER DE ALERTA DE PRODUTOS ESGOTADOS NO CONTRATO */}
+            {depletedCount > 0 && (
+              <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-2xl flex items-center gap-4 text-red-900 shadow-sm no-print">
+                <div className="p-2.5 bg-red-100 rounded-xl text-red-600 shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-red-800">Alerta de Saldo de Contrato</h4>
+                  <p className="text-[11px] font-bold text-red-700 mt-0.5">
+                    Atenção: Este contrato possui <strong>{depletedCount} produto(s)</strong> com saldo totalmente esgotado (zerado). O sistema emitirá um alerta caso tente solicitar estes itens.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {selectedContractId ? (
               <table className="w-full text-left text-[11px] border-collapse mb-8">
                 <thead>
@@ -898,10 +986,14 @@ const Orders: React.FC = () => {
                 <tbody className="divide-y-2 divide-black border-2 border-black">
                   {filteredLocalItems.length > 0 ? filteredLocalItems.map(item => {
                     const contractItem = selectedContract?.items.find(ci => ci.id === item.contractItemId);
-                    const remaining = contractItem ? (contractItem.contractedQuantity - contractItem.acquiredQuantity) : 0;
+                    const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === item.contractItemId);
+                    const originalQty = originalItem ? originalItem.quantity : 0;
+                    const remaining = contractItem ? (contractItem.contractedQuantity - contractItem.acquiredQuantity + originalQty) : 0;
+                    const isException = selectedContract?.number === '01/2026/SEDUC/MT' && contractItem?.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+                    const isDepleted = remaining <= 0 && !isException;
 
                     return (
-                      <tr key={item.contractItemId} className={`group transition-colors ${item.selected ? 'bg-emerald-50/20' : 'hover:bg-gray-50'}`}>
+                      <tr key={item.contractItemId} className={`group transition-colors ${isDepleted ? 'bg-red-50/50' : item.selected ? 'bg-emerald-50/20' : 'hover:bg-gray-50'}`}>
                         <td className="p-3 text-center no-print">
                           <div className="flex items-center justify-center gap-2">
                             <input
@@ -920,10 +1012,20 @@ const Orders: React.FC = () => {
                           </div>
                         </td>
                         <td className="p-3">
-                          <p className="font-black uppercase text-gray-900">{item.description}</p>
-                          <div className="flex gap-2 mt-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={`font-black uppercase ${isDepleted ? 'text-red-900' : 'text-gray-900'}`}>{item.description}</p>
+                            {isDepleted && (
+                              <span className="text-[8px] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded border border-red-300 uppercase flex items-center gap-1 shrink-0 no-print">
+                                <AlertTriangle size={10} /> Saldo Esgotado
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2 mt-1 flex-wrap items-center">
                             <span className="text-[8px] font-black bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 uppercase border border-gray-200">UNID: {item.unit}</span>
                             {item.brand && <span className="text-[8px] font-black bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 uppercase border border-blue-100">MARCA: {item.brand}</span>}
+                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase border ${isDepleted ? 'bg-red-105 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                              Saldo Contrato: {formatQuantity(remaining)} {item.unit}
+                            </span>
                           </div>
                         </td>
                         <td className="p-3 text-center font-black uppercase">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -931,9 +1033,10 @@ const Orders: React.FC = () => {
                           <div className="flex flex-col items-center gap-1">
                             <input
                               type="text"
+                              key={`${item.contractItemId}-${item.requestedQuantity}`}
                               defaultValue={formatQuantity(item.requestedQuantity)}
                               onBlur={(e) => updateLocalItem(item.contractItemId, 'requestedQuantity', e.target.value)}
-                              className="w-24 border border-gray-300 p-2 text-center font-black rounded-lg no-print outline-none focus:border-emerald-500"
+                              className={`w-24 border p-2 text-center font-black rounded-lg no-print outline-none focus:border-emerald-500 ${isDepleted ? 'border-red-300 bg-red-50 text-red-700' : 'border-gray-300'}`}
                               placeholder="0,000"
                             />
                             <span className="hidden pdf-show font-black text-sm">{formatQuantity(item.requestedQuantity)}</span>

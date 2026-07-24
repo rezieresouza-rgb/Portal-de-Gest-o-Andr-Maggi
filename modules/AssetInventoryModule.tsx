@@ -339,7 +339,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
   const isSemRp = (heritageNumber: string) => {
     const clean = (heritageNumber || '').toUpperCase().trim();
-    return !clean || clean === 'S/N' || clean === 'SEM NÚMERO' || clean === 'SEM NUMERO' || clean === 'SEM PATRIMONIO' || clean === 'SEM PATRIMÔNIO';
+    return !clean || clean === 'S/N' || clean === 'SEM NÚMERO' || clean === 'SEM NUMERO' || clean === 'SEM PATRIMONIO' || clean === 'SEM PATRIMÔNIO' || clean === 'SRP' || clean === 'S.R.P' || clean === 'S.R.P.';
   };
 
   const getSitFisica = (cond: string, isUnserviceable: boolean) => {
@@ -540,11 +540,16 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!editingAssetId && assets.some(a => a.heritageNumber === form.heritageNumber)) {
-      return alert("Erro: Número de patrimônio já cadastrado.");
-    }
-    if (editingAssetId && assets.some(a => a.heritageNumber === form.heritageNumber && a.id !== editingAssetId)) {
-      return alert("Erro: Número de patrimônio já cadastrado em outro bem.");
+    const cleanHeritage = (form.heritageNumber || '').trim().toUpperCase();
+    const isAllowedDuplicate = isSemRp(cleanHeritage);
+
+    if (!isAllowedDuplicate) {
+      if (!editingAssetId && assets.some(a => (a.heritageNumber || '').trim().toUpperCase() === cleanHeritage)) {
+        return alert("Erro: Número de patrimônio já cadastrado.");
+      }
+      if (editingAssetId && assets.some(a => (a.heritageNumber || '').trim().toUpperCase() === cleanHeritage && a.id !== editingAssetId)) {
+        return alert("Erro: Número de patrimônio já cadastrado em outro bem.");
+      }
     }
 
     const isPessimo = form.condition === 'PÉSSIMO';
@@ -657,7 +662,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const filteredAssets = useMemo(() => {
     return assets.filter(a => {
       const matchSearch = a.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.heritageNumber.includes(searchTerm) ||
+        a.heritageNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.location.toLowerCase().includes(searchTerm.toLowerCase());
       const matchLocation = locationFilter ? a.location === locationFilter : true;
       return matchSearch && matchLocation;
@@ -668,7 +673,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     return assets.filter(a => {
       const matchSearch = reportSearch ? (
         a.description.toLowerCase().includes(reportSearch.toLowerCase()) ||
-        a.heritageNumber.includes(reportSearch)
+        a.heritageNumber.toLowerCase().includes(reportSearch.toLowerCase())
       ) : true;
       const matchLocation = reportLocation ? a.location === reportLocation : true;
       const matchCondition = reportCondition ? (
@@ -3256,9 +3261,10 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nº Patrimônio</label>
                       <input
                         required
-                        type="number"
+                        type="text"
+                        placeholder="Ex: 123456 ou SRP"
                         value={form.heritageNumber}
-                        onChange={e => setForm({ ...form, heritageNumber: e.target.value })}
+                        onChange={e => setForm({ ...form, heritageNumber: e.target.value.toUpperCase() })}
                         className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-lg outline-none focus:bg-white transition-all"
                       />
                     </div>

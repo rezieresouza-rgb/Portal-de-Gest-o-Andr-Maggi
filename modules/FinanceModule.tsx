@@ -41,7 +41,9 @@ import {
   Database,
   Trash2,
   FileSearch,
-  Printer
+  Printer,
+  List,
+  Table
 } from 'lucide-react';
 import { extractInvoiceInfo } from '../geminiService';
 import { supabase } from '../supabaseClient';
@@ -120,6 +122,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     startDate: '',
     endDate: ''
   });
+
+  const [reportViewMode, setReportViewMode] = useState<'list' | 'table'>('list');
 
   // UI Helper for Date Pickers (YYYY-MM-DD)
   const getLocalDateString = () => {
@@ -1709,17 +1713,63 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
                   {activeTab === 'transaction_reports' && (
                     <div className="space-y-8 animate-in fade-in duration-500 pb-20 print:space-y-4 print:pb-0 print:bg-white print:text-black">
-                       <div className="bg-white/5 backdrop-blur-md p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-8 print:bg-white print:p-0 print:border-none print:shadow-none print:space-y-4">
-                         <div className="flex justify-between items-center border-b border-white/5 pb-6 print:border-b-2 print:border-gray-300 print:pb-2">
-                           <div className="flex items-center gap-3 print:w-full print:justify-center">
-                             <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20 print:hidden"><FileSearch size={20} /></div>
-                             <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none print:text-black print:text-2xl print:text-center">Relatório de Lançamentos</h3>
+                       <div className="bg-white/5 backdrop-blur-md p-8 md:p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-8 print:bg-white print:p-0 print:border-none print:shadow-none print:space-y-4">
+                         
+                         {/* CABEÇALHO DO RELATÓRIO E AÇÕES */}
+                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6 print:border-b-2 print:border-black print:pb-4">
+                           <div className="flex items-center gap-3 print:w-full print:justify-between">
+                             <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20 print:hidden">
+                               <FileSearch size={22} />
+                             </div>
+                             <div>
+                               <div className="hidden print:block mb-2 text-center">
+                                 <h2 className="text-xl font-black uppercase tracking-wider text-black">Escola Estadual André Maggi</h2>
+                                 <p className="text-[10px] uppercase font-bold text-gray-600">Sistema de Gestão Financeira Escolar</p>
+                               </div>
+                               <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none print:text-black print:text-2xl print:text-center print:font-black">
+                                 Relatório de Lançamentos
+                               </h3>
+                               <p className="text-xs text-white/50 font-medium mt-1 print:hidden">
+                                 Visualização detalhada e emissão de relatório oficial em formato de lista ou tabela
+                               </p>
+                             </div>
                            </div>
-                           <button onClick={() => window.print()} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2 print:hidden">
-                              <Printer size={16} /> Imprimir Relatório
-                           </button>
+
+                           {/* CONTROLES DE VISUALIZAÇÃO E IMPRESSÃO (OCULTOS NA IMPRESSÃO) */}
+                           <div className="flex items-center gap-3 self-stretch md:self-auto print:hidden">
+                             <div className="flex items-center bg-white/5 p-1 rounded-2xl border border-white/10">
+                               <button
+                                 onClick={() => setReportViewMode('list')}
+                                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all ${
+                                   reportViewMode === 'list'
+                                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                     : 'text-white/60 hover:text-white hover:bg-white/5'
+                                 }`}
+                               >
+                                 <List size={15} /> Lista
+                               </button>
+                               <button
+                                 onClick={() => setReportViewMode('table')}
+                                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all ${
+                                   reportViewMode === 'table'
+                                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                     : 'text-white/60 hover:text-white hover:bg-white/5'
+                                 }`}
+                               >
+                                 <Table size={15} /> Tabela
+                               </button>
+                             </div>
+
+                             <button 
+                               onClick={() => window.print()} 
+                               className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-2 shrink-0"
+                             >
+                               <Printer size={16} /> Imprimir Relatório
+                             </button>
+                           </div>
                          </div>
                          
+                         {/* FILTROS (TELA APENAS) */}
                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 print:hidden">
                             <select 
                                value={reportFilters.fund} 
@@ -1780,95 +1830,204 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                             />
                          </div>
 
-                         <div className="overflow-x-auto bg-white/5 p-4 rounded-3xl border border-white/10 print:bg-white print:p-0 print:border-none print:overflow-visible">
-                           <table className="w-full text-left text-[11px] border-collapse print:text-black">
-                             <thead>
-                               <tr className="text-white/40 border-b border-white/5 print:text-black print:border-b-2 print:border-black">
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Data</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Fonte</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Descrição</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">NF</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest print:text-black">Tipo</th>
-                                 <th className="px-4 py-3 font-black uppercase tracking-widest text-right print:text-black">Valor</th>
-                               </tr>
-                             </thead>
-                             <tbody className="divide-y divide-white/5 print:divide-gray-300">
-                               {(() => {
-                                 let filtered = Object.values(funds).flatMap(f => (f as any).transactions.map((t: any) => ({...t, fundName: (f as any).name})));
-                                 
-                                 if (reportFilters.fund !== 'all') {
-                                    filtered = filtered.filter(t => t.fundName === funds[reportFilters.fund as SubModuleType].name);
-                                    if (reportFilters.fund === 'merenda' && reportFilters.fundingSource && reportFilters.fundingSource !== 'ALL') {
-                                       filtered = filtered.filter(t => t.fundingSource === reportFilters.fundingSource);
-                                    }
-                                 }
-                                 if (reportFilters.type !== 'ALL') {
-                                    filtered = filtered.filter(t => t.type === reportFilters.type);
-                                 }
-                                 if (reportFilters.group !== 'ALL') {
-                                    filtered = filtered.filter(t => t.group === reportFilters.group);
-                                 }
-                                 if (reportFilters.startDate) {
-                                    filtered = filtered.filter(t => t.date >= reportFilters.startDate);
-                                 }
-                                 if (reportFilters.endDate) {
-                                    filtered = filtered.filter(t => t.date <= reportFilters.endDate);
-                                 }
-                                 
-                                 filtered.sort((a, b) => {
-                                    const dateTimeA = new Date(`${a.date}T${a.time || '00:00:00'}`).getTime();
-                                    const dateTimeB = new Date(`${b.date}T${b.time || '00:00:00'}`).getTime();
-                                    return dateTimeA - dateTimeB;
-                                 });
+                         {/* DADOS PROCESSADOS E EXIBIÇÃO */}
+                         {(() => {
+                           let filtered = Object.values(funds).flatMap(f => (f as any).transactions.map((t: any) => ({...t, fundName: (f as any).name})));
+                           
+                           if (reportFilters.fund !== 'all') {
+                              filtered = filtered.filter(t => t.fundName === funds[reportFilters.fund as SubModuleType].name);
+                              if (reportFilters.fund === 'merenda' && reportFilters.fundingSource && reportFilters.fundingSource !== 'ALL') {
+                                 filtered = filtered.filter(t => t.fundingSource === reportFilters.fundingSource);
+                              }
+                           }
+                           if (reportFilters.type !== 'ALL') {
+                              filtered = filtered.filter(t => t.type === reportFilters.type);
+                           }
+                           if (reportFilters.group !== 'ALL') {
+                              filtered = filtered.filter(t => t.group === reportFilters.group);
+                           }
+                           if (reportFilters.startDate) {
+                              filtered = filtered.filter(t => t.date >= reportFilters.startDate);
+                           }
+                           if (reportFilters.endDate) {
+                              filtered = filtered.filter(t => t.date <= reportFilters.endDate);
+                           }
+                           
+                           filtered.sort((a, b) => {
+                              const dateTimeA = new Date(`${a.date}T${a.time || '00:00:00'}`).getTime();
+                              const dateTimeB = new Date(`${b.date}T${b.time || '00:00:00'}`).getTime();
+                              return dateTimeA - dateTimeB;
+                           });
 
-                                 const totalEntries = filtered.filter(t => t.type === 'ENTRY').reduce((acc, t) => acc + t.value, 0);
-                                 const totalExpenses = filtered.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.value, 0);
+                           const totalEntries = filtered.filter(t => t.type === 'ENTRY').reduce((acc, t) => acc + t.value, 0);
+                           const totalExpenses = filtered.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.value, 0);
+                           const periodBalance = totalEntries - totalExpenses;
 
-                                 if (filtered.length === 0) {
-                                    return <tr><td colSpan={6} className="py-10 text-center text-white/30 print:text-gray-500 text-xs font-bold uppercase tracking-widest">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>;
-                                 }
+                           const fundLabel = reportFilters.fund === 'all' ? 'Todas as Fontes' : (funds[reportFilters.fund as SubModuleType]?.name || reportFilters.fund);
+                           const groupLabel = reportFilters.group === 'ALL' ? 'Custeio & Capital' : reportFilters.group;
+                           const periodLabel = (reportFilters.startDate || reportFilters.endDate)
+                             ? `${reportFilters.startDate ? new Date(reportFilters.startDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início'} até ${reportFilters.endDate ? new Date(reportFilters.endDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
+                             : 'Período Completo';
 
-                                 return (
-                                    <>
-                                       {filtered.map(t => (
-                                          <tr key={t.id} className="hover:bg-white/5 transition-all print:hover:bg-transparent">
-                                            <td className="px-4 py-3 font-bold text-white/70 print:text-black">{new Date(t.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
-                                            <td className="px-4 py-3 font-bold text-white/70 uppercase print:text-black text-[9px]">{t.fundName}</td>
-                                            <td className="px-4 py-3 font-black text-white uppercase print:text-black max-w-[200px] truncate print:max-w-none print:whitespace-normal print:overflow-visible" title={t.description}>{t.description}</td>
-                                            <td className="px-4 py-3 font-bold text-white/50 print:text-black">{t.invoiceNumber || '-'}</td>
-                                            <td className="px-4 py-3 space-y-1">
-                                               <span className={`px-2 py-1 rounded text-[8px] font-black uppercase inline-block ${t.type === 'ENTRY' ? 'bg-blue-500/20 text-blue-400 print:bg-transparent print:text-black print:border print:border-black' : 'bg-red-500/20 text-red-400 print:bg-transparent print:text-black print:border print:border-black'}`}>
-                                                  {t.type === 'ENTRY' ? 'Entrada' : 'Saída'} - {t.group}
+                           if (filtered.length === 0) {
+                              return (
+                                <div className="py-16 text-center bg-white/5 rounded-3xl border border-white/10 print:bg-white print:border-none">
+                                  <p className="text-xs font-bold uppercase tracking-widest text-white/40 print:text-gray-600">
+                                    Nenhum lançamento encontrado para os filtros selecionados.
+                                  </p>
+                                </div>
+                              );
+                           }
+
+                           return (
+                             <div className="space-y-6">
+                               {/* CARDS DE RESUMO (TELA E IMPRESSÃO) */}
+                               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print:grid-cols-4 print:gap-2 print:border-b print:border-gray-300 print:pb-3">
+                                 <div className="bg-white/5 p-4 rounded-2xl border border-white/10 print:bg-gray-50 print:border print:border-gray-300 print:p-2">
+                                   <p className="text-[10px] uppercase font-black text-white/40 print:text-gray-600 print:text-[8px]">Filtros Aplicados</p>
+                                   <p className="text-xs font-bold text-white uppercase mt-0.5 truncate print:text-black print:text-[9px]" title={`${fundLabel} (${groupLabel})`}>
+                                     {fundLabel}
+                                   </p>
+                                   <p className="text-[9px] text-white/50 print:text-gray-500 font-semibold">{periodLabel}</p>
+                                 </div>
+
+                                 <div className="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20 print:bg-gray-50 print:border print:border-gray-300 print:p-2">
+                                   <p className="text-[10px] uppercase font-black text-emerald-400 print:text-gray-700 print:text-[8px]">Total Entradas</p>
+                                   <p className="text-base font-black text-emerald-400 mt-0.5 print:text-black print:text-[11px]">
+                                     + R$ {totalEntries.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                   </p>
+                                 </div>
+
+                                 <div className="bg-rose-500/10 p-4 rounded-2xl border border-rose-500/20 print:bg-gray-50 print:border print:border-gray-300 print:p-2">
+                                   <p className="text-[10px] uppercase font-black text-rose-400 print:text-gray-700 print:text-[8px]">Total Saídas</p>
+                                   <p className="text-base font-black text-rose-400 mt-0.5 print:text-black print:text-[11px]">
+                                     - R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                   </p>
+                                 </div>
+
+                                 <div className="bg-blue-600/20 p-4 rounded-2xl border border-blue-500/30 print:bg-gray-100 print:border print:border-black print:p-2">
+                                   <p className="text-[10px] uppercase font-black text-blue-400 print:text-black print:text-[8px]">Saldo no Período</p>
+                                   <p className="text-base font-black text-blue-300 mt-0.5 print:text-black print:text-[11px]">
+                                     R$ {periodBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                   </p>
+                                 </div>
+                               </div>
+
+                               {/* METADADOS EXCLUSIVOS DA IMPRESSÃO */}
+                               <div className="hidden print:flex justify-between items-center text-[9px] text-gray-600 border-b border-gray-200 pb-1">
+                                 <span>Total de itens listados: <strong>{filtered.length}</strong></span>
+                                 <span>Emissão: {new Date().toLocaleString('pt-BR')}</span>
+                               </div>
+
+                               {/* EXIBIÇÃO EM FORMATO DE LISTA (LIST VIEW) */}
+                               <div className={`${reportViewMode === 'table' ? 'print:block hidden' : 'block'} space-y-2 print:space-y-1`}>
+                                 <div className="divide-y divide-white/5 print:divide-gray-200 border border-white/10 rounded-3xl overflow-hidden bg-white/5 p-2 print:bg-white print:border-none print:p-0">
+                                   {filtered.map((t, idx) => (
+                                     <div 
+                                       key={t.id} 
+                                       className="p-4 hover:bg-white/5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 print:bg-white print:py-1.5 print:px-2 print:border-b print:border-gray-200"
+                                       style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                                     >
+                                       <div className="flex items-start md:items-center gap-3">
+                                         <span className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center text-[10px] font-black text-white/60 shrink-0 print:bg-gray-200 print:text-black print:w-5 print:h-5 print:text-[8px] print:rounded">
+                                           #{idx + 1}
+                                         </span>
+                                         
+                                         <div className="space-y-0.5">
+                                           <div className="flex items-center gap-2 flex-wrap">
+                                             <span className="text-xs font-bold text-blue-400 print:text-black print:text-[10px] print:font-bold">
+                                               {new Date(t.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                                             </span>
+                                             <h4 className="text-xs font-black text-white uppercase tracking-tight print:text-black print:text-[10px] print:font-bold">
+                                               {t.description}
+                                             </h4>
+                                           </div>
+
+                                           <div className="flex items-center gap-2 flex-wrap text-[10px] text-white/60 print:text-gray-700 print:text-[8.5px]">
+                                             <span className="font-bold text-white/80 uppercase print:text-black">
+                                               {t.fundName}
+                                             </span>
+
+                                             {t.fundingSource && (
+                                               <span className="font-semibold text-white/60 print:text-gray-700">
+                                                 • {t.fundingSource}
                                                </span>
-                                               {t.fundingSource && (
-                                                  <span className="px-2 py-1 rounded text-[8px] font-black uppercase inline-block ml-1 bg-gray-500/20 text-gray-300 print:bg-transparent print:text-black print:border print:border-gray-500">
-                                                     {t.fundingSource}
-                                                  </span>
-                                               )}
-                                            </td>
-                                            <td className={`px-4 py-3 font-black text-right ${t.type === 'ENTRY' ? 'text-blue-400 print:text-black' : 'text-red-400 print:text-black'}`}>
-                                               {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                            </td>
-                                          </tr>
+                                             )}
+
+                                             <span className={`font-black uppercase px-1.5 py-0.5 rounded text-[8px] print:p-0 print:text-[8.5px] print:font-bold ${
+                                               t.type === 'ENTRY' 
+                                                 ? 'bg-emerald-500/20 text-emerald-300 print:text-black' 
+                                                 : 'bg-rose-500/20 text-rose-300 print:text-black'
+                                             }`}>
+                                               • {t.type === 'ENTRY' ? 'Entrada' : 'Saída'} ({t.group})
+                                             </span>
+
+                                             {t.invoiceNumber && (
+                                               <span className="font-semibold text-white/40 print:text-gray-600">
+                                                 • NF: {t.invoiceNumber}
+                                               </span>
+                                             )}
+                                           </div>
+                                         </div>
+                                       </div>
+
+                                       <div className="text-right shrink-0">
+                                         <span className={`text-sm font-black print:text-[11px] print:font-black ${
+                                           t.type === 'ENTRY' ? 'text-emerald-400 print:text-black' : 'text-rose-400 print:text-black'
+                                         }`}>
+                                           {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                         </span>
+                                       </div>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
+
+                               {/* EXIBIÇÃO EM FORMATO DE TABELA (TABLE VIEW - TELA APENAS) */}
+                               {reportViewMode === 'table' && (
+                                 <div className="overflow-x-auto bg-white/5 p-4 rounded-3xl border border-white/10 print:hidden">
+                                   <table className="w-full text-left text-[11px] border-collapse">
+                                     <thead>
+                                       <tr className="text-white/40 border-b border-white/5">
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest">#</th>
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest">Data</th>
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest">Fonte</th>
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest">Descrição</th>
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest">NF</th>
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest">Tipo</th>
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest text-right">Valor</th>
+                                       </tr>
+                                     </thead>
+                                     <tbody className="divide-y divide-white/5">
+                                       {filtered.map((t, idx) => (
+                                         <tr key={t.id} className="hover:bg-white/5 transition-all">
+                                           <td className="px-4 py-3 font-bold text-white/30 text-[10px]">#{idx + 1}</td>
+                                           <td className="px-4 py-3 font-bold text-white/70">{new Date(t.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                                           <td className="px-4 py-3 font-bold text-white/70 uppercase text-[9px]">{t.fundName}</td>
+                                           <td className="px-4 py-3 font-black text-white uppercase max-w-[200px] truncate" title={t.description}>{t.description}</td>
+                                           <td className="px-4 py-3 font-bold text-white/50">{t.invoiceNumber || '-'}</td>
+                                           <td className="px-4 py-3 space-y-1">
+                                             <span className={`px-2 py-1 rounded text-[8px] font-black uppercase inline-block ${t.type === 'ENTRY' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>
+                                               {t.type === 'ENTRY' ? 'Entrada' : 'Saída'} - {t.group}
+                                             </span>
+                                             {t.fundingSource && (
+                                               <span className="px-2 py-1 rounded text-[8px] font-black uppercase inline-block ml-1 bg-gray-500/20 text-gray-300">
+                                                 {t.fundingSource}
+                                               </span>
+                                             )}
+                                           </td>
+                                           <td className={`px-4 py-3 font-black text-right ${t.type === 'ENTRY' ? 'text-blue-400' : 'text-red-400'}`}>
+                                             {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                           </td>
+                                         </tr>
                                        ))}
-                                       <tr className="bg-white/10 print:bg-gray-100 border-t-2 border-white/20 print:border-black">
-                                          <td colSpan={5} className="px-4 py-4 text-right font-black text-white print:text-black uppercase tracking-widest text-xs">Total Entradas</td>
-                                          <td className="px-4 py-4 text-right font-black text-blue-400 print:text-black text-sm">R$ {totalEntries.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                       </tr>
-                                       <tr className="bg-white/10 print:bg-gray-100 border-t border-white/5 print:border-gray-300">
-                                          <td colSpan={5} className="px-4 py-4 text-right font-black text-white print:text-black uppercase tracking-widest text-xs">Total Saídas</td>
-                                          <td className="px-4 py-4 text-right font-black text-red-400 print:text-black text-sm">R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                       </tr>
-                                       <tr className="bg-blue-600 print:bg-black">
-                                          <td colSpan={5} className="px-4 py-4 text-right font-black text-white print:text-white uppercase tracking-widest text-sm">Saldo no Período</td>
-                                          <td className="px-4 py-4 text-right font-black text-white print:text-white text-lg">R$ {(totalEntries - totalExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                       </tr>
-                                    </>
-                                 );
-                               })()}
-                             </tbody>
-                           </table>
-                         </div>
+                                     </tbody>
+                                   </table>
+                                 </div>
+                               )}
+                             </div>
+                           );
+                         })()}
                        </div>
                     </div>
                   )}
