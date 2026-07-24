@@ -9,6 +9,7 @@ import {
   RotateCcw,
   ArrowRightLeft,
   Download,
+  Printer,
   Loader2,
   CheckCircle2,
   Info,
@@ -972,6 +973,15 @@ const Inventory: React.FC = () => {
                     Limpar Filtros
                   </button>
                 )}
+
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2.5 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-sm whitespace-nowrap print:hidden"
+                  title="Imprimir relatório completo do histórico"
+                >
+                  <Printer size={14} />
+                  <span>Imprimir Histórico</span>
+                </button>
               </div>
             </div>
 
@@ -990,19 +1000,35 @@ const Inventory: React.FC = () => {
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h.responsavel}</p>
                       </div>
                     </div>
-                    <button onClick={async (e) => {
-                      e.stopPropagation();
-                      if(window.confirm("Excluir este fechamento de histórico?")) {
-                        const updated = history.filter(item => item.id !== h.id);
-                        setHistory(updated);
-                        localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updated));
-                        const { error: deleteError } = await supabase.from('merenda_inventory_history').delete().eq('id', h.id);
-                        if (deleteError) {
-                          console.error("Erro ao excluir do Supabase:", deleteError.message);
-                          alert("Erro no Supabase ao excluir o fechamento: " + deleteError.message);
+
+                    <div className="flex items-center gap-2 print:hidden">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          loadFromHistory(h);
+                          setTimeout(() => window.print(), 200);
+                        }} 
+                        title="Imprimir Ficha deste Fechamento"
+                        className="px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-xl transition-all flex items-center gap-1.5 text-[10px] font-black uppercase shadow-sm"
+                      >
+                        <Printer size={14} />
+                        <span className="hidden sm:inline">Imprimir Ficha</span>
+                      </button>
+
+                      <button onClick={async (e) => {
+                        e.stopPropagation();
+                        if(window.confirm("Excluir este fechamento de histórico?")) {
+                          const updated = history.filter(item => item.id !== h.id);
+                          setHistory(updated);
+                          localStorage.setItem('merenda_inventory_history_v1', JSON.stringify(updated));
+                          const { error: deleteError } = await supabase.from('merenda_inventory_history').delete().eq('id', h.id);
+                          if (deleteError) {
+                            console.error("Erro ao excluir do Supabase:", deleteError.message);
+                            alert("Erro no Supabase ao excluir o fechamento: " + deleteError.message);
+                          }
                         }
-                      }
-                    }} className="text-gray-300 hover:text-red-500 p-2"><Trash2 size={16} /></button>
+                      }} className="text-gray-300 hover:text-red-500 p-2" title="Excluir"><Trash2 size={16} /></button>
+                    </div>
                   </div>
                   
                   <div className="bg-white p-4 rounded-2xl border border-gray-100 space-y-2">
