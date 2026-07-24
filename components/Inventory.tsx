@@ -1056,6 +1056,46 @@ const Inventory: React.FC = () => {
       </div>
 
       <div ref={printRef} className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm">
+        {/* Cabeçalho Oficial do Documento / Ficha para Impressão e PDF */}
+        <div className="border-b-2 border-gray-900 pb-6 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                  SEDUC/MT • Alimentação Escolar
+                </span>
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                  Código UA: 14101
+                </span>
+              </div>
+              <h1 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                E.E. CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI
+              </h1>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Ficha de Controle de Estoque Físico e Consumo Diário de Merenda
+              </p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 min-w-[260px] text-right space-y-1">
+              <div className="text-xs font-black text-gray-900 uppercase">
+                Data do Lançamento: <span className="text-emerald-700 font-extrabold">{new Date(data + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div className="text-xs font-bold text-gray-700 uppercase">
+                Turno: <span className="font-black text-gray-900">{turno}</span>
+              </div>
+              <div className="text-[10px] font-bold text-gray-500 uppercase">
+                Responsável: <span className="font-bold text-gray-800">{responsavel || 'GESTOR DE MERENDA'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+            <span>Município: Lucas do Rio Verde - MT</span>
+            <span>Documento Auditado do Sistema</span>
+            <span>Data de Impressão: {new Date().toLocaleDateString('pt-BR')}</span>
+          </div>
+        </div>
+
         <table className="w-full text-left border-collapse table-fixed">
           <thead>
             <tr className="text-white">
