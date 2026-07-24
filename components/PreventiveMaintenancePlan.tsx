@@ -250,11 +250,26 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                 if (error) throw error;
 
                 if (data && data.length > 0) {
-                    setItems(data);
+                    const formatted = data.map(i => {
+                        if (i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda'))) {
+                            return { ...i, status: 'EM_EXECUCAO' as PreventiveStatus, cost: 6500 };
+                        }
+                        return i;
+                    });
+                    setItems(formatted);
+
+                    const acItem = data.find(i => i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda')));
+                    if (acItem) {
+                        await supabase.from('preventive_maintenance_plan').update({
+                            status: 'EM_EXECUCAO',
+                            cost: 6500
+                        }).eq('id', acItem.id);
+                    }
                 } else {
                     const seedData = MANUAL_ITEMS.map(m => ({
                         ...m,
-                        status: 'PENDENTE' as PreventiveStatus,
+                        status: (m.item === 'Ar Condicionado' && m.intervention === 'Limpeza Interna') ? ('EM_EXECUCAO' as PreventiveStatus) : ('PENDENTE' as PreventiveStatus),
+                        cost: (m.item === 'Ar Condicionado' && m.intervention === 'Limpeza Interna') ? 6500 : undefined,
                         created_at: new Date().toISOString()
                     }));
 
