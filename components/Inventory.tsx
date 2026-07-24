@@ -1183,7 +1183,9 @@ const Inventory: React.FC = () => {
                       }}
                       className={`w-full bg-transparent text-center font-black outline-none print:hidden transition-all ${hasEntries ? 'text-emerald-700 scale-110' : 'text-emerald-600'}`} 
                     />
-                    <span className="hidden pdf-show">{item.entries || '0'}</span>
+                    <span className="hidden print:inline-block font-black text-emerald-800 text-xs text-center">
+                      {item.entries ? item.entries.toLocaleString('pt-BR') : '0'}
+                    </span>
                   </td>
                   <td className={`px-4 py-4 text-center transition-all ${hasOutputs ? 'bg-red-50' : 'bg-red-50/10'}`}>
                     <input 
@@ -1200,7 +1202,9 @@ const Inventory: React.FC = () => {
                       }}
                       className={`w-full bg-transparent text-center font-black outline-none print:hidden transition-all ${hasOutputs ? 'text-red-700 scale-110' : 'text-red-600'}`} 
                     />
-                    <span className="hidden pdf-show">{item.outputs || '0'}</span>
+                    <span className="hidden print:inline-block font-black text-red-800 text-xs text-center">
+                      {item.outputs ? item.outputs.toLocaleString('pt-BR') : '0'}
+                    </span>
                   </td>
                   <td className={`px-6 py-6 text-center text-sm font-black ${isCritical ? 'text-red-700 bg-red-100/40 shadow-inner' : 'text-gray-900'}`}>
                     {currentBalance.toLocaleString('pt-BR')}
