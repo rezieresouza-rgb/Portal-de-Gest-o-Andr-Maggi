@@ -531,9 +531,45 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setImagePreview(base64);
-        setForm(prev => ({ ...prev, photo: base64 }));
+        const rawBase64 = reader.result as string;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1024;
+          const MAX_HEIGHT = 1024;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            setImagePreview(compressedBase64);
+            setForm(prev => ({ ...prev, photo: compressedBase64 }));
+          } else {
+            setImagePreview(rawBase64);
+            setForm(prev => ({ ...prev, photo: rawBase64 }));
+          }
+        };
+        img.onerror = () => {
+          setImagePreview(rawBase64);
+          setForm(prev => ({ ...prev, photo: rawBase64 }));
+        };
+        img.src = rawBase64;
       };
       reader.readAsDataURL(file);
     }
@@ -557,50 +593,55 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let heritageToSave = (form.heritageNumber || '').trim().toUpperCase();
-    if (!heritageToSave) {
-      heritageToSave = 'SRP';
-    }
+    const rawHeritage = (form.heritageNumber || '').trim().toUpperCase();
+    const cleanHeritage = rawHeritage || 'SRP';
+    let heritageToSave = cleanHeritage;
 
-    const cleanHeritage = heritageToSave;
-    const isAllowedDuplicate = isSemRp(cleanHeritage);
+    // Check if cleanHeritage is already taken in the existing assets list
+    const isTaken = assets.some(a => {
+      const existingDisplay = getDisplayHeritage(a.heritageNumber).toUpperCase().trim();
+      const existingRaw = (a.heritageNumber || '').toUpperCase().trim();
+      return (existingDisplay === cleanHeritage || existingRaw === cleanHeritage) && a.id !== editingAssetId;
+    });
 
-    if (!isAllowedDuplicate) {
-      if (!editingAssetId && assets.some(a => (a.heritageNumber || '').trim().toUpperCase() === cleanHeritage)) {
-        return alert("Erro: Número de patrimônio já cadastrado.");
-      }
-      if (editingAssetId && assets.some(a => (a.heritageNumber || '').trim().toUpperCase() === cleanHeritage && a.id !== editingAssetId)) {
-        return alert("Erro: Número de patrimônio já cadastrado em outro bem.");
-      }
-    } else {
-      const isTaken = assets.some(a => a.heritageNumber.toUpperCase().trim() === cleanHeritage && a.id !== editingAssetId);
-      if (isTaken) {
-        heritageToSave = `${cleanHeritage}-${Date.now()}`;
-      }
+    if (isTaken) {
+      heritageToSave = `${cleanHeritage}#${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     }
 
     const isPessimo = form.condition === 'PÉSSIMO';
 
+    const payload = {
+      description: form.description.toUpperCase(),
+      location: form.location.toUpperCase(),
+      heritage_number: heritageToSave,
+      condition: form.condition,
+      is_unserviceable: isPessimo,
+      photo: form.photo,
+      unserviceable_data: isPessimo ? {
+        date: new Date().toISOString().split('T')[0],
+        ...unserviceableForm
+      } : null,
+      acquisition_document: form.acquisitionDocument?.toUpperCase() || null,
+      acquisition_year: form.acquisitionYear || null
+    };
+
     try {
       if (editingAssetId) {
         // 1. Update Asset
-        const { error: assetError } = await supabase
+        let { error: assetError } = await supabase
           .from('assets')
-          .update({
-            description: form.description.toUpperCase(),
-            location: form.location.toUpperCase(),
-            heritage_number: heritageToSave,
-            condition: form.condition,
-            is_unserviceable: isPessimo,
-            photo: form.photo,
-            unserviceable_data: isPessimo ? {
-              date: new Date().toISOString().split('T')[0],
-              ...unserviceableForm
-            } : null,
-            acquisition_document: form.acquisitionDocument?.toUpperCase() || null,
-            acquisition_year: form.acquisitionYear || null
-          })
+          .update(payload)
           .eq('id', editingAssetId);
+
+        // Fallback if DB unique constraint triggers
+        if (assetError && (assetError.code === '23505' || assetError.message?.includes('unique constraint'))) {
+          const fallbackHeritage = `${cleanHeritage}#${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          const retryRes = await supabase
+            .from('assets')
+            .update({ ...payload, heritage_number: fallbackHeritage })
+            .eq('id', editingAssetId);
+          assetError = retryRes.error;
+        }
 
         if (assetError) throw assetError;
 
@@ -619,39 +660,40 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
       } else {
         // 1. Insert Asset
-        const { data: newAsset, error: assetError } = await supabase
+        let { data: newAsset, error: assetError } = await supabase
           .from('assets')
-          .insert([{
-            description: form.description.toUpperCase(),
-            location: form.location.toUpperCase(),
-            heritage_number: heritageToSave,
-            condition: form.condition,
-            is_unserviceable: isPessimo,
-            photo: form.photo,
-            unserviceable_data: isPessimo ? {
-              date: new Date().toISOString().split('T')[0],
-              ...unserviceableForm
-            } : null,
-            acquisition_document: form.acquisitionDocument?.toUpperCase() || null,
-            acquisition_year: form.acquisitionYear || null
-          }])
+          .insert([payload])
           .select()
           .single();
+
+        // Fallback if DB unique constraint triggers
+        if (assetError && (assetError.code === '23505' || assetError.message?.includes('unique constraint'))) {
+          const fallbackHeritage = `${cleanHeritage}#${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          const retryRes = await supabase
+            .from('assets')
+            .insert([{ ...payload, heritage_number: fallbackHeritage }])
+            .select()
+            .single();
+          newAsset = retryRes.data;
+          assetError = retryRes.error;
+        }
 
         if (assetError) throw assetError;
 
         // 2. Insert History for Creation
-        const { error: historyError } = await supabase
-          .from('asset_history')
-          .insert([{
-            asset_id: newAsset.id,
-            date: new Date().toISOString().split('T')[0],
-            action: isPessimo ? 'CADASTRO COMO INSERVÍVEL' : 'CADASTRO INICIAL',
-            responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR',
-            notes: isPessimo ? `Motivo: ${unserviceableForm.reason}` : 'Inclusão manual no inventário'
-          }]);
+        if (newAsset) {
+          const { error: historyError } = await supabase
+            .from('asset_history')
+            .insert([{
+              asset_id: newAsset.id,
+              date: new Date().toISOString().split('T')[0],
+              action: isPessimo ? 'CADASTRO COMO INSERVÍVEL' : 'CADASTRO INICIAL',
+              responsible: user?.name ? `GESTOR ${user.name.toUpperCase()}` : 'GESTOR',
+              notes: isPessimo ? `Motivo: ${unserviceableForm.reason}` : 'Inclusão manual no inventário'
+            }]);
 
-        if (historyError) throw historyError;
+          if (historyError) throw historyError;
+        }
       }
 
       await fetchAssets();
@@ -661,7 +703,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
     } catch (error: any) {
       console.error("Erro ao salvar bem:", error);
-      alert(`Erro ao salvar bem patrimonial: ${error?.message || error?.details || 'Erro ao processar dados.'}`);
+      alert(`Erro ao salvar bem patrimonial: ${error?.message || error?.details || 'Erro de conexão ou dados.'}`);
     }
   };
 
