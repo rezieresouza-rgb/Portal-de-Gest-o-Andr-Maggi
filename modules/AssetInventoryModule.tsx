@@ -339,7 +339,24 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
   const isSemRp = (heritageNumber: string) => {
     const clean = (heritageNumber || '').toUpperCase().trim();
-    return !clean || clean === 'S/N' || clean === 'SEM NÚMERO' || clean === 'SEM NUMERO' || clean === 'SEM PATRIMONIO' || clean === 'SEM PATRIMÔNIO' || clean === 'SRP' || clean === 'S.R.P' || clean === 'S.R.P.';
+    return !clean ||
+      clean === 'S/N' || clean.startsWith('S/N-') || clean.startsWith('S/N#') || clean.startsWith('S/N_') ||
+      clean === 'SEM NÚMERO' || clean === 'SEM NUMERO' ||
+      clean === 'SEM PATRIMONIO' || clean === 'SEM PATRIMÔNIO' ||
+      clean === 'SRP' || clean.startsWith('SRP-') || clean.startsWith('SRP#') || clean.startsWith('SRP_') || clean.startsWith('SRP ') ||
+      clean === 'S.R.P' || clean === 'S.R.P.';
+  };
+
+  const getDisplayHeritage = (heritageNumber: string) => {
+    if (!heritageNumber) return 'SRP';
+    const clean = heritageNumber.trim().toUpperCase();
+    if (clean.startsWith('SRP-') || clean.startsWith('SRP#') || clean.startsWith('SRP_') || clean.startsWith('SRP ')) {
+      return 'SRP';
+    }
+    if (clean.startsWith('S/N-') || clean.startsWith('S/N#') || clean.startsWith('S/N_') || clean.startsWith('S/N ')) {
+      return 'S/N';
+    }
+    return heritageNumber;
   };
 
   const getSitFisica = (cond: string, isUnserviceable: boolean) => {
@@ -527,7 +544,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     setForm({
       description: asset.description,
       location: asset.location,
-      heritageNumber: asset.heritageNumber,
+      heritageNumber: getDisplayHeritage(asset.heritageNumber),
       condition: asset.condition,
       photo: asset.photo || '',
       acquisitionDocument: asset.acquisitionDocument || '',
@@ -540,7 +557,12 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const cleanHeritage = (form.heritageNumber || '').trim().toUpperCase();
+    let heritageToSave = (form.heritageNumber || '').trim().toUpperCase();
+    if (!heritageToSave) {
+      heritageToSave = 'SRP';
+    }
+
+    const cleanHeritage = heritageToSave;
     const isAllowedDuplicate = isSemRp(cleanHeritage);
 
     if (!isAllowedDuplicate) {
@@ -549,6 +571,11 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       }
       if (editingAssetId && assets.some(a => (a.heritageNumber || '').trim().toUpperCase() === cleanHeritage && a.id !== editingAssetId)) {
         return alert("Erro: Número de patrimônio já cadastrado em outro bem.");
+      }
+    } else {
+      const isTaken = assets.some(a => a.heritageNumber.toUpperCase().trim() === cleanHeritage && a.id !== editingAssetId);
+      if (isTaken) {
+        heritageToSave = `${cleanHeritage}-${Date.now()}`;
       }
     }
 
@@ -562,7 +589,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           .update({
             description: form.description.toUpperCase(),
             location: form.location.toUpperCase(),
-            heritage_number: form.heritageNumber,
+            heritage_number: heritageToSave,
             condition: form.condition,
             is_unserviceable: isPessimo,
             photo: form.photo,
@@ -597,7 +624,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           .insert([{
             description: form.description.toUpperCase(),
             location: form.location.toUpperCase(),
-            heritage_number: form.heritageNumber,
+            heritage_number: heritageToSave,
             condition: form.condition,
             is_unserviceable: isPessimo,
             photo: form.photo,
@@ -632,9 +659,9 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       resetForm();
       alert(editingAssetId ? "Bem patrimonial atualizado com sucesso!" : "Bem patrimonial salvo com sucesso!");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar bem:", error);
-      alert("Erro ao salvar bem patrimonial.");
+      alert(`Erro ao salvar bem patrimonial: ${error?.message || error?.details || 'Erro ao processar dados.'}`);
     }
   };
 
@@ -1908,7 +1935,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             ) : (
                               reportAssets.map(asset => (
                                 <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
-                                  <td className="p-6 font-black text-gray-900">PAT: {asset.heritageNumber}</td>
+                                  <td className="p-6 font-black text-gray-900">PAT: {getDisplayHeritage(asset.heritageNumber)}</td>
                                   <td className="p-6 uppercase">{asset.description}</td>
                                   <td className="p-6 uppercase">{asset.location}</td>
                                   <td className="p-6">
@@ -1990,7 +2017,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                           <tbody className="divide-y divide-gray-200 border border-gray-200 font-bold text-gray-800 uppercase">
                             {reportAssets.map(asset => (
                               <tr key={asset.id} className="hover:bg-gray-50">
-                                <td className="p-3 border-r border-gray-200 font-black">PAT: {asset.heritageNumber}</td>
+                                <td className="p-3 border-r border-gray-200 font-black">PAT: {getDisplayHeritage(asset.heritageNumber)}</td>
                                 <td className="p-3 border-r border-gray-200">{asset.description}</td>
                                 <td className="p-3 border-r border-gray-200">{asset.location}</td>
                                 <td className="p-3 border-r border-gray-200">{asset.isUnserviceable ? 'INSERVÍVEL' : asset.condition}</td>
@@ -2006,7 +2033,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                         <div className="pt-16 grid grid-cols-2 gap-16 text-center text-xs font-black uppercase text-gray-700 tracking-wider">
                           <div className="space-y-1">
                             <div className="border-t border-gray-400 w-64 mx-auto pt-2"></div>
-                            <p>{user?.name ? user.name.toUpperCase() : 'GESTOR DE PATRIMÔNIO'}</p>
+                            <p>{user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA'}</p>
                             <p className="text-[10px] text-gray-400">Responsável pelo Inventário</p>
                           </div>
                           <div className="space-y-1">
@@ -2054,7 +2081,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             ) : (
                               reportAssets.map((asset) => (
                                 <tr key={asset.id} className="hover:bg-gray-50/50 transition-colors">
-                                  <td className="p-4 text-center font-black text-gray-900">{isSemRp(asset.heritageNumber) ? '-' : asset.heritageNumber}</td>
+                                  <td className="p-4 text-center font-black text-gray-900">{isSemRp(asset.heritageNumber) ? '-' : getDisplayHeritage(asset.heritageNumber)}</td>
                                   <td className="p-4 text-center font-black text-indigo-600">{isSemRp(asset.heritageNumber) ? 'X' : ''}</td>
                                   <td className="p-4 text-center text-gray-400">UN</td>
                                   <td className="p-4 uppercase">{asset.description}</td>
@@ -2489,7 +2516,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             ) : (
                               reportAssets.map((asset) => (
                                 <tr key={asset.id} className="border-b border-gray-800">
-                                  <td className="p-2 border-r border-gray-800 font-black">{isSemRp(asset.heritageNumber) ? '' : asset.heritageNumber}</td>
+                                  <td className="p-2 border-r border-gray-800 font-black">{isSemRp(asset.heritageNumber) ? '' : getDisplayHeritage(asset.heritageNumber)}</td>
                                   <td className="p-2 border-r border-gray-800 font-black">{isSemRp(asset.heritageNumber) ? 'X' : ''}</td>
                                   <td className="p-2 border-r border-gray-800">UN</td>
                                   <td className="p-2 border-r border-gray-800 text-left">{asset.description}</td>
