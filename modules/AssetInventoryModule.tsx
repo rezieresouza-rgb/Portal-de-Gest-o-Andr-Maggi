@@ -374,7 +374,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [headerCodUG, setHeaderCodUG] = useState('14101');
   const [headerUA, setHeaderUA] = useState('E.E. CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI');
   const [headerCodUA, setHeaderCodUA] = useState('');
-  const [headerMunicipio, setHeaderMunicipio] = useState('LUCAS DO RIO VERDE');
+  const [headerMunicipio, setHeaderMunicipio] = useState('COLÍDER');
   const [headerCodUL, setHeaderCodUL] = useState('');
   const [headerResponsavel, setHeaderResponsavel] = useState(user?.name ? user.name.toUpperCase() : 'GESTOR DO SISTEMA');
   const [headerMatricula, setHeaderMatricula] = useState('');
@@ -406,12 +406,12 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [headerRelatorioPeriodo, setHeaderRelatorioPeriodo] = useState('16/10/' + new Date().getFullYear() + ' a 15/11/' + new Date().getFullYear());
   const [headerSchoolEmail, setHeaderSchoolEmail] = useState('ESCOLA@edu.mt.gov.br');
   const [headerSchoolPhone, setHeaderSchoolPhone] = useState('(XX) 0000-0000');
-  const [headerRelatorioData, setHeaderRelatorioData] = useState('LUCAS DO RIO VERDE - MT, 15 de novembro de ' + new Date().getFullYear());
+  const [headerRelatorioData, setHeaderRelatorioData] = useState('COLÍDER - MT, 15 de novembro de ' + new Date().getFullYear());
   const [headerComissaoNumero, setHeaderComissaoNumero] = useState('01/' + new Date().getFullYear());
 
   const [headerEncerramentoAtaDataTexto, setHeaderEncerramentoAtaDataTexto] = useState('dois dias do mês de Julho do ano dois mil e vinte cinco');
   const [headerEncerramentoAtaAno, setHeaderEncerramentoAtaAno] = useState(new Date().getFullYear().toString());
-  const [headerEncerramentoData, setHeaderEncerramentoData] = useState('LUCAS DO RIO VERDE - MT, 02 de julho de ' + new Date().getFullYear());
+  const [headerEncerramentoData, setHeaderEncerramentoData] = useState('COLÍDER - MT, 02 de julho de ' + new Date().getFullYear());
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [form, setForm] = useState<Omit<Asset, 'id' | 'timestamp' | 'history' | 'isUnserviceable'>>({
@@ -445,10 +445,10 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       setHeaderAberturaAtaAno(schedule.year.toString());
       setHeaderAberturaColegiadoData(`14/12/${schedule.year}`);
       setHeaderRelatorioPeriodo(`16/10/${schedule.year} a 15/11/${schedule.year}`);
-      setHeaderRelatorioData(`LUCAS DO RIO VERDE - MT, 15 de novembro de ${schedule.year}`);
+      setHeaderRelatorioData(`COLÍDER - MT, 15 de novembro de ${schedule.year}`);
       setHeaderComissaoNumero(`01/${schedule.year}`);
       setHeaderEncerramentoAtaAno(schedule.year.toString());
-      setHeaderEncerramentoData(`LUCAS DO RIO VERDE - MT, 02 de julho de ${schedule.year}`);
+      setHeaderEncerramentoData(`COLÍDER - MT, 02 de julho de ${schedule.year}`);
     }
   }, [schedule.year]);
 

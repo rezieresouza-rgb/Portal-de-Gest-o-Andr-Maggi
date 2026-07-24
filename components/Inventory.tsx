@@ -1130,7 +1130,7 @@ const Inventory: React.FC = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-            <span>Município: Lucas do Rio Verde - MT</span>
+            <span>Município: Colíder - MT</span>
             <span>Documento Auditado do Sistema</span>
             <span>Data de Impressão: {new Date().toLocaleDateString('pt-BR')}</span>
           </div>

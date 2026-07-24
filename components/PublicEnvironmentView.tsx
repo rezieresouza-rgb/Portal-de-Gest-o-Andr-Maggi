@@ -318,7 +318,7 @@ export const PublicEnvironmentView: React.FC<PublicEnvironmentViewProps> = ({
                 ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI
               </h1>
               <p className="text-xs text-slate-600 font-semibold">
-                Lucas do Rio Verde - MT • Código Inep: 51084220
+                Colíder - MT • Código Inep: 51084220
               </p>
             </div>
           </div>
@@ -552,7 +552,7 @@ export const PublicEnvironmentView: React.FC<PublicEnvironmentViewProps> = ({
                   <div className="border-t border-slate-800 w-4/5 mx-auto pt-1 font-bold uppercase">
                     Direção / Gestão Escolar
                   </div>
-                  <p className="text-[10px] text-slate-500">EEAM Lucas do Rio Verde</p>
+                  <p className="text-[10px] text-slate-500">EEAM Colíder</p>
                 </div>
               </div>
             </div>
@@ -645,7 +645,7 @@ export const PublicEnvironmentView: React.FC<PublicEnvironmentViewProps> = ({
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© {new Date().getFullYear()} EEAM - Portal de Gestão Escolar Integrada</p>
           <div className="flex items-center gap-4 text-slate-500 font-semibold">
-            <span>Lucas do Rio Verde - MT</span>
+            <span>Colíder - MT</span>
             <span>•</span>
             <span>Módulo de Patrimônio & Zeladoria</span>
           </div>
