@@ -59,11 +59,42 @@ interface InventorySnapshot {
   timestamp: number;
 }
 
+const TODAY_DEFAULT_ITEMS: SeducInventoryItem[] = [
+  { id: 'item-20260724-01', name: 'ARROZ TIPO 1 (5KG)', unit: 'KG', previousBalance: 150, entries: 50, outputs: 25, min: 20 },
+  { id: 'item-20260724-02', name: 'FEIJÃO CARIOCA (1KG)', unit: 'KG', previousBalance: 80, entries: 30, outputs: 15, min: 15 },
+  { id: 'item-20260724-03', name: 'CARNE BOVINA (ACÉM/MOÍDA)', unit: 'KG', previousBalance: 60, entries: 40, outputs: 28, min: 10 },
+  { id: 'item-20260724-04', name: 'PEITO DE FRANGO EM CUBOS', unit: 'KG', previousBalance: 50, entries: 35, outputs: 22, min: 10 },
+  { id: 'item-20260724-05', name: 'LEITE INTEGRAL (1L)', unit: 'L', previousBalance: 120, entries: 60, outputs: 45, min: 30 },
+  { id: 'item-20260724-06', name: 'PÃO DE LEITE / FRANCÊS', unit: 'UN', previousBalance: 300, entries: 400, outputs: 360, min: 50 },
+  { id: 'item-20260724-07', name: 'BANANA NANICA', unit: 'KG', previousBalance: 40, entries: 50, outputs: 42, min: 10 },
+  { id: 'item-20260724-08', name: 'MAÇÃ FUJI', unit: 'KG', previousBalance: 35, entries: 40, outputs: 32, min: 10 },
+  { id: 'item-20260724-09', name: 'BATATA INGLESA', unit: 'KG', previousBalance: 50, entries: 30, outputs: 18, min: 10 },
+  { id: 'item-20260724-10', name: 'CENOURA EXTRA', unit: 'KG', previousBalance: 25, entries: 20, outputs: 10, min: 5 },
+  { id: 'item-20260724-11', name: 'TOMATE LONG LIFE', unit: 'KG', previousBalance: 30, entries: 20, outputs: 12, min: 5 },
+  { id: 'item-20260724-12', name: 'ABÓBORA CABOTIÁ', unit: 'KG', previousBalance: 40, entries: 20, outputs: 14, min: 5 },
+  { id: 'item-20260724-13', name: 'MACARRÃO SPAGHETTI', unit: 'KG', previousBalance: 60, entries: 30, outputs: 20, min: 10 },
+  { id: 'item-20260724-14', name: 'AÇÚCAR REFINADO', unit: 'KG', previousBalance: 70, entries: 20, outputs: 12, min: 10 },
+  { id: 'item-20260724-15', name: 'ÓLEO DE SOJA (900ML)', unit: 'UN', previousBalance: 50, entries: 24, outputs: 14, min: 10 },
+  { id: 'item-20260724-16', name: 'SAL REFINADO', unit: 'KG', previousBalance: 20, entries: 10, outputs: 3, min: 5 },
+  { id: 'item-20260724-17', name: 'IOGURTE DE FRUTAS', unit: 'UN', previousBalance: 150, entries: 200, outputs: 185, min: 30 },
+  { id: 'item-20260724-18', name: 'SUCO CONCENTRADO DE MARACUJÁ', unit: 'L', previousBalance: 30, entries: 20, outputs: 16, min: 5 },
+  { id: 'item-20260724-19', name: 'CHEIRO VERDE (SALSA E CEBOLINHA)', unit: 'KG', previousBalance: 6, entries: 5, outputs: 4, min: 1 },
+  { id: 'item-20260724-20', name: 'ALHO DESCALCADO', unit: 'KG', previousBalance: 8, entries: 5, outputs: 2, min: 1 },
+  { id: 'item-20260724-21', name: 'CEBOLA BRANCA', unit: 'KG', previousBalance: 20, entries: 15, outputs: 8, min: 3 },
+  { id: 'item-20260724-22', name: 'MELÂNCIA', unit: 'KG', previousBalance: 60, entries: 80, outputs: 70, min: 15 }
+];
+
 const Inventory: React.FC = () => {
   const [viewMode, setViewMode] = useState<'active' | 'history'>('active');
   const [items, setItems] = useState<SeducInventoryItem[]>(() => {
     const saved = localStorage.getItem('seduc_inventory_v3');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      const parsed: SeducInventoryItem[] = JSON.parse(saved);
+      if (parsed.length > 0 && parsed.some(i => i.entries > 0 || i.outputs > 0)) {
+        return parsed;
+      }
+    }
+    return TODAY_DEFAULT_ITEMS;
   });
 
   const [history, setHistory] = useState<InventorySnapshot[]>(() => {
@@ -861,6 +892,12 @@ const Inventory: React.FC = () => {
     });
   }, [history, historySearchTerm, historyTurnFilter]);
 
+  const fillTodayEntriesAndOutputs = () => {
+    setItems(TODAY_DEFAULT_ITEMS.map(i => ({ ...i })));
+    if (!responsavel) setResponsavel('GESTOR ANDRÉ MAGGI');
+    alert("✅ Colunas de Entradas e Saídas preenchidas com sucesso!");
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm print:hidden">
@@ -887,6 +924,9 @@ const Inventory: React.FC = () => {
             </button>
             {viewMode === 'active' && (
               <div className="flex flex-wrap gap-2">
+                <button onClick={fillTodayEntriesAndOutputs} className="px-4 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-md" title="Preencher colunas de entrada e saída com lançamentos do dia">
+                  <CheckCircle2 size={14} /> Preencher Entradas/Saídas (24/07)
+                </button>
                 <button onClick={syncWithMenu} className="px-4 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all flex items-center gap-2">
                   <Search size={14} /> Sincronizar Cardápio (5 Semanas)
                 </button>
