@@ -625,52 +625,62 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
     return (
         <div className="space-y-6 w-full min-w-0">
             {/* Header / Filters Toolbar */}
-            <div className="bg-white p-3 sm:p-4 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 xl:space-y-0 xl:flex xl:items-center xl:justify-between gap-4 w-full min-w-0">
-                {/* Segmented Frequency & Mode Controls */}
-                <div className="flex items-center gap-1.5 bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200/50 shadow-inner overflow-x-auto custom-scrollbar shrink-0 max-w-full">
-                    {[
-                        { id: 'ALL', label: 'Todos', icon: Filter },
-                        { id: 'DIARIA', label: 'Diária', icon: Clock },
-                        { id: 'SEMANAL', label: 'Semanal', icon: Calendar },
-                        { id: 'MENSAL', label: 'Mensal', icon: Calendar },
-                        { id: 'TRIMESTRAL', label: 'Trimestral', icon: Calendar },
-                    ].map(tab => {
-                        const IconComponent = tab.icon;
-                        const isActive = filterFrequency === tab.id && viewMode === 'schedule';
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => { setFilterFrequency(tab.id); setViewMode('schedule'); }}
-                                className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all duration-200 ${
-                                    isActive
-                                        ? 'bg-indigo-600 text-white shadow-md scale-[1.02]'
-                                        : 'text-gray-500 hover:text-gray-900 hover:bg-white/80'
-                                }`}
-                            >
-                                <IconComponent size={14} className={isActive ? 'text-white' : 'text-gray-400'} />
-                                <span>{tab.label}</span>
-                            </button>
-                        );
-                    })}
+            <div className="bg-white p-4 sm:p-5 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-4 w-full min-w-0">
+                {/* Top Row: Periodicity Tabs & Total Count */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full border-b border-gray-100/80 pb-3">
+                    {/* Segmented Frequency & Mode Controls */}
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100/90 p-1.5 rounded-2xl border border-gray-200/60 shadow-inner overflow-x-auto custom-scrollbar max-w-full shrink-0">
+                        {[
+                            { id: 'ALL', label: 'Todos', icon: Filter },
+                            { id: 'DIARIA', label: 'Diária', icon: Clock },
+                            { id: 'SEMANAL', label: 'Semanal', icon: Calendar },
+                            { id: 'MENSAL', label: 'Mensal', icon: Calendar },
+                            { id: 'TRIMESTRAL', label: 'Trimestral', icon: Calendar },
+                        ].map(tab => {
+                            const IconComponent = tab.icon;
+                            const isActive = filterFrequency === tab.id && viewMode === 'schedule';
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => { setFilterFrequency(tab.id); setViewMode('schedule'); }}
+                                    className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                                        isActive
+                                            ? 'bg-indigo-600 text-white shadow-md scale-[1.02]'
+                                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/80'
+                                    }`}
+                                >
+                                    <IconComponent size={14} className={isActive ? 'text-white' : 'text-gray-400'} />
+                                    <span>{tab.label}</span>
+                                </button>
+                            );
+                        })}
 
-                    <div className="w-px h-5 bg-gray-300 mx-1 shrink-0" />
+                        <div className="w-px h-5 bg-gray-300 mx-1 shrink-0" />
 
-                    <button
-                        onClick={() => setViewMode(viewMode === 'schedule' ? 'history' : 'schedule')}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all duration-200 ${
-                            viewMode === 'history'
-                                ? 'bg-indigo-600 text-white shadow-md scale-[1.02]'
-                                : 'text-gray-500 hover:text-gray-900 hover:bg-white/80'
-                        }`}
-                    >
-                        <History size={14} className={viewMode === 'history' ? 'text-white' : 'text-gray-400'} />
-                        <span>{viewMode === 'history' ? 'Voltar' : 'Histórico'}</span>
-                    </button>
+                        <button
+                            onClick={() => setViewMode(viewMode === 'schedule' ? 'history' : 'schedule')}
+                            className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                                viewMode === 'history'
+                                    ? 'bg-indigo-600 text-white shadow-md scale-[1.02]'
+                                    : 'text-gray-600 hover:text-gray-900 hover:bg-white/80'
+                            }`}
+                        >
+                            <History size={14} className={viewMode === 'history' ? 'text-white' : 'text-gray-400'} />
+                            <span>{viewMode === 'history' ? 'Voltar' : 'Histórico'}</span>
+                        </button>
+                    </div>
+
+                    {/* Total Badge */}
+                    <div className="flex items-center justify-between lg:justify-end gap-2 shrink-0 bg-indigo-50/80 border border-indigo-100/80 rounded-2xl px-4 py-2">
+                        <span className="text-[10px] font-black uppercase text-indigo-400 tracking-wider">Total de Tarefas:</span>
+                        <span className="text-lg font-black text-indigo-900 leading-none">{tasks.length}</span>
+                    </div>
                 </div>
 
-                {/* Right Action Tools */}
-                <div className="flex flex-wrap items-center justify-between xl:justify-end gap-2 sm:gap-3 shrink-0 min-w-0">
-                    <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/80 rounded-2xl px-3 py-1.5 shadow-xs shrink-0">
+                {/* Bottom Row: Date Filters & Action Buttons */}
+                <div className="flex flex-wrap items-center justify-between gap-3 w-full min-w-0 pt-0.5">
+                    {/* Date Range Picker */}
+                    <div className="flex flex-wrap items-center gap-2 bg-gray-50 border border-gray-200/80 rounded-2xl px-3.5 py-2 shadow-xs shrink-0">
                         <button
                             type="button"
                             onClick={() => {
@@ -683,56 +693,58 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                 setReportPeriodStart(mon.toISOString().split('T')[0]);
                                 setReportPeriodEnd(fri.toISOString().split('T')[0]);
                             }}
-                            className="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2.5 py-1 rounded-xl transition-all shrink-0"
+                            className="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2.5 py-1 rounded-xl transition-all shrink-0 cursor-pointer"
                             title="Selecionar automaticamente Segunda a Sexta desta semana"
                         >
                             Esta Semana
                         </button>
-                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0 ml-1">De:</span>
-                        <input
-                            type="date"
-                            value={reportPeriodStart}
-                            onChange={e => setReportPeriodStart(e.target.value)}
-                            className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-24 px-1 focus:ring-0 cursor-pointer"
-                        />
-                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">Até:</span>
-                        <input
-                            type="date"
-                            value={reportPeriodEnd}
-                            onChange={e => setReportPeriodEnd(e.target.value)}
-                            className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-24 px-1 focus:ring-0 cursor-pointer"
-                        />
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">De:</span>
+                            <input
+                                type="date"
+                                value={reportPeriodStart}
+                                onChange={e => setReportPeriodStart(e.target.value)}
+                                className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-24 px-1 focus:ring-0 cursor-pointer"
+                            />
+                            <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">Até:</span>
+                            <input
+                                type="date"
+                                value={reportPeriodEnd}
+                                onChange={e => setReportPeriodEnd(e.target.value)}
+                                className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-24 px-1 focus:ring-0 cursor-pointer"
+                            />
+                        </div>
                     </div>
 
-                    <button
-                        onClick={() => setIsRecessModalOpen(true)}
-                        className="px-3.5 sm:px-4 py-2 bg-emerald-600 text-white rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm shrink-0"
-                    >
-                        <Palmtree size={14} className="shrink-0" /> <span className="whitespace-nowrap">Escala de Recesso</span>
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <button
+                            onClick={() => setIsRecessModalOpen(true)}
+                            className="px-4 py-2 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-sm shrink-0 cursor-pointer"
+                        >
+                            <Palmtree size={15} className="shrink-0" />
+                            <span className="whitespace-nowrap">Escala de Recesso</span>
+                        </button>
 
-                    <button
-                        onClick={() => setShowReportConfig(!showReportConfig)}
-                        className={`p-2 rounded-2xl border transition-all shrink-0 ${
-                            showReportConfig 
-                                ? 'bg-indigo-50 border-indigo-200 text-indigo-600' 
-                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                        }`}
-                        title="Opções de Assinaturas e Impressão"
-                    >
-                        <Settings2 size={16} />
-                    </button>
+                        <button
+                            onClick={() => setShowReportConfig(!showReportConfig)}
+                            className={`p-2 rounded-2xl border transition-all shrink-0 cursor-pointer ${
+                                showReportConfig 
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600' 
+                                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                            }`}
+                            title="Opções de Assinaturas e Impressão"
+                        >
+                            <Settings2 size={16} />
+                        </button>
 
-                    <button
-                        onClick={viewMode === 'history' ? generateHistoryReport : generateWeeklyReport}
-                        className="px-3.5 sm:px-4 py-2 bg-gray-900 text-white rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider hover:bg-black transition-all flex items-center gap-1.5 shadow-sm shrink-0"
-                    >
-                        <Printer size={14} className="shrink-0" /> <span className="whitespace-nowrap">{viewMode === 'history' ? 'Imprimir Histórico' : 'Imprimir Relatório'}</span>
-                    </button>
-
-                    <div className="text-right shrink-0 border-l border-gray-200 pl-3">
-                        <p className="text-[9px] font-black uppercase text-gray-400 tracking-tighter">Total</p>
-                        <p className="text-lg sm:text-xl font-black text-gray-900 leading-none">{tasks.length}</p>
+                        <button
+                            onClick={viewMode === 'history' ? generateHistoryReport : generateWeeklyReport}
+                            className="px-4 py-2 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-black transition-all flex items-center gap-2 shadow-sm shrink-0 cursor-pointer"
+                        >
+                            <Printer size={15} className="shrink-0" />
+                            <span className="whitespace-nowrap">{viewMode === 'history' ? 'Imprimir Histórico' : 'Imprimir Relatório'}</span>
+                        </button>
                     </div>
                 </div>
             </div>
