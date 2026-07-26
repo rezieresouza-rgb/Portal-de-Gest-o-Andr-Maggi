@@ -12,14 +12,13 @@ import {
 } from 'lucide-react';
 import { User, CleaningEmployee } from '../types';
 import PredialMaintenanceDashboard from '../components/PredialMaintenanceDashboard';
-import MaintenanceScheduler from '../components/MaintenanceScheduler';
 import PreventiveMaintenancePlan from '../components/PreventiveMaintenancePlan';
 import MaintenanceReports from '../components/MaintenanceReports';
 import SeducReportsManager, { SeducDocType } from '../components/SeducReportsManager';
 import { supabase } from '../supabaseClient';
 
 const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'predial' | 'scheduler' | 'preventive_plan' | 'reports' | 'seduc_docs'>('predial');
+  const [activeTab, setActiveTab] = useState<'predial' | 'preventive_plan' | 'reports' | 'seduc_docs'>('predial');
   const [activeSeducDoc, setActiveSeducDoc] = useState<SeducDocType>('doc1');
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
   const [allActiveEmployees, setAllActiveEmployees] = useState<CleaningEmployee[]>([]);
@@ -98,16 +97,6 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
           >
             <LayoutDashboard size={18} className="shrink-0" />
             <span className="truncate">Painel Predial</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('scheduler')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'scheduler' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <Calendar size={18} className="shrink-0" />
-            <span className="truncate">Chamados & OS</span>
           </button>
 
           <button
@@ -195,9 +184,8 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
         </header>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar min-w-0">
-          {activeTab === 'predial' && <PredialMaintenanceDashboard onNavigateToPreventive={() => setActiveTab('preventive_plan')} />}
-          {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} allStaff={allActiveEmployees} currentUser={user} />}
-          {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
+          {activeTab === 'predial' && <PredialMaintenanceDashboard user={user} employees={employees as any} />}
+          {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={allActiveEmployees as any} />}
           {activeTab === 'reports' && <MaintenanceReports />}
           {activeTab === 'seduc_docs' && <SeducReportsManager initialDoc={activeSeducDoc} user={user} />}
         </div>
