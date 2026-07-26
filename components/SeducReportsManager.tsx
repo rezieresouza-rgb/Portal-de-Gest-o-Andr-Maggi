@@ -905,27 +905,49 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
         )}
 
         {/* RODAPÉ E ASSINATURAS IDÊNTICAS AO MODELO OFICIAL SEDUC */}
-        <div className="mt-8 pt-4 border-t border-black space-y-4">
-          <p className="text-center font-bold text-xs uppercase">
+        <div className="mt-8 pt-4 border-t border-black space-y-3 font-sans text-xs">
+          <p className="font-bold text-xs uppercase">
             {schoolInfo.city}, ____ de _____________________ de {schoolInfo.year}.
           </p>
 
-          <p className="text-center font-black text-xs uppercase tracking-wider">
+          <p className="font-black text-xs uppercase tracking-wider">
             Responsáveis pela Unidade Escolar
           </p>
 
-          <div className="grid grid-cols-2 gap-8 text-center text-xs font-bold pt-2">
-            <div className="space-y-1">
-              <p className="font-bold">Nome: <u>{schoolInfo.director}</u></p>
-              <div className="border-b border-black w-4/5 mx-auto mt-6"></div>
-              <p className="text-[10px] uppercase font-black">Diretor(a)</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-bold">Nome: <u>{schoolInfo.coordinators}</u></p>
-              <div className="border-b border-black w-4/5 mx-auto mt-6"></div>
-              <p className="text-[10px] uppercase font-black">Coordenador(a)</p>
-            </div>
-          </div>
+          <table className="w-full border-collapse border border-black text-left text-xs">
+            <thead>
+              <tr className="bg-gray-200 text-black uppercase font-black">
+                <th className="border border-black p-2 w-1/2">Nome</th>
+                <th className="border border-black p-2 w-1/2">Assinatura</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-black p-2 font-bold">
+                  Diretor(a): {schoolInfo.director || '_________________________________'}
+                </td>
+                <td className="border border-black p-2 font-semibold">
+                  _________________________________
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-bold">
+                  Coordenador(a): {schoolInfo.coordinators?.split(',')[0] || '_________________________________'}
+                </td>
+                <td className="border border-black p-2 font-semibold">
+                  _________________________________
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-bold">
+                  Coordenador(a): {schoolInfo.coordinators?.split(',')[1] || '_________________________________'}
+                </td>
+                <td className="border border-black p-2 font-semibold">
+                  _________________________________
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
       </div>
