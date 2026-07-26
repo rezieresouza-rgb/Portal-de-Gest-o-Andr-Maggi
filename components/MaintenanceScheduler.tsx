@@ -292,7 +292,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak: { mode: ['css', 'legacy'] }
         };
 
         // @ts-ignore
@@ -1170,24 +1170,24 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                     <p className="text-xs text-gray-500 mt-2">Referência: {reportPeriod}</p>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {Object.keys(groupedTasks).sort().map(block => (
-                        <div key={block} className="break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                            <h3 className="text-lg font-bold uppercase bg-gray-100 p-2 mb-2 border-l-4 border-black">{block}</h3>
-                            <div className="space-y-4">
+                        <div key={block} className="mb-4">
+                            <h3 className="text-sm font-bold uppercase bg-gray-100 p-2 mb-2 border-l-4 border-black text-gray-900" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>{block}</h3>
+                            <div className="space-y-3">
                                 {Object.keys(groupedTasks[block]).sort().map(area => {
                                     const responsible = getAreaResponsible(block, area);
                                     return (
-                                        <div key={area} className="break-inside-avoid area-block mb-4" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                                            <div className="flex justify-between items-end mb-1 border-b border-gray-300 pb-1">
-                                                <h4 className="text-sm font-bold uppercase">{area}</h4>
-                                                {responsible && <span className="text-xs uppercase text-gray-600">Resp: {responsible}</span>}
+                                        <div key={area} className="area-block mb-3">
+                                            <div className="flex justify-between items-end mb-1 border-b border-gray-300 pb-0.5" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                                                <h4 className="text-xs font-black uppercase text-gray-900">{area}</h4>
+                                                {responsible && <span className="text-[10px] uppercase text-gray-600 font-semibold">Resp: {responsible}</span>}
                                             </div>
-                                            <table className="w-full text-left text-xs mb-2">
+                                            <table className="w-full text-left text-xs mb-1 border-collapse">
                                                 <thead>
-                                                    <tr className="border-b border-gray-200">
-                                                        <th className="py-1 w-[40%]">Tarefa</th>
-                                                        <th className="py-1 w-[12%]">Freq.</th>
+                                                    <tr className="border-b border-gray-300 text-gray-700 uppercase text-[9px] font-black">
+                                                        <th className="py-1 w-[42%]">Tarefa</th>
+                                                        <th className="py-1 w-[10%]">Freq.</th>
                                                         <th className="py-1 w-[18%]">Execução</th>
                                                         <th className="py-1 w-[10%] text-center">Status</th>
                                                         {includeTaskSignature && (
@@ -1208,17 +1208,17 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                                         const datesString = hasRecords ? uniqueDates.join(', ') : '____/____/____';
 
                                                         return (
-                                                        <tr key={task.id} className="border-b border-gray-100 break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                                                            <td className="py-1 pr-2">{task.task_description}</td>
-                                                            <td className="py-1 text-[10px]">{task.frequency}</td>
-                                                            <td className="py-1 text-[10px] break-words max-w-[120px]">
+                                                        <tr key={task.id} className="border-b border-gray-100" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                                            <td className="py-1 pr-2 text-[11px] text-gray-800 leading-tight">{task.task_description}</td>
+                                                            <td className="py-1 text-[10px] uppercase font-semibold text-gray-600">{task.frequency}</td>
+                                                            <td className="py-1 text-[10px] font-mono text-gray-700 break-words max-w-[120px]">
                                                                 {datesString}
                                                             </td>
-                                                            <td className="py-1 text-center font-bold">
+                                                            <td className="py-1 text-center font-black text-xs">
                                                                 {hasRecords ? 'OK' : '[ ]'}
                                                             </td>
                                                             {includeTaskSignature && (
-                                                                <td className="py-1 text-[9px] text-gray-500 italic">
+                                                                <td className="py-1 text-[9px] text-gray-400 italic">
                                                                     _________________
                                                                 </td>
                                                             )}
