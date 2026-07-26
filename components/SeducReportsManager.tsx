@@ -284,7 +284,7 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
               className="px-6 py-2.5 bg-amber-600 text-white rounded-xl font-black text-xs uppercase hover:bg-amber-700 transition-all flex items-center gap-2 shadow-lg"
             >
               <Printer size={18} />
-              <span>Imprimir PDF Identico (A4)</span>
+              <span>Imprimir PDF (Paisagem)</span>
             </button>
           </div>
         </div>
@@ -318,7 +318,7 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
       {/* PRINTABLE DOCUMENT - EXACT SEDUC-MT FORMATTING */}
       <div
         id="seduc-printable-report"
-        className="bg-white p-6 sm:p-10 border border-black shadow-xl mx-auto text-black font-sans text-xs leading-tight max-w-[210mm] w-full min-w-0"
+        className="bg-white p-6 sm:p-10 border border-black shadow-xl mx-auto text-black font-sans text-xs leading-tight max-w-[297mm] w-full min-w-0"
         style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
       >
         {/* HEADER GOVERNO DO ESTADO DE MATO GROSSO / SEDUC */}
@@ -934,7 +934,7 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
+            size: A4 landscape;
             margin: 10mm 10mm 10mm 10mm;
           }
           body * {
