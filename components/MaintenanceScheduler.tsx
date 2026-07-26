@@ -269,11 +269,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
 
         const safePeriod = reportPeriod.replace(/\//g, '-').replace(/\s+/g, '_');
         const opt = {
-            margin: 5,
+            margin: [8, 8, 8, 8],
             filename: `Historico_Manutencao_${safePeriod}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         // @ts-ignore
@@ -286,11 +287,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
 
         const safePeriod = reportPeriod.replace(/\//g, '-').replace(/\s+/g, '_');
         const opt = {
-            margin: 5,
+            margin: [8, 8, 8, 8],
             filename: `Relatorio_Manutencao_${safePeriod}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         // @ts-ignore
@@ -303,11 +305,12 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
             const element = document.getElementById('mural-checklist-print');
             if (element) {
                 const opt = {
-                    margin: 5,
+                    margin: [8, 8, 8, 8],
                     filename: `Checklist_Mural_Zeladoria.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 1.5 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                    html2canvas: { scale: 1.5, useCORS: true, logging: false },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                 };
                 try {
                     // @ts-ignore
@@ -1169,18 +1172,18 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
 
                 <div className="space-y-6">
                     {Object.keys(groupedTasks).sort().map(block => (
-                        <div key={block}>
+                        <div key={block} className="break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                             <h3 className="text-lg font-bold uppercase bg-gray-100 p-2 mb-2 border-l-4 border-black">{block}</h3>
                             <div className="space-y-4">
                                 {Object.keys(groupedTasks[block]).sort().map(area => {
                                     const responsible = getAreaResponsible(block, area);
                                     return (
-                                        <div key={area} className="break-inside-avoid">
+                                        <div key={area} className="break-inside-avoid area-block mb-4" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                                             <div className="flex justify-between items-end mb-1 border-b border-gray-300 pb-1">
                                                 <h4 className="text-sm font-bold uppercase">{area}</h4>
                                                 {responsible && <span className="text-xs uppercase text-gray-600">Resp: {responsible}</span>}
                                             </div>
-                                            <table className="w-full text-left text-xs mb-4">
+                                            <table className="w-full text-left text-xs mb-2">
                                                 <thead>
                                                     <tr className="border-b border-gray-200">
                                                         <th className="py-1 w-[40%]">Tarefa</th>
@@ -1205,7 +1208,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                                         const datesString = hasRecords ? uniqueDates.join(', ') : '____/____/____';
 
                                                         return (
-                                                        <tr key={task.id} className="border-b border-gray-100">
+                                                        <tr key={task.id} className="border-b border-gray-100 break-inside-avoid" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                                                             <td className="py-1 pr-2">{task.task_description}</td>
                                                             <td className="py-1 text-[10px]">{task.frequency}</td>
                                                             <td className="py-1 text-[10px] break-words max-w-[120px]">
@@ -1221,7 +1224,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                                             )}
                                                         </tr>
                                                         );
-                                                    })}
+                                                     })}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -1271,9 +1274,22 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                 )}
 
                 <style>{`
+                    .break-inside-avoid,
+                    .area-block,
+                    tr,
+                    table {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    h1, h2, h3, h4 {
+                        page-break-after: avoid !important;
+                        break-after: avoid !important;
+                    }
                     @media print {
-                        @page { margin: 10mm; }
-                        body { -webkit-print-color-adjust: exact; }
+                        @page { margin: 10mm; size: A4 portrait; }
+                        body { -webkit-print-color-adjust: exact !important; }
+                        tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+                        thead { display: table-header-group !important; }
                     }
                 `}</style>
                 </div>
