@@ -6,17 +6,21 @@ import {
   Calendar,
   ShieldCheck,
   FileText,
-  Search
+  Search,
+  Building2,
+  Printer
 } from 'lucide-react';
 import { User, CleaningEmployee } from '../types';
 import PredialMaintenanceDashboard from '../components/PredialMaintenanceDashboard';
 import MaintenanceScheduler from '../components/MaintenanceScheduler';
 import PreventiveMaintenancePlan from '../components/PreventiveMaintenancePlan';
 import MaintenanceReports from '../components/MaintenanceReports';
+import SeducReportsManager, { SeducDocType } from '../components/SeducReportsManager';
 import { supabase } from '../supabaseClient';
 
 const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'predial' | 'scheduler' | 'preventive_plan' | 'reports'>('predial');
+  const [activeTab, setActiveTab] = useState<'predial' | 'scheduler' | 'preventive_plan' | 'reports' | 'seduc_docs'>('predial');
+  const [activeSeducDoc, setActiveSeducDoc] = useState<SeducDocType>('doc1');
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
   const [allActiveEmployees, setAllActiveEmployees] = useState<CleaningEmployee[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +74,11 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
     loadStaffFromSecretariat();
   }, []);
 
+  const openSeducDoc = (doc: SeducDocType) => {
+    setActiveSeducDoc(doc);
+    setActiveTab('seduc_docs');
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
       <aside className="w-64 shrink-0 bg-slate-900 text-white flex flex-col no-print min-w-0">
@@ -83,7 +92,7 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
         <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           <button
             onClick={() => setActiveTab('predial')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'predial' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
             }`}
           >
@@ -93,7 +102,7 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
 
           <button
             onClick={() => setActiveTab('scheduler')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'scheduler' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
             }`}
           >
@@ -103,23 +112,54 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
 
           <button
             onClick={() => setActiveTab('preventive_plan')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'preventive_plan' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
             }`}
           >
             <ShieldCheck size={18} className="shrink-0" />
-            <span className="truncate">Manutenção Preventiva</span>
+            <span className="truncate">Plano Preventivo</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('reports')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'reports' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <FileText size={18} className="shrink-0" />
-            <span className="truncate">Relatórios & SLA</span>
-          </button>
+          {/* SECTION: RELATÓRIOS OFICIAIS SEDUC MT */}
+          <div className="pt-4 border-t border-slate-800/80">
+            <p className="px-4 text-[9px] font-black text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <Building2 size={12} /> Relatórios SEDUC-MT
+            </p>
+
+            <button
+              onClick={() => setActiveTab('seduc_docs')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'seduc_docs' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <Printer size={16} className="shrink-0 text-amber-300" />
+              <span className="truncate">Central de Impressão</span>
+            </button>
+
+            <div className="mt-1 space-y-1 pl-2 border-l-2 border-slate-800 ml-3">
+              {[
+                { id: 'doc1', title: '1 - Cronograma' },
+                { id: 'doc2', title: '2 - Ficha Inspeções' },
+                { id: 'doc3', title: '3 - Demanda' },
+                { id: 'doc4', title: '4 - Intervenções' },
+                { id: 'doc5', title: '5 - Verificação' },
+                { id: 'doc6', title: '6 - Pendências' },
+                { id: 'doc7', title: '7 - Boas Práticas' }
+              ].map(doc => (
+                <button
+                  key={doc.id}
+                  onClick={() => openSeducDoc(doc.id as SeducDocType)}
+                  className={`w-full text-left px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all truncate block ${
+                    activeTab === 'seduc_docs' && activeSeducDoc === doc.id
+                      ? 'text-amber-400 font-bold bg-slate-800'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  {doc.title}
+                </button>
+              ))}
+            </div>
+          </div>
         </nav>
         <div className="p-6">
           <button
@@ -145,7 +185,7 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
               <input
                 type="text"
-                placeholder="Pesquisar OS ou reparos..."
+                placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-amber-500/5 w-28 sm:w-48 md:w-64 min-w-0"
@@ -159,6 +199,7 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
           {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} allStaff={allActiveEmployees} currentUser={user} />}
           {activeTab === 'preventive_plan' && <PreventiveMaintenancePlan employees={employees} />}
           {activeTab === 'reports' && <MaintenanceReports />}
+          {activeTab === 'seduc_docs' && <SeducReportsManager initialDoc={activeSeducDoc} user={user} />}
         </div>
       </main>
     </div>
