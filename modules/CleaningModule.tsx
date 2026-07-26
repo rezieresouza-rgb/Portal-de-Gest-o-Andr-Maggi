@@ -14,7 +14,8 @@ import {
   Settings2,
   X,
   RefreshCw,
-  Trash2
+  Trash2,
+  Calendar
 } from 'lucide-react';
 import { User, SchoolEnvironment, CleaningTask, CleaningFrequency, CleaningEmployee, SchoolEnvironmentCategory } from '../types';
 import KitchenSanitation from '../components/KitchenSanitation';
@@ -24,6 +25,7 @@ import CleaningOfficialManual from '../components/CleaningOfficialManual';
 import CleaningOccurrences from '../components/CleaningOccurrences';
 import CleaningWorkPlan from '../components/CleaningWorkPlan';
 import MaintenanceDashboard from '../components/MaintenanceDashboard';
+import MaintenanceScheduler from '../components/MaintenanceScheduler';
 import { supabase } from '../supabaseClient';
 
 const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
@@ -41,7 +43,7 @@ const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
 ];
 
 const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'protocol_official' | 'work_plan' | 'occurrences' | 'team' | 'kitchen' | 'materials' | 'ppe'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scheduler' | 'protocol_official' | 'work_plan' | 'occurrences' | 'team' | 'kitchen' | 'materials' | 'ppe'>('dashboard');
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
@@ -217,6 +219,16 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
+            onClick={() => setActiveTab('scheduler')}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
+              activeTab === 'scheduler' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
+            }`}
+          >
+            <Calendar size={18} className="shrink-0" />
+            <span className="truncate">Chamados & Ordens (OS)</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('work_plan')}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'work_plan' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
@@ -329,6 +341,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar min-w-0">
           {activeTab === 'dashboard' && <MaintenanceDashboard employees={employees} onNavigateToPlan={() => setActiveTab('work_plan')} />}
+          {activeTab === 'scheduler' && <MaintenanceScheduler employees={employees} allStaff={employees} currentUser={user} />}
           {activeTab === 'protocol_official' && <CleaningOfficialManual />}
           {activeTab === 'work_plan' && <CleaningWorkPlan employees={employees} />}
           {activeTab === 'occurrences' && <CleaningOccurrences employees={employees} environments={environments} />}
