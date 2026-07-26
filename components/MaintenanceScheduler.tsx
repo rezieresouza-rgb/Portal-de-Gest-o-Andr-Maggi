@@ -700,12 +700,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                     >
                         <Settings2 size={16} />
                     </button>
-                    <button
-                        onClick={generateMuralChecklist}
-                        className="px-3 sm:px-5 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1.5 shadow-lg shrink-0"
-                    >
-                        <Printer size={14} className="shrink-0" /> <span className="truncate">Checklist Mural (Vazio)</span>
-                    </button>
+
                     <button
                         onClick={viewMode === 'history' ? generateHistoryReport : generateWeeklyReport}
                         className="px-3 sm:px-5 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-1.5 shadow-lg shrink-0"
