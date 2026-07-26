@@ -24,7 +24,7 @@ import {
 import { PreventiveMaintenanceItem, MaintenanceFrequency, PreventiveStatus, StaffMember } from '../types';
 import { supabase } from '../supabaseClient';
 
-// --- DATA FROM MANUAL (SEDUC-MT 2025) ---
+// --- DATA FROM MANUAL (SEDUC-MT 2025 - SEÇÃO 7.1 a 7.15) ---
 const MANUAL_ITEMS: Omit<PreventiveMaintenanceItem, 'id' | 'status'>[] = [
     // 7.1 SISTEMAS CONSTRUTIVOS
     { category: 'SISTEMAS CONSTRUTIVOS', item: 'Estrutura (Alvenaria/Concreto)', intervention: 'Inspeção Visual', description: 'Verificar fissuras, infiltrações, desprendimento de revestimentos.', frequency: 'SEMESTRAL' },
@@ -38,44 +38,58 @@ const MANUAL_ITEMS: Omit<PreventiveMaintenanceItem, 'id' | 'status'>[] = [
     { category: 'FORRO', item: 'Placas e Estrutura', intervention: 'Inspeção Visual', description: 'Verificar manchas, ondulações, infiltrações e fixação.', frequency: 'SEMESTRAL' },
 
     // 7.4 PISOS E REVESTIMENTOS
-    { category: 'PISOS E REVESTIMENTOS', item: 'Pisos Internos', intervention: 'Inspeção Visual', description: 'Verificar peças soltas, trincadas ou manchadas.', frequency: 'ANUAL' },
+    { category: 'PISOS E REVESTIMENTOS', item: 'Pisos Internos e Calçamentos', intervention: 'Inspeção Visual', description: 'Verificar peças soltas, trincadas ou manchadas.', frequency: 'ANUAL' },
 
     // 7.5 PINTURA
-    { category: 'PINTURA', item: 'Paredes Internas/Externas', intervention: 'Inspeção Visual', description: 'Verificar manchas, bolhas, descascamento.', frequency: 'BIENAL' },
+    { category: 'PINTURA', item: 'Paredes Internas/Externas', intervention: 'Inspeção Visual', description: 'Verificar manchas, bolhas, descascamento (Interna a cada 3 anos, externa a cada 2 anos).', frequency: 'BIENAL' },
 
     // 7.6 ESQUADRIAS
     { category: 'ESQUADRIAS', item: 'Portas e Janelas', intervention: 'Inspeção Visual', description: 'Verificar empenamento, trincos, fechaduras e vidros.', frequency: 'ANUAL' },
     { category: 'ESQUADRIAS', item: 'Dobradiças/Fechaduras', intervention: 'Limpeza/Lubrificação', description: 'Lubrificar para garantir funcionamento suave.', frequency: 'ANUAL' },
 
     // 7.7 INSTALAÇÕES ELÉTRICAS
-    { category: 'ELÉTRICA', item: 'Fiação e Cabos', intervention: 'Inspeção Visual', description: 'Identificar desgastes, superaquecimento, fios expostos.', frequency: 'ANUAL' },
-    { category: 'ELÉTRICA', item: 'Quadros de Energia', intervention: 'Limpeza', description: 'Remover poeira (por especialista) para evitar superaquecimento.', frequency: 'TRIMESTRAL' },
+    { category: 'ELÉTRICA', item: 'Fiação e Cabos (Baixa Tensão)', intervention: 'Inspeção Visual', description: 'Identificar desgastes, superaquecimento, fios expostos.', frequency: 'ANUAL' },
+    { category: 'ELÉTRICA', item: 'Quadros de Energia (QGD)', intervention: 'Limpeza', description: 'Remover poeira (por especialista) para evitar superaquecimento.', frequency: 'TRIMESTRAL' },
+    { category: 'ELÉTRICA', item: 'SPDA (Para-raios e Aterramento)', intervention: 'Laudo e Inspeção', description: 'Medição da resistência de aterramento e estado das hastes/conectores.', frequency: 'ANUAL' },
+    { category: 'ELÉTRICA', item: 'Posto de Transformação / Subestação', intervention: 'Inspeção Visual', description: 'Verificar nível de óleo, vedação do cerco e sinalização de alta tensão.', frequency: 'SEMESTRAL' },
 
     // 7.8 HIDROSSANITÁRIAS
     { category: 'HIDRÁULICA', item: 'Caixa d\'água / Cisterna', intervention: 'Inspeção Visual', description: 'Verificar rachaduras na estrutura e vedação da tampa.', frequency: 'ANUAL' },
     { category: 'HIDRÁULICA', item: 'Caixa d\'água / Cisterna', intervention: 'Limpeza', description: 'Limpeza completa e desinfecção.', frequency: 'ANUAL' },
     { category: 'HIDRÁULICA', item: 'Ralos e Sifões', intervention: 'Limpeza', description: 'Remover resíduos e verificar escoamento.', frequency: 'MENSAL' },
     { category: 'HIDRÁULICA', item: 'Válvulas de Descarga', intervention: 'Inspeção Visual', description: 'Verificar vazamentos e funcionamento do acionamento.', frequency: 'MENSAL' },
+    { category: 'HIDRÁULICA', item: 'Sistema de Tratamento de Esgoto (STE)', intervention: 'Esgotamento / Limpeza', description: 'Inspeção do nível de lodo e esgotamento com caminhão limpa-fossa.', frequency: 'SEMESTRAL' },
     { category: 'HIDRÁULICA', item: 'Caixa de Gordura', intervention: 'Limpeza', description: 'Remoção de gordura e resíduos sólidos.', frequency: 'MENSAL' },
-    { category: 'HIDRÁULICA', item: 'Instalações de Gás', intervention: 'Inspeção Visual', description: 'Verificar validade de mangueiras e vazamentos (água+sabão).', frequency: 'MENSAL' },
+    { category: 'HIDRÁULICA', item: 'Instalações de Gás (Cozinha)', intervention: 'Inspeção Visual', description: 'Verificar validade de mangueiras, reguladores e teste de estanqueidade.', frequency: 'MENSAL' },
 
     // 7.9 INCÊNDIO
     { category: 'INCÊNDIO', item: 'Extintores', intervention: 'Inspeção Visual', description: 'Verificar manômetro, lacre, validade e acesso desobstruído.', frequency: 'MENSAL' },
-    { category: 'INCÊNDIO', item: 'Hidrantes', intervention: 'Teste', description: 'Teste de funcionamento e vedação.', frequency: 'ANUAL' },
-    { category: 'INCÊNDIO', item: 'Iluminação de Emergência', intervention: 'Teste', description: 'Simular falta de energia para verificar acionamento.', frequency: 'SEMESTRAL' },
+    { category: 'INCÊNDIO', item: 'Hidrantes e Mangueiras', intervention: 'Teste', description: 'Teste de funcionamento e vedação.', frequency: 'ANUAL' },
+    { category: 'INCÊNDIO', item: 'Iluminação de Emergência e Rotas de Fuga', intervention: 'Teste', description: 'Simular falta de energia para verificar acionamento e sinalização.', frequency: 'SEMESTRAL' },
 
-    // 7.13 IMPLANTAÇÃO
-    { category: 'EXTERNA', item: 'Muros e Gradis', intervention: 'Inspeção Visual', description: 'Verificar estabilidade, fissuras e corrosão.', frequency: 'SEMESTRAL' },
-    { category: 'EXTERNA', item: 'Depósito de Lixo', intervention: 'Limpeza', description: 'Limpeza profunda e desinfecção.', frequency: 'SEMANAL' },
-    { category: 'EXTERNA', item: 'Calhas e Drenagem', intervention: 'Limpeza', description: 'Desobstrução de canaletas e caixas de areia.', frequency: 'SEMESTRAL' },
-    { category: 'EXTERNA', item: 'Controle de Pragas', intervention: 'Dedetização', description: 'Serviço especializado.', frequency: 'SEMESTRAL' },
+    // 7.10 ÁREAS MOLHADAS
+    { category: 'ÁREAS MOLHADAS', item: 'Louças, Metais e Divisórias', intervention: 'Inspeção Visual', description: 'Verificar vazamentos em torneiras, pias e conservação das divisórias dos banheiros.', frequency: 'ANUAL' },
+
+    // 7.11 QUADRA POLIESPORTIVA
+    { category: 'QUADRA POLIESPORTIVA', item: 'Iluminação e Demarcação da Quadra', intervention: 'Inspeção e Reparo', description: 'Verificar refletores, pintura de demarcação e estado das traves/tabelas.', frequency: 'SEMESTRAL' },
+
+    // 7.12 PISCINA E CASA DE MÁQUINAS
+    { category: 'PISCINA', item: 'Filtros, Bombas e Cloração', intervention: 'Tratamento / Limpeza', description: 'Limpeza do fundo, retrolavagem dos filtros e teste químico de pH/cloro.', frequency: 'MENSAL' },
+
+    // 7.13 IMPLANTAÇÃO E EXTERNA
+    { category: 'EXTERNA', item: 'Muros, Gradis e Pórtico', intervention: 'Inspeção Visual', description: 'Verificar estabilidade, fissuras e corrosão.', frequency: 'SEMESTRAL' },
+    { category: 'EXTERNA', item: 'Depósito de Lixo e Drenagem', intervention: 'Limpeza', description: 'Desobstrução de canaletas, caixas de areia e higienização do abrigo de lixo.', frequency: 'SEMESTRAL' },
+    { category: 'EXTERNA', item: 'Controle de Pragas e Vetores', intervention: 'Dedetização', description: 'Dedetização e desinsetização por empresa especializada.', frequency: 'SEMESTRAL' },
+
+    // 7.14 ACESSIBILIDADE
+    { category: 'ACESSIBILIDADE', item: 'Rampas, Corrimãos e Piso Tátil', intervention: 'Inspeção Visual', description: 'Verificar firmeza dos corrimãos, piso tátil descolado e barras de apoio PNE.', frequency: 'SEMESTRAL' },
 
     // 7.15 EQUIPAMENTOS
-    { category: 'EQUIPAMENTOS', item: 'Ar Condicionado', intervention: 'Limpeza de Filtros', description: 'Limpeza dos filtros de ar.', frequency: 'MENSAL' },
-    { category: 'EQUIPAMENTOS', item: 'Ar Condicionado', intervention: 'Limpeza Interna', description: 'Higienização profunda (Especialista).', frequency: 'SEMESTRAL' },
-    { category: 'EQUIPAMENTOS', item: 'Bebedouros', intervention: 'Troca de Filtro', description: 'Substituição do elemento filtrante.', frequency: 'MENSAL' },
-    { category: 'EQUIPAMENTOS', item: 'Bebedouros', intervention: 'Higienização', description: 'Limpeza interna do reservatório.', frequency: 'SEMESTRAL' },
-    { category: 'EQUIPAMENTOS', item: 'Computadores', intervention: 'Limpeza Externa', description: 'Remover poeira de gabinete e periféricos.', frequency: 'ANUAL' },
+    { category: 'EQUIPAMENTOS', item: 'Ar Condicionado (Filtros)', intervention: 'Limpeza de Filtros', description: 'Limpeza dos filtros de ar.', frequency: 'MENSAL' },
+    { category: 'EQUIPAMENTOS', item: 'Ar Condicionado (Higienização)', intervention: 'Limpeza Interna', description: 'Higienização química profunda (Especialista).', frequency: 'SEMESTRAL' },
+    { category: 'EQUIPAMENTOS', item: 'Bebedouros', intervention: 'Troca de Filtro / Higienização', description: 'Substituição do elemento filtrante e higienização interna.', frequency: 'MENSAL' },
+    { category: 'EQUIPAMENTOS', item: 'Equipamentos da Cozinha Escolar', intervention: 'Inspeção Preventiva', description: 'Verificar vedação de freezers, fogões industriais e batedeiras.', frequency: 'SEMESTRAL' },
+    { category: 'EQUIPAMENTOS', item: 'Computadores e Redes', intervention: 'Limpeza Externa', description: 'Remover poeira de gabinetes, no-breaks e racks de rede.', frequency: 'ANUAL' },
 ];
 
 const MONTHS_NAMES = [
@@ -248,11 +262,7 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                 if (error) throw error;
 
                 if (data && data.length > 0) {
-                    const cleanData = data.filter(i => 
-                        !i.item.toUpperCase().includes('SPDA') && 
-                        !i.item.toUpperCase().includes('ATERRAMENTO') &&
-                        !i.item.toUpperCase().includes('PARA-RAIOS')
-                    );
+                    const cleanData = data;
 
                     const formatted = cleanData.map(i => {
                         if (i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda'))) {
