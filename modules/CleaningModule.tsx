@@ -225,7 +225,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
             }`}
           >
             <Calendar size={18} className="shrink-0" />
-            <span className="truncate">Chamados & Ordens (OS)</span>
+            <span className="truncate">Cronograma de Limpeza</span>
           </button>
 
           <button
