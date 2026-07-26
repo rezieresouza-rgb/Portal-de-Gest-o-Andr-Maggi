@@ -624,33 +624,53 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
 
     return (
         <div className="space-y-6 w-full min-w-0">
-            {/* Header / Filters */}
-            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 w-full min-w-0">
-                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 w-full lg:flex-1 min-w-0 custom-scrollbar">
-                    {['ALL', 'DIARIA', 'SEMANAL', 'MENSAL', 'TRIMESTRAL'].map(freq => (
-                        <button
-                            key={freq}
-                            onClick={() => { setFilterFrequency(freq); setViewMode('schedule'); }}
-                            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider border transition-all shrink-0 ${filterFrequency === freq && viewMode === 'schedule'
-                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                                    : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
+            {/* Header / Filters Toolbar */}
+            <div className="bg-white p-3 sm:p-4 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 xl:space-y-0 xl:flex xl:items-center xl:justify-between gap-4 w-full min-w-0">
+                {/* Segmented Frequency & Mode Controls */}
+                <div className="flex items-center gap-1.5 bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200/50 shadow-inner overflow-x-auto custom-scrollbar shrink-0 max-w-full">
+                    {[
+                        { id: 'ALL', label: 'Todos', icon: Filter },
+                        { id: 'DIARIA', label: 'Diária', icon: Clock },
+                        { id: 'SEMANAL', label: 'Semanal', icon: Calendar },
+                        { id: 'MENSAL', label: 'Mensal', icon: Calendar },
+                        { id: 'TRIMESTRAL', label: 'Trimestral', icon: Calendar },
+                    ].map(tab => {
+                        const IconComponent = tab.icon;
+                        const isActive = filterFrequency === tab.id && viewMode === 'schedule';
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => { setFilterFrequency(tab.id); setViewMode('schedule'); }}
+                                className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all duration-200 ${
+                                    isActive
+                                        ? 'bg-indigo-600 text-white shadow-md scale-[1.02]'
+                                        : 'text-gray-500 hover:text-gray-900 hover:bg-white/80'
                                 }`}
-                        >
-                            {freq === 'ALL' ? 'Todos' : getFrequencyLabel(freq)}
-                        </button>
-                    ))}
+                            >
+                                <IconComponent size={14} className={isActive ? 'text-white' : 'text-gray-400'} />
+                                <span>{tab.label}</span>
+                            </button>
+                        );
+                    })}
+
+                    <div className="w-px h-5 bg-gray-300 mx-1 shrink-0" />
+
                     <button
                         onClick={() => setViewMode(viewMode === 'schedule' ? 'history' : 'schedule')}
-                        className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider border transition-all shrink-0 flex items-center gap-1.5 ${viewMode === 'history'
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                                : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
-                            }`}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all duration-200 ${
+                            viewMode === 'history'
+                                ? 'bg-indigo-600 text-white shadow-md scale-[1.02]'
+                                : 'text-gray-500 hover:text-gray-900 hover:bg-white/80'
+                        }`}
                     >
-                        <History size={14} className="shrink-0" /> <span className="truncate">{viewMode === 'history' ? 'Voltar' : 'Histórico'}</span>
+                        <History size={14} className={viewMode === 'history' ? 'text-white' : 'text-gray-400'} />
+                        <span>{viewMode === 'history' ? 'Voltar' : 'Histórico'}</span>
                     </button>
                 </div>
-                <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-4 shrink-0 min-w-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
-                    <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-sm shrink-0">
+
+                {/* Right Action Tools */}
+                <div className="flex flex-wrap items-center justify-between xl:justify-end gap-2 sm:gap-3 shrink-0 min-w-0">
+                    <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/80 rounded-2xl px-3 py-1.5 shadow-xs shrink-0">
                         <button
                             type="button"
                             onClick={() => {
@@ -663,7 +683,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                                 setReportPeriodStart(mon.toISOString().split('T')[0]);
                                 setReportPeriodEnd(fri.toISOString().split('T')[0]);
                             }}
-                            className="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2 py-1 rounded-md transition-all shrink-0"
+                            className="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2.5 py-1 rounded-xl transition-all shrink-0"
                             title="Selecionar automaticamente Segunda a Sexta desta semana"
                         >
                             Esta Semana
@@ -683,18 +703,20 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                             className="bg-transparent border-none text-[10px] font-bold text-gray-700 outline-none w-24 px-1 focus:ring-0 cursor-pointer"
                         />
                     </div>
+
                     <button
                         onClick={() => setIsRecessModalOpen(true)}
-                        className="px-3 sm:px-5 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-lg shrink-0"
+                        className="px-3.5 sm:px-4 py-2 bg-emerald-600 text-white rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm shrink-0"
                     >
-                        <Palmtree size={14} className="shrink-0" /> <span className="truncate">Escala de Recesso</span>
+                        <Palmtree size={14} className="shrink-0" /> <span className="whitespace-nowrap">Escala de Recesso</span>
                     </button>
+
                     <button
                         onClick={() => setShowReportConfig(!showReportConfig)}
-                        className={`p-2 rounded-xl border transition-all shrink-0 ${
+                        className={`p-2 rounded-2xl border transition-all shrink-0 ${
                             showReportConfig 
                                 ? 'bg-indigo-50 border-indigo-200 text-indigo-600' 
-                                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
                         }`}
                         title="Opções de Assinaturas e Impressão"
                     >
@@ -703,12 +725,13 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
 
                     <button
                         onClick={viewMode === 'history' ? generateHistoryReport : generateWeeklyReport}
-                        className="px-3 sm:px-5 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-1.5 shadow-lg shrink-0"
+                        className="px-3.5 sm:px-4 py-2 bg-gray-900 text-white rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider hover:bg-black transition-all flex items-center gap-1.5 shadow-sm shrink-0"
                     >
-                        <Printer size={14} className="shrink-0" /> <span className="truncate">{viewMode === 'history' ? 'Imprimir Histórico' : 'Imprimir Relatório Semanal'}</span>
+                        <Printer size={14} className="shrink-0" /> <span className="whitespace-nowrap">{viewMode === 'history' ? 'Imprimir Histórico' : 'Imprimir Relatório'}</span>
                     </button>
-                    <div className="text-right shrink-0 border-l border-gray-200 pl-3 sm:pl-4">
-                        <p className="text-[8px] sm:text-[9px] font-black uppercase text-gray-400 tracking-tighter">Total de Tarefas</p>
+
+                    <div className="text-right shrink-0 border-l border-gray-200 pl-3">
+                        <p className="text-[9px] font-black uppercase text-gray-400 tracking-tighter">Total</p>
                         <p className="text-lg sm:text-xl font-black text-gray-900 leading-none">{tasks.length}</p>
                     </div>
                 </div>

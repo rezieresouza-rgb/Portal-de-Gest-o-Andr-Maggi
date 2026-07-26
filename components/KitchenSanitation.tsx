@@ -374,12 +374,12 @@ const KitchenSanitation: React.FC<KitchenSanitationProps> = ({ employees }) => {
          </div>
 
          <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center no-print">
-            <div className="flex bg-gray-100 p-1.5 rounded-2xl">
+            <div className="flex bg-gray-100 p-1.5 rounded-2xl overflow-x-auto max-w-full custom-scrollbar shrink-0">
                {['DIÁRIA', 'SEMANAL', 'MENSAL', 'PERIÓDICA', 'TODOS'].map(f => (
                   <button
                      key={f}
                      onClick={() => setFilterFreq(f as any)}
-                     className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${filterFreq === f ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+                     className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all shrink-0 whitespace-nowrap ${filterFreq === f ? 'bg-orange-600 text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                      {f}
                   </button>
