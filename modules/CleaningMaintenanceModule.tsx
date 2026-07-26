@@ -48,7 +48,7 @@ const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
   { id: 'env-1', name: 'SALAS DE AULA', category: 'SALA_AULA', complianceRate: 100 },
   { id: 'env-2', name: 'AUDITÓRIO', category: 'AUDITORIO', complianceRate: 100 },
   { id: 'env-3', name: 'SALA DE RECURSOS', category: 'SALA_RECURSOS', complianceRate: 100 },
-  { id: 'env-4', name: 'LABORATÓRIOS (MAKER, CIÊNCIAS, EF, APA)', category: 'LABORATORIO', complianceRate: 100 },
+  { id: 'env-4', name: 'MONITORIA CÍVICO-MILITAR', category: 'LABORATORIO', complianceRate: 100 },
   { id: 'env-5', name: 'BIBLIOTECA', category: 'BIBLIOTECA', complianceRate: 100 },
   { id: 'env-6', name: 'ADMINISTRATIVOS (SEC, COORD, PROF...)', category: 'ADMINISTRATIVO', complianceRate: 100 },
   { id: 'env-7', name: 'SANITÁRIOS', category: 'SANITARIO', complianceRate: 100 },
