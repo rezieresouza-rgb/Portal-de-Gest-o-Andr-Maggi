@@ -29,7 +29,7 @@ interface SeducReportsManagerProps {
   user?: User;
 }
 
-// School Info Defaults
+// School Info Defaults (Exact SEDUC Pattern)
 const DEFAULT_SCHOOL_INFO = {
   name: 'ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
   code: '51190826',
@@ -41,16 +41,16 @@ const DEFAULT_SCHOOL_INFO = {
   year: '2026'
 };
 
-// Initial Data for Doc 1: Cronograma de Inspeções
+// Initial Data for Doc 1: Cronograma de Inspeções (Oficial SEDUC-MT)
 const INITIAL_DOC1_ITEMS = [
-  { id: '1', system: 'Estrutura & Alvenaria', frequency: 'Quadrimestral', months: ['Janeiro', 'Maio', 'Setembro'], responsible: 'Genivaldo / Equipe Predial' },
-  { id: '2', system: 'Cobertura & Telhado', frequency: 'Semestral', months: ['Fevereiro', 'Agosto'], responsible: 'Equipe de Manutenção' },
-  { id: '3', system: 'Instalações Elétricas & Iluminação', frequency: 'Trimestral', months: ['Janeiro', 'Abril', 'Julho', 'Outubro'], responsible: 'Eletricista Credenciado' },
-  { id: '4', system: 'Instalações Hidráulicas & Esgoto', frequency: 'Trimestral', months: ['Fevereiro', 'Maio', 'Agosto', 'Novembro'], responsible: 'Encanador / Apoio' },
-  { id: '5', system: 'Climatização & Ar Condicionado', frequency: 'Mensal', months: ['Mensalmente'], responsible: 'Técnico HVAC' },
-  { id: '6', system: 'Pintura & Revestimentos', frequency: 'Semestral', months: ['Janeiro', 'Julho'], responsible: 'Zeladoria Predial' },
-  { id: '7', system: 'Sanitários & Bebedouros', frequency: 'Mensal', months: ['Mensalmente'], responsible: 'AAE Limpeza / Manutenção' },
-  { id: '8', system: 'Segurança & Equipamentos Incêndio', frequency: 'Semestral', months: ['Março', 'Setembro'], responsible: 'Bombeiro Civil / Gestão' }
+  { id: '1', system: 'Estrutura & Alvenaria (Paredes, Pilares, Vigas e Lajes)', frequency: 'Semestral', months: ['Fevereiro', 'Agosto'], responsible: 'Genivaldo / Manutenção Predial' },
+  { id: '2', system: 'Cobertura & Telhado (Telhas, Calhas, Rufos e Condutores)', frequency: 'Semestral', months: ['Janeiro', 'Julho'], responsible: 'Equipe de Manutenção' },
+  { id: '3', system: 'Instalações Elétricas & Iluminação (QGD, Disjuntores e Refletores)', frequency: 'Trimestral', months: ['Janeiro', 'Abril', 'Julho', 'Outubro'], responsible: 'Eletricista Credenciado' },
+  { id: '4', system: 'Instalações Hidráulicas & Esgoto (Caixas d\'Água, Pias e Ralos)', frequency: 'Trimestral', months: ['Fevereiro', 'Maio', 'Agosto', 'Novembro'], responsible: 'Encanador / Apoio' },
+  { id: '5', system: 'Climatização & Ar Condicionado (Salas de Aula e Administração)', frequency: 'Mensal', months: ['Mensalmente'], responsible: 'Técnico HVAC' },
+  { id: '6', system: 'Pintura & Revestimentos (Fachada, Paredes e Rodapés)', frequency: 'Semestral', months: ['Janeiro', 'Julho'], responsible: 'Zeladoria Predial' },
+  { id: '7', system: 'Sanitários & Bebedouros (Louças, Torneiras e Descargas)', frequency: 'Mensal', months: ['Mensalmente'], responsible: 'AAE Limpeza / Zelo' },
+  { id: '8', system: 'Segurança & Prevenção Contra Incêndio (Extintores e Luz de Emergência)', frequency: 'Semestral', months: ['Março', 'Setembro'], responsible: 'Bombeiro Civil / Gestão' }
 ];
 
 // Initial Data for Doc 2: Ficha de Inspeções
@@ -58,9 +58,9 @@ const INITIAL_DOC2_ITEMS = [
   { id: '1', system: 'Esgotamento Sanitário e Caixas de Gordura', status: 'ADEQUADO', risk: 'BAIXO', obs: 'Limpeza e desobstrução efetuadas recentemente.' },
   { id: '2', system: 'Instalações de Reservatório e Caixas d\'Água', status: 'ADEQUADO', risk: 'BAIXO', obs: 'Higienização e lavagem completadas no início do ano.' },
   { id: '3', system: 'Instalações de Gás (Cozinha)', status: 'ADEQUADO', risk: 'MÉDIO', obs: 'Central de gás revisada com teste de estanqueidade OK.' },
-  { id: '4', system: 'Ar Condicionado (Salas e Bloco Adm)', status: 'NÃO_ADEQUADO', risk: 'MÉDIO', obs: 'Unidades das salas 04 e 06 necessitam de higienização profunda.' },
+  { id: '4', system: 'Ar Condicionado (Salas e Bloco Adm)', status: 'NÃO ADEQUADO', risk: 'MÉDIO', obs: 'Unidades das salas 04 e 06 necessitam de higienização profunda.' },
   { id: '5', system: 'Quadro Geral de Distribuição Elétrica (QGD)', status: 'ADEQUADO', risk: 'BAIXO', obs: 'Disjuntores e barramentos identificados e organizados.' },
-  { id: '6', system: 'Iluminação Externa e Refletores da Quadra', status: 'NÃO_ADEQUADO', risk: 'BAIXO', obs: 'Substituição pendente de 4 refletores LED queimados.' },
+  { id: '6', system: 'Iluminação Externa e Refletores da Quadra', status: 'NÃO ADEQUADO', risk: 'BAIXO', obs: 'Substituição pendente de 4 refletores LED queimados.' },
   { id: '7', system: 'Telhado, Calhas e Condutores Pluviais', status: 'ADEQUADO', risk: 'BAIXO', obs: 'Revisão de telhas e desobstrução de calhas realizada.' },
   { id: '8', system: 'Pintura de Paredes e Fachada', status: 'ADEQUADO', risk: 'BAIXO', obs: 'Pintura conservada em padrão oficial.' }
 ];
@@ -93,8 +93,8 @@ const INITIAL_DOC4_ITEMS = [
 const INITIAL_DOC5_ITEMS = [
   { id: '1', system: 'Limpeza de Caixas d\'Água', initialStatus: 'NÃO ADEQUADO', action: 'Higienização e cloração completa', status: 'CONCLUÍDO', date: '15/01/2026' },
   { id: '2', system: 'Revisão do QGD e Disjuntores', initialStatus: 'NÃO ADEQUADO', action: 'Reaperto e rebalanceamento de fases', status: 'CONCLUÍDO', date: '20/01/2026' },
-  { id: '3', system: 'Troca de Lampadas da Secretaria', initialStatus: 'NÃO ADEQUADO', action: 'Instalação de lâmpadas tubulares LED', status: 'CONCLUÍDO', date: '25/01/2026' },
-  { id: '4', system: 'Refletores da Quadra', initialStatus: 'NÃO ADEQUADO', action: 'Substituição de refletores queimados', status: 'PENDENTE', date: '25/07/2026' }
+  { id: '3', system: 'Troca de Lâmpadas da Secretaria', initialStatus: 'NÃO ADEQUADO', action: 'Instalação de lâmpadas tubulares LED', status: 'CONCLUÍDO', date: '25/01/2026' },
+  { id: '4', system: 'Refletores da Quadra Poliesportiva', initialStatus: 'NÃO ADEQUADO', action: 'Substituição de refletores queimados', status: 'PENDENTE', date: '25/07/2026' }
 ];
 
 // Initial Data for Doc 6: Justificativa de Pendências
@@ -115,7 +115,7 @@ const INITIAL_DOC6_ITEMS = [
 const INITIAL_DOC7_DATA = {
   objective: 'Promover a conscientização, engajamento e responsabilidade compartilhada entre estudantes, servidores e comunidade para a preservação e conservação do patrimônio físico escolar.',
   targetAudience: 'Estudantes dos Anos Finais, Professores, Auxiliares de Serviços Gerais (AAE) e Comunidade Escolar.',
-  schoolReality: 'A unidade possui excelente estrutura física com laboratórios, salas climatizadas e auditório. Registra-se necessidade contínua de orientação quanto ao uso zelosodo mobiliário e conservação de banheiros e paredes.',
+  schoolReality: 'A unidade possui excelente estrutura física com laboratórios, salas climatizadas e auditório. Registra-se necessidade contínua de orientação quanto ao uso zeloso do mobiliário e conservação de banheiros e paredes.',
   planning: '1. Apresentação do Manual de Manutenção Predial 2025 para a equipe.\n2. Formação da Brigada Mirim do Zelo Escolar com líderes de turma.\n3. Campanhas periódicas de uso consciente da água, energia e preservação das carteiras.',
   execution: 'Ações iniciadas em Março/2026 com palestra motivacional no auditório e gincana da sala mais limpa e conservada.',
   photos: [] as string[]
@@ -134,7 +134,7 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
   const [doc6Items, setDoc6Items] = useState(INITIAL_DOC6_ITEMS);
   const [doc7Data, setDoc7Data] = useState(INITIAL_DOC7_DATA);
 
-  // Load saved state and sync with system data
+  // Load saved state
   useEffect(() => {
     try {
       const savedSchool = localStorage.getItem('seduc_school_info_v1');
@@ -165,10 +165,8 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
     }
   }, []);
 
-  // Sincronização automática com ordens de serviço / dados reais do sistema
   const syncWithSystemData = async () => {
     try {
-      // Buscar equipe diretiva
       const { data: staffData } = await supabase.from('staff').select('*');
       if (staffData) {
         const director = staffData.find(s => s.role === 'DIRETOR' || s.job_function?.toUpperCase().includes('DIRETOR'))?.name;
@@ -181,14 +179,12 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
           }));
         }
       }
-
-      alert('Dados sincronizados com o sistema com sucesso!');
+      alert('Dados sincronizados com o sistema!');
     } catch (err) {
       console.error('Erro ao sincronizar com sistema:', err);
     }
   };
 
-  // Save changes
   const saveAll = () => {
     try {
       localStorage.setItem('seduc_school_info_v1', JSON.stringify(schoolInfo));
@@ -222,7 +218,6 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
     }
   };
 
-  // Document Title Mapping
   const getDocTitle = (type: SeducDocType) => {
     switch (type) {
       case 'doc1': return '1 – CRONOGRAMA DE INSPEÇÕES';
@@ -236,36 +231,32 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
   };
 
   return (
-    <div className="w-full min-w-0 space-y-6">
-      {/* Top Header & Navigation for Documents */}
-      <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm no-print space-y-4">
+    <div className="w-full min-w-0 space-y-6 font-sans">
+      {/* Top Header & Navigation Bar */}
+      <div className="bg-white p-6 rounded-[2rem] border border-gray-200 shadow-sm no-print space-y-4">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-amber-600 font-black text-xs uppercase tracking-widest">
               <Building2 size={16} />
-              <span>Modelos Oficiais SEDUC-MT 2025/2026</span>
+              <span>Modelos Identicos SEDUC-MT 2025/2026</span>
             </div>
             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mt-1">
-              Gestão de Relatórios de Manutenção Predial
+              Gerenciador & Impressão de Relatórios Oficiais
             </h2>
-            <p className="text-xs text-gray-500 font-semibold mt-1">
-              Os relatórios são <strong>pré-preenchidos automaticamente</strong> com as ordens de serviço e vistorias do sistema, permitindo complementação e edição manual livre antes da impressão.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={syncWithSystemData}
-              className="px-4 py-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-100 transition-all flex items-center gap-2"
-              title="Sincronizar com ordens de serviço e equipe"
+              className="px-4 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl font-bold text-xs uppercase hover:bg-amber-100 transition-all flex items-center gap-2"
             >
               <RefreshCw size={16} />
-              <span>Atualizar do Sistema</span>
+              <span>Sincronizar Dados</span>
             </button>
 
             <button
               onClick={saveAll}
-              className="px-5 py-3 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-md"
+              className="px-5 py-2.5 bg-gray-900 text-white rounded-xl font-bold text-xs uppercase hover:bg-black transition-all flex items-center gap-2 shadow-md"
             >
               <Save size={16} />
               <span>Salvar Dados</span>
@@ -273,15 +264,15 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
 
             <button
               onClick={handlePrint}
-              className="px-6 py-3 bg-amber-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-700 transition-all flex items-center gap-2 shadow-lg"
+              className="px-6 py-2.5 bg-amber-600 text-white rounded-xl font-black text-xs uppercase hover:bg-amber-700 transition-all flex items-center gap-2 shadow-lg"
             >
               <Printer size={18} />
-              <span>Imprimir Relatório Oficial</span>
+              <span>Imprimir PDF Oficial</span>
             </button>
           </div>
         </div>
 
-        {/* Tab Selector Buttons */}
+        {/* Tab Buttons */}
         <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
           {[
             { id: 'doc1', label: '1. Cronograma' },
@@ -295,10 +286,10 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
             <button
               key={tab.id}
               onClick={() => setActiveDoc(tab.id as SeducDocType)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
                 activeDoc === tab.id
-                  ? 'bg-amber-500 text-white shadow-md'
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {tab.label}
@@ -307,217 +298,172 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
         </div>
       </div>
 
-      {/* PRINTABLE REPORT CONTAINER */}
-      <div id="seduc-printable-report" className="bg-white p-8 md:p-12 rounded-[2rem] border border-gray-200 shadow-md printable-seduc-doc w-full min-w-0">
-        
-        {/* OFFICIAL SEDUC HEADER */}
-        <div className="text-center border-b-2 border-gray-900 pb-4 mb-6">
-          <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-gray-700">Governo do Estado de Mato Grosso</p>
-          <p className="text-sm md:text-base font-black uppercase tracking-wider text-gray-900 mt-0.5">SECRETARIA DE ESTADO DE EDUCAÇÃO</p>
-          <h1 className="text-lg md:text-2xl font-black uppercase text-amber-700 tracking-tight mt-3">
+      {/* PRINTABLE DOCUMENT - EXACT SEDUC-MT FORMATTING */}
+      <div
+        id="seduc-printable-report"
+        className="bg-white p-10 md:p-14 border border-gray-900 shadow-xl mx-auto text-black font-sans text-xs leading-relaxed max-w-[210mm] w-full min-w-0"
+        style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
+      >
+        {/* HEADER GOVERNO DO ESTADO DE MATO GROSSO / SEDUC */}
+        <div className="text-center font-bold uppercase tracking-normal mb-6 leading-tight">
+          <p className="text-sm text-gray-900">Governo do Estado de Mato Grosso</p>
+          <p className="text-base font-black text-gray-900">SECRETARIA DE ESTADO DE EDUCAÇÃO</p>
+          <div className="w-full border-b border-black my-3"></div>
+          <h2 className="text-lg font-black text-black tracking-tight mt-2">
             {getDocTitle(activeDoc)}
-          </h1>
+          </h2>
         </div>
 
-        {/* IDENTIFICATION BOX */}
-        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 mb-8 space-y-4">
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">
+        {/* IDENTIFICAÇÃO E EQUIPE GESTORA - TABELA PADRÃO SEDUC */}
+        <div className="border border-black mb-6 text-xs">
+          <div className="bg-gray-200 font-black p-1.5 border-b border-black uppercase text-center text-[11px]">
             Identificação da Unidade Escolar
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-bold uppercase text-gray-800">
-            <div>
-              <span className="text-[10px] text-gray-400 block font-black">Escola:</span>
-              <input
-                value={schoolInfo.name}
-                onChange={e => setSchoolInfo({ ...schoolInfo, name: e.target.value })}
-                className="w-full bg-transparent font-black text-gray-900 border-b border-dashed border-gray-300 focus:border-amber-500 outline-none"
-              />
+          </div>
+          <div className="grid grid-cols-2 border-b border-black">
+            <div className="p-2 border-r border-black font-bold">
+              Nome da escola: <input value={schoolInfo.name} onChange={e => setSchoolInfo({ ...schoolInfo, name: e.target.value })} className="w-full bg-transparent font-normal outline-none uppercase" />
             </div>
-            <div>
-              <span className="text-[10px] text-gray-400 block font-black">Código Inep/SEDUC:</span>
-              <input
-                value={schoolInfo.code}
-                onChange={e => setSchoolInfo({ ...schoolInfo, code: e.target.value })}
-                className="w-full bg-transparent font-black text-gray-900 border-b border-dashed border-gray-300 focus:border-amber-500 outline-none"
-              />
+            <div className="p-2 font-bold">
+              Código da escola: <input value={schoolInfo.code} onChange={e => setSchoolInfo({ ...schoolInfo, code: e.target.value })} className="w-full bg-transparent font-normal outline-none uppercase" />
             </div>
-            <div>
-              <span className="text-[10px] text-gray-400 block font-black">Município:</span>
-              <input
-                value={schoolInfo.city}
-                onChange={e => setSchoolInfo({ ...schoolInfo, city: e.target.value })}
-                className="w-full bg-transparent font-black text-gray-900 border-b border-dashed border-gray-300 focus:border-amber-500 outline-none"
-              />
+          </div>
+          <div className="grid grid-cols-2 border-b border-black">
+            <div className="p-2 border-r border-black font-bold">
+              Município: <input value={schoolInfo.city} onChange={e => setSchoolInfo({ ...schoolInfo, city: e.target.value })} className="w-full bg-transparent font-normal outline-none uppercase" />
             </div>
-            <div>
-              <span className="text-[10px] text-gray-400 block font-black">DRE:</span>
-              <input
-                value={schoolInfo.dre}
-                onChange={e => setSchoolInfo({ ...schoolInfo, dre: e.target.value })}
-                className="w-full bg-transparent font-black text-gray-900 border-b border-dashed border-gray-300 focus:border-amber-500 outline-none"
-              />
+            <div className="p-2 font-bold">
+              DRE: <input value={schoolInfo.dre} onChange={e => setSchoolInfo({ ...schoolInfo, dre: e.target.value })} className="w-full bg-transparent font-normal outline-none uppercase" />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase text-gray-800 pt-2 border-t border-gray-200/60">
-            <div>
-              <span className="text-[10px] text-gray-400 block font-black">Diretor(a):</span>
-              <input
-                value={schoolInfo.director}
-                onChange={e => setSchoolInfo({ ...schoolInfo, director: e.target.value })}
-                className="w-full bg-transparent font-black text-gray-900 border-b border-dashed border-gray-300 outline-none"
-              />
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-400 block font-black">Coordenadores(as):</span>
-              <input
-                value={schoolInfo.coordinators}
-                onChange={e => setSchoolInfo({ ...schoolInfo, coordinators: e.target.value })}
-                className="w-full bg-transparent font-black text-gray-900 border-b border-dashed border-gray-300 outline-none"
-              />
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-400 block font-black">Secretário(a):</span>
-              <input
-                value={schoolInfo.secretary}
-                onChange={e => setSchoolInfo({ ...schoolInfo, secretary: e.target.value })}
-                className="w-full bg-transparent font-black text-gray-900 border-b border-dashed border-gray-300 outline-none"
-              />
-            </div>
+          <div className="bg-gray-200 font-black p-1.5 border-b border-black uppercase text-center text-[11px]">
+            Equipe Gestora
+          </div>
+          <div className="p-2 border-b border-black font-bold">
+            Diretor(a): <input value={schoolInfo.director} onChange={e => setSchoolInfo({ ...schoolInfo, director: e.target.value })} className="w-full bg-transparent font-normal outline-none uppercase" />
+          </div>
+          <div className="p-2 border-b border-black font-bold">
+            Coordenadores(as): <input value={schoolInfo.coordinators} onChange={e => setSchoolInfo({ ...schoolInfo, coordinators: e.target.value })} className="w-full bg-transparent font-normal outline-none uppercase" />
+          </div>
+          <div className="p-2 font-bold">
+            Secretário(a): <input value={schoolInfo.secretary} onChange={e => setSchoolInfo({ ...schoolInfo, secretary: e.target.value })} className="w-full bg-transparent font-normal outline-none uppercase" />
           </div>
         </div>
-
-        {/* DOCUMENT CONTENT SWITCH */}
 
         {/* DOC 1: CRONOGRAMA DE INSPEÇÕES */}
         {activeDoc === 'doc1' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex justify-between items-center no-print">
-              <h3 className="text-sm font-black uppercase text-gray-700">Sistemas e Frequência de Vistoria</h3>
+              <span className="font-bold uppercase text-[11px]">Cronograma de Vistoria dos Sistemas</span>
               <button
                 onClick={() => setDoc1Items([...doc1Items, { id: Date.now().toString(), system: 'Novo Sistema', frequency: 'Mensal', months: ['Mensalmente'], responsible: 'Equipe' }])}
-                className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-100"
+                className="px-2 py-1 bg-gray-200 text-black text-[10px] font-bold rounded flex items-center gap-1 border border-black"
               >
-                <Plus size={14} /> Adicionar Sistema
+                + Adicionar Sistema
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300 text-left text-xs font-sans">
-                <thead>
-                  <tr className="bg-gray-100 text-gray-900 uppercase font-black">
-                    <th className="border border-gray-300 p-3">Sistema / Instalação</th>
-                    <th className="border border-gray-300 p-3">Frequência Prevista</th>
-                    <th className="border border-gray-300 p-3">Meses de Execução</th>
-                    <th className="border border-gray-300 p-3">Responsável</th>
-                    <th className="border border-gray-300 p-2 text-center no-print">Ação</th>
+            <table className="w-full border-collapse border border-black text-left text-xs">
+              <thead>
+                <tr className="bg-gray-200 text-black uppercase font-black">
+                  <th className="border border-black p-2 text-center">Sistema / Instalação</th>
+                  <th className="border border-black p-2 text-center">Frequência</th>
+                  <th className="border border-black p-2 text-center">Meses Previstos</th>
+                  <th className="border border-black p-2 text-center">Responsável</th>
+                  <th className="border border-black p-1 text-center no-print">Excluir</th>
+                </tr>
+              </thead>
+              <tbody>
+                {doc1Items.map((item, idx) => (
+                  <tr key={item.id}>
+                    <td className="border border-black p-2 font-bold">
+                      <input
+                        value={item.system}
+                        onChange={e => {
+                          const updated = [...doc1Items];
+                          updated[idx].system = e.target.value;
+                          setDoc1Items(updated);
+                        }}
+                        className="w-full bg-transparent outline-none"
+                      />
+                    </td>
+                    <td className="border border-black p-2 text-center font-semibold">
+                      <input
+                        value={item.frequency}
+                        onChange={e => {
+                          const updated = [...doc1Items];
+                          updated[idx].frequency = e.target.value;
+                          setDoc1Items(updated);
+                        }}
+                        className="w-full bg-transparent outline-none text-center"
+                      />
+                    </td>
+                    <td className="border border-black p-2 text-center font-bold">
+                      <input
+                        value={item.months.join(', ')}
+                        onChange={e => {
+                          const updated = [...doc1Items];
+                          updated[idx].months = e.target.value.split(',').map(m => m.trim());
+                          setDoc1Items(updated);
+                        }}
+                        className="w-full bg-transparent outline-none text-center"
+                      />
+                    </td>
+                    <td className="border border-black p-2 text-center">
+                      <input
+                        value={item.responsible}
+                        onChange={e => {
+                          const updated = [...doc1Items];
+                          updated[idx].responsible = e.target.value;
+                          setDoc1Items(updated);
+                        }}
+                        className="w-full bg-transparent outline-none text-center"
+                      />
+                    </td>
+                    <td className="border border-black p-1 text-center no-print">
+                      <button onClick={() => setDoc1Items(doc1Items.filter(i => i.id !== item.id))} className="text-red-600 font-bold">X</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {doc1Items.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 p-3 font-bold text-gray-900">
-                        <input
-                          value={item.system}
-                          onChange={e => {
-                            const updated = [...doc1Items];
-                            updated[idx].system = e.target.value;
-                            setDoc1Items(updated);
-                          }}
-                          className="w-full bg-transparent outline-none font-bold"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-3">
-                        <input
-                          value={item.frequency}
-                          onChange={e => {
-                            const updated = [...doc1Items];
-                            updated[idx].frequency = e.target.value;
-                            setDoc1Items(updated);
-                          }}
-                          className="w-full bg-transparent outline-none"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-3">
-                        <input
-                          value={item.months.join(', ')}
-                          onChange={e => {
-                            const updated = [...doc1Items];
-                            updated[idx].months = e.target.value.split(',').map(m => m.trim());
-                            setDoc1Items(updated);
-                          }}
-                          className="w-full bg-transparent outline-none font-semibold text-amber-800"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-3">
-                        <input
-                          value={item.responsible}
-                          onChange={e => {
-                            const updated = [...doc1Items];
-                            updated[idx].responsible = e.target.value;
-                            setDoc1Items(updated);
-                          }}
-                          className="w-full bg-transparent outline-none"
-                        />
-                      </td>
-                      <td className="border border-gray-300 p-2 text-center no-print">
-                        <button
-                          onClick={() => setDoc1Items(doc1Items.filter(i => i.id !== item.id))}
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
         {/* DOC 2: FICHA DE INSPEÇÕES */}
         {activeDoc === 'doc2' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex justify-between items-center no-print">
-              <h3 className="text-sm font-black uppercase text-gray-700">Verificação dos Itens Físicos</h3>
+              <span className="font-bold uppercase text-[11px]">Tabela Geral de Vistorias e Contagem</span>
               <button
-                onClick={() => setDoc2Items([...doc2Items, { id: Date.now().toString(), system: 'Novo Elemento', status: 'ADEQUADO', risk: 'BAIXO', obs: 'Sem observações' }])}
-                className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-100"
+                onClick={() => setDoc2Items([...doc2Items, { id: Date.now().toString(), system: 'Novo Item', status: 'ADEQUADO', risk: 'BAIXO', obs: 'Sem observações' }])}
+                className="px-2 py-1 bg-gray-200 text-black text-[10px] font-bold rounded flex items-center gap-1 border border-black"
               >
-                <Plus size={14} /> Adicionar Item
+                + Adicionar Item
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900">
-                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Itens Adequados</p>
-                <p className="text-2xl font-black">{doc2Items.filter(i => i.status === 'ADEQUADO').length}</p>
-              </div>
-              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-900">
-                <p className="text-[10px] font-black uppercase tracking-widest text-red-600">Itens Não Adequados</p>
-                <p className="text-2xl font-black">{doc2Items.filter(i => i.status === 'NÃO_ADEQUADO').length}</p>
-              </div>
-              <div className="p-4 bg-gray-100 border border-gray-300 rounded-2xl text-gray-800">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Total de Itens Auditados</p>
-                <p className="text-2xl font-black">{doc2Items.length}</p>
-              </div>
+            <div className="border border-black p-3 bg-gray-100 text-xs font-bold space-y-1 mb-3">
+              <p className="font-black uppercase">Contagem dos Itens:</p>
+              <p>Itens em condições adequadas: <strong>{doc2Items.filter(i => i.status === 'ADEQUADO').length}</strong></p>
+              <p>Itens em condições não adequadas: <strong>{doc2Items.filter(i => i.status === 'NÃO ADEQUADO').length}</strong></p>
+              <p>Total de Itens Auditados: <strong>{doc2Items.length}</strong></p>
             </div>
 
-            <table className="w-full border-collapse border border-gray-300 text-left text-xs font-sans">
+            <table className="w-full border-collapse border border-black text-left text-xs">
               <thead>
-                <tr className="bg-gray-100 text-gray-900 uppercase font-black">
-                  <th className="border border-gray-300 p-3">Elemento / Instalação</th>
-                  <th className="border border-gray-300 p-3 text-center">Condição</th>
-                  <th className="border border-gray-300 p-3 text-center">Risco</th>
-                  <th className="border border-gray-300 p-3">Observação Técnica</th>
-                  <th className="border border-gray-300 p-2 text-center no-print">Ação</th>
+                <tr className="bg-gray-200 text-black uppercase font-black">
+                  <th className="border border-black p-2">Item / Sistema</th>
+                  <th className="border border-black p-2 text-center">Condição</th>
+                  <th className="border border-black p-2 text-center">Grau de Risco</th>
+                  <th className="border border-black p-2">Observações Técnicas</th>
+                  <th className="border border-black p-1 text-center no-print">Excluir</th>
                 </tr>
               </thead>
               <tbody>
                 {doc2Items.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 p-3 font-bold text-gray-900">
+                  <tr key={item.id}>
+                    <td className="border border-black p-2 font-bold">
                       <input
                         value={item.system}
                         onChange={e => {
@@ -525,10 +471,10 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].system = e.target.value;
                           setDoc2Items(updated);
                         }}
-                        className="w-full bg-transparent outline-none font-bold"
+                        className="w-full bg-transparent outline-none"
                       />
                     </td>
-                    <td className="border border-gray-300 p-3 text-center font-black">
+                    <td className="border border-black p-2 text-center font-bold">
                       <select
                         value={item.status}
                         onChange={e => {
@@ -536,15 +482,13 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].status = e.target.value;
                           setDoc2Items(updated);
                         }}
-                        className={`bg-transparent outline-none font-black ${
-                          item.status === 'ADEQUADO' ? 'text-emerald-700' : 'text-red-700'
-                        }`}
+                        className="bg-transparent outline-none font-bold"
                       >
                         <option value="ADEQUADO">ADEQUADO</option>
-                        <option value="NÃO_ADEQUADO">NÃO ADEQUADO</option>
+                        <option value="NÃO ADEQUADO">NÃO ADEQUADO</option>
                       </select>
                     </td>
-                    <td className="border border-gray-300 p-3 text-center">
+                    <td className="border border-black p-2 text-center font-bold">
                       <select
                         value={item.risk}
                         onChange={e => {
@@ -552,14 +496,14 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].risk = e.target.value;
                           setDoc2Items(updated);
                         }}
-                        className="bg-transparent outline-none font-black"
+                        className="bg-transparent outline-none font-bold"
                       >
                         <option value="BAIXO">BAIXO</option>
                         <option value="MÉDIO">MÉDIO</option>
                         <option value="ALTO">ALTO</option>
                       </select>
                     </td>
-                    <td className="border border-gray-300 p-3">
+                    <td className="border border-black p-2">
                       <input
                         value={item.obs}
                         onChange={e => {
@@ -570,13 +514,8 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                         className="w-full bg-transparent outline-none"
                       />
                     </td>
-                    <td className="border border-gray-300 p-2 text-center no-print">
-                      <button
-                        onClick={() => setDoc2Items(doc2Items.filter(i => i.id !== item.id))}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    <td className="border border-black p-1 text-center no-print">
+                      <button onClick={() => setDoc2Items(doc2Items.filter(i => i.id !== item.id))} className="text-red-600 font-bold">X</button>
                     </td>
                   </tr>
                 ))}
@@ -587,32 +526,32 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
 
         {/* DOC 3: RELATÓRIO DE DEMANDA */}
         {activeDoc === 'doc3' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex justify-between items-center no-print">
-              <h3 className="text-sm font-black uppercase text-gray-700">Necessidades de Intervenção Priorizadas</h3>
+              <span className="font-bold uppercase text-[11px]">Demandas Priorizadas</span>
               <button
-                onClick={() => setDoc3Items([...doc3Items, { id: Date.now().toString(), system: 'Nova Demanda', diagnosis: 'Diagnóstico da necessidade', risk: 'MÉDIO', priority: 'MÉDIA', costEst: 'R$ 0,00' }])}
-                className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-100"
+                onClick={() => setDoc3Items([...doc3Items, { id: Date.now().toString(), system: 'Nova Demanda', diagnosis: 'Diagnóstico', risk: 'MÉDIO', priority: 'MÉDIA', costEst: 'R$ 0,00' }])}
+                className="px-2 py-1 bg-gray-200 text-black text-[10px] font-bold rounded flex items-center gap-1 border border-black"
               >
-                <Plus size={14} /> Adicionar Demanda
+                + Adicionar Demanda
               </button>
             </div>
 
-            <table className="w-full border-collapse border border-gray-300 text-left text-xs font-sans">
+            <table className="w-full border-collapse border border-black text-left text-xs">
               <thead>
-                <tr className="bg-gray-100 text-gray-900 uppercase font-black">
-                  <th className="border border-gray-300 p-3">Item / Local</th>
-                  <th className="border border-gray-300 p-3">Diagnóstico da Necessidade</th>
-                  <th className="border border-gray-300 p-3 text-center">Risco</th>
-                  <th className="border border-gray-300 p-3 text-center">Prioridade</th>
-                  <th className="border border-gray-300 p-3">Custo Estimado</th>
-                  <th className="border border-gray-300 p-2 text-center no-print">Ação</th>
+                <tr className="bg-gray-200 text-black uppercase font-black">
+                  <th className="border border-black p-2">Item / Local</th>
+                  <th className="border border-black p-2">Diagnóstico da Necessidade</th>
+                  <th className="border border-black p-2 text-center">Risco</th>
+                  <th className="border border-black p-2 text-center">Prioridade</th>
+                  <th className="border border-black p-2 text-center">Custo Estimado</th>
+                  <th className="border border-black p-1 text-center no-print">Excluir</th>
                 </tr>
               </thead>
               <tbody>
                 {doc3Items.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 p-3 font-bold text-gray-900">
+                  <tr key={item.id}>
+                    <td className="border border-black p-2 font-bold">
                       <input
                         value={item.system}
                         onChange={e => {
@@ -620,10 +559,10 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].system = e.target.value;
                           setDoc3Items(updated);
                         }}
-                        className="w-full bg-transparent outline-none font-bold"
+                        className="w-full bg-transparent outline-none"
                       />
                     </td>
-                    <td className="border border-gray-300 p-3">
+                    <td className="border border-black p-2">
                       <textarea
                         rows={2}
                         value={item.diagnosis}
@@ -635,7 +574,7 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                         className="w-full bg-transparent outline-none resize-none"
                       />
                     </td>
-                    <td className="border border-gray-300 p-3 text-center font-black">
+                    <td className="border border-black p-2 text-center font-bold">
                       <select
                         value={item.risk}
                         onChange={e => {
@@ -643,14 +582,14 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].risk = e.target.value;
                           setDoc3Items(updated);
                         }}
-                        className="bg-transparent outline-none font-black"
+                        className="bg-transparent outline-none font-bold"
                       >
                         <option value="BAIXO">BAIXO</option>
                         <option value="MÉDIO">MÉDIO</option>
                         <option value="ALTO">ALTO</option>
                       </select>
                     </td>
-                    <td className="border border-gray-300 p-3 text-center font-black">
+                    <td className="border border-black p-2 text-center font-bold">
                       <select
                         value={item.priority}
                         onChange={e => {
@@ -658,14 +597,14 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].priority = e.target.value;
                           setDoc3Items(updated);
                         }}
-                        className="bg-transparent outline-none font-black text-amber-700"
+                        className="bg-transparent outline-none font-bold"
                       >
                         <option value="BAIXA">BAIXA</option>
                         <option value="MÉDIA">MÉDIA</option>
                         <option value="ALTA">ALTA</option>
                       </select>
                     </td>
-                    <td className="border border-gray-300 p-3 font-bold">
+                    <td className="border border-black p-2 text-center font-bold">
                       <input
                         value={item.costEst}
                         onChange={e => {
@@ -673,16 +612,11 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].costEst = e.target.value;
                           setDoc3Items(updated);
                         }}
-                        className="w-full bg-transparent outline-none font-bold"
+                        className="w-full bg-transparent outline-none text-center font-bold"
                       />
                     </td>
-                    <td className="border border-gray-300 p-2 text-center no-print">
-                      <button
-                        onClick={() => setDoc3Items(doc3Items.filter(i => i.id !== item.id))}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    <td className="border border-black p-1 text-center no-print">
+                      <button onClick={() => setDoc3Items(doc3Items.filter(i => i.id !== item.id))} className="text-red-600 font-bold">X</button>
                     </td>
                   </tr>
                 ))}
@@ -693,141 +627,66 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
 
         {/* DOC 4: CHECKLIST DE INTERVENÇÕES */}
         {activeDoc === 'doc4' && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="flex justify-between items-center no-print">
-              <h3 className="text-sm font-black uppercase text-gray-700">Intervenções Efetuadas e Registros Fotográficos</h3>
+              <span className="font-bold uppercase text-[11px]">Intervenções e Registros Fotográficos</span>
               <button
                 onClick={() => setDoc4Items([...doc4Items, { id: Date.now().toString(), system: 'Nova Intervenção', risk: 'BAIXO', diagnosis: 'Descrição', description: 'Serviço efetuado', serviceValue: 'R$ 0,00', materialValue: 'R$ 0,00', executor: 'Empresa', nfs: 'NF-001', photoBefore: '', photoAfter: '' }])}
-                className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-100"
+                className="px-2 py-1 bg-gray-200 text-black text-[10px] font-bold rounded flex items-center gap-1 border border-black"
               >
-                <Plus size={14} /> Adicionar Intervenção
+                + Adicionar Intervenção
               </button>
             </div>
 
             {doc4Items.map((item, idx) => (
-              <div key={item.id} className="p-6 bg-gray-50 rounded-2xl border border-gray-300 space-y-4">
-                <div className="flex justify-between items-center border-b border-gray-200 pb-3">
-                  <h4 className="text-sm font-black uppercase text-amber-800">Intervenção #{idx + 1}</h4>
-                  <button
-                    onClick={() => setDoc4Items(doc4Items.filter(i => i.id !== item.id))}
-                    className="text-xs text-red-600 font-bold hover:underline no-print"
-                  >
-                    Excluir
-                  </button>
+              <div key={item.id} className="border border-black p-4 space-y-3">
+                <div className="flex justify-between items-center border-b border-black pb-2 font-bold uppercase">
+                  <span>ITEM / INTERVENÇÃO #{idx + 1}: {item.system}</span>
+                  <button onClick={() => setDoc4Items(doc4Items.filter(i => i.id !== item.id))} className="text-red-600 text-xs no-print">Remover</button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase">Item / Sistema:</label>
-                    <input
-                      value={item.system}
-                      onChange={e => {
-                        const updated = [...doc4Items];
-                        updated[idx].system = e.target.value;
-                        setDoc4Items(updated);
-                      }}
-                      className="w-full bg-white p-2.5 rounded-xl border border-gray-200 font-bold"
-                    />
+                    <strong>Sistema / Elemento:</strong>
+                    <input value={item.system} onChange={e => { const u = [...doc4Items]; u[idx].system = e.target.value; setDoc4Items(u); }} className="w-full border border-gray-400 p-1 mt-0.5 font-bold" />
                   </div>
-
                   <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase">Executor / Nota Fiscal:</label>
-                    <input
-                      value={`${item.executor} | ${item.nfs}`}
-                      onChange={e => {
-                        const updated = [...doc4Items];
-                        const parts = e.target.value.split('|');
-                        updated[idx].executor = parts[0] ? parts[0].trim() : '';
-                        updated[idx].nfs = parts[1] ? parts[1].trim() : '';
-                        setDoc4Items(updated);
-                      }}
-                      className="w-full bg-white p-2.5 rounded-xl border border-gray-200 font-bold"
-                    />
+                    <strong>Executor & Nota Fiscal:</strong>
+                    <input value={`${item.executor} | ${item.nfs}`} onChange={e => { const u = [...doc4Items]; const p = e.target.value.split('|'); u[idx].executor = p[0]?.trim() || ''; u[idx].nfs = p[1]?.trim() || ''; setDoc4Items(u); }} className="w-full border border-gray-400 p-1 mt-0.5" />
                   </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase">Descrição da Manutenção Realizada:</label>
-                    <textarea
-                      rows={2}
-                      value={item.description}
-                      onChange={e => {
-                        const updated = [...doc4Items];
-                        updated[idx].description = e.target.value;
-                        setDoc4Items(updated);
-                      }}
-                      className="w-full bg-white p-2.5 rounded-xl border border-gray-200 font-semibold"
-                    />
+                  <div className="col-span-2">
+                    <strong>Manutenção Realizada:</strong>
+                    <textarea rows={2} value={item.description} onChange={e => { const u = [...doc4Items]; u[idx].description = e.target.value; setDoc4Items(u); }} className="w-full border border-gray-400 p-1 mt-0.5" />
                   </div>
                 </div>
 
-                {/* PHOTOS ANTES E DEPOIS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div className="border border-gray-300 p-4 rounded-2xl bg-white text-center space-y-2">
-                    <p className="text-xs font-black uppercase text-gray-700">Foto 1 – Antes da Intervenção</p>
-                    {item.photoBefore ? (
-                      <div className="relative group">
-                        <img src={item.photoBefore} alt="Antes" className="w-full h-44 object-cover rounded-xl border" />
-                        <button
-                          onClick={() => {
-                            const updated = [...doc4Items];
-                            updated[idx].photoBefore = '';
-                            setDoc4Items(updated);
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all no-print"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center h-44 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 no-print">
-                        <ImageIcon className="text-gray-400 mb-1" size={24} />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase">Carregar Foto Antes</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => handleFileUpload(e, url => {
-                            const updated = [...doc4Items];
-                            updated[idx].photoBefore = url;
-                            setDoc4Items(updated);
-                          })}
-                        />
-                      </label>
-                    )}
-                  </div>
+                {/* TABELA DE FOTOS EXATA SEDUC (FOTO 1 - ANTES | FOTO 2 - DEPOIS) */}
+                <div className="border border-black p-2 mt-2">
+                  <p className="text-center font-bold uppercase text-[11px] mb-2">Registro Fotográfico</p>
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div className="border border-black p-2 bg-gray-50">
+                      <p className="font-bold text-[10px] uppercase mb-1">Foto 1 – Antes da Intervenção</p>
+                      {item.photoBefore ? (
+                        <img src={item.photoBefore} alt="Antes" className="w-full h-40 object-cover border border-black" />
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-40 border border-dashed border-black cursor-pointer no-print">
+                          <span className="text-[10px] font-bold">Clique para Carregar Foto</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, url => { const u = [...doc4Items]; u[idx].photoBefore = url; setDoc4Items(u); })} />
+                        </label>
+                      )}
+                    </div>
 
-                  <div className="border border-gray-300 p-4 rounded-2xl bg-white text-center space-y-2">
-                    <p className="text-xs font-black uppercase text-gray-700">Foto 2 – Após a Intervenção</p>
-                    {item.photoAfter ? (
-                      <div className="relative group">
-                        <img src={item.photoAfter} alt="Depois" className="w-full h-44 object-cover rounded-xl border" />
-                        <button
-                          onClick={() => {
-                            const updated = [...doc4Items];
-                            updated[idx].photoAfter = '';
-                            setDoc4Items(updated);
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all no-print"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center h-44 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 no-print">
-                        <ImageIcon className="text-gray-400 mb-1" size={24} />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase">Carregar Foto Depois</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => handleFileUpload(e, url => {
-                            const updated = [...doc4Items];
-                            updated[idx].photoAfter = url;
-                            setDoc4Items(updated);
-                          })}
-                        />
-                      </label>
-                    )}
+                    <div className="border border-black p-2 bg-gray-50">
+                      <p className="font-bold text-[10px] uppercase mb-1">Foto 2 – Após a Intervenção</p>
+                      {item.photoAfter ? (
+                        <img src={item.photoAfter} alt="Depois" className="w-full h-40 object-cover border border-black" />
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-40 border border-dashed border-black cursor-pointer no-print">
+                          <span className="text-[10px] font-bold">Clique para Carregar Foto</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, url => { const u = [...doc4Items]; u[idx].photoAfter = url; setDoc4Items(u); })} />
+                        </label>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -837,31 +696,31 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
 
         {/* DOC 5: RELATÓRIO DE VERIFICAÇÃO */}
         {activeDoc === 'doc5' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex justify-between items-center no-print">
-              <h3 className="text-sm font-black uppercase text-gray-700">Atesto de Conformidade das Manutenções</h3>
+              <span className="font-bold uppercase text-[11px]">Conformidade e Atesto Pós-Intervenção</span>
               <button
                 onClick={() => setDoc5Items([...doc5Items, { id: Date.now().toString(), system: 'Novo Item', initialStatus: 'NÃO ADEQUADO', action: 'Ação executada', status: 'CONCLUÍDO', date: '2026-07-25' }])}
-                className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-100"
+                className="px-2 py-1 bg-gray-200 text-black text-[10px] font-bold rounded flex items-center gap-1 border border-black"
               >
-                <Plus size={14} /> Adicionar Item
+                + Adicionar Item
               </button>
             </div>
 
-            <table className="w-full border-collapse border border-gray-300 text-left text-xs font-sans">
+            <table className="w-full border-collapse border border-black text-left text-xs">
               <thead>
-                <tr className="bg-gray-100 text-gray-900 uppercase font-black">
-                  <th className="border border-gray-300 p-3">Item / Sistema</th>
-                  <th className="border border-gray-300 p-3">Manutenção Planejada / Ação</th>
-                  <th className="border border-gray-300 p-3 text-center">Status Final</th>
-                  <th className="border border-gray-300 p-3 text-center">Data Atesto</th>
-                  <th className="border border-gray-300 p-2 text-center no-print">Ação</th>
+                <tr className="bg-gray-200 text-black uppercase font-black">
+                  <th className="border border-black p-2">Item / Sistema</th>
+                  <th className="border border-black p-2">Manutenção Planejada / Ação</th>
+                  <th className="border border-black p-2 text-center">Status Final</th>
+                  <th className="border border-black p-2 text-center">Data Atesto</th>
+                  <th className="border border-black p-1 text-center no-print">Excluir</th>
                 </tr>
               </thead>
               <tbody>
                 {doc5Items.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 p-3 font-bold text-gray-900">
+                  <tr key={item.id}>
+                    <td className="border border-black p-2 font-bold">
                       <input
                         value={item.system}
                         onChange={e => {
@@ -869,10 +728,10 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].system = e.target.value;
                           setDoc5Items(updated);
                         }}
-                        className="w-full bg-transparent outline-none font-bold"
+                        className="w-full bg-transparent outline-none"
                       />
                     </td>
-                    <td className="border border-gray-300 p-3">
+                    <td className="border border-black p-2">
                       <input
                         value={item.action}
                         onChange={e => {
@@ -883,7 +742,7 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                         className="w-full bg-transparent outline-none"
                       />
                     </td>
-                    <td className="border border-gray-300 p-3 text-center font-black">
+                    <td className="border border-black p-2 text-center font-bold">
                       <select
                         value={item.status}
                         onChange={e => {
@@ -891,15 +750,13 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                           updated[idx].status = e.target.value;
                           setDoc5Items(updated);
                         }}
-                        className={`bg-transparent outline-none font-black ${
-                          item.status === 'CONCLUÍDO' ? 'text-emerald-700' : 'text-red-700'
-                        }`}
+                        className="bg-transparent outline-none font-bold"
                       >
                         <option value="CONCLUÍDO">CONCLUÍDO</option>
                         <option value="PENDENTE">PENDENTE</option>
                       </select>
                     </td>
-                    <td className="border border-gray-300 p-3 text-center font-bold">
+                    <td className="border border-black p-2 text-center font-bold">
                       <input
                         value={item.date}
                         onChange={e => {
@@ -910,13 +767,8 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
                         className="w-full bg-transparent outline-none text-center"
                       />
                     </td>
-                    <td className="border border-gray-300 p-2 text-center no-print">
-                      <button
-                        onClick={() => setDoc5Items(doc5Items.filter(i => i.id !== item.id))}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    <td className="border border-black p-1 text-center no-print">
+                      <button onClick={() => setDoc5Items(doc5Items.filter(i => i.id !== item.id))} className="text-red-600 font-bold">X</button>
                     </td>
                   </tr>
                 ))}
@@ -927,126 +779,63 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
 
         {/* DOC 6: JUSTIFICATIVA DE PENDÊNCIAS */}
         {activeDoc === 'doc6' && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="flex justify-between items-center no-print">
-              <h3 className="text-sm font-black uppercase text-gray-700">Registro Transparente de Pendências</h3>
+              <span className="font-bold uppercase text-[11px]">Registro Formal de Justificativa</span>
               <button
                 onClick={() => setDoc6Items([...doc6Items, { id: Date.now().toString(), system: 'Item Pendente', risk: 'BAIXO', observedCondition: 'Condição', neededMaintenance: 'Reparo necessário', justification: 'Justificativa...', photo1: '', photo2: '' }])}
-                className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-100"
+                className="px-2 py-1 bg-gray-200 text-black text-[10px] font-bold rounded flex items-center gap-1 border border-black"
               >
-                <Plus size={14} /> Adicionar Pendência
+                + Adicionar Pendência
               </button>
             </div>
 
             {doc6Items.map((item, idx) => (
-              <div key={item.id} className="p-6 bg-red-50/40 rounded-2xl border border-red-200 space-y-4">
-                <div className="flex justify-between items-center border-b border-red-200 pb-3">
-                  <h4 className="text-sm font-black uppercase text-red-800">Pendência #{idx + 1}</h4>
-                  <button
-                    onClick={() => setDoc6Items(doc6Items.filter(i => i.id !== item.id))}
-                    className="text-xs text-red-600 font-bold hover:underline no-print"
-                  >
-                    Excluir
-                  </button>
+              <div key={item.id} className="border border-black p-4 space-y-3 bg-gray-50/50">
+                <div className="flex justify-between items-center border-b border-black pb-2 font-bold uppercase">
+                  <span>ITEM PENDENTE #{idx + 1}: {item.system}</span>
+                  <button onClick={() => setDoc6Items(doc6Items.filter(i => i.id !== item.id))} className="text-red-600 text-xs no-print">Remover</button>
                 </div>
 
-                <div className="space-y-3 text-xs">
+                <div className="space-y-2 text-xs">
                   <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase">Item / Sistema Pendente:</label>
-                    <input
-                      value={item.system}
-                      onChange={e => {
-                        const updated = [...doc6Items];
-                        updated[idx].system = e.target.value;
-                        setDoc6Items(updated);
-                      }}
-                      className="w-full bg-white p-2.5 rounded-xl border border-gray-300 font-bold"
-                    />
+                    <strong>ITEM / SISTEMA:</strong>
+                    <input value={item.system} onChange={e => { const u = [...doc6Items]; u[idx].system = e.target.value; setDoc6Items(u); }} className="w-full border border-gray-400 p-1 mt-0.5 font-bold" />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase">Justificativa Oficial para a Não Realização:</label>
-                    <textarea
-                      rows={3}
-                      value={item.justification}
-                      onChange={e => {
-                        const updated = [...doc6Items];
-                        updated[idx].justification = e.target.value;
-                        setDoc6Items(updated);
-                      }}
-                      className="w-full bg-white p-3 rounded-xl border border-gray-300 font-medium leading-relaxed"
-                    />
+                    <strong>Justificativa para a Não Realização da Manutenção:</strong>
+                    <textarea rows={3} value={item.justification} onChange={e => { const u = [...doc6Items]; u[idx].justification = e.target.value; setDoc6Items(u); }} className="w-full border border-gray-400 p-2 mt-0.5 font-medium leading-normal" />
                   </div>
                 </div>
 
-                {/* PHOTOS DO ESTADO ATUAL */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div className="border border-gray-300 p-4 rounded-2xl bg-white text-center space-y-2">
-                    <p className="text-xs font-black uppercase text-gray-700">Foto 1 – Condição Atual</p>
-                    {item.photo1 ? (
-                      <div className="relative group">
-                        <img src={item.photo1} alt="Foto 1" className="w-full h-40 object-cover rounded-xl border" />
-                        <button
-                          onClick={() => {
-                            const updated = [...doc6Items];
-                            updated[idx].photo1 = '';
-                            setDoc6Items(updated);
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all no-print"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 no-print">
-                        <ImageIcon className="text-gray-400 mb-1" size={24} />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase">Carregar Foto 1</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => handleFileUpload(e, url => {
-                            const updated = [...doc6Items];
-                            updated[idx].photo1 = url;
-                            setDoc6Items(updated);
-                          })}
-                        />
-                      </label>
-                    )}
-                  </div>
+                {/* TABELA FOTOS PENDÊNCIA SEDUC */}
+                <div className="border border-black p-2 mt-2 bg-white">
+                  <p className="text-center font-bold uppercase text-[11px] mb-2">Registro Fotográfico (Condição que se encontra – antes da intervenção)</p>
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div className="border border-black p-2">
+                      <p className="font-bold text-[10px] uppercase mb-1">Foto 1</p>
+                      {item.photo1 ? (
+                        <img src={item.photo1} alt="Foto 1" className="w-full h-36 object-cover border border-black" />
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-36 border border-dashed border-black cursor-pointer no-print">
+                          <span className="text-[10px] font-bold">Carregar Foto 1</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, url => { const u = [...doc6Items]; u[idx].photo1 = url; setDoc6Items(u); })} />
+                        </label>
+                      )}
+                    </div>
 
-                  <div className="border border-gray-300 p-4 rounded-2xl bg-white text-center space-y-2">
-                    <p className="text-xs font-black uppercase text-gray-700">Foto 2 – Detalhe da Pendência</p>
-                    {item.photo2 ? (
-                      <div className="relative group">
-                        <img src={item.photo2} alt="Foto 2" className="w-full h-40 object-cover rounded-xl border" />
-                        <button
-                          onClick={() => {
-                            const updated = [...doc6Items];
-                            updated[idx].photo2 = '';
-                            setDoc6Items(updated);
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all no-print"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 no-print">
-                        <ImageIcon className="text-gray-400 mb-1" size={24} />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase">Carregar Foto 2</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => handleFileUpload(e, url => {
-                            const updated = [...doc6Items];
-                            updated[idx].photo2 = url;
-                            setDoc6Items(updated);
-                          })}
-                        />
-                      </label>
-                    )}
+                    <div className="border border-black p-2">
+                      <p className="font-bold text-[10px] uppercase mb-1">Foto 2</p>
+                      {item.photo2 ? (
+                        <img src={item.photo2} alt="Foto 2" className="w-full h-36 object-cover border border-black" />
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-36 border border-dashed border-black cursor-pointer no-print">
+                          <span className="text-[10px] font-bold">Carregar Foto 2</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, url => { const u = [...doc6Items]; u[idx].photo2 = url; setDoc6Items(u); })} />
+                        </label>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1056,81 +845,67 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
 
         {/* DOC 7: PLANO DE BOAS PRÁTICAS */}
         {activeDoc === 'doc7' && (
-          <div className="space-y-6 text-xs font-sans">
-            <div className="space-y-2">
-              <label className="font-black text-gray-900 uppercase">Objetivo da Ação:</label>
-              <textarea
-                rows={2}
-                value={doc7Data.objective}
-                onChange={e => setDoc7Data({ ...doc7Data, objective: e.target.value })}
-                className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-medium"
-              />
+          <div className="space-y-4 text-xs">
+            <div className="border border-black p-3 space-y-1">
+              <strong className="block uppercase font-black text-black">Objetivo:</strong>
+              <textarea rows={2} value={doc7Data.objective} onChange={e => setDoc7Data({ ...doc7Data, objective: e.target.value })} className="w-full bg-transparent outline-none" />
             </div>
 
-            <div className="space-y-2">
-              <label className="font-black text-gray-900 uppercase">Público-Alvo:</label>
-              <input
-                value={doc7Data.targetAudience}
-                onChange={e => setDoc7Data({ ...doc7Data, targetAudience: e.target.value })}
-                className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-medium"
-              />
+            <div className="border border-black p-3 space-y-1">
+              <strong className="block uppercase font-black text-black">Público-alvo:</strong>
+              <input value={doc7Data.targetAudience} onChange={e => setDoc7Data({ ...doc7Data, targetAudience: e.target.value })} className="w-full bg-transparent outline-none font-bold" />
             </div>
 
-            <div className="space-y-2">
-              <label className="font-black text-gray-900 uppercase">Realidade Escolar & Diagnóstico:</label>
-              <textarea
-                rows={3}
-                value={doc7Data.schoolReality}
-                onChange={e => setDoc7Data({ ...doc7Data, schoolReality: e.target.value })}
-                className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-medium"
-              />
+            <div className="border border-black p-3 space-y-1">
+              <strong className="block uppercase font-black text-black">Realidade escolar:</strong>
+              <textarea rows={3} value={doc7Data.schoolReality} onChange={e => setDoc7Data({ ...doc7Data, schoolReality: e.target.value })} className="w-full bg-transparent outline-none" />
             </div>
 
-            <div className="space-y-2">
-              <label className="font-black text-gray-900 uppercase">Planejamento das Ações Educativas:</label>
-              <textarea
-                rows={4}
-                value={doc7Data.planning}
-                onChange={e => setDoc7Data({ ...doc7Data, planning: e.target.value })}
-                className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-medium"
-              />
+            <div className="border border-black p-3 space-y-1">
+              <strong className="block uppercase font-black text-black">Planejamento:</strong>
+              <textarea rows={4} value={doc7Data.planning} onChange={e => setDoc7Data({ ...doc7Data, planning: e.target.value })} className="w-full bg-transparent outline-none" />
             </div>
 
-            <div className="space-y-2">
-              <label className="font-black text-gray-900 uppercase">Execução & Resultados Obtidos:</label>
-              <textarea
-                rows={3}
-                value={doc7Data.execution}
-                onChange={e => setDoc7Data({ ...doc7Data, execution: e.target.value })}
-                className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-medium"
-              />
+            <div className="border border-black p-3 space-y-1">
+              <strong className="block uppercase font-black text-black">Execução:</strong>
+              <textarea rows={3} value={doc7Data.execution} onChange={e => setDoc7Data({ ...doc7Data, execution: e.target.value })} className="w-full bg-transparent outline-none" />
             </div>
           </div>
         )}
 
-        {/* OFFICIAL SIGNATURE FOOTER FOR ALL DOCS */}
-        <div className="mt-12 pt-8 border-t-2 border-gray-900 space-y-6">
-          <p className="text-center text-xs font-bold uppercase text-gray-600">
+        {/* RODAPÉ E ASSINATURAS IDÊNTICAS AO MODELO OFICIAL SEDUC */}
+        <div className="mt-10 pt-6 border-t border-black space-y-6">
+          <p className="text-center font-bold text-xs uppercase">
             {schoolInfo.city}, ____ de _____________________ de {schoolInfo.year}.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center text-xs font-bold uppercase pt-4">
+          <p className="text-center font-black text-xs uppercase tracking-wider">
+            Responsáveis pela Unidade Escolar
+          </p>
+
+          <div className="grid grid-cols-2 gap-8 text-center text-xs font-bold pt-4">
             <div className="space-y-1">
-              <p className="border-b border-gray-900 w-3/4 mx-auto pb-1">{schoolInfo.director}</p>
-              <p className="text-[10px] text-gray-500 font-black">Diretor(a) Escolar</p>
+              <p className="font-bold">Nome: <u>{schoolInfo.director}</u></p>
+              <div className="border-b border-black w-4/5 mx-auto mt-6"></div>
+              <p className="text-[10px] uppercase font-black">Diretor(a)</p>
             </div>
             <div className="space-y-1">
-              <p className="border-b border-gray-900 w-3/4 mx-auto pb-1">{schoolInfo.coordinators}</p>
-              <p className="text-[10px] text-gray-500 font-black">Coordenação Pedagógica / Gestão</p>
+              <p className="font-bold">Nome: <u>{schoolInfo.coordinators}</u></p>
+              <div className="border-b border-black w-4/5 mx-auto mt-6"></div>
+              <p className="text-[10px] uppercase font-black">Coordenador(a)</p>
             </div>
           </div>
         </div>
 
       </div>
 
-      {/* PRINT CSS STYLING */}
+      {/* PRINT STYLING - EXACT PAGE FIT & A4 MARGINS */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 15mm 15mm 15mm 15mm;
+          }
           body * {
             visibility: hidden;
           }
@@ -1142,8 +917,9 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
             left: 0;
             top: 0;
             width: 100%;
+            max-width: 100% !important;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             box-shadow: none !important;
             border: none !important;
           }
