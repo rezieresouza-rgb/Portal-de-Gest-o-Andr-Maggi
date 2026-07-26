@@ -37,7 +37,8 @@ const MODULES_LIST = [
    { id: 'scheduling', label: 'Agendas' },
    { id: 'library', label: 'Biblioteca' },
    { id: 'almoxarifado', label: 'Almoxarifado' },
-   { id: 'limpeza', label: 'Manutenção' },
+   { id: 'limpeza', label: 'Limpeza & Higienização' },
+   { id: 'infraestrutura', label: 'Manutenção & Infraestrutura' },
    { id: 'patrimonio', label: 'Patrimônio' },
    { id: 'special_education', label: 'Sala de Recursos e APA' },
 ];
@@ -55,6 +56,7 @@ const FUNCTIONS_LIST = [
    { id: "PSICOSSOCIAL", label: "Psicossocial" },
    { id: "BIBLIOTECA", label: "Biblioteca" },
    { id: "LIMPEZA", label: "Limpeza" },
+   { id: "MANUTENCAO", label: "Manutenção / Infraestrutura" },
    { id: "NUTRIÇÃO", label: "Nutrição" },
    { id: "AUXILIAR DE PÁTIO", label: "Auxiliar de Pátio" },
    { id: "AUXILIAR DE COORDENAÇÃO PEDAGÓGICA", label: "Aux. de Coord. Pedagógica" },
@@ -71,7 +73,7 @@ const Settings: React.FC = () => {
          'OFICIAL DE GESTÃO CIVICO-MILITAR': ['civico_militar', 'scheduling', 'training'],
          'OFICIAL DE GESTÃO EDUCACIONAL': ['civico_militar', 'scheduling', 'training'],
          'COORDENADOR PEDAGÓGICO': MODULES_LIST.map(m => m.id),
-         'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar', 'training'],
+         'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
          'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
          'MONITOR': ['civico_militar', 'scheduling', 'training'],
          'BUSCA ATIVA': ['busca_ativa', 'secretariat'],
@@ -79,6 +81,7 @@ const Settings: React.FC = () => {
          'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
          'BIBLIOTECA': ['library', 'scheduling'],
          'LIMPEZA': ['limpeza', 'training'],
+         'MANUTENCAO': ['infraestrutura', 'limpeza', 'training'],
          'NUTRIÇÃO': ['merenda', 'training'],
          'AUXILIAR DE PÁTIO': ['training'],
          'AUXILIAR DE COORDENAÇÃO PEDAGÓGICA': ['pedagogical', 'scheduling', 'training'],
@@ -88,7 +91,7 @@ const Settings: React.FC = () => {
       };
 
       try {
-         const saved = localStorage.getItem('portal_module_permissions_v5');
+         const saved = localStorage.getItem('portal_module_permissions_v6');
          const parsed = saved ? JSON.parse(saved) : null;
          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             // Garante que cargos novos ou não salvos recebam os defaults

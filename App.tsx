@@ -8,7 +8,8 @@ import TeacherModule from './modules/TeacherModule';
 import PedagogicalModule from './modules/PedagogicalModule';
 import AlmoxarifeModule from './modules/AlmoxarifeModule';
 import AssetInventoryModule from './modules/AssetInventoryModule';
-import CleaningMaintenanceModule from './modules/CleaningMaintenanceModule';
+import CleaningModule from './modules/CleaningModule';
+import InfrastructureModule from './modules/InfrastructureModule';
 import BuscaAtivaModule from './modules/BuscaAtivaModule';
 import PsychosocialModule from './modules/PsychosocialModule';
 import SecretariatModule from './modules/SecretariatModule';
@@ -24,7 +25,7 @@ import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { INITIAL_STUDENTS } from './constants/initialData';
 
-export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'busca_ativa' | 'psychosocial' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'settings';
+export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'settings';
 
 const App: React.FC = () => {
   const [isPending, startTransition] = useTransition();
@@ -57,7 +58,7 @@ const App: React.FC = () => {
       const saved = localStorage.getItem('active_portal_module');
       const validModules: ModuleTypeExtended[] = [
         'hub', 'merenda', 'finance', 'library', 'scheduling', 'teacher',
-        'pedagogical', 'almoxarifado', 'patrimonio', 'limpeza',
+        'pedagogical', 'almoxarifado', 'patrimonio', 'limpeza', 'infraestrutura',
         'busca_ativa', 'psychosocial', 'secretariat', 'special_education', 'civico_militar', 'training', 'settings'
       ];
       if (validModules.includes(saved as ModuleTypeExtended)) {
@@ -238,7 +239,8 @@ const App: React.FC = () => {
       case 'pedagogical': return <PedagogicalModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'almoxarifado': return <AlmoxarifeModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'patrimonio': return <AssetInventoryModule user={user} onExit={() => handleModuleChange('hub')} />;
-      case 'limpeza': return <CleaningMaintenanceModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'limpeza': return <CleaningModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'infraestrutura': return <InfrastructureModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'busca_ativa': return <BuscaAtivaModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'psychosocial': return <PsychosocialModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'secretariat': return <SecretariatModule user={user} onExit={() => handleModuleChange('hub')} />;

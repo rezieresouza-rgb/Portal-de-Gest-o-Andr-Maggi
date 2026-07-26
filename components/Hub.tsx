@@ -9,6 +9,7 @@ import {
   Library,
   HardHat,
   Hammer,
+  Brush,
   ShieldCheck,
   PhoneCall,
   HeartHandshake,
@@ -37,7 +38,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   useEffect(() => {
     const loadPermissions = () => {
       try {
-        const saved = localStorage.getItem('portal_module_permissions_v5');
+        const saved = localStorage.getItem('portal_module_permissions_v6');
         const parsed = saved ? JSON.parse(saved) : null;
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           setDynamicPermissions(parsed);
@@ -49,17 +50,17 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
       // Permissões Padrão Iniciais
       const defaults = {
-        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'patrimonio', 'special_education', 'civico_militar', 'training'],
+        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training'],
         'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
-        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar', 'training'],
+        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
         'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
-        'MANUTENCAO': ['limpeza', 'training'],
+        'MANUTENCAO': ['infraestrutura', 'limpeza', 'training'],
         'AAE': ['merenda', 'limpeza', 'almoxarifado', 'training'],
         'AAE_LIMPEZA': ['limpeza', 'almoxarifado', 'training'],
         'AEE_NUTRICAO': ['merenda', 'almoxarifado', 'training'],
-        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'special_education', 'civico_militar', 'training']
+        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training']
       };
-      localStorage.setItem('portal_module_permissions_v5', JSON.stringify(defaults));
+      localStorage.setItem('portal_module_permissions_v6', JSON.stringify(defaults));
       setDynamicPermissions(defaults);
     };
 
@@ -79,7 +80,8 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     { id: 'scheduling', title: 'Agendas', status: 'Reservas', statusColor: 'fuchsia', icon: <CalendarDays size={20} /> },
     { id: 'library', title: 'Biblioteca', status: 'Acervo', statusColor: 'indigo', icon: <Library size={20} /> },
     { id: 'almoxarifado', title: 'Almoxarifado', status: 'Materiais', statusColor: 'orange', icon: <HardHat size={20} /> },
-    { id: 'limpeza', title: 'Manutenção', status: 'Operacional', statusColor: 'emerald', icon: <Hammer size={20} /> },
+    { id: 'limpeza', title: 'Limpeza & Higienização', status: 'Operacional', statusColor: 'emerald', icon: <Brush size={20} /> },
+    { id: 'infraestrutura', title: 'Manutenção Predial', status: 'Ativo', statusColor: 'amber', icon: <Hammer size={20} /> },
     { id: 'patrimonio', title: 'Patrimônio', status: 'Auditado', statusColor: 'blue', icon: <ShieldCheck size={20} /> },
     { id: 'special_education', title: 'Sala de Recursos e APA', status: 'AEE', statusColor: 'pink', icon: <UserIcon size={20} /> },
     { id: 'civico_militar', title: 'Cívico-Militar', status: 'Rotina OK', statusColor: 'blue', icon: <ShieldCheck size={20} /> },
@@ -114,7 +116,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
                         user.cpf?.replace(/\D/g, '') === '89436296134';
     
     if (isGenivaldo) {
-      return ['limpeza', 'training', 'patrimonio'].includes(mod.id);
+      return ['infraestrutura', 'limpeza', 'training', 'patrimonio'].includes(mod.id);
     }
 
     const isDanubia = user.name?.toUpperCase().includes('DANUBIA') || 
@@ -143,7 +145,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return true;
     }
 
-    if (isVeraLucia && ['almoxarifado', 'limpeza'].includes(mod.id)) {
+    if (isVeraLucia && ['almoxarifado', 'limpeza', 'infraestrutura'].includes(mod.id)) {
       return false;
     }
 
