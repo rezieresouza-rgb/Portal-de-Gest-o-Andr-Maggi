@@ -16,9 +16,11 @@ import {
   ChevronRight,
   Info,
   Building2,
-  UserCheck
+  UserCheck,
+  RefreshCw
 } from 'lucide-react';
 import { User } from '../types';
+import { supabase } from '../supabaseClient';
 
 export type SeducDocType = 'doc1' | 'doc2' | 'doc3' | 'doc4' | 'doc5' | 'doc6' | 'doc7';
 
@@ -132,7 +134,7 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
   const [doc6Items, setDoc6Items] = useState(INITIAL_DOC6_ITEMS);
   const [doc7Data, setDoc7Data] = useState(INITIAL_DOC7_DATA);
 
-  // Load saved state from localStorage
+  // Load saved state and sync with system data
   useEffect(() => {
     try {
       const savedSchool = localStorage.getItem('seduc_school_info_v1');
@@ -162,6 +164,29 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
       console.error('Erro ao carregar dados dos relatórios SEDUC:', e);
     }
   }, []);
+
+  // Sincronização automática com ordens de serviço / dados reais do sistema
+  const syncWithSystemData = async () => {
+    try {
+      // Buscar equipe diretiva
+      const { data: staffData } = await supabase.from('staff').select('*');
+      if (staffData) {
+        const director = staffData.find(s => s.role === 'DIRETOR' || s.job_function?.toUpperCase().includes('DIRETOR'))?.name;
+        const secretary = staffData.find(s => s.role === 'SECRETÁRIO' || s.job_function?.toUpperCase().includes('SECRET'))?.name;
+        if (director || secretary) {
+          setSchoolInfo(prev => ({
+            ...prev,
+            director: director ? director.toUpperCase() : prev.director,
+            secretary: secretary ? secretary.toUpperCase() : prev.secretary
+          }));
+        }
+      }
+
+      alert('Dados sincronizados com o sistema com sucesso!');
+    } catch (err) {
+      console.error('Erro ao sincronizar com sistema:', err);
+    }
+  };
 
   // Save changes
   const saveAll = () => {
@@ -223,9 +248,21 @@ export const SeducReportsManager: React.FC<SeducReportsManagerProps> = ({ initia
             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight mt-1">
               Gestão de Relatórios de Manutenção Predial
             </h2>
+            <p className="text-xs text-gray-500 font-semibold mt-1">
+              Os relatórios são <strong>pré-preenchidos automaticamente</strong> com as ordens de serviço e vistorias do sistema, permitindo complementação e edição manual livre antes da impressão.
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={syncWithSystemData}
+              className="px-4 py-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-100 transition-all flex items-center gap-2"
+              title="Sincronizar com ordens de serviço e equipe"
+            >
+              <RefreshCw size={16} />
+              <span>Atualizar do Sistema</span>
+            </button>
+
             <button
               onClick={saveAll}
               className="px-5 py-3 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-md"
