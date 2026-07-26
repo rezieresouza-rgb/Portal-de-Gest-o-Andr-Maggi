@@ -43,7 +43,7 @@ const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
 ];
 
 const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'scheduler' | 'protocol_official' | 'work_plan' | 'occurrences' | 'team' | 'kitchen' | 'materials' | 'ppe'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scheduler' | 'protocol_official' | 'work_plan' | 'occurrences' | 'kitchen' | 'materials' | 'ppe'>('dashboard');
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
@@ -249,16 +249,6 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('team')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'team' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
-            }`}
-          >
-            <Users size={18} className="shrink-0" />
-            <span className="truncate">Equipe de Apoio</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('kitchen')}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'kitchen' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
@@ -345,46 +335,6 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           {activeTab === 'protocol_official' && <CleaningOfficialManual />}
           {activeTab === 'work_plan' && <CleaningWorkPlan employees={employees} />}
           {activeTab === 'occurrences' && <CleaningOccurrences employees={employees} environments={environments} />}
-
-          {activeTab === 'team' && (
-            <div className="space-y-8 animate-in fade-in duration-500 w-full min-w-0">
-              <div className="bg-emerald-900 p-6 sm:p-8 rounded-[2.5rem] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-xl relative overflow-hidden gap-4 min-w-0 w-full">
-                <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12 pointer-events-none">
-                  <Users size={140} />
-                </div>
-                <div className="relative z-10 min-w-0 flex-1">
-                  <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tighter truncate">Equipe Operacional de Apoio</h3>
-                  <p className="text-emerald-200 text-xs sm:text-sm mt-1 truncate">Servidores de Apoio e Higienização sincronizados com a Secretaria.</p>
-                </div>
-                <div className="bg-white/10 px-6 py-4 rounded-2xl border border-white/10 backdrop-blur-md shrink-0">
-                  <p className="text-[10px] font-black text-emerald-300 uppercase">Servidores em Atividade</p>
-                  <p className="text-2xl font-black">{employees.length}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full min-w-0">
-                {employees.map(emp => (
-                  <div key={emp.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:border-emerald-200 transition-all flex flex-col group min-w-0 w-full">
-                    <div className="flex items-center gap-4 mb-4 min-w-0">
-                      <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-black text-lg group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-inner shrink-0">
-                        {emp.name[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black text-gray-900 uppercase truncate">{emp.name}</p>
-                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest truncate">{emp.shift} | {emp.scope}</p>
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2 min-w-0">
-                      <p className="text-[8px] font-black text-gray-400 uppercase leading-none truncate">Matrícula: {(emp as any).registration || '---'}</p>
-                      <p className="text-[10px] font-bold text-gray-700 uppercase truncate">
-                        {tasks.filter(t => t.assignedEmployeeId === emp.id).length} tarefas vinculadas
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {activeTab === 'kitchen' && <KitchenSanitation employees={employees} />}
           {activeTab === 'materials' && <CleaningMaterialControl />}
