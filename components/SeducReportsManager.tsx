@@ -29,15 +29,15 @@ interface SeducReportsManagerProps {
   user?: User;
 }
 
-// School Info Defaults
+// School Info Defaults (Dados Reais da Escola)
 const DEFAULT_SCHOOL_INFO = {
   name: 'ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
   code: '51190826',
   city: 'COLÍDER',
   dre: 'DRE SINOP',
-  director: 'MARIA DA SILVA',
-  coordinators: 'JOÃO SANTOS, PAULA SOUZA',
-  secretary: 'ANA OLIVEIRA',
+  director: 'REZIERE DE SOUZA',
+  coordinators: 'MARCIA CRISTINA FAVERO, DYNEA REIS VALLE LIRA',
+  secretary: 'JAIME DE SOUZA COSTA',
   year: '2026'
 };
 
