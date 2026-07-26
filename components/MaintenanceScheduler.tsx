@@ -648,7 +648,24 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                 </div>
                 <div className="flex items-center justify-between lg:justify-end gap-2 sm:gap-4 shrink-0 min-w-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
                     <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-sm shrink-0">
-                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0">De:</span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const now = new Date();
+                                const day = now.getDay();
+                                const diffMon = now.getDate() - day + (day === 0 ? -6 : 1);
+                                const mon = new Date(now.setDate(diffMon));
+                                const fri = new Date(mon);
+                                fri.setDate(mon.getDate() + 4);
+                                setReportPeriodStart(mon.toISOString().split('T')[0]);
+                                setReportPeriodEnd(fri.toISOString().split('T')[0]);
+                            }}
+                            className="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2 py-1 rounded-md transition-all shrink-0"
+                            title="Selecionar automaticamente Segunda a Sexta desta semana"
+                        >
+                            Esta Semana
+                        </button>
+                        <span className="text-[9px] font-black uppercase text-gray-400 shrink-0 ml-1">De:</span>
                         <input
                             type="date"
                             value={reportPeriodStart}
@@ -690,7 +707,7 @@ const MaintenanceScheduler: React.FC<MaintenanceSchedulerProps> = ({ employees, 
                         onClick={viewMode === 'history' ? generateHistoryReport : generateWeeklyReport}
                         className="px-3 sm:px-5 py-2 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-1.5 shadow-lg shrink-0"
                     >
-                        <Printer size={14} className="shrink-0" /> <span className="truncate">{viewMode === 'history' ? 'Imprimir Histórico' : 'Imprimir Relatório'}</span>
+                        <Printer size={14} className="shrink-0" /> <span className="truncate">{viewMode === 'history' ? 'Imprimir Histórico' : 'Imprimir Relatório Semanal'}</span>
                     </button>
                     <div className="text-right shrink-0 border-l border-gray-200 pl-3 sm:pl-4">
                         <p className="text-[8px] sm:text-[9px] font-black uppercase text-gray-400 tracking-tighter">Total de Tarefas</p>
