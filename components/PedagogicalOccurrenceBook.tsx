@@ -14,7 +14,6 @@ import {
    Clock,
    FileText,
    User,
-   // Added missing Users icon
    Users,
    MapPin,
    Sparkles,
@@ -22,12 +21,14 @@ import {
    Loader2,
    Send,
    X,
-   Printer
+   Printer,
+   ArrowRightLeft
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { PedagogicalOccurrence, OccurrenceCategory } from '../types';
 import PedagogicalOccurrenceForm from './PedagogicalOccurrenceForm';
 import PedagogicalOccurrenceAta from './PedagogicalOccurrenceAta';
+import { TramitationModal } from './TramitationModal';
 import { supabase } from '../supabaseClient';
 
 interface PedagogicalOccurrenceBookProps {
@@ -45,6 +46,7 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
    const [filterCat, setFilterCat] = useState<OccurrenceCategory | 'TODOS'>('TODOS');
    const [filterSeverity, setFilterSeverity] = useState<string>('TODOS');
    const [isExportingPDF, setIsExportingPDF] = useState(false);
+   const [tramitatingOcc, setTramitatingOcc] = useState<PedagogicalOccurrence | null>(null);
 
    const fetchOccurrences = async () => {
       const { data } = await supabase.from('occurrences').select('*').order('date', { ascending: false });
@@ -392,7 +394,18 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
-                     <div className="text-right mr-4">
+                     <button
+                        type="button"
+                        onClick={(e) => {
+                           e.stopPropagation();
+                           setTramitatingOcc(occ);
+                        }}
+                        className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all border border-blue-500/30 shadow-md"
+                        title="Tramitar ocorrência entre setores (Cívico-Militar, Mediação, Busca Ativa, Psicossocial)"
+                     >
+                        <ArrowRightLeft size={14} /> Tramitar
+                     </button>
+                     <div className="text-right mr-2">
                         <p className="text-[9px] font-black text-white/30 uppercase">Status</p>
                         <p className={`text-[10px] font-black uppercase ${occ.status === 'ATA_GERADA' ? 'text-emerald-400' : 'text-amber-400'}`}>
                            {occ.status.replace('_', ' ')}
@@ -413,6 +426,17 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                </div>
             )}
          </div>
+
+         {/* MODAL DE TRAMITAÇÃO INTERSETORIAL */}
+         {tramitatingOcc && (
+            <TramitationModal
+               occurrence={tramitatingOcc}
+               currentSector="PROFESSOR"
+               user={user || { id: 'prof', name: 'Professor' }}
+               onClose={() => setTramitatingOcc(null)}
+               onSuccess={() => fetchOccurrences()}
+            />
+         )}
 
          {/* FOOTER STATS */}
          <div className="bg-gradient-to-br from-indigo-900/80 to-violet-900/80 p-10 rounded-[3.5rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden border border-white/10 backdrop-blur-md">

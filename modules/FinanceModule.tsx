@@ -58,7 +58,28 @@ const DEFAULT_FUNDS = [
   { name: 'pdde_qualidade', full_name: 'PDDE Qualidade (FEDERAL)', budget_year: new Date().getFullYear().toString() },
 ];
 
-type SubModuleType = 'dashboard' | 'ru' | 'merenda' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget' | 'transaction_reports';
+type SubModuleType = 'dashboard' | 'ru' | 'merenda' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget' | 'transaction_reports' | 'ecf';
+
+interface ECFReportData {
+  referenceYear: string;
+  previousYear: string;
+  dueDate: string;
+  issueDate: string;
+  schoolName: string;
+  cityState: string;
+  contribAssociados: number;
+  receitaVendaBens: number;
+  rendimentosAplicacoes: number;
+  doacoesSubvencoes: number;
+  outrosRecursos: number;
+  ordenadosEncargos: number;
+  irRetidoAplicacoes: number;
+  impostosTaxas: number;
+  despesasManutencao: number;
+  outrasDespesas: number;
+  saldoAnterior: number;
+  saldoAtual: number;
+}
 
 interface Transaction {
   id: string;
@@ -124,6 +145,145 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   });
 
   const [reportViewMode, setReportViewMode] = useState<'list' | 'table'>('list');
+
+  // [NOVO] Estado para Relatório ECF (Recursos e Despesas)
+  const DEFAULT_ECF_DATA: ECFReportData = {
+    referenceYear: '2025',
+    previousYear: '2024',
+    dueDate: '31/07/2026',
+    issueDate: '06/05/2026',
+    schoolName: 'Escola Estadual André Maggi',
+    cityState: 'Colíder/MT',
+    contribAssociados: 0,
+    receitaVendaBens: 0,
+    rendimentosAplicacoes: 0,
+    doacoesSubvencoes: 0,
+    outrosRecursos: 0,
+    ordenadosEncargos: 0,
+    irRetidoAplicacoes: 0,
+    impostosTaxas: 0,
+    despesasManutencao: 0,
+    outrasDespesas: 0,
+    saldoAnterior: 0,
+    saldoAtual: 0,
+  };
+
+  const [ecfData, setEcfData] = useState<ECFReportData>(() => {
+    const saved = localStorage.getItem('ecf_report_data');
+    if (saved) {
+      try {
+        return { ...DEFAULT_ECF_DATA, ...JSON.parse(saved) };
+      } catch (e) {
+        console.error("Erro ao carregar dados ECF do localStorage:", e);
+      }
+    }
+    return DEFAULT_ECF_DATA;
+  });
+
+  const [ecfTab, setEcfTab] = useState<'form' | 'preview'>('form');
+
+  useEffect(() => {
+    localStorage.setItem('ecf_report_data', JSON.stringify(ecfData));
+  }, [ecfData]);
+
+  const handleEcfChange = (field: keyof ECFReportData, value: any) => {
+    setEcfData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const totalEcfOrigem = useMemo(() => {
+    return (
+      Number(ecfData.contribAssociados || 0) +
+      Number(ecfData.receitaVendaBens || 0) +
+      Number(ecfData.rendimentosAplicacoes || 0) +
+      Number(ecfData.doacoesSubvencoes || 0) +
+      Number(ecfData.outrosRecursos || 0)
+    );
+  }, [ecfData]);
+
+  const totalEcfAplicacao = useMemo(() => {
+    return (
+      Number(ecfData.ordenadosEncargos || 0) +
+      Number(ecfData.irRetidoAplicacoes || 0) +
+      Number(ecfData.impostosTaxas || 0) +
+      Number(ecfData.despesasManutencao || 0) +
+      Number(ecfData.outrasDespesas || 0)
+    );
+  }, [ecfData]);
+
+  const handleAutoFillECF = () => {
+    let allTx: Transaction[] = [];
+    (Object.values(funds) as FundData[]).forEach(f => {
+      if (f.transactions) {
+        allTx = allTx.concat(f.transactions);
+      }
+    });
+
+    let rendimentos = 0;
+    let doacoes = 0;
+    let contrib = 0;
+    let vendas = 0;
+    let outrosEntrada = 0;
+
+    let ordenados = 0;
+    let irRetido = 0;
+    let impostos = 0;
+    let manutencao = 0;
+    let outrasSaidas = 0;
+
+    allTx.forEach(tx => {
+      const val = Number(tx.value) || 0;
+      const desc = (tx.description || '').toLowerCase();
+      const cat = (tx.category || '').toLowerCase();
+
+      if (tx.type === 'ENTRY') {
+        if (cat.includes('rendimento') || cat.includes('aplicação') || desc.includes('rendimento')) {
+          rendimentos += val;
+        } else if (cat.includes('contribui') || desc.includes('associado')) {
+          contrib += val;
+        } else if (cat.includes('venda') || desc.includes('prestação')) {
+          vendas += val;
+        } else if (cat.includes('doaç') || cat.includes('subven') || cat.includes('pnae') || cat.includes('pdde') || cat.includes('ru') || cat.includes('recurso')) {
+          doacoes += val;
+        } else {
+          outrosEntrada += val;
+        }
+      } else {
+        if (cat.includes('salário') || cat.includes('ordenado') || cat.includes('encargo') || cat.includes('pessoal') || desc.includes('folha')) {
+          ordenados += val;
+        } else if (cat.includes('ir') || cat.includes('retido') || desc.includes('irrf')) {
+          irRetido += val;
+        } else if (cat.includes('imposto') || cat.includes('taxa') || cat.includes('tributo')) {
+          impostos += val;
+        } else if (cat.includes('manuten') || cat.includes('predial') || cat.includes('reforma') || cat.includes('infra') || desc.includes('obra')) {
+          manutencao += val;
+        } else {
+          outrasSaidas += val;
+        }
+      }
+    });
+
+    let totalAllocated = 0;
+    (Object.values(funds) as FundData[]).forEach(f => { totalAllocated += Number(f.allocated) || 0; });
+    const saldoCalculado = totalAllocated + (rendimentos + doacoes + contrib + vendas + outrosEntrada) - (ordenados + irRetido + impostos + manutencao + outrasSaidas);
+
+    setEcfData(prev => ({
+      ...prev,
+      rendimentosAplicacoes: rendimentos,
+      doacoesSubvencoes: doacoes,
+      contribAssociados: contrib,
+      receitaVendaBens: vendas,
+      outrosRecursos: outrosEntrada,
+      ordenadosEncargos: ordenados,
+      irRetidoAplicacoes: irRetido,
+      impostosTaxas: impostos,
+      despesasManutencao: manutencao,
+      outrasDespesas: outrasSaidas,
+      saldoAnterior: totalAllocated > 0 ? totalAllocated : prev.saldoAnterior,
+      saldoAtual: saldoCalculado > 0 ? saldoCalculado : prev.saldoAtual,
+    }));
+
+    addToast('Dados do ECF auto-preenchidos a partir das transações!', 'success');
+  };
 
   // UI Helper for Date Pickers (YYYY-MM-DD)
   const getLocalDateString = () => {
@@ -669,11 +829,19 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
             </button>
             <button
               onClick={() => setActiveTab('transaction_reports')}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'transaction_reports'
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all mb-2 ${activeTab === 'transaction_reports'
                 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
             >
               <FileSearch size={18} /> Relatório de Lançamentos
+            </button>
+            <button
+              onClick={() => setActiveTab('ecf')}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ecf'
+                ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
+                : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >
+              <FileCheck size={18} /> Relatório ECF (Recursos e Despesas)
             </button>
           </nav>
 
@@ -2029,6 +2197,440 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                            );
                          })()}
                        </div>
+                     </div>
+                  )}
+
+                  {activeTab === 'ecf' && (
+                    <div className="space-y-8 animate-in fade-in duration-500 pb-20 print:space-y-0 print:pb-0 print:bg-white print:text-black">
+                      
+                      {/* BARRA SUPERIOR E CONTROLES (OCULTOS NA IMPRESSÃO) */}
+                      <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/10 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-blue-500/10 text-blue-400 rounded-2xl border border-blue-500/20">
+                            <FileCheck size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                              Relatório ECF (Recursos e Despesas)
+                            </h3>
+                            <p className="text-xs text-white/50 font-medium">
+                              Preenchimento e emissão do Relatório de Origem e Aplicação dos Recursos para a ECF {ecfData.referenceYear}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                          {/* Mudar aba entre Edição e Pré-visualização */}
+                          <div className="flex items-center bg-white/5 p-1 rounded-2xl border border-white/10">
+                            <button
+                              onClick={() => setEcfTab('form')}
+                              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all ${
+                                ecfTab === 'form'
+                                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              <FileText size={15} /> Formulário
+                            </button>
+                            <button
+                              onClick={() => setEcfTab('preview')}
+                              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all ${
+                                ecfTab === 'preview'
+                                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              <Table size={15} /> Visualizar Folha
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={handleAutoFillECF}
+                            className="px-4 py-2.5 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all border border-indigo-500/30 shadow-lg"
+                            title="Auto-preencher valores com base nos lançamentos financeiros já cadastrados"
+                          >
+                            <Sparkles size={16} /> Auto-preencher
+                          </button>
+
+                          <button
+                            onClick={() => window.print()}
+                            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
+                          >
+                            <Printer size={16} /> Imprimir / PDF
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* MODO FORMULÁRIO DE EDIÇÃO */}
+                      {ecfTab === 'form' && (
+                        <div className="space-y-8 print:hidden">
+                          {/* SEÇÃO METADADOS E DATAS */}
+                          <div className="bg-white/5 backdrop-blur-md p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-xl space-y-6">
+                            <h4 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-4">
+                              <Calendar size={18} className="text-blue-400" /> Parâmetros do Relatório
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                              <div>
+                                <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-1.5">Ano Referência</label>
+                                <input
+                                  type="text"
+                                  value={ecfData.referenceYear}
+                                  onChange={e => handleEcfChange('referenceYear', e.target.value)}
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-1.5">Ano Anterior</label>
+                                <input
+                                  type="text"
+                                  value={ecfData.previousYear}
+                                  onChange={e => handleEcfChange('previousYear', e.target.value)}
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-1.5">Data Vencimento</label>
+                                <input
+                                  type="text"
+                                  value={ecfData.dueDate}
+                                  onChange={e => handleEcfChange('dueDate', e.target.value)}
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-1.5">Data Emissão</label>
+                                <input
+                                  type="text"
+                                  value={ecfData.issueDate}
+                                  onChange={e => handleEcfChange('issueDate', e.target.value)}
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-1.5">Instituição / Escola</label>
+                                <input
+                                  type="text"
+                                  value={ecfData.schoolName}
+                                  onChange={e => handleEcfChange('schoolName', e.target.value)}
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* SEÇÃO ORIGEM DOS RECURSOS */}
+                            <div className="bg-white/5 backdrop-blur-md p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-xl space-y-6">
+                              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                                <h4 className="text-base font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                  <Coins size={18} /> Origem dos Recursos (Receitas)
+                                </h4>
+                                <span className="text-xs font-black bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/30">
+                                  Total: R$ {totalEcfOrigem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Contribuições de Associados ou Sindicalizados</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.contribAssociados || ''}
+                                    onChange={e => handleEcfChange('contribAssociados', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-emerald-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Receita da Venda de Bens ou da Prestação de Serviços</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.receitaVendaBens || ''}
+                                    onChange={e => handleEcfChange('receitaVendaBens', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-emerald-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Rendimentos de Aplicações Financeiras</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.rendimentosAplicacoes || ''}
+                                    onChange={e => handleEcfChange('rendimentosAplicacoes', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-emerald-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Doações e Subvenções (Recurso Federal e Municipal)</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.doacoesSubvencoes || ''}
+                                    onChange={e => handleEcfChange('doacoesSubvencoes', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-emerald-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Outros Recursos</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.outrosRecursos || ''}
+                                    onChange={e => handleEcfChange('outrosRecursos', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-emerald-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* SEÇÃO APLICAÇÃO DOS RECURSOS */}
+                            <div className="bg-white/5 backdrop-blur-md p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-xl space-y-6">
+                              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                                <h4 className="text-base font-black text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                                  <ReceiptText size={18} /> Aplicação dos Recursos (Despesas)
+                                </h4>
+                                <span className="text-xs font-black bg-rose-500/20 text-rose-300 px-3 py-1 rounded-full border border-rose-500/30">
+                                  Total: R$ {totalEcfAplicacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Ordenados, Gratificações e Outros Pagamentos, Inclusive Encargos Sociais</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.ordenadosEncargos || ''}
+                                    onChange={e => handleEcfChange('ordenadosEncargos', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-rose-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">IR Retido sobre Rendimentos de Aplicações Financeiras</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.irRetidoAplicacoes || ''}
+                                    onChange={e => handleEcfChange('irRetidoAplicacoes', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-rose-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Impostos, Taxas e Contribuições</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.impostosTaxas || ''}
+                                    onChange={e => handleEcfChange('impostosTaxas', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-rose-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Despesas de Manutenção (Predial)</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.despesasManutencao || ''}
+                                    onChange={e => handleEcfChange('despesasManutencao', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-rose-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-white/70 mb-1">Outras Despesas</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={ecfData.outrasDespesas || ''}
+                                    onChange={e => handleEcfChange('outrasDespesas', parseFloat(e.target.value) || 0)}
+                                    placeholder="0,00"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-rose-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* SEÇÃO SALDOS BANCÁRIOS */}
+                          <div className="bg-white/5 backdrop-blur-md p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-xl space-y-6">
+                            <h4 className="text-base font-black text-blue-400 uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-4">
+                              <Wallet size={18} /> Saldos de Caixa e Bancos
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div>
+                                <label className="block text-xs font-bold text-white/70 mb-1">Saldo de Caixa / Bancos no Final {ecfData.previousYear}</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={ecfData.saldoAnterior || ''}
+                                  onChange={e => handleEcfChange('saldoAnterior', parseFloat(e.target.value) || 0)}
+                                  placeholder="0,00"
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-white/70 mb-1">Saldo de Caixa / Bancos no Final {ecfData.referenceYear}</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={ecfData.saldoAtual || ''}
+                                  onChange={e => handleEcfChange('saldoAtual', parseFloat(e.target.value) || 0)}
+                                  placeholder="0,00"
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-black focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* MODO VISUALIZAÇÃO OFICIAL / IMPRESSÃO */}
+                      {(ecfTab === 'preview' || true) && (
+                        <div className={`bg-white text-black p-8 md:p-12 rounded-[2rem] shadow-2xl space-y-6 max-w-4xl mx-auto border border-gray-300 font-sans print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full ${ecfTab === 'form' ? 'hidden print:block' : 'block'}`}>
+                          
+                          {/* CABEÇALHO DA ESCOLA (REQUISITO: ESCOLA ESTADUAL ANDRÉ MAGGI) */}
+                          <div className="border-b-2 border-black pb-4 text-center space-y-1">
+                            <h1 className="text-xl md:text-2xl font-black uppercase tracking-wide text-black">
+                              {ecfData.schoolName || 'Escola Estadual André Maggi'}
+                            </h1>
+                            <p className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                              Governo do Estado de Mato Grosso — Secretaria de Estado de Educação (SEDUC/MT)
+                            </p>
+                            <p className="text-[11px] font-medium text-gray-600">
+                              {ecfData.cityState || 'Colíder/MT'} — Sistema de Gestão Financeira Escolar
+                            </p>
+                          </div>
+
+                          {/* TEXTO DE APRESENTAÇÃO */}
+                          <div className="space-y-3 pt-2 text-xs md:text-sm text-gray-800 leading-relaxed text-justify">
+                            <p className="font-semibold">Prezado(a),</p>
+                            <p className="indent-6">
+                              Vem através do presente apresentar as informações necessárias para Envio da <strong>ECF (Escrituração Contábil Fiscal)</strong> referente ao Ano de <strong>{ecfData.referenceYear}</strong> com vencimento para <strong>{ecfData.dueDate}</strong>, conforme descrito no quadro abaixo:
+                            </p>
+                          </div>
+
+                          {/* TÍTULO DA TABELA */}
+                          <div className="text-center pt-2">
+                            <h2 className="text-base md:text-lg font-black uppercase tracking-tight text-black border-b-2 border-black inline-block px-4 pb-1">
+                              Relatório de Origem e Aplicação dos Recursos
+                            </h2>
+                          </div>
+
+                          {/* TABELA OFICIAL ECF */}
+                          <div className="border-2 border-black overflow-hidden">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="bg-gray-100 border-b-2 border-black text-black">
+                                  <th className="py-2 px-4 font-black uppercase">ORIGEM DOS RECURSOS</th>
+                                  <th className="py-2 px-4 font-black uppercase text-right w-44">Valor</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-300">
+                                <tr>
+                                  <td className="py-2 px-4">Contribuições de Associados ou Sindicalizados</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.contribAssociados > 0 ? `R$ ${ecfData.contribAssociados.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Receita da Venda de Bens ou da Prestação de Serviços</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.receitaVendaBens > 0 ? `R$ ${ecfData.receitaVendaBens.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Rendimentos de Aplicações Financeiras</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.rendimentosAplicacoes > 0 ? `R$ ${ecfData.rendimentosAplicacoes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Doações e Subvenções (Recurso Federal e Municipal)</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.doacoesSubvencoes > 0 ? `R$ ${ecfData.doacoesSubvencoes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Outros Recursos</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.outrosRecursos > 0 ? `R$ ${ecfData.outrosRecursos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr className="bg-gray-100 font-black border-t-2 border-black">
+                                  <td className="py-2 px-4 uppercase">Total:</td>
+                                  <td className="py-2 px-4 text-right">R$ {totalEcfOrigem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                </tr>
+
+                                <tr className="bg-gray-100 border-t-2 border-b-2 border-black text-black">
+                                  <th className="py-2 px-4 font-black uppercase">APLICAÇÃO DOS RECURSOS</th>
+                                  <th className="py-2 px-4 font-black uppercase text-right">Valor</th>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Ordenados, Gratificações e Outros Pagamentos, Inclusive Encargos Sociais</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.ordenadosEncargos > 0 ? `R$ ${ecfData.ordenadosEncargos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">IR Retido sobre Rendimentos de Aplicações Financeiras</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.irRetidoAplicacoes > 0 ? `R$ ${ecfData.irRetidoAplicacoes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Impostos, Taxas e Contribuições</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.impostosTaxas > 0 ? `R$ ${ecfData.impostosTaxas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Despesas de Manutenção (Predial)</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.despesasManutencao > 0 ? `R$ ${ecfData.despesasManutencao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4">Outras Despesas</td>
+                                  <td className="py-2 px-4 text-right font-medium">{ecfData.outrasDespesas > 0 ? `R$ ${ecfData.outrasDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr className="bg-gray-100 font-black border-t-2 border-black">
+                                  <td className="py-2 px-4 uppercase">Total:</td>
+                                  <td className="py-2 px-4 text-right">R$ {totalEcfAplicacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* QUADRO DE SALDOS */}
+                          <div className="border-2 border-black overflow-hidden">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <tbody className="divide-y divide-gray-300">
+                                <tr>
+                                  <td className="py-2 px-4 font-bold">Saldo de Caixa / Bancos no Final {ecfData.previousYear}</td>
+                                  <td className="py-2 px-4 text-right font-bold w-44">{ecfData.saldoAnterior > 0 ? `R$ ${ecfData.saldoAnterior.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-2 px-4 font-bold">Saldo de Caixa / Bancos no Final {ecfData.referenceYear}</td>
+                                  <td className="py-2 px-4 text-right font-bold w-44">{ecfData.saldoAtual > 0 ? `R$ ${ecfData.saldoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '***'}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* RODAPÉ E ASSINATURA */}
+                          <div className="pt-8 space-y-12">
+                            <div className="text-right text-xs font-semibold text-gray-800">
+                              {ecfData.cityState || 'Colíder/MT'}, {ecfData.issueDate || new Date().toLocaleDateString('pt-BR')}.
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-8 pt-8">
+                              <div className="text-center space-y-1">
+                                <div className="border-t border-black w-4/5 mx-auto"></div>
+                                <p className="text-xs font-black uppercase text-black">Direção Escolar</p>
+                                <p className="text-[10px] text-gray-600">{ecfData.schoolName}</p>
+                              </div>
+                              <div className="text-center space-y-1">
+                                <div className="border-t border-black w-4/5 mx-auto"></div>
+                                <p className="text-xs font-black uppercase text-black">Conselho Deliberativo (CDCE)</p>
+                                <p className="text-[10px] text-gray-600">Comunidade Escolar</p>
+                              </div>
+                            </div>
+                          </div>
+
+                        </div>
+                      )}
+
                     </div>
                   )}
 

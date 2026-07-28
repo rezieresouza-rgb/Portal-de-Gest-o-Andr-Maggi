@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Loader2, Search, FileText, CheckCircle, Clock, AlertTriangle, ArrowRight, MessageSquare } from 'lucide-react';
+import { Loader2, Search, FileText, CheckCircle, Clock, AlertTriangle, ArrowRight, MessageSquare, ArrowRightLeft } from 'lucide-react';
+import { TramitationModal } from './TramitationModal';
 
 interface FatosObservadosInboxProps {
   onPreencherDocumento: (occ: any) => void;
   demeritOptions: Array<{ category: string; severity: string; points: number }>;
   disciplinaryMeasuresList: string[];
   onAplicarPunicao: (studentName: string, category: string, disciplinaryMeasure: string, suspensionDays: number | undefined, observations: string, date: string) => void;
+  user?: any;
 }
 
-const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencherDocumento, demeritOptions, disciplinaryMeasuresList, onAplicarPunicao }) => {
+const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencherDocumento, demeritOptions, disciplinaryMeasuresList, onAplicarPunicao, user }) => {
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('TODOS');
+  const [tramitatingOcc, setTramitatingOcc] = useState<any>(null);
   
   // Modal State
   const [selectedOcc, setSelectedOcc] = useState<any>(null);
@@ -170,6 +173,24 @@ const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencher
                 
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0 lg:ml-4 flex-shrink-0">
                   <button
+                    onClick={() => setTramitatingOcc({
+                      id: occ.id,
+                      involvedStudents: occ.student_name,
+                      className: occ.classroom_name,
+                      date: occ.date,
+                      time: occ.time || '10:00',
+                      report: occ.description,
+                      responsible: occ.responsible_name || 'Monitor',
+                      category: 'INDISCIPLINA',
+                      severity: 'MÉDIA',
+                      status: occ.status === 'CONCLUÍDO' ? 'ATA_GERADA' : 'REGISTRADO'
+                    })}
+                    className="px-4 py-2 bg-indigo-50 text-indigo-700 font-bold uppercase text-xs rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2 border border-indigo-200"
+                    title="Tramitar ocorrência entre setores (Mediação, Busca Ativa, Psicossocial)"
+                  >
+                    <ArrowRightLeft size={16} /> Tramitar
+                  </button>
+                  <button
                     onClick={() => onPreencherDocumento(occ)}
                     className="px-4 py-2 bg-blue-50 text-blue-700 font-bold uppercase text-xs rounded-xl hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
                   >
@@ -313,6 +334,17 @@ const FatosObservadosInbox: React.FC<FatosObservadosInboxProps> = ({ onPreencher
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Tramitação Intersetorial */}
+      {tramitatingOcc && (
+        <TramitationModal
+          occurrence={tramitatingOcc}
+          currentSector="CIVICO_MILITAR"
+          user={user || { id: 'monitor', name: 'Monitor Cívico-Militar' }}
+          onClose={() => setTramitatingOcc(null)}
+          onSuccess={() => fetchOccurrences()}
+        />
       )}
     </div>
   );

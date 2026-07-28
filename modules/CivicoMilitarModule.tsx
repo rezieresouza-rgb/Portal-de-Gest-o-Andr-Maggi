@@ -3224,7 +3224,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <div className="grid grid-cols-2 gap-8 text-xs text-gray-900 mb-16 break-after-page">
                           <div className="flex flex-col items-center">
                             <div className="border-t border-black w-full"></div>
-                            <p className="mt-2 text-center">Nome completo do Responsável</p>
+                            <p className="mt-2 text-center">Nome do estudante</p>
                           </div>
                           <div className="flex flex-col items-center">
                             <div className="border-t border-black w-full"></div>
@@ -3527,6 +3527,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 demeritOptions={demeritOptions}
                 disciplinaryMeasuresList={disciplinaryMeasuresList}
                 onAplicarPunicao={handleInboxPunicao}
+                user={user}
              />
           )}
 

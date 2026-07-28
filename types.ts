@@ -105,7 +105,43 @@ export interface SchoolEvent { id: string; title: string; date: string; type: 'R
 export interface SchoolCelebration { id: string; title: string; day: number; month: number; category: string; iconType: 'PROFESSOR' | 'MERENDEIRA' | 'ZELADOR' | 'SECRETARIA' | 'GESTAO' | 'PSICOSSOCIAL' | 'GERAL' | 'COORDENADOR' | 'BIBLIOTECA' | 'MOTORISTA' | 'TI' | 'VIGILANTE' | 'ORIENTADOR'; }
 export interface BirthdayPerson { id: string; name: string; role: string; day: number; month: number; }
 export type OccurrenceCategory = 'INDISCIPLINA' | 'CONFLITO' | 'ATRASO' | 'VIOLÊNCIA' | 'DESCUMPRIMENTO_REGRAS' | 'OUTRO';
-export interface PedagogicalOccurrence { id: string; date: string; time: string; involvedStudents: string; className: string; location: string; report: string; responsible: string; category: OccurrenceCategory; severity?: string; attachments: string[]; status: 'REGISTRADO' | 'ATA_GERADA' | 'ARQUIVADO'; timestamp: number; }
+export type TramitationSector = 'PROFESSOR' | 'CIVICO_MILITAR' | 'MEDIACAO' | 'BUSCA_ATIVA' | 'PSICOSSOCIAL';
+export type TramitationPriority = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
+export type TramitationStatus = 'PENDENTE' | 'EM_ATENDIMENTO' | 'CONCLUIDO' | 'DEVOLVIDO';
+
+export interface OccurrenceTramitation {
+  id: string;
+  occurrence_id: string;
+  from_sector: TramitationSector;
+  to_sector: TramitationSector;
+  tramitated_by?: string;
+  tramitated_by_name?: string;
+  reason: string;
+  priority: TramitationPriority;
+  status: TramitationStatus;
+  feedback?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface PedagogicalOccurrence {
+  id: string;
+  date: string;
+  time: string;
+  involvedStudents: string;
+  className: string;
+  location: string;
+  report: string;
+  responsible: string;
+  category: OccurrenceCategory;
+  severity?: string;
+  attachments: string[];
+  status: 'REGISTRADO' | 'ATA_GERADA' | 'ARQUIVADO';
+  timestamp: number;
+  student_id?: string;
+  current_sector?: TramitationSector;
+  tramitation_status?: string;
+}
 export interface OccurrenceAta { id: string; occurrenceId: string; formalText: string; summary: string; involvedParties: string; suggestedReferrals: string[]; date: string; }
 export interface ClassCouncilStudentObservation {
   studentId: string;
