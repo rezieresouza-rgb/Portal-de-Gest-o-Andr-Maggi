@@ -192,12 +192,12 @@ export const INITIAL_CONTRACTS: Contract[] = [
       { id: 'scarpin-i1', description: 'AGRIÃO', contractedQuantity: 75.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 36.88, brand: 'HETROS' },
       { id: 'scarpin-i2', description: 'ALHO BRANCO', contractedQuantity: 53.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 30.00, brand: 'HETROS' },
       { id: 'scarpin-i3', description: 'ALHO BRANCO DESCASCADO RESFRIADO', contractedQuantity: 53.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 46.98, brand: 'DERMARCH' },
-      { id: 'scarpin-i4', description: 'BATATA INGLESA', contractedQuantity: 292.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 4.70, brand: 'HETROS' },
+      { id: 'scarpin-i4', description: 'BATATA INGLESA', contractedQuantity: 292.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 11.27, brand: 'HETROS' },
       { id: 'scarpin-i5', description: 'BRÓCOLIS', contractedQuantity: 33.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 26.45, brand: 'HETROS' },
       { id: 'scarpin-i6', description: 'CACAU EM PÓ SOLÚVEL 100% CACAU', contractedQuantity: 27.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 89.99, brand: 'CACAU POWER' },
-      { id: 'scarpin-i7', description: 'CEBOLA BRANCA', contractedQuantity: 275.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 4.30, brand: 'HETROS' },
+      { id: 'scarpin-i7', description: 'CEBOLA BRANCA', contractedQuantity: 275.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 7.99, brand: 'HETROS' },
       { id: 'scarpin-i8', description: 'LOURO', contractedQuantity: 8.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 425.10, brand: 'REI DOS CONDIMENTOS' },
-      { id: 'scarpin-i9', description: 'MAÇÃ FUJI', contractedQuantity: 575.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 11.80, brand: 'HETROS' },
+      { id: 'scarpin-i9', description: 'MAÇÃ FUJI', contractedQuantity: 575.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 15.46, brand: 'HETROS' },
       { id: 'scarpin-i10', description: 'MILHO VERDE EM CONSERVA', contractedQuantity: 21.0, acquiredQuantity: 0, unit: 'KG', unitPrice: 20.00, brand: 'FUGINI' }
     ]
   },
