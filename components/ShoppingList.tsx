@@ -203,24 +203,28 @@ const ShoppingList: React.FC = () => {
           const searchWords = normSearch.split(' ').filter(w => w.length > 0);
           const itemWords = normItem.split(' ').filter(w => w.length > 0);
 
-          // Sistema de Pontuação (Scoring) por Palavras Inteiras
+          // Sistema de Pontuação (Scoring) por Palavras Inteiras e Prioridades
           if (normItem === normSearch) {
             score = 100; // Correspondência EXATA
+          } else if (normSearch === 'mandioca' && normItem.startsWith('mandioca descascada')) {
+            score = 95; // Priorizar Mandioca vegetal sobre Farinha de Mandioca
+          } else if (normSearch === 'tomate' && normItem.includes('tomate salada')) {
+            score = 95; // Priorizar Tomate vegetal sobre Extrato de Tomate
+          } else if (normItem.startsWith(normSearch + ' ') && !normItem.includes('farinha de mandioca') && !normItem.includes('extrato de tomate')) {
+            score = 95; // Prefixo direto de ingrediente fresco
           } else if (searchWords.every(sw => itemWords.includes(sw))) {
             score = 90; // Todas as palavras da busca contidas como palavras inteiras no item
           } else if (itemWords.every(iw => searchWords.includes(iw))) {
-            score = 80; // Todas as palavras do item contidas na busca
-          } else if (normItem.startsWith(normSearch + ' ')) {
-            score = 70; // Prefixo por palavra inteira
+            score = 85; // Todas as palavras do item contidas na busca
           }
 
-          // Lógica de Prioridade Especial para Carnes e Polpas (Fuzzy Matcher)
-          if (score < 60) {
-            if (normSearch.includes('ISCA') && normItem.includes('ISCA')) score = 65;
-            if (normSearch.includes('POLPA') && normItem.includes('POLPA')) score = 65;
-            if (normSearch.includes('FERMENTO') && normItem.includes('FERMENTO')) score = 65;
-            if ((normSearch.includes('SUINA') || normSearch.includes('SUINO')) &&
-              (normItem.includes('SUINA') || normItem.includes('SUINO'))) score = 65;
+          // Lógica de Prioridade Especial para Carnes, Polpas e Derivados
+          if (score < 80) {
+            if (normSearch.includes('carne') && normSearch.includes('cubo') && normItem.includes('carne') && normItem.includes('cubo')) score = 92;
+            if (normSearch.includes('carne') && normSearch.includes('isca') && normItem.includes('carne') && normItem.includes('isca')) score = 92;
+            if ((normSearch.includes('suina') || normSearch.includes('suino')) && (normItem.includes('suina') || normItem.includes('suino'))) score = 92;
+            if (normSearch.includes('polpa') && normItem.includes('polpa')) score = 90;
+            if (normSearch.includes('fermento') && normItem.includes('fermento')) score = 90;
           }
 
           // Atualiza se for a melhor pontuação encontrada até agora
