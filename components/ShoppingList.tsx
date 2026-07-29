@@ -520,25 +520,72 @@ const ShoppingList: React.FC = () => {
     return isNaN(num) ? 0 : num;
   };
 
-  const getStockForProduct = (productName: string) => {
+  const getStockForProduct = (productName: string, item?: any) => {
     if (isLoadingStock) return 'loading';
+
+    // 1. Se o item possui um ID de item de contrato específico, buscar direto por ele
+    const targetItemId = item?.contractItemId || item?.contract_item_id;
+    const targetContractId = item?.contractId || item?.contract_id;
+
+    if (targetItemId) {
+      for (const contract of contracts) {
+        if (!targetContractId || contract.id === targetContractId) {
+          const foundItem = contract.items.find(ci => ci.id === targetItemId);
+          if (foundItem) {
+            const remaining = (foundItem.contractedQuantity || 0) - (foundItem.acquiredQuantity || 0);
+            const contracted = foundItem.contractedQuantity || 0;
+            const usage = contracted > 0 ? ((contracted - remaining) / contracted) * 100 : 0;
+            return {
+              remaining,
+              contracted,
+              usage
+            };
+          }
+        }
+      }
+    }
+
     const normalizedTarget = normalize(productName);
 
-    // BUSCAR SALDO NOS CONTRATOS ATIVOS
+    // 2. Busca de 1ª Passagem: Correspondência EXATA do nome do item
     let totalBalance = 0;
     let totalContracted = 0;
     let found = false;
 
     contracts.forEach(contract => {
-      contract.items.forEach(ci => {
-        const normalizedCi = normalize(ci.description);
-        // Busca exata ou parcial para maior robustez
-        if (normalizedCi === normalizedTarget || normalizedCi.includes(normalizedTarget) || normalizedTarget.includes(normalizedCi)) {
-          totalBalance += ((ci.contractedQuantity || 0) - (ci.acquiredQuantity || 0));
-          totalContracted += (ci.contractedQuantity || 0);
-          found = true;
-        }
-      });
+      if (!targetContractId || contract.id === targetContractId) {
+        contract.items.forEach(ci => {
+          const normalizedCi = normalize(ci.description);
+          if (normalizedCi === normalizedTarget) {
+            totalBalance += ((ci.contractedQuantity || 0) - (ci.acquiredQuantity || 0));
+            totalContracted += (ci.contractedQuantity || 0);
+            found = true;
+          }
+        });
+      }
+    });
+
+    if (found) {
+      const usage = totalContracted > 0 ? ((totalContracted - totalBalance) / totalContracted) * 100 : 0;
+      return {
+        remaining: totalBalance,
+        contracted: totalContracted,
+        usage
+      };
+    }
+
+    // 3. Busca de 2ª Passagem: Correspondência Parcial (Fallback)
+    contracts.forEach(contract => {
+      if (!targetContractId || contract.id === targetContractId) {
+        contract.items.forEach(ci => {
+          const normalizedCi = normalize(ci.description);
+          if (normalizedCi.includes(normalizedTarget) || normalizedTarget.includes(normalizedCi)) {
+            totalBalance += ((ci.contractedQuantity || 0) - (ci.acquiredQuantity || 0));
+            totalContracted += (ci.contractedQuantity || 0);
+            found = true;
+          }
+        });
+      }
     });
 
     if (!found) return null;
@@ -723,7 +770,7 @@ const ShoppingList: React.FC = () => {
                           </td>
                           <td className="px-6 py-5">
                              {(() => {
-                                const stock = getStockForProduct(item.description);
+                                const stock = getStockForProduct(item.description, item);
                                 
                                 if (stock === 'loading') return <Loader2 size={12} className="animate-spin text-orange-400 mx-auto" />;
                                 
@@ -929,7 +976,7 @@ const ShoppingList: React.FC = () => {
                    </td>
                    <td className="px-6 py-5">
                       {(() => {
-                         const stock = getStockForProduct(item.description);
+                         const stock = getStockForProduct(item.description, item);
                          if (stock === 'loading') return <Loader2 size={10} className="animate-spin text-gray-400 mx-auto" />;
                          if (stock === null || typeof stock === 'string') return <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter italic text-center block">---</span>;
                          
