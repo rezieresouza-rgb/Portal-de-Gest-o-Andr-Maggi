@@ -200,27 +200,18 @@ const ShoppingList: React.FC = () => {
           const normItem = normalize(contractItem.description);
           let score = -1;
 
-          // Sistema de Pontuação (Scoring)
+          const searchWords = normSearch.split(' ').filter(w => w.length > 0);
+          const itemWords = normItem.split(' ').filter(w => w.length > 0);
+
+          // Sistema de Pontuação (Scoring) por Palavras Inteiras
           if (normItem === normSearch) {
             score = 100; // Correspondência EXATA
+          } else if (searchWords.every(sw => itemWords.includes(sw))) {
+            score = 90; // Todas as palavras da busca contidas como palavras inteiras no item
+          } else if (itemWords.every(iw => searchWords.includes(iw))) {
+            score = 80; // Todas as palavras do item contidas na busca
           } else if (normItem.startsWith(normSearch + ' ')) {
-            score = 90; // Começa com (ex: "TOMATE" em "TOMATE SALADA")
-          } else if (normItem.startsWith(normSearch)) {
-            score = 80; // Prefixo forte
-          } else {
-            const searchWords = normSearch.split(' ');
-            const itemWords = normItem.split(' ');
-
-            // Verifica se todas as palavras da busca estão contidas no item (independente da ordem)
-            const allWordsMatch = searchWords.every(sw => itemWords.includes(sw));
-
-            if (allWordsMatch) {
-              score = 70; // Todas as palavras batem
-            } else if (normItem.includes(normSearch)) {
-              score = 40; // Inclusão simples (ex: "TOMATE" em "EXTRATO DE TOMATE")
-            } else if (normSearch.includes(normItem)) {
-              score = 20; // Inclusão reversa
-            }
+            score = 70; // Prefixo por palavra inteira
           }
 
           // Lógica de Prioridade Especial para Carnes e Polpas (Fuzzy Matcher)
@@ -574,12 +565,18 @@ const ShoppingList: React.FC = () => {
       };
     }
 
-    // 3. Busca de 2ª Passagem: Correspondência Parcial (Fallback)
+    // 3. Busca de 2ª Passagem: Correspondência por Palavras Inteiras (Word Boundaries)
+    const targetWords = normalizedTarget.split(' ').filter(w => w.length > 0);
+
     contracts.forEach(contract => {
       if (!targetContractId || contract.id === targetContractId) {
         contract.items.forEach(ci => {
           const normalizedCi = normalize(ci.description);
-          if (normalizedCi.includes(normalizedTarget) || normalizedTarget.includes(normalizedCi)) {
+          const itemWords = normalizedCi.split(' ').filter(w => w.length > 0);
+
+          const isWordMatch = targetWords.every(tw => itemWords.includes(tw));
+
+          if (isWordMatch) {
             totalBalance += ((ci.contractedQuantity || 0) - (ci.acquiredQuantity || 0));
             totalContracted += (ci.contractedQuantity || 0);
             found = true;
