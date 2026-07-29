@@ -1511,6 +1511,7 @@ const Contracts: React.FC = () => {
                     <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
                       <th className="px-6 py-4 w-32 text-center bg-emerald-50 text-emerald-700 shadow-inner">Qtd. Receber</th>
                       <th className="px-6 py-4">Item (Descrição / Marca)</th>
+                      <th className="px-6 py-4 text-center">Valor Unitário</th>
                       <th className="px-6 py-4 text-center">Saldo Restante</th>
                       <th className="px-6 py-4 text-right">Ações</th>
                     </tr>
@@ -1551,7 +1552,12 @@ const Contracts: React.FC = () => {
                           </td>
                           <td className="px-6 py-5">
                             <p className="text-[11px] font-black text-gray-900 uppercase leading-tight">{item.description}</p>
-                            <p className="text-[8px] font-black text-emerald-500 uppercase mt-1">R$ {item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {item.unit} • {item.brand || 'Original'}</p>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase mt-1">{item.brand ? `Marca: ${item.brand}` : 'Marca Original'}</p>
+                          </td>
+                          <td className="px-6 py-5 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-xl text-xs font-black shadow-xs">
+                              R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] font-bold text-emerald-600 ml-1">/ {item.unit}</span>
+                            </span>
                           </td>
                           <td className="px-6 py-5">
                             <div className="flex flex-col items-center">
@@ -2427,6 +2433,7 @@ const Contracts: React.FC = () => {
                 <tr>
                   <th className="px-6 py-4">Produto</th>
                   <th className="px-6 py-4 text-center">Un.</th>
+                  <th className="px-6 py-4 text-center">Valor Unit.</th>
                   <th className="px-6 py-4 text-center">Qtd. Selecionada</th>
                   <th className="px-6 py-4 text-right">Subtotal</th>
                 </tr>
@@ -2438,6 +2445,7 @@ const Contracts: React.FC = () => {
                     <tr key={itemId}>
                        <td className="px-6 py-4 font-black text-xs uppercase text-gray-900">{item?.description}</td>
                        <td className="px-6 py-4 text-center font-bold text-gray-500 uppercase text-xs">{item?.unit}</td>
+                       <td className="px-6 py-4 text-center font-bold text-emerald-700 text-xs">R$ {((item?.unitPrice as number) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                        <td className="px-6 py-4 text-center font-black text-emerald-600">{formatQuantity(qty as number)}</td>
                        <td className="px-6 py-4 text-right font-black text-emerald-700">R$ {((qty as number) * ((item?.unitPrice as number) || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
