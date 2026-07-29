@@ -17,7 +17,9 @@ import {
   Plus,
   Users,
   FileText,
-  Edit
+  Edit,
+  Mic,
+  UserCheck
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { supabase } from '../supabaseClient';
@@ -157,6 +159,40 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
   const [showCertificateModal, setShowCertificateModal] = useState<Course | null>(null);
   const [showRecordModal, setShowRecordModal] = useState<Course | null>(null);
   const [showAdminCertificateModal, setShowAdminCertificateModal] = useState<Course | null>(null);
+  const [showSpeakerDeclarationModal, setShowSpeakerDeclarationModal] = useState<Course | null>(null);
+  const [speakerForm, setSpeakerForm] = useState({
+    name: '',
+    degree: '',
+    role: 'Palestrante / Instrutor(a) Principal',
+    cpf: '',
+    hours: 20,
+    date: '',
+    topic: ''
+  });
+
+  const handleOpenSpeakerModal = (course?: Course | null) => {
+    const targetCourse = course || (catalogCourses[0] || myCourses[0]);
+    setShowSpeakerDeclarationModal(targetCourse || {
+      id: 'custom-palestra',
+      title: 'Formação Continuada de Docentes',
+      category: 'Pedagógico',
+      hours: 20,
+      description: '',
+      progress: 100,
+      lessons: [],
+      completed: true
+    });
+    setSpeakerForm({
+      name: targetCourse?.instructor || '',
+      degree: targetCourse?.instructorDegree || '',
+      role: 'Palestrante / Instrutor(a) Principal',
+      cpf: '',
+      hours: targetCourse?.hours || 20,
+      date: targetCourse?.startDate || targetCourse?.date || new Date().toISOString().split('T')[0],
+      topic: targetCourse?.title || 'Formação Continuada de Docentes'
+    });
+  };
+
   const [staffList, setStaffList] = useState<any[]>([]);
   const [selectedStaffForCert, setSelectedStaffForCert] = useState<any>(null);
   const [selectedStaffIdsForRecord, setSelectedStaffIdsForRecord] = useState<Set<string>>(new Set());
@@ -974,9 +1010,17 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
 
               {activeTab === 'certificates' && (
                 <div className="space-y-6 animate-in fade-in duration-500">
-                  <div className="text-left">
-                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Meus Certificados</h3>
-                    <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Certificados digitais emitidos após conclusão das formações</p>
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Certificados e Declarações</h3>
+                      <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Emissão de certificados para participantes e declarações oficiais para palestrantes</p>
+                    </div>
+                    <button
+                      onClick={() => handleOpenSpeakerModal(null)}
+                      className="px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-violet-600/10 shrink-0"
+                    >
+                      <Mic size={16} /> Emitir Declaração de Palestrante
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1343,7 +1387,6 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                             <h5 className="text-sm font-black text-slate-800 uppercase">{c.title}</h5>
                             <p className="text-xs text-slate-400 max-w-2xl line-clamp-2 leading-relaxed">{c.description}</p>
                           </div>
-
                           <div className="flex gap-2 self-end md:self-center shrink-0">
                             <button
                               type="button"
@@ -1358,6 +1401,14 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                               className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1"
                             >
                               <Award size={12} /> Certificados
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSpeakerModal(c)}
+                              className="px-4 py-2.5 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all flex items-center gap-1 border border-violet-100"
+                              title="Emitir Declaração de Palestrante / Instrutor"
+                            >
+                              <Mic size={12} /> Declaração Palestrante
                             </button>
                             <button
                               type="button"
@@ -1774,6 +1825,158 @@ const TrainingModule: React.FC<TrainingModuleProps> = ({ user, onExit }) => {
                 className="px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold uppercase text-[10px] shadow-md shadow-violet-600/10 transition-all flex items-center gap-1.5"
               >
                 <Download size={14} /> Imprimir / PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Declaração do Palestrante / Instrutor */}
+      {showSpeakerDeclarationModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 print:static print:block print:bg-white print:p-0">
+          <div className="bg-white rounded-[3rem] shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col print:shadow-none print:border-none print:overflow-visible print:max-h-none print:rounded-none print:max-w-none print:w-full print:block">
+            <button
+              onClick={() => setShowSpeakerDeclarationModal(null)}
+              className="absolute top-6 right-6 p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors z-10 print:hidden"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Painel de Edição (Oculto na Impressão) */}
+            <div className="p-6 bg-slate-50 border-b border-slate-200 print:hidden shrink-0">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-violet-600 text-white rounded-2xl">
+                  <Mic size={20} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black uppercase tracking-tight text-slate-800">Emitir Declaração do Palestrante</h2>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Preencha ou confirme os dados para gerar a declaração oficial</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Nome do Palestrante / Instrutor</label>
+                  <input
+                    type="text"
+                    value={speakerForm.name}
+                    onChange={(e) => setSpeakerForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Ex: Prof. Dr. Ricardo Silva"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Titulação / Formação</label>
+                  <input
+                    type="text"
+                    value={speakerForm.degree}
+                    onChange={(e) => setSpeakerForm(prev => ({ ...prev, degree: e.target.value }))}
+                    placeholder="Ex: Doutor em Educação"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Função na Atividade</label>
+                  <input
+                    type="text"
+                    value={speakerForm.role}
+                    onChange={(e) => setSpeakerForm(prev => ({ ...prev, role: e.target.value }))}
+                    placeholder="Ex: Palestrante Principal"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Título / Tema da Formação</label>
+                  <input
+                    type="text"
+                    value={speakerForm.topic}
+                    onChange={(e) => setSpeakerForm(prev => ({ ...prev, topic: e.target.value }))}
+                    placeholder="Ex: Novas Diretrizes Curriculares e BNCC"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Carga Horária (Horas)</label>
+                  <input
+                    type="number"
+                    value={speakerForm.hours}
+                    onChange={(e) => setSpeakerForm(prev => ({ ...prev, hours: Number(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Data da Realização</label>
+                  <input
+                    type="date"
+                    value={speakerForm.date}
+                    onChange={(e) => setSpeakerForm(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-violet-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Impressão da Declaração Oficial */}
+            <div className="p-8 md:p-14 border-[16px] border-double border-violet-100 m-4 rounded-[2.5rem] bg-amber-50/5 relative text-center space-y-8 overflow-y-auto print:border-none print:m-0 print:overflow-visible flex-1">
+              {/* Molduras Decorativas */}
+              <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-violet-300"></div>
+              <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-violet-300"></div>
+              <div className="absolute bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-violet-300"></div>
+              <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-violet-300"></div>
+
+              {/* Cabeçalho Oficial */}
+              <div className="space-y-2 flex flex-col items-center">
+                <img src="/logo-escola-oficial.png" alt="Brasão" className="w-20 h-20 object-contain mb-3" />
+                <h1 className="text-2xl font-bold uppercase tracking-[0.2em] text-violet-900">DECLARAÇÃO DE PALESTRANTE</h1>
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Escola Estadual Cívico-Militar André Antônio Maggi</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Secretaria de Estado de Educação - SEDUC/MT</p>
+              </div>
+
+              {/* Corpo da Declaração */}
+              <div className="space-y-6 py-6 px-4">
+                <p className="text-sm text-slate-700 leading-relaxed max-w-2xl mx-auto font-medium text-justify">
+                  Declaramos, para os devidos fins de comprovação de atividades acadêmicas, profissionais e de extensão cultural, que o(a) especialista/docente <strong className="text-slate-900 uppercase font-black">{speakerForm.name || '_____________________________________'}</strong>{speakerForm.degree ? `, ${speakerForm.degree},` : ''} atuou na condição de <strong className="text-violet-800 uppercase font-black">{speakerForm.role || 'Palestrante / Instrutor(a)'}</strong> no programa de formação continuada <strong className="text-slate-900 uppercase font-black">"{speakerForm.topic || 'FORMAÇÃO CONTINUADA DE DOCENTES'}"</strong>, ministrado aos professores e servidores desta unidade escolar{speakerForm.date ? `, realizado em ${new Date(speakerForm.date + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}, perfazendo a carga horária total de <strong className="text-slate-900 font-black">{speakerForm.hours} (horas)</strong> de palestra e mediação pedagógica.
+                </p>
+              </div>
+
+              {/* Assinaturas */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-8 pt-10 border-t border-slate-200 max-w-3xl mx-auto text-center">
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-400 max-w-[150px] mx-auto mb-2"></div>
+                  <p className="text-[10px] font-black text-slate-800 uppercase leading-none">Reziere de Souza</p>
+                  <p className="text-[9px] font-bold text-slate-600 uppercase">Diretor Escolar</p>
+                  <p className="text-[7px] text-slate-400 font-bold uppercase">EE Cívico-Militar André Maggi</p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="h-px bg-slate-400 max-w-[150px] mx-auto mb-2"></div>
+                  <p className="text-[10px] font-black text-slate-800 uppercase leading-none">Gestão Pedagógica</p>
+                  <p className="text-[9px] font-bold text-slate-600 uppercase">Coordenação de Formação</p>
+                  <p className="text-[7px] text-slate-400 font-bold uppercase">SEDUC/MT</p>
+                </div>
+
+                <div className="space-y-1 col-span-2 md:col-span-1">
+                  <div className="h-px bg-slate-400 max-w-[150px] mx-auto mb-2"></div>
+                  <p className="text-[10px] font-black text-slate-800 uppercase leading-none truncate max-w-[180px] mx-auto">{speakerForm.name || 'Palestrante'}</p>
+                  <p className="text-[9px] font-bold text-slate-600 uppercase">Palestrante / Instrutor(a)</p>
+                  {speakerForm.degree && <p className="text-[7px] text-slate-400 font-bold uppercase truncate max-w-[180px] mx-auto">{speakerForm.degree}</p>}
+                </div>
+              </div>
+
+              {/* Autenticidade */}
+              <div className="text-[8px] text-slate-400 font-bold uppercase tracking-widest pt-4 text-center">
+                Registrado sob o código de validação institucional nº DECL-PAL-2026-{(showSpeakerDeclarationModal?.id || 'MAGGI').toUpperCase()}-{Date.now().toString().substring(7)}
+              </div>
+            </div>
+
+            {/* Ações / Botões */}
+            <div className="bg-slate-50 p-6 border-t border-slate-100 flex justify-end gap-3 print:hidden shrink-0">
+              <button
+                disabled={!speakerForm.name}
+                onClick={() => window.print()}
+                className="px-6 py-3.5 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-wider shadow-lg shadow-violet-600/10 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                <Download size={16} /> Imprimir / Salvar Declaração (PDF)
               </button>
             </div>
           </div>
