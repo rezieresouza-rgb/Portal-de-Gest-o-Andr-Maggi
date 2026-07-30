@@ -177,7 +177,16 @@ const SecretariatClassroomManager: React.FC = () => {
 
          if (dbClassrooms) {
             const enhanced = dbClassrooms.map((cls: any) => {
-               const classEnrollments = enrollments?.filter((e: any) => e.classroom_id === cls.id) || [];
+               const classEnrollments = enrollments?.filter((e: any) => {
+                  if (e.classroom_id !== cls.id) return false;
+                  if (e.status === 'TRANSFERIDO DE ESCOLA' || e.status === 'TRANSFERIDO DE TURMA') return false;
+
+                  const studentEnrs = enrollments.filter((other: any) => other.students?.id === e.students?.id);
+                  const hasNewerActive = studentEnrs.some((other: any) => other.classroom_id !== cls.id && other.status === 'ATIVO');
+                  if (hasNewerActive && e.status !== 'ATIVO') return false;
+
+                  return true;
+               }) || [];
                const classStudents = classEnrollments.map((e: any) => ({
                   ...e.students,
                   status: e.status || e.students?.status || 'ATIVO',

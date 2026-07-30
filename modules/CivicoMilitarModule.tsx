@@ -254,19 +254,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
         if (data && data.length > 0) {
           const mapped = data.map((s: any) => {
-            const activeEnr = s.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO') || s.enrollments?.[0];
+            const activeEnr = 
+              s.enrollments?.find((e: any) => e.status === 'ATIVO') ||
+              s.enrollments?.find((e: any) => e.status === 'MATRICULADO' || e.status === 'CURSANDO') ||
+              s.enrollments?.find((e: any) => e.status === 'RECLASSIFICADO');
+
+            if (!activeEnr) return null;
+
             return {
               CodigoAluno: s.registration_number,
               Nome: s.name,
-              Turma: activeEnr?.classrooms?.name || 'SEM TURMA',
-              Turno: activeEnr?.classrooms?.shift || '---',
+              Turma: activeEnr.classrooms?.name || 'SEM TURMA',
+              Turno: activeEnr.classrooms?.shift || '---',
               DataNascimento: s.birth_date,
               PAED: s.paed ? 'Sim' : 'Não',
               TransporteEscolar: s.school_transport ? 'Sim' : 'Não',
               NomeResponsavel: s.guardian_name || '',
               TelefoneContato: s.contact_phone || ''
             };
-          });
+          }).filter(Boolean);
           setDbStudents(mapped);
         }
       } catch (err) {
