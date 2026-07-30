@@ -326,44 +326,46 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       console.error(e);
     }
 
-    // C. Student Behavior Scores
+  // Sync studentStates automatically whenever dbStudents is loaded/updated from Supabase
+  useEffect(() => {
+    if (!dbStudents || dbStudents.length === 0) return;
+
     try {
       const savedScores = localStorage.getItem('civico_militar_student_scores_v3');
+      let saved: StudentBehaviorState[] = [];
       if (savedScores) {
-        // Check for new students in dbStudents that are not in savedScores
-        const saved = JSON.parse(savedScores) as StudentBehaviorState[];
-        const newStudents = dbStudents.filter(dbS => !saved.find(s => s.studentId === dbS.CodigoAluno));
-        if (newStudents.length > 0) {
-          const addedStates: StudentBehaviorState[] = newStudents.map(s => ({
-            studentId: s.CodigoAluno,
-            studentName: s.Nome,
-            className: s.Turma,
-            score: 8.0,
-            isClassLeader: false,
-            isCivicHighlight: false,
-            occurrences: []
-          }));
-          setStudentStates([...saved, ...addedStates]);
-        } else {
-          setStudentStates(saved);
+        try {
+          saved = JSON.parse(savedScores);
+        } catch (e) {}
+      }
+
+      // Merge dbStudents with saved scores or create default 8.0 score state
+      const updatedStates: StudentBehaviorState[] = dbStudents.map(dbS => {
+        const existing = saved.find(s => String(s.studentId) === String(dbS.CodigoAluno));
+        if (existing) {
+          return {
+            ...existing,
+            studentName: dbS.Nome,
+            className: dbS.Turma // Always keep current class in sync with Supabase
+          };
         }
-      } else {
-        // Initialize behavior states for all dbStudents
-        const initialStates: StudentBehaviorState[] = dbStudents.map((s, idx) => ({
-          studentId: s.CodigoAluno,
-          studentName: s.Nome,
-          className: s.Turma,
-          score: 8.0, // Baseado no Art. 45, § 2º do Regulamento Disciplinar (grau numérico 8,0)
+        return {
+          studentId: dbS.CodigoAluno,
+          studentName: dbS.Nome,
+          className: dbS.Turma,
+          score: 8.0,
           isClassLeader: false,
           isCivicHighlight: false,
           occurrences: []
-        }));
-        localStorage.setItem('civico_militar_student_scores_v3', JSON.stringify(initialStates));
-        setStudentStates(initialStates);
-      }
+        };
+      });
+
+      setStudentStates(updatedStates);
+      localStorage.setItem('civico_militar_student_scores_v3', JSON.stringify(updatedStates));
     } catch (e) {
-      console.error(e);
+      console.error("Error syncing student states:", e);
     }
+  }, [dbStudents]);
 
     // D. Document History
     try {
