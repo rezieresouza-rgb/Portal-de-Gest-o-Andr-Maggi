@@ -74,6 +74,7 @@ const SecretariatClassroomManager: React.FC = () => {
    const [classrooms, setClassrooms] = useState<EnhancedClassroom[]>([]);
    const [activeShift, setActiveShift] = useState<Shift | 'TODOS'>('TODOS');
    const [selectedClassDetail, setSelectedClassDetail] = useState<EnhancedClassroom | null>(null);
+   const [showTransferredInModal, setShowTransferredInModal] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
 
    // Global Search States
@@ -173,21 +174,10 @@ const SecretariatClassroomManager: React.FC = () => {
                students (*)
             `);
 
-         if (enrollError) throw enrollError;
-
-         if (dbClassrooms) {
+         if (enrollError) throw enrollError;         if (dbClassrooms) {
             const enhanced = dbClassrooms.map((cls: any) => {
-               const classEnrollments = enrollments?.filter((e: any) => {
-                  if (e.classroom_id !== cls.id) return false;
-                  if (e.status === 'TRANSFERIDO DE ESCOLA' || e.status === 'TRANSFERIDO DE TURMA') return false;
-
-                  const studentEnrs = enrollments.filter((other: any) => other.students?.id === e.students?.id);
-                  const hasNewerActive = studentEnrs.some((other: any) => other.classroom_id !== cls.id && other.status === 'ATIVO');
-                  if (hasNewerActive && e.status !== 'ATIVO') return false;
-
-                  return true;
-               }) || [];
-               const classStudents = classEnrollments.map((e: any) => ({
+               const classEnrollments = enrollments?.filter((e: any) => e.classroom_id === cls.id) || [];
+               const allClassStudents = classEnrollments.map((e: any) => ({
                   ...e.students,
                   status: e.status || e.students?.status || 'ATIVO',
                   enrollment_date: e.enrollment_date,
@@ -200,15 +190,25 @@ const SecretariatClassroomManager: React.FC = () => {
                   NomeResponsavel: e.students?.guardian_name || '',
                   TelefoneContato: e.students?.contact_phone || ''
                })).sort((a, b) => a.Nome.localeCompare(b.Nome));
- 
-               const activeCount = classStudents.filter(s => s.status === 'ATIVO' || s.status === 'RECLASSIFICADO').length;
+
+               const activeClassStudents = allClassStudents.filter((s: any) => {
+                  if (s.status === 'TRANSFERIDO DE ESCOLA' || s.status === 'TRANSFERIDO DE TURMA') return false;
+                  const studentEnrs = enrollments?.filter((other: any) => other.students?.id === s.id) || [];
+                  const hasNewerActive = studentEnrs.some((other: any) => other.classroom_id !== cls.id && other.status === 'ATIVO');
+                  if (hasNewerActive && s.status !== 'ATIVO') return false;
+                  return true;
+               });
+
+               const activeCount = activeClassStudents.filter(s => s.status === 'ATIVO' || s.status === 'RECLASSIFICADO').length;
                let salaNum = cls.room_number || '---';
                
                return {
                   ...cls,
-                  studentCount: classStudents.length,
+                  studentCount: activeClassStudents.length,
+                  totalHistoricalCount: allClassStudents.length,
                   activeCount,
-                  students: classStudents,
+                  students: activeClassStudents,
+                  allStudents: allClassStudents,
                   salaNum
                };
             });
@@ -923,7 +923,24 @@ const SecretariatClassroomManager: React.FC = () => {
                            </div>
                         </div>
                      </div>
-                     <button onClick={() => setSelectedClassDetail(null)} className="p-3 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-all"><X size={20} /></button>
+
+                     {/* Alternador de Filtro: Ativos vs Transferidos/Histórico */}
+                     <div className="flex items-center gap-2">
+                       <button
+                         onClick={() => setShowTransferredInModal(false)}
+                         className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${!showTransferredInModal ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                       >
+                         Alunos Ativos ({selectedClassDetail.studentCount})
+                       </button>
+                       <button
+                         onClick={() => setShowTransferredInModal(true)}
+                         className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${showTransferredInModal ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                       >
+                         Incluir Histórico / Transferidos ({(selectedClassDetail as any).totalHistoricalCount || selectedClassDetail.studentCount})
+                       </button>
+                     </div>
+
+                     <button onClick={() => { setSelectedClassDetail(null); setShowTransferredInModal(false); }} className="p-3 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-all"><X size={20} /></button>
                   </div>
 
                   {/* TABELA MAIS LIMPA */}
@@ -941,7 +958,7 @@ const SecretariatClassroomManager: React.FC = () => {
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                           {selectedClassDetail.students.map((student: any, idx: number) => (
+                           {(showTransferredInModal ? ((selectedClassDetail as any).allStudents || selectedClassDetail.students) : selectedClassDetail.students).map((student: any, idx: number) => (
                               <tr key={student.id} className="hover:bg-indigo-50/30 transition-all group">
                                  <td className="px-6 py-4">
                                     <span className="text-[10px] font-bold text-gray-300 group-hover:text-indigo-400 font-mono">
