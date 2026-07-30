@@ -326,6 +326,32 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       console.error(e);
     }
 
+    // D. Document History
+    try {
+      let currentDocs: any[] = [];
+      const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
+      if (savedDocs) {
+        currentDocs = JSON.parse(savedDocs);
+      }
+      
+      // Migrate v1 docs to v2
+      const oldDocs = localStorage.getItem('civico_militar_documentos_v1');
+      if (oldDocs) {
+        const oldParsed = JSON.parse(oldDocs);
+        const newOnes = oldParsed.filter((oldDoc: any) => !currentDocs.some((d: any) => d.id === oldDoc.id));
+        if (newOnes.length > 0) {
+          currentDocs = [...newOnes, ...currentDocs].sort((a, b) => b.timestamp - a.timestamp);
+          localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(currentDocs));
+        }
+        localStorage.removeItem('civico_militar_documentos_v1');
+      }
+
+      setDocHistory(currentDocs);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   // Sync studentStates automatically whenever dbStudents is loaded/updated from Supabase
   useEffect(() => {
     if (!dbStudents || dbStudents.length === 0) return;
@@ -366,32 +392,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       console.error("Error syncing student states:", e);
     }
   }, [dbStudents]);
-
-    // D. Document History
-    try {
-      let currentDocs: any[] = [];
-      const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
-      if (savedDocs) {
-        currentDocs = JSON.parse(savedDocs);
-      }
-      
-      // Migrate v1 docs to v2
-      const oldDocs = localStorage.getItem('civico_militar_documentos_v1');
-      if (oldDocs) {
-        const oldParsed = JSON.parse(oldDocs);
-        const newOnes = oldParsed.filter((oldDoc: any) => !currentDocs.some((d: any) => d.id === oldDoc.id));
-        if (newOnes.length > 0) {
-          currentDocs = [...newOnes, ...currentDocs].sort((a, b) => b.timestamp - a.timestamp);
-          localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(currentDocs));
-        }
-        localStorage.removeItem('civico_militar_documentos_v1');
-      }
-
-      setDocHistory(currentDocs);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
 
   // Sync state to local storage when state changes
   const saveInspectionsToStorage = (list: InspectionRecord[]) => {
