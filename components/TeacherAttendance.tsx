@@ -407,19 +407,28 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
           }
         }
 
-        // 2. Insert/Update Students for this period record
-        const studentRecords = students.map(s => ({
+        // 2. Insert/Update Students for this period record (apenas alunos ativos)
+        const activeStudentsToSave = students.filter(s => {
+          const studentStatus = s.status || '';
+          const adjDate = s.adjustment_date;
+          const isBlocked = studentStatus !== 'ATIVO' && (!adjDate || date >= adjDate);
+          return !isBlocked;
+        });
+
+        const studentRecords = activeStudentsToSave.map(s => ({
           attendance_record_id: recordId,
           student_id: s.CodigoAluno,
           student_name: s.Nome,
           is_present: attendance[s.CodigoAluno]?.[period] ?? false
         }));
 
-        const { error: studentsError } = await supabase
-          .from('class_attendance_students')
-          .upsert(studentRecords, { onConflict: 'attendance_record_id, student_id' });
+        if (studentRecords.length > 0) {
+          const { error: studentsError } = await supabase
+            .from('class_attendance_students')
+            .upsert(studentRecords, { onConflict: 'attendance_record_id, student_id' });
 
-        if (studentsError) throw studentsError;
+          if (studentsError) throw studentsError;
+        }
       }
 
       alert(Object.keys(existingRecordIds).length > 0

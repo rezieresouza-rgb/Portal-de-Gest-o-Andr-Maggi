@@ -195,8 +195,10 @@ const BuscaAtivaAttendanceHistory: React.FC = () => {
                     </div>
                 ) : records.length > 0 ? (
                     records.map(record => {
-                        const absences = record.students.filter(s => !s.is_present);
-                        const presents = record.students.filter(s => s.is_present);
+                        const isSpecialStatus = (status?: string) => status && status !== 'ATIVO';
+                        const absences = record.students.filter(s => !s.is_present && !isSpecialStatus(s.status));
+                        const presents = record.students.filter(s => s.is_present && !isSpecialStatus(s.status));
+                        const transferredCount = record.students.filter(s => isSpecialStatus(s.status)).length;
                         const isExpanded = expandedRecord === record.id;
 
                         return (
@@ -235,6 +237,12 @@ const BuscaAtivaAttendanceHistory: React.FC = () => {
                                                 <p className="text-lg font-black leading-none">{absences.length}</p>
                                                 <p className="text-[7px] uppercase font-black mt-1">Faltas</p>
                                             </div>
+                                            {transferredCount > 0 && (
+                                                <div className="text-center px-4 py-2 bg-amber-50 text-amber-800 rounded-2xl border border-amber-200/80">
+                                                    <p className="text-lg font-black leading-none">{transferredCount}</p>
+                                                    <p className="text-[7px] uppercase font-black mt-1">Transferidos</p>
+                                                </div>
+                                            )}
                                         </div>
                                         <ChevronRight size={24} className={`text-gray-300 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
                                     </div>
@@ -244,50 +252,70 @@ const BuscaAtivaAttendanceHistory: React.FC = () => {
                                 {isExpanded && (
                                     <div className="px-8 pb-8 animate-in slide-in-from-top duration-300">
                                         <div className="pt-6 border-t border-gray-50 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                            {record.students.map(s => (
-                                                <div
-                                                    key={s.student_id}
-                                                    className={`flex items-center justify-between p-4 rounded-2xl border ${s.is_present
-                                                        ? 'bg-emerald-50/50 border-emerald-100/50'
-                                                        : 'bg-red-50 border-red-100 shadow-sm'
+                                            {record.students.map(s => {
+                                                const isTransferred = isSpecialStatus(s.status);
+                                                return (
+                                                    <div
+                                                        key={s.student_id}
+                                                        className={`flex items-center justify-between p-4 rounded-2xl border ${
+                                                            isTransferred
+                                                                ? 'bg-amber-50/60 border-amber-200/80 shadow-xs'
+                                                                : s.is_present
+                                                                ? 'bg-emerald-50/50 border-emerald-100/50'
+                                                                : 'bg-red-50 border-red-100 shadow-sm'
                                                         }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`p-2 rounded-xl shrink-0 ${s.is_present ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                                                            {s.is_present ? <UserCheck size={14} /> : <UserX size={14} />}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`p-2 rounded-xl shrink-0 ${
+                                                                isTransferred
+                                                                    ? 'bg-amber-100 text-amber-700'
+                                                                    : s.is_present
+                                                                    ? 'bg-emerald-100 text-emerald-600'
+                                                                    : 'bg-red-100 text-red-600'
+                                                            }`}>
+                                                                {isTransferred ? <AlertCircle size={14} /> : s.is_present ? <UserCheck size={14} /> : <UserX size={14} />}
+                                                            </div>
+                                                            <div>
+                                                                <p className={`text-[11px] font-black uppercase leading-tight ${
+                                                                    isTransferred ? 'text-amber-900' : s.is_present ? 'text-emerald-800' : 'text-red-800'
+                                                                }`}>
+                                                                    {s.student_name}
+                                                                </p>
+                                                                {/* TAGS DE STATUS ESPECIAIS: TRANSFERIDOS / RECLASSIFICADOS */}
+                                                                {s.status === 'TRANSFERIDO DE ESCOLA' && (
+                                                                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 font-bold">
+                                                                        ⚠️ Transferido de Escola
+                                                                    </span>
+                                                                )}
+                                                                {s.status === 'TRANSFERIDO DE TURMA' && (
+                                                                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 font-bold">
+                                                                        🔄 Transferido de Turma {s.current_classroom && s.current_classroom !== record.classroom_name ? `→ ${s.current_classroom}` : ''}
+                                                                    </span>
+                                                                )}
+                                                                {s.status === 'RECLASSIFICADO' && (
+                                                                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 font-bold">
+                                                                        📘 Reclassificado {s.current_classroom && s.current_classroom !== record.classroom_name ? `→ ${s.current_classroom}` : ''}
+                                                                    </span>
+                                                                )}
+                                                                {(s.status === 'ABANDONO' || s.status === 'FALECIDO' || s.status === 'CANCELADO') && (
+                                                                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200 font-bold">
+                                                                        🚫 {s.status}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <p className={`text-[11px] font-black uppercase leading-tight ${s.is_present ? 'text-emerald-800' : 'text-red-800'}`}>
-                                                                {s.student_name}
-                                                            </p>
-                                                            {/* TAGS DE STATUS ESPECIAIS: TRANSFERIDOS / RECLASSIFICADOS */}
-                                                            {s.status === 'TRANSFERIDO DE ESCOLA' && (
-                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                                                                    ⚠️ Transferido de Escola
-                                                                </span>
-                                                            )}
-                                                            {s.status === 'TRANSFERIDO DE TURMA' && (
-                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">
-                                                                    🔄 Transferido de Turma {s.current_classroom && s.current_classroom !== record.classroom_name ? `→ ${s.current_classroom}` : ''}
-                                                                </span>
-                                                            )}
-                                                            {s.status === 'RECLASSIFICADO' && (
-                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
-                                                                    📘 Reclassificado {s.current_classroom && s.current_classroom !== record.classroom_name ? `→ ${s.current_classroom}` : ''}
-                                                                </span>
-                                                            )}
-                                                            {(s.status === 'ABANDONO' || s.status === 'FALECIDO' || s.status === 'CANCELADO') && (
-                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200">
-                                                                    🚫 {s.status}
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                                            isTransferred
+                                                                ? 'bg-amber-200 text-amber-900 border border-amber-300 font-bold'
+                                                                : s.is_present
+                                                                ? 'bg-emerald-200 text-emerald-800'
+                                                                : 'bg-red-200 text-red-800'
+                                                        }`}>
+                                                            {isTransferred ? (s.status === 'TRANSFERIDO DE ESCOLA' ? 'TRANSFERIDO' : s.status || 'INATIVO') : s.is_present ? 'PRESENTE' : 'FALTA'}
+                                                        </span>
                                                     </div>
-                                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${s.is_present ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'}`}>
-                                                        {s.is_present ? 'PRESENTE' : 'FALTA'}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
