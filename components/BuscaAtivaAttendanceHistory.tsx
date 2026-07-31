@@ -30,6 +30,8 @@ interface AttendanceRecord {
         student_id: string;
         student_name: string;
         is_present: boolean;
+        status?: string;
+        current_classroom?: string;
     }[];
 }
 
@@ -68,6 +70,28 @@ const BuscaAtivaAttendanceHistory: React.FC = () => {
             const { data, error } = await query.order('created_at', { ascending: false });
             if (error) throw error;
 
+            // Fetch student enrollment statuses to cross-reference
+            const { data: dbStudents } = await supabase
+                .from('students')
+                .select('id, name, registration_number, enrollments(status, classrooms(name))');
+
+            const studentStatusMap: Record<string, { status: string; currentClass?: string }> = {};
+            if (dbStudents) {
+                dbStudents.forEach((s: any) => {
+                    const activeEnr = 
+                        s.enrollments?.find((e: any) => e.status === 'ATIVO') ||
+                        s.enrollments?.find((e: any) => e.status === 'RECLASSIFICADO') ||
+                        s.enrollments?.find((e: any) => e.status === 'MATRICULADO' || e.status === 'CURSANDO') ||
+                        s.enrollments?.[0];
+
+                    const statusVal = activeEnr?.status || 'ATIVO';
+                    const currentClass = activeEnr?.classrooms?.name;
+
+                    if (s.id) studentStatusMap[s.id] = { status: statusVal, currentClass };
+                    if (s.name) studentStatusMap[s.name.toUpperCase().trim()] = { status: statusVal, currentClass };
+                });
+            }
+
             if (data) {
                 const mapped: AttendanceRecord[] = data.map((r: any) => ({
                     id: r.id,
@@ -76,7 +100,14 @@ const BuscaAtivaAttendanceHistory: React.FC = () => {
                     subject: r.subject,
                     date: r.date,
                     shift: r.shift,
-                    students: r.class_attendance_students.sort((a: any, b: any) => a.student_name.localeCompare(b.student_name))
+                    students: (r.class_attendance_students || []).map((st: any) => {
+                        const match = studentStatusMap[st.student_id] || studentStatusMap[(st.student_name || '').toUpperCase().trim()];
+                        return {
+                            ...st,
+                            status: match?.status || 'ATIVO',
+                            current_classroom: match?.currentClass
+                        };
+                    }).sort((a: any, b: any) => a.student_name.localeCompare(b.student_name))
                 }));
                 setRecords(mapped);
             }
@@ -222,12 +253,35 @@ const BuscaAtivaAttendanceHistory: React.FC = () => {
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`p-2 rounded-xl ${s.is_present ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                                                        <div className={`p-2 rounded-xl shrink-0 ${s.is_present ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                                                             {s.is_present ? <UserCheck size={14} /> : <UserX size={14} />}
                                                         </div>
-                                                        <p className={`text-[11px] font-black uppercase ${s.is_present ? 'text-emerald-800' : 'text-red-800'}`}>
-                                                            {s.student_name}
-                                                        </p>
+                                                        <div>
+                                                            <p className={`text-[11px] font-black uppercase leading-tight ${s.is_present ? 'text-emerald-800' : 'text-red-800'}`}>
+                                                                {s.student_name}
+                                                            </p>
+                                                            {/* TAGS DE STATUS ESPECIAIS: TRANSFERIDOS / RECLASSIFICADOS */}
+                                                            {s.status === 'TRANSFERIDO DE ESCOLA' && (
+                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                                                    ⚠️ Transferido de Escola
+                                                                </span>
+                                                            )}
+                                                            {s.status === 'TRANSFERIDO DE TURMA' && (
+                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">
+                                                                    🔄 Transferido de Turma {s.current_classroom && s.current_classroom !== record.classroom_name ? `→ ${s.current_classroom}` : ''}
+                                                                </span>
+                                                            )}
+                                                            {s.status === 'RECLASSIFICADO' && (
+                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
+                                                                    📘 Reclassificado {s.current_classroom && s.current_classroom !== record.classroom_name ? `→ ${s.current_classroom}` : ''}
+                                                                </span>
+                                                            )}
+                                                            {(s.status === 'ABANDONO' || s.status === 'FALECIDO' || s.status === 'CANCELADO') && (
+                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200">
+                                                                    🚫 {s.status}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${s.is_present ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'}`}>
                                                         {s.is_present ? 'PRESENTE' : 'FALTA'}
