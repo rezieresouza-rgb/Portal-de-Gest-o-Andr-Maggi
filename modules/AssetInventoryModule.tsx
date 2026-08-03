@@ -207,6 +207,25 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     }
   };
 
+  const openSpecModal = async (asset: Asset) => {
+    setShowSpecModal(asset);
+    if (!asset.photo) {
+      try {
+        const { data } = await supabase
+          .from('assets')
+          .select('photo')
+          .eq('id', asset.id)
+          .single();
+        if (data?.photo) {
+          setShowSpecModal(prev => prev ? { ...prev, photo: data.photo } : null);
+          setAssets(prev => prev.map(a => a.id === asset.id ? { ...a, photo: data.photo } : a));
+        }
+      } catch (err) {
+        console.error("Erro ao carregar foto do patrimônio:", err);
+      }
+    }
+  };
+
   const fetchAssets = async () => {
     setIsLoadingAssets(true);
     try {
@@ -614,18 +633,34 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     }
   };
 
-  const handleStartEdit = (asset: Asset) => {
+  const handleStartEdit = async (asset: Asset) => {
+    let photoData = asset.photo || '';
+    if (!photoData) {
+      try {
+        const { data } = await supabase
+          .from('assets')
+          .select('photo')
+          .eq('id', asset.id)
+          .single();
+        if (data?.photo) {
+          photoData = data.photo;
+          setAssets(prev => prev.map(a => a.id === asset.id ? { ...a, photo: data.photo } : a));
+        }
+      } catch (err) {
+        console.error("Erro ao carregar foto para edição:", err);
+      }
+    }
     setEditingAssetId(asset.id);
     setForm({
       description: asset.description,
       location: asset.location,
       heritageNumber: getDisplayHeritage(asset.heritageNumber),
       condition: asset.condition,
-      photo: asset.photo || '',
+      photo: photoData,
       acquisitionDocument: asset.acquisitionDocument || '',
       acquisitionYear: asset.acquisitionYear || '',
     });
-    setImagePreview(asset.photo || null);
+    setImagePreview(photoData || null);
     setIsModalOpen(true);
   };
 
@@ -3404,7 +3439,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
                           <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</span>
-                          <button onClick={() => setShowSpecModal(asset)} className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-1 hover:underline">Ficha Técnica <ChevronRight size={14} /></button>
+                          <button onClick={() => openSpecModal(asset)} className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-1 hover:underline">Ficha Técnica <ChevronRight size={14} /></button>
                         </div>
                       </div>
                     );
