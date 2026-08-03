@@ -2528,7 +2528,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-black uppercase text-slate-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                         >
                           <option value="ALL">Todas as Turmas ({dbStudents.length} Alunos)</option>
-                          {availableClasses.map(cls => {
+                          {classesList.map(cls => {
                             const count = dbStudents.filter(s => s.Turma === cls).length;
                             return (
                               <option key={cls} value={cls}>{cls} ({count} Alunos)</option>
