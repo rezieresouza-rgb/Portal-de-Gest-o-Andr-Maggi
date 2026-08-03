@@ -28,6 +28,7 @@ import {
   ChevronUp,
   TrendingUp,
   Check,
+  Copy,
   Table2,
   Printer
 } from 'lucide-react';
@@ -162,6 +163,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState<Asset | null>(null);
+  const [showSpecModal, setShowSpecModal] = useState<Asset | null>(null);
   const [historyLogs, setHistoryLogs] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isLoadingAssets, setIsLoadingAssets] = useState(true);
@@ -1023,6 +1025,84 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
               Portal de Gestão Escolar EEAM
             </div>
           </div>
+          <script>
+            window.onload = () => {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const printAssetSpecSheet = (asset: Asset) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ficha Técnica - Patrimônio ${asset.heritageNumber || 'S/RP'}</title>
+          <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; color: #1e293b; background: #fff; }
+            .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
+            .header-title h1 { font-size: 16pt; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; }
+            .header-title p { font-size: 8pt; margin: 2px 0 0 0; color: #64748b; text-transform: uppercase; font-weight: bold; }
+            .badge { display: inline-block; padding: 4px 10px; background: #0f172a; color: #fff; font-size: 9pt; font-weight: bold; border-radius: 4px; }
+            .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+            .photo-box { width: 100%; height: 220px; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; }
+            .photo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+            .qr-box { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; background: #f8fafc; }
+            .details-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+            .details-table th, .details-table td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; font-size: 9pt; }
+            .details-table th { background: #f1f5f9; text-transform: uppercase; font-size: 8pt; color: #475569; width: 30%; font-weight: bold; }
+            .details-table td { font-weight: 600; color: #0f172a; }
+            .footer-signatures { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center; }
+            .signature-line { border-top: 1px solid #94a3b8; padding-top: 6px; font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #334155; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="header-title">
+              <h1>Ficha Técnica Patrimonial</h1>
+              <p>Escola Estadual Cívico-Militar André Antônio Maggi — SEDUC-MT</p>
+            </div>
+            <div class="badge">PAT: ${asset.heritageNumber || 'SEM REGISTRO'}</div>
+          </div>
+
+          <div class="grid">
+            <div class="photo-box">
+              ${asset.photo ? `<img src="${asset.photo}" alt="Foto do Bem" />` : '<p style="color:#94a3b8; font-size:9pt; font-weight:bold; text-transform:uppercase;">Sem foto anexada</p>'}
+            </div>
+            <div class="qr-box">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(window.location.origin + '/?location=' + asset.location)}" width="140" height="140" alt="QR Code" />
+              <p style="font-size:7pt; font-weight:bold; color:#64748b; margin-top:8px; text-transform:uppercase; text-align:center;">Local: ${asset.location}</p>
+            </div>
+          </div>
+
+          <table class="details-table">
+            <tr><th>Nº de Patrimônio (RP)</th><td>${asset.heritageNumber || 'NÃO EMPLAQUETADO'}</td></tr>
+            <tr><th>Descrição do Bem</th><td>${asset.description}</td></tr>
+            <tr><th>Ambiente / Localização</th><td>${asset.location}</td></tr>
+            <tr><th>Estado de Conservação</th><td>${asset.isUnserviceable ? 'INSERVÍVEL (PÉSSIMO)' : asset.condition}</td></tr>
+            <tr><th>Documento de Aquisição</th><td>${asset.acquisitionDocument || 'NÃO ESPECIFICADO'}</td></tr>
+            <tr><th>Ano de Incorporação</th><td>${asset.acquisitionYear || '-'}</td></tr>
+            <tr><th>Data de Cadastramento</th><td>${new Date(asset.timestamp).toLocaleDateString('pt-BR')}</td></tr>
+          </table>
+
+          <div class="footer-signatures">
+            <div>
+              <div class="signature-line">Comissão de Inventário Patrimonial</div>
+            </div>
+            <div>
+              <div class="signature-line">Direção Escolar EEAM</div>
+            </div>
+          </div>
+
           <script>
             window.onload = () => {
               window.print();
@@ -3324,7 +3404,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
 
                         <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
                           <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{new Date(asset.timestamp).toLocaleDateString('pt-BR')}</span>
-                          <button className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-1 hover:underline">Ficha Técnica <ChevronRight size={14} /></button>
+                          <button onClick={() => setShowSpecModal(asset)} className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-1 hover:underline">Ficha Técnica <ChevronRight size={14} /></button>
                         </div>
                       </div>
                     );
@@ -3702,6 +3782,161 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FICHA TÉCNICA DO PATRIMÔNIO */}
+      {showSpecModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-100">
+            {/* Header */}
+            <div className="p-8 bg-gradient-to-r from-blue-900 to-slate-900 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-blue-400">
+                  <FileText size={28} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-blue-500/30 text-blue-200 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-blue-400/30 uppercase tracking-widest">Ficha Técnica Oficial</span>
+                    <span className="bg-white/20 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest">PAT: {showSpecModal.heritageNumber || 'SEM RP'}</span>
+                  </div>
+                  <h3 className="text-xl font-black uppercase tracking-tight mt-1 text-white truncate max-w-md">{showSpecModal.description}</h3>
+                </div>
+              </div>
+              <button onClick={() => setShowSpecModal(null)} className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-2xl transition-all">
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              {/* Top Banner: Photo & Quick Badges */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Photo Preview / Placeholder */}
+                <div className="md:col-span-1 bg-gray-50 rounded-3xl border border-gray-100 p-4 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden group">
+                  {showSpecModal.photo ? (
+                    <img src={showSpecModal.photo} alt={showSpecModal.description} className="max-h-40 w-full object-contain rounded-2xl" />
+                  ) : (
+                    <div className="text-center p-6 space-y-2">
+                      <ImageIcon size={40} className="mx-auto text-gray-300" />
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Sem evidência fotográfica</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Main Spec Fields Grid */}
+                <div className="md:col-span-2 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Nº de Patrimônio (RP)</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-gray-900 uppercase">{showSpecModal.heritageNumber || 'NÃO EMPLAQUETADO'}</span>
+                        {showSpecModal.heritageNumber && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(showSpecModal.heritageNumber);
+                              alert('Nº de patrimônio copiado!');
+                            }}
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Copiar Patrimônio"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Estado de Conservação</span>
+                      <span className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${getConditionColor(showSpecModal.condition)}`}>
+                        {showSpecModal.isUnserviceable ? 'INSERVÍVEL (PÉSSIMO)' : showSpecModal.condition}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Local / Ambiente Alocado</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-gray-900 uppercase flex items-center gap-1.5">
+                        <MapPin size={14} className="text-blue-600" /> {showSpecModal.location}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setLocationFilter(showSpecModal.location);
+                          setShowSpecModal(null);
+                          setActiveTab('inventory');
+                        }}
+                        className="text-[9px] font-black text-blue-600 hover:underline uppercase"
+                      >
+                        Filtrar Este Local →
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Documento de Aquisição</span>
+                      <span className="text-xs font-black text-gray-800 uppercase">{showSpecModal.acquisitionDocument || 'Não informado'}</span>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Ano de Aquisição</span>
+                      <span className="text-xs font-black text-gray-800 uppercase">{showSpecModal.acquisitionYear || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inservivel Extra Detail Card if applicable */}
+              {showSpecModal.isUnserviceable && showSpecModal.unserviceableData && (
+                <div className="p-5 bg-red-50 rounded-2xl border border-red-100 space-y-2">
+                  <div className="flex items-center gap-2 text-red-700 font-black text-xs uppercase">
+                    <AlertTriangle size={16} /> Bem Declarado Inservível
+                  </div>
+                  <p className="text-xs text-red-900 font-medium">Motivo: "{showSpecModal.unserviceableData.reason}"</p>
+                  <p className="text-[10px] text-red-600 font-bold uppercase">Responsável pelo Laudo: {showSpecModal.unserviceableData.responsible}</p>
+                </div>
+              )}
+
+              {/* Data de Registro */}
+              <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase px-2 pt-2 border-t border-gray-100">
+                <span>Cadastrado no Sistema em: {new Date(showSpecModal.timestamp).toLocaleDateString('pt-BR')}</span>
+                <span>EEAM • Gestão Patrimonial</span>
+              </div>
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-between items-center gap-4 shrink-0">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const target = showSpecModal;
+                    setShowSpecModal(null);
+                    openHistoryModal(target);
+                  }}
+                  className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <History size={14} /> Histórico de Alterações
+                </button>
+                <button
+                  onClick={() => {
+                    const target = showSpecModal;
+                    setShowSpecModal(null);
+                    handleStartEdit(target);
+                  }}
+                  className="px-4 py-2.5 bg-white border border-gray-200 text-blue-600 hover:bg-blue-50 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Edit2 size={14} /> Editar Patrimônio
+                </button>
+              </div>
+
+              <button
+                onClick={() => printAssetSpecSheet(showSpecModal)}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all"
+              >
+                <Printer size={16} /> Imprimir Ficha Técnica Oficial (PDF)
+              </button>
             </div>
           </div>
         </div>
