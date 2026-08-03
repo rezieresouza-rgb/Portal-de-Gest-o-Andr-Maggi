@@ -29,7 +29,8 @@ import {
   Activity,
   AlertOctagon,
   Radio,
-  Shirt
+  Shirt,
+  Printer
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
@@ -111,6 +112,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [selectedStudentForDoc, setSelectedStudentForDoc] = useState<any | null>(null);
   const [selectedDocTemplate, setSelectedDocTemplate] = useState('termo_ciencia');
   const [docFields, setDocFields] = useState({
+    // Aluno & Turma no documento
+    studentName: '',
+    studentClass: '',
     responsibleName: '',
     responsibleRg: '',
     responsibleCpf: '',
@@ -146,6 +150,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
 
+  // Batch print states
+  const [batchClassSelect, setBatchClassSelect] = useState<string>('ALL');
+  const [isBatchPrinting, setIsBatchPrinting] = useState<boolean>(false);
+  const [batchStudentsList, setBatchStudentsList] = useState<any[]>([]);
+
   const nextFichaNumber = useMemo(() => {
     if (selectedDocTemplate !== 'ficha_medida_disciplinar') return '';
     const currentYear = new Date().getFullYear();
@@ -173,11 +182,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     return `${(docsThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
   }, [selectedDocTemplate, docHistory]);
 
-  // Automatically infer Series/Year when a student is selected
+  // Automatically infer Series/Year and prefill studentName & studentClass when a student is selected
   useEffect(() => {
     if (selectedStudentForDoc) {
-      const classParts = selectedStudentForDoc.Turma.split(' ');
-      let inferredSeries = selectedStudentForDoc.Turma;
+      const classParts = (selectedStudentForDoc.Turma || '').split(' ');
+      let inferredSeries = selectedStudentForDoc.Turma || '';
       if (classParts.length >= 2) {
         const anoWord = classParts[1].toLowerCase() === 'ano' ? 'Ano' : classParts[1];
         inferredSeries = `${classParts[0]} ${anoWord}`;
@@ -185,6 +194,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       setDocFields(prev => ({
         ...prev,
         series: prev.series || inferredSeries,
+        studentName: selectedStudentForDoc.Nome || '',
+        studentClass: selectedStudentForDoc.Turma ? `${selectedStudentForDoc.Turma}${selectedStudentForDoc.Turno ? ` (${selectedStudentForDoc.Turno})` : ''}` : '',
         responsibleName: selectedStudentForDoc.NomeResponsavel || prev.responsibleName,
         responsibleAddress: selectedStudentForDoc.TelefoneContato ? `(Tel: ${selectedStudentForDoc.TelefoneContato})` : prev.responsibleAddress
       }));
@@ -1235,6 +1246,32 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setTimeout(() => {
       window.print();
     }, 150);
+  };
+
+  const batchPrintCount = useMemo(() => {
+    if (batchClassSelect === 'ALL') return dbStudents.length;
+    return dbStudents.filter(s => s.Turma === batchClassSelect).length;
+  }, [batchClassSelect, dbStudents]);
+
+  const handlePrintBatchTermos = () => {
+    const list = batchClassSelect === 'ALL' 
+      ? dbStudents 
+      : dbStudents.filter(s => s.Turma === batchClassSelect);
+    
+    if (!list || list.length === 0) {
+      alert('Nenhum aluno encontrado para a turma selecionada.');
+      return;
+    }
+
+    setBatchStudentsList(list);
+    setIsBatchPrinting(true);
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setIsBatchPrinting(false);
+      }, 600);
+    }, 300);
   };
 
   const handleDeleteDocFromHistory = (id: string, e: React.MouseEvent) => {
@@ -2446,6 +2483,69 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     )}
                   </div>
 
+                  {/* Dados do Aluno no Documento (Sobrescrita Direta / Personalizada) */}
+                  <div className="border-t border-slate-100 pt-4 space-y-3">
+                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                      Dados do Aluno no Documento
+                    </h4>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Nome do Aluno</label>
+                      <input
+                        type="text"
+                        value={docFields.studentName}
+                        onChange={e => setDocFields(prev => ({ ...prev, studentName: e.target.value }))}
+                        placeholder="Nome do aluno (auto se selecionado acima)"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 uppercase"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Turma / Turno</label>
+                      <input
+                        type="text"
+                        value={docFields.studentClass}
+                        onChange={e => setDocFields(prev => ({ ...prev, studentClass: e.target.value }))}
+                        placeholder="Ex: 6º ANO A (MATUTINO)"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 uppercase"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Impressão em Lote por Turma (Termo de Ciência) */}
+                  {selectedDocTemplate === 'termo_ciencia' && (
+                    <div className="border-t border-blue-100 pt-4 mt-4 space-y-3 bg-blue-50/70 p-4 rounded-2xl border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-blue-900 uppercase tracking-widest flex items-center gap-1.5">
+                          <Users size={14} className="text-blue-600" /> Impressão em Lote por Turma
+                        </h4>
+                      </div>
+                      <p className="text-[10px] text-slate-600 font-medium">Imprima o Termo com o Nome e Turma de cada estudante de uma só vez.</p>
+                      
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-600 uppercase">Selecione a Turma</label>
+                        <select
+                          value={batchClassSelect}
+                          onChange={e => setBatchClassSelect(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-black uppercase text-slate-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        >
+                          <option value="ALL">Todas as Turmas ({dbStudents.length} Alunos)</option>
+                          {availableClasses.map(cls => {
+                            const count = dbStudents.filter(s => s.Turma === cls).length;
+                            return (
+                              <option key={cls} value={cls}>{cls} ({count} Alunos)</option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <button
+                        onClick={handlePrintBatchTermos}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-1"
+                      >
+                        <Printer size={15} /> Imprimir Termos da Turma ({batchPrintCount} Alunos)
+                      </button>
+                    </div>
+                  )}
+
                   {/* Dados Condicionais do Modelo */}
                   {(selectedDocTemplate === 'termo_ciencia' || selectedDocTemplate === 'termo_adequacao_conduta') ? (
                     <div className="border-t border-slate-100 pt-5 space-y-4">
@@ -2913,11 +3013,109 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                 {/* PRÉ-VISUALIZAÇÃO DO DOCUMENTO (SIMULAÇÃO A4) */}
                 <div className="xl:col-span-7 flex justify-center overflow-x-auto">
-                  <div 
-                    id="document-print-area" 
-                    className="w-[210mm] min-h-[297mm] p-[20mm] bg-white text-black shadow-2xl relative overflow-hidden select-none mx-auto border border-gray-200 print:border-none print:shadow-none print:p-0 print:m-0 print:w-full print:h-auto"
-                    style={{ fontFamily: 'Arial, sans-serif' }}
-                  >
+                  {isBatchPrinting ? (
+                    <div id="document-print-area-batch" className="w-[210mm] bg-white text-black shadow-2xl mx-auto border border-gray-200">
+                      <style>{`
+                        @media print {
+                          body * {
+                            visibility: hidden !important;
+                          }
+                          #document-print-area-batch, #document-print-area-batch * {
+                            visibility: visible !important;
+                          }
+                          #document-print-area-batch {
+                            position: absolute !important;
+                            left: 0 !important;
+                            top: 0 !important;
+                            width: 210mm !important;
+                            background: white !important;
+                            color: black !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                          }
+                          .batch-term-page {
+                            page-break-after: always !important;
+                            break-after: page !important;
+                            padding: 20mm !important;
+                            width: 210mm !important;
+                            min-height: 297mm !important;
+                            box-sizing: border-box !important;
+                            position: relative !important;
+                            background: white !important;
+                          }
+                        }
+                      `}</style>
+                      {batchStudentsList.map((st, idx) => (
+                        <div key={st.CodigoAluno || idx} className="batch-term-page bg-white text-black relative border-b border-gray-100 print:border-none" style={{ fontFamily: 'Arial, sans-serif' }}>
+                          {/* Logo/Número no topo direito */}
+                          <div className="absolute right-[20mm] top-[15mm] flex flex-col items-center text-center pointer-events-none w-[120px]">
+                            <span className="text-[12px] font-black text-[#0f264c] leading-tight">42</span>
+                            <img src="/logo-escola.png" alt="Logo Escola" className="w-[80px] h-auto object-contain drop-shadow-sm" />
+                          </div>
+
+                          {/* Cabeçalho do Documento */}
+                          <div className="text-center pr-32 pl-4 mb-6">
+                            <p className="text-[11px] font-black text-black uppercase tracking-wider mb-1">Anexo I</p>
+                            <p className="text-[11px] font-black text-black uppercase leading-tight">Estado de Mato Grosso</p>
+                            <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">Secretaria de Estado de Educação</p>
+                            <p className="text-[9px] font-black text-black uppercase leading-tight mt-0.5">Superintendência de Escolas Militares e Cívico-Militares</p>
+                            <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">Escola Estadual Cívico-Militar</p>
+                            <p className="text-[10px] font-black text-black uppercase leading-tight mt-0.5">André Antônio Maggi</p>
+                            <div className="border-b border-black w-full my-4"></div>
+                          </div>
+
+                          {/* Título do Termo */}
+                          <div className="text-center my-10">
+                            <h2 className="text-base font-black text-gray-900 tracking-wider uppercase">Termo de Ciência e Concordância</h2>
+                          </div>
+
+                          {/* Texto do Documento */}
+                          <div className="text-sm text-gray-900 leading-[1.8] space-y-6 text-justify" style={{ textIndent: '2.5cm' }}>
+                            <p>
+                              Eu, <span className="font-black border-b border-gray-400 px-1 uppercase">{st.NomeResponsavel || docFields.responsibleName || '___________________________________________________'}</span> (nome completo), 
+                              portador do documento de Identidade nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleRg || '________________________'}</span>, 
+                              CPF nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleCpf || '____________________'}</span>, 
+                              residente e domiciliado em <span className="font-black border-b border-gray-400 px-1 uppercase">{st.TelefoneContato ? `(Tel: ${st.TelefoneContato})` : (docFields.responsibleAddress || '________________________________________________________________________')}</span> (endereço completo), 
+                              responsável legal pelo aluno(a) <span className="font-black border-b border-gray-400 px-1 uppercase">{st.Nome}</span> (nome completo), 
+                              matriculado na turma <span className="font-black border-b border-gray-400 px-1 uppercase">{st.Turma} ({st.Turno})</span>, 
+                              Declaro, para todos os fins úteis, que:
+                            </p>
+
+                            <p>
+                              Estou familiarizado com as disposições contidas no Manual das Escolas Cívicas e Militares do Estado, 
+                              incluindo, mas não se limitando a, normas disciplinares, regulamentos internos, diretrizes educacionais, 
+                              procedimentos de segurança e protocolos administrativos.
+                            </p>
+
+                            <p>
+                              Aceito o conteúdo dos documentos de orientação, sejam eles o Regulamento Disciplinar Escolar, 
+                              o Projeto de Política Pedagógica, as Normas e Orientações a que se referem, nomeadamente a apresentação pessoal 
+                              e o sistema de créditos e reduções, bem como, afirmo que tenho conhecimento dos documentos aqui citados.
+                            </p>
+                          </div>
+
+                          {/* Local e Data */}
+                          <div className="text-right mt-16 text-sm text-gray-900 font-medium">
+                            <p>
+                              {docFields.city}, {formatDocDate(docFields.date)}.
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-1 mr-4 italic">(local e data)</p>
+                          </div>
+
+                          {/* Assinatura do Responsável */}
+                          <div className="mt-28 flex flex-col items-center">
+                            <div className="w-96 border-t border-black"></div>
+                            <p className="text-xs font-black uppercase text-gray-900 tracking-wide mt-2">Nome e assinatura do responsável</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div 
+                      id="document-print-area" 
+                      className="w-[210mm] min-h-[297mm] p-[20mm] bg-white text-black shadow-2xl relative overflow-hidden select-none mx-auto border border-gray-200 print:border-none print:shadow-none print:p-0 print:m-0 print:w-full print:h-auto"
+                      style={{ fontFamily: 'Arial, sans-serif' }}
+                    >
                     
                     {/* Estilo para ocultar decorações em tela cheia na hora de imprimir */}
                     <style>{`
@@ -3013,8 +3211,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                             portador do documento de Identidade nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleRg || '________________________'}</span>, 
                             CPF nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleCpf || '____________________'}</span>, 
                             residente e domiciliado em <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleAddress || '________________________________________________________________________'}</span> (endereço completo), 
-                            responsável legal pelo aluno(a) <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________________________________'}</span> (nome completo), 
-                            matriculado na turma <span className="font-black border-b border-gray-400 px-1 uppercase">{selectedStudentForDoc ? `${selectedStudentForDoc.Turma} (${selectedStudentForDoc.Turno})` : '_________________________'}</span>, 
+                            responsável legal pelo aluno(a) <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.studentName || (selectedStudentForDoc ? selectedStudentForDoc.Nome : '___________________________________________________')}</span> (nome completo), 
+                            matriculado na turma <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.studentClass || (selectedStudentForDoc ? `${selectedStudentForDoc.Turma} (${selectedStudentForDoc.Turno})` : '_________________________')}</span>, 
                             Declaro, para todos os fins úteis, que:
                           </p>
 
@@ -3459,8 +3657,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         </div>
                       </>
                     ) : null}
-
                   </div>
+                )}
                 </div>
 
               </div>
