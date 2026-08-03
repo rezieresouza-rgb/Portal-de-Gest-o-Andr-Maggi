@@ -510,6 +510,31 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       setHeaderEncerramentoData(`COLÍDER - MT, 02 de julho de ${schedule.year}`);
     }
   }, [schedule.year]);
+
+  useEffect(() => {
+    fetchAssets();
+    fetchSchedule();
+    const sub = supabase.channel('assets_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, fetchAssets).subscribe();
+
+    try {
+      const qrLoc = localStorage.getItem('qr_location_filter');
+      const qrPat = localStorage.getItem('qr_patrimonio_filter');
+      if (qrLoc) {
+        setLocationFilter(qrLoc);
+        setActiveTab('inventory');
+        localStorage.removeItem('qr_location_filter');
+      }
+      if (qrPat) {
+        setSearchTerm(qrPat);
+        setActiveTab('inventory');
+        localStorage.removeItem('qr_patrimonio_filter');
+      }
+    } catch (e) {
+      console.error("Erro ao carregar filtros do QR Code:", e);
+    }
+
+    return () => { sub.unsubscribe(); };
+  }, []);
   const uniqueLocations = useMemo(() => {
     const locsFromAssets = assets.map(a => a.location).filter(Boolean);
     const defaultSchoolLocs = [
