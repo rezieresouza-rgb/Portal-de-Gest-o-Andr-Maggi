@@ -195,9 +195,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         ...prev,
         series: prev.series || inferredSeries,
         studentName: selectedStudentForDoc.Nome || '',
-        studentClass: selectedStudentForDoc.Turma ? `${selectedStudentForDoc.Turma}${selectedStudentForDoc.Turno ? ` (${selectedStudentForDoc.Turno})` : ''}` : '',
-        responsibleName: selectedStudentForDoc.NomeResponsavel || prev.responsibleName,
-        responsibleAddress: selectedStudentForDoc.TelefoneContato ? `(Tel: ${selectedStudentForDoc.TelefoneContato})` : prev.responsibleAddress
+        studentClass: selectedStudentForDoc.Turma ? `${selectedStudentForDoc.Turma}${selectedStudentForDoc.Turno ? ` (${selectedStudentForDoc.Turno})` : ''}` : ''
       }));
     }
   }, [selectedStudentForDoc]);
@@ -3072,10 +3070,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           {/* Texto do Documento */}
                           <div className="text-sm text-gray-900 leading-[1.8] space-y-6 text-justify" style={{ textIndent: '2.5cm' }}>
                             <p>
-                              Eu, <span className="font-black border-b border-gray-400 px-1 uppercase">{st.NomeResponsavel || docFields.responsibleName || '___________________________________________________'}</span> (nome completo), 
+                              Eu, <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleName || '___________________________________________________'}</span> (nome completo), 
                               portador do documento de Identidade nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleRg || '________________________'}</span>, 
                               CPF nº <span className="font-black border-b border-gray-400 px-1">{docFields.responsibleCpf || '____________________'}</span>, 
-                              residente e domiciliado em <span className="font-black border-b border-gray-400 px-1 uppercase">{st.TelefoneContato ? `(Tel: ${st.TelefoneContato})` : (docFields.responsibleAddress || '________________________________________________________________________')}</span> (endereço completo), 
+                              residente e domiciliado em <span className="font-black border-b border-gray-400 px-1 uppercase">{docFields.responsibleAddress || '________________________________________________________________________'}</span> (endereço completo), 
                               responsável legal pelo aluno(a) <span className="font-black border-b border-gray-400 px-1 uppercase">{st.Nome}</span> (nome completo), 
                               matriculado na turma <span className="font-black border-b border-gray-400 px-1 uppercase">{st.Turma} ({st.Turno})</span>, 
                               Declaro, para todos os fins úteis, que:
