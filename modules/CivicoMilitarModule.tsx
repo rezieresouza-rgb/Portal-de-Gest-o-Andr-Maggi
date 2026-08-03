@@ -1197,25 +1197,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   // Documentações Handlers
   const handlePrintDocument = () => {
-    if (!selectedStudentForDoc) {
-      alert('Por favor, selecione um aluno antes de gerar o documento.');
-      return;
-    }
-    if (selectedDocTemplate === 'termo_ciencia' && !docFields.responsibleName) {
-      alert('Por favor, preencha o nome do responsável.');
-      return;
-    }
-    if (selectedDocTemplate === 'fato_observado' && !docFields.achado) {
+    if (selectedDocTemplate === 'fato_observado' && selectedStudentForDoc && !docFields.achado) {
       alert('Por favor, preencha o relato do fato observado (achado).');
       return;
     }
 
     const newDocRecord = {
       id: `doc-${Date.now()}`,
-      studentId: selectedStudentForDoc.CodigoAluno,
-      studentName: selectedStudentForDoc.Nome,
-      className: selectedStudentForDoc.Turma,
-      shiftName: selectedStudentForDoc.Turno,
+      studentId: selectedStudentForDoc ? selectedStudentForDoc.CodigoAluno : 'BLANK',
+      studentName: selectedStudentForDoc ? selectedStudentForDoc.Nome : 'Formulário em Branco',
+      className: selectedStudentForDoc ? selectedStudentForDoc.Turma : 'N/A',
+      shiftName: selectedStudentForDoc ? selectedStudentForDoc.Turno : 'N/A',
       template: selectedDocTemplate,
       templateLabel: selectedDocTemplate === 'termo_ciencia' 
         ? 'Termo de Ciência e Concordância' 
