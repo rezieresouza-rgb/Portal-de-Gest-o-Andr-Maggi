@@ -162,6 +162,10 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState<Asset | null>(null);
+  const [historyLogs, setHistoryLogs] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingAssets, setIsLoadingAssets] = useState(true);
+  const [environmentSearch, setEnvironmentSearch] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
@@ -178,6 +182,61 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
     secretary: { name: '', role: '', register: '' },
     member: { name: '', role: '', register: '' }
   });
+
+  const openHistoryModal = async (asset: Asset) => {
+    setShowHistoryModal(asset);
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('asset_history')
+        .select('*')
+        .eq('asset_id', asset.id)
+        .order('date', { ascending: false });
+      if (!error && data) {
+        setHistoryLogs(data);
+      } else {
+        setHistoryLogs([]);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar histórico:", err);
+      setHistoryLogs([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const fetchAssets = async () => {
+    setIsLoadingAssets(true);
+    try {
+      const { data: assetsData, error: assetsError } = await supabase
+        .from('assets')
+        .select('id, description, location, heritage_number, condition, is_unserviceable, unserviceable_data, acquisition_document, acquisition_year, created_at')
+        .order('created_at', { ascending: false });
+
+      if (assetsError) throw assetsError;
+
+      if (assetsData) {
+        setAssets(assetsData.map(a => ({
+          id: a.id,
+          description: a.description,
+          location: a.location,
+          heritageNumber: a.heritage_number,
+          condition: a.condition as any,
+          isUnserviceable: a.is_unserviceable,
+          photo: '',
+          unserviceableData: a.unserviceable_data,
+          acquisitionDocument: a.acquisition_document,
+          acquisitionYear: a.acquisition_year,
+          history: [],
+          timestamp: new Date(a.created_at).getTime()
+        })));
+      }
+    } catch (error) {
+      console.error("Erro ao buscar patrimônio:", error);
+    } finally {
+      setIsLoadingAssets(false);
+    }
+  };
 
   const fetchSchedule = async () => {
     setIsLoadingSchedule(true);
@@ -451,80 +510,33 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       setHeaderEncerramentoData(`COLÍDER - MT, 02 de julho de ${schedule.year}`);
     }
   }, [schedule.year]);
-
-  const fetchAssets = async () => {
-    try {
-      const { data: assetsData, error: assetsError } = await supabase
-        .from('assets')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (assetsError) throw assetsError;
-
-      // Fetch histories for all assets (optimization: could happen on demand or with join if not too many)
-      const { data: historyData, error: historyError } = await supabase
-        .from('asset_history')
-        .select('*');
-
-      if (historyError) throw historyError;
-
-      if (assetsData) {
-        setAssets(assetsData.map(a => ({
-          id: a.id,
-          description: a.description,
-          location: a.location,
-          heritageNumber: a.heritage_number,
-          condition: a.condition as any,
-          isUnserviceable: a.is_unserviceable,
-          photo: a.photo,
-          unserviceableData: a.unserviceable_data,
-          acquisitionDocument: a.acquisition_document,
-          acquisitionYear: a.acquisition_year,
-          history: historyData?.filter(h => h.asset_id === a.id).map(h => ({
-            id: h.id,
-            date: h.date,
-            action: h.action,
-            responsible: h.responsible,
-            notes: h.notes
-          })) || [],
-          timestamp: new Date(a.created_at).getTime()
-        })));
-      }
-    } catch (error) {
-      console.error("Erro ao buscar patrimônio:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAssets();
-    fetchSchedule();
-    const sub = supabase.channel('assets_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, fetchAssets).subscribe();
-
-    // Ler filtros de QR Code passados pela URL/App
-    try {
-      const qrLoc = localStorage.getItem('qr_location_filter');
-      const qrPat = localStorage.getItem('qr_patrimonio_filter');
-      if (qrLoc) {
-        setLocationFilter(qrLoc);
-        setActiveTab('inventory');
-        localStorage.removeItem('qr_location_filter');
-      }
-      if (qrPat) {
-        setSearchTerm(qrPat);
-        setActiveTab('inventory');
-        localStorage.removeItem('qr_patrimonio_filter');
-      }
-    } catch (e) {
-      console.error("Erro ao carregar filtros do QR Code:", e);
-    }
-
-    return () => { sub.unsubscribe(); };
-  }, []);
-
   const uniqueLocations = useMemo(() => {
-    const locs = assets.map(a => a.location);
-    return Array.from(new Set(locs)).sort();
+    const locsFromAssets = assets.map(a => a.location).filter(Boolean);
+    const defaultSchoolLocs = [
+      'ALMOXARIFADO',
+      'AUDITÓRIO',
+      'BIBLIOTECA',
+      'BUSCA ATIVA',
+      'COORDENAÇÃO PEDAGÓGICA',
+      'COZINHA',
+      'LABORATÓRIO DE CIÊNCIAS',
+      'LABORATÓRIO DE INFORMÁTICA',
+      'MONITORIA',
+      'REFEITÓRIO',
+      'SALA DA DIREÇÃO',
+      'SALA DOS PROFESSORES',
+      'SALA DE MEDIAÇÃO',
+      'SALA DE RECURSOS MULTIFUNCIONAIS',
+      'SECRETARIA'
+    ];
+    const combined = new Set([...locsFromAssets, ...defaultSchoolLocs]);
+    return Array.from(combined).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [assets]);
+
+  const filteredLocations = useMemo(() => {
+    if (!environmentSearch.trim()) return uniqueLocations;
+    return uniqueLocations.filter(loc => loc.toLowerCase().includes(environmentSearch.toLowerCase()));
+  }, [uniqueLocations, environmentSearch]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1359,74 +1371,107 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
               <AssetProcessesManager user={user} />
             ) : activeTab === 'ambientes' ? (
               <div className="space-y-8 animate-in fade-in duration-500">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div>
                     <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Gestão de Ambientes</h3>
-                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">QR Codes vinculados à unidade física</p>
+                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">
+                      QR Codes vinculados à unidade física ({uniqueLocations.length} Ambientes Mapeados)
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Buscar ambiente..."
+                        value={environmentSearch}
+                        onChange={e => setEnvironmentSearch(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {uniqueLocations.map(loc => {
-                    const itemsInLoc = assets.filter(a => a.location === loc);
-                    const unserviceableInLoc = itemsInLoc.filter(a => a.condition === 'PÉSSIMO').length;
+                {isLoadingAssets ? (
+                  <div className="p-20 flex flex-col items-center justify-center gap-4 bg-white rounded-[3rem] border border-gray-100 shadow-sm">
+                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Carregando Ambientes e QR Codes...</p>
+                  </div>
+                ) : filteredLocations.length === 0 ? (
+                  <div className="p-16 text-center bg-white rounded-[3rem] border border-gray-100 shadow-sm space-y-4">
+                    <MapPin size={48} className="mx-auto text-gray-300" />
+                    <p className="text-gray-500 font-black uppercase text-sm">Nenhum ambiente encontrado com a busca "{environmentSearch}"</p>
+                    <button
+                      onClick={() => setEnvironmentSearch('')}
+                      className="px-6 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-black uppercase hover:bg-blue-100 transition-all"
+                    >
+                      Limpar Busca
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredLocations.map(loc => {
+                      const itemsInLoc = assets.filter(a => a.location === loc);
+                      const unserviceableInLoc = itemsInLoc.filter(a => a.condition === 'PÉSSIMO').length;
 
-                    return (
-                      <div key={loc} className="bg-white p-8 rounded-[3.5rem] border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-2xl transition-all group flex flex-col items-center">
-                        <div className="p-4 bg-gray-50 rounded-[2.5rem] border border-gray-100 mb-6 group-hover:scale-105 transition-transform duration-300">
-                          <QRCodeSVG
-                            id={`qr-${loc}`}
-                            value={`${window.location.origin}/?location=${encodeURIComponent(loc)}`}
-                            size={160}
-                            level="H"
-                            includeMargin={true}
-                          />
-                        </div>
+                      return (
+                        <div key={loc} className="bg-white p-8 rounded-[3.5rem] border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-2xl transition-all group flex flex-col items-center">
+                          <div className="p-4 bg-gray-50 rounded-[2.5rem] border border-gray-100 mb-6 group-hover:scale-105 transition-transform duration-300">
+                            <QRCodeSVG
+                              id={`qr-${loc}`}
+                              value={`${window.location.origin}/?location=${encodeURIComponent(loc)}`}
+                              size={160}
+                              level="H"
+                              includeMargin={true}
+                            />
+                          </div>
 
-                        <h4 className="text-xl font-black text-gray-900 uppercase mb-2 text-center leading-tight">{loc}</h4>
-                        <div className="flex flex-wrap justify-center gap-3 mb-6">
-                          <span className="text-[10px] font-black bg-blue-50 text-blue-700 px-3 py-1 rounded-full uppercase border border-blue-100">
-                            {itemsInLoc.length} Itens
-                          </span>
-                          {unserviceableInLoc > 0 && (
-                            <span className="text-[10px] font-black bg-red-50 text-red-600 px-3 py-1 rounded-full uppercase border border-red-100 flex items-center gap-1">
-                              <AlertTriangle size={10} /> {unserviceableInLoc} Inservíveis
+                          <h4 className="text-xl font-black text-gray-900 uppercase mb-2 text-center leading-tight">{loc}</h4>
+                          <div className="flex flex-wrap justify-center gap-3 mb-6">
+                            <span className="text-[10px] font-black bg-blue-50 text-blue-700 px-3 py-1 rounded-full uppercase border border-blue-100">
+                              {itemsInLoc.length} {itemsInLoc.length === 1 ? 'Item' : 'Itens'}
                             </span>
-                          )}
-                        </div>
+                            {unserviceableInLoc > 0 && (
+                              <span className="text-[10px] font-black bg-red-50 text-red-600 px-3 py-1 rounded-full uppercase border border-red-100 flex items-center gap-1">
+                                <AlertTriangle size={10} /> {unserviceableInLoc} Inservíveis
+                              </span>
+                            )}
+                          </div>
 
-                        <div className="w-full space-y-2">
-                          <button
-                            onClick={() => printQRCodeLabel(loc)}
-                            className="w-full py-3.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg"
-                          >
-                            <Printer size={14} /> Imprimir Etiqueta QR
-                          </button>
-                          <button
-                            onClick={() => window.open(`/?location=${encodeURIComponent(loc)}`, '_blank')}
-                            className="w-full py-3 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                          >
-                            <FileText size={12} /> Abrir Página Pública / PDF
-                          </button>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="w-full space-y-2">
                             <button
-                              onClick={() => downloadQRCode(loc)}
-                              className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-all"
+                              onClick={() => printQRCodeLabel(loc)}
+                              className="w-full py-3.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg"
                             >
-                              <Download size={12} /> Salvar Imagem
+                              <Printer size={14} /> Imprimir Etiqueta QR
                             </button>
                             <button
-                              onClick={() => { setLocationFilter(loc); setActiveTab('inventory'); }}
-                              className="w-full py-3 bg-blue-50 text-blue-700 rounded-xl text-[9px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all flex items-center justify-center gap-1.5"
+                              onClick={() => window.open(`/?location=${encodeURIComponent(loc)}`, '_blank')}
+                              className="w-full py-3 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                             >
-                              <Search size={12} /> Inventário
+                              <FileText size={12} /> Abrir Página Pública / PDF
                             </button>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                onClick={() => downloadQRCode(loc)}
+                                className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-all"
+                              >
+                                <Download size={12} /> Salvar Imagem
+                              </button>
+                              <button
+                                onClick={() => { setLocationFilter(loc); setActiveTab('inventory'); }}
+                                className="w-full py-3 bg-blue-50 text-blue-700 rounded-xl text-[9px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all flex items-center justify-center gap-1.5"
+                              >
+                                <Search size={12} /> Inventário
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ) : activeTab === 'relatorios' ? (
               <div className="space-y-8 animate-in fade-in duration-500">
@@ -3224,7 +3269,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                             </div>
                             <div className="flex gap-2">
                               <button onClick={() => handleStartEdit(asset)} className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-lg transition-all" title="Editar"><Edit2 size={16} /></button>
-                              <button onClick={() => setShowHistoryModal(asset)} className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-lg transition-all" title="Histórico"><History size={16} /></button>
+                              <button onClick={() => openHistoryModal(asset)} className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-lg transition-all" title="Histórico"><History size={16} /></button>
                               <button onClick={() => deleteAsset(asset.id)} className="p-2 bg-gray-50 text-gray-400 hover:text-red-500 rounded-lg transition-all" title="Excluir"><Trash2 size={16} /></button>
                             </div>
                           </div>
@@ -3591,6 +3636,47 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE HISTÓRICO DE MOVIMENTAÇÕES */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-gray-100">
+            <div className="p-8 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                  <History size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Histórico de Movimentações</h3>
+                  <p className="text-xs text-gray-400 font-bold uppercase">{showHistoryModal.description} ({showHistoryModal.heritageNumber || 'SEM RP'})</p>
+                </div>
+              </div>
+              <button onClick={() => setShowHistoryModal(null)} className="p-2 text-gray-400 hover:text-red-500 rounded-xl transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+              {isLoadingHistory ? (
+                <div className="p-12 text-center text-gray-400 font-bold text-xs uppercase animate-pulse">Carregando movimentações...</div>
+              ) : historyLogs.length === 0 ? (
+                <div className="p-12 text-center text-gray-400 font-bold text-xs uppercase">Nenhuma movimentação registrada para este bem.</div>
+              ) : (
+                historyLogs.map((log, idx) => (
+                  <div key={log.id || idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-1">
+                    <div className="flex justify-between items-center text-xs font-black uppercase text-gray-800">
+                      <span>{log.action}</span>
+                      <span className="text-[10px] text-gray-400 font-bold">{new Date(log.date || log.created_at).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    {log.responsible && <p className="text-[10px] text-gray-500 font-bold">Responsável: {log.responsible}</p>}
+                    {log.notes && <p className="text-[10px] text-gray-600 italic">"{log.notes}"</p>}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
