@@ -75,7 +75,6 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
     { id: 'suppliers', label: 'Fornecedores', icon: Users },
     { id: 'inventory', label: 'Controle de Estoque', icon: Package },
     { id: 'ai', label: 'Consultoria IA', icon: BrainCircuit },
-    { id: 'settings', label: 'Segurança & Dados', icon: Database },
   ];
 
   const renderContent = () => {
@@ -91,7 +90,6 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
       case 'shoppingList': return <ShoppingList />;
       case 'menuAudit': return <MenuContractAudit />;
       case 'supplierNotifications': return <SupplierNotifications user={user} />;
-      case 'settings': return <Settings />;
       default: return <Dashboard />;
     }
   };
