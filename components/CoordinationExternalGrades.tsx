@@ -81,6 +81,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    const [matrixBimestre, setMatrixBimestre] = useState<string>('2º BIMESTRE');
    const [selectedStudentClass, setSelectedStudentClass] = useState<string>('6º ANO A');
    const [studentSearchQuery, setStudentSearchQuery] = useState<string>('');
+   const [studentSubView, setStudentSubView] = useState<'boletim' | 'comparativo'>('boletim');
 
    // Cross-referencing Data fetcher
    useEffect(() => {
@@ -795,15 +796,31 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                           {/* ALTERNADOR SUB-VISÃO (BOLETIM VS EVOLUÇÃO INDIVIDUAL) */}
+                           <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+                              <button
+                                 onClick={() => setStudentSubView('boletim')}
+                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${studentSubView === 'boletim' ? 'bg-violet-600 text-white' : 'text-white/40 hover:text-white'}`}
+                              >
+                                 Boletim
+                              </button>
+                              <button
+                                 onClick={() => setStudentSubView('comparativo')}
+                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1 ${studentSubView === 'comparativo' ? 'bg-violet-600 text-white' : 'text-white/40 hover:text-white'}`}
+                              >
+                                 <ArrowUpRight size={12} /> Evolução 1º x 2º Bim.
+                              </button>
+                           </div>
+
                            {/* BUSCA POR NOME DO ALUNO */}
-                           <div className="relative flex-1 md:w-64">
+                           <div className="relative flex-1 md:w-56">
                               <Search size={16} className="absolute left-3 top-3.5 text-white/40" />
                               <input
                                  type="text"
                                  placeholder="Buscar aluno..."
                                  value={studentSearchQuery}
                                  onChange={e => setStudentSearchQuery(e.target.value)}
-                                 className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:bg-white/10 focus:ring-2 focus:ring-violet-500/50"
+                                 className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:bg-white/10 focus:ring-2 focus:ring-violet-500/50"
                               />
                            </div>
 
@@ -811,7 +828,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <select
                               value={selectedStudentClass}
                               onChange={e => setSelectedStudentClass(e.target.value)}
-                              className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                              className="p-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
                            >
                               {(() => {
                                  const availableClasses = Array.from(new Set(allExternalAssessments.map(a => a.className))).sort();
@@ -820,19 +837,23 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               })()}
                            </select>
 
-                           {/* SELETOR DE BIMESTRE */}
-                           <select
-                              value={matrixBimestre}
-                              onChange={e => setMatrixBimestre(e.target.value)}
-                              className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
-                           >
-                              {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => (
-                                 <option key={b} value={b}>{b}</option>
-                              ))}
-                           </select>
+                           {/* SELETOR DE BIMESTRE (Apenas no modo boletim simples) */}
+                           {studentSubView === 'boletim' && (
+                              <select
+                                 value={matrixBimestre}
+                                 onChange={e => setMatrixBimestre(e.target.value)}
+                                 className="p-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                              >
+                                 {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => (
+                                    <option key={b} value={b}>{b}</option>
+                                 ))}
+                              </select>
+                           )}
                         </div>
                      </div>
 
+                     {/* MODO 1: BOLETIM SIMPLES DE ALUNOS */}
+                     {studentSubView === 'boletim' && (
                      <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                            <thead>
@@ -847,7 +868,6 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </thead>
                            <tbody className="divide-y divide-white/5">
                               {(() => {
-                                 // Filtrar assessments da turma e bimestre selecionados
                                  const targetAssessments = allExternalAssessments.filter(a => 
                                     a.className === selectedStudentClass && a.bimestre === matrixBimestre
                                  );
@@ -862,7 +882,6 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     );
                                  }
 
-                                 // Agrupar alunos de todas as disciplinas da turma
                                  const studentMap = new Map<string, { id: string, name: string, scores: Record<string, number> }>();
 
                                  targetAssessments.forEach(ass => {
@@ -942,6 +961,106 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </tbody>
                         </table>
                      </div>
+                     )}
+
+                     {/* MODO 2: COMPARATIVO BIMESTRAL (1º X 2º BIMESTRE POR ALUNO) */}
+                     {studentSubView === 'comparativo' && (
+                     <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse">
+                           <thead>
+                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                                 <th className="py-4 px-4 text-center">#</th>
+                                 <th className="py-4 px-6">Nome do Aluno</th>
+                                 <th className="py-4 px-6 text-center">Média 1º Bim</th>
+                                 <th className="py-4 px-6 text-center">Média 2º Bim</th>
+                                 <th className="py-4 px-6 text-center">Evolução Geral (Δ)</th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-white/5">
+                              {(() => {
+                                 const b1 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '1º BIMESTRE');
+                                 const b2 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '2º BIMESTRE');
+
+                                 const studentMap = new Map<string, { name: string, b1Scores: number[], b2Scores: number[] }>();
+
+                                 b1.forEach(ass => {
+                                    ass.grades.forEach(g => {
+                                       if (!studentMap.has(g.studentName)) {
+                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [] });
+                                       }
+                                       studentMap.get(g.studentName)!.b1Scores.push(g.score);
+                                    });
+                                 });
+
+                                 b2.forEach(ass => {
+                                    ass.grades.forEach(g => {
+                                       if (!studentMap.has(g.studentName)) {
+                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [] });
+                                       }
+                                       studentMap.get(g.studentName)!.b2Scores.push(g.score);
+                                    });
+                                 });
+
+                                 let list = Array.from(studentMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+                                 if (studentSearchQuery.trim()) {
+                                    const q = studentSearchQuery.toLowerCase();
+                                    list = list.filter(s => s.name.toLowerCase().includes(q));
+                                 }
+
+                                 if (list.length === 0) {
+                                    return (
+                                       <tr>
+                                          <td colSpan={5} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                             Nenhum aluno encontrado para comparação na turma {selectedStudentClass}
+                                          </td>
+                                       </tr>
+                                    );
+                                 }
+
+                                 return list.map((st, idx) => {
+                                    const avg1 = st.b1Scores.length > 0 ? (st.b1Scores.reduce((a, b) => a + b, 0) / st.b1Scores.length) : null;
+                                    const avg2 = st.b2Scores.length > 0 ? (st.b2Scores.reduce((a, b) => a + b, 0) / st.b2Scores.length) : null;
+
+                                    let delta: number | null = null;
+                                    if (avg1 !== null && avg2 !== null) {
+                                       delta = parseFloat((avg2 - avg1).toFixed(1));
+                                    }
+
+                                    return (
+                                       <tr key={st.name} className="hover:bg-white/5 transition-colors">
+                                          <td className="py-4 px-4 text-center font-bold text-xs text-white/30">{idx + 1}</td>
+                                          <td className="py-4 px-6 font-black text-xs text-white uppercase">{st.name}</td>
+                                          <td className="py-4 px-6 text-center font-bold text-xs text-white/70">
+                                             {avg1 !== null ? `${avg1.toFixed(1)}%` : '-'}
+                                          </td>
+                                          <td className="py-4 px-6 text-center font-bold text-xs text-white/90">
+                                             {avg2 !== null ? `${avg2.toFixed(1)}%` : '-'}
+                                          </td>
+                                          <td className="py-4 px-6 text-center">
+                                             {delta !== null ? (
+                                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black border ${
+                                                   delta > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                                   delta < 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                                   'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                                                }`}>
+                                                   {delta > 0 && <ArrowUpRight size={14} />}
+                                                   {delta < 0 && <ArrowDownRight size={14} />}
+                                                   {delta === 0 && <Minus size={14} />}
+                                                   {delta > 0 ? `+${delta}%` : `${delta}%`}
+                                                </span>
+                                             ) : (
+                                                <span className="text-white/20 text-xs font-bold">-</span>
+                                             )}
+                                          </td>
+                                       </tr>
+                                    );
+                                 });
+                              })()}
+                           </tbody>
+                        </table>
+                     </div>
+                     )}
                   </div>
                )}
                {displayMode === 'cards' && (
