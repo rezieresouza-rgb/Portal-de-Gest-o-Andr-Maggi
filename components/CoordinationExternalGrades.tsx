@@ -552,7 +552,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
    return (
       <div className="space-y-8 animate-in fade-in duration-500">
-         {viewMode === 'list' ? (
+         {viewMode === 'list' && (
             <div className="space-y-6">
                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   <div>
