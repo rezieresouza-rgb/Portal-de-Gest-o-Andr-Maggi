@@ -402,30 +402,134 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
   }, [dbStudents]);
 
-  // Sync state to local storage when state changes
-  const saveInspectionsToStorage = (list: InspectionRecord[]) => {
-    localStorage.setItem('civico_militar_inspections_v2', JSON.stringify(list));
+  // Sync state to Supabase when state changes
+  const saveInspectionsToStorage = async (list: InspectionRecord[]) => {
     setInspections(list);
+    try {
+      const payload = list.map(i => ({
+        id: i.id,
+        student_id: i.studentId,
+        student_name: i.studentName,
+        class_name: i.className,
+        item: i.item,
+        date: i.date,
+        shift: i.shift,
+        observations: i.observations,
+        responsible: i.responsible
+      }));
+      if (payload.length > 0) {
+        await supabase.from('civic_inspections').upsert(payload, { onConflict: 'id' });
+      }
+    } catch(e) { console.error(e); }
   };
 
-  const saveRoutinesToStorage = (list: CivicRoutineRecord[]) => {
-    localStorage.setItem('civico_militar_routines_v2', JSON.stringify(list));
+  const saveRoutinesToStorage = async (list: CivicRoutineRecord[]) => {
     setRoutines(list);
+    try {
+      const payload = list.map(r => ({
+        id: r.id,
+        date: r.date,
+        shift: r.shift,
+        formation_ok: r.formationOk,
+        commanders_present: r.commandersPresent,
+        flags_raised: r.flagsRaised,
+        anthems_sung: r.anthemsSung,
+        marching_ok: r.marchingOk,
+        bulletin_read: r.bulletinRead,
+        responsible: r.responsible
+      }));
+      if (payload.length > 0) {
+        await supabase.from('civic_routines').upsert(payload, { onConflict: 'id' });
+      }
+    } catch(e) { console.error(e); }
   };
 
-  const saveStudentStatesToStorage = (list: StudentBehaviorState[]) => {
-    localStorage.setItem('civico_militar_student_scores_v3', JSON.stringify(list));
+  const saveStudentStatesToStorage = async (list: StudentBehaviorState[]) => {
     setStudentStates(list);
-    // If a modal is open for a student, update its local copy as well
     if (selectedStudentState) {
       const updated = list.find(s => s.studentId === selectedStudentState.studentId);
       if (updated) setSelectedStudentState(updated);
     }
+    
+    try {
+      const behaviorsPayload = list.map(b => ({
+        student_id: b.studentId,
+        student_name: b.studentName,
+        class_name: b.className,
+        score: b.score,
+        is_class_leader: b.isClassLeader,
+        is_civic_highlight: b.isCivicHighlight
+      }));
+      if (behaviorsPayload.length > 0) {
+        await supabase.from('civic_student_behavior').upsert(behaviorsPayload, { onConflict: 'student_id' });
+      }
+
+      let occsPayload: any[] = [];
+      list.forEach(b => {
+        b.occurrences.forEach(o => {
+          occsPayload.push({
+            id: o.id,
+            student_id: b.studentId,
+            type: o.type,
+            category: o.category,
+            categories: o.categories,
+            points: o.points,
+            date: o.date,
+            observations: o.observations,
+            responsible: o.responsible,
+            disciplinary_measure: o.disciplinaryMeasure,
+            suspension_days: o.suspensionDays,
+            is_escalated: o.isEscalated
+          });
+        });
+      });
+      if (occsPayload.length > 0) {
+        await supabase.from('civic_occurrences').upsert(occsPayload, { onConflict: 'id' });
+      }
+    } catch(e) { console.error(e); }
   };
 
-  const saveDocHistoryToStorage = (list: any[]) => {
-    localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(list));
+  const saveDocHistoryToStorage = async (list: any[]) => {
     setDocHistory(list);
+    try {
+      const payload = list.map(d => {
+        const { id, template, date, timestamp, studentName, studentClass, ...rest } = d;
+        return {
+          id: d.id,
+          template: d.template,
+          date: d.date,
+          timestamp: d.timestamp,
+          student_name: d.studentName,
+          student_class: d.studentClass,
+          content: rest
+        };
+      });
+      if (payload.length > 0) {
+        await supabase.from('civic_documents').upsert(payload, { onConflict: 'id' });
+      }
+    } catch(e) { console.error(e); }
+  };
+
+  const handleSyncLocalToCloud = async () => {
+    if(!window.confirm('Tem certeza? Isso fará com que os dados atuais salvos no seu computador (se houver) sejam enviados para o banco de dados na nuvem.')) return;
+    try {
+      const localInspections = JSON.parse(localStorage.getItem('civico_militar_inspections_v2') || '[]');
+      if(localInspections.length > 0) await saveInspectionsToStorage(localInspections);
+
+      const localRoutines = JSON.parse(localStorage.getItem('civico_militar_routines_v2') || '[]');
+      if(localRoutines.length > 0) await saveRoutinesToStorage(localRoutines);
+
+      const localDocs = JSON.parse(localStorage.getItem('civico_militar_documentos_v2') || '[]');
+      if(localDocs.length > 0) await saveDocHistoryToStorage(localDocs);
+
+      const localScores = JSON.parse(localStorage.getItem('civico_militar_student_scores_v3') || '[]');
+      if(localScores.length > 0) await saveStudentStatesToStorage(localScores);
+
+      alert('Dados locais sincronizados para a nuvem com sucesso!');
+      window.location.reload();
+    } catch(e) {
+      alert('Erro ao sincronizar: ' + String(e));
+    }
   };
 
   // 2. Computed Statistics
