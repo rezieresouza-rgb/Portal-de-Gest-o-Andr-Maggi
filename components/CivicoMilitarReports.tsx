@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Filter, AlertTriangle, TrendingUp, Users, ShieldAlert, Award, FileText } from 'lucide-react';
+import { Filter, AlertTriangle, TrendingUp, Users, ShieldAlert, Award, FileText, Printer } from 'lucide-react';
 
 
 interface CivicoMilitarReportsProps {
   studentStates: any[];
+  inspections: any[];
+  routines: any[];
 }
 
 type Period = 'HOJE' | 'SEMANA' | 'MES' | 'TRIMESTRE' | 'ANO';
@@ -16,7 +18,7 @@ const COLORS = {
   MERIT: '#10b981' // emerald-500
 };
 
-const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStates }) => {
+const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStates, inspections, routines }) => {
   const [period, setPeriod] = useState<Period>('MES');
 
   // Helper to filter dates
@@ -58,6 +60,45 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
     
     // For timeline (last 7 data points based on period)
     const timelineDataMap: Record<string, { date: string, demeritos: number, meritos: number }> = {};
+
+    // Inspections Stats
+    let totalInspections = 0;
+    const inspectionItemsCounts: Record<string, number> = {};
+
+    (inspections || []).forEach(insp => {
+      if (!isDateInPeriod(insp.date, period)) return;
+      totalInspections++;
+      if (!inspectionItemsCounts[insp.item]) inspectionItemsCounts[insp.item] = 0;
+      inspectionItemsCounts[insp.item]++;
+    });
+
+    const topInspectionItems = Object.entries(inspectionItemsCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value }));
+
+    // Routine Stats
+    let totalRoutines = 0;
+    let completedSteps = 0;
+    let possibleSteps = 0;
+
+    (routines || []).forEach(rout => {
+      if (!isDateInPeriod(rout.date, period)) return;
+      totalRoutines++;
+      possibleSteps += 10;
+      if (rout.formationOk) completedSteps++;
+      if (rout.commandersPresent) completedSteps++;
+      if (rout.flagsRaised?.national) completedSteps++;
+      if (rout.flagsRaised?.state) completedSteps++;
+      if (rout.flagsRaised?.municipal) completedSteps++;
+      if (rout.anthemsSung?.national) completedSteps++;
+      if (rout.anthemsSung?.state) completedSteps++;
+      if (rout.anthemsSung?.school) completedSteps++;
+      if (rout.marchingOk) completedSteps++;
+      if (rout.bulletinRead) completedSteps++;
+    });
+
+    const routineAdherence = possibleSteps > 0 ? Math.round((completedSteps / possibleSteps) * 100) : 100;
+
 
     studentStates.forEach(student => {
       student.occurrences.forEach(occ => {
@@ -144,9 +185,13 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
       topStudents,
       topMeritStudents,
       severityPie,
-      timelineData
+      timelineData,
+      totalInspections,
+      topInspectionItems,
+      totalRoutines,
+      routineAdherence
     };
-  }, [studentStates, period]);
+  }, [studentStates, inspections, routines, period]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
@@ -163,51 +208,74 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100">
-          {(['HOJE', 'SEMANA', 'MES', 'TRIMESTRE', 'ANO'] as Period[]).map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                period === p 
-                  ? 'bg-indigo-600 text-white shadow-md' 
-                  : 'text-slate-500 hover:bg-slate-200/50'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 print:hidden">
+            {(['HOJE', 'SEMANA', 'MES', 'TRIMESTRE', 'ANO'] as Period[]).map(p => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                  period === p 
+                    ? 'bg-indigo-600 text-white shadow-md' 
+                    : 'text-slate-500 hover:bg-slate-200/50'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          
+          <button 
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-4 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-colors print:hidden"
+          >
+            <Printer size={16} /> Imprimir
+          </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
-          <div className="w-14 h-14 rounded-[1.2rem] bg-indigo-50 text-indigo-600 flex items-center justify-center"><FileText size={24} /></div>
+          <div className="w-14 h-14 rounded-[1.2rem] bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0"><FileText size={24} /></div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Registros</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ocorrências</p>
             <p className="text-3xl font-black text-slate-900">{filteredData.totalOccurrences}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
-          <div className="w-14 h-14 rounded-[1.2rem] bg-red-50 text-red-500 flex items-center justify-center"><AlertTriangle size={24} /></div>
+          <div className="w-14 h-14 rounded-[1.2rem] bg-red-50 text-red-500 flex items-center justify-center shrink-0"><AlertTriangle size={24} /></div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Deméritos (Faltas)</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Deméritos</p>
             <p className="text-3xl font-black text-red-500">{filteredData.totalDemerits}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
-          <div className="w-14 h-14 rounded-[1.2rem] bg-emerald-50 text-emerald-500 flex items-center justify-center"><Award size={24} /></div>
+          <div className="w-14 h-14 rounded-[1.2rem] bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0"><Award size={24} /></div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Méritos (Elogios)</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Méritos</p>
             <p className="text-3xl font-black text-emerald-500">{filteredData.totalMerits}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
-          <div className="w-14 h-14 rounded-[1.2rem] bg-blue-50 text-blue-500 flex items-center justify-center"><Users size={24} /></div>
+          <div className="w-14 h-14 rounded-[1.2rem] bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"><Users size={24} /></div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Alunos Atingidos</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Alunos</p>
             <p className="text-3xl font-black text-blue-500">{filteredData.studentsAffectedCount}</p>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
+          <div className="w-14 h-14 rounded-[1.2rem] bg-orange-50 text-orange-500 flex items-center justify-center shrink-0"><ShieldAlert size={24} /></div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Inspeções</p>
+            <p className="text-3xl font-black text-orange-500">{filteredData.totalInspections}</p>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
+          <div className="w-14 h-14 rounded-[1.2rem] bg-purple-50 text-purple-500 flex items-center justify-center shrink-0"><TrendingUp size={24} /></div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Adesão Rotina</p>
+            <p className="text-3xl font-black text-purple-500">{filteredData.routineAdherence}%</p>
           </div>
         </div>
       </div>
@@ -360,8 +428,27 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
               </div>
             )) : <p className="text-xs text-slate-400 font-bold uppercase text-center py-10">Nenhum aluno com méritos</p>}
           </div>
-        </div>
+      </div>
 
+      {/* Top Inspection Items Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-6 flex items-center gap-2">
+            <ShieldAlert size={18} className="text-orange-500" /> Irregularidades de Fardamento
+          </h3>
+          <div className="space-y-4">
+            {filteredData.topInspectionItems.length > 0 ? filteredData.topInspectionItems.slice(0, 5).map((item, idx) => (
+              <div key={idx} className="flex justify-between items-center p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                <div className="flex-1 pr-4">
+                  <p className="text-[10px] font-black text-slate-700 uppercase leading-snug line-clamp-2">{item.name}</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white border border-orange-100 flex items-center justify-center font-black text-orange-500 shrink-0 shadow-sm">
+                  {item.value}
+                </div>
+              </div>
+            )) : <p className="text-xs text-slate-400 font-bold uppercase text-center py-10">Nenhuma inspeção registrada</p>}
+          </div>
+        </div>
       </div>
     </div>
   );

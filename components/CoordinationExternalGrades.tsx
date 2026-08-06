@@ -40,7 +40,7 @@ import {
    Line
 } from 'recharts';
 
-const SYSTEMS = ['SEE', 'SISTEMA ESTRUTURADO'];
+const SYSTEMS = ['SEE', 'CAED'];
 const SUBJECTS = ["MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA", "LÍNGUA INGLESA"];
 const PROFICIENCY_LEVELS = [
    { label: 'Muito Baixo', value: 'MUITO_BAIXO', color: 'text-red-600 bg-red-50' },

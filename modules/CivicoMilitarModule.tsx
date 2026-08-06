@@ -3894,7 +3894,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           )}
 
           {activeTab === 'relatorios' && (
-             <CivicoMilitarReports studentStates={studentStates} />
+             <CivicoMilitarReports studentStates={studentStates} inspections={inspections} routines={routines} />
           )}
 
         </div>
