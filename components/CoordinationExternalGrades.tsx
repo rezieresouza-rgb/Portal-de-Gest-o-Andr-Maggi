@@ -26,7 +26,8 @@ import {
    ArrowDownRight,
    Minus,
    Users,
-   UserCheck
+   UserCheck,
+   BarChart2
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { Assessment, StudentGrade } from '../types';
