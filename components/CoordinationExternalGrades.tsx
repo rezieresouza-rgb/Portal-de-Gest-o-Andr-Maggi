@@ -77,7 +77,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    const [selectedAssessmentForView, setSelectedAssessmentForView] = useState<Assessment | null>(null);
    const [studentStats, setStudentStats] = useState<Record<string, { attendance: number, activeReferrals: number, civicoBehavior: number }>>({});
    const [selectedStudentHistory, setSelectedStudentHistory] = useState<string | null>(null);
-   const [displayMode, setDisplayMode] = useState<'matriz' | 'comparativo' | 'alunos_turma' | 'cards'>('matriz');
+   const [displayMode, setDisplayMode] = useState<'matriz' | 'comparativo' | 'alunos_turma' | 'rendimento_geral' | 'cards'>('matriz');
    const [matrixBimestre, setMatrixBimestre] = useState<string>('2º BIMESTRE');
    const [selectedStudentClass, setSelectedStudentClass] = useState<string>('6º ANO A');
    const [studentSearchQuery, setStudentSearchQuery] = useState<string>('');
@@ -574,6 +574,14 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <Users size={16} /> Notas por Aluno (Turma)
                         </button>
                         <button
+                           onClick={() => setDisplayMode('rendimento_geral')}
+                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                              displayMode === 'rendimento_geral' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           }`}
+                        >
+                           <BarChart2 size={16} /> Rendimento Geral por Ano
+                        </button>
+                        <button
                            onClick={() => setDisplayMode('cards')}
                            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
                               displayMode === 'cards' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
@@ -1061,6 +1069,104 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                         </table>
                      </div>
                      )}
+                  </div>
+               )}
+
+               {/* NOVO MODO: RENDIMENTO GERAL POR ANO (SÉRIE) */}
+               {displayMode === 'rendimento_geral' && (
+                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-8">
+                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-6">
+                        <div>
+                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                              <BarChart2 size={20} className="text-violet-400" /> Rendimento Geral Consolidado por Série
+                           </h3>
+                           <p className="text-xs text-white/50 font-bold uppercase mt-1">Média escolar acumulada por disciplina do 6º ao 9º Ano</p>
+                        </div>
+                     </div>
+
+                     {/* CARDS DE CADA SÉRIE */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {['6º ANO', '7º ANO', '8º ANO', '9º ANO'].map(grade => {
+                           const gradeAssessments = allExternalAssessments.filter(a => a.className.startsWith(grade));
+                           
+                           return (
+                              <div key={grade} className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-4 hover:border-violet-500/40 transition-all">
+                                 <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                    <h4 className="text-lg font-black text-white uppercase tracking-wide flex items-center gap-2">
+                                       <span className="w-3 h-3 rounded-full bg-violet-500"></span> {grade} - Média Geral Escola
+                                    </h4>
+                                 </div>
+
+                                 <table className="w-full text-left">
+                                    <thead>
+                                       <tr className="text-[10px] font-black uppercase text-white/40 border-b border-white/5">
+                                          <th className="py-2">Disciplina</th>
+                                          <th className="py-2 text-center">1º Bimestre</th>
+                                          <th className="py-2 text-center">2º Bimestre</th>
+                                          <th className="py-2 text-center">Evolução (Δ)</th>
+                                       </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5 text-xs font-bold">
+                                       {SUBJECTS.map(subj => {
+                                          const subjUpper = subj.toUpperCase();
+                                          
+                                          // Se for 9º ano e não houver turmas do 1º Bimestre registradas com rendimento, usar dado oficial geral (Arte 71%, Mat 65%, Ciênc 63%, LP 55%, Hist 54%, Geog 47%)
+                                          let b1Val: number | null = null;
+                                          const b1Ass = gradeAssessments.filter(a => a.subject.toUpperCase() === subjUpper && a.bimestre === '1º BIMESTRE');
+                                          if (b1Ass.length > 0) {
+                                             b1Val = b1Ass.reduce((acc, curr) => acc + curr.averageScore, 0) / b1Ass.length;
+                                          } else if (grade === '9º ANO') {
+                                             if (subjUpper === 'ARTE') b1Val = 71;
+                                             else if (subjUpper === 'MATEMÁTICA') b1Val = 65;
+                                             else if (subjUpper === 'CIÊNCIAS') b1Val = 63;
+                                             else if (subjUpper === 'LÍNGUA PORTUGUESA') b1Val = 55;
+                                             else if (subjUpper === 'HISTÓRIA') b1Val = 54;
+                                             else if (subjUpper === 'GEOGRAFIA') b1Val = 47;
+                                          }
+
+                                          let b2Val: number | null = null;
+                                          const b2Ass = gradeAssessments.filter(a => a.subject.toUpperCase() === subjUpper && a.bimestre === '2º BIMESTRE');
+                                          if (b2Ass.length > 0) {
+                                             b2Val = b2Ass.reduce((acc, curr) => acc + curr.averageScore, 0) / b2Ass.length;
+                                          }
+
+                                          let delta: number | null = null;
+                                          if (b1Val !== null && b2Val !== null) {
+                                             delta = parseFloat((b2Val - b1Val).toFixed(1));
+                                          }
+
+                                          return (
+                                             <tr key={subj} className="hover:bg-white/5">
+                                                <td className="py-2.5 text-white/90 font-black uppercase text-[11px]">{subj}</td>
+                                                <td className="py-2.5 text-center text-white/60">
+                                                   {b1Val !== null ? `${b1Val.toFixed(1)}%` : '-'}
+                                                </td>
+                                                <td className="py-2.5 text-center text-white/90">
+                                                   {b2Val !== null ? `${b2Val.toFixed(1)}%` : '-'}
+                                                </td>
+                                                <td className="py-2.5 text-center">
+                                                   {delta !== null ? (
+                                                      <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-black border ${
+                                                         delta > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                                         delta < 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                                         'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                                                      }`}>
+                                                         {delta > 0 && <ArrowUpRight size={12} />}
+                                                         {delta < 0 && <ArrowDownRight size={12} />}
+                                                         {delta === 0 && <Minus size={12} />}
+                                                         {delta > 0 ? `+${delta}%` : `${delta}%`}
+                                                      </span>
+                                                   ) : '-'}
+                                                </td>
+                                             </tr>
+                                          );
+                                       })}
+                                    </tbody>
+                                 </table>
+                              </div>
+                           );
+                        })}
+                     </div>
                   </div>
                )}
                {displayMode === 'cards' && (
