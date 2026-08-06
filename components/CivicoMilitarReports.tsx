@@ -428,6 +428,7 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
               </div>
             )) : <p className="text-xs text-slate-400 font-bold uppercase text-center py-10">Nenhum aluno com méritos</p>}
           </div>
+        </div>
       </div>
 
       {/* Top Inspection Items Row */}
