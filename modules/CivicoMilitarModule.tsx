@@ -1587,6 +1587,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           </div>
 
           <div className="flex items-center gap-6">
+            <button onClick={handleSyncLocalToCloud} className="text-[10px] flex items-center gap-1 bg-amber-100 hover:bg-amber-200 text-amber-700 px-4 py-2 rounded-full font-black uppercase tracking-widest transition-colors no-print" title="Sincronizar dados deste computador para a nuvem">
+              <RefreshCw size={14} />
+              Migrar Dados
+            </button>
             <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
               <Shield size={14} />
               <span className="text-[10px] font-black uppercase tracking-widest">Rotina Ativa</span>
