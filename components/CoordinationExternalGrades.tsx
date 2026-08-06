@@ -19,7 +19,12 @@ import {
    Lightbulb,
    Save,
    Check,
-   RefreshCw
+   RefreshCw,
+   LayoutGrid,
+   Columns,
+   ArrowUpRight,
+   ArrowDownRight,
+   Minus
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { Assessment, StudentGrade } from '../types';
@@ -70,6 +75,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    const [selectedAssessmentForView, setSelectedAssessmentForView] = useState<Assessment | null>(null);
    const [studentStats, setStudentStats] = useState<Record<string, { attendance: number, activeReferrals: number, civicoBehavior: number }>>({});
    const [selectedStudentHistory, setSelectedStudentHistory] = useState<string | null>(null);
+   const [displayMode, setDisplayMode] = useState<'matriz' | 'comparativo' | 'cards'>('matriz');
+   const [matrixBimestre, setMatrixBimestre] = useState<string>('2º BIMESTRE');
 
    // Cross-referencing Data fetcher
    useEffect(() => {
@@ -532,112 +539,339 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   <div>
                      <h2 className="text-3xl font-black text-white uppercase tracking-tight">Avaliações de Sistema</h2>
-                     <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Resultados SEE / Sistema Estruturado</p>
+                     <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Painel Comparativo de Proficiência (SEE / CAED)</p>
                   </div>
-                  <button
-                     onClick={() => setViewMode('form')}
-                     className="px-8 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20"
-                  >
-                     <Plus size={18} /> Lançar Resultados
-                  </button>
-               </div>
-
-               {/* GRAPH SECTION */}
-               <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md">
-                  <div className="flex justify-between items-center mb-6">
-                     <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                        <TrendingUp size={20} className="text-violet-400" /> Evolução Bimestral
-                     </h3>
-                     <select
-                        value={selectedSubjectChart}
-                        onChange={e => setSelectedSubjectChart(e.target.value)}
-                        className="p-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 focus:ring-2 focus:ring-violet-500/50 text-white/80 [&>option]:bg-gray-900"
-                     >
-                        {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-                     </select>
-                  </div>
-                  <div className="h-[300px] w-full">
-                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                           <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
-                           <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
-                           <Tooltip
-                              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                              contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', backgroundColor: '#1e1b4b', color: '#fff' }}
-                              itemStyle={{ fontSize: '11px', fontWeight: 'bold', color: '#ccc' }}
-                              labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#fff', marginBottom: '4px', textTransform: 'uppercase' }}
-                           />
-                           <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: '#fff' }} />
-                           {activeClasses.map((cls, idx) => (
-                              <Bar
-                                 key={cls}
-                                 dataKey={cls}
-                                 fill={COLORS[idx % COLORS.length]}
-                                 radius={[4, 4, 0, 0]}
-                                 barSize={30}
-                              />
-                           ))}
-                        </BarChart>
-                     </ResponsiveContainer>
-                  </div>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {externalAssessments.map(ass => {
-                     const avg = ass.grades.reduce((acc, g) => acc + g.score, 0) / (ass.grades.length || 1);
-                     const lowPerformers = ass.grades.filter(g => (g.proficiencyLevel === 'BAIXO' || g.proficiencyLevel === 'MUITO_BAIXO')).length;
-
-                     return (
-                        <div key={ass.id} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-sm hover:border-violet-500/30 hover:bg-white/10 transition-all flex flex-col justify-between group backdrop-blur-md">
-                           <div>
-                              <div className="flex justify-between items-start mb-4">
-                                 <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl border border-violet-500/20"><FileBarChart size={24} /></div>
-                                 <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg border ${ass.type === 'CAED' || ass.type === 'SEE' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>{ass.type === 'CAED' ? 'SEE' : ass.type}</span>
-                              </div>
-                              <h4 className="text-lg font-black text-white uppercase leading-tight">{ass.subject}</h4>
-                              <p className="text-[10px] text-white/40 font-bold uppercase mt-1">{ass.className} • {ass.bimestre}</p>
-
-                              <div className="mt-6 grid grid-cols-2 gap-4">
-                                 <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
-                                    <p className="text-[8px] font-black text-white/40 uppercase">Proficiência Média</p>
-                                    <p className="text-xl font-black text-violet-300">{avg.toFixed(1)}%</p>
-                                 </div>
-                                 <div className="bg-red-500/10 p-3 rounded-2xl border border-red-500/20">
-                                    <p className="text-[8px] font-black text-red-400 uppercase">Atenção (Baixo)</p>
-                                    <p className="text-xl font-black text-red-500">{lowPerformers} <span className="text-[10px] text-red-300/60 uppercase">Alunos</span></p>
-                                 </div>
-                              </div>
-                           </div>
-                           <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
-                              <button onClick={() => deleteRecord(ass.id)} className="text-white/20 hover:text-red-400 transition-colors" title="Excluir"><Trash2 size={16} /></button>
-                              <div className="flex gap-2">
-                                 <button
-                                    onClick={() => setSelectedAssessmentForView(ass)}
-                                    className="px-3 py-2 bg-white/5 text-white/60 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 border border-white/10"
-                                 >
-                                    <Search size={12} />
-                                    Ver Alunos
-                                 </button>
-                                 <button
-                                    onClick={() => handleGenerateAIReport(ass)}
-                                    className="px-3 py-2 bg-violet-500/10 text-violet-300 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-violet-500/20 transition-all flex items-center gap-2 border border-violet-500/20"
-                                 >
-                                    <Sparkles size={12} />
-                                    Plano de Ação (IA)
-                                 </button>
-                              </div>
-                           </div>
-                        </div>
-                     );
-                  })}
-                  {externalAssessments.length === 0 && (
-                     <div className="col-span-full py-24 text-center border-2 border-dashed border-white/10 rounded-[3rem] bg-white/5 backdrop-blur-sm">
-                        <BarChart3 size={48} className="mx-auto mb-4 text-white/10" />
-                        <p className="text-white/30 font-black uppercase text-xs tracking-widest">Nenhuma avaliação externa registrada</p>
+                  
+                  <div className="flex items-center gap-3 flex-wrap">
+                     <div className="flex items-center gap-1 bg-white/5 p-1.5 rounded-2xl border border-white/10">
+                        <button
+                           onClick={() => setDisplayMode('matriz')}
+                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                              displayMode === 'matriz' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           }`}
+                        >
+                           <LayoutGrid size={16} /> Matriz por Turma
+                        </button>
+                        <button
+                           onClick={() => setDisplayMode('comparativo')}
+                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                              displayMode === 'comparativo' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           }`}
+                        >
+                           <ArrowUpRight size={16} /> Comparador 1º x 2º Bim.
+                        </button>
+                        <button
+                           onClick={() => setDisplayMode('cards')}
+                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                              displayMode === 'cards' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           }`}
+                        >
+                           <Columns size={16} /> Visão Cards
+                        </button>
                      </div>
-                  )}
+
+                     <button
+                        onClick={() => setViewMode('form')}
+                        className="px-6 py-3.5 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20"
+                     >
+                        <Plus size={18} /> Lançar Resultados
+                     </button>
+                  </div>
                </div>
+
+               {/* MATRIZ DE PROFICIÊNCIA POR TURMA E DISCIPLINA */}
+               {displayMode === 'matriz' && (
+                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-6">
+                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-6">
+                        <div>
+                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                              <LayoutGrid size={20} className="text-violet-400" /> Matriz Comparativa de Proficiência
+                           </h3>
+                           <p className="text-xs text-white/50 font-bold uppercase mt-1">Comparativo de desempenho de todas as turmas lado a lado</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                           <span className="text-xs font-bold text-white/40 uppercase">Filtrar Bimestre:</span>
+                           <select
+                              value={matrixBimestre}
+                              onChange={e => setMatrixBimestre(e.target.value)}
+                              className="p-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                           >
+                              {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => (
+                                 <option key={b} value={b}>{b}</option>
+                              ))}
+                           </select>
+                        </div>
+                     </div>
+
+                     <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse">
+                           <thead>
+                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                                 <th className="py-4 px-6">Turma</th>
+                                 {SUBJECTS.map(subj => (
+                                    <th key={subj} className="py-4 px-4 text-center">{subj}</th>
+                                 ))}
+                                 <th className="py-4 px-6 text-center text-violet-400">Média Geral</th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-white/5">
+                              {(() => {
+                                 const bimeAssessments = allExternalAssessments.filter(a => a.bimestre === matrixBimestre);
+                                 const classesInMatrix = Array.from(new Set(bimeAssessments.map(a => a.className))).sort();
+
+                                 if (classesInMatrix.length === 0) {
+                                    return (
+                                       <tr>
+                                          <td colSpan={SUBJECTS.length + 2} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                             Nenhum resultado lançado para o {matrixBimestre}
+                                          </td>
+                                       </tr>
+                                    );
+                                 }
+
+                                 return classesInMatrix.map(cls => {
+                                    let sumAcc = 0;
+                                    let countAcc = 0;
+
+                                    return (
+                                       <tr key={cls} className="hover:bg-white/5 transition-colors">
+                                          <td className="py-5 px-6 font-black text-sm text-white uppercase flex items-center gap-2">
+                                             <div className="w-2 h-2 rounded-full bg-violet-500"></div>
+                                             {cls}
+                                          </td>
+                                          {SUBJECTS.map(subj => {
+                                             const targetAss = bimeAssessments.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                             if (!targetAss || targetAss.grades.length === 0) {
+                                                return (
+                                                   <td key={subj} className="py-5 px-4 text-center text-white/20 text-xs font-bold">-</td>
+                                                );
+                                             }
+
+                                             const avg = targetAss.grades.reduce((acc, g) => acc + g.score, 0) / targetAss.grades.length;
+                                             sumAcc += avg;
+                                             countAcc++;
+
+                                             let colorClass = 'bg-red-500/20 text-red-300 border-red-500/30';
+                                             if (avg >= 60) colorClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+                                             else if (avg >= 40) colorClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+
+                                             return (
+                                                <td key={subj} className="py-5 px-4 text-center">
+                                                   <button
+                                                      onClick={() => setSelectedAssessmentForView(targetAss)}
+                                                      className={`px-3 py-1.5 rounded-xl border text-xs font-black transition-transform hover:scale-105 ${colorClass}`}
+                                                      title="Clique para ver os alunos"
+                                                   >
+                                                      {avg.toFixed(1)}%
+                                                   </button>
+                                                </td>
+                                             );
+                                          })}
+                                          <td className="py-5 px-6 text-center font-black text-sm text-violet-300">
+                                             {countAcc > 0 ? `${(sumAcc / countAcc).toFixed(1)}%` : '-'}
+                                          </td>
+                                       </tr>
+                                    );
+                                 });
+                              })()}
+                           </tbody>
+                        </table>
+                     </div>
+                  </div>
+               )}
+
+               {/* COMPARATIVO BIMESTRAL (1º X 2º BIMESTRE COM DELTA) */}
+               {displayMode === 'comparativo' && (
+                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-6">
+                     <div className="border-b border-white/10 pb-6">
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                           <ArrowUpRight size={20} className="text-emerald-400" /> Comparativo de Evolução Bimestral (1º Bimestre vs 2º Bimestre)
+                        </h3>
+                        <p className="text-xs text-white/50 font-bold uppercase mt-1">Acompanhamento do avanço ou retrocesso percentual (Δ Delta) por turma e disciplina</p>
+                     </div>
+
+                     <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse">
+                           <thead>
+                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                                 <th className="py-4 px-6">Turma</th>
+                                 <th className="py-4 px-6">Disciplina</th>
+                                 <th className="py-4 px-6 text-center">1º Bimestre</th>
+                                 <th className="py-4 px-6 text-center">2º Bimestre</th>
+                                 <th className="py-4 px-6 text-center">Variação (Δ)</th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-white/5">
+                              {(() => {
+                                 const b1 = allExternalAssessments.filter(a => a.bimestre === '1º BIMESTRE');
+                                 const b2 = allExternalAssessments.filter(a => a.bimestre === '2º BIMESTRE');
+
+                                 const classSubjectPairs = new Set<string>();
+                                 allExternalAssessments.forEach(a => classSubjectPairs.add(`${a.className}___${a.subject}`));
+
+                                 const sortedPairs = Array.from(classSubjectPairs).sort();
+
+                                 if (sortedPairs.length === 0) {
+                                    return (
+                                       <tr>
+                                          <td colSpan={5} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                             Nenhum dado cadastrado para comparação
+                                          </td>
+                                       </tr>
+                                    );
+                                 }
+
+                                 return sortedPairs.map(pair => {
+                                    const [cls, subj] = pair.split('___');
+                                    const ass1 = b1.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                    const ass2 = b2.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+
+                                    const avg1 = ass1 && ass1.grades.length > 0 ? (ass1.grades.reduce((a, g) => a + g.score, 0) / ass1.grades.length) : null;
+                                    const avg2 = ass2 && ass2.grades.length > 0 ? (ass2.grades.reduce((a, g) => a + g.score, 0) / ass2.grades.length) : null;
+
+                                    let delta: number | null = null;
+                                    if (avg1 !== null && avg2 !== null) {
+                                       delta = parseFloat((avg2 - avg1).toFixed(1));
+                                    }
+
+                                    return (
+                                       <tr key={pair} className="hover:bg-white/5 transition-colors">
+                                          <td className="py-5 px-6 font-black text-sm text-white uppercase">{cls}</td>
+                                          <td className="py-5 px-6 font-bold text-xs text-violet-300 uppercase">{subj}</td>
+                                          <td className="py-5 px-6 text-center font-bold text-xs text-white/70">
+                                             {avg1 !== null ? `${avg1.toFixed(1)}%` : '-'}
+                                          </td>
+                                          <td className="py-5 px-6 text-center font-bold text-xs text-white/90">
+                                             {avg2 !== null ? `${avg2.toFixed(1)}%` : '-'}
+                                          </td>
+                                          <td className="py-5 px-6 text-center">
+                                             {delta !== null ? (
+                                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black border ${
+                                                   delta > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                                   delta < 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                                   'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                                                }`}>
+                                                   {delta > 0 && <ArrowUpRight size={14} />}
+                                                   {delta < 0 && <ArrowDownRight size={14} />}
+                                                   {delta === 0 && <Minus size={14} />}
+                                                   {delta > 0 ? `+${delta}%` : `${delta}%`}
+                                                </span>
+                                             ) : (
+                                                <span className="text-white/20 text-xs font-bold">-</span>
+                                             )}
+                                          </td>
+                                       </tr>
+                                    );
+                                 });
+                              })()}
+                           </tbody>
+                        </table>
+                     </div>
+                  </div>
+               )}
+
+               {/* VISÃO CARDS / GRÁFICOS (MODO ORIGINAL) */}
+               {displayMode === 'cards' && (
+                  <>
+                     {/* GRAPH SECTION */}
+                     <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md">
+                        <div className="flex justify-between items-center mb-6">
+                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                              <TrendingUp size={20} className="text-violet-400" /> Evolução Bimestral por Turmas
+                           </h3>
+                           <select
+                              value={selectedSubjectChart}
+                              onChange={e => setSelectedSubjectChart(e.target.value)}
+                              className="p-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 focus:ring-2 focus:ring-violet-500/50 text-white/80 [&>option]:bg-gray-900"
+                           >
+                              {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                           </select>
+                        </div>
+                        <div className="h-[300px] w-full">
+                           <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                                 <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
+                                 <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
+                                 <Tooltip
+                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                    contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', backgroundColor: '#1e1b4b', color: '#fff' }}
+                                    itemStyle={{ fontSize: '11px', fontWeight: 'bold', color: '#ccc' }}
+                                    labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#fff', marginBottom: '4px', textTransform: 'uppercase' }}
+                                 />
+                                 <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: '#fff' }} />
+                                 {activeClasses.map((cls, idx) => (
+                                    <Bar
+                                       key={cls}
+                                       dataKey={cls}
+                                       fill={COLORS[idx % COLORS.length]}
+                                       radius={[4, 4, 0, 0]}
+                                       barSize={30}
+                                    />
+                                 ))}
+                              </BarChart>
+                           </ResponsiveContainer>
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {externalAssessments.map(ass => {
+                           const avg = ass.grades.reduce((acc, g) => acc + g.score, 0) / (ass.grades.length || 1);
+                           const lowPerformers = ass.grades.filter(g => (g.proficiencyLevel === 'BAIXO' || g.proficiencyLevel === 'MUITO_BAIXO')).length;
+
+                           return (
+                              <div key={ass.id} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-sm hover:border-violet-500/30 hover:bg-white/10 transition-all flex flex-col justify-between group backdrop-blur-md">
+                                 <div>
+                                    <div className="flex justify-between items-start mb-4">
+                                       <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl border border-violet-500/20"><FileBarChart size={24} /></div>
+                                       <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg border ${ass.type === 'CAED' || ass.type === 'SEE' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>{ass.type === 'CAED' ? 'SEE' : ass.type}</span>
+                                    </div>
+                                    <h4 className="text-lg font-black text-white uppercase leading-tight">{ass.subject}</h4>
+                                    <p className="text-[10px] text-white/40 font-bold uppercase mt-1">{ass.className} • {ass.bimestre}</p>
+
+                                    <div className="mt-6 grid grid-cols-2 gap-4">
+                                       <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                                          <p className="text-[8px] font-black text-white/40 uppercase">Proficiência Média</p>
+                                          <p className="text-xl font-black text-violet-300">{avg.toFixed(1)}%</p>
+                                       </div>
+                                       <div className="bg-red-500/10 p-3 rounded-2xl border border-red-500/20">
+                                          <p className="text-[8px] font-black text-red-400 uppercase">Atenção (Baixo)</p>
+                                          <p className="text-xl font-black text-red-500">{lowPerformers} <span className="text-[10px] text-red-300/60 uppercase">Alunos</span></p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
+                                    <button onClick={() => deleteRecord(ass.id)} className="text-white/20 hover:text-red-400 transition-colors" title="Excluir"><Trash2 size={16} /></button>
+                                    <div className="flex gap-2">
+                                       <button
+                                          onClick={() => setSelectedAssessmentForView(ass)}
+                                          className="px-3 py-2 bg-white/5 text-white/60 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 border border-white/10"
+                                       >
+                                          <Search size={12} />
+                                          Ver Alunos
+                                       </button>
+                                       <button
+                                          onClick={() => handleGenerateAIReport(ass)}
+                                          className="px-3 py-2 bg-violet-500/10 text-violet-300 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-violet-500/20 transition-all flex items-center gap-2 border border-violet-500/20"
+                                       >
+                                          <Sparkles size={12} />
+                                          Plano de Ação (IA)
+                                       </button>
+                                    </div>
+                                 </div>
+                              </div>
+                           );
+                        })}
+                        {externalAssessments.length === 0 && (
+                           <div className="col-span-full py-24 text-center border-2 border-dashed border-white/10 rounded-[3rem] bg-white/5 backdrop-blur-sm">
+                              <BarChart3 size={48} className="mx-auto mb-4 text-white/10" />
+                              <p className="text-white/30 font-black uppercase text-xs tracking-widest">Nenhuma avaliação externa registrada</p>
+                           </div>
+                        )}
+                     </div>
+                  </>
+               )}
             </div>
          ) : (
             <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500 pb-20">
