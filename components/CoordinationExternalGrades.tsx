@@ -1480,7 +1480,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   </div>
                </div>
             </div>
-         )}(
+         )}
+         {viewMode === 'form' && (
             <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500 pb-20">
                <form onSubmit={handleSave} className="bg-white/5 p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-10 backdrop-blur-md">
                   <div className="flex justify-between items-center border-b border-white/10 pb-8">
