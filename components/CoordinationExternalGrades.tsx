@@ -1381,7 +1381,6 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   </>
                )}
             </div>
-            </div>
          )}
          {viewMode === 'form' && (
             <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500 pb-20">
