@@ -1382,6 +1382,105 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                )}
             </div>
          )}
+
+         {/* MODAL / GUIA DE SUGESTÕES PEDAGÓGICAS DE MELHORIA */}
+         {showPedagogicalGuide && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+               <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar space-y-6 shadow-2xl animate-in zoom-in-95">
+                  <div className="flex justify-between items-start border-b border-white/10 pb-6">
+                     <div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black uppercase mb-2">
+                           <Lightbulb size={14} /> Plano Estratégico de Gestão
+                        </div>
+                        <h3 className="text-2xl font-black text-white uppercase tracking-tight">
+                           Diagnóstico Pedagógico & Ações de Melhoria
+                        </h3>
+                        <p className="text-xs text-white/50 font-bold uppercase mt-1">
+                           Recomendações fundamentadas nos dados do 1º e 2º Bimestres da SEE 2026
+                        </p>
+                     </div>
+                     <button
+                        onClick={() => setShowPedagogicalGuide(false)}
+                        className="p-2.5 text-white/40 hover:text-white hover:bg-white/10 rounded-2xl transition-all"
+                     >
+                        <X size={20} />
+                     </button>
+                  </div>
+
+                  <div className="space-y-6 text-sm">
+                     {/* SEÇÃO 1: AÇÕES PRIORITÁRIAS DE RECOMPOSIÇÃO (URGENTE) */}
+                     <div className="bg-red-500/10 p-6 rounded-3xl border border-red-500/20 space-y-3">
+                        <h4 className="text-base font-black text-red-400 uppercase flex items-center gap-2">
+                           <AlertTriangle size={18} /> 1. Intervenções de Alta Prioridade (Foco Crítico)
+                        </h4>
+                        <ul className="space-y-2 text-xs font-bold text-white/80 list-disc list-inside">
+                           <li>
+                              <strong className="text-white">Ciências no 7º Ano (55% ➔ 31%, Δ -24%):</strong> Registrou a maior queda na escola. Recomenda-se realizar uma reunião de alinhamento com os professores de Ciências e aplicar oficinas de reforço com apoio de experimentos práticos.
+                           </li>
+                           <li>
+                              <strong className="text-white">Matemática nos 7º, 8º e 9º Anos:</strong> Médias estabilizadas abaixo de 50%. Sugere-se trabalhar a recomposição de descritores básicos (Resolução de Problemas, Frações e Geometria) no início de cada aula (Rotina de 10 min de Cálculo Mental).
+                           </li>
+                           <li>
+                              <strong className="text-white">História no 6º Ano (47% ➔ 35%, Δ -12%):</strong> Queda de engajamento na transição para os Anos Finais. Utilizar metodologias ativas e mapas mentais para interpretação de fontes históricas.
+                           </li>
+                        </ul>
+                     </div>
+
+                     {/* SEÇÃO 2: CASE DE SUCESSO (DISSEMINAÇÃO DE BOAS PRÁTICAS) */}
+                     <div className="bg-emerald-500/10 p-6 rounded-3xl border border-emerald-500/20 space-y-3">
+                        <h4 className="text-base font-black text-emerald-400 uppercase flex items-center gap-2">
+                           <Award size={18} /> 2. Destaques Positivos & Boas Práticas (Disseminar)
+                        </h4>
+                        <ul className="space-y-2 text-xs font-bold text-white/80 list-disc list-inside">
+                           <li>
+                              <strong className="text-white">Ciências no 8º Ano (31% ➔ 62%, Δ +31%):</strong> Maior evolução da escola no bimestre! Recomenda-se convidar o professor responsável para compartilhar a metodologia de ensino durante as Horas de Trabalho Pedagógico Coletivo (HTPC).
+                           </li>
+                           <li>
+                              <strong className="text-white">Língua Portuguesa no 9º Ano (55% ➔ 66%, Δ +11%):</strong> Excelente avanço na reta final do Ensino Fundamental. Manter o foco na interpretação textual e simulados preparatórios para as avaliações de saída.
+                           </li>
+                           <li>
+                              <strong className="text-white">Geografia no 7º Ano (32% ➔ 46%, Δ +14%):</strong> Recuperação expressiva de aprendizado.
+                           </li>
+                        </ul>
+                     </div>
+
+                     {/* SEÇÃO 3: ROTEIRO PASSO A PASSO DE MELHORIA PARA A COORDENAÇÃO */}
+                     <div className="bg-violet-500/10 p-6 rounded-3xl border border-violet-500/20 space-y-3">
+                        <h4 className="text-base font-black text-violet-300 uppercase flex items-center gap-2">
+                           <Zap size={18} /> 3. Plano Institucional de Ação em 4 Passos
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
+                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
+                              <span className="text-violet-400 font-black">Passo 1: Reagrupamento</span>
+                              <p className="text-white/70">Organizar turmas de tutoria quinzenal com os alunos sinalizados com tag vermelha (🔴 &lt; 40%).</p>
+                           </div>
+                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
+                              <span className="text-violet-400 font-black">Passo 2: Devolutiva de Aluno</span>
+                              <p className="text-white/70">Apresentar ao aluno seu gráfico de evolução bimestral na aba "Evolução do Aluno" para gerar corresponsabilidade.</p>
+                           </div>
+                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
+                              <span className="text-violet-400 font-black">Passo 3: Metas por Turma</span>
+                              <p className="text-white/70">Pactuar com os professores metas de superação de pelo menos +10% para o 3º Bimestre nas disciplinas em alerta.</p>
+                           </div>
+                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
+                              <span className="text-violet-400 font-black">Passo 4: IA Interventiva</span>
+                              <p className="text-white/70">Usar o botão "Gerar Plano de Intervenção Pedagógica com IA" em cada avaliação para obter roteiro de aula pronto.</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/10 flex justify-end">
+                     <button
+                        onClick={() => setShowPedagogicalGuide(false)}
+                        className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider hover:bg-violet-700 transition-all shadow-lg"
+                     >
+                        Entendido / Fechar
+                     </button>
+                  </div>
+               </div>
+            </div>
+         )}
          {viewMode === 'form' && (
             <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500 pb-20">
                <form onSubmit={handleSave} className="bg-white/5 p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-10 backdrop-blur-md">
