@@ -153,7 +153,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          .from('assessments')
          .select(`
         *,
-        grades (student_id, score, proficiency_level, students(name)),
+        grades (student_id, student_name, student_code, score, proficiency_level, students(name)),
         classrooms (name)
       `)
          .in('type', ['CAED', 'SEE', 'SISTEMA ESTRUTURADO'])
@@ -171,8 +171,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
             description: a.type + ' - ' + a.date,
             max_score: a.max_score,
             grades: a.grades.map((g: any) => ({
-               studentId: g.student_id || 'N/A', 
-               studentName: g.students?.name || 'Aluno',
+               studentId: g.student_id || g.student_code || 'N/A', 
+               studentName: g.students?.name || g.student_name || 'Aluno',
                score: g.score,
                proficiencyLevel: g.proficiency_level
             })),
