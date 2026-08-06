@@ -24,7 +24,9 @@ import {
    Columns,
    ArrowUpRight,
    ArrowDownRight,
-   Minus
+   Minus,
+   Users,
+   UserCheck
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { Assessment, StudentGrade } from '../types';
@@ -75,8 +77,10 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    const [selectedAssessmentForView, setSelectedAssessmentForView] = useState<Assessment | null>(null);
    const [studentStats, setStudentStats] = useState<Record<string, { attendance: number, activeReferrals: number, civicoBehavior: number }>>({});
    const [selectedStudentHistory, setSelectedStudentHistory] = useState<string | null>(null);
-   const [displayMode, setDisplayMode] = useState<'matriz' | 'comparativo' | 'cards'>('matriz');
+   const [displayMode, setDisplayMode] = useState<'matriz' | 'comparativo' | 'alunos_turma' | 'cards'>('matriz');
    const [matrixBimestre, setMatrixBimestre] = useState<string>('2º BIMESTRE');
+   const [selectedStudentClass, setSelectedStudentClass] = useState<string>('6º ANO A');
+   const [studentSearchQuery, setStudentSearchQuery] = useState<string>('');
 
    // Cross-referencing Data fetcher
    useEffect(() => {
@@ -561,6 +565,14 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <ArrowUpRight size={16} /> Comparador 1º x 2º Bim.
                         </button>
                         <button
+                           onClick={() => setDisplayMode('alunos_turma')}
+                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                              displayMode === 'alunos_turma' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           }`}
+                        >
+                           <Users size={16} /> Notas por Aluno (Turma)
+                        </button>
+                        <button
                            onClick={() => setDisplayMode('cards')}
                            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
                               displayMode === 'cards' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
@@ -771,7 +783,167 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   </div>
                )}
 
-               {/* VISÃO CARDS / GRÁFICOS (MODO ORIGINAL) */}
+               {/* NOTAS POR ALUNO - BOLETIM GERAL DA TURMA */}
+               {displayMode === 'alunos_turma' && (
+                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-6">
+                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
+                        <div>
+                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                              <Users size={20} className="text-violet-400" /> Boletim Completo de Alunos da Turma
+                           </h3>
+                           <p className="text-xs text-white/50 font-bold uppercase mt-1">Notas individuais por aluno em todas as disciplinas</p>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                           {/* BUSCA POR NOME DO ALUNO */}
+                           <div className="relative flex-1 md:w-64">
+                              <Search size={16} className="absolute left-3 top-3.5 text-white/40" />
+                              <input
+                                 type="text"
+                                 placeholder="Buscar aluno..."
+                                 value={studentSearchQuery}
+                                 onChange={e => setStudentSearchQuery(e.target.value)}
+                                 className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:bg-white/10 focus:ring-2 focus:ring-violet-500/50"
+                              />
+                           </div>
+
+                           {/* SELETOR DE TURMA */}
+                           <select
+                              value={selectedStudentClass}
+                              onChange={e => setSelectedStudentClass(e.target.value)}
+                              className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                           >
+                              {(() => {
+                                 const availableClasses = Array.from(new Set(allExternalAssessments.map(a => a.className))).sort();
+                                 if (availableClasses.length === 0) return <option value="">Sem turmas</option>;
+                                 return availableClasses.map(cls => <option key={cls} value={cls}>{cls}</option>);
+                              })()}
+                           </select>
+
+                           {/* SELETOR DE BIMESTRE */}
+                           <select
+                              value={matrixBimestre}
+                              onChange={e => setMatrixBimestre(e.target.value)}
+                              className="p-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                           >
+                              {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => (
+                                 <option key={b} value={b}>{b}</option>
+                              ))}
+                           </select>
+                        </div>
+                     </div>
+
+                     <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse">
+                           <thead>
+                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                                 <th className="py-4 px-4 text-center">#</th>
+                                 <th className="py-4 px-6">Nome do Aluno</th>
+                                 {SUBJECTS.map(subj => (
+                                    <th key={subj} className="py-4 px-4 text-center">{subj}</th>
+                                 ))}
+                                 <th className="py-4 px-6 text-center text-violet-400">Média Aluno</th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-white/5">
+                              {(() => {
+                                 // Filtrar assessments da turma e bimestre selecionados
+                                 const targetAssessments = allExternalAssessments.filter(a => 
+                                    a.className === selectedStudentClass && a.bimestre === matrixBimestre
+                                 );
+
+                                 if (targetAssessments.length === 0) {
+                                    return (
+                                       <tr>
+                                          <td colSpan={SUBJECTS.length + 3} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                             Nenhuma avaliação encontrada para a turma {selectedStudentClass} no {matrixBimestre}
+                                          </td>
+                                       </tr>
+                                    );
+                                 }
+
+                                 // Agrupar alunos de todas as disciplinas da turma
+                                 const studentMap = new Map<string, { id: string, name: string, scores: Record<string, number> }>();
+
+                                 targetAssessments.forEach(ass => {
+                                    const subjUpper = ass.subject.toUpperCase();
+                                    ass.grades.forEach(g => {
+                                       const sName = g.studentName;
+                                       if (!studentMap.has(sName)) {
+                                          studentMap.set(sName, {
+                                             id: g.studentId,
+                                             name: sName,
+                                             scores: {}
+                                          });
+                                       }
+                                       studentMap.get(sName)!.scores[subjUpper] = g.score;
+                                    });
+                                 });
+
+                                 let studentList = Array.from(studentMap.values())
+                                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                                 if (studentSearchQuery.trim()) {
+                                    const q = studentSearchQuery.toLowerCase();
+                                    studentList = studentList.filter(s => s.name.toLowerCase().includes(q));
+                                 }
+
+                                 if (studentList.length === 0) {
+                                    return (
+                                       <tr>
+                                          <td colSpan={SUBJECTS.length + 3} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                             Nenhum aluno encontrado com a busca "{studentSearchQuery}"
+                                          </td>
+                                       </tr>
+                                    );
+                                 }
+
+                                 return studentList.map((st, idx) => {
+                                    const scores = Object.values(st.scores);
+                                    const avgStudent = scores.length > 0 ? (scores.reduce((acc, val) => acc + val, 0) / scores.length) : null;
+
+                                    return (
+                                       <tr key={st.name} className="hover:bg-white/5 transition-colors">
+                                          <td className="py-4 px-4 text-center font-bold text-xs text-white/30">{idx + 1}</td>
+                                          <td className="py-4 px-6 font-black text-xs text-white uppercase">{st.name}</td>
+                                          {SUBJECTS.map(subj => {
+                                             const score = st.scores[subj.toUpperCase()];
+                                             if (score === undefined) {
+                                                return <td key={subj} className="py-4 px-4 text-center text-white/20 text-xs font-bold">-</td>;
+                                             }
+
+                                             let colorClass = 'bg-red-500/20 text-red-300 border-red-500/30';
+                                             if (score >= 60) colorClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+                                             else if (score >= 40) colorClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+
+                                             return (
+                                                <td key={subj} className="py-4 px-4 text-center">
+                                                   <span className={`inline-block px-2.5 py-1 rounded-xl border text-xs font-black ${colorClass}`}>
+                                                      {score}%
+                                                   </span>
+                                                </td>
+                                             );
+                                          })}
+                                          <td className="py-4 px-6 text-center">
+                                             {avgStudent !== null ? (
+                                                <span className={`inline-block px-3 py-1 rounded-xl text-xs font-black ${
+                                                   avgStudent >= 60 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' :
+                                                   avgStudent >= 40 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                                                   'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                }`}>
+                                                   {avgStudent.toFixed(1)}%
+                                                </span>
+                                             ) : '-'}
+                                          </td>
+                                       </tr>
+                                    );
+                                 });
+                              })()}
+                           </tbody>
+                        </table>
+                     </div>
+                  </div>
+               )}
                {displayMode === 'cards' && (
                   <>
                      {/* GRAPH SECTION */}
