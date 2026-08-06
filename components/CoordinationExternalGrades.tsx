@@ -1110,11 +1110,16 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                        {SUBJECTS.map(subj => {
                                           const subjUpper = subj.toUpperCase();
                                           
-                                          // Se for 9º ano e não houver turmas do 1º Bimestre registradas com rendimento, usar dado oficial geral (Arte 71%, Mat 65%, Ciênc 63%, LP 55%, Hist 54%, Geog 47%)
+                                          // Se houver dados oficiais de disciplinas_geral do 1º Bimestre
                                           let b1Val: number | null = null;
                                           const b1Ass = gradeAssessments.filter(a => a.subject.toUpperCase() === subjUpper && a.bimestre === '1º BIMESTRE');
-                                          if (b1Ass.length > 0) {
-                                             b1Val = b1Ass.reduce((acc, curr) => acc + curr.averageScore, 0) / b1Ass.length;
+                                          if (grade === '8º ANO') {
+                                             if (subjUpper === 'HISTÓRIA') b1Val = 46;
+                                             else if (subjUpper === 'GEOGRAFIA') b1Val = 40;
+                                             else if (subjUpper === 'MATEMÁTICA') b1Val = 38;
+                                             else if (subjUpper === 'LÍNGUA PORTUGUESA') b1Val = 35;
+                                             else if (subjUpper === 'CIÊNCIAS') b1Val = 31;
+                                             else if (subjUpper === 'ARTE') b1Val = 28;
                                           } else if (grade === '9º ANO') {
                                              if (subjUpper === 'ARTE') b1Val = 71;
                                              else if (subjUpper === 'MATEMÁTICA') b1Val = 65;
@@ -1122,6 +1127,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                              else if (subjUpper === 'LÍNGUA PORTUGUESA') b1Val = 55;
                                              else if (subjUpper === 'HISTÓRIA') b1Val = 54;
                                              else if (subjUpper === 'GEOGRAFIA') b1Val = 47;
+                                          } else if (b1Ass.length > 0) {
+                                             b1Val = b1Ass.reduce((acc, curr) => acc + curr.averageScore, 0) / b1Ass.length;
                                           }
 
                                           let b2Val: number | null = null;
