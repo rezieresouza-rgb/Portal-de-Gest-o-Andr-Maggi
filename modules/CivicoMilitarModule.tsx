@@ -309,98 +309,120 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   });
 
   // 1. Initial Data Load & Sync
+  // Fetch data from Supabase on mount
   useEffect(() => {
-    // A. Inspections
-    try {
-      const savedInspections = localStorage.getItem('civico_militar_inspections_v2');
-      if (savedInspections) {
-        setInspections(JSON.parse(savedInspections));
-      } else {
-        localStorage.setItem('civico_militar_inspections_v2', JSON.stringify([]));
-        setInspections([]);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    // B. Civic Routines
-    try {
-      const savedRoutines = localStorage.getItem('civico_militar_routines_v2');
-      if (savedRoutines) {
-        setRoutines(JSON.parse(savedRoutines));
-      } else {
-        localStorage.setItem('civico_militar_routines_v2', JSON.stringify([]));
-        setRoutines([]);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    // D. Document History
-    try {
-      let currentDocs: any[] = [];
-      const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
-      if (savedDocs) {
-        currentDocs = JSON.parse(savedDocs);
-      }
-      
-      // Migrate v1 docs to v2
-      const oldDocs = localStorage.getItem('civico_militar_documentos_v1');
-      if (oldDocs) {
-        const oldParsed = JSON.parse(oldDocs);
-        const newOnes = oldParsed.filter((oldDoc: any) => !currentDocs.some((d: any) => d.id === oldDoc.id));
-        if (newOnes.length > 0) {
-          currentDocs = [...newOnes, ...currentDocs].sort((a, b) => b.timestamp - a.timestamp);
-          localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(currentDocs));
+    const loadFromSupabase = async () => {
+      try {
+        // Load Inspections
+        const { data: inspData } = await supabase.from('civic_inspections').select('*');
+        if (inspData) {
+          setInspections(inspData.map((i: any) => ({
+            id: i.id,
+            studentId: i.student_id,
+            studentName: i.student_name,
+            className: i.class_name,
+            item: i.item,
+            date: i.date,
+            shift: i.shift,
+            observations: i.observations,
+            responsible: i.responsible
+          })));
         }
-        localStorage.removeItem('civico_militar_documentos_v1');
-      }
 
-      setDocHistory(currentDocs);
-    } catch (e) {
-      console.error(e);
-    }
+        // Load Routines
+        const { data: routData } = await supabase.from('civic_routines').select('*');
+        if (routData) {
+          setRoutines(routData.map((r: any) => ({
+            id: r.id,
+            date: r.date,
+            shift: r.shift,
+            formationOk: r.formation_ok,
+            commandersPresent: r.commanders_present,
+            flagsRaised: r.flags_raised,
+            anthemsSung: r.anthems_sung,
+            marchingOk: r.marching_ok,
+            bulletinRead: r.bulletin_read,
+            responsible: r.responsible
+          })));
+        }
+
+        // Load Documents
+        const { data: docData } = await supabase.from('civic_documents').select('*');
+        if (docData) {
+          setDocHistory(docData.map((d: any) => ({
+            id: d.id,
+            template: d.template,
+            date: d.date,
+            timestamp: d.timestamp,
+            studentName: d.student_name,
+            studentClass: d.student_class,
+            ...d.content
+          })).sort((a: any, b: any) => b.timestamp - a.timestamp));
+        }
+      } catch (err) {
+        console.error('Error loading civic data:', err);
+      }
+    };
+    loadFromSupabase();
   }, []);
 
   // Sync studentStates automatically whenever dbStudents is loaded/updated from Supabase
   useEffect(() => {
     if (!dbStudents || dbStudents.length === 0) return;
 
-    try {
-      const savedScores = localStorage.getItem('civico_militar_student_scores_v3');
-      let saved: StudentBehaviorState[] = [];
-      if (savedScores) {
-        try {
-          saved = JSON.parse(savedScores);
-        } catch (e) {}
-      }
+    const loadStudentData = async () => {
+      try {
+        const { data: behaviors } = await supabase.from('civic_student_behavior').select('*');
+        const { data: occurrences } = await supabase.from('civic_occurrences').select('*');
 
-      // Merge dbStudents with saved scores or create default 8.0 score state
-      const updatedStates: StudentBehaviorState[] = dbStudents.map(dbS => {
-        const existing = saved.find(s => String(s.studentId) === String(dbS.CodigoAluno));
-        if (existing) {
+        const saved: StudentBehaviorState[] = (behaviors || []).map((b: any) => ({
+          studentId: b.student_id,
+          studentName: b.student_name,
+          className: b.class_name,
+          score: parseFloat(b.score),
+          isClassLeader: b.is_class_leader,
+          isCivicHighlight: b.is_civic_highlight,
+          occurrences: (occurrences || []).filter((o: any) => o.student_id === b.student_id).map((o: any) => ({
+            id: o.id,
+            type: o.type,
+            category: o.category,
+            categories: o.categories,
+            points: parseFloat(o.points),
+            date: o.date,
+            observations: o.observations,
+            responsible: o.responsible,
+            disciplinaryMeasure: o.disciplinary_measure,
+            suspensionDays: o.suspension_days,
+            isEscalated: o.is_escalated
+          }))
+        }));
+
+        const updatedStates: StudentBehaviorState[] = dbStudents.map(dbS => {
+          const existing = saved.find(s => String(s.studentId) === String(dbS.CodigoAluno));
+          if (existing) {
+            return {
+              ...existing,
+              studentName: dbS.Nome,
+              className: dbS.Turma
+            };
+          }
           return {
-            ...existing,
+            studentId: dbS.CodigoAluno,
             studentName: dbS.Nome,
-            className: dbS.Turma // Always keep current class in sync with Supabase
+            className: dbS.Turma,
+            score: 8.0,
+            isClassLeader: false,
+            isCivicHighlight: false,
+            occurrences: []
           };
-        }
-        return {
-          studentId: dbS.CodigoAluno,
-          studentName: dbS.Nome,
-          className: dbS.Turma,
-          score: 8.0,
-          isClassLeader: false,
-          isCivicHighlight: false,
-          occurrences: []
-        };
-      });
+        });
 
-      setStudentStates(updatedStates);
-      localStorage.setItem('civico_militar_student_scores_v3', JSON.stringify(updatedStates));
-    } catch (e) {
-      console.error("Error syncing student states:", e);
-    }
+        setStudentStates(updatedStates);
+      } catch (e) {
+        console.error("Error syncing student states from DB:", e);
+      }
+    };
+    loadStudentData();
   }, [dbStudents]);
 
   // Sync state to Supabase when state changes
