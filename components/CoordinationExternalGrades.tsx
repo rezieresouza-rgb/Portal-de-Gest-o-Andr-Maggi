@@ -260,6 +260,12 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          } finally {
             setIsLoadingStudents(false);
          }
+      };
+
+      if (viewMode === 'form') {
+         loadStudents();
+      }
+   }, [form.className, viewMode]);
    // Analytics Logic
    const chartData = useMemo(() => {
       // Filter by selected subject
@@ -1131,6 +1137,5 @@ function SkillsXRay({ assessment }: { assessment: Assessment }) {
       </div>
    );
 }
-
 
 export default CoordinationExternalGrades;
