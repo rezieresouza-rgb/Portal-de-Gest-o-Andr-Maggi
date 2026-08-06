@@ -345,7 +345,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
       ...prev,
       [id]: {
         ...prev[id],
-        [period]: !prev[id]?.[period]
+        [period]: !(prev[id]?.[period] ?? true)
       }
     }));
   };
@@ -419,7 +419,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
           attendance_record_id: recordId,
           student_id: s.CodigoAluno,
           student_name: s.Nome,
-          is_present: attendance[s.CodigoAluno]?.[period] ?? false
+          is_present: attendance[s.CodigoAluno]?.[period] ?? true
         }));
 
         if (studentRecords.length > 0) {
@@ -435,9 +435,8 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
         ? "Chamada atualizada com sucesso!"
         : "Chamada realizada e salva com sucesso!"
       );
-      setSelectedClass('');
-      setExistingRecordIds({});
-      setSelectedPeriods([1]); // Reset periods
+      // Maintain the selected class, periods, etc. on screen and refresh the existing records state
+      fetchStudentsAndAttendance();
 
     } catch (error) {
       console.error('Erro ao salvar chamada:', error);
@@ -623,7 +622,7 @@ const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {
                         <div className="flex gap-1.5">
                           {[1, 2, 3, 4, 5].map(period => {
                             const isSelected = selectedPeriods.includes(period);
-                            const isPresent = attendance[student.CodigoAluno]?.[period] ?? false;
+                            const isPresent = attendance[student.CodigoAluno]?.[period] ?? true;
 
                             return (
                               <div key={period} className="flex flex-col items-center gap-1">
