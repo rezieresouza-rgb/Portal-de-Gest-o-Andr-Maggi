@@ -200,11 +200,11 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    // Apply Global Filters
    useEffect(() => {
       let filtered = allExternalAssessments;
-      if (globalFilterTurma) {
+      if (globalFilterTurma && globalFilterTurma !== 'ALL' && !globalFilterTurma.toLowerCase().startsWith('todas')) {
          filtered = filtered.filter(a => a.className === globalFilterTurma);
       }
-      if (globalFilterSubject) {
-         filtered = filtered.filter(a => a.subject === globalFilterSubject);
+      if (globalFilterSubject && globalFilterSubject !== 'ALL' && !globalFilterSubject.toLowerCase().startsWith('todas')) {
+         filtered = filtered.filter(a => a.subject?.toUpperCase() === globalFilterSubject?.toUpperCase());
       }
       setExternalAssessments(filtered);
    }, [globalFilterTurma, globalFilterSubject, allExternalAssessments]);
@@ -260,17 +260,13 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          } finally {
             setIsLoadingStudents(false);
          }
-      };
-
-      if (viewMode === 'form') {
-         loadStudents();
-      }
-   }, [form.className, viewMode]);
-
    // Analytics Logic
    const chartData = useMemo(() => {
       // Filter by selected subject
-      const filtered = externalAssessments.filter(a => a.subject === selectedSubjectChart);
+      const filtered = externalAssessments.filter(a => 
+         !selectedSubjectChart || 
+         a.subject?.toUpperCase() === selectedSubjectChart?.toUpperCase()
+      );
 
       // Group by Bimestre and Class
       // We want XAxis = Bimestre, Lines = Classes
@@ -294,7 +290,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
    const activeClasses = useMemo(() => {
       const classes = new Set<string>();
-      externalAssessments.filter(a => a.subject === selectedSubjectChart).forEach(a => classes.add(a.className));
+      externalAssessments
+         .filter(a => !selectedSubjectChart || a.subject?.toUpperCase() === selectedSubjectChart?.toUpperCase())
+         .forEach(a => classes.add(a.className));
       return Array.from(classes).sort(); // Sort so colors are consistent-ish
    }, [externalAssessments, selectedSubjectChart]);
 
