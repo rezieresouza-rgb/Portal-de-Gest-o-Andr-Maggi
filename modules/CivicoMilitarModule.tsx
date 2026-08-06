@@ -1272,6 +1272,23 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }, 300);
   };
 
+  const handlePrintBlankDoc = () => {
+    setSelectedStudentForDoc(null);
+    setIsBatchPrinting(false);
+    setDocFields(prev => ({
+      ...prev,
+      studentName: '',
+      studentClass: '',
+      responsibleName: '',
+      responsibleRg: '',
+      responsibleCpf: '',
+      responsibleAddress: ''
+    }));
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
+
   const handleDeleteDocFromHistory = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm('Deseja excluir permanentemente este documento do histórico?')) {
@@ -2535,12 +2552,21 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         </select>
                       </div>
 
-                      <button
-                        onClick={handlePrintBatchTermos}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-1"
-                      >
-                        <Printer size={15} /> Imprimir Termos da Turma ({batchPrintCount} Alunos)
-                      </button>
+                      <div className="flex flex-col gap-2 mt-2">
+                        <button
+                          onClick={handlePrintBatchTermos}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                        >
+                          <Printer size={15} /> Imprimir Termos da Turma ({batchPrintCount} Alunos)
+                        </button>
+                        <button
+                          onClick={handlePrintBlankDoc}
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                          title="Imprimir 1 cópia totalmente em branco para preenchimento manual"
+                        >
+                          <FileText size={14} /> Imprimir 1 Termo em Branco
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -2992,19 +3018,28 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   </div>
 
                   {/* Ações */}
-                  <div className="pt-4 flex gap-4">
+                  <div className="pt-4 flex flex-col gap-2.5">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handlePrintDocument}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                      >
+                        <FileText size={16} /> Imprimir / Salvar PDF
+                      </button>
+                      <button
+                        onClick={handleClearDocForm}
+                        className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-slate-200"
+                        title="Limpar formulário"
+                      >
+                        Limpar
+                      </button>
+                    </div>
                     <button
-                      onClick={handlePrintDocument}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                      onClick={handlePrintBlankDoc}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                      title="Imprimir o documento totalmente em branco com linhas sublinhadas para preenchimento manual à mão"
                     >
-                      <FileText size={16} /> Imprimir / Salvar PDF
-                    </button>
-                    <button
-                      onClick={handleClearDocForm}
-                      className="px-4 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-slate-200"
-                      title="Limpar formulário"
-                    >
-                      Limpar
+                      <Printer size={16} /> 📄 Imprimir Termo em Branco
                     </button>
                   </div>
                 </div>
