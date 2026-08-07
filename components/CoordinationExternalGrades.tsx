@@ -90,6 +90,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    const [studentSubView, setStudentSubView] = useState<'boletim' | 'comparativo'>('boletim');
 
    // Filtros Avançados de Análise
+   const [filterClassroom, setFilterClassroom] = useState<string>('TODAS');
    const [filterSubject, setFilterSubject] = useState<string>('TODAS');
    const [filterPerformanceLevel, setFilterPerformanceLevel] = useState<string>('TODOS'); // 'TODOS' | 'CRITICO' | 'ATENCAO' | 'ADEQUADO' | 'REGRESSAO' | 'EVOLUCAO'
    const [showPedagogicalGuide, setShowPedagogicalGuide] = useState<boolean>(false);
@@ -629,6 +630,23 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">
+                     {/* FILTRO DE TURMA */}
+                     <select
+                        value={filterClassroom}
+                        onChange={e => {
+                           setFilterClassroom(e.target.value);
+                           if (e.target.value !== 'TODAS') {
+                              setSelectedStudentClass(e.target.value);
+                           }
+                        }}
+                        className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase text-white outline-none focus:bg-white/10 [&>option]:bg-gray-900"
+                     >
+                        <option value="TODAS">🏫 Todas as Turmas</option>
+                        {classrooms.map(c => (
+                           <option key={c} value={c}>{c}</option>
+                        ))}
+                     </select>
+
                      {/* FILTRO DE NIVEL DE DESEMPENHO */}
                      <select
                         value={filterPerformanceLevel}
@@ -655,9 +673,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                         ))}
                      </select>
 
-                     {(filterPerformanceLevel !== 'TODOS' || filterSubject !== 'TODAS') && (
+                     {(filterPerformanceLevel !== 'TODOS' || filterSubject !== 'TODAS' || filterClassroom !== 'TODAS') && (
                         <button
-                           onClick={() => { setFilterPerformanceLevel('TODOS'); setFilterSubject('TODAS'); }}
+                           onClick={() => { setFilterPerformanceLevel('TODOS'); setFilterSubject('TODAS'); setFilterClassroom('TODAS'); }}
                            className="px-3 py-2 bg-red-500/20 text-red-300 border border-red-500/30 rounded-xl text-xs font-black uppercase flex items-center gap-1 hover:bg-red-500/30 transition-all"
                         >
                            <FilterX size={14} /> Limpar Filtros
@@ -705,7 +723,10 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <tbody className="divide-y divide-white/5">
                               {(() => {
                                  const bimeAssessments = allExternalAssessments.filter(a => a.bimestre === matrixBimestre);
-                                 const classesInMatrix = Array.from(new Set(bimeAssessments.map(a => a.className))).sort();
+                                 let classesInMatrix = Array.from(new Set(bimeAssessments.map(a => a.className))).sort();
+                                 if (filterClassroom !== 'TODAS') {
+                                    classesInMatrix = classesInMatrix.filter(c => c === filterClassroom);
+                                 }
 
                                  if (classesInMatrix.length === 0) {
                                     return (
@@ -797,7 +818,13 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  const classSubjectPairs = new Set<string>();
                                  allExternalAssessments.forEach(a => classSubjectPairs.add(`${a.className}___${a.subject}`));
 
-                                 const sortedPairs = Array.from(classSubjectPairs).sort();
+                                 let sortedPairs = Array.from(classSubjectPairs).sort();
+                                 if (filterClassroom !== 'TODAS') {
+                                    sortedPairs = sortedPairs.filter(p => p.startsWith(`${filterClassroom}___`));
+                                 }
+                                 if (filterSubject !== 'TODAS') {
+                                    sortedPairs = sortedPairs.filter(p => p.endsWith(`___${filterSubject}`));
+                                 }
 
                                  if (sortedPairs.length === 0) {
                                     return (
