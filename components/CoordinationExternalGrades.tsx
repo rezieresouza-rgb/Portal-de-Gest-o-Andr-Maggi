@@ -37,6 +37,18 @@ import {
 import { useToast } from './Toast';
 import { Assessment, StudentGrade } from '../types';
 import { extractAssessmentResults, generatePedagogicalIntervention } from '../geminiService';
+
+// Helper function to test score performance level match
+const matchesPerformanceFilter = (score: number | null | undefined, levelFilter: string, delta: number | null = null): boolean => {
+   if (levelFilter === 'TODOS') return true;
+   if (score === null || score === undefined || isNaN(score)) return false;
+   if (levelFilter === 'CRITICO') return score < 40;
+   if (levelFilter === 'ATENCAO') return score >= 40 && score < 60;
+   if (levelFilter === 'ADEQUADO') return score >= 60;
+   if (levelFilter === 'REGRESSAO') return delta !== null && delta < 0;
+   if (levelFilter === 'EVOLUCAO') return delta !== null && delta > 0;
+   return true;
+};
 import HabilidadesTodasTurmas from '../data/habilidades_todas_turmas.json';
 import { supabase } from '../supabaseClient';
 import {
@@ -728,11 +740,28 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     classesInMatrix = classesInMatrix.filter(c => c === filterClassroom);
                                  }
 
+                                 // Filtro de Nível de Desempenho na Matriz
+                                 if (filterPerformanceLevel !== 'TODOS') {
+                                    classesInMatrix = classesInMatrix.filter(cls => {
+                                       if (filterSubject !== 'TODAS') {
+                                          const ass = bimeAssessments.find(a => a.className === cls && a.subject.toUpperCase() === filterSubject.toUpperCase());
+                                          const avg = ass && ass.grades.length > 0 ? ass.grades.reduce((acc, g) => acc + g.score, 0) / ass.grades.length : null;
+                                          return matchesPerformanceFilter(avg, filterPerformanceLevel);
+                                       } else {
+                                          return SUBJECTS.some(subj => {
+                                             const ass = bimeAssessments.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                             const avg = ass && ass.grades.length > 0 ? ass.grades.reduce((acc, g) => acc + g.score, 0) / ass.grades.length : null;
+                                             return matchesPerformanceFilter(avg, filterPerformanceLevel);
+                                          });
+                                       }
+                                    });
+                                 }
+
                                  if (classesInMatrix.length === 0) {
                                     return (
                                        <tr>
                                           <td colSpan={SUBJECTS.length + 2} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
-                                             Nenhum resultado lançado para o {matrixBimestre}
+                                             Nenhum resultado corresponde aos filtros selecionados
                                           </td>
                                        </tr>
                                     );
@@ -749,10 +778,13 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                              {cls}
                                           </td>
                                           {SUBJECTS.map(subj => {
+                                             const isSelectedSubj = filterSubject !== 'TODAS' && filterSubject.toUpperCase() === subj.toUpperCase();
+                                             const isDimmedSubj = filterSubject !== 'TODAS' && !isSelectedSubj;
                                              const targetAss = bimeAssessments.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+
                                              if (!targetAss || targetAss.grades.length === 0) {
                                                 return (
-                                                   <td key={subj} className="py-5 px-4 text-center text-white/20 text-xs font-bold">-</td>
+                                                   <td key={subj} className={`py-5 px-4 text-center text-white/20 text-xs font-bold ${isDimmedSubj ? 'opacity-20' : ''}`}>-</td>
                                                 );
                                              }
 
@@ -764,11 +796,14 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                              if (avg >= 60) colorClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
                                              else if (avg >= 40) colorClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
 
+                                             const isMatchPerf = matchesPerformanceFilter(avg, filterPerformanceLevel);
+                                             const highlightPerf = filterPerformanceLevel !== 'TODOS' && isMatchPerf ? 'ring-2 ring-amber-400 font-black scale-105 shadow-lg' : filterPerformanceLevel !== 'TODOS' && !isMatchPerf ? 'opacity-25' : '';
+
                                              return (
-                                                <td key={subj} className="py-5 px-4 text-center">
+                                                <td key={subj} className={`py-5 px-4 text-center ${isDimmedSubj ? 'opacity-20' : ''}`}>
                                                    <button
                                                       onClick={() => setSelectedAssessmentForView(targetAss)}
-                                                      className={`px-3 py-1.5 rounded-xl border text-xs font-black transition-transform hover:scale-105 ${colorClass}`}
+                                                      className={`px-3 py-1.5 rounded-xl border text-xs font-black transition-transform hover:scale-105 ${colorClass} ${highlightPerf}`}
                                                       title="Clique para ver os alunos"
                                                    >
                                                       {avg.toFixed(1)}%
@@ -824,6 +859,17 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  }
                                  if (filterSubject !== 'TODAS') {
                                     sortedPairs = sortedPairs.filter(p => p.endsWith(`___${filterSubject}`));
+                                 }
+                                 if (filterPerformanceLevel !== 'TODOS') {
+                                    sortedPairs = sortedPairs.filter(pair => {
+                                       const [cls, subj] = pair.split('___');
+                                       const ass1 = b1.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                       const ass2 = b2.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                       const avg1 = ass1 && ass1.grades.length > 0 ? (ass1.grades.reduce((a, g) => a + g.score, 0) / ass1.grades.length) : null;
+                                       const avg2 = ass2 && ass2.grades.length > 0 ? (ass2.grades.reduce((a, g) => a + g.score, 0) / ass2.grades.length) : null;
+                                       const delta = avg1 !== null && avg2 !== null ? parseFloat((avg2 - avg1).toFixed(1)) : null;
+                                       return matchesPerformanceFilter(avg2, filterPerformanceLevel, delta);
+                                    });
                                  }
 
                                  if (sortedPairs.length === 0) {
@@ -1006,6 +1052,18 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (studentSearchQuery.trim()) {
                                     const q = studentSearchQuery.toLowerCase();
                                     studentList = studentList.filter(s => s.name.toLowerCase().includes(q));
+                                 }
+
+                                 // Filtro de Nível de Desempenho no Boletim
+                                 if (filterPerformanceLevel !== 'TODOS') {
+                                    studentList = studentList.filter(student => {
+                                       if (filterSubject !== 'TODAS') {
+                                          const sc = student.scores[filterSubject.toUpperCase()];
+                                          return matchesPerformanceFilter(sc, filterPerformanceLevel);
+                                       } else {
+                                          return Object.values(student.scores).some(sc => matchesPerformanceFilter(sc, filterPerformanceLevel));
+                                       }
+                                    });
                                  }
 
                                  if (studentList.length === 0) {
