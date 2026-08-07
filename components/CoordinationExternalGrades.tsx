@@ -1847,7 +1847,6 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                </div>
             </div>
          )}
-      </div>
    );
 };
 
