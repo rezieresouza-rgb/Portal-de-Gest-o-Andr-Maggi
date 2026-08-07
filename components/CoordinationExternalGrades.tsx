@@ -552,68 +552,72 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
       <div className="space-y-8 animate-in fade-in duration-500">
          {viewMode === 'list' ? (
             <div className="space-y-6">
-               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                  <div>
-                     <h2 className="text-3xl font-black text-white uppercase tracking-tight">Avaliações de Sistema</h2>
-                     <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Painel Comparativo de Proficiência (SEE / CAED)</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 flex-wrap">
-                     <div className="flex items-center gap-1 bg-white/5 p-1.5 rounded-2xl border border-white/10">
-                        <button
-                           onClick={() => setDisplayMode('matriz')}
-                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                              displayMode === 'matriz' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
-                           }`}
-                        >
-                           <LayoutGrid size={16} /> Matriz por Turma
-                        </button>
-                        <button
-                           onClick={() => setDisplayMode('comparativo')}
-                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                              displayMode === 'comparativo' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
-                           }`}
-                        >
-                           <ArrowUpRight size={16} /> Comparador 1º x 2º Bim.
-                        </button>
-                        <button
-                           onClick={() => setDisplayMode('alunos_turma')}
-                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                              displayMode === 'alunos_turma' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
-                           }`}
-                        >
-                           <Users size={16} /> Notas por Aluno (Turma)
-                        </button>
-                        <button
-                           onClick={() => setDisplayMode('rendimento_geral')}
-                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                              displayMode === 'rendimento_geral' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
-                           }`}
-                        >
-                           <BarChart2 size={16} /> Rendimento Geral por Ano
-                        </button>
-                        <button
-                           onClick={() => setDisplayMode('cards')}
-                           className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                              displayMode === 'cards' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
-                           }`}
-                        >
-                           <Columns size={16} /> Visão Cards
-                        </button>
+               <div className="flex flex-col gap-6">
+                  {/* LINHA 1: TÍTULO E BOTÕES DE AÇÃO */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                     <div>
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tight">Avaliações de Sistema</h2>
+                        <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Painel Comparativo de Proficiência (SEE / CAED)</p>
                      </div>
 
-                     <button
-                        onClick={() => setShowPedagogicalGuide(true)}
-                        className="px-5 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-xl shadow-amber-500/20 hover:from-amber-600 hover:to-orange-700 transition-all flex items-center gap-2 border border-amber-400/30 animate-pulse"
-                     >
-                        <Lightbulb size={18} /> Sugestões de Melhoria
-                     </button>
+                     <div className="flex items-center gap-3 flex-wrap">
+                        <button
+                           onClick={() => setShowPedagogicalGuide(true)}
+                           className="px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-xl shadow-amber-500/20 hover:from-amber-600 hover:to-orange-700 transition-all flex items-center gap-2 border border-amber-400/30 animate-pulse shrink-0"
+                        >
+                           <Lightbulb size={18} /> Sugestões de Melhoria
+                        </button>
 
+                        <button
+                           onClick={() => setViewMode('form')}
+                           className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20 shrink-0"
+                        >
+                           <Plus size={18} /> Lançar Resultados
+                        </button>
+                     </div>
+                  </div>
+
+                  {/* LINHA 2: ABAS NAVEGAÇÃO DE MODOS DE VISÃO */}
+                  <div className="flex items-center gap-1 bg-white/5 p-1.5 rounded-2xl border border-white/10 overflow-x-auto custom-scrollbar w-full">
                      <button
-                        onClick={() => setViewMode('form')}
-                        className="px-6 py-3.5 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20"
+                        onClick={() => setDisplayMode('matriz')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+                           displayMode === 'matriz' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
                      >
-                        <Plus size={18} /> Lançar Resultados
+                        <LayoutGrid size={16} /> Matriz por Turma
+                     </button>
+                     <button
+                        onClick={() => setDisplayMode('comparativo')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+                           displayMode === 'comparativo' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                     >
+                        <ArrowUpRight size={16} /> Comparador 1º x 2º Bim.
+                     </button>
+                     <button
+                        onClick={() => setDisplayMode('alunos_turma')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+                           displayMode === 'alunos_turma' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                     >
+                        <Users size={16} /> Notas por Aluno (Turma)
+                     </button>
+                     <button
+                        onClick={() => setDisplayMode('rendimento_geral')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+                           displayMode === 'rendimento_geral' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                     >
+                        <BarChart2 size={16} /> Rendimento Geral por Ano
+                     </button>
+                     <button
+                        onClick={() => setDisplayMode('cards')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+                           displayMode === 'cards' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                     >
+                        <Columns size={16} /> Visão Cards
                      </button>
                   </div>
                </div>
