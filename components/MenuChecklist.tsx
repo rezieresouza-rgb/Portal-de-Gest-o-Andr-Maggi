@@ -715,7 +715,11 @@ const MenuChecklist: React.FC = () => {
                     </div>
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase">
                       <span className="text-gray-400">Volume Tot.:</span>
-                      <span className="text-gray-700 font-black">{(Number(record.entrada.mealsServed) + Number(record.principal.mealsServed)) || 0} Refeições</span>
+                      <span className="text-gray-700 font-black">{((Number(record.entrada?.mealsServed) || 0) + (Number(record.principal?.mealsServed) || 0))} Refeições</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+                      <span className="text-gray-400">Repetições:</span>
+                      <span className="text-emerald-700 font-black">{((Number(record.entrada?.repeats) || 0) + (Number(record.principal?.repeats) || 0))} Repetições</span>
                     </div>
                   </div>
 
