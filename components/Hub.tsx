@@ -109,6 +109,15 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['teacher', 'scheduling'].includes(mod.id);
     }
 
+    // Restrição específica para a servidora de login 63148480163 (Edna da Matta Tirolti)
+    const isEdna = user.name?.toUpperCase().includes('EDNA DA MATTA TIROLTI') || 
+                   user.login?.replace(/\D/g, '') === '63148480163' ||
+                   user.cpf?.replace(/\D/g, '') === '63148480163';
+    
+    if (isEdna) {
+      return ['teacher', 'scheduling'].includes(mod.id);
+    }
+
     // Restrição específica para o servidor Genivaldo conforme solicitado (Manutenção, Formação e Patrimônio)
     const isGenivaldo = user.name?.toUpperCase().includes('GENIVALDO') || 
                         user.login?.toUpperCase().includes('GENIVALDO') ||
