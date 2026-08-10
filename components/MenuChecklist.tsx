@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ClipboardCheck,
   Calendar,
@@ -81,9 +81,37 @@ const MenuChecklist: React.FC = () => {
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       console.error("Erro ao carregar histórico diário", e);
-      return [];
     }
   });
+
+  const [historySearchTerm, setHistorySearchTerm] = useState('');
+
+  const sortedHistory = useMemo(() => {
+    let list = [...history];
+
+    if (historySearchTerm.trim()) {
+      const term = historySearchTerm.toLowerCase();
+      list = list.filter(r => {
+        const formattedDate = new Date(r.date + 'T12:00:00').toLocaleDateString('pt-BR');
+        return r.date.includes(term) || formattedDate.includes(term) || r.shift?.toLowerCase().includes(term);
+      });
+    }
+
+    return list.sort((a, b) => {
+      // 1. Data em ordem decrescente (dia mais recente primeiro)
+      const dateCompare = (b.date || '').localeCompare(a.date || '');
+      if (dateCompare !== 0) return dateCompare;
+
+      // 2. Turno (Matutino antes de Vespertino no mesmo dia)
+      const shiftOrder: Record<string, number> = { 'MATUTINO': 1, 'VESPERTINO': 2, 'INTEGRAL': 3, 'NOTURNO': 4 };
+      const orderA = shiftOrder[(a.shift || '').toUpperCase()] || 99;
+      const orderB = shiftOrder[(b.shift || '').toUpperCase()] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+
+      // 3. Timestamp de criação decrescente
+      return (b.timestamp || 0) - (a.timestamp || 0);
+    });
+  }, [history, historySearchTerm]);
 
   const [nutricaoStaff, setNutricaoStaff] = useState<StaffMember[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -684,12 +712,18 @@ const MenuChecklist: React.FC = () => {
               </h3>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
-                <input type="text" placeholder="Data ou Turno..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                <input 
+                  type="text" 
+                  placeholder="Data ou Turno..." 
+                  value={historySearchTerm}
+                  onChange={(e) => setHistorySearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20" 
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {history.length > 0 ? history.map(record => (
+              {sortedHistory.length > 0 ? sortedHistory.map(record => (
                 <div
                   key={record.id}
                   className="bg-white p-6 rounded-[2rem] border border-gray-100 hover:border-emerald-300 hover:shadow-lg transition-all group relative overflow-hidden"
