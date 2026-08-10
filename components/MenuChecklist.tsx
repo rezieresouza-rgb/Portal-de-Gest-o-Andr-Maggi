@@ -16,7 +16,8 @@ import {
   Lock,
   ShieldCheck,
   Save,
-  Edit
+  Edit,
+  Eye
 } from 'lucide-react';
 import { OFFICIAL_MENUS } from '../constants/menus';
 import { supabase } from '../supabaseClient';
@@ -321,13 +322,13 @@ const MenuChecklist: React.FC = () => {
     }
   };
 
-  const loadFromHistory = (record: SavedMealRecord) => {
+  const loadFromHistory = (record: SavedMealRecord, isEdit: boolean = false) => {
     setCurrentRecordId(record.id);
     setServiceDate(record.date);
     setSelectedShift(record.shift || 'MATUTINO');
     setEntrada(record.entrada);
     setPrincipal(record.principal);
-    setIsLocked(true); // Blinda o formulário para apenas leitura
+    setIsLocked(!isEdit); // Se isEdit for true, abre no modo de edição; se false, abre no modo somente leitura (blindado)
     setViewMode('form');
   };
 
@@ -718,28 +719,38 @@ const MenuChecklist: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-4">
                     <button
-                      onClick={() => loadFromHistory(record)}
-                      className="flex items-center justify-center gap-2 text-[9px] font-black text-blue-700 uppercase tracking-widest bg-blue-50 py-2.5 rounded-xl border border-blue-100 hover:bg-blue-100 transition-all"
+                      onClick={() => loadFromHistory(record, false)}
+                      className="flex items-center justify-center gap-1 text-[9px] font-black text-purple-700 uppercase tracking-wider bg-purple-50 py-2.5 px-1 rounded-xl border border-purple-100 hover:bg-purple-100 transition-all"
+                      title="Visualizar registro (Somente Leitura)"
                     >
-                      <Edit size={14} /> Editar
+                      <Eye size={13} /> Visualizar
+                    </button>
+                    <button
+                      onClick={() => loadFromHistory(record, true)}
+                      className="flex items-center justify-center gap-1 text-[9px] font-black text-blue-700 uppercase tracking-wider bg-blue-50 py-2.5 px-1 rounded-xl border border-blue-100 hover:bg-blue-100 transition-all"
+                      title="Editar registro"
+                    >
+                      <Edit size={13} /> Editar
                     </button>
                     <button
                       onClick={async () => {
-                        loadFromHistory(record);
+                        loadFromHistory(record, false);
                         // Pequeno delay para garantir que o DOM atualizou com o registro carregado antes de imprimir
                         setTimeout(() => handleGeneratePDF(record), 500);
                       }}
-                      className="flex items-center justify-center gap-2 text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 py-2.5 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all"
+                      className="flex items-center justify-center gap-1 text-[9px] font-black text-emerald-700 uppercase tracking-wider bg-emerald-50 py-2.5 px-1 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all"
+                      title="Imprimir registro"
                     >
-                      <Printer size={14} /> Imprimir
+                      <Printer size={13} /> Imprimir
                     </button>
                     <button
                       onClick={(e) => deleteFromHistory(record.id, e)}
-                      className="flex items-center justify-center gap-2 text-[9px] font-black text-red-700 uppercase tracking-widest bg-red-50 py-2.5 rounded-xl border border-red-100 hover:bg-red-100 transition-all"
+                      className="flex items-center justify-center gap-1 text-[9px] font-black text-red-700 uppercase tracking-wider bg-red-50 py-2.5 px-1 rounded-xl border border-red-100 hover:bg-red-100 transition-all"
+                      title="Excluir registro"
                     >
-                      <Trash2 size={14} /> Excluir
+                      <Trash2 size={13} /> Excluir
                     </button>
                   </div>
                 </div>
