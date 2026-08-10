@@ -661,7 +661,7 @@ const MenuChecklist: React.FC = () => {
             </div>
           ))}
 
-          <div className="mt-8 grid grid-cols-2 gap-12 px-6">
+          <div className="mt-8 grid grid-cols-2 gap-12 px-6 no-print">
             <div className="text-center">
               <div className="border-t-2 border-black pt-1">
                 <p className="text-[9px] font-black uppercase">Responsável pela Merenda</p>
