@@ -99,15 +99,35 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loanSearch, setLoanSearch] = useState('');
 
+  const fetchAllRows = async (getBuilder: () => any) => {
+    let allRows: any[] = [];
+    let from = 0;
+    const step = 1000;
+    while (true) {
+      const { data, error } = await getBuilder().range(from, from + step - 1);
+      if (error || !data || data.length === 0) break;
+      allRows = allRows.concat(data);
+      if (data.length < step) break;
+      from += step;
+    }
+    return allRows;
+  };
+
   const fetchData = async () => {
     try {
-      // 1. Fetch Books
+      // 1. Fetch Books com paginação completa (superando o limite padrão de 1000 itens do Supabase)
       const [
-        { data: booksData },
-        { data: apaBooksData }
+        booksData,
+        apaBooksData,
+        readersData,
+        loansData,
+        apaLoansData
       ] = await Promise.all([
-        supabase.from('library_books').select('*').order('title'),
-        supabase.from('library_apa_books').select('*').order('title')
+        fetchAllRows(() => supabase.from('library_books').select('*').order('title')),
+        fetchAllRows(() => supabase.from('library_apa_books').select('*').order('title')),
+        fetchAllRows(() => supabase.from('library_readers').select('*').order('name')),
+        fetchAllRows(() => supabase.from('library_loans').select(`*, library_books (title), library_readers (name)`).order('loan_date', { ascending: false })),
+        fetchAllRows(() => supabase.from('library_apa_loans').select(`*, library_apa_books (title), library_readers (name)`).order('loan_date', { ascending: false }))
       ]);
 
       let allBooks: Book[] = [];
@@ -137,12 +157,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       
       setBooks(allBooks);
 
-      // 2. Fetch Readers
-      const { data: readersData } = await supabase
-        .from('library_readers')
-        .select('*')
-        .order('name');
-
+      // 2. Map Readers
       if (readersData) {
         setReaders(readersData.map(r => ({
           id: r.id,
@@ -153,15 +168,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         })));
       }
 
-      // 3. Fetch Loans
-      const [
-        { data: loansData },
-        { data: apaLoansData }
-      ] = await Promise.all([
-        supabase.from('library_loans').select(`*, library_books (title), library_readers (name)`).order('loan_date', { ascending: false }),
-        supabase.from('library_apa_loans').select(`*, library_apa_books (title), library_readers (name)`).order('loan_date', { ascending: false })
-      ]);
-
+      // 3. Map Loans
       let allLoans: Loan[] = [];
 
       const mapLoan = (l: any, isApa: boolean): Loan => ({
