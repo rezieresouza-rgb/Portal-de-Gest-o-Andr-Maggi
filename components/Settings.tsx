@@ -49,6 +49,7 @@ const FUNCTIONS_LIST = [
    { id: "OFICIAL DE GESTÃO EDUCACIONAL", label: "Oficial de Gestão Educacional" },
    { id: "COORDENADOR PEDAGÓGICO", label: "Coordenador Pedagógico" },
    { id: "SECRETÁRIO", label: "Secretário" },
+   { id: "SECRETARIA", label: "Secretaria" },
    { id: "REGÊNCIA", label: "Regência" },
    { id: "MONITOR", label: "Monitor" },
    { id: "BUSCA ATIVA", label: "Busca Ativa" },
