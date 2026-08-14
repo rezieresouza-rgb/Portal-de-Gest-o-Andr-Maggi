@@ -250,7 +250,20 @@ export interface Classroom { id: string; name: string; year: string; shift: Shif
 export interface SecretariatNotification { id: string; title: string; message: string; targetTeacherId?: string; targetClassId?: string; date: string; isRead: boolean; priority: 'ALTA' | 'NORMAL'; }
 export interface Book { id: string; title: string; author: string; category: string; isbn?: string; totalCopies: number; availableCopies: number; location: string; internalRegistration?: string; registrationDate?: string; bookType?: 'AVULSO' | 'COLEÇÃO'; volumeNumber?: string; subtitle?: string; colorTag?: string; coverUrl?: string; synopsis?: string; isApaBook?: boolean; }
 export interface Reader { id: string; name: string; registration: string; class: string; email?: string; }
-export interface Loan { id: string; bookId: string; bookTitle: string; readerId: string; readerName: string; loanDate: string; dueDate: string; status: 'ATIVO' | 'DEVOLVIDO'; returnDate?: string; isApaLoan?: boolean; }
+export interface Loan {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  readerId: string;
+  readerName: string;
+  loanDate: string;
+  dueDate: string;
+  status: 'ATIVO' | 'DEVOLVIDO' | 'RESERVA' | 'RESERVA_DISPONIVEL' | 'CANCELADO';
+  returnDate?: string;
+  isApaLoan?: boolean;
+  reservationDate?: string;
+  notes?: string;
+}
 export interface ChromebookBooking { id: string; stationId: string; date: string; shift: Shift; classes: string[]; teacherName: string; className: string; subject: string; observations: string; timestamp: number; }
 export interface ScienceLabBooking { id: string; date: string; shift: Shift; classes: string[]; teacherName: string; className: string; subject: string; experimentName: string; needsTechnician: boolean; observations: string; timestamp: number; }
 export interface PedagogicalKitchenBooking { id: string; date: string; shift: Shift; classes: string[]; teacherName: string; className: string; subject: string; projectName: string; ingredientsRequested: string; observations: string; timestamp: number; }

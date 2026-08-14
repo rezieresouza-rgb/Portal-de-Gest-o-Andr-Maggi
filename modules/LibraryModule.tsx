@@ -89,7 +89,7 @@ interface GroupedBook {
 }
 
 const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'readers' | 'ai' | 'reports' | 'apa' | 'apa-loans'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'reservations' | 'readers' | 'ai' | 'reports' | 'apa' | 'apa-loans'>('dashboard');
 
   /*
    * MIGRAÇÃO SUPABASE: Biblioteca
@@ -243,6 +243,19 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
   const [isGlobalLoanModalOpen, setIsGlobalLoanModalOpen] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
+
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+  const [reservationForm, setReservationForm] = useState({
+    bookSearch: '',
+    bookId: '',
+    readerSearch: '',
+    readerId: '',
+    notes: ''
+  });
+  const [reservationAlertModal, setReservationAlertModal] = useState<{
+    isOpen: boolean;
+    reservation: Loan | null;
+  } | null>(null);
 
   type LoanFormState = {
     bookSearch: string;
@@ -783,6 +796,91 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const handleCreateReservation = async (bookId: string, readerId: string, notes?: string) => {
+    try {
+      const today = new Date().toLocaleDateString('en-CA');
+      const targetBook = books.find(b => b.id === bookId);
+      if (!targetBook) {
+        alert("Livro não encontrado.");
+        return;
+      }
+
+      const loanTable = targetBook.isApaBook ? 'library_apa_loans' : 'library_loans';
+
+      const { error } = await supabase.from(loanTable).insert([{
+        book_id: bookId,
+        reader_id: readerId,
+        loan_date: today,
+        due_date: today,
+        status: 'RESERVA'
+      }]);
+
+      if (error) throw error;
+
+      await fetchData();
+      alert(`Reserva registrada com sucesso para o livro "${targetBook.title}"!`);
+      setIsReservationModalOpen(false);
+      setReservationForm({ bookSearch: '', bookId: '', readerSearch: '', readerId: '', notes: '' });
+    } catch (err) {
+      console.error("Erro ao criar reserva:", err);
+      alert("Erro ao salvar reserva.");
+    }
+  };
+
+  const handleFulfillReservation = async (reservationLoan: Loan) => {
+    try {
+      const today = new Date().toLocaleDateString('en-CA');
+      const dueDateObj = new Date();
+      dueDateObj.setDate(dueDateObj.getDate() + 15);
+      const dueDateStr = dueDateObj.toLocaleDateString('en-CA');
+
+      const loanTable = reservationLoan.isApaLoan ? 'library_apa_loans' : 'library_loans';
+      const bookTable = reservationLoan.isApaLoan ? 'library_apa_books' : 'library_books';
+
+      const targetBook = books.find(b => b.id === reservationLoan.bookId);
+
+      // 1. Atualizar status da reserva para ATIVO com novas datas
+      const { error } = await supabase
+        .from(loanTable)
+        .update({
+          status: 'ATIVO',
+          loan_date: today,
+          due_date: dueDateStr
+        })
+        .eq('id', reservationLoan.id);
+
+      if (error) throw error;
+
+      // 2. Decrementar exemplar se cópia disponível > 0
+      if (targetBook && targetBook.availableCopies > 0) {
+        await supabase
+          .from(bookTable)
+          .update({ available_copies: Math.max(0, targetBook.availableCopies - 1) })
+          .eq('id', targetBook.id);
+      }
+
+      await fetchData();
+      alert(`Empréstimo efetivado com sucesso para ${reservationLoan.readerName}!`);
+    } catch (err) {
+      console.error("Erro ao efetivar empréstimo:", err);
+      alert("Erro ao efetivar empréstimo da reserva.");
+    }
+  };
+
+  const handleCancelReservation = async (reservationLoan: Loan) => {
+    if (!window.confirm(`Cancelar a reserva do livro "${reservationLoan.bookTitle}" para ${reservationLoan.readerName}?`)) return;
+    try {
+      const loanTable = reservationLoan.isApaLoan ? 'library_apa_loans' : 'library_loans';
+      const { error } = await supabase.from(loanTable).delete().eq('id', reservationLoan.id);
+      if (error) throw error;
+      await fetchData();
+      alert("Reserva cancelada.");
+    } catch (err) {
+      console.error("Erro ao cancelar reserva:", err);
+      alert("Erro ao cancelar reserva.");
+    }
+  };
+
   const handleReturn = async (loan: Loan) => {
     if (!window.confirm("Confirmar devolução do livro?")) return;
     try {
@@ -808,8 +906,25 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           .eq('id', book.id);
       }
 
-      await fetchData();
-      alert("Devolução registrada!");
+      // 3. Checar se existe reserva pendente para este livro
+      const pendingReservation = loans.find(l => l.bookId === loan.bookId && (l.status === 'RESERVA' || l.status === 'RESERVA_DISPONIVEL'));
+
+      if (pendingReservation) {
+        if (pendingReservation.status === 'RESERVA') {
+          await supabase
+            .from(loanTable)
+            .update({ status: 'RESERVA_DISPONIVEL' })
+            .eq('id', pendingReservation.id);
+        }
+        await fetchData();
+        setReservationAlertModal({
+          isOpen: true,
+          reservation: pendingReservation
+        });
+      } else {
+        await fetchData();
+        alert("Devolução registrada com sucesso!");
+      }
     } catch (error) {
       console.error("Erro ao registrar devolução:", error);
       alert("Erro ao registrar devolução.");
@@ -1923,6 +2038,101 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             </div>
           </div>
         );
+      case 'reservations':
+        const reservationsList = loans.filter(l => l.status === 'RESERVA' || l.status === 'RESERVA_DISPONIVEL');
+        const pendingCount = reservationsList.filter(l => l.status === 'RESERVA').length;
+        const availableCount = reservationsList.filter(l => l.status === 'RESERVA_DISPONIVEL').length;
+
+        return (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-md">
+                    <Bookmark size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Fila de Reservas de Livros</h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Gerenciamento de solicitações de leitura</p>
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-lg text-[9px] font-black uppercase border border-amber-100">{pendingCount} Em Fila</span>
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-black uppercase border border-emerald-100">{availableCount} Prontos p/ Retirada</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsReservationModalOpen(true)}
+                  className="px-6 py-3 bg-amber-600 text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-amber-700 transition-all shrink-0"
+                >
+                  <Plus size={16} /> Nova Reserva
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                      <th className="px-8 py-5">Leitor Solicitante</th>
+                      <th className="px-8 py-5">Obra Reservada</th>
+                      <th className="px-8 py-5 text-center">Data da Reserva</th>
+                      <th className="px-8 py-5 text-center">Status na Fila</th>
+                      <th className="px-8 py-5 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm">
+                    {reservationsList.map(res => {
+                      const reader = readers.find(r => r.id === res.readerId);
+                      const book = books.find(b => b.id === res.bookId);
+                      const isReady = res.status === 'RESERVA_DISPONIVEL';
+                      return (
+                        <tr key={res.id} className={`hover:bg-gray-50/50 transition-colors ${isReady ? 'bg-emerald-50/30' : ''}`}>
+                          <td className="px-8 py-6">
+                            <p className="font-black text-gray-900 uppercase">{res.readerName}</p>
+                            <p className="text-[9px] text-gray-400 font-bold uppercase">{reader?.class || 'N/A'}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="font-bold text-indigo-600 uppercase leading-tight">{res.bookTitle}</p>
+                            {book && <p className="text-[9px] text-gray-400 uppercase">{book.author} • Disponíveis: {book.availableCopies}</p>}
+                          </td>
+                          <td className="px-8 py-6 text-center text-[10px] font-black text-gray-400">{formatDate(res.loanDate)}</td>
+                          <td className="px-8 py-6 text-center">
+                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase border ${isReady ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                              {isReady ? '🟢 DISPONÍVEL P/ RETIRADA' : '🟡 EM FILA DE ESPERA'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleFulfillReservation(res)}
+                                className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase hover:bg-emerald-700 transition-all shadow-md flex items-center gap-1.5"
+                              >
+                                <CheckCircle2 size={14} /> Efetivar Empréstimo
+                              </button>
+                              <button
+                                onClick={() => handleCancelReservation(res)}
+                                className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                title="Cancelar Reserva"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {reservationsList.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="text-center py-16 text-gray-300 font-black uppercase text-xs">
+                          Nenhuma reserva pendente na fila
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
       default: return null;
     }
   };
@@ -1936,6 +2146,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
             { id: 'catalog', label: 'Acervo Digital', icon: BookOpen },
             { id: 'loans', label: 'Empréstimos', icon: Clock },
+            { id: 'reservations', label: 'Reservas e Fila', icon: Bookmark },
             { id: 'readers', label: 'Leitores (School)', icon: Users },
             { id: 'apa', label: 'Laboratório APA', icon: BookMarked },
             { id: 'ai', label: 'IA Consultor', icon: BrainCircuit },
@@ -2404,6 +2615,153 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               <div className="space-y-1.5"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">3. Data de Devolução (+15 Dias)</label><input required type="date" value={loanForm.dueDate} onChange={e => setLoanForm({ ...loanForm, dueDate: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none text-indigo-900" /></div>
               <button type="submit" disabled={!loanForm.bookId || !loanForm.readerId} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors mt-4">Confirmar Empréstimo</button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL NOVA RESERVA */}
+      {isReservationModalOpen && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-indigo-950/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3.5rem] w-full max-w-xl shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-8 bg-amber-50 border-b border-amber-100 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-lg">
+                  <Bookmark size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Reservar Livro</h3>
+                  <p className="text-[10px] text-amber-600 font-bold uppercase tracking-widest mt-0.5">Adicionar leitor à fila de espera</p>
+                </div>
+              </div>
+              <button onClick={() => setIsReservationModalOpen(false)} className="p-2 text-gray-400 hover:text-red-500 rounded-xl transition-all">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+              {/* Seleção do Livro */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">1. Selecionar Obra</label>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Digite o título do livro..."
+                    value={reservationForm.bookSearch}
+                    onChange={e => setReservationForm({ ...reservationForm, bookSearch: e.target.value, bookId: '' })}
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none uppercase"
+                  />
+                </div>
+                {reservationForm.bookSearch && !reservationForm.bookId && (
+                  <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-2 max-h-40 overflow-y-auto space-y-1">
+                    {books.filter(b => b.title.toLowerCase().includes(reservationForm.bookSearch.toLowerCase())).slice(0, 5).map(b => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setReservationForm({ ...reservationForm, bookId: b.id, bookSearch: b.title })}
+                        className="w-full text-left p-3 hover:bg-amber-50 rounded-xl transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-black uppercase text-gray-900">{b.title}</p>
+                          <p className="text-[9px] text-gray-400 font-bold uppercase">{b.author} • Disponíveis: {b.availableCopies}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {reservationForm.bookId && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center">
+                    <span className="text-xs font-black uppercase text-amber-900">📚 {reservationForm.bookSearch}</span>
+                    <button type="button" onClick={() => setReservationForm({ ...reservationForm, bookId: '', bookSearch: '' })} className="text-amber-500 hover:text-red-500"><X size={14} /></button>
+                  </div>
+                )}
+              </div>
+
+              {/* Seleção do Leitor */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">2. Selecionar Leitor (Aluno / Servidor)</label>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Digite o nome do leitor ou matrícula..."
+                    value={reservationForm.readerSearch}
+                    onChange={e => setReservationForm({ ...reservationForm, readerSearch: e.target.value, readerId: '' })}
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none uppercase"
+                  />
+                </div>
+                {reservationForm.readerSearch && !reservationForm.readerId && (
+                  <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-2 max-h-40 overflow-y-auto space-y-1">
+                    {readers.filter(r => r.name.toLowerCase().includes(reservationForm.readerSearch.toLowerCase()) || r.registration.includes(reservationForm.readerSearch)).slice(0, 5).map(r => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setReservationForm({ ...reservationForm, readerId: r.id, readerSearch: r.name })}
+                        className="w-full text-left p-3 hover:bg-amber-50 rounded-xl transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-black uppercase text-gray-900">{r.name}</p>
+                          <p className="text-[9px] text-gray-400 font-bold uppercase">{r.class} • MAT: {r.registration}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {reservationForm.readerId && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center">
+                    <span className="text-xs font-black uppercase text-amber-900">👤 {reservationForm.readerSearch}</span>
+                    <button type="button" onClick={() => setReservationForm({ ...reservationForm, readerId: '', readerSearch: '' })} className="text-amber-500 hover:text-red-500"><X size={14} /></button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                disabled={!reservationForm.bookId || !reservationForm.readerId}
+                onClick={() => handleCreateReservation(reservationForm.bookId, reservationForm.readerId, reservationForm.notes)}
+                className="w-full py-5 bg-amber-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl hover:bg-amber-700 disabled:opacity-50 transition-all mt-4"
+              >
+                Confirmar Reserva na Fila
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ALERTA DE DEVOLUÇÃO COM RESERVA PENDENTE */}
+      {reservationAlertModal && reservationAlertModal.isOpen && reservationAlertModal.reservation && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-indigo-950/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3.5rem] w-full max-w-lg shadow-2xl border border-white/20 p-8 space-y-6 text-center">
+            <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-3xl mx-auto flex items-center justify-center shadow-inner">
+              <BellRing size={32} className="animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Livro com Reserva Pendente!</h3>
+              <p className="text-xs text-gray-500 font-bold uppercase mt-2">
+                Este exemplar devolvido é o próximo da fila para:
+              </p>
+              <div className="my-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                <p className="text-lg font-black text-amber-900 uppercase">{reservationAlertModal.reservation.readerName}</p>
+                <p className="text-xs font-bold text-amber-700 uppercase mt-1">Obra: {reservationAlertModal.reservation.bookTitle}</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={async () => {
+                  const res = reservationAlertModal.reservation!;
+                  setReservationAlertModal(null);
+                  await handleFulfillReservation(res);
+                }}
+                className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={18} /> Efetivar Empréstimo Agora
+              </button>
+              <button
+                onClick={() => setReservationAlertModal(null)}
+                className="w-full py-3 bg-gray-100 text-gray-600 rounded-2xl text-xs font-black uppercase hover:bg-gray-200 transition-all"
+              >
+                Guardar no Acervo (Status: Disponível p/ Retirada)
+              </button>
+            </div>
           </div>
         </div>
       )}
