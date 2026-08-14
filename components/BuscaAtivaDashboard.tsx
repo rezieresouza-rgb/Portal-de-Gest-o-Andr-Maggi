@@ -30,7 +30,9 @@ import {
   Plus,
   Filter,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
@@ -38,7 +40,7 @@ import BuscaAtivaStudentProfile from './BuscaAtivaStudentProfile';
 
 
 interface BuscaAtivaDashboardProps {
-  onNavigate: (tab: 'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports') => void;
+  onNavigate: (tab: 'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports' | 'datastudio') => void;
 }
 
 const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate }) => {
@@ -295,6 +297,29 @@ const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate })
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+
+      {/* BANNER ATALHO PARA PAINEL GOOGLE DATA STUDIO */}
+      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 p-6 sm:p-8 rounded-[2.5rem] text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-emerald-800/50">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-emerald-500/20 text-emerald-400 rounded-2xl shrink-0 border border-emerald-500/30">
+            <BarChart3 size={32} />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-black text-amber-400 uppercase tracking-widest bg-amber-500/10 px-3 py-0.5 rounded-full border border-amber-500/20 w-fit">
+              <Sparkles size={10} /> Relatório Oficial COGER / DRE-SINOP / SEDUC-MT
+            </div>
+            <h3 className="text-lg font-black uppercase text-white tracking-tight">Painel Interativo de Busca Ativa no Google Data Studio</h3>
+            <p className="text-xs text-slate-300 font-medium">Acesse o dashboard consolidado em tempo real com indicadores territoriais e filtros por escola.</p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onNavigate('datastudio')}
+          className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all shrink-0 flex items-center gap-2 active:scale-95"
+        >
+          <BarChart3 size={16} /> Abrir Painel Data Studio
+        </button>
+      </div>
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

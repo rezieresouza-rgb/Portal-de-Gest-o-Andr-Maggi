@@ -19,7 +19,8 @@ import {
   Settings2,
   FileBarChart,
   ShieldAlert,
-  ShieldCheck
+  ShieldCheck,
+  BarChart3
 } from 'lucide-react';
 import BuscaAtivaDashboard from '../components/BuscaAtivaDashboard';
 import BuscaAtivaStudentList from '../components/BuscaAtivaStudentManager';
@@ -28,16 +29,18 @@ import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import BuscaAtivaAttendanceHistory from '../components/BuscaAtivaAttendanceHistory';
 import BuscaAtivaContactChannels from '../components/BuscaAtivaContactChannels';
 import BuscaAtivaReports from '../components/BuscaAtivaReports';
+import BuscaAtivaDataStudioPanel from '../components/BuscaAtivaDataStudioPanel';
 
 interface BuscaAtivaModuleProps {
   onExit: () => void;
 }
 
 const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports' | 'datastudio'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
+    { id: 'datastudio', label: 'Painel DRE / Data Studio', icon: BarChart3 },
     { id: 'calendar', label: 'Estratégia 2026', icon: CalendarDays },
     { id: 'attendance', label: 'Conferência de Chamadas', icon: History },
     { id: 'students', label: 'Monitoramento Alunos', icon: Users },
@@ -111,6 +114,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
 
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {activeTab === 'dashboard' && <BuscaAtivaDashboard onNavigate={(tab) => setActiveTab(tab)} />}
+          {activeTab === 'datastudio' && <BuscaAtivaDataStudioPanel />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'attendance' && <BuscaAtivaAttendanceHistory />}
