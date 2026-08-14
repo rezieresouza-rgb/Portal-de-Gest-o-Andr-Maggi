@@ -653,11 +653,68 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       setEditingId(null);
    };
 
+   // --- Contract Expiration Helper ---
+   const getContractInfo = (member: StaffMember) => {
+      if (member.entryProfile !== 'CONTRATADO' || !member.contractTerm?.end) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endParts = member.contractTerm.end.split('-');
+      if (endParts.length !== 3) return null;
+      const endDate = new Date(Number(endParts[0]), Number(endParts[1]) - 1, Number(endParts[2]));
+      const diffTime = endDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const formattedDate = endDate.toLocaleDateString('pt-BR');
+
+      if (diffDays < 0) {
+         return {
+            isExpired: true,
+            label: `CONTRATO VENCIDO EM ${formattedDate}`,
+            color: 'bg-red-100 text-red-700 border-red-300 font-extrabold'
+         };
+      } else if (diffDays <= 30) {
+         return {
+            isExpired: false,
+            isExpiringSoon: true,
+            label: `VENCE EM ${diffDays} DIA${diffDays === 1 ? '' : 'S'} (${formattedDate})`,
+            color: 'bg-amber-100 text-amber-800 border-amber-300 font-extrabold'
+         };
+      } else {
+         return {
+            isExpired: false,
+            isExpiringSoon: false,
+            label: `CONTRATO VIGENTE ATÉ ${formattedDate}`,
+            color: 'bg-blue-50 text-blue-700 border-blue-200'
+         };
+      }
+   };
+
    // --- Stats ---
    const counts = useMemo(() => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let expiredCount = 0;
+      let contratadosCount = 0;
+
+      staff.forEach(s => {
+         if (s.entryProfile === 'CONTRATADO') {
+            contratadosCount++;
+            if (s.contractTerm?.end) {
+               const parts = s.contractTerm.end.split('-');
+               if (parts.length === 3) {
+                  const endDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                  if (endDate.getTime() < today.getTime()) {
+                     expiredCount++;
+                  }
+               }
+            }
+         }
+      });
+
       return {
          ativos: staff.filter(s => s.status === 'EM_ATIVIDADE').length,
          afastados: staff.filter(s => s.status !== 'EM_ATIVIDADE').length,
+         contratos: contratadosCount,
+         vencidos: expiredCount,
          movements: movementsData.length
       };
    }, [staff, movementsData]);
@@ -666,8 +723,14 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       return staff.filter(member => {
          const matchSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) || member.registration.includes(searchTerm);
          const matchRole = roleFilter === 'TODOS' || member.role === roleFilter;
-         const matchStatus = activeTab === 'ativos' ? member.status === 'EM_ATIVIDADE' : activeTab === 'afastados' ? member.status !== 'EM_ATIVIDADE' : true;
-         if (activeTab === 'calendar' || activeTab === 'movements') return true; // Don't filter by status on these tabs
+         const matchStatus = activeTab === 'ativos'
+            ? member.status === 'EM_ATIVIDADE'
+            : activeTab === 'afastados'
+               ? member.status !== 'EM_ATIVIDADE'
+               : activeTab === 'contratos'
+                  ? member.entryProfile === 'CONTRATADO'
+                  : true;
+         if (activeTab === 'calendar' || activeTab === 'movements') return true;
          return matchSearch && matchRole && matchStatus;
       });
    }, [staff, searchTerm, roleFilter, activeTab]);
@@ -799,9 +862,10 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
 
          {/* TABS E FILTROS */}
          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
-            <div className="flex bg-gray-100 p-1.5 rounded-2xl">
+            <div className="flex bg-gray-100 p-1.5 rounded-2xl flex-wrap gap-1">
                {[
                   { id: 'ativos', label: 'Quadro Ativo', icon: Users, count: counts.ativos },
+                  { id: 'contratos', label: 'Contratados', icon: Clock, count: counts.contratos, alertCount: counts.vencidos },
                   { id: 'afastados', label: 'Licenças/Afastados', icon: UserCheck, count: counts.afastados },
                   { id: 'movements', label: 'Histórico RH', icon: History, count: counts.movements },
                   { id: 'calendar', label: 'Calendário', icon: CalendarDays }
@@ -819,6 +883,11 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                            {t.count}
                         </span>
                      )}
+                     {t.alertCount ? (
+                        <span className="px-1.5 py-0.5 rounded-full text-[8px] bg-red-500 text-white font-black" title={`${t.alertCount} contrato(s) vencido(s)`}>
+                           {t.alertCount} VENCIDO{t.alertCount > 1 ? 'S' : ''}
+                        </span>
+                     ) : null}
                   </button>
                ))}
             </div>
@@ -903,7 +972,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                            type="checkbox"
                            className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                            checked={selectedStaffIds.length === filteredStaff.length && filteredStaff.length > 0}
-                           onChange={toggleSelectAll}
+                           onChange={selectAllStaff}
                         />
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                            {selectedStaffIds.length} Selecionados
@@ -920,71 +989,78 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                   </div>
 
                   <div className="divide-y divide-gray-50">
-                     {filteredStaff.length > 0 ? filteredStaff.map(member => (
-                        <div key={member.id} className={`p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:bg-gray-50/50 transition-all group relative ${selectedStaffIds.includes(member.id!) ? 'bg-indigo-50/30' : ''}`}>
-                           {/* Selection Checkbox */}
-                           <div className="absolute left-6 top-1/2 -translate-y-1/2">
-                              <input
-                                 type="checkbox"
-                                 className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                 checked={selectedStaffIds.includes(member.id!)}
-                                 onChange={() => toggleSelectStaff(member.id!)}
-                              />
-                           </div>
-
-                           <div className="flex items-center gap-6 flex-1 pl-8">
-                              <div className="w-16 h-16 bg-white rounded-[1.5rem] border border-gray-100 shadow-sm flex items-center justify-center text-emerald-600 font-black text-xl group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0 shadow-inner overflow-hidden">
-                                 {member.photoUrl ? <img src={member.photoUrl} alt="" className="w-full h-full object-cover" /> : member.name[0]}
+                     {filteredStaff.length > 0 ? filteredStaff.map(member => {
+                        const contractInfo = getContractInfo(member);
+                        return (
+                           <div key={member.id} className={`p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 hover:bg-gray-50/50 transition-all group relative ${selectedStaffIds.includes(member.id!) ? 'bg-indigo-50/30' : ''}`}>
+                              {/* Selection Checkbox */}
+                              <div className="absolute left-6 top-1/2 -translate-y-1/2">
+                                 <input
+                                    type="checkbox"
+                                    className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                    checked={selectedStaffIds.includes(member.id!)}
+                                    onChange={() => toggleSelectStaff(member.id!)}
+                                 />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                 <div className="flex items-center gap-3">
-                                    <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight truncate">{member.name}</h4>
-                                    <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase border shrink-0 ${member.status === 'EM_ATIVIDADE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
-                                       }`}>
-                                       {member.status.replace('_', ' ')}
-                                    </span>
-                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[7px] font-black uppercase border bg-gray-50 border-gray-200 shrink-0">
-                                       {getShiftIcon(member.shift)} {member.shift}
-                                    </span>
-                                 </div>
 
-                                 <div className="flex flex-wrap items-center gap-y-2 gap-x-6 mt-3">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><Fingerprint size={12} className="text-indigo-500" /> CPF: {member.cpf}</span>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><FileBadge size={12} className="text-blue-500" /> MAT: {member.registration}</span>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><ShieldCheck size={12} className="text-emerald-500" /> {member.jobFunction}</span>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><BookOpen size={12} className="text-amber-500" /> {member.qualification}</span>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><Clock size={12} /> {member.workload}h</span>
+                              <div className="flex items-center gap-6 flex-1 pl-8">
+                                 <div className="w-16 h-16 bg-white rounded-[1.5rem] border border-gray-100 shadow-sm flex items-center justify-center text-emerald-600 font-black text-xl group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0 shadow-inner overflow-hidden">
+                                    {member.photoUrl ? <img src={member.photoUrl} alt="" className="w-full h-full object-cover" /> : member.name[0]}
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                       <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight truncate">{member.name}</h4>
+                                       <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase border shrink-0 ${member.status === 'EM_ATIVIDADE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                                          {member.status.replace('_', ' ')}
+                                       </span>
+                                       {contractInfo && (
+                                          <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase border shrink-0 ${contractInfo.color}`}>
+                                             {contractInfo.label}
+                                          </span>
+                                       )}
+                                       <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[7px] font-black uppercase border bg-gray-50 border-gray-200 shrink-0">
+                                          {getShiftIcon(member.shift)} {member.shift}
+                                       </span>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-y-2 gap-x-6 mt-3">
+                                       <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><Fingerprint size={12} className="text-indigo-500" /> CPF: {member.cpf}</span>
+                                       <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><FileBadge size={12} className="text-blue-500" /> MAT: {member.registration}</span>
+                                       <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><ShieldCheck size={12} className="text-emerald-500" /> {member.jobFunction}</span>
+                                       <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><BookOpen size={12} className="text-amber-500" /> {member.qualification}</span>
+                                       <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><Clock size={12} /> {member.workload}h</span>
+                                    </div>
                                  </div>
                               </div>
-                           </div>
 
-                           <div className="flex items-center gap-2 no-print">
-                              <button
-                                 onClick={() => { setSelectedStaff(member); setIsMovementModalOpen(true); }}
-                                 className="px-5 py-3 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-100 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 shadow-sm"
-                              >
-                                 <ArrowRightLeft size={14} /> Movimentar
-                              </button>
-                              
-                              <div className="w-[1px] h-8 bg-gray-100 mx-1"></div>
+                              <div className="flex items-center gap-2 no-print">
+                                 <button
+                                    onClick={() => { setSelectedStaff(member); setIsMovementModalOpen(true); }}
+                                    className="px-5 py-3 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-100 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 shadow-sm"
+                                 >
+                                    <ArrowRightLeft size={14} /> Movimentar
+                                 </button>
+                                 
+                                 <div className="w-[1px] h-8 bg-gray-100 mx-1"></div>
 
-                              <button
-                                 onClick={() => { setForm(member); setEditingId(member.id); setIsModalOpen(true); }}
-                                 className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-gray-100"
-                                 title="Editar Cadastro"
-                              >
-                                 <Edit3 size={18} />
-                              </button>
-                              <button
-                                 onClick={() => handleDelete(member.id)}
-                                 className="p-3 bg-red-50/50 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-red-100"
-                                 title="Excluir Registro Permanente"
-                              >
-                                 <Trash2 size={18} />
-                              </button>
+                                 <button
+                                    onClick={() => { setForm(member); setEditingId(member.id); setIsModalOpen(true); }}
+                                    className="p-3 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-gray-100"
+                                    title="Editar Cadastro"
+                                 >
+                                    <Edit3 size={18} />
+                                 </button>
+                                 <button
+                                    onClick={() => handleDelete(member.id)}
+                                    className="p-3 bg-red-50/50 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-red-100"
+                                    title="Excluir Registro Permanente"
+                                 >
+                                    <Trash2 size={18} />
+                                 </button>
+                              </div>
                            </div>
-                        </div>
-                     )) : (
+                        );
+                     }) : (
                         <div className="p-20 text-center">
                            <p className="text-gray-300 font-bold uppercase tracking-widest text-xs">Nenhum servidor encontrado</p>
                         </div>
