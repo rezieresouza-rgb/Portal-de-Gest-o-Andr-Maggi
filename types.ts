@@ -446,6 +446,7 @@ export type ChromebookPhysicalCondition = 'OTIMO' | 'BOM' | 'COM_AVARIA' | 'INOP
 export interface ChromebookAssetItem {
   id: string;
   assetTag: string;
+  internalNumber?: string;
   serialNumber: string;
   brand: string;
   model: string;

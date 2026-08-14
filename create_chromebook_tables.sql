@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS public.chromebook_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_tag TEXT UNIQUE NOT NULL,
+    internal_number TEXT,
     serial_number TEXT UNIQUE NOT NULL,
     brand TEXT NOT NULL DEFAULT 'Positivo',
     model TEXT NOT NULL DEFAULT 'Chromebook C434',

@@ -49,6 +49,7 @@ const generateInitialChromebooks = (): ChromebookAssetItem[] => {
       list.push({
         id: `cb-${sIdx + 1}-${i}`,
         assetTag: `PAT-CB-${statNum}${numStr}`,
+        internalNumber: numStr,
         serialNumber: `NS-POS-2026-${statNum}${numStr}`,
         brand: 'Positivo',
         model: 'Chromebook C434',
@@ -82,6 +83,7 @@ export const ChromebookManagement: React.FC = () => {
   const [editingCb, setEditingCb] = useState<ChromebookAssetItem | null>(null);
   const [cbForm, setCbForm] = useState({
     assetTag: '',
+    internalNumber: '',
     serialNumber: '',
     brand: 'Positivo',
     model: 'Chromebook C434',
@@ -124,6 +126,7 @@ export const ChromebookManagement: React.FC = () => {
         setChromebooks(cbData.map(c => ({
           id: c.id,
           assetTag: c.asset_tag,
+          internalNumber: c.internal_number || c.asset_tag?.slice(-2) || '',
           serialNumber: c.serial_number,
           brand: c.brand,
           model: c.model,
@@ -134,13 +137,13 @@ export const ChromebookManagement: React.FC = () => {
           notes: c.notes || ''
         })));
       } else {
-        const saved = localStorage.getItem('chromebook_assets_v2');
+        const saved = localStorage.getItem('chromebook_assets_v3');
         if (saved) {
           setChromebooks(JSON.parse(saved));
         } else {
           const initial = generateInitialChromebooks();
           setChromebooks(initial);
-          localStorage.setItem('chromebook_assets_v2', JSON.stringify(initial));
+          localStorage.setItem('chromebook_assets_v3', JSON.stringify(initial));
         }
       }
 
@@ -182,7 +185,7 @@ export const ChromebookManagement: React.FC = () => {
   // Save State to Storage
   const persistChromebooks = async (newList: ChromebookAssetItem[]) => {
     setChromebooks(newList);
-    localStorage.setItem('chromebook_assets_v2', JSON.stringify(newList));
+    localStorage.setItem('chromebook_assets_v3', JSON.stringify(newList));
   };
 
   const persistMaintenance = async (newLogs: ChromebookMaintenanceLog[]) => {
@@ -202,6 +205,7 @@ export const ChromebookManagement: React.FC = () => {
 
         await supabase.from('chromebook_assets').update({
           asset_tag: cbForm.assetTag,
+          internal_number: cbForm.internalNumber,
           serial_number: cbForm.serialNumber,
           brand: cbForm.brand,
           model: cbForm.model,
@@ -223,6 +227,7 @@ export const ChromebookManagement: React.FC = () => {
 
         await supabase.from('chromebook_assets').insert([{
           asset_tag: cbForm.assetTag,
+          internal_number: cbForm.internalNumber,
           serial_number: cbForm.serialNumber,
           brand: cbForm.brand,
           model: cbForm.model,
@@ -258,6 +263,7 @@ export const ChromebookManagement: React.FC = () => {
       newItems.push({
         id: `cb-batch-${Date.now()}-${i}`,
         assetTag: `${batchForm.assetPrefix}${statNum}${numStr}`,
+        internalNumber: numStr,
         serialNumber: `${batchForm.serialPrefix}${statNum}${numStr}`,
         brand: batchForm.brand,
         model: batchForm.model,
@@ -649,6 +655,7 @@ export const ChromebookManagement: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase border-b border-slate-100">
+                  <th className="px-5 py-4">Nº Interno</th>
                   <th className="px-5 py-4">Tombamento / QR</th>
                   <th className="px-5 py-4">Número de Série (N/S)</th>
                   <th className="px-5 py-4">Estação / Armário</th>
@@ -662,6 +669,11 @@ export const ChromebookManagement: React.FC = () => {
               <tbody className="divide-y divide-slate-100 text-xs">
                 {filteredChromebooks.map(c => (
                   <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="px-5 py-4 font-black">
+                      <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-black border border-blue-100">
+                        {c.internalNumber || c.assetTag.slice(-2)}
+                      </span>
+                    </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <button
@@ -704,6 +716,7 @@ export const ChromebookManagement: React.FC = () => {
                             setEditingCb(c);
                             setCbForm({
                               assetTag: c.assetTag,
+                              internalNumber: c.internalNumber || '',
                               serialNumber: c.serialNumber,
                               brand: c.brand,
                               model: c.model,
@@ -811,7 +824,7 @@ export const ChromebookManagement: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveChromebook} className="p-8 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-500 uppercase">Código Tombamento</label>
                   <input
@@ -820,6 +833,17 @@ export const ChromebookManagement: React.FC = () => {
                     value={cbForm.assetTag}
                     onChange={e => setCbForm({ ...cbForm, assetTag: e.target.value })}
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-xs uppercase"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Número Interno</label>
+                  <input
+                    type="text"
+                    placeholder="ex: 01, CB-01"
+                    value={cbForm.internalNumber}
+                    onChange={e => setCbForm({ ...cbForm, internalNumber: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-xs uppercase text-blue-700 bg-blue-50/50 border-blue-200"
                   />
                 </div>
 
