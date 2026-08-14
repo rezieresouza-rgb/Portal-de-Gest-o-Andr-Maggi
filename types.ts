@@ -44,7 +44,7 @@ export interface SchoolCalendarData {
   meses: MonthlyCalendar[];
 }
 
-export type MovementType = 'FÉRIAS' | 'LICENÇA PRÊMIO' | 'ATESTADO' | 'AFASTAMENTO' | 'RETORNO';
+export type MovementType = 'FÉRIAS' | 'LICENÇA PRÊMIO' | 'ATESTADO' | 'AFASTAMENTO' | 'RETORNO' | 'TÉRMINO DE CONTRATO' | 'DESLIGAMENTO';
 
 export interface StaffMovement {
   id: string;

@@ -353,7 +353,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       }
    }, [movementForm.startDate, movementForm.endDate]);
 
-   const MOVEMENT_TYPES: MovementType[] = ['FÉRIAS', 'LICENÇA PRÊMIO', 'ATESTADO', 'AFASTAMENTO', 'RETORNO'];
+   const MOVEMENT_TYPES: MovementType[] = ['TÉRMINO DE CONTRATO', 'DESLIGAMENTO', 'FÉRIAS', 'LICENÇA PRÊMIO', 'ATESTADO', 'AFASTAMENTO', 'RETORNO'];
 
    const handleImportStaffPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -529,6 +529,24 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
          }]).select().single();
 
          if (error) throw error;
+
+         // Atualizar status funcional do servidor conforme o tipo de movimentação
+         let newStatus: string | null = null;
+         if (movementForm.type === 'TÉRMINO DE CONTRATO' || movementForm.type === 'DESLIGAMENTO') {
+            newStatus = 'DESLIGADO';
+         } else if (movementForm.type === 'AFASTAMENTO' || movementForm.type === 'ATESTADO') {
+            newStatus = 'AFASTADO';
+         } else if (movementForm.type === 'FÉRIAS') {
+            newStatus = 'FERIAS';
+         } else if (movementForm.type === 'LICENÇA PRÊMIO') {
+            newStatus = 'LICENCA_PREMIO';
+         } else if (movementForm.type === 'RETORNO') {
+            newStatus = 'EM_ATIVIDADE';
+         }
+
+         if (newStatus && newStatus !== selectedStaff.status) {
+            await supabase.from('staff').update({ status: newStatus }).eq('id', selectedStaff.id);
+         }
 
          await fetchData(); 
          setIsMovementModalOpen(false);
