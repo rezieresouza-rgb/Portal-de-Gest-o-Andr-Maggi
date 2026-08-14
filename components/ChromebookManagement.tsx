@@ -40,11 +40,11 @@ const STATIONS = [
 const generateInitialChromebooks = (): ChromebookAssetItem[] => {
   const list: ChromebookAssetItem[] = [];
   STATIONS.forEach((station, sIdx) => {
-    for (let i = 1; i <= 30; i++) {
+    for (let i = 1; i <= 40; i++) {
       const numStr = String(i).padStart(2, '0');
       const statNum = String(sIdx + 1).padStart(2, '0');
-      const isDefective = (sIdx === 0 && i === 12) || (sIdx === 2 && i === 5);
-      const isMaintenance = (sIdx === 1 && i === 8);
+      const isDefective = (sIdx === 0 && i === 12) || (sIdx === 2 && i === 5) || (sIdx === 3 && i === 34);
+      const isMaintenance = (sIdx === 1 && i === 8) || (sIdx === 4 && i === 19);
 
       list.push({
         id: `cb-${sIdx + 1}-${i}`,
@@ -53,7 +53,7 @@ const generateInitialChromebooks = (): ChromebookAssetItem[] => {
         brand: 'Positivo',
         model: 'Chromebook C434',
         stationId: station,
-        status: isMaintenance ? 'EM_MANUTENCAO' : isDefective ? 'DISPONIVEL' : 'DISPONIVEL',
+        status: isMaintenance ? 'EM_MANUTENCAO' : 'DISPONIVEL',
         condition: isDefective ? 'COM_AVARIA' : 'OTIMO',
         hasCharger: !(sIdx === 0 && i === 12),
         notes: isDefective ? 'Tela com leve arranhão no canto superior direito.' : 'Equipamento em perfeito estado.'
@@ -97,7 +97,7 @@ export const ChromebookManagement: React.FC = () => {
     stationId: STATIONS[0],
     brand: 'Positivo',
     model: 'Chromebook C434',
-    quantity: 30,
+    quantity: 40,
     serialPrefix: 'NS-POS-2026-',
     assetPrefix: 'PAT-CB-'
   });
@@ -134,13 +134,13 @@ export const ChromebookManagement: React.FC = () => {
           notes: c.notes || ''
         })));
       } else {
-        const saved = localStorage.getItem('chromebook_assets_v1');
+        const saved = localStorage.getItem('chromebook_assets_v2');
         if (saved) {
           setChromebooks(JSON.parse(saved));
         } else {
           const initial = generateInitialChromebooks();
           setChromebooks(initial);
-          localStorage.setItem('chromebook_assets_v1', JSON.stringify(initial));
+          localStorage.setItem('chromebook_assets_v2', JSON.stringify(initial));
         }
       }
 
@@ -182,7 +182,7 @@ export const ChromebookManagement: React.FC = () => {
   // Save State to Storage
   const persistChromebooks = async (newList: ChromebookAssetItem[]) => {
     setChromebooks(newList);
-    localStorage.setItem('chromebook_assets_v1', JSON.stringify(newList));
+    localStorage.setItem('chromebook_assets_v2', JSON.stringify(newList));
   };
 
   const persistMaintenance = async (newLogs: ChromebookMaintenanceLog[]) => {
@@ -566,7 +566,7 @@ export const ChromebookManagement: React.FC = () => {
                     </div>
 
                     {/* GRID DE CHROMEBOOKS DO ARMÁRIO */}
-                    <div className="grid grid-cols-6 gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-100 max-h-48 overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-8 sm:grid-cols-10 gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-100 max-h-64 overflow-y-auto custom-scrollbar">
                       {stationCbs.map(c => {
                         const isOk = c.status === 'DISPONIVEL' && c.condition !== 'COM_AVARIA';
                         const isMain = c.status === 'EM_MANUTENCAO';
