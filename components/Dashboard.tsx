@@ -39,11 +39,12 @@ const Dashboard: React.FC = () => {
   const studentCount = students.length;
 
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [paymentGuides, setPaymentGuides] = useState<any[]>([]);
   const [isLoadingContracts, setIsLoadingContracts] = useState(true);
   const [showDebtDeclarationModal, setShowDebtDeclarationModal] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-  // Carrega contratos (do Supabase com fallback local/mock)
+  // Carrega contratos e guias de recebimento (do Supabase com fallback local/mock)
   useEffect(() => {
     const fetchContractsData = async () => {
       try {
@@ -91,6 +92,18 @@ const Dashboard: React.FC = () => {
           });
           setContracts(guaranteedContracts);
         }
+
+        // Buscar Guias de Recebimento
+        const { data: guidesData, error: guidesErr } = await supabase
+          .from('payment_guides')
+          .select(`
+            *,
+            statement:consumption_statements(id, statement_number, payment_date, invoice_number)
+          `);
+
+        if (!guidesErr && guidesData) {
+          setPaymentGuides(guidesData);
+        }
       } catch (err) {
         console.error("Erro ao carregar contratos no Dashboard:", err);
       } finally {
@@ -113,7 +126,29 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  // Consolidação Estratégica dos Contratos
+  // Estatísticas de Guias por Contrato (Pagas vs Em Aberto)
+  const perContractGuideStats = useMemo(() => {
+    const map: Record<string, { totalGuidesValue: number; paidGuidesValue: number; openGuidesValue: number; guidesCount: number; openGuidesCount: number; paidGuidesCount: number }> = {};
+
+    contracts.forEach(c => {
+      const cGuides = paymentGuides.filter(g => g.contract_id === c.id);
+      const paidG = cGuides.filter(g => (g.statement && g.statement.payment_date) || g.status === 'PAGO');
+      const openG = cGuides.filter(g => !(g.statement && g.statement.payment_date) && g.status !== 'PAGO');
+
+      map[c.id] = {
+        totalGuidesValue: cGuides.reduce((sum, g) => sum + Number(g.total_value || 0), 0),
+        paidGuidesValue: paidG.reduce((sum, g) => sum + Number(g.total_value || 0), 0),
+        openGuidesValue: openG.reduce((sum, g) => sum + Number(g.total_value || 0), 0),
+        guidesCount: cGuides.length,
+        openGuidesCount: openG.length,
+        paidGuidesCount: paidG.length
+      };
+    });
+
+    return map;
+  }, [contracts, paymentGuides]);
+
+  // Consolidação Estratégica dos Contratos e Guias
   const stats = useMemo(() => {
     let globalValue = 0;
     let totalSpent = 0;
@@ -146,6 +181,19 @@ const Dashboard: React.FC = () => {
       });
     });
 
+    // Totais Consolidados de Guias de Recebimento
+    const totalPaidGuidesSum = paymentGuides
+      .filter(g => (g.statement && g.statement.payment_date) || g.status === 'PAGO')
+      .reduce((sum, g) => sum + Number(g.total_value || 0), 0);
+
+    const totalOpenGuidesSum = paymentGuides
+      .filter(g => !(g.statement && g.statement.payment_date) && g.status !== 'PAGO')
+      .reduce((sum, g) => sum + Number(g.total_value || 0), 0);
+
+    const totalGuidesSum = paymentGuides.reduce((sum, g) => sum + Number(g.total_value || 0), 0);
+    const openGuidesCount = paymentGuides.filter(g => !(g.statement && g.statement.payment_date) && g.status !== 'PAGO').length;
+    const paidGuidesCount = paymentGuides.filter(g => (g.statement && g.statement.payment_date) || g.status === 'PAGO').length;
+
     const remainingValue = Math.max(0, globalValue - totalSpent);
     const executionPercent = globalValue > 0 ? (totalSpent / globalValue) * 100 : 0;
 
@@ -156,9 +204,15 @@ const Dashboard: React.FC = () => {
       executionPercent,
       contractsCount: contracts.length,
       expiringSoonCount,
-      criticalContractItems: criticalContractItems.sort((a, b) => b.consumed - a.consumed).slice(0, 5)
+      criticalContractItems: criticalContractItems.sort((a, b) => b.consumed - a.consumed).slice(0, 5),
+      totalPaidGuidesSum,
+      totalOpenGuidesSum,
+      totalGuidesSum,
+      openGuidesCount,
+      paidGuidesCount,
+      totalGuidesCount: paymentGuides.length
     };
-  }, [contracts]);
+  }, [contracts, paymentGuides]);
 
   const chartData = [
     { name: 'Valor Executado (Recebido)', valor: stats.totalSpent },
@@ -455,9 +509,9 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h3 className="text-base sm:text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-              <Wallet className="text-emerald-600" size={20} /> Acompanhamento Detalhado dos Contratos
+              <Wallet className="text-emerald-600" size={20} /> Acompanhamento Detalhado dos Contratos e Guias
             </h3>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Valores Já Pagos (Entregues) vs. Valores A Pagar (Saldo Pendente)</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Guias Pagas (Quitadas com NF) vs. Guias em Aberto (Débitos Lançados)</p>
           </div>
           <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 uppercase">
             {contracts.length} Contratos Auditados
@@ -469,18 +523,16 @@ const Dashboard: React.FC = () => {
             <thead>
               <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
                 <th className="px-6 py-4">Contrato / Fornecedor</th>
-                <th className="px-6 py-4 text-right">Valor Global</th>
-                <th className="px-6 py-4 text-right">Valor Já Pago</th>
-                <th className="px-6 py-4 text-right">Valor A Pagar</th>
-                <th className="px-6 py-4 text-center">Progresso</th>
+                <th className="px-6 py-4 text-center">Guias Lançadas</th>
+                <th className="px-6 py-4 text-right">Total das Guias</th>
+                <th className="px-6 py-4 text-right">Guias Pagas</th>
+                <th className="px-6 py-4 text-right">Guias em Aberto (Débito)</th>
+                <th className="px-6 py-4 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {contracts.map(c => {
-                const totalGlobal = (c.items || []).reduce((acc, i) => acc + (i.contractedQuantity * i.unitPrice), 0);
-                const totalPaid = (c.items || []).reduce((acc, i) => acc + (i.acquiredQuantity * i.unitPrice), 0);
-                const totalToPay = Math.max(0, totalGlobal - totalPaid);
-                const percentPaid = totalGlobal > 0 ? (totalPaid / totalGlobal) * 100 : 0;
+                const gStats = perContractGuideStats[c.id] || { totalGuidesValue: 0, paidGuidesValue: 0, openGuidesValue: 0, guidesCount: 0, openGuidesCount: 0, paidGuidesCount: 0 };
 
                 return (
                   <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
@@ -488,32 +540,41 @@ const Dashboard: React.FC = () => {
                       <p className="font-black text-gray-900 text-xs uppercase leading-tight">{c.number}</p>
                       <p className="text-[10px] text-gray-400 font-bold uppercase truncate mt-0.5">{c.supplierName}</p>
                     </td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-700 text-xs">
+                      <span className="bg-gray-100 px-2.5 py-1 rounded-lg font-black text-[10px]">{gStats.guidesCount} Guias</span>
+                    </td>
                     <td className="px-6 py-4 text-right font-black text-gray-900 text-xs">
-                      R$ {totalGlobal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      R$ {gStats.totalGuidesValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4 text-right font-black text-emerald-600 text-xs">
-                      R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      R$ {gStats.paidGuidesValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4 text-right font-black text-blue-600 text-xs">
-                      R$ {totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className={gStats.openGuidesValue > 0 ? 'text-red-600 bg-red-50 px-2 py-1 rounded-md' : 'text-gray-400'}>
+                        R$ {gStats.openGuidesValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="w-24 bg-gray-100 h-2 rounded-full mx-auto overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 transition-all duration-700"
-                          style={{ width: `${Math.min(100, percentPaid)}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] font-black text-gray-500 mt-1 block">
-                        {percentPaid.toFixed(0)}% Pago
-                      </span>
+                      {gStats.openGuidesCount > 0 ? (
+                        <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-[9px] font-black uppercase rounded-full">
+                          {gStats.openGuidesCount} Pendentes
+                        </span>
+                      ) : gStats.guidesCount > 0 ? (
+                        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full">
+                          100% Quitadas
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 bg-gray-100 text-gray-400 text-[9px] font-black uppercase rounded-full">
+                          Sem Guias
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
               })}
               {contracts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-gray-300 font-black uppercase text-xs">
+                  <td colSpan={6} className="text-center py-10 text-gray-300 font-black uppercase text-xs">
                     Nenhum contrato cadastrado
                   </td>
                 </tr>
@@ -534,7 +595,7 @@ const Dashboard: React.FC = () => {
                   <FileText size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">Declaração de Débitos em Aberto</h3>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Declaração de Débitos de Guias em Aberto</h3>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Documento oficial pronto para impressão em PDF</p>
                 </div>
               </div>
@@ -547,7 +608,7 @@ const Dashboard: React.FC = () => {
                       if (element && (window as any).html2pdf) {
                         const opt = {
                           margin: [10, 10, 10, 10],
-                          filename: `Declaracao_Debitos_Em_Aberto_${new Date().toISOString().split('T')[0]}.pdf`,
+                          filename: `Declaracao_Debitos_Guias_Em_Aberto_${new Date().toISOString().split('T')[0]}.pdf`,
                           image: { type: 'jpeg', quality: 0.98 },
                           html2canvas: { scale: 2, useCORS: true },
                           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -583,7 +644,7 @@ const Dashboard: React.FC = () => {
                 {/* Header Timbrado */}
                 <div className="text-center border-b-2 border-gray-800 pb-4 space-y-1">
                   <p className="text-[11px] font-black uppercase tracking-widest text-gray-700">ESTADO DE MATO GROSSO • SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC</p>
-                  <h1 className="text-base font-black uppercase text-gray-900">ESCOLA ESTADUAL ANDRÉ MAGGI</h1>
+                  <h1 className="text-base font-black uppercase text-gray-900">ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ MAGGI</h1>
                   <p className="text-[10px] font-bold text-gray-600 uppercase">CÓDIGO INEP: 51007890 • COLÍDER / MT</p>
                   <p className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider">CONSELHO DELIBERATIVO DA COMUNIDADE ESCOLAR - CDCE • ALIMENTAÇÃO ESCOLAR</p>
                 </div>
@@ -591,17 +652,17 @@ const Dashboard: React.FC = () => {
                 {/* Document Title */}
                 <div className="text-center my-6">
                   <h2 className="text-lg font-black uppercase tracking-tight text-gray-900 underline decoration-red-600 decoration-2 underline-offset-4">
-                    DECLARAÇÃO DE DÉBITOS E SALDOS EM ABERTO
+                    DECLARAÇÃO DE DÉBITOS DE GUIAS EM ABERTO
                   </h2>
                   <p className="text-[10px] font-bold uppercase text-gray-500 mt-1">
-                    Demonstrativo Oficial de Execução e Saldo Devedor por Fornecedor (Exercício 2026)
+                    Demonstrativo Oficial de Guias de Recebimento Pendentes de Quitação Financeira
                   </p>
                 </div>
 
                 {/* Declaratory Text */}
                 <div className="text-xs text-gray-800 leading-relaxed text-justify space-y-2">
                   <p>
-                    Declaramos, para os devidos fins de direito, prestação de contas e fiscalização financeira perante a Secretaria de Estado de Educação de Mato Grosso (SEDUC/MT) e órgãos de controle, que a Unidade Escolar <b>E.E. André Maggi</b> apresenta o seguinte demonstrativo consolidado de débitos e saldos financeiros pendentes de quitação relativos aos contratos vigentes de fornecimento de Alimentação Escolar na presente data:
+                    Declaramos, para os devidos fins de direito, prestação de contas e fiscalização financeira perante a Secretaria de Estado de Educação de Mato Grosso (SEDUC/MT) e órgãos de controle, que a Unidade Escolar <b>E.E. André Maggi</b> apresenta o seguinte demonstrativo consolidado de <b>Guias de Recebimento</b> lançadas no sistema e pendentes de quitação financeira por fornecedor na presente data:
                   </p>
                 </div>
 
@@ -610,47 +671,48 @@ const Dashboard: React.FC = () => {
                   <table className="w-full text-left border-collapse border border-gray-300">
                     <thead>
                       <tr className="bg-gray-100 text-[10px] font-black uppercase text-gray-800 border-b border-gray-300">
-                        <th className="p-2.5 border-r border-gray-300">Nº Contrato</th>
-                        <th className="p-2.5 border-r border-gray-300">Fornecedor / Licitante</th>
-                        <th className="p-2.5 border-r border-gray-300 text-right">Valor Global (R$)</th>
-                        <th className="p-2.5 border-r border-gray-300 text-right">Valor Já Pago (R$)</th>
-                        <th className="p-2.5 text-right font-black text-red-700 bg-red-50">Débito em Aberto (R$)</th>
+                        <th className="p-2 border-r border-gray-300">Nº Contrato</th>
+                        <th className="p-2 border-r border-gray-300">Fornecedor / Licitante</th>
+                        <th className="p-2 border-r border-gray-300 text-center">Guias Lançadas</th>
+                        <th className="p-2 border-r border-gray-300 text-right">Valor Guias (R$)</th>
+                        <th className="p-2 border-r border-gray-300 text-right text-emerald-800">Guias Pagas (R$)</th>
+                        <th className="p-2 text-right font-black text-red-700 bg-red-50">Débito em Aberto (R$)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-300 text-[11px]">
+                    <tbody className="divide-y divide-gray-300 text-[10px]">
                       {contracts.map(c => {
-                        const totalGlobal = (c.items || []).reduce((acc, i) => acc + (i.contractedQuantity * i.unitPrice), 0);
-                        const totalPaid = (c.items || []).reduce((acc, i) => acc + (i.acquiredQuantity * i.unitPrice), 0);
-                        const debt = Math.max(0, totalGlobal - totalPaid);
+                        const gStats = perContractGuideStats[c.id] || { totalGuidesValue: 0, paidGuidesValue: 0, openGuidesValue: 0, guidesCount: 0, openGuidesCount: 0, paidGuidesCount: 0 };
 
                         return (
                           <tr key={c.id}>
-                            <td className="p-2.5 border-r border-gray-300 font-bold">{c.number}</td>
-                            <td className="p-2.5 border-r border-gray-300 font-bold uppercase">{c.supplierName}</td>
-                            <td className="p-2.5 border-r border-gray-300 text-right font-medium">
-                              {totalGlobal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <td className="p-2 border-r border-gray-300 font-bold">{c.number}</td>
+                            <td className="p-2 border-r border-gray-300 font-bold uppercase">{c.supplierName}</td>
+                            <td className="p-2 border-r border-gray-300 text-center font-bold">{gStats.guidesCount}</td>
+                            <td className="p-2 border-r border-gray-300 text-right font-medium">
+                              {gStats.totalGuidesValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td className="p-2.5 border-r border-gray-300 text-right font-bold text-emerald-700">
-                              {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <td className="p-2 border-r border-gray-300 text-right font-bold text-emerald-700">
+                              {gStats.paidGuidesValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td className="p-2.5 text-right font-black text-red-700 bg-red-50/50">
-                              {debt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <td className="p-2 text-right font-black text-red-700 bg-red-50/50">
+                              {gStats.openGuidesValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-gray-900 text-white font-black text-[11px] uppercase">
-                        <td colSpan={2} className="p-3">TOTAL GERAL CONSOLIDADO</td>
-                        <td className="p-3 text-right">
-                          R$ {stats.globalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <tr className="bg-gray-900 text-white font-black text-[10px] uppercase">
+                        <td colSpan={2} className="p-2.5">TOTAL GERAL CONSOLIDADO</td>
+                        <td className="p-2.5 text-center">{stats.totalGuidesCount}</td>
+                        <td className="p-2.5 text-right">
+                          R$ {stats.totalGuidesSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="p-3 text-right text-emerald-400">
-                          R$ {stats.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="p-2.5 text-right text-emerald-400">
+                          R$ {stats.totalPaidGuidesSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="p-3 text-right text-red-400 bg-red-950/40">
-                          R$ {stats.remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="p-2.5 text-right text-red-400 bg-red-950/40">
+                          R$ {stats.totalOpenGuidesSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                       </tr>
                     </tfoot>
@@ -659,12 +721,12 @@ const Dashboard: React.FC = () => {
 
                 {/* Summary Statement */}
                 <div className="bg-red-50 border border-red-200 p-4 rounded-xl text-center space-y-1">
-                  <p className="text-[10px] font-black text-red-900 uppercase">MONTANTE TOTAL EM ABERTO / DÉBITOS PENDENTES:</p>
+                  <p className="text-[10px] font-black text-red-900 uppercase">MONTANTE TOTAL EM ABERTO (GUIAS LANÇADAS PENDENTES):</p>
                   <p className="text-2xl font-black text-red-700">
-                    R$ {stats.remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    R$ {stats.totalOpenGuidesSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p className="text-[9px] font-bold text-red-600 uppercase">
-                    ({(100 - stats.executionPercent).toFixed(1)}% do saldo total orçamentário dos contratos vigentes)
+                    (Soma referente a {stats.openGuidesCount} guias de recebimento lançadas no sistema aguardando quitação financeira)
                   </p>
                 </div>
 
@@ -699,4 +761,5 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+
 
