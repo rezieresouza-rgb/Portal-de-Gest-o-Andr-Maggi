@@ -1,184 +1,178 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ExternalLink,
-  RefreshCw,
-  Maximize2,
-  Minimize2,
   BarChart3,
   ShieldCheck,
   Globe,
   Sparkles,
-  Info,
-  Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Users,
+  AlertTriangle,
+  FileText,
+  TrendingUp,
+  CheckCircle2,
+  ArrowRight
 } from 'lucide-react';
 
 export const BuscaAtivaDataStudioPanel: React.FC = () => {
-  const embedUrl = "https://lookerstudio.google.com/embed/reporting/69029f48-46b1-4455-8e48-a4da2c834f74/page/p_xjvkf08ykd";
   const directUrl = "https://datastudio.google.com/u/0/reporting/69029f48-46b1-4455-8e48-a4da2c834f74/page/p_xjvkf08ykd";
 
-  const [iframeKey, setIframeKey] = useState<number>(0);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [hasError, setHasError] = useState<boolean>(false);
-
-  const handleRefresh = () => {
-    setIframeKey(prev => prev + 1);
-  };
-
   return (
-    <div className={`space-y-6 animate-in fade-in duration-500 w-full min-w-0 font-sans ${isFullscreen ? 'fixed inset-0 z-[9999] bg-slate-950 p-6 overflow-y-auto' : ''}`}>
+    <div className="space-y-8 animate-in fade-in duration-500 w-full min-w-0 font-sans pb-16 text-slate-800">
       
-      {/* BANNER PRINCIPAL DO PAINEL GOOGLE DATA STUDIO */}
-      <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 p-6 sm:p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden border border-emerald-800/40">
-        <div className="absolute top-0 right-0 -mr-12 -mt-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
-        
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2 max-w-2xl">
-            <div className="flex items-center gap-2 text-[10px] font-black text-amber-400 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 w-fit">
-              <Sparkles size={12} /> Inteligência Territorial SEDUC / DRE-SINOP
-            </div>
-            <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-white flex items-center gap-3">
-              <BarChart3 size={32} className="text-emerald-400" /> Painel Geral de Busca Ativa (Data Studio)
-            </h2>
-            <p className="text-xs text-emerald-100/90 font-medium leading-relaxed">
-              Integração direta com o relatório oficial da COGER / DRE-SINOP no Google Data Studio para acompanhamento consolidado de indicadores de frequência, infrequência e ações territoriais.
-            </p>
+      {/* CARD CENTRAL DE COMANDO E INTELIGÊNCIA */}
+      <div className="bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900 p-8 sm:p-12 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden border border-emerald-700/40">
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl"></div>
+
+        <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
+          
+          <div className="inline-flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest bg-amber-500/10 px-4 py-1.5 rounded-full border border-amber-500/20">
+            <Sparkles size={14} /> Relatório Oficial COGER / DRE-SINOP / SEDUC-MT
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              onClick={handleRefresh}
-              className="px-4 py-3 bg-emerald-800/80 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all border border-emerald-700 flex items-center gap-2"
-              title="Recarregar dados do relatório"
-            >
-              <RefreshCw size={16} /> Recarregar
-            </button>
+          <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white leading-tight">
+            Painel de Inteligência da Busca Ativa Escolar
+          </h1>
 
-            <button
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="px-4 py-3 bg-emerald-800/80 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all border border-emerald-700 flex items-center gap-2"
-            >
-              {isFullscreen ? <><Minimize2 size={16} /> Sair Tela Cheia</> : <><Maximize2 size={16} /> Tela Cheia</>}
-            </button>
+          <p className="text-sm sm:text-base text-emerald-100/90 font-medium leading-relaxed max-w-2xl mx-auto">
+            Acesse a central consolidada no <b>Google Data Studio / Looker Studio</b> com os indicadores oficiais de infrequência, resgate de alunos, registros de FICAI e gráficos de prevenção ao abandono escolar da <b>E.E. André Maggi</b>.
+          </p>
 
+          {/* BOTÃO PRINCIPAL DE DESTAQUE */}
+          <div className="pt-4 pb-2">
             <a
               href={directUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center gap-2 transition-all active:scale-95"
+              className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 rounded-3xl text-sm sm:text-base font-black uppercase tracking-widest shadow-2xl shadow-emerald-500/30 transition-all transform hover:scale-105 active:scale-95 group"
             >
-              <ExternalLink size={18} /> Abrir no Google Data Studio
+              <BarChart3 size={24} className="group-hover:rotate-12 transition-transform" />
+              <span>Abrir Painel Interativo no Data Studio</span>
+              <ExternalLink size={20} />
             </a>
+            <p className="text-[11px] font-bold text-emerald-300/80 uppercase tracking-wider mt-3">
+              ✦ Abre instantaneamente em tela cheia com todos os filtros por escola, turma e aluno liberados
+            </p>
           </div>
+
         </div>
 
-        {/* CARDS DE RESUMO RÁPIDO DO PAINEL */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-emerald-900/80 relative z-10 text-xs">
-          <div className="bg-emerald-900/40 p-4 rounded-2xl border border-emerald-800/50 flex items-center gap-3">
-            <Globe className="text-emerald-400 shrink-0" size={20} />
+        {/* CARDS DE DESTAQUE DE RECURSOS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 pt-8 border-t border-emerald-800/60 relative z-10">
+          <div className="bg-emerald-900/40 p-5 rounded-2xl border border-emerald-700/40 flex items-start gap-3">
+            <div className="p-2.5 bg-emerald-500/20 text-emerald-300 rounded-xl shrink-0">
+              <Globe size={20} />
+            </div>
             <div>
-              <p className="text-[10px] font-black text-emerald-300 uppercase">Origem dos Dados</p>
-              <p className="font-bold text-white uppercase">Sistemas SEDUC • COGER / DRE-SINOP</p>
+              <p className="text-xs font-black text-white uppercase">Dados Oficiais da DRE-SINOP</p>
+              <p className="text-[11px] text-emerald-200/80 font-medium mt-0.5">Alimentado continuamente com os lançamentos dos sistemas SEDUC-MT.</p>
             </div>
           </div>
 
-          <div className="bg-emerald-900/40 p-4 rounded-2xl border border-emerald-800/50 flex items-center gap-3">
-            <ShieldCheck className="text-amber-400 shrink-0" size={20} />
+          <div className="bg-emerald-900/40 p-5 rounded-2xl border border-emerald-700/40 flex items-start gap-3">
+            <div className="p-2.5 bg-amber-500/20 text-amber-300 rounded-xl shrink-0">
+              <ShieldCheck size={20} />
+            </div>
             <div>
-              <p className="text-[10px] font-black text-emerald-300 uppercase">Status de Sincronização</p>
-              <p className="font-bold text-white uppercase">Atualização Contínua em Tempo Real</p>
+              <p className="text-xs font-black text-white uppercase">Sincronização em Tempo Real</p>
+              <p className="text-[11px] text-emerald-200/80 font-medium mt-0.5">As atualizações da COGER são refletidas imediatamente ao abrir o painel.</p>
             </div>
           </div>
 
-          <div className="bg-emerald-900/40 p-4 rounded-2xl border border-emerald-800/50 flex items-center gap-3">
-            <FileSpreadsheet className="text-blue-400 shrink-0" size={20} />
+          <div className="bg-emerald-900/40 p-5 rounded-2xl border border-emerald-700/40 flex items-start gap-3">
+            <div className="p-2.5 bg-blue-500/20 text-blue-300 rounded-xl shrink-0">
+              <FileSpreadsheet size={20} />
+            </div>
             <div>
-              <p className="text-[10px] font-black text-emerald-300 uppercase">Filtros Avançados</p>
-              <p className="font-bold text-white uppercase">Interatividade com Busca por Aluno/Turma</p>
+              <p className="text-xs font-black text-white uppercase">Filtros Dinâmicos</p>
+              <p className="text-[11px] text-emerald-200/80 font-medium mt-0.5">Consulte por Aluno, Turma, Matriz, FICAIs e programas Bolsa Família / Pé de Meia.</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* CONTAINER DO IFRAME / VISUALIZADOR */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-200 shadow-xl overflow-hidden relative flex flex-col">
-        <div className="p-4 bg-slate-900 text-white flex items-center justify-between px-6 border-b border-slate-800 text-xs font-black uppercase">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-            <span className="ml-2 text-slate-300 font-mono text-[10px]">COGER / DRE-SINOP • PAINEL DE RELATÓRIO OFICIAL</span>
+      {/* SEÇÃO DE MÓDULOS DE MONITORAMENTO DISPONÍVEIS NO DATA STUDIO */}
+      <div className="bg-white p-8 sm:p-10 rounded-[3rem] border border-gray-200 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-4">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+              <FileText size={20} className="text-emerald-600" /> Relatórios Disponíveis no Painel Oficial
+            </h3>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+              Navegue pelas abas laterais ao abrir o Data Studio
+            </p>
+          </div>
+          <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 uppercase">
+            COGER • DRE-SINOP
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 hover:border-emerald-300 transition-all">
+            <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl w-fit">
+              <TrendingUp size={20} />
+            </div>
+            <h4 className="font-black text-slate-900 text-xs uppercase">Relatório de Monitoramento</h4>
+            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+              Visão geral dos percentuais de infrequência por ano escolar, modalidade e turno.
+            </p>
           </div>
 
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 hover:border-emerald-300 transition-all">
+            <div className="p-2.5 bg-blue-100 text-blue-800 rounded-xl w-fit">
+              <Users size={20} />
+            </div>
+            <h4 className="font-black text-slate-900 text-xs uppercase">Detalhamento Por Estudante</h4>
+            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+              Consulta nominal com código do aluno, quantidade de faltas registradas e percentual geral.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 hover:border-emerald-300 transition-all">
+            <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl w-fit">
+              <AlertTriangle size={20} />
+            </div>
+            <h4 className="font-black text-slate-900 text-xs uppercase">Plataforma FICAI</h4>
+            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+              Fichas de Infrequência e Indisciplina abertas e acompanhadas junto ao Ministério Público.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 hover:border-emerald-300 transition-all">
+            <div className="p-2.5 bg-red-100 text-red-800 rounded-xl w-fit">
+              <CheckCircle2 size={20} />
+            </div>
+            <h4 className="font-black text-slate-900 text-xs uppercase">Relatório de Evasão</h4>
+            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+              Monitoramento preventivo e ações de busca ativa para resgate imediato de estudantes.
+            </p>
+          </div>
+
+        </div>
+
+        {/* ORIENTAÇÃO RÁPIDA DE FILTRO */}
+        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-600 text-white rounded-xl font-black">
+              💡
+            </div>
+            <div>
+              <p className="font-black text-emerald-950 uppercase text-[11px]">Dica para Consulta Rápida na Tela do Data Studio:</p>
+              <p className="text-[11px] text-emerald-900 font-bold">
+                Ao abrir o painel, selecione o filtro <b>Escola: EE ANDRÉ ANTONIO MAGGI</b> no topo da página para filtrar os alunos da nossa unidade.
+              </p>
+            </div>
+          </div>
           <a
             href={directUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-emerald-400 hover:underline text-[10px] font-bold uppercase flex items-center gap-1"
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shrink-0 transition-all flex items-center gap-1.5 shadow-md"
           >
-            Abrir Relatório Completo <ExternalLink size={12} />
+            Acessar Agora <ArrowRight size={14} />
           </a>
-        </div>
-
-        {/* CONTAINER DO IFRAME E AVISO EXPLICATIVO */}
-        <div className="relative w-full min-h-[70vh] bg-slate-50 flex flex-col">
-          <iframe
-            key={iframeKey}
-            src={embedUrl}
-            title="Painel de Busca Ativa Google Data Studio"
-            className="w-full h-[65vh] border-0"
-            allowFullScreen
-          />
-
-          {/* CARD EXPLICATIVO DA MENSAGEM DO GOOGLE */}
-          <div className="p-6 bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50 border-t-2 border-amber-400 text-amber-950 space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-lg shadow-amber-500/20">
-                <Info size={24} />
-              </div>
-              <div className="space-y-1.5 flex-1">
-                <h4 className="font-black text-amber-900 uppercase text-sm tracking-tight">
-                  Por que aparece "A visualização em outros sites foi desativada pelo proprietário"?
-                </h4>
-                <p className="text-xs text-amber-900/90 leading-relaxed">
-                  O Google Data Studio possui uma trava nativa de privacidade. Por padrão, ele exige que a <b>COGER / DRE-SINOP</b> (criadores do painel) ativem a opção de incorporação externa.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-amber-200/80">
-              {/* SOLUÇÃO 1: BOTÃO DIRETO */}
-              <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm flex flex-col justify-between space-y-3">
-                <div>
-                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Opção 1 (Imediata): Acessar Agora</p>
-                  <p className="text-xs text-slate-700 font-medium mt-1">
-                    Clique no botão abaixo para abrir o painel completo do Data Studio em tela cheia com todos os filtros da DRE-SINOP ativados.
-                  </p>
-                </div>
-                <a
-                  href={directUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest text-center shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
-                >
-                  <ExternalLink size={16} /> Abrir Relatório no Google Data Studio
-                </a>
-              </div>
-
-              {/* SOLUÇÃO 2: COMO HABILITAR NO DATA STUDIO */}
-              <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm space-y-2">
-                <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Opção 2 (Para exibir 100% dentro desta caixa):</p>
-                <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                  Basta solicitar à equipe da <b>COGER / DRE-SINOP</b> para realizar a liberação no painel deles seguindo estes 3 passos rápidos:
-                </p>
-                <ol className="text-[10px] text-slate-800 font-bold uppercase space-y-1 pl-4 list-decimal">
-                  <li>No Data Studio, clicar em <b>Arquivo ➔ Incorporar relatório</b>.</li>
-                  <li>Marcar a opção <b>"Habilitar incorporação"</b>.</li>
-                  <li>Em Compartilhamento, definir visibilidade como <b>"Qualquer pessoa com o link pode visualizar"</b>.</li>
-                </ol>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
