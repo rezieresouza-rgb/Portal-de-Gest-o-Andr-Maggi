@@ -30,7 +30,8 @@ import {
   Check,
   Copy,
   Table2,
-  Printer
+  Printer,
+  Laptop
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Asset, AssetCondition } from '../types';
