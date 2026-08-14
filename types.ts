@@ -439,3 +439,54 @@ export interface ActionPlan {
   tasks: ActionPlanTask[];
   created_at: string;
 }
+
+export type ChromebookStatus = 'DISPONIVEL' | 'EMPRESTADO' | 'EM_MANUTENCAO' | 'INSERVIVEL' | 'RESERVADO';
+export type ChromebookPhysicalCondition = 'OTIMO' | 'BOM' | 'COM_AVARIA' | 'INOPERANTE';
+
+export interface ChromebookAssetItem {
+  id: string;
+  assetTag: string;
+  serialNumber: string;
+  brand: string;
+  model: string;
+  stationId: string;
+  status: ChromebookStatus;
+  condition: ChromebookPhysicalCondition;
+  hasCharger: boolean;
+  notes?: string;
+  lastInspectionDate?: string;
+  created_at?: string;
+}
+
+export interface ChromebookMaintenanceLog {
+  id: string;
+  chromebookId: string;
+  assetTag: string;
+  serialNumber: string;
+  defectType: 'TELA' | 'BATERIA' | 'TECLADO' | 'CARREGADOR' | 'SISTEMA' | 'ESTRUTURA' | 'OUTRO';
+  description: string;
+  reportedBy: string;
+  reportDate: string;
+  status: 'ABERTO' | 'EM_REPARO' | 'CONCLUIDO' | 'CANCELADO';
+  resolutionNotes?: string;
+  completedDate?: string;
+  cost?: number;
+}
+
+export interface ChromebookCheckout {
+  id: string;
+  stationId: string;
+  teacherName: string;
+  className: string;
+  shift: Shift;
+  checkoutDate: string;
+  checkoutTime: string;
+  expectedReturnDate: string;
+  actualReturnDate?: string;
+  status: 'ATIVO' | 'DEVOLVIDO' | 'DEVOLVIDO_COM_AVARIA';
+  quantityCheckedOut: number;
+  chromebookSerialNumbers: string[];
+  missingChargersCount?: number;
+  returnNotes?: string;
+  checkedBy?: string;
+}
