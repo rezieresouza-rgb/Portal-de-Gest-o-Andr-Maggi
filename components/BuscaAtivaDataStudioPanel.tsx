@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const BuscaAtivaDataStudioPanel: React.FC = () => {
-  const embedUrl = "https://datastudio.google.com/embed/reporting/69029f48-46b1-4455-8e48-a4da2c834f74/page/p_xjvkf08ykd";
+  const embedUrl = "https://lookerstudio.google.com/embed/reporting/69029f48-46b1-4455-8e48-a4da2c834f74/page/p_xjvkf08ykd";
   const directUrl = "https://datastudio.google.com/u/0/reporting/69029f48-46b1-4455-8e48-a4da2c834f74/page/p_xjvkf08ykd";
 
   const [iframeKey, setIframeKey] = useState<number>(0);
@@ -131,19 +131,24 @@ export const BuscaAtivaDataStudioPanel: React.FC = () => {
             onError={() => setHasError(true)}
           />
 
-          {/* MENSAJE AUXILIAR CASO O NAVEGADOR BLOQUEIE IFRAMES DE TERCEIROS */}
-          <div className="p-3 bg-amber-50 border-t border-amber-200 text-amber-900 text-[11px] font-bold flex items-center justify-between px-6">
-            <div className="flex items-center gap-2">
-              <Info size={16} className="text-amber-600 shrink-0" />
-              <span>O relatório interativo é carregado diretamente do Google Looker Studio. Se a visualização não carregar devido a cookies de conta Google, clique no botão ao lado.</span>
+          {/* MENSAGEM AUXILIAR CASO O NAVEGADOR BLOQUEIE IFRAMES DE TERCEIROS */}
+          <div className="p-4 bg-amber-50 border-t border-amber-200 text-amber-950 text-xs font-bold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-6">
+            <div className="flex items-start sm:items-center gap-3">
+              <Info size={20} className="text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+              <div>
+                <p className="font-black text-amber-900 uppercase text-[11px]">Nota de Autenticação do Google Data Studio:</p>
+                <p className="text-[11px] font-medium text-amber-800 leading-snug">
+                  Se a tela acima exibir a mensagem <i>"Não é possível acessar o relatório"</i>, isto ocorre pois o Google exige login direto com sua conta cadastrada. Clique no botão verde <b>ABRIR NO GOOGLE DATA STUDIO</b> no topo para visualizar com todos os filtros interativos ativados.
+                </p>
+              </div>
             </div>
             <a
               href={directUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 hover:bg-amber-700 transition-all flex items-center gap-1"
+              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shrink-0 transition-all flex items-center gap-1.5 shadow-md"
             >
-              Abrir em Nova Aba <ExternalLink size={12} />
+              Abrir Painel Oficial <ExternalLink size={14} />
             </a>
           </div>
         </div>
