@@ -293,11 +293,85 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* CARD DESTAQUE: DEMONSTRATIVO CONSOLIDADO DE GUIAS DE RECEBIMENTO & DÉBITOS */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-6 sm:p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden border border-slate-700/50 min-w-0 w-full">
+        <div className="absolute -top-10 -right-10 w-48 h-48 bg-red-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-emerald-600/10 rounded-full blur-3xl"></div>
+        
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2 max-w-xl">
+            <div className="flex items-center gap-2 text-[10px] font-black text-amber-400 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 w-fit">
+              <Sparkles size={12} /> Lançamentos Fiscais de Recebimento
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">
+              Resumo das Guias de Recebimento & Débitos em Aberto
+            </h3>
+            <p className="text-xs text-slate-300 font-medium leading-relaxed">
+              Consolidação calculada diretamente a partir das Guias de Recebimento emitidas. Separação de guias quitadas com Nota Fiscal e montante exato de débitos lançados pendentes de quitação.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => setShowDebtDeclarationModal(true)}
+              className="px-6 py-3.5 bg-red-600 hover:bg-red-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/30 flex items-center gap-2"
+            >
+              <FileDown size={18} /> Imprimir Declaração (PDF)
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-700/60 relative z-10">
+          {/* Item 1: Total Lançado */}
+          <div className="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/80">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total de Guias Lançadas</p>
+            <p className="text-xl sm:text-2xl font-black text-white mt-1">
+              R$ {stats.totalGuidesSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+              {stats.totalGuidesCount} guias emitidas no sistema
+            </p>
+          </div>
+
+          {/* Item 2: Guias Pagas */}
+          <div className="bg-emerald-950/40 p-5 rounded-2xl border border-emerald-500/30">
+            <div className="flex justify-between items-center">
+              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Guias Já Pagas (Quitadas)</p>
+              <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">
+                {stats.paidGuidesCount} Quitadas
+              </span>
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-emerald-400 mt-1">
+              R$ {stats.totalPaidGuidesSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-[9px] font-bold text-emerald-500/80 uppercase mt-1">
+              Liquidadas com Nota Fiscal
+            </p>
+          </div>
+
+          {/* Item 3: Débitos em Aberto */}
+          <div className="bg-red-950/40 p-5 rounded-2xl border border-red-500/30">
+            <div className="flex justify-between items-center">
+              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Débitos em Aberto (Pagar)</p>
+              <span className="text-[9px] font-black bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full animate-pulse">
+                {stats.openGuidesCount} Em Aberto
+              </span>
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-red-400 mt-1">
+              R$ {stats.totalOpenGuidesSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-[9px] font-bold text-red-400/80 uppercase mt-1">
+              Soma das guias a liquidar
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* PAINEL DE CONTRATOS - CARDS INFORMATIVOS GERAIS */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-            <FileText size={14} className="text-emerald-600" /> Acompanhamento de Valores: Pagos vs. A Pagar
+            <FileText size={14} className="text-emerald-600" /> Acompanhamento de Guias: Pagas vs. Lançadas em Aberto
           </h3>
           <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 uppercase">
             {stats.contractsCount} Contratos Registrados
