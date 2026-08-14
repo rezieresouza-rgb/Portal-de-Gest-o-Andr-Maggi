@@ -1,0 +1,2480 @@
+
+
+-- 1 of 106 --
+
+MANUAL DE MANUTENÇÃO
+Mauro Mendes Ferreira
+Governador do Estado de Mato Grosso
+Otaviano Olavo Pivetta
+Vice-Governador do Estado de Mato Grosso
+Alan Resende Porto
+Secretário de Estado de Educação
+Flávia Emanuelle de Souza Soares
+Secretária Executiva de Educação
+Harley Rafael Leopoldo Pereira
+Secretário Adjunto de Infraestrutura e Patrimônio
+Matheus dos Santos Firmino
+Superintendente de Obras
+Daiane Carvalho Viana
+Superintendente de Patrimônio
+
+-- 2 of 106 --
+
+Equipe de Elaboração
+Felipe Sodré Mascarenhas
+Engenheiro Civil
+Analista de Des. Econômico e Social
+Gabrielle Manzoli Bernardo
+Arquiteta e Urbanista
+Analista de Des. Econômico e Social
+Gisele de Souza Pinheiro
+Professora da Educação Básica
+Leticia Silva Campos
+Arquiteta e Urbanista
+Analista de Des. Econômico e Social
+Marcelo de Rezende
+Professor da Educação Básica
+Raone Luiz de Freitas Adams
+Analista de Des. Econômico e Social
+NAPD/ SUOB / SAIP/ SEDUC/MT
+NPM/SPAT/SAIP/SEDUC/MT
+2025
+Colaborações
+SUOB
+Coordenadoria de Projetos de
+Manutenção – CPM
+Núcleo de Análise de Projetos de
+Descentralização – NAPD
+Núcleo de Projetos – NPRO
+SUOB
+SPAT
+Núcleo de Patrimônio Mobiliário –
+NPM
+
+-- 3 of 106 --
+
+
+
+-- 4 of 106 --
+
+4
+APRESENTAÇÃO
+A Secretaria de Estado de Educação de Mato Grosso (SEDUC-MT) tem a finalidade
+de propor e implementar políticas públicas para a Educação Básica, com foco em
+planejamento e gestão de qualidade. Suas competências incluem a coordenação da
+gestão e da adequação da rede estadual de ensino (Seduc-MT, 2025a).
+A gestão e a adequação da rede pública estadual de ensino são essenciais para
+que as escolas estejam devidamente estruturadas e ofereçam um atendimento
+educacional eficiente e de qualidade. Isso inclui a manutenção do espaço físico destas,
+que devem garantir ambientes seguros, adequados e funcionais para estudantes e
+servidores.
+Com base nesse princípio, a Superintendência Obras da SEDUC-MT identificou a
+necessidade de desenvolver um material de apoio com foco na manutenção preventiva e
+corretiva das instalações das escolas estaduais: o Manual de Manutenção. O objetivo é
+adotar uma abordagem proativa, com intervenções antecipadas e imediatas assim que
+qualquer problema for identificado, garantindo a preservação e a melhoria contínua das
+condições físicas.
+Essas intervenções possibilitam a otimização e uso eficiente dos recursos públicos,
+reduzindo gastos com reparos emergenciais e prolongando a durabilidade das estruturas.
+Para isso, apresenta ações estratégicas, tanto preventivas quanto corretivas, que, quando
+implementadas, solucionarão problemas existentes e evitarão novas ocorrências,
+contribuindo para a melhoria contínua do ambiente escolar.
+Assim, esperamos colaborar efetivamente com essas ações estratégicas para o
+monitoramento e execução eficiente das intervenções. Além disso, buscamos fortalecer a
+gestão escolar, proporcionando ferramentas e diretrizes que facilitem a manutenção
+contínua das estruturas.
+
+-- 5 of 106 --
+
+5
+SUMÁRIO
+1. INTRODUÇÃO ........................................................................................................... 9
+2. NORMAS .................................................................................................................. 10
+3. RESPONSABILIDADES .......................................................................................... 12
+4. MANUTENÇÃO PREDIAL E TIPOS DE MANUTENÇÃO ....................................... 14
+5. GRAUS DE RISCO .................................................................................................. 16
+6. FORMAS DE INTERVENÇÃO ................................................................................. 17
+7. ITENS A SEREM VERIFICADOS ............................................................................ 19
+7.1 SISTEMAS CONSTRUTIVOS ........................................................................................... 19
+7.2 COBERTURA ........................................................................................................................ 23
+7.3 FORRO.................................................................................................................................... 24
+7.4 PISOS E REVESTIMENTOS ............................................................................................. 25
+7.5 PINTURA ................................................................................................................................ 26
+7.6 ESQUADRIAS ....................................................................................................................... 27
+7.7 INSTALAÇÕES ELÉTRICAS ............................................................................................. 28
+7.7.1 BAIXA TENSÃO ............................................................................................................ 28
+7.7.2 SISTEMA DE PREVENÇÃO CONTRA DESCARGAS ATMOSFÉRICAS
+(SPDA) 30
+7.7.3 POSTO DE TRANSFORMAÇÃO .............................................................................. 31
+7.8 INSTALAÇÕES HIDROSSANITÁRIAS ........................................................................... 32
+7.8.1 CAIXA D’ÁGUA E CISTERNA (RESERVATÓRIOS)............................................ 32
+7.8.2 RALOS E SIFÕES ........................................................................................................ 33
+7.8.3 VÁLVULAS E REGISTROS ........................................................................................ 34
+7.8.4 TUBULAÇÕES ............................................................................................................... 35
+7.8.5 SISTEMA DE TRATAMENTO DE ESGOTO (STE) .............................................. 36
+7.8.6 CAIXA DE GORDURA ................................................................................................. 37
+7.8.7 INSTALAÇÕES DE GÁS ............................................................................................. 38
+
+-- 6 of 106 --
+
+6
+7.9 INSTALAÇÕES DE COMBATE A INCÊNDIO ............................................................... 39
+7.9.1 EXTINTORES ................................................................................................................ 39
+7.9.2 HIDRANTES E MANGUEIRAS .................................................................................. 40
+7.9.3 SINALIZAÇÃO DE EMERGÊNCIA E ROTAS DE FUGA .................................... 41
+7.9.4 ACIONAMENTOS ......................................................................................................... 42
+7.10 ÁREAS MOLHADAS (LOUÇAS, METAIS, BANCADAS E DIVISÓRIAS) ........... 43
+7.11 QUADRA POLIESPORTIVA .......................................................................................... 44
+7.11.1 PINTURA DE DEMARCAÇÃO – QUADRA POLIESPORTIVA ...................... 45
+7.11.2 PISO ARTICULADO – QUADRA POLIESPORTIVA ........................................ 46
+7.12 PISCINA E CASA DE MÁQUINAS ............................................................................... 47
+7.13 IMPLANTAÇÃO ................................................................................................................. 49
+7.13.1 PÓRTICO .................................................................................................................... 49
+7.13.2 MURO E GRADIL ...................................................................................................... 50
+7.13.3 DEPÓSITO DE RESÍDUOS SÓLIDOS ................................................................ 51
+7.13.4 CALÇAMENTOS ....................................................................................................... 52
+7.13.5 PAISAGISMO ............................................................................................................. 53
+7.13.6 CONTROLE DE PRAGAS ...................................................................................... 54
+7.13.7 SISTEMA DE DRENAGEM..................................................................................... 55
+7.14 ACESSIBILIDADE ............................................................................................................ 56
+7.14.1 ESCADA E RAMPA .................................................................................................. 56
+7.14.2 CORRIMÃO, GUARDA-CORPO E BARRAS DE APOIO ................................ 57
+7.14.3 PLACA DE SINALIZAÇÃO, MAPA E PISO TÁTIL ............................................ 58
+7.15 EQUIPAMENTOS E MOBILIÁRIOS ............................................................................. 59
+7.15.1 APARELHO DE AR CONDICIONADO ................................................................ 59
+7.15.2 VENTILADORES ....................................................................................................... 60
+7.15.3 BEBEDOUROS .......................................................................................................... 61
+
+-- 7 of 106 --
+
+7
+7.15.4 CONJUNTO ALUNO, CONJUNTO PROFESSOR, CONJUNTO
+REFEITÓRIO, MESA PNE. ....................................................................................................... 62
+7.15.5 CHROMEBOOK E NOTEBOOK ............................................................................ 63
+7.15.6 GABINETE DE RECARGA ..................................................................................... 64
+7.15.7 MESA EM “L”, MESA CIRCULAR EM MDF ....................................................... 65
+7.15.8 ARQUIVO EM AÇO, ARMÁRIO ALTO EM AÇO, ROUPEIRO, ESTANTE
+EM AÇO, EXPOSITOR DE LIVROS. ...................................................................................... 66
+7.15.9 TELEVISOR SMART TV 65 POLEGADAS ......................................................... 67
+7.15.10 COMPUTADOR DE MESA (DESKTOP) ............................................................. 68
+7.15.11 REFRIGERADORES E FREEZERS ..................................................................... 69
+7.15.12 FOGÃO INDUSTRIAL .............................................................................................. 70
+7.15.13 FORNO MICRO-ONDAS ......................................................................................... 71
+7.15.14 FORNO ELÉTRICO INDUSTRIAL ........................................................................ 72
+7.15.15 BALCÃO TÉRMICO .................................................................................................. 73
+7.15.16 CADEIRA GIRATÓRIA............................................................................................. 74
+7.15.17 SOFÁ DOIS LUGARES ........................................................................................... 75
+7.15.18 CADEIRA FIXA .......................................................................................................... 76
+7.15.19 BANQUETA ................................................................................................................ 77
+7.15.20 BATEDEIRA TIPO INDUSTRIAL ........................................................................... 78
+7.15.21 NOBREAK ................................................................................................................... 79
+7.15.22 MULTIPROCESSADOR DE ALIMENTOS .......................................................... 80
+7.15.23 BEBEDOURO COLUNA GARRAFÃO ................................................................. 81
+7.15.24 LIQUIDIFICADOR TIPO INDUSTRIAL ................................................................ 82
+7.15.25 ARMÁRIO ALTO EM MDF, ARMÁRIO BAIXO 2P, ARMÁRIO BAIXO 3P .. 83
+7.15.26 REPOSIÇÃO DE EQUIPAMENTOS ..................................................................... 84
+8. GARANTIA ............................................................................................................... 85
+9. RECURSOS ............................................................................................................. 86
+10. PLANO DE MANUTENÇÃO .................................................................................... 88
+
+-- 8 of 106 --
+
+8
+11. CONCLUSÃO........................................................................................................... 90
+12. REFERÊNCIAS ........................................................................................................ 91
+ANEXO I – FLUXOGRAMA DE ATENDIMENTO ........................................................... 93
+ANEXO II – CRONOGRAMA DE MANUTENÇÃO.......................................................... 94
+ANEXO III – RELATÓRIO DE DEMANDA .................................................................... 101
+ANEXO IV – IDENTIFICAÇÃO DE INTERVENÇÕES .................................................. 104
+
+-- 9 of 106 --
+
+9
+1. INTRODUÇÃO
+Por meio de ações coordenadas de manutenção, adequação e reformas, a SEDUC-
+MT tem realizado investimentos consideráveis em diversas frentes de atendimento para a
+garantia de um ambiente escolar seguro, funcional e de qualidade.
+O prédio escolar é constituído de sistemas, elementos e componentes que sofrem
+desgaste ao longo do tempo. Contudo, a adoção de boas práticas de uso e o
+monitoramento para a realização de manutenções pode prolongar a vida útil e manter a
+preservação da estrutura.
+A temática da manutenção preventiva e conservação de patrimônios públicos,
+embora fundamental, nem sempre é priorizada. Diversos fatores podem explicar essa
+situação, como o desconhecimento sobre a relevância do tema, a subestimação dos
+impactos que a falta de manutenção pode gerar ou até a falta de compreensão dos custos
+envolvidos, tanto sociais quanto financeiros, além da redução na qualidade dos serviços
+prestados à população (RIO GRANDE DO SUL, 2018).
+Este documento tem como objetivo fornecer aos gestores das unidades escolares,
+conforme a NBR 5674 (ABNT, 2024a), as diretrizes para a realização de intervenções de
+manutenção preventiva e corretiva nas escolas, garantindo a preservação das estruturas
+e o pleno funcionamento dos espaços educacionais. Isso envolve o incentivo à
+conscientização sobre as manutenções, planejamento e monitoramento das estruturas das
+escolas.
+A falta de ação ou a ação tardia tem consequências diretas em toda a comunidade
+escolar. Em um contexto de recursos limitados, qualquer medida que possa evitar gastos
+futuros e garantir a continuidade dos serviços essenciais é uma prioridade. Nesse sentido,
+a manutenção preventiva e a conservação do patrimônio público devem ser consideradas
+ações estratégicas e de fundamental importância.
+
+-- 10 of 106 --
+
+10
+2. NORMAS
+As normas apresentadas nesta seção têm o propósito de reunir e esclarecer, de
+forma geral, os principais referenciais normativos relacionados à manutenção predial das
+escolas, oferecendo uma visão introdutória dos requisitos técnicos e legais aplicáveis.
+● ABNT NBR 5410: Instalações elétricas de baixa tensão (ABNT, 2024).
+Estabelece as condições mínimas para garantir a segurança em instalações elétricas de
+baixa tensão. Essa norma visa proteger pessoas, animais e bens contra riscos como
+choques elétricos, incêndios e outros problemas relacionados à eletricidade.
+● ABNT NBR 5419: Proteção contra descargas atmosféricas (ABNT, 2015).
+Estabelece as condições para o projeto, instalação e manutenção de Sistemas de
+Proteção contra Descargas Atmosféricas (SPDA). A norma tem como objetivo proteger
+edificações, estruturas e pessoas contra os efeitos das descargas atmosféricas, como
+raios.
+● ABNT NBR 5462: Confiabilidade e Mantenabilidade (ABNT, 1994).
+Estabelece diretrizes para garantir a confiabilidade e a mantenabilidade de sistemas e
+equipamentos, sendo essencial para a gestão da manutenção.
+● ABNT NBR 5674: Manutenção de edificações – Requisitos para o sistema de gestão
+de manutenção (ABNT, 2024a).
+Estabelece diretrizes para a gestão da manutenção em edificações, abrangendo desde a
+inspeção até a execução de reparos e reformas.
+● ABNT NBR 9050: Acessibilidade a edificações, mobiliário, espaços e equipamentos
+urbanos (ABNT, 2020).
+Estabelece critérios e parâmetros técnicos a serem observados quanto ao projeto,
+construção, instalação e adaptação do meio urbano e rural, e de edificações quanto às
+condições de acessibilidade.
+● NBR 10339: Piscina - Projeto, execução e manutenção
+Estabelece os requisitos e parâmetros para projeto, construção, instalação e segurança no
+uso e operação aplicáveis a todos os tipos de piscinas.
+
+-- 11 of 106 --
+
+11
+● NBR 13752: Perícias de Engenharia na Construção Civil (ABNT, 1996).
+Estabelece os termos, conceitos, definições, requisitos e procedimentos para as perícias
+de engenharia na construção civil, a serem realizadas por profissionais habilitados,
+devidamente registrados no Conselho de classe competente.
+● ABNT NBR 14037: Diretrizes para elaboração de manuais de uso, operação e
+manutenção das edificações – requisitos para elaboração e apresentação dos
+conteúdos (ABNT, 2024b).
+Estabelece os requisitos mínimos para a elaboração de manuais que orientem sobre a
+operação e a manutenção dos sistemas e componentes das edificações.
+● ABNT NBR 14136: Plugues e tomadas para uso doméstico e análogo até 20 A/250 V
+em corrente alternada — Padronização (ABNT, 2022).
+Estabelece as especificações técnicas para plugues e tomadas utilizados em instalações
+elétricas de baixa tensão no Brasil, principalmente em uso doméstico e similar. Essa norma
+é fundamental para garantir a compatibilidade, segurança e padronização desses
+dispositivos elétricos.
+● ABNT NBR 15575: Edificações habitacionais – Desempenho.
+Embora não exclusivamente sobre manutenção, essa norma define critérios de
+desempenho que influenciam a manutenção ao longo da vida útil da edificação.
+● NR 10: Segurança em instalações e serviços em eletricidade (Brasil, 2022).
+Estabelece os requisitos e condições mínimas objetivando a implementação de medidas
+de controle e sistemas preventivos, de forma a garantir a segurança e a saúde dos
+trabalhadores que, direta ou indiretamente, interajam em instalações elétricas e serviços
+com eletricidade.
+● INSTRUÇÃO NORMATIVA Nº 003/2025/GS/SEDUC/MT - Dispõe sobre critérios e
+procedimentos para descentralização de recursos financeiros destinados às unidades
+escolares da Rede Pública Estadual de Ensino e dá outras providências (Seduc-MT,
+2025b).
+
+-- 12 of 106 --
+
+12
+3. RESPONSABILIDADES
+As responsabilidades dos gestores das unidades escolares na manutenção e
+conservação da escola são essenciais para garantir a segurança, o conforto e a qualidade
+do ambiente escolar, proporcionando um espaço adequado para alunos e servidores.
+É essencial que evitem o uso inadequado da edificação, respeitando as condições
+para as quais o espaço foi projetado. Modificações na estrutura da escola não devem ser
+realizadas sem o conhecimento e a prévia anuência da Superintendência de Obras da
+SEDUC-MT. O acompanhamento contínuo e uma postura proativa em relação às
+condições do prédio são indispensáveis para o bom funcionamento da escola e para a
+qualidade do ensino ofertado.
+No Quadro 1 seguem os principais pontos que devem ser destacados no que se
+refere a essas responsabilidades.
+Quadro 1 – Manutenção e Conservação: responsabilidades dos Gestores
+Planejamento e
+Organização da
+Manutenção
+Desenvolvimento de um plano de manutenção: O gestor escolar
+deve garantir que exista um plano de manutenção preventiva,
+estabelecendo as atividades necessárias, a frequência e os
+responsáveis por cada tarefa. Esse plano deve ser atualizado
+periodicamente e garantir que as necessidades da escola sejam
+atendidas de forma eficiente.
+Orçamento e recursos: O gestor deve colaborar na elaboração do
+orçamento destinado à manutenção predial, priorizando as
+intervenções mais urgentes e buscando otimizar os recursos
+disponíveis.
+Inspeção e
+Monitoramento
+Constante
+Acompanhamento diário: O gestor deve realizar vistorias regulares
+nas instalações da escola para verificar o estado de conservação e
+identificar possíveis problemas de infraestrutura (rachaduras, fissuras,
+infiltrações, sistemas elétricos ou hidráulicos danificados, etc.).
+Relato de problemas: Toda falha ou defeito identificado deve ser
+imediatamente solucionada e, em determinados casos, os serviços
+devem ser realizados por meio de profissional habilitado. O gestor
+deve manter registros detalhados dessas ocorrências para garantir
+que os problemas sejam tratados em tempo hábil. Em casos
+específicos de Grau de Risco 1, a Superintendência de Obras deve
+ser acionada.
+Garantia de Segurança
+e Conforto
+Segurança física e estrutural: O gestor escolar deve garantir que a
+infraestrutura da escola esteja em conformidade com as normas de
+segurança, evitando riscos como instalações elétricas defeituosas,
+escadas e corrimãos danificados, vazamentos, entre outros.
+Conforto térmico e acústico: Além da segurança, o gestor deve
+monitorar as condições de ventilação, iluminação e temperatura nas
+
+-- 13 of 106 --
+
+13
+salas de aula e em outras áreas, visando proporcionar um ambiente
+confortável para os alunos e servidores.
+Gestão de
+Equipamentos e
+Sistemas
+Manutenção de equipamentos e sistemas: O gestor deve assegurar
+que equipamentos essenciais (como ar-condicionado, ventiladores,
+sistemas de calefação, elevadores, etc.) estejam em bom
+funcionamento e sejam mantidos regularmente.
+Verificação de sistemas elétricos e hidráulicos: É importante que o
+gestor oriente e fiscalize a manutenção periódica dos sistemas
+elétricos e hidráulicos da escola, para evitar problemas que possam
+comprometer o funcionamento da unidade escolar e gerar custos
+emergenciais elevados. Essa manutenção deve ser feita por
+profissional habilitado.
+Gestão de Pessoas e
+Comunicação
+Treinamento da equipe escolar: O gestor escolar deve promover a
+capacitação da equipe administrativa, professores e outros servidores
+quanto à importância da manutenção preventiva, incentivando a
+colaboração de todos para o bom estado de conservação da
+edificação.
+Canal de comunicação com a comunidade escolar: O gestor deve
+manter um canal aberto de comunicação com alunos, pais e
+servidores, incentivando o relato de problemas ou necessidades
+relacionadas à infraestrutura. Essa comunicação deve ser clara e
+eficiente para que as demandas sejam tratadas de forma adequada e
+tempestiva.
+Acompanhamento de
+Serviços Terceirizados
+Acompanhamento de serviços terceirizados: Quando serviços de
+manutenção (como limpeza, jardinagem, elétrica ou hidráulica) são
+terceirizados, o gestor deve garantir que as empresas contratadas
+cumpram os prazos e padrões de qualidade estabelecidos.
+Atendimento a
+Emergências e
+Reparos Urgentes
+Plano de ação para situações emergenciais: O gestor escolar deve,
+em caso de emergências, como desastres naturais, falhas estruturais
+graves, incêndios ou problemas com sistemas elétricos que ofereçam
+risco à segurança, solicitar auxílio da Superintendência de Obras.
+Coordenação de reparos urgentes: Quando houver necessidade de
+reparos urgentes, o gestor deve garantir que as ações sejam tomadas
+rapidamente para minimizar os impactos no funcionamento das
+atividades escolares.
+Cumprimento das
+Normas e
+Regulamentações
+Conformidade com as normas de segurança e acessibilidade: O
+gestor escolar deve assegurar que a infraestrutura da escola atenda a
+todas as normas legais pertinentes.
+Documentação e relatórios: O gestor deve manter todos os registros
+relacionados à manutenção, incluindo laudos técnicos, comprovantes
+de serviços realizados e documentos fiscais, para garantir a
+conformidade com as exigências legais e orçamentárias.
+
+-- 14 of 106 --
+
+14
+4. MANUTENÇÃO PREDIAL E TIPOS DE MANUTENÇÃO
+A Manutenção Predial constitui um conjunto de atividades voltadas à conservação
+ou recuperação da capacidade funcional da construção e de seus sistemas, visando o
+prolongamento de sua vida útil1.
+Envolve a realização de inspeções regulares, limpeza, conservação de ambientes e
+reparos. Nestes, são inclusos a realização de serviços, como por exemplo: verificação de
+sistemas elétricos e hidráulicos, manutenção de equipamentos, reparo de estruturas,
+pintura, dentre outros.
+A NBR 5462 (ABNT, 1994) traz três tipos de manutenção, cujas definições são:
+i. Manutenção preditiva: manutenção que permite garantir uma qualidade de serviço
+desejada, com base na aplicação sistemática de técnicas de análise, utilizando-se
+de meios de supervisão centralizados ou de amostragem, para reduzir ao mínimo a
+manutenção preventiva e diminuir a manutenção corretiva.
+ii. Manutenção preventiva: manutenção efetuada em intervalos determinados, ou de
+acordo com critérios prescritos, destinada a reduzir a probabilidade de falha ou a
+degradação do funcionamento do item.
+iii. Manutenção corretiva: manutenção efetuada após a ocorrência de uma pane
+destinada a recolocar um item em condições de executar uma função requerida.
+Para este Manual, abordaremos as tratativas para dois tipos de manutenção:
+manutenção preventiva e manutenção corretiva.
+A manutenção preventiva é realizada antes da ocorrência de um problema e tem
+por objetivo a prevenção de falhas para prolongar a vida útil das edificações. Envolve
+inspeções, testes, limpezas, lubrificação e substituição de componentes antes que eles
+apresentem sinais de desgaste ou falhas iminentes.
+A manutenção corretiva é efetuada após a identificação de uma falha. Geralmente,
+esse tipo de manutenção ocasiona maiores despesas e tempo de inatividade até o
+restabelecimento da funcionalidade.
+No Quadro 2 seguem alguns aspectos que se diferenciam nesses dois tipos de
+manutenção, elencados por Minas Gerais (2024):
+1 Período durante o qual um edifício e seus sistemas permanecem aptos para as funções às quais foram
+projetados e construídos, levando em conta a regularidade e a correta execução dos processos de
+manutenção.
+
+-- 15 of 106 --
+
+15
+Quadro 2 – Aspectos consideráveis em manutenção preventiva e manutenção corretiva
+Aspecto Manutenção Preventiva Manutenção Corretiva
+Objetivo Prevenir falhas e desgastes Corrigir falhas e desgastes
+ocorridos
+Abordagem Proativa Reativa
+Métodos
+Inspeções regulares, limpeza,
+lubrificação, substituição de
+peças antes da falha
+Reparo ou substituição de peças
+falhadas, consertos
+emergenciais
+Frequência Regular e planejada Conforme necessário, após a
+identificação de problemas
+Custos Menores a longo prazo Maiores devido à urgência e
+gravidade dos problemas
+Impacto Menores interrupções, maior
+confiabilidade
+Maior tempo de inatividade,
+possíveis impactos negativos
+Benefícios Aumento da segurança e vida
+útil dos equipamentos
+Restabelecimento da
+funcionalidade após falhas
+Exemplos
+Troca de filtros de ar, inspeções
+de sistemas elétricos e
+hidráulicos, lubrificação de
+máquina.
+Conserto de vazamentos,
+substituição de componentes
+queimados.
+Técnica Proativa e preventiva Reativa e corretiva
+Fonte: Minas Gerais (2024)
+
+-- 16 of 106 --
+
+16
+5. GRAUS DE RISCO
+A manutenção predial está diretamente ligada à preservação do ambiente para
+garantir a segurança dos usuários. Tanto a manutenção preventiva, quanto a manutenção
+corretiva, envolvem diferentes graus de risco. Identificar esses riscos é fundamental para
+adotar medidas de manutenção adequadas e prevenir acidentes.
+Utilizamos como parâmetro de classificação a Norma de Inspeção Predial do
+Instituto Brasileiro de Avaliações e Perícias de Engenharia (IBAPE), com classificação em
+três diferentes graus de recuperação, considerando o impacto do risco oferecido aos
+usuários, ao meio ambiente e ao patrimônio, dentro dos limites da inspeção visual. Os
+graus de recuperação seguem especificados no Quadro 3, onde os mesmos são
+ordenados de 1 (risco crítico) a 3 (risco mínimo).
+Quadro 3 – Diferentes graus de recuperação de mau funcionamento e falhas – IBAPE
+GRAU DE RISCO CRÍTICO
+Esse tipo de risco pode causar sérios problemas para a saúde e
+segurança das pessoas, além de prejudicar o meio ambiente.
+Acarreta perda excessiva de desempenho e funcionalidade do prédio,
+levando a paralisações, altos custos de reparo e redução da vida útil
+da estrutura.
+GRAU DE RISCO REGULAR
+Esse risco causa perda moderada no funcionamento do prédio, mas
+sem comprometer o uso direto dos sistemas. Pode levar a um
+desgaste mais rápido da estrutura, mas esses problemas podem ser
+corrigidos com manutenção adequada.
+GRAU DE RISCO MÍNIMO
+Esse risco envolve pequenas falhas no funcionamento ou na
+aparência do prédio, sem afetar a segurança ou o uso dos sistemas.
+Normalmente, são problemas estéticos ou ajustes que podem ser
+programados sem urgência.
+Tendo em vista os graus de risco apresentados no Quadro 3, é importante salientar
+que devem ser priorizadas as manutenções nos itens que possuem grau de risco
+mais elevado.
+
+-- 17 of 106 --
+
+17
+6. FORMAS DE INTERVENÇÃO
+Recomenda-se que, para cada item que for submetido à verificação, o responsável
+pela manutenção realize as atividades especificadas a seguir, de forma a garantir a
+conformidade e o bom funcionamento dos processos envolvidos.
+INSPEÇÃO VISUAL – Identificação de possíveis danos visíveis,
+sinais de desgaste, obstruções e/ou vazamentos que comprometam
+a funcionalidade da estrutura ou equipamento.
+LIMPEZA – Realização de remoção de sujeira, resíduos, detritos ou
+qualquer material que possa afetar o bom funcionamento, segurança
+ou longevidade do equipamento ou estrutura.
+REPARO OU SUBSTITUIÇÃO - Proceder com o conserto ou
+substituição de elementos, peças ou componentes que apresentam
+algum defeito, avaria ou desgaste.
+TESTE DE DESEMPENHO – Verificação do desempenho de
+equipamentos a fim de detectar possíveis defeitos e falhas ocultas,
+bem como confirmar a eficácia de reparos realizados.
+EMPRESA ESPECIALIZADA – Contratação de serviço
+especializado para a manutenção do item especificado,
+preferencialmente por empresa que disponha de profissional
+habilitado para emissão da Anotação de Responsabilidade Técnica
+(ART) relativa ao serviço prestado.
+SUPORTE SEDUC – Solicitação de suporte da Secretaria de Estado
+de Educação (Órgão Central/DRE) para verificar o funcionamento do
+item especificado quando este apresentar qualquer mau
+funcionamento.
+
+-- 18 of 106 --
+
+18
+Na contratação de serviços de manutenção predial, é essencial escolher empresas
+especializadas que cumpram rigorosamente as normas de saúde e segurança do
+trabalho. Garantir que os profissionais utilizem Equipamentos de Proteção
+Individual (EPIs) e sigam as Normas Regulamentadoras, como a NR 6, NR 18 e NR
+35, é uma medida fundamental para prevenir acidentes e assegurar a integridade
+de todos no ambiente escolar. Essa responsabilidade também protege a escola de
+eventuais implicações legais e reforça o compromisso com a segurança de todos.
+
+-- 19 of 106 --
+
+19
+7. ITENS A SEREM VERIFICADOS
+7.1 SISTEMAS CONSTRUTIVOS
+Um sistema construtivo é a forma como uma construção é feita, ou seja, o conjunto
+de materiais e técnicas usados para levantar uma casa, escola ou qualquer outro prédio.
+Isso inclui tudo, desde a fundação, que é a base da construção, até as paredes, o teto e o
+acabamento. Existem diferentes tipos de sistemas, como os que usam tijolos, blocos,
+concreto ou madeira, por exemplo.
+A falta de manutenção pode agravar as suas patologias2 (IBAPE-SP, 2022)
+específicas de cada sistema construtivo, reduzindo a segurança, funcionalidade e
+durabilidade da edificação. Em resumo, as patologias mais comuns causadas pela falta de
+manutenção em cada sistema construtivo são:
+I. Alvenaria + Concreto Armado
+a) Principais Patologias: Fissuras, infiltrações, desprendimento de revestimentos,
+assentamento desigual, e desgaste de pisos.
+b) Pontos de atenção: Não realizar sem consulta técnica
+o rasgos nas paredes para embutimento de instalações, assim como a fixação
+de armários e prateleiras, visando a integridade das instalações hidráulicas e
+elétricas;
+o a fixação de elementos ou furos na estrutura de concreto armado. Ex:
+Instalações de Lógica (internet, telefone, câmeras etc).
+II. Alvenaria Estrutural
+2 PATOLOGIA CONSTRUTIVA: é o estudo que se ocupa da natureza das modificações estruturais e ou
+funcional, produzindo anomalias construtivas.
+
+-- 20 of 106 --
+
+20
+a) Principais Patologias: Fissuras, deslocamento de blocos, vazamento e
+infiltrações, desgaste de revestimento, corrosão e deterioração devido a
+umidade.
+b) Pontos de atenção: Não realizar sem consulta técnica
+o remoção de blocos ou partes da parede sem análise técnica, pois a alteração
+ou remoção de blocos pode comprometer a estabilidade da estrutura, já que
+nas alvenarias estruturais as paredes fazem parte do sistema de sustentação
+do edifício;
+o utilização de materiais ou técnicas inadequadas, tendo em vista que usar
+argamassas diferentes das especificadas, aplicar reforços mal
+dimensionados ou empregar técnicas improvisadas, pode gerar fissuras,
+descolamentos e perda de desempenho da estrutura;
+o perfurações excessivas ou em locais críticos, uma vez que abrir furos para
+passagem de tubulações, instalações elétricas ou fixação de objetos sem
+critério pode atingir pontos estruturais sensíveis, afetando diretamente a
+integridade da parede.
+III. Pré-moldado
+a) Principais Patologias: Fissuras ou deficiências nas juntas, corrosão das
+armaduras, desgaste do concreto e deslocamento das peças.
+b) Pontos de atenção: Não realizar sem consulta técnica
+o corte ou modificação dos elementos estruturais sem projeto específico, como
+alterar vigas, pilares ou lajes pré-moldadas sem um estudo técnico detalhado
+pode comprometer a estabilidade da estrutura, já que esses elementos são
+projetados para trabalhar juntos de forma muito precisa;
+o desalinhamento ou movimentação de peças durante intervenções nas
+estruturas pré-moldadas, pois as mesmas dependem de encaixes e apoios
+específicos. Mexer nelas sem cuidado pode causar desencaixes, fissuras ou
+até o colapso local da estrutura.
+Observação: As ligações e conexões entre os elementos estruturais — como
+chumbadores, juntas secas ou grauteadas — são componentes essenciais para a
+estabilidade e o bom desempenho da estrutura. Ignorar seu estado ou negligenciar a
+
+-- 21 of 106 --
+
+21
+verificação e a manutenção dessas conexões pode resultar em deslocamentos, vibrações
+indesejadas e até falhas estruturais.
+IV. Placa Isotérmica
+a) Principais Patologias: Perda de eficiência do isolamento, deformações e
+quebras, desprendimento do revestimento, infiltração nas juntas e desgaste do
+revestimento térmico.
+b) Pontos de atenção: Não realizar sem consulta técnica
+o perfurações excessivas, como perfurações na chapa ou no EPS, pois podem
+comprometer a integridade térmica e estrutural da parede, além de permitir a
+entrada de umidade ou a redução da capacidade de isolamento acústico e
+térmico;
+o utilizar materiais incompatíveis na superfície, pois ao usar revestimentos ou
+adesivos que não sejam compatíveis com o EPS ou a chapa pode resultar
+em descolamento, bolhas ou danos à estrutura, prejudicando a performance
+da parede no isolamento térmico e acústico;
+Observação: as juntas entre as placas devem ser devidamente vedadas para evitar
+infiltrações de água. A falta de impermeabilização pode causar degradação das placas e
+comprometimento do desempenho térmico e estrutural da parede.
+Para identificação das patologias mencionadas e sistema construtivo da Unidade
+Escolar, solicitar suporte à Coordenadoria de Infraestrutura, Patrimônio e TI da
+Diretoria Regional de Educação (DRE) responsável pela unidade escolar.
+
+-- 22 of 106 --
+
+22
+É estritamente PROIBIDA a abertura de vãos, adição de cargas excessivas e
+mudanças nas esquadrias (portas e janelas) de sistemas construtivos com função
+estrutural. Alterações não autorizadas podem comprometer a integridade e segurança
+da edificação, além de violar normas técnicas e regulamentos de construção.
+Modificações indevidas podem resultar em sérios riscos à estabilidade da edificação e à
+segurança dos ocupantes. Qualquer alteração deve ser previamente avaliada e aprovada
+por profissionais qualificados, garantindo a conformidade com o projeto original e
+evitando prejuízos futuros.
+
+-- 23 of 106 --
+
+23
+7.2 COBERTURA
+Intervenção Descrição
+Inspeção visual das telhas para verificar a existência de telhas
+quebradas, soltas ou desalinhadas.
+Inspeção visual da estrutura, com o objetivo de avaliar o estado da
+madeira ou do metal, identificando possíveis sinais de deterioração,
+como ferrugem, apodrecimento ou presença de pragas. Deve-se
+também verificar as fixações — como pregos, parafusos e grampos
+— para assegurar que estejam firmes e em bom estado.
+Inspeção visual dos beirais para verificar possíveis pontos de
+deterioração, peças soltas ou desencaixadas, bem como certificar se
+não há espaços que permitam a entrada de insetos, aves e roedores
+na cobertura.
+Limpeza de calhas, rufos e condutores verticais, realizada por
+empresa especializada ou profissional habilitado, com a finalidade
+de remover folhas, galhos e demais resíduos, prevenindo
+entupimentos e infiltrações.
+Reparo ou substituição de telhas quebradas ou danificadas para
+evitar goteiras e infiltrações, reapertos de parafusos de fixação, de
+elementos de vedações (como PU de vedação das calhas, mantas
+de impermeabilização)
+Reparo ou substituição de elementos na estrutura de suporte caso
+sejam identificadas peças danificadas, como madeira apodrecida ou
+ferragens enferrujadas.
+Reparo ou substituição de elementos do beiral que estejam
+desgastados.
+Frequência de manutenção: inspeção visual duas vezes ao ano, priorizando períodos
+que antecedam as épocas chuvosas.
+
+-- 24 of 106 --
+
+24
+7.3 FORRO
+Intervenção Descrição
+Inspeção visual para verificar manchas, rachaduras, ondulações,
+sinais de infiltração, bem como a análise das fixações para conferir
+se placas ou ripas estão bem presas e sem sinais de deslocamento.
+Reparo ou substituição de partes danificadas em caso de
+manchas, rachaduras, placas soltas ou deterioradas com empresa
+especializada ou profissional habilitado.
+Frequência de manutenção: inspeção visual duas vezes ao ano, priorizando períodos
+de férias escolares.
+
+-- 25 of 106 --
+
+25
+7.4 PISOS E REVESTIMENTOS
+Intervenção Descrição
+Inspeção visual para verificar peças soltas ou trincadas,
+manchadas, condições dos rejuntes.
+Limpeza regular para evitar o acúmulo de sujeira, utilizando
+produtos adequados para cada tipo de piso e revestimento. Tanto
+nos pisos de granilite quanto em porcelanatos, evite produtos de
+limpeza abrasivos, que possam danificar o acabamento.
+Reparo e substituição de pisos ou revestimentos trincados ou
+soltos para evitar acidentes e garantir a segurança dos usuários do
+espaço, bem como reaplicação do rejunte em casos de desgaste
+excessivo.
+Frequência de manutenção: inspeção visual uma vez ao ano, priorizando períodos de
+férias escolares. Verificar as orientações no Manual de Limpeza, disponibilizado pela
+Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+
+-- 26 of 106 --
+
+26
+7.5 PINTURA
+Intervenção Descrição
+Inspeção visual para verificação de manchas, infiltrações, fissuras,
+bolhas ou descascamento nas paredes.
+Limpeza regular das paredes evitando produtos abrasivos ou
+químicos fortes na limpeza das paredes. Usar pano úmido com
+detergente neutro em tintas laváveis (exemplo: acrílica).
+Atenção! As paredes adesivadas exigem que a limpeza seja
+realizada de forma a evitar que os adesivos descolem. Priorizar o
+uso de sabão neutro diluído em água juntamente com pano de
+microfibra, evitando a utilização de produtos abrasivos.
+Reparo e Repintura, realizando a limpeza da superfície. Quando
+necessário preencher as fissuras e buracos com massa adequada,
+assim como aplicar o fundo preparador. Em seguida pintar com a
+tinta com a especificação correta, garantindo duas demãos para
+acabamento uniforme e durabilidade.
+Frequência de manutenção: nas áreas internas a cada dois a três anos, dependendo
+do desgaste. Já as áreas externas a cada dois anos, principalmente em locais com
+exposição direta ao sol e à chuva.
+
+-- 27 of 106 --
+
+27
+7.6 ESQUADRIAS
+Intervenção Descrição
+Inspeção visual periódica para identificar possíveis danos, como
+deteriorações, empenamento, desgastes nas dobradiças ou
+mecanismos de abertura, como fechaduras e trincos.
+Limpeza regular para remover poeira, sujeira ou gordura. Além
+disso, é necessária a aplicação de lubrificante nas dobradiças e
+fechaduras das portas e janelas para garantir que funcionem de
+maneira suave e sem rangidos.
+Reparo e substituição de peças danificadas que possam
+comprometer o uso do ambiente, ou a segurança dos usuários.
+Frequência de manutenção: as esquadrias devem ser repintadas a cada dois a três
+anos para evitar a ferrugem e garantir uma aparência adequada. Quanto à inspeção e
+limpeza, verificar as orientações no Manual de Limpeza, disponibilizado pela Secretaria
+Adjunta de Gestão Regional (SAGR/SEDUC).
+
+-- 28 of 106 --
+
+28
+7.7 INSTALAÇÕES ELÉTRICAS
+7.7.1 BAIXA TENSÃO
+Intervenção Descrição
+Inspeção visual periódica para identificar desgastes na fiação,
+sinais de superaquecimento ou curtos-circuitos. Verificar também o
+estado de isolamento dos fios e cabos. É proibido o uso de extensões
+em circuitos que possam sobrecarregar o sistema elétrico.
+Atenção quanto a instalação elétrica de equipamentos térmicos
+(ar-condicionado, micro-ondas, fornos elétricos, chuveiro elétrico
+etc), que devem possuir, obrigatoriamente, circuito independente.
+Limpeza regular nos quadros de energia de sujeira, que podem
+causar sobreaquecimento ou mau funcionamento.
+Atenção quanto a limpeza dos quadros de energia, que deve ser
+realizada por empresa especializada e profissional devidamente
+habilitado, preferencialmente aqueles que possam emitir a ART
+(Anotação de Responsabilidade Técnica) referente ao serviço
+executado.
+Reparo e substituição de lâmpadas queimadas, interruptores com
+defeito ou tomadas que não funcionam. Além disso, faça a troca de
+fios sem isolamento imediatamente para evitar riscos de choques
+elétricos ou incêndios.
+Contratação de Empresa Especializada para realizar qualquer
+intervenção no sistema elétrico, preferencialmente aqueles que
+possam emitir a ART (Anotação de Responsabilidade Técnica)
+referente ao serviço executado. O profissional deve seguir a NR 10
+(Brasil, 2022) - Segurança em Instalações Elétricas - e estar
+familiarizado com a NBR 5419 (ABNT, 2015).
+Frequência de manutenção:
+ Inspeção geral e testes de segurança: anualmente.
+ Manutenção corretiva (substituição de componentes): sempre que necessário.
+ Limpeza dos quadros e equipamentos: trimestralmente (Empresa Especializada).
+ Testes de aterramento: anualmente.
+
+-- 29 of 106 --
+
+29
+Quando ocorre um aumento na demanda de energia, como a instalação de novos
+aparelhos de ar-condicionado ou modificações na infraestrutura da edificação que
+resultem em mais pontos de energia, é fundamental realizar um estudo técnico
+para verificar se o sistema elétrico atual é capaz de suportar a carga adicional. Para
+a realização do estudo, solicitar suporte à Coordenadoria de Infraestrutura,
+Patrimônio e TI da Diretoria Regional de Educação (DRE) responsável pela unidade
+escolar.
+
+-- 30 of 106 --
+
+30
+7.7.2 SISTEMA DE PREVENÇÃO CONTRA DESCARGAS ATMOSFÉRICAS (SPDA)
+Intervenção Descrição
+Inspeção visual periódica para verificar a integridade dos
+componentes do sistema de proteção (captores, condutores,
+aterramento).
+Limpeza regular do quadro do BEP (Barramento de
+Equipotencialização), caso houver. Contratar profissionais
+qualificados para realizar qualquer intervenção no sistema elétrico,
+preferencialmente aqueles que possam emitir a ART (Anotação de
+Responsabilidade Técnica) referente ao serviço executado.
+Contratação de Empresa Especializada para realizar qualquer
+intervenção no sistema elétrico, preferencialmente aqueles que
+possam emitir a ART (Anotação de Responsabilidade Técnica)
+referente ao serviço executado.
+Frequência de manutenção
+ Em condições normais: anualmente.
+ Em eventos atípicos, como suspeita de impacto de descarga atmosférica, grandes
+tempestades, modificações na edificação e/ou alterações ou reparos no sistema:
+realizar a inspeção o mais breve possível.
+
+-- 31 of 106 --
+
+31
+7.7.3 POSTO DE TRANSFORMAÇÃO
+Intervenção Descrição
+Inspeção visual periódica para verificar a integridade dos
+componentes do posto de transformação (cabos, disjuntor,
+conectores, aterramento e correlatos).
+Limpeza regular dos quadros de energia a fim de evitar o
+sobreaquecimento ou mau funcionamento.
+Atenção quanto a limpeza dos quadros de energia, que devem ser
+realizadas com empresa especializada e profissional devidamente
+habilitado, preferencialmente aqueles que possam emitir a ART
+(Anotação de Responsabilidade Técnica) referente ao serviço
+executado.
+Contratação de Empresa Especializada para realizar qualquer
+intervenção no sistema elétrico, preferencialmente aqueles que
+possam emitir a ART (Anotação de Responsabilidade Técnica)
+referente ao serviço executado.
+Frequência de manutenção
+ Em condições normais: anualmente.
+ Em eventos atípicos: realizar a inspeção o mais breve possível.
+
+-- 32 of 106 --
+
+32
+7.8 INSTALAÇÕES HIDROSSANITÁRIAS
+7.8.1 CAIXA D’ÁGUA E CISTERNA (RESERVATÓRIOS)
+Intervenção Descrição
+Inspeção visual periódica para verificar as paredes, tampa e
+conexões da caixa d'água, ou cisterna para identificar possíveis
+rachaduras ou vazamentos. A tampa deve ser bem vedada para
+evitar a entrada de sujeira ou detritos.
+Se houver bomba para distribuição da água, verifique
+regularmente seu funcionamento.
+Limpeza regular e desinfecção das caixas d'água e cisternas com
+produtos adequados.
+Atenção quanto a limpeza das caixas d’água e cisternas, que
+devem ser realizadas com empresa especializada e profissional
+devidamente habilitado, preferencialmente aqueles que possam
+emitir a ART (Anotação de Responsabilidade Técnica) referente ao
+serviço executado.
+Contratação de Empresa Especializada para realizar qualquer
+intervenção no sistema ou para limpeza e reparo no reservatório.
+Frequência de manutenção: Caixas d'água e cisternas devem ser limpas uma vez por
+ano. Após a limpeza, recomenda-se fazer a desinfecção da caixa d'água ou cisterna
+com produtos adequados.
+
+-- 33 of 106 --
+
+33
+7.8.2 RALOS E SIFÕES
+Intervenção Descrição
+Inspeção visual periódica para verificar se há resíduos que possam
+causar entupimento ou odores provenientes do ralo.
+Inspeção visual periódica para verificar se a água está escorrendo
+devidamente. Caso a mesma esteja demorando para descer ou há
+vazamentos ao redor do ralo, pode ser um sinal de mau
+funcionamento, sendo necessária a manutenção.
+Inspeção visual das tubulações para verificar se há sinais de danos
+ou vazamentos.
+Limpeza regular dos sifões e dos ralos, especialmente os de
+banheiro e cozinha. A inspeção deve ser periódica, com a remoção
+do sifão e limpeza do mesmo.
+Reparo ou substituição das tampas ou grelhas que estiverem
+danificadas.
+Frequência de manutenção: inspeção e limpeza ao menos uma vez ao mês ou sempre
+que notar mau funcionamento nos elementos.
+
+-- 34 of 106 --
+
+34
+7.8.3 VÁLVULAS E REGISTROS
+Intervenção Descrição
+Inspeção visual para verificar se a alavanca ou botão de
+acionamento da válvula de descarga está funcionando.
+Inspeção visual periódica para verificar se a descarga está na vazão
+adequada ou se apresenta vazamentos após o fechamento da
+válvula.
+Inspeção visual dos registros para garantir que abrem e fecham
+completamente conforme uso. Examine os registros e a área ao
+redor para verificar se há vazamentos ou umidade.
+Reparo ou substituição das peças desgastadas, como anel de
+vedação da válvula de descarga e registros, para evitar vazamentos.
+Frequência de manutenção: ao menos uma vez ao mês e a substituição dos
+componentes devem acontecer sempre que verificado mau funcionamento.
+
+-- 35 of 106 --
+
+35
+7.8.4 TUBULAÇÕES
+Intervenção Descrição
+Inspeção visual periódica nas paredes ou no piso em busca de
+manchas ou umidade, que podem indicar vazamentos internos.
+Testes de Desempenho para identificar possíveis vazamentos na
+rede hidráulica da escola:
+● No primeiro teste, feche a torneira de boia da caixa d’água ou
+da cisterna e anote a leitura do hidrômetro. Após 30 minutos
+a 1 hora, verifique se a leitura mudou. Se houver alteração,
+isso indica vazamento entre o hidrômetro e o reservatório.
+● No segundo teste, mantenha todos os pontos de uso da
+escola fechados, como torneiras e descargas, e abra o
+registro da caixa d’água. Depois do mesmo intervalo de
+tempo, observe se o nível da água na caixa baixou. Caso
+tenha diminuído sem que houvesse consumo, há um
+vazamento na rede interna.
+É importante também observar sinais de infiltração e repetir
+esses testes com frequência.
+Contratação de Empresa Especializada para realizar qualquer
+intervenção no sistema ou para manutenção ou reparo das
+tubulações.
+Frequência de manutenção: inspeção visual e teste de desempenho uma vez ao ano
+e a substituição dos componentes deve acontecer sempre que verificado mau
+funcionamento.
+
+-- 36 of 106 --
+
+36
+7.8.5 SISTEMA DE TRATAMENTO DE ESGOTO (STE)
+Intervenção Descrição
+Inspeção visual na vedação da tampa do sistema de tratamento,
+verificando sinais de obstrução, vazamentos ou acúmulo de líquidos
+no solo. Checar se há transbordamento de esgoto, rebaixamento do
+solo ao redor do sistema, presença de insetos, odores e crescimento
+de vegetação.
+É necessário contratar uma Empresa Especializada na remoção de
+esgoto, conhecida popularmente como "limpa fossa", e todos os
+compartimentos deverão ser esvaziados.
+Em caso de transbordamentos constantes contatar o Suporte
+SEDUC.
+Frequência de manutenção: inspeção e limpeza ao menos duas vezes no ano ou
+sempre que necessário, especialmente se houver sinais de mau funcionamento.
+
+-- 37 of 106 --
+
+37
+7.8.6 CAIXA DE GORDURA
+Intervenção Descrição
+Inspeção visual na vedação da tampa da caixa de gordura,
+verificando sinais de obstrução e vazamentos. Checar se há
+transbordamento de esgoto, presença de insetos e odores.
+Limpeza regular, removendo manualmente a gordura acumulada e
+os resíduos sólidos.
+Atenção quanto a limpeza das caixas de gordura, que devem ser
+realizadas com empresa especializada e profissional devidamente
+habilitado.
+Em caso de transbordamentos constantes contatar o Suporte
+SEDUC.
+Frequência de manutenção: realizar limpeza sempre que necessário, especialmente
+se houver sinais de mau funcionamento.
+
+-- 38 of 106 --
+
+38
+7.8.7 INSTALAÇÕES DE GÁS
+Intervenção Descrição
+Inspeção visual para verificar se as tubulações estão intactas, sem
+corrosão, rachaduras, obstruções ou vazamentos.
+Inspeção visual para verificar se as válvulas de segurança estão
+funcionando.
+Inspeção visual para verificar a validade dos botijões de gás e
+solicitar a troca dos que estão vencidos. É importante que os
+funcionários da cozinha conheçam o funcionamento do sistema de
+gás GLP.
+Contrate Empresa Especializada para o manuseio e a manutenção
+de gás GLP a fim de garantir a segurança, evitando vazamentos e
+riscos de explosão.
+Frequência de manutenção: inspeção mensal ou sempre que necessário. Em casos
+de mau funcionamento, contratar Empresa Especializada.
+
+-- 39 of 106 --
+
+39
+7.9 INSTALAÇÕES DE COMBATE A INCÊNDIO
+7.9.1 EXTINTORES
+Intervenção Descrição
+Inspeção visual regular para verificar se o extintor está sem danos
+aparentes, no local indicado, acessível e com selo de validade.
+Reparo ou substituição sempre que o extintor for utilizado ou
+quando a pressão estiver abaixo do recomendado (para extintores
+pressurizados).
+Frequência de manutenção: verificação a cada cinco anos ou conforme recomendação
+do fabricante.
+
+-- 40 of 106 --
+
+40
+7.9.2 HIDRANTES E MANGUEIRAS
+Intervenção Descrição
+Inspeção visual para verificar se o hidrante e as mangueiras estão
+sem danos aparentes.
+Realizar manutenção técnica ou substituição de componentes por
+meio de contratação de Empresa Especializada para garantir o
+funcionamento adequado do sistema.
+Frequência de manutenção: o teste de funcionamento do sistema deve ser realizado
+ao menos uma vez por ano.
+
+-- 41 of 106 --
+
+41
+7.9.3 SINALIZAÇÃO DE EMERGÊNCIA E ROTAS DE FUGA
+Intervenção Descrição
+Inspeção visual para verificar se as placas de sinalização de
+emergência estão visíveis e funcionando.
+Inspeção visual para verificação do funcionamento das lâmpadas
+de emergência, checar se estão operando corretamente, sem falhas
+ou queima de lâmpadas.
+Inspeção visual para garantir que as placas de sinalização e
+lâmpadas de emergência estejam desobstruídas, com a sinalização
+correta e legível.
+Testes de Desempenho para identificar falta de funcionamento das
+luminárias de emergência:
+● Desligue os disjuntores do circuito de iluminação de
+emergência. A luminária deverá ser acionada
+automaticamente. Caso não ocorra, é provável que a
+luminária esteja defeituosa e é necessária a troca.
+Reparo ou substituição sempre que for verificada uma placa de
+sinalização danificada ou ausente, além de luminárias de sinalização
+de emergência com mau funcionamento.
+Em caso de depreciação ou perda de diversos elementos de
+sinalização, contatar o Suporte SEDUC.
+Frequência de manutenção: inspeção visual e teste de desempenho ao menos duas
+vezes por ano ou quando houver sinais de mau funcionamento.
+
+-- 42 of 106 --
+
+42
+7.9.4 ACIONAMENTOS
+Intervenção Descrição
+Inspeção visual para identificar desgastes na fiação e/ou curtos-
+circuitos e o estado de isolamento dos cabos.
+Inspeção visual para verificação das condições operacionais dos
+itens, como botoeiras, central de alarme e sirenes.
+Contratação de Empresa Especializada para realizar qualquer
+intervenção.
+Frequência de manutenção: verificação detalhada e manutenção preventiva de todos
+os equipamentos e sistemas de segurança ao menos uma vez ao ano.
+
+-- 43 of 106 --
+
+43
+7.10 ÁREAS MOLHADAS (LOUÇAS, METAIS, BANCADAS E
+DIVISÓRIAS)
+Intervenção Descrição
+Inspeção visual nas louças, bancadas, metais e divisórias para
+verificar se estão em boas condições de uso, sem vazamentos,
+rachaduras, bem fixados ou se apresentam mau funcionamento.
+Inspeção visual nos metais para verificar sinais de ferrugem ou
+corrosão.
+Inspeção visual nas bancadas para verificar se apresentam
+rachaduras, lascas ou áreas desgastadas, que possam acumular
+sujeira e bactérias.
+Inspeção visual para verificar se as divisórias estão firmemente
+fixadas, sem folgas nas conexões e sem danos que possam
+comprometer a privacidade ou segurança dos usuários.
+Limpeza frequente, utilizando produtos adequados para evitar o
+acúmulo de sujeira ou mofo nas superfícies.
+Reparo ou substituição das peças que apresentam desgaste ou
+mau funcionamento.
+Frequência de manutenção: a verificação deve ser realizada anualmente e a troca das
+peças danificadas deve ocorrer sempre que necessário. Quanto à limpeza, verificar as
+orientações no Manual de Limpeza, disponibilizado pela Secretaria Adjunta de Gestão
+Regional (SAGR/SEDUC).
+
+-- 44 of 106 --
+
+44
+7.11 QUADRA POLIESPORTIVA
+Intervenção Descrição
+Inspeção visual das telhas para verificar se estão em bom estado,
+sem rachaduras, furos, quebras ou amassadas.
+Inspeção visual das vigas, arcos, colunas e suportes metálicos em
+busca de sinais de desgastes nas pinturas de acabamento e proteção,
+de corrosão, ferrugem ou danos estruturais.
+Inspeção visual para verificar se os alambrados e as telas de
+proteção estão firmemente fixados e sem danos.
+Inspeção visual para garantir que não haja rachaduras nas
+muretas/arquibancadas, desmoronamento ou sinais de afundamento
+no solo, de forma que estejam estáveis e não haja movimentações
+que possam comprometer a segurança dos usuários.
+Inspeção visual para verificar se os ralos ou sistemas de drenagem
+ao redor da quadra estão limpos, desobstruídos e funcionando
+corretamente.
+Limpeza de calhas, rufos e condutores verticais para remover folhas,
+galhos e sujeiras para evitar entupimentos e infiltrações.
+Limpeza das superfícies metálicas, removendo sujeira, poeira e
+outros resíduos que possam contribuir para a corrosão.
+Limpeza dos ralos e sistemas de drenagem ao redor da quadra para
+que o escoamento da água ocorra adequadamente.
+Reparo ou substituição de telhas metálicas quebradas ou
+danificadas para evitar goteiras e infiltrações.
+Reparo ou substituição de elementos na estrutura de suporte caso
+sejam identificadas peças danificadas ou ferragens enferrujadas.
+Reparo ou substituição de elementos do beiral que estejam
+desgastados.
+Atenção quanto a necessidade de aplicação de produtos
+anticorrosivos nas partes metálicas expostas, para evitar a
+deterioração.
+Frequência de manutenção: duas vezes ao ano, priorizando períodos que antecedam
+as épocas chuvosas. Quanto à inspeção e limpeza, verificar o Manual de Limpeza.
+
+-- 45 of 106 --
+
+45
+7.11.1 PINTURA DE DEMARCAÇÃO – QUADRA POLIESPORTIVA
+Intervenção Descrição
+Inspeção visual para garantir que o piso e demarcações da quadra
+estejam em boas condições, com uma superfície antiderrapante e
+nivelada.
+Limpeza regular do piso para remover sujeira, poeira ou resíduos
+que possam acumular e prejudicar a aderência do piso.
+Reparo ou repintura da área afetada.
+Frequência de manutenção: a inspeção deve ser realizada anualmente e os reparos
+devem ser realizados sempre que necessário.
+
+-- 46 of 106 --
+
+46
+7.11.2 PISO ARTICULADO – QUADRA POLIESPORTIVA
+Intervenção Descrição
+Inspeção visual para verificar se há peças soltas, rachadas,
+danificadas ou se apresentam alteração na coloração.
+Limpeza regular do piso com produtos de limpeza indicados pelo
+fabricante, evitando produtos químicos abrasivos ou corrosivos que
+possam danificar o material do piso.
+Reparo ou substituição das peças danificadas.
+Frequência de manutenção: a inspeção deve ser realizada anualmente e os reparos
+devem ser realizados sempre que necessário.
+
+-- 47 of 106 --
+
+47
+7.12 PISCINA E CASA DE MÁQUINAS
+Intervenção Descrição
+Inspeção visual para verificar o nível e coloração da água.
+Identificar impurezas na água e verificar a condição e validade dos
+filtros presentes na casa de máquinas.
+Inspeção visual das bordas e revestimentos (azulejos, pastilhas,
+rejuntes).
+Inspeção visual de verificação de itens como painéis, disjuntores e
+aterramentos da casa de máquinas.
+Reparo ou substituição imediata caso haja sinais de vazamento ou
+infiltração.
+Reparo ou substituição de equipamentos de segurança (boias,
+escadas, sinalizações).
+Contratação de Empresa Especializada para realizar o tratamento
+da água, incluindo a remoção de sujeiras com rede, aspiração e
+escovação de fundo e paredes para eliminar detritos e algas,
+monitoramento e ajuste dos níveis de pH e cloro residual com
+produtos químicos, limpeza regular do sistema de filtração, possíveis
+trocas parciais ou totais da água, desinfecção das superfícies da
+piscina e verificação dos equipamentos, como filtros e bombas, para
+garantir seu pleno funcionamento.
+Frequência de manutenção: verificar a frequência de uso da piscina e, caso seja diária,
+realizar a limpeza toda semana.
+Importante: a piscina possui um sistema de limpeza auxiliar com filtração e ozonização.
+O mesmo deve ser utilizado rotineiramente, no verão todos os dias e nas demais
+épocas, 3 vezes por semana, pelo período de 6 horas e não somente quando o técnico
+especializado em limpeza, realizar a manutenção. O uso combinado garante uma
+manutenção mais eficaz, não sendo necessário uma limpeza semanal pelo piscineiro,
+uma vez que preventivamente o sistema auxiliar estará funcionando.
+
+-- 48 of 106 --
+
+48
+É PROIBIDO ESVAZIAR A PISCINA. Caso necessário, entre em contato com a
+Coordenadoria de Infraestrutura, Patrimônio e TI (COIPT) da DRE de seu respectivo
+pólo.
+
+-- 49 of 106 --
+
+49
+7.13 IMPLANTAÇÃO
+7.13.1 PÓRTICO
+Intervenção Descrição
+Inspeção visual para verificar se a estrutura do pórtico está segura
+e sem danos, se tem rachaduras, fissuras ou distorções que
+apresentem risco de colapso ou falhas durante o uso.
+Inspeção visual para garantir que a pintura e os acabamentos
+estejam preservados, evitando a deterioração precoce do material e
+mantendo a estética da escola.
+Inspeção visual nas partes metálicas para identificar ferrugem,
+corrosão ou oxidação.
+Inspeção visual nos portões para garantir que abram e fechem
+corretamente, sem dificuldade ou resistência excessiva.
+Reparo ou substituição imediata caso haja sinais de deterioração,
+deslocamento de placas, desgaste da pintura ou infiltração.
+Reparo ou substituição da iluminação do pórtico em caso de mau
+funcionamento.
+Frequência de manutenção: a inspeção deve ser realizada anualmente e os reparos
+devem ser realizados sempre que necessário.
+
+-- 50 of 106 --
+
+50
+7.13.2 MURO E GRADIL
+Intervenção Descrição
+Inspeção visual para verificar se o muro apresenta danos como
+rachaduras, infiltrações, ou alterações no terreno ao redor. Se
+apresenta manchas de mofo ou acúmulo de sujeira, e no gradil em
+busca de sinais de ferrugem ou desgaste devido à ação do tempo.
+Certifique-se de que o muro está estável e não apresenta sinais de
+deslizamento ou afundamento.
+Inspeção visual nas colunas do gradil para garantir que estejam
+firmes e sem movimentações. Confira se as grades do gradil estão
+inteiras, sem dentes quebrados, dobradas ou enferrujadas.
+Reparo ou substituição imediata caso haja sinais de deterioração
+no muro e gradil, assim como deslocamento de placas, desgaste da
+pintura ou infiltração.
+Frequência de manutenção: a inspeção deve ser realizada a cada seis meses e os
+reparos devem ser realizados sempre que necessário.
+
+-- 51 of 106 --
+
+51
+7.13.3 DEPÓSITO DE RESÍDUOS SÓLIDOS
+Intervenção Descrição
+Inspeção visual para verificar as lixeiras, caçambas e outros
+recipientes e garantir que estão em boas condições.
+Inspeção visual nos drenos e as saídas de água no depósito para
+garantir que estejam livres de obstruções e funcionando
+adequadamente.
+Inspeção visual detalhada no depósito para verificar se há
+roedores, insetos, pombos ou outros animais indesejados.
+Limpeza do depósito para remover resíduos acumulados no chão,
+nas paredes e ao redor dos recipientes de lixo. Essa limpeza deve
+ser periódica, se possível, diária. Ademais, recomendamos que uma
+vez por semana, seja realizada uma limpeza mais profunda, com
+desinfecção do espaço, para evitar o acúmulo de bactérias e mau
+cheiro.
+Reparo ou substituição imediata dos elementos caso apresentem
+desgaste ou estejam impróprios para o uso.
+Frequência de manutenção: a inspeção deve ser realizada a cada seis meses e os
+reparos devem ser realizados sempre que necessário.
+
+-- 52 of 106 --
+
+52
+7.13.4 CALÇAMENTOS
+Intervenção Descrição
+Inspeção visual em busca de trincas, buracos e desníveis que
+possam causar acidentes.
+Inspeção visual para verificar se o piso está escorregadio, se há a
+presença de musgo ou lodo, afetando a segurança do pedestre.
+Limpeza regular para evitar o acúmulo de sujeira que possa danificar
+o calçamento. Essa limpeza deve ser periódica, se possível, diária.
+Ademais, recomendamos que uma vez por semana, seja realizada
+uma limpeza mais profunda.
+Reparo ou substituição imediata caso haja sinais de deterioração
+das calçadas/passeios.
+Frequência de manutenção: a inspeção em toda escola deve ser realizada duas vezes
+ao ano e as correções devem ser realizadas sempre que necessário.
+
+-- 53 of 106 --
+
+53
+7.13.5 PAISAGISMO
+Intervenção Descrição
+Inspeção visual para identificar plantas secas, pragas, galhos
+quebrados ou sinais de erosão. Isso permite ações rápidas e de
+baixo custo.
+Limpeza regular das áreas ajardinadas, que inclui retirada de folhas,
+galhos, lixo e mato. A capina e a roçagem mantêm a segurança, a
+estética e evitam animais peçonhentos.
+Contratação de Empresa Especializada para fazer a manutenção
+da área gramada, poda de árvores grandes, o controle de pragas e
+doenças, o replantio em larga escala e a instalação ou manutenção
+de sistemas de irrigação.
+Frequência de manutenção: A manutenção deve ser feita ao menos uma vez por mês
+durante o período de seca. Já no período chuvoso, a manutenção deve ser ajustada
+conforme a necessidade, podendo ser mais frequente para evitar o crescimento de
+mato e espécies invasoras. Isso garante um espaço limpo, seguro e organizado,
+prevenindo pragas.
+É essencial consultar a área técnica antes de plantar árvores na escola para
+escolher espécies adequadas ao espaço. Algumas plantas podem exigir muita
+manutenção ou ter raízes que danificam a drenagem e outras infraestruturas.
+Assim, garantimos um ambiente mais seguro e sustentável para todos.
+
+-- 54 of 106 --
+
+54
+7.13.6 CONTROLE DE PRAGAS
+Intervenção Descrição
+Inspeção visual nas dependências da escola para detectar a
+presença de pragas e identificar focos de infestação.
+Limpeza dos ambientes internos e externos para eliminar fontes de
+atração (como resíduos de comida e água parada) é essencial para
+evitar que as pragas se instalem e se proliferem.
+A contratação de uma Empresa Especializada em controle de
+pragas é fundamental para garantir um ambiente seguro, além de
+garantir o cumprimento das normas sanitárias.
+Frequência de manutenção: A inspeção deve ser realizada duas vezes ao ano,
+especialmente se houver sinais de infestações.
+
+-- 55 of 106 --
+
+55
+7.13.7 SISTEMA DE DRENAGEM
+Intervenção Descrição
+Inspeção visual em calhas, tubulações, canaletas e caixas de areia,
+verificando o acúmulo de detritos, terra e matéria orgânica,
+existência de áreas alagadiças.
+Limpeza regular removendo itens que possam causar obstrução do
+sistema de drenagem, pois este nunca deverá estar obstruído. No
+caso das caixas, verificar se a grelha está em conformidade e sem
+danos.
+Solicitar Suporte SEDUC deverá em caso de alagamentos críticos e
+constantes.
+Frequência de manutenção: a inspeção deve ser realizada duas vezes no ano,
+especialmente se houver sinais de mau funcionamento. Priorizar para que a
+manutenção seja feita antes do período chuvoso.
+
+-- 56 of 106 --
+
+56
+7.14 ACESSIBILIDADE
+7.14.1 ESCADA E RAMPA
+Intervenção Descrição
+Inspeção visual para verificar se os acessos estão livres de
+obstruções. O piso da rampa deve ser antiderrapante e sem
+desníveis.
+Inspeção visual para verificar se não há rachaduras, buracos ou
+danos que possam afetar a locomoção de cadeirantes ou pessoas
+com dificuldades de mobilidade.
+Inspeção visual na rampa para verificar se a mesma está com a
+sinalização tátil para indicar sua presença e garantir que deficientes
+visuais possam localizá-la. Escadas e rampas devem ter corrimãos
+instalados de ambos os lados.
+Reparo ou substituição imediata dos itens danificados, como
+revestimentos, guias de balizamento, etc.
+Frequência de manutenção: a inspeção deve ser realizada duas vezes ao ano,
+especialmente se houver sinais de desgaste que possam causar acidentes.
+Escadas e rampas devem estar em conformidade com as normas técnicas
+para assegurar a segurança e a acessibilidade de todos os usuários.
+A NBR 9050 (ABNT, 2020), que regulamenta os critérios de acessibilidade,
+define aspectos essenciais como dimensões, inclinação, corrimãos e sinalização,
+garantindo a mobilidade adequada para pessoas com deficiência ou mobilidade
+reduzida.
+Em caso de necessidade de adaptações ou reformas, entre em contato com
+a equipe técnica da DRE responsável pela sua região para orientações e suporte.
+
+-- 57 of 106 --
+
+57
+7.14.2 CORRIMÃO, GUARDA-CORPO E BARRAS DE APOIO
+Intervenção Descrição
+Inspeção visual para verificar se os corrimãos estão firmes, sem
+folgas e devidamente fixados na parede ou em sua base, para evitar
+que se solte ou se mova durante o uso.
+Inspeção visual para verificar se o guarda-corpo está em bom
+estado, firme, sem rachaduras ou danos estruturais. Deve ser alto o
+suficiente para impedir quedas. Realizar inspeção em busca de
+corrosão, desgaste e descumprimento da norma NBR 9050 (ABNT,
+2020).
+Reparo ou substituição imediata das peças danificadas, como
+corrimão, guarda corpo e barras de apoio.
+Frequência de manutenção: A inspeção deve ser realizada duas vezes ao ano,
+especialmente se houver sinais de desgaste que possam causar acidentes.
+
+-- 58 of 106 --
+
+58
+7.14.3 PLACA DE SINALIZAÇÃO, MAPA E PISO TÁTIL
+Intervenção Descrição
+Inspeção visual para verificar se as sinalizações indicativas estão
+visíveis e em conformidade com as normas de acessibilidade.
+Inspeção visual no piso tátil para verificar se está intacto, bem
+fixado, sem rachaduras, desníveis, buracos ou áreas danificadas que
+possam prejudicar a mobilidade das pessoas.
+Limpeza regular do piso tátil para evitar o acúmulo de sujeira, poeira
+ou detritos que possam prejudicar a percepção tátil ou causar
+escorregamentos.
+Reparo ou substituição imediata das peças danificadas.
+Frequência de manutenção: A inspeção deve ser realizada duas vezes ao ano,
+especialmente se houver sinais de desgaste que possam causar acidentes.
+Antes de eventos como votações, concursos ou provas, é essencial fazer uma
+inspeção na escola para garantir que rampas, pisos táteis e outros recursos de
+acessibilidade estejam em boas condições, permitindo que todas as pessoas se
+desloquem com segurança e facilidade pelo ambiente.
+
+-- 59 of 106 --
+
+59
+7.15 EQUIPAMENTOS E MOBILIÁRIOS
+7.15.1 APARELHO DE AR CONDICIONADO
+Intervenção Descrição
+Inspeção visual: Realizar inspeções regulares no ar-condicionado
+para identificar vazamentos, sujeira, mofo ou ruídos anormais. Evite
+a incidência direta de luz solar no ambiente, usando cortinas ou
+persianas. Durante o uso, mantenha portas e janelas fechadas e
+ajuste a temperatura entre 23 °C e 25 °C para garantir conforto e
+economia. Não ligue e desligue o aparelho em intervalos curtos e
+desligue-o quando o ambiente estiver desocupado para evitar
+desperdício de energia e riscos elétricos.
+Limpeza: Filtros sujos podem comprometer a qualidade do ar e
+reduzir a eficiência do sistema. Eles devem ser limpos ou
+substituídos regularmente. Siga o Manual de Limpeza da Secretaria
+Adjunta de Gestão Regional (SAGR/SEDUC), preservando a vida útil
+do mobiliário.
+Empresa Especializada: Em caso de falhas no ar-condicionado,
+como não funcionamento, barulhos incomuns, queda no
+desempenho, cheiro de queimado ou superaquecimento, é
+fundamental contar com uma empresa especializada. A manutenção
+ou substituição deve ser feita por profissionais qualificados para
+garantir sua segurança, preservar o equipamento e evitar maiores
+prejuízos.
+Frequência de manutenção
+A inspeção dos bebedouros deve ser feita pelo menos duas vezes ao ano, especialmente
+em caso de mau funcionamento. A limpeza dos filtros é mensal, e a manutenção interna,
+realizada por empresa especializada, ocorre semestralmente ou conforme a
+necessidade.
+
+-- 60 of 106 --
+
+60
+7.15.2 VENTILADORES
+Intervenção Descrição
+Inspeção visual: Realize inspeção visual para identificar ruídos
+anormais, funcionamento irregular ou vibrações excessivas no
+ventilador, que podem indicar lâminas desbalanceadas. Verifique
+também as condições da fiação e das conexões elétricas, garantindo
+que não apresentem desgaste, mau contato ou aquecimento
+excessivo, conforme orientações da ABNT NBR 5410 (ABNT, 2024),
+que trata da instalação elétrica de baixa tensão. Se o motor possuir
+partes móveis que exigem lubrificação, assegure-se de que estejam
+devidamente lubrificadas para evitar desgaste prematuro e garantir
+o bom funcionamento do equipamento.
+Limpeza: Deve ser feita regularmente para garantir bom
+desempenho e qualidade do ar. Limpe hélices e grade a cada 15 dias
+com pano úmido. Siga o Manual de Limpeza da Secretaria Adjunta
+de Gestão Regional (SAGR/SEDUC), preservando a vida útil do
+mobiliário.
+Reparo ou substituição: Em caso de falhas, ruídos excessivos,
+queda de desempenho, cheiro de queimado ou superaquecimento,
+é importante buscar o reparo ou a substituição do equipamento.
+Sempre contrate profissionais especializados para garantir
+segurança e evitar danos maiores.
+Frequência de manutenção: A inspeção e limpeza interna deve ser realizada por
+profissional qualificado duas vezes ao ano, especialmente se houver sinais de mau
+funcionamento.
+
+-- 61 of 106 --
+
+61
+7.15.3 BEBEDOUROS
+Intervenção Descrição
+Inspeção visual: realize inspeções periódicas nos bebedouros para
+garantir seu funcionamento seguro e eficiente. Verifique vazamentos
+na válvula, torneira e sistema de refrigeração, avalie a fiação e
+instalação elétrica conforme a norma ABNT NBR 5410 (ABNT, 2024)
+para evitar riscos elétricos, e confirme que o sistema de refrigeração
+opera sem falhas ou superaquecimento.
+Limpeza: A limpeza periódica dos bebedouros é fundamental para
+evitar a proliferação de bactérias e garantir a qualidade da água
+consumida. Siga o Manual de Limpeza da Secretaria Adjunta de
+Gestão Regional (SAGR/SEDUC), preservando a vida útil do
+mobiliário.
+Reparo ou substituição: Aparelhos com mau funcionamento
+devem ser reparados ou substituídos imediatamente para garantir
+segurança e eficiência. O filtro deve ser trocado regularmente para
+manter a água potável e livre de impurezas. Além disso, o motor e o
+interruptor devem ser verificados periodicamente para assegurar o
+funcionamento adequado do ventilador e evitar falhas elétricas.
+Frequência de manutenção: Deve ser realizado a cada 3 meses, para verificar
+vazamentos, funcionamento do sistema de refrigeração, estado da fiação e conexões
+elétricas.
+
+-- 62 of 106 --
+
+62
+7.15.4 CONJUNTO ALUNO, CONJUNTO PROFESSOR, CONJUNTO REFEITÓRIO,
+MESA PNE.
+Intervenção Descrição
+Inspeção visual: Verificar periodicamente o estado do tampo de
+MDF (rachaduras, inchaços), estrutura metálica (ferrugem, trincas ou
+instabilidade), peças de PVC (quebras, ressecamento). O uso deve
+ser exclusivo em sala de aula, não sendo recomendado para outros
+ambientes.
+Limpeza: Utilizar produtos neutros. Evitar excesso de água
+utilizando apenas um pano úmido, especialmente nas partes de MDF
+e PVC, para evitar inchaço ou deterioração. Siga o Manual de
+Limpeza da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC),
+preservando a vida útil do mobiliário.
+Reparo ou Substituição: Reapertar parafusos e conexões soltas.
+Tratar partes metálicas com sinais de ferrugem. Em caso de tampos
+de MDF danificados ou peças de PVC quebradas, ressecadas,
+consultar a DRE sobre a vigência da garantia; se fora do prazo,
+solicitar a substituição do mobiliário.
+Frequência de manutenção: Realizar revisão de parafusos e estruturas metálicas a
+cada três meses. Tratamento anticorrosivo e substituições conforme necessidade
+identificada.
+
+-- 63 of 106 --
+
+63
+7.15.5 CHROMEBOOK E NOTEBOOK
+Intervenção Descrição
+Inspeção visual: Verificar periodicamente a integridade da estrutura
+externa (trincas, quebras), funcionamento do teclado e touchpad,
+condição da tela (manchas, pixels mortos ou rachaduras), além do
+estado das conexões (USB, carregador, fones de ouvido). Observar
+também se há danos nos cabos ou conectores.
+Limpeza: Limpar com pano de microfibra levemente umedecido com
+produto específico para eletrônicos. Evitar o uso de água diretamente
+no equipamento. Siga o Manual de Limpeza da Secretaria Adjunta de
+Gestão Regional (SAGR/SEDUC), preservando a vida útil do
+mobiliário.
+Reparo ou Substituição: Em caso de falhas, comunicar a DRE para
+verificar a garantia. Danos por mau uso, como touchpad ou tela
+danificados, não são cobertos e deve ser registrado processo
+administrativo para uma possível substituição com orientação da
+DRE.
+Frequência de manutenção: A inspeção visual deve ser realizada mensalmente. A
+avaliação para reparos deve ser feita sempre que identificado mau funcionamento.
+
+-- 64 of 106 --
+
+64
+7.15.6 GABINETE DE RECARGA
+Intervenção Descrição
+Inspeção visual: Verificar periodicamente a integridade da estrutura
+externa do gabinete (trincas, quebras), funcionamento das portas de
+conexão (USB, carregador) e o estado das conexões de energia.
+Observar também se há danos nos cabos ou conectores.
+Limpeza: Limpar com pano de microfibra levemente umedecido com
+produto específico para eletrônicos. Evitar o uso de água diretamente
+no equipamento. A limpeza deve ser feita com o gabinete desligado,
+incluindo a parte externa e as conexões. Siga o Manual de Limpeza
+da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC),
+preservando a vida útil do mobiliário.
+Reparo ou Substituição: Em caso de falhas nas conexões ou
+funcionamento, comunicar a DRE para verificar a garantia. Danos por
+mau uso, como danos físicos à estrutura do gabinete, não são
+cobertos pela garantia e deve ser registrado processo administrativo
+para uma possível substituição com orientação da DRE.
+Frequência de manutenção: A inspeção visual e a limpeza devem ser realizadas
+mensalmente. A avaliação para reparos deve ser feita sempre que identificado mau
+funcionamento.
+
+-- 65 of 106 --
+
+65
+7.15.7 MESA EM “L”, MESA CIRCULAR EM MDF
+Intervenção Descrição
+Inspeção visual: Verificar periodicamente a integridade da estrutura
+da mesa (parafusos, suportes, cantos, revestimento), estabilidade
+das junções e sinais de empenamento ou ferrugem, no caso de
+estrutura metálica.
+Limpeza: Limpar com pano de microfibra levemente umedecido com
+produto apropriado ao mobiliário. A limpeza deve incluir o tampo, os
+pés e a parte inferior da mesa. Siga o Manual de Limpeza da
+Secretaria Adjunta de Gestão Regional (SAGR/SEDUC),
+preservando a vida útil do mobiliário.
+Reparo ou Substituição: Em caso de danos estruturais (como
+trincas no tampo ou folgas nas junções), realizar reparo imediato ou
+solicitar substituição. Partes danificadas por mau uso devem ser
+avaliadas conforme a política da unidade.
+Frequência de manutenção: Realizar revisão de parafusos e estruturas metálicas
+mensalmente. Tratamento anticorrosivo e substituições conforme necessidade
+identificada. Siga o Manual de Limpeza da Secretaria Adjunta de Gestão Regional
+(SAGR/SEDUC), preservando a vida útil do mobiliário.
+
+-- 66 of 106 --
+
+66
+7.15.8 ARQUIVO EM AÇO, ARMÁRIO ALTO EM AÇO, ROUPEIRO, ESTANTE EM
+AÇO, EXPOSITOR DE LIVROS.
+Intervenção Descrição
+Inspeção visual: Verificar periodicamente a estrutura do mobiliário,
+alinhamento das gavetas e integridade dos trilhos e puxadores,
+parafusos. Certificar-se de que o mobiliário está nivelado e estável,
+não ultrapassando o limite da capacidade de peso do mobiliário.
+Limpeza: Realizar limpeza com pano macio e levemente umedecido
+com produto adequado ao mobiliário. Limpar a parte externa, interna
+das gavetas e laterais. Siga o Manual de Limpeza da Secretaria
+Adjunta de Gestão Regional (SAGR/SEDUC), preservando a vida útil
+do mobiliário.
+Reparo ou Substituição: Em caso de falha nos trilhos, travamento
+das gavetas, ferrugem avançada, avaria nas prateleiras, avaria no
+suporte da base do mobiliário, avaliar a possibilidade de reparo ou
+substituição. Danos causados por mau uso devem ser registrados
+conforme normas da unidade.
+Frequência de manutenção: Realizar revisão de parafusos e estruturas metálicas a
+cada três meses para garantir segurança. Aplique tratamento anticorrosivo conforme
+necessidade e substitua peças danificadas ou corroídas.
+
+-- 67 of 106 --
+
+67
+7.15.9 TELEVISOR SMART TV 65 POLEGADAS
+Intervenção Descrição
+Inspeção visual: Verificar periodicamente o estado da tela quanto a
+trincas, manchas ou pixels queimados. Observar o funcionamento das
+conexões (HDMI, USB, energia), estabilidade do suporte ou fixação
+na parede, e presença de poeira excessiva nas saídas de ventilação.
+Limpeza: Quando limpar, desligue da tomada e limpe suavemente
+com um pano e produtos específicos. Siga o Manual de Limpeza da
+Secretaria Adjunta de Gestão Regional (SAGR/SEDUC), preservando
+a vida útil do mobiliário.
+Reparo ou Substituição: Em caso de mau funcionamento, como
+falha na imagem, som, ou entradas de conexão, acionar a DRE para
+verificar se o equipamento está dentro do prazo de garantia. Caso não
+esteja, encaminhar solicitação de reparo técnico ou substituição do
+equipamento conforme orientações da mantenedora.
+Frequência de manutenção: A inspeção deve ser realizada duas vezes ao ano,
+especialmente se houver sinais de mau funcionamento.
+
+-- 68 of 106 --
+
+68
+7.15.10 COMPUTADOR DE MESA (DESKTOP)
+Intervenção Descrição
+Inspeção visual: Verifique danos físicos, conexões, estabilidade do
+monitor e acúmulo de poeira. Avalie desempenho, aquecimento e
+atualizações. Garanta a conformidade do cabeamento e tomadas
+com as normas NBR 14.136 e NBR 5410 (ABNT, 2024). Em dúvidas
+elétricas, consulte um eletricista. Desligue da tomada em
+tempestades, não deixe o computador ligado após o expediente.
+Limpeza: Desligue o computador da tomada e limpe o gabinete,
+monitor, teclado e mouse com pano macio e seco. Não use produtos
+químicos, pois podem danificar o equipamento. Siga o Manual de
+Limpeza da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC),
+preservando a vida útil do mobiliário.
+Reparo ou Substituição: Em caso de problemas no sistema
+operacional, falhas de hardware (como HD, memória ou placa de
+vídeo) ou lentidão excessiva, acione o suporte técnico. Verifique se o
+equipamento está na garantia; se não, solicite reparo técnico.
+Frequência de manutenção: A inspeção deve ser realizada uma vez ao ano,
+especialmente se houver sinais de mau funcionamento.
+
+-- 69 of 106 --
+
+69
+7.15.11 REFRIGERADORES E FREEZERS
+Intervenção Descrição
+Inspeção visual: Confira se o refrigerador está resfriando bem, sem
+esquentar demais ou apresentar problemas no motor. Verifique se a
+temperatura está correta para conservar os alimentos e se as portas
+fecham bem, evitando o desperdício de energia. Fique atento a
+barulhos estranhos e veja se os fios estão em bom estado, sem sinais
+de desgaste ou perigo.
+Limpeza: Limpe o interior e o exterior do refrigerador ou freezer,
+incluindo prateleiras e gavetas, para evitar acúmulo de sujeira.
+Verifique e desobstrua as saídas do sistema de drenagem para
+garantir seu funcionamento eficiente. Siga o Manual de Limpeza da
+Secretaria Adjunta de Gestão Regional (SAGR/SEDUC), preservando
+a vida útil do mobiliário.
+Reparo ou Substituição de aparelhos que apresentarem mau
+funcionamento, como o motor, bobina, compressor, sistema de
+drenagem obstruído ou ventiladores internos. Caso fique inviável o
+reparo, solicitar apoio da DRE para acionamento da garantia ou
+substituição dos elementos.
+Frequência de manutenção: A inspeção deve ser realizada trimestralmente,
+especialmente se houver sinais de mau funcionamento.
+
+-- 70 of 106 --
+
+70
+7.15.12 FOGÃO INDUSTRIAL
+Intervenção Descrição
+Inspeção visual: Verifique visualmente durante o uso possíveis
+vazamentos de gás em mangueiras, conexões e válvulas, usando
+água com sabão. Inspecione a estrutura do fogão em busca de
+ferrugem, rachaduras ou danos. Confira se botões e controles
+funcionam corretamente e sem desgaste. Teste o acendimento das
+bocas. Verifique se válvulas e regulador de pressão estão em bom
+estado e funcionando adequadamente.
+Limpeza: Realizar a limpeza completa das bocas, difusores e
+queimadores para evitar acúmulo de resíduos e garantir o bom
+funcionamento, verificar se não há obstruções de GÁS, assegurando
+o fluxo adequado. Siga o Manual de Limpeza da Secretaria
+Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Providenciar o reparo ou substituição
+imediata de componentes com mau funcionamento. Se o reparo for
+inviável, acionar a DRE para verificar a garantia.
+Frequência de manutenção: A inspeção deve ser realizada trimestralmente,
+especialmente se houver sinais de mau funcionamento.
+
+-- 71 of 106 --
+
+71
+7.15.13 FORNO MICRO-ONDAS
+Intervenção Descrição
+Inspeção visual: Verifique se a porta do micro-ondas abre e fecha
+corretamente, e se trava bem. Observe se há trincas, ferrugem ou
+amassados na parte externa. Teste os botões, teclas e o visor para
+garantir que estejam funcionando. Confira se o prato gira de forma
+suave e sem barulhos. Inspecione o cabo e o plugue para garantir que
+não estejam danificados ou aquecendo demais.
+Limpeza: Limpe bem as partes internas e externas do micro-ondas,
+incluindo o prato giratório, removendo resíduos de alimentos e
+gordura. Verifique e limpe as saídas de gás, garantindo que não
+estejam obstruídas e o fluxo esteja normal. Siga o Manual de Limpeza
+da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Se houver peças com defeito, providencie
+o reparo ou substituição. Antes de qualquer substituição, verifique se
+o produto ainda está na garantia. Caso o conserto não seja viável,
+solicite a substituição junto à DRE.
+Frequência de manutenção: A inspeção deve ser realizada semestralmente,
+especialmente se houver sinais de mau funcionamento.
+
+-- 72 of 106 --
+
+72
+7.15.14 FORNO ELÉTRICO INDUSTRIAL
+Intervenção Descrição
+Inspeção visual: Verifique se há danos no forno (amassados,
+ferrugem ou trincas), se as resistências aquecem por igual e se o
+termostato mantém a temperatura. Teste timer, botões e visor.
+Observe fios e conexões quanto a desgaste ou superaquecimento. Ao
+ligar, confira o aquecimento, a distribuição do calor, luz interna,
+ventilação (se houver) e o desligamento. Certifique-se de que a
+tomada tenha aterramento conforme a NBR 5410 (ABNT, 2024).
+Limpeza: Limpe totalmente o interior e exterior do forno, removendo
+resíduos e gordura para manter a higiene e evitar odores. Verifique e
+desobstrua as saídas de gás para garantir o fluxo adequado. Siga o
+Manual de Limpeza da Secretaria Adjunta de Gestão Regional
+(SAGR/SEDUC).
+Reparo ou Substituição: Se houver falhas, repare ou substitua
+resistências, termostato, painel ou fiação. Verifique se o equipamento
+está na garantia antes de substituir. Caso o conserto não seja
+possível, solicite a troca junto à DRE.
+Frequência de manutenção: A inspeção deve ser realizada trimestralmente,
+especialmente se houver sinais de mau funcionamento.
+
+-- 73 of 106 --
+
+73
+7.15.15 BALCÃO TÉRMICO
+Intervenção Descrição
+Inspeção visual: Verifique danos no balcão (trincas, ferrugem,
+amassados) e o funcionamento uniforme do aquecimento e
+termostato. Teste botões, visor (se houver) e observe cabos e
+tomadas quanto a desgaste ou superaquecimento. Garanta que a
+instalação elétrica esteja conforme as normas ABNT NBR 5410
+(ABNT, 2024).
+Limpeza: Limpe cuidadosamente o interior e exterior com pano macio
+e seco, evitando produtos químicos que possam danificar o
+equipamento. Evite molhar partes elétricas e verifique que as saídas
+de ventilação estejam livres de obstruções. Siga o Manual de Limpeza
+da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Em caso de falhas, repare ou substitua
+componentes como resistências, termostato, painel ou fiação.
+Verifique a garantia antes da substituição. Se o conserto não for
+viável, solicite a substituição junto à DRE.
+Frequência de manutenção: Realizar a inspeção trimestralmente ou sempre que notar
+sinais de mau funcionamento.
+
+-- 74 of 106 --
+
+74
+7.15.16 CADEIRA GIRATÓRIA
+Intervenção Descrição
+Inspeção visual: Verifique se a cadeira apresenta danos como
+rachaduras, desgastes ou partes soltas, especialmente no assento,
+encosto, base e rodas. Confira o funcionamento do ajuste de altura e
+giro. Certifique-se de que todos os parafusos estejam firmes e que a
+cadeira esteja estável para uso seguro.
+Limpeza: Limpe a cadeira com pano úmido, remova poeira e sujeira
+das rodas para garantir que elas rolem bem. Siga o Manual de
+Limpeza da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Em caso de peças danificadas (rodas,
+mecanismos, apoios), providencie o reparo ou substituição. Verifique
+a garantia antes de trocar componentes. Se o reparo não for possível,
+solicitar à DRE, uma possível substituição.
+Frequência de manutenção: Realizar inspeção, limpeza e lubrificação trimestralmente
+ou ao notar mau funcionamento. Utilize lubrificante spray multiuso (como WD-40) nas
+partes móveis para manter o bom desempenho.
+
+-- 75 of 106 --
+
+75
+7.15.17 SOFÁ DOIS LUGARES
+Intervenção Descrição
+Inspeção visual: Verifique se o sofá apresenta rachaduras, furos,
+rasgos ou desgaste no revestimento de courvin. Observe a estrutura,
+pés e parafusos para garantir que estejam firmes e sem danos.
+Certifique-se de que o assento e o encosto não estejam afundando
+ou com molas soltas.
+Limpeza: Limpe a superfície com pano macio levemente umedecido.
+Evite produtos abrasivos, álcool ou solventes, que podem ressecar ou
+danificar o courvin. Finalize com pano seco. Siga o Manual de
+Limpeza da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Em caso de danos no revestimento ou
+estrutura, providencie o reparo ou substituição das partes afetadas.
+Verifique se o sofá ainda está na garantia antes de qualquer
+substituição. Se não for possível o conserto, solicite substituição
+conforme os trâmites internos.
+Frequência de manutenção: Realizar inspeção a cada três meses verificando
+estruturas e nivelamento.
+
+-- 76 of 106 --
+
+76
+7.15.18 CADEIRA FIXA
+Intervenção Descrição
+Inspeção visual: Verifique se a cadeira apresenta rachaduras,
+ferrugem, soldas quebradas ou partes soltas na estrutura. Observe o
+estado do assento e encosto, certificando-se de que estejam firmes e
+sem desgaste excessivo. Garanta que os pés estejam estáveis e
+nivelados.
+Limpeza: Faça a limpeza com pano úmido e detergente neutro. Evite
+o uso de produtos abrasivos que possam danificar o revestimento ou
+estrutura. Se for estofada, utilize aspirador de pó e produtos
+apropriados para o tipo de tecido. Siga o Manual de Limpeza da
+Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Caso haja partes danificadas (estrutura,
+revestimento ou encosto), providencie o reparo ou substituição.
+Verifique se a cadeira ainda está na garantia antes de qualquer
+substituição. Se o conserto for inviável, solicite a troca conforme os
+procedimentos internos.
+Frequência de manutenção: Realizar inspeção e limpeza a cada três meses, ou sempre
+que houver sinais de desgaste, instabilidade ou desconforto.
+
+-- 77 of 106 --
+
+77
+7.15.19 BANQUETA
+Intervenção Descrição
+Inspeção visual: Verifique se a estrutura de ferro da banqueta
+apresenta ferrugem, trincas, soldas quebradas ou partes soltas.
+Certifique-se de que os parafusos estejam firmes e que a base esteja
+estável. Inspecione o assento em courvin quanto a rasgos,
+rachaduras ou desgaste.
+Limpeza: Limpe a estrutura metálica com pano úmido e detergente
+neutro, secando bem para evitar ferrugem. Para o assento em
+courvin, use pano macio com sabão neutro e finalize com pano seco.
+Evite produtos abrasivos ou solventes. Siga o Manual de Limpeza da
+Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Em caso de danos na estrutura ou no
+assento, providencie o reparo ou substituição das partes
+comprometidas. Verifique se o item está dentro da garantia antes de
+solicitar a troca. Se o conserto não for viável, encaminhe pedido de
+substituição conforme os procedimentos internos.
+Frequência de manutenção: Realizar inspeção mensalmente, verificar danos na
+estrutura, balanceamento e apertando parafusos se necessário.
+
+-- 78 of 106 --
+
+78
+7.15.20 BATEDEIRA TIPO INDUSTRIAL
+Intervenção Descrição
+Inspeção visual: Verifique se há trincas, ferrugem, peças soltas ou
+danificadas na estrutura e nos acessórios da batedeira. Certifique-se
+de que o globo, pá ou gancho estejam em bom estado e bem
+encaixados. Avalie o estado do cabo de alimentação e do plugue,
+garantindo que não haja fios expostos ou superaquecimento. A parte
+elétrica deve estar conforme a norma ABNT NBR 5410 (ABNT, 2024),
+com tomada aterrada.
+Limpeza: Após cada uso, limpe todas as partes removíveis. Limpe o
+corpo da batedeira com pano úmido e nunca jogue água diretamente
+sobre o motor. Evite produtos abrasivos ou corrosivos. Siga o Manual
+de Limpeza da Secretaria Adjunta de Gestão Regional
+(SAGR/SEDUC).
+Reparo ou Substituição: Se apresentar ruídos anormais, falhas no
+motor, aquecimento excessivo ou mau funcionamento. Antes de
+qualquer reparo verifique se está na garantia. Caso o conserto não
+seja viável, solicite a substituição conforme os procedimentos
+internos.
+Frequência de manutenção: Inspeção visual e limpeza diária, após o uso. Lubrificação
+dos componentes mecânicos (se aplicável) semestralmente, utilizando graxa alimentícia
+apropriada.
+
+-- 79 of 106 --
+
+79
+7.15.21 NOBREAK
+Intervenção Descrição
+Inspeção visual: Verifique-se o aterramento para o funcionamento
+eficaz do nobreak e proteção de seus equipamentos. Para um perfeito
+aterramento e dimensionamento da rede elétrica, siga a norma ABNT
+sobre instalações elétricas de baixa tensão, NBR 5410 (ABNT, 2024).
+A polarização (Fase, Neutro e Terra) da rede elétrica deve seguir o
+padrão NBR 14136 (ABNT, 2022);
+Limpeza: Limpar com pano de microfibra levemente umedecido com
+produto específico para eletrônicos. A limpeza deve ser feita com o
+nobreak desligado, incluindo a parte externa e as conexões. Siga o
+Manual de Limpeza da Secretaria Adjunta de Gestão Regional
+(SAGR/SEDUC).
+Reparo ou Substituição: Em caso de falhas, ruídos anormais ou
+funcionamento irregular, acione o suporte técnico. Verifique se há
+garantia vigente antes de solicitar substituição. Caso o reparo não
+seja viável, siga o procedimento interno para troca do equipamento.
+Frequência de manutenção: Realizar teste de Autonomia, simulando falta de energia
+para verificar quanto tempo o nobreak mantém os equipamentos ligados, a cada
+semestre.
+
+-- 80 of 106 --
+
+80
+7.15.22 MULTIPROCESSADOR DE ALIMENTOS
+Intervenção Descrição
+Inspeção visual: Verifique se há trincas, rachaduras ou peças
+quebradas no copo, tampa e acessórios (discos, lâminas, etc.).
+Confirme se os encaixes estão firmes e se a trava de segurança
+funciona corretamente. Avalie o estado do cabo de alimentação e
+plugue, evitando uso com fios expostos ou danificados. A instalação
+elétrica deve estar de acordo com a ABNT NBR 5410 (ABNT, 2024) -
+tomada com aterramento.
+Limpeza: Após cada uso, lave os acessórios com água e sabão
+neutro, secando completamente antes de guardar. Limpe a parte
+externa com pano úmido e seque. Evite o uso de produtos abrasivos
+que possam danificar plásticos ou metais. Siga o Manual de Limpeza
+da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Se o equipamento apresentar ruídos
+anormais, problemas no motor ou falha nos botões, acione o suporte
+técnico. Verifique se há garantia ativa antes de qualquer substituição.
+Caso o conserto seja inviável, solicite a substituição conforme
+procedimento interno.
+Frequência de manutenção: Inspeção visual durante o uso. Lubrificação quinzenal (se
+indicada pelo fabricante) a cada 6 meses com graxa alimentícia apropriada.
+
+-- 81 of 106 --
+
+81
+7.15.23 BEBEDOURO COLUNA GARRAFÃO
+Intervenção Descrição
+Inspeção visual: Verifique se há trincas, ferrugem, amassados ou
+vazamentos no corpo do bebedouro. Confira se as torneiras estão
+firmes e funcionando corretamente. Observe se há acúmulo de sujeira
+ou umidade excessiva na base ou ao redor do garrafão. A parte
+elétrica deve estar em bom estado, com cabos e plugues sem danos,
+conforme a norma ABNT NBR 5410 (ABNT, 2024) - instalações
+elétricas seguras e aterradas.
+Limpeza: Higienize a parte externa com pano úmido e sabão neutro.
+Limpe as torneiras regularmente com escova pequena e enxágue
+com água filtrada. Siga o Manual de Limpeza da Secretaria Adjunta
+de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Se houver mau funcionamento no
+resfriamento, vazamentos ou falhas nas torneiras, providencie reparo
+ou substituição das peças. Caso o conserto seja inviável, solicite a
+substituição conforme procedimento interno.
+Frequência de manutenção: Limpeza interna a cada 3 meses ou ao trocar o garrafão.
+Inspeção visual mensal observando se há vazamentos nas torneiras e rachaduras na
+estrutura que comprometam o funcionamento.
+
+-- 82 of 106 --
+
+82
+7.15.24 LIQUIDIFICADOR TIPO INDUSTRIAL
+Intervenção Descrição
+Inspeção visual: Verifique se há trincas no copo, folgas na tampa,
+desgaste nas lâminas ou vazamentos na base. Inspecione a estrutura
+do motor, botão de controle e o cabo de alimentação para garantir que
+não haja danos, fios expostos ou sinais de superaquecimento. A
+instalação elétrica deve seguir a norma ABNT NBR 5410 (ABNT,
+2024), com tomada aterrada.
+Limpeza: Após cada uso, lave o copo, tampa e lâminas com água e
+sabão neutro. Não mergulhe a base do motor em água; limpe-a com
+pano úmido e seco em seguida. Evite produtos abrasivos ou
+solventes. Siga o Manual de Limpeza da Secretaria Adjunta de
+Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Em caso de falhas no motor, ruídos
+incomuns, aquecimento excessivo ou lâminas danificadas, acione o
+suporte técnico. Verifique se o equipamento está em garantia antes
+de solicitar conserto ou substituição. Se o reparo for inviável, solicite
+substituição conforme procedimento interno.
+Frequência de manutenção: Inspeção visual durante uso. Lubrificação (quando
+aplicável) a cada 6 meses, com produtos específicos.
+
+-- 83 of 106 --
+
+83
+7.15.25 ARMÁRIO ALTO EM MDF, ARMÁRIO BAIXO 2P, ARMÁRIO BAIXO 3P
+Intervenção Descrição
+Inspeção visual: Verifique se há danos aparentes como
+empenamentos, lascas, inchaço por umidade, ferrugem em dobradiças
+ou trincas no MDF. Confira o alinhamento das portas e se as dobradiças,
+puxadores e fechaduras estão firmes e funcionando corretamente.
+Certifique-se de que o móvel está estável, nivelado e sem risco de
+tombamento.
+Limpeza: Faça a limpeza semanal com pano macio levemente
+umedecido em água com sabão neutro. Seque bem após a limpeza para
+evitar absorção de umidade. Evite o uso de produtos abrasivos ou
+solventes, pois podem danificar o mobiliário. Siga o Manual de Limpeza
+da Secretaria Adjunta de Gestão Regional (SAGR/SEDUC).
+Reparo ou Substituição: Se houver partes danificadas, como
+dobradiças soltas ou painéis comprometidos por umidade, providencie
+o reparo ou troca das peças. Antes de solicitar substituição do móvel,
+verifique se ainda está na garantia. Caso o conserto não seja viável,
+encaminhe a solicitação para substituição conforme o procedimento
+interno.
+Frequência de manutenção: Inspeção visual mensal. Evite exposição direta ao sol e à
+umidade. Verifique nivelamento, trincas e dobradiças.
+
+-- 84 of 106 --
+
+84
+7.15.26 REPOSIÇÃO DE EQUIPAMENTOS
+Descrição
+Equipamentos como computadores, projetores, ventiladores, lousas e mobiliário são
+fundamentais para o desenvolvimento das atividades pedagógicas.
+Quando estão danificados, podem comprometer a segurança e, na ausência desses
+itens essenciais, a infraestrutura escolar enfrenta limitações, impactando diretamente o
+funcionamento da instituição.
+A quebra de um equipamento sem a devida substituição faz com que outros itens
+precisem assumir suas funções temporariamente, o que pode causar sobrecarga,
+acelerar o desgaste e provocar novos problemas de manutenção.
+Por isso, é fundamental realizar o reparo ou a substituição imediata de quaisquer
+peças danificadas.
+
+-- 85 of 106 --
+
+85
+8. GARANTIA
+De acordo com o artigo 618 do Código Civil, obras de construção ou reforma têm
+um período de garantia de 5 anos a partir da data de conclusão. Durante esse período, a
+empresa responsável deve corrigir, sem custo adicional, qualquer problema decorrente de
+falhas de execução ou uso de materiais inadequados ou de baixa qualidade. Ou seja,
+defeitos originados por erros construtivos devem ser reparados pela empresa, sem custos
+para o governo ou para a unidade escolar.
+Se a sua unidade escolar passou por alguma intervenção realizada pela SEDUC —
+como construção, reforma ou, em alguns casos, manutenção —, ela pode estar dentro
+desse período de garantia. No entanto, é importante destacar que a cobertura se limita
+apenas aos itens que passaram por intervenção. Por exemplo, se o telhado foi
+reformado e apresenta falhas, a garantia poderá ser acionada, desde que os
+problemas sejam decorrentes de falha construtiva, e não causados por mau uso ou
+ausência de manutenção.
+Em caso de ocorrência de problemas em itens contemplados por obras da SEDUC,
+o gestor da escola deve entrar em contato com a Diretoria Regional de Educação (DRE)
+para relatar a situação. A DRE acionará a Superintendência de Obras, que fará a avaliação
+técnica do item e verificará se ele está coberto pela garantia. Caso o problema não seja
+coberto, a equipe poderá orientar sobre alternativas viáveis de solução.
+Para casos que não se enquadram nas garantias previstas pelo Código Civil, como
+serviços contratados diretamente pela unidade escolar com recursos próprios (por
+exemplo, via Recurso Único), é fundamental que a garantia esteja prevista no contrato
+com a empresa executora. Nesses casos, a gestão deve verificar se o contrato especifica
+com clareza os prazos de garantia, os itens cobertos e as condições para acionamento. A
+garantia só será válida se estiver formalmente documentada.
+
+-- 86 of 106 --
+
+86
+9. RECURSOS
+A correta aplicação dos recursos financeiros destinados à manutenção das
+unidades escolares é essencial para garantir a continuidade das atividades educacionais,
+a segurança da comunidade escolar e a preservação do patrimônio público. A Instrução
+Normativa nº 003/2025/GS/SEDUC/MT (Seduc-MT, 2025b) estabelece diretrizes para a
+descentralização de recursos financeiros por meio do Recurso Único (RU), para a
+aplicação em despesas de Custeio (90% do recurso) e despesas de Capital (10% do
+recurso) das unidades escolares.
+Na destinação deste recurso estão inclusas a manutenção de bens (permanentes
+e de consumo) e a conservação predial, em que incidem a manutenção corretiva e
+preventiva, de acordo com a NBR 5674 (ABNT, 2024a). Além disso, devem ser observadas
+as orientações estabelecidas nos Art. 4°, 5° e 6° da IN 003/2025/GS/SEDUC/MT e as
+vedações no Art. 7°.
+Conforme estabelecido na referida Instrução Normativa, o Projeto Político
+Pedagógico (PPP) deve prever ações para a execução de manutenção e conservação
+predial, nos termos descritos pela NBR 5674 (ABNT, 2024a), para conservar ou recuperar
+a capacidade funcional da edificação e de suas partes constituintes.
+Dessa forma, este Manual serve como um guia complementar para as unidades
+escolares desenvolverem um plano estratégico abrangente para a realização de
+manutenções preventivas e corretivas. É fundamental que este plano seja integrado ao
+PPP, garantindo que tais ações sejam previstas na destinação do RU, o que contribui
+significativamente para um gerenciamento mais eficaz dos recursos utilizados na
+execução de ações estratégicas.
+Em situações em que a unidade escolar não dispõe de recursos para a realização
+das manutenções, é necessário entrar em contato com a Coordenadoria de Infraestrutura,
+Patrimônio e TI da DRE responsável pela unidade escolar.
+Diante da diversidade de serviços de manutenção a serem realizados na unidade
+escolar, a alocação dos recursos deve seguir uma escala de prioridades baseada em três
+fatores principais:
+ Garantia da continuidade das atividades escolares – Assegurar que os ambientes
+escolares estejam em condições adequadas para o ensino e a aprendizagem,
+evitando interrupções nas aulas devido a problemas estruturais ou falta de insumos
+essenciais.
+
+-- 87 of 106 --
+
+87
+ Segurança – A identificação e o reparo imediato de situações que representem riscos
+à integridade física da comunidade escolar.
+ Grau de risco envolvido – As demandas devem ser classificadas de acordo com o
+grau de risco que representam. Questões que afetam diretamente a segurança
+devem ser tratadas com máxima urgência, enquanto melhorias estéticas ou
+estruturais que não impactam a funcionalidade da unidade escolar podem ser
+programadas para um segundo momento.
+
+-- 88 of 106 --
+
+88
+10. PLANO DE MANUTENÇÃO
+A manutenção adequada das infraestruturas escolares é essencial para garantir um
+ambiente seguro, confortável e favorável ao aprendizado. Um plano de manutenção bem
+estruturado contribui para a preservação das instalações, otimiza o uso dos recursos
+públicos e evita interrupções nas atividades escolares. Além disso, reflete o
+comprometimento da gestão com a qualidade do ensino e o bem-estar de toda a
+comunidade escolar.
+O primeiro passo para uma gestão eficiente da manutenção é a identificação de
+todos os itens que necessitam de reparos ou ajustes, por meio da inspeção. Em seguida,
+é importante fazer a classificação de risco dos problemas encontrados, definindo
+prioridades de atendimento conforme o grau de urgência. Para facilitar esse processo,
+elaboramos documentos que servirão de suporte para o desenvolvimento de etapas neste
+processo, apresentadas nos anexos deste Manual:
+ ANEXO I: Fluxograma de Atendimento. Elenca as etapas a serem realizadas a
+partir da inspeção de um item.
+ ANEXO II: Cronograma de Manutenção. Ficha para identificação das demandas
+de manutenção da unidade escolar, elencando as inspeções a serem realizadas,
+conforme a frequência estabelecida por item a ser verificado.
+ ANEXO III: Relatório de Demanda. Documento para identificação de todos os itens
+que necessitam de manutenção.
+ ANEXO IV: Identificação de Intervenções. Ficha para identificação de
+manutenções realizadas (ações de intervenção, desde a limpeza até a substituição)
+
+-- 89 of 106 --
+
+89
+e indicação de manutenções corretivas que necessitam de apoio da DRE/SEDUC,
+considerando a prioridade de manutenção de itens conforme os graus de urgência.
+Essas ações visam o planejamento dos serviços, a alocação adequada de recursos
+e o acompanhamento sistemático dos procedimentos de manutenção. A manutenção
+preventiva, em especial, é fundamental para evitar que pequenos problemas se agravem,
+gerando custos maiores e comprometendo o funcionamento da escola.
+
+-- 90 of 106 --
+
+90
+11. CONCLUSÃO
+A manutenção predial é uma responsabilidade contínua e essencial para garantir o
+bom funcionamento da unidade escolar, preservar o patrimônio público e assegurar um
+ambiente adequado para o ensino e a aprendizagem. Com a adoção de práticas simples,
+planejamento adequado e acompanhamento regular, é possível prevenir problemas, reduzir
+custos com reparos emergenciais e evitar a interrupção das atividades escolares.
+Este Manual foi elaborado para orientar os diretores e equipes gestoras na
+identificação, organização e priorização das ações de manutenção, oferecendo referências
+claras sobre os tipos de serviços, suas naturezas (preventiva ou corretiva) e a frequência
+recomendada. A atuação proativa da gestão escolar, em parceria com as Diretorias
+Regionais de Educação e a Secretaria de Estado de Educação, é fundamental para manter
+a infraestrutura em boas condições de uso e garantir o bem-estar de toda a comunidade
+escolar.
+Manter a escola funcionando com segurança, eficiência e dignidade também é um
+compromisso com a qualidade da educação. Que este material seja mais do que uma
+ferramenta de apoio — que ele fortaleça o compromisso diário com uma escola mais
+segura, bem cuidada e acolhedora para todos.
+
+-- 91 of 106 --
+
+91
+12. REFERÊNCIAS
+ABNT. NBR 5462: Confiabilidade e Mantenabilidade. Rio de Janeiro: Associação
+Brasileira de Normas Técnicas, 1994.
+ABNT. NBR 13752 - Perícias de Engenharia na Construção Civil. Rio de Janeiro:
+Associação Brasileira de Normas Técnicas, 1996.
+ABNT. NBR 5419: Proteção contra descargas atmosféricas. Rio de Janeiro:
+Associação Brasileira de Normas Técnicas, 2015.
+ABNT. NBR 9050: Acessibilidade a edificações, mobiliário, espaços e equipamentos
+urbanos. Rio de Janeiro: Associação Brasileira de Normas Técnicas, 2020.
+ABNT. NBR 14136: Plugues e tomadas para uso doméstico e análogo até 20 A/250 V
+em corrente alternada — Padronização. Rio de Janeiro: Associação Brasileira de
+Normas Técnicas, 2022.
+ABNT. NBR 5410: Instalações elétricas de baixa tensão. Rio de Janeiro: Associação
+Brasileira de Normas Técnicas, 2024. a.
+ABNT. NBR 5674: Manutenção de edificações – Requisitos para o sistema de gestão
+de manutenção. Rio de Janeiro: Associação Brasileira de Normas Técnicas, 2024. b.
+ABNT. NBR 14037: Diretrizes para elaboração de manuais de uso, operação e
+manutenção das edificações – requisitos para elaboração e apresentação dos
+conteúdos. Rio de Janeiro: Associação Brasileira de Normas Técnicas, 2024. c.
+BRASIL. NR 10: segurança em instalações e serviços em eletricidade. Brasília:
+Associação Brasileira de Normas Técnicas, 2022.
+IBAPE-SP. Glossário de Terminologia Básica aplicável à Engenharia de Avaliações
+e Perícias do IBAPE/SP. 2022. Disponível em: https://ibape-
+nacional.com.br/biblioteca/wp-content/uploads/2013/06/glossario-de-terminologia.pdf.
+Acesso em: 25 maio. 2025.
+SEDUC-MT. Competências da Secretaria. 2025a. Disponível em:
+https://www3.seduc.mt.gov.br/a-secretaria. Acesso em: 10 mar. 2025.
+SEDUC-MT. Instrução Normativa n° 003/2025/GS/SEDUC/MT. [s.l.] : Secretaria de
+Estado de Educação de Mato Grosso, 2025. b.
+ABNT. NBR 10339: Piscina - Projeto, execução e manutenção. Rio de Janeiro:
+Associação Brasileira de Normas Técnicas, 2018.
+MINAS GERAIS. Manual de Manutenção de Prédios Escolares. , 2024. Disponível em:
+chrome-
+extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.educacao.mg.gov.br/wp-
+content/uploads/2024/11/MANUAL-DE-MANUTENCAO-DOS-PREDIOS-
+ESCOLARES.pdf.pdf.
+
+-- 92 of 106 --
+
+92
+RIO GRANDE DO SUL. Programa de manutenção de prédios públicos: manual de
+manutenção e conservação. Porto Alegre: Secretaria de Planejamento, Governança e
+Gestão (SPGG), 2018.
+SEDUC-MT. Competências da Secretaria. 2025a. Disponível em:
+https://www3.seduc.mt.gov.br/a-secretaria. Acesso em: 10 mar. 2025.
+
+-- 93 of 106 --
+
+93
+ANEXO I – FLUXOGRAMA DE ATENDIMENTO
+É interessante fazer um pequeno textinho com as SIGLAS do FLUXOGRAMA
+ÁREAS ENVOLVIDAS NO FLUXO:
+● DRE - DIRETORIA REGIONAL DE EDUCAÇÃO (CONFORME A REGIÃO DO MUNICÍPIO EM QUESTÃO);
+● SUOB - SUPERINTENDÊNCIA DE OBRAS (SEDE);
+● SAGR - SECRETARIA ADJUNTA DE GESTÃO REGIONAL (SEDE)
+
+-- 94 of 106 --
+
+94
+ANEXO II – CRONOGRAMA DE MANUTENÇÃO
+Identificação
+Nome da escola
+Código da escola
+Município
+DRE
+Equipe Gestora
+Diretor(a)
+Coordenadores(as)
+Secretário(a)
+ITEM PERIODICIDADE JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ
+SISTEMA CONSTRUTIVO
+COBERTURA
+FORRO
+PISOS E REVESTIMENTOS
+PINTURA
+
+-- 95 of 106 --
+
+95
+ITEM PERIODICIDADE JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ
+ESQUADRIAS
+INSTALAÇÕES
+ELETRICAS
+ 
+BAIXA TENSÃO
+SISTEMA DE PREVENÇÃO
+CONTRA DESCARGAS
+ATMOSFÉRICAS
+POSTO DE
+TRANSFORMAÇÃO
+INSTALAÇÕES HIDROSSANITÁRIAS
+CAIXA D’ÁGUA E CISTERNA
+(RESERVATÓRIOS)
+RALOS E SIFÕES
+VÁLVULAS E REGISTROS
+TUBULAÇÕES
+SISTEMA DE TRATAMENTO
+DE ESGOTO (STE)
+CAIXA DE GORDURA
+INSTALAÇÕES DE GÁS
+
+-- 96 of 106 --
+
+96
+ITEM PERIODICIDADE JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ
+INSTALAÇÕES DE COMBATE
+A INCÊNDIO
+EXTINTORES
+HIDRANTES E
+MANGUEIRAS
+SINALIZAÇÃO DE
+EMERGÊNCIA E ROTAS DE
+FUGA
+ACIONAMENTOS
+ÁREAS MOLHADAS (LOUÇAS,
+METAIS, BANCADAS E DISVISÓRIAS)
+QUADRA
+POLIESPORTI
+VA
+PINTURA DE
+DEMARCAÇÃO – QUADRA
+POLIESPORTIVA
+PISO ARTICULADO –
+QUADRA POLIESPORTIVA
+PISCINA E CASA DE MÁQUINAS
+IMPLANTAÇÃO
+ PÓRTICO
+MURO E GRADIL
+DEPÓSITO DE RESÍDUOS
+SÓLIDOS
+
+-- 97 of 106 --
+
+97
+ITEM PERIODICIDADE JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ
+CALÇAMENTOS
+PAISAGISMO
+SISTEMA DE DRENAGEM
+ACESSIBILIDADE
+ ESCADA E RAMPA
+CORRIMÃO, GUARDA-
+CORPO E BARRAS DE
+APOIO
+PLACA DE SINALIZAÇÃO,
+MAPA E PISO TÁTIL
+EQUIPAMENTOS E
+MOBILIÁRIOS
+APARELHO DE AR
+CONDICIONADO
+VENTILADORES
+BEBEDOUROS
+CONTROLE DE PRAGAS
+
+-- 98 of 106 --
+
+98
+ITEM PERIODICIDADE JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ
+EQUIPAMENTOS E MOBILIÁRIOS
+CONJUNTO ALUNO,
+CONJUNTO PROFESSOR,
+CONJUNTO REFEITÓRIO,
+MESA PNE
+CHROMEBOOK E
+NOTEBOOK
+GABINETE DE RECARGA
+MESA EM “L”, MESA
+CIRCULAR E MESA EM
+MDF
+ARQUIVO EM AÇO,
+ARMÁRIO ALTO EM AÇO,
+ROUPEIRO, ESTANTE EM
+AÇO, EXPOSITOR DE
+LIVROS
+TELEVISOR SMART TV 65
+POLEGADAS
+COMPUTADOR DE MESA
+(DESKTOP)
+REFRIGERADORES E
+FREEZERS
+FOGÃO INDUSTRIAL
+FORNO MICRO-ONDAS
+
+-- 99 of 106 --
+
+99
+ITEM PERIODICIDADE JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ
+EQUIPAMENTOS E MOBILIÁRIOS
+FORNO ELÉTRICO
+INDUSTRIAL
+BALCÃO TÉRMICO
+CADEIRA GIRATÓRIA
+SOFÁ DOIS LUGARES
+CADEIRA FIXA
+BANQUETA
+BATEDEIRA TIPO
+INDUSTRIAL
+NOBREAK
+MULTIPROCESSADOR DE
+ALIMENTOS
+BEBEDOURO COLUNA
+GARRAFÃO
+
+-- 100 of 106 --
+
+100
+ITEM PERIODICIDADE JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ
+EQUIPAMENTOS E
+MOBILIÁRIOS
+ LIQUIDIFICADOR TIPO
+INDUSTRIAL
+ARMÁRIO ALTO EM MDF,
+ARMÁRIO BAIXO 2P,
+ARMÁRIO BAIXO 3P
+Nome do município, xx de xx de 2025.
+Responsáveis pela Unidade Escolar
+Nome Assinatura
+Diretor(a): _________________________________ _________________________________
+Coordenador(a): _________________________________ _________________________________
+Coordenador(a): _________________________________ _________________________________
+
+-- 101 of 106 --
+
+101
+ANEXO III – RELATÓRIO DE DEMANDA
+1. Objetivo
+O objetivo da elaboração do Relatório de Demanda é identificar as manutenções
+necessárias na escola, conforme o grau de risco definido no Manual de Manutenção. O
+relatório contribui para o planejamento das ações, orientando a tomada de decisões quanto
+à urgência e à alocação de recursos, de forma a preservar a segurança, a funcionalidade
+e a integridade da infraestrutura escolar.
+2. Preenchimento do Relatório
+Para o preenchimento do Relatório de Demanda, as unidades escolares devem
+considerar as condições observadas em cada item avaliado, juntamente com as
+possibilidades de manutenção. É essencial levar em conta o grau de risco identificado,
+priorizando, sempre que possível, a organização das demandas em ordem decrescente —
+do maior para o menor risco.
+Esse modelo oferece um referencial organizacional que permite às unidades
+escolares registrar a situação real da estrutura física. O relatório também servirá como
+subsídio para a elaboração do Projeto Político-Pedagógico (PPP), contribuindo para o
+planejamento e a justificativa da aplicação de recursos, no que compete à infraestrutura.
+A seguir apresentamos o modelo a ser preenchido.
+
+-- 102 of 106 --
+
+102
+RELATÓRIO DE DEMANDA
+Identificação
+Nome da escola
+Código da escola
+Município
+DRE
+Equipe Gestora
+Diretor(a)
+Coordenadores(as)
+Secretário(a)
+ITEM:
+Grau de Risco
+Condição observada (Relatório de Inspeção)
+Manutenção necessária
+Registro fotográfico (mostrar a condição que se encontra – antes da intervenção)
+Foto 1 Foto 2
+ITEM:
+Grau de Risco
+Condição observada (Relatório de Inspeção)
+Manutenção necessária
+Registro fotográfico (mostrar a condição que se encontra – antes da intervenção)
+Foto 1 Foto 2
+
+-- 103 of 106 --
+
+103
+ITEM:
+Grau de Risco
+Condição observada (Relatório de Inspeção)
+Manutenção necessária
+Registro fotográfico (mostrar a condição que se encontra – antes da intervenção)
+Foto 1 Foto 2
+Nome do município, xx de xx de 2025.
+Responsáveis pela Unidade Escolar
+Nome Assinatura
+Diretor(a): ______________________ ________________________
+Coordenador(a): ______________________ ________________________
+Coordenador(a): ______________________ ________________________
+A unidade escolar poderá incluir novos quadros conforme sua necessidade.
+
+-- 104 of 106 --
+
+104
+ANEXO IV – IDENTIFICAÇÃO DE INTERVENÇÕES
+Identificação
+Nome da escola
+Código da escola
+Município
+DRE
+Equipe Gestora
+Diretor(a)
+Coordenadores(as)
+Secretário(a)
+ITEM
+TIPO DE
+MANUTENÇÃO
+(INTERVENÇÃO)
+DATA VALOR OBSERVAÇÃO
+Este é apenas um modelo para preenchimento, em que devem ser acrescentadas
+linhas, conforme a demanda.
+ ITEM – Indicar cada item que apresentou necessidade de manutenção, seja ela
+preventiva ou corretiva. Cada ação de manutenção ou intervenção deverá ser descrita
+em uma linha distinta. Assim, um mesmo item poderá ter várias linhas
+correspondentes, conforme a quantidade de manutenções realizadas/a serem
+realizadas.
+Os itens de verificação seguem especificados no capítulo 7 e também no Anexo II.
+ TIPO DE MANUTENÇÃO – Identificar cada manutenção necessária a ser realizada,
+para o item correspondente.
+ DATA – Se alguma manutenção tiver sido realizada, indicar a data de sua execução.
+ VALOR – Se alguma manutenção tiver sido realizada, informar o valor que foi
+investido.
+ OBSERVAÇÃO – Se for identificada alguma manutenção necessária que não tenha
+sido executada, informar neste campo o motivo da sua não realização.
+
+-- 105 of 106 --
+
+
+
+-- 106 of 106 --
+

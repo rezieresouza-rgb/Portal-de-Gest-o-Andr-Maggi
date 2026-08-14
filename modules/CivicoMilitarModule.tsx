@@ -39,6 +39,48 @@ import { User } from '../types';
 import FatosObservadosInbox from '../components/FatosObservadosInbox';
 import CivicoMilitarReports from '../components/CivicoMilitarReports';
 
+export const CivicoMilitarLogoBadge: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl', showLabel?: boolean }> = ({ size = 'md', showLabel = false }) => {
+  const badgeClasses = 
+    size === 'sm' ? 'w-9 h-9' :
+    size === 'lg' ? 'w-14 h-14' :
+    size === 'xl' ? 'w-20 h-20' : 'w-11 h-11';
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className={`relative flex items-center justify-center shrink-0 ${badgeClasses} group`}>
+        {/* Outer Metallic Glow */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-amber-500 via-yellow-300 to-blue-600 rounded-2xl blur-[3px] opacity-75 group-hover:opacity-100 transition-opacity"></div>
+        
+        {/* Shield Container */}
+        <div className="relative w-full h-full bg-slate-950 rounded-2xl border-2 border-amber-400 shadow-2xl flex flex-col items-center justify-between overflow-hidden p-1">
+          {/* Top 3 Gold Stars */}
+          <div className="flex items-center gap-0.5 text-amber-400 mt-0.5">
+            <Star size={size === 'sm' ? 6 : size === 'xl' ? 10 : 8} className="fill-amber-400 text-amber-400" />
+            <Star size={size === 'sm' ? 7 : size === 'xl' ? 12 : 9} className="fill-amber-400 text-amber-400" />
+            <Star size={size === 'sm' ? 6 : size === 'xl' ? 10 : 8} className="fill-amber-400 text-amber-400" />
+          </div>
+
+          {/* Central Insignia Icons */}
+          <div className="relative flex items-center justify-center my-auto">
+            <Shield size={size === 'sm' ? 16 : size === 'xl' ? 32 : 22} className="text-blue-500 fill-blue-900/60" strokeWidth={2.5} />
+            <Award size={size === 'sm' ? 10 : size === 'xl' ? 18 : 12} className="absolute text-amber-400 fill-amber-500/30" />
+          </div>
+
+          {/* Bottom Tricolor Stripe */}
+          <div className="w-full bg-gradient-to-r from-emerald-600 via-amber-400 to-blue-600 h-1.5 rounded-full mt-0.5"></div>
+        </div>
+      </div>
+
+      {showLabel && (
+        <div className="flex flex-col leading-tight">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-900">Escola Cívico-Militar</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-blue-600">E.E. André Maggi • SEDUC/MT</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface CivicoMilitarModuleProps {
   user: User;
   onExit: () => void;
@@ -1576,14 +1618,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
       {/* Sidebar do Módulo */}
       <aside className="w-80 bg-slate-950 flex flex-col no-print border-r border-slate-900 shadow-2xl relative z-10">
-        <div className="p-8 bg-slate-900/40 border-b border-slate-900/80">
-          <h1 className="text-xl font-black flex items-center gap-3">
-            <span className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20 text-white">
-              <Shield size={22} className="fill-white/10 text-white" />
-            </span>
-            Cívico-Militar
-          </h1>
-          <p className="text-[10px] text-blue-400 font-black uppercase tracking-[0.2em] mt-3 ml-1">Portal André Maggi</p>
+        <div className="p-6 bg-slate-900/60 border-b border-slate-900/80">
+          <div className="flex items-center gap-4">
+            <CivicoMilitarLogoBadge size="lg" />
+            <div>
+              <h1 className="text-lg font-black text-white uppercase tracking-tight leading-tight">Cívico-Militar</h1>
+              <p className="text-[9px] text-amber-400 font-black uppercase tracking-[0.2em] mt-1">E.E. André Maggi</p>
+            </div>
+          </div>
         </div>
 
         {/* Abas */}
@@ -1683,16 +1725,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       {/* Área Principal de Conteúdo */}
       <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
         {/* Header */}
-        <header className="h-24 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0">
+        <header className="h-24 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0 shadow-sm">
           <div className="flex items-center gap-5">
-            <div className="p-4 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100">
-              {activeTab === 'dashboard' && <ClipboardList size={22} />}
-              {activeTab === 'rotina' && <Flag size={22} />}
-              {activeTab === 'inspecao' && <UserCheck size={22} />}
-              {activeTab === 'comportamento' && <TrendingUp size={22} />}
-              {activeTab === 'honra' && <Award size={22} />}
-              {activeTab === 'documentos' && <FileText size={22} />}
-            </div>
+            <CivicoMilitarLogoBadge size="lg" />
             <div>
               <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
                 {activeTab === 'dashboard' && 'Painel Geral Disciplinar'}
@@ -1703,12 +1738,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'documentos' && 'Preenchimento de Documentos'}
               </h2>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares'}
-                {activeTab === 'rotina' && 'Controle de Formatura, Hasteamento e Hinos'}
-                {activeTab === 'inspecao' && 'Apresentação Pessoal e Fardamento'}
-                {activeTab === 'comportamento' && 'Histórico de Méritos e Deméritos'}
+                {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares • Escola Cívico-Militar E.E. André Maggi'}
+                {activeTab === 'rotina' && 'Controle de Formatura, Hasteamento e Hinos • SEDUC/MT'}
+                {activeTab === 'inspecao' && 'Apresentação Pessoal e Fardamento • PECIM'}
+                {activeTab === 'comportamento' && 'Histórico de Méritos e Deméritos • Regulamento Disciplinar'}
                 {activeTab === 'honra' && 'Líderes de Turma e Destaques de Atitude'}
-                {activeTab === 'documentos' && 'Emissão e Impressão de Fichas Oficiais'}
+                {activeTab === 'documentos' && 'Emissão e Impressão de Fichas Oficiais Timbradas'}
               </p>
             </div>
           </div>
@@ -1718,11 +1753,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               <RefreshCw size={14} />
               Migrar Dados
             </button>
-            <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
-              <Shield size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Rotina Ativa</span>
+            <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 text-blue-700 rounded-full border border-blue-100 shadow-sm">
+              <Shield size={14} className="text-blue-600" />
+              <span className="text-[10px] font-black uppercase tracking-widest">PECIM • Rotina Ativa</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-600/10">CM</div>
+            <div className="flex items-center gap-2">
+              <img src="/brasao_mt.png" alt="MT" className="h-9 w-auto object-contain hidden lg:block" onError={(e) => e.currentTarget.style.display = 'none'} />
+              <img src="/logo-escola-oficial.png" alt="Logo Escola" className="h-9 w-auto object-contain hidden lg:block" onError={(e) => e.currentTarget.style.display = 'none'} />
+            </div>
           </div>
         </header>
 
