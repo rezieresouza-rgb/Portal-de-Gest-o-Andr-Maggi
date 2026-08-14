@@ -24,7 +24,10 @@ import {
   PieChart as PieChartIcon,
   Clock,
   ArrowUpRight,
-  Sparkles
+  Sparkles,
+  Printer,
+  FileDown,
+  X
 } from 'lucide-react';
 import { Contract } from '../types';
 import { INITIAL_CONTRACTS } from '../constants/initialData';
@@ -37,6 +40,8 @@ const Dashboard: React.FC = () => {
 
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [isLoadingContracts, setIsLoadingContracts] = useState(true);
+  const [showDebtDeclarationModal, setShowDebtDeclarationModal] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Carrega contratos (do Supabase com fallback local/mock)
   useEffect(() => {
@@ -175,9 +180,17 @@ const Dashboard: React.FC = () => {
           </div>
           <p className="text-gray-500 font-bold text-xs sm:text-sm truncate mt-1">Consolidação financeira de contratos e monitoramento de beneficiários ({studentCount} alunos)</p>
         </div>
-        <div className="text-left md:text-right shrink-0 bg-white px-4 py-2 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Atualizado Em</p>
-          <p className="text-xs font-black text-emerald-700">{new Date().toLocaleString('pt-BR')}</p>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            onClick={() => setShowDebtDeclarationModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-600/20"
+          >
+            <FileDown size={18} /> Declaração de Débitos (PDF)
+          </button>
+          <div className="text-left md:text-right shrink-0 bg-white px-4 py-2 rounded-2xl border border-gray-100 shadow-sm">
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Atualizado Em</p>
+            <p className="text-xs font-black text-emerald-700">{new Date().toLocaleString('pt-BR')}</p>
+          </div>
         </div>
       </div>
 
@@ -509,6 +522,178 @@ const Dashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* MODAL DE EMISSÃO DA DECLARAÇÃO DE DÉBITOS EM ABERTO (PDF) */}
+      {showDebtDeclarationModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-950/70 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] border border-white/20">
+            {/* Modal Header */}
+            <div className="p-6 bg-gray-900 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-red-600 text-white rounded-2xl shadow-lg">
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Declaração de Débitos em Aberto</h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Documento oficial pronto para impressão em PDF</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    setIsGeneratingPDF(true);
+                    try {
+                      const element = document.getElementById('debt-declaration-pdf');
+                      if (element && (window as any).html2pdf) {
+                        const opt = {
+                          margin: [10, 10, 10, 10],
+                          filename: `Declaracao_Debitos_Em_Aberto_${new Date().toISOString().split('T')[0]}.pdf`,
+                          image: { type: 'jpeg', quality: 0.98 },
+                          html2canvas: { scale: 2, useCORS: true },
+                          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        };
+                        await (window as any).html2pdf().set(opt).from(element).save();
+                      } else {
+                        window.print();
+                      }
+                    } catch (e) {
+                      console.error("Erro na impressão do PDF:", e);
+                      window.print();
+                    } finally {
+                      setIsGeneratingPDF(false);
+                    }
+                  }}
+                  disabled={isGeneratingPDF}
+                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-50"
+                >
+                  <Printer size={16} /> {isGeneratingPDF ? 'Gerando PDF...' : 'Baixar PDF / Imprimir'}
+                </button>
+                <button
+                  onClick={() => setShowDebtDeclarationModal(false)}
+                  className="p-2 text-gray-400 hover:text-white rounded-xl transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body / PDF Element */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-100 custom-scrollbar">
+              <div id="debt-declaration-pdf" className="bg-white p-10 max-w-3xl mx-auto shadow-md rounded-xl text-gray-900 font-sans space-y-6 border border-gray-200">
+                {/* Header Timbrado */}
+                <div className="text-center border-b-2 border-gray-800 pb-4 space-y-1">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-gray-700">ESTADO DE MATO GROSSO • SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC</p>
+                  <h1 className="text-base font-black uppercase text-gray-900">ESCOLA ESTADUAL ANDRÉ MAGGI</h1>
+                  <p className="text-[10px] font-bold text-gray-600 uppercase">CÓDIGO INEP: 51007890 • COLÍDER / MT</p>
+                  <p className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider">CONSELHO DELIBERATIVO DA COMUNIDADE ESCOLAR - CDCE • ALIMENTAÇÃO ESCOLAR</p>
+                </div>
+
+                {/* Document Title */}
+                <div className="text-center my-6">
+                  <h2 className="text-lg font-black uppercase tracking-tight text-gray-900 underline decoration-red-600 decoration-2 underline-offset-4">
+                    DECLARAÇÃO DE DÉBITOS E SALDOS EM ABERTO
+                  </h2>
+                  <p className="text-[10px] font-bold uppercase text-gray-500 mt-1">
+                    Demonstrativo Oficial de Execução e Saldo Devedor por Fornecedor (Exercício 2026)
+                  </p>
+                </div>
+
+                {/* Declaratory Text */}
+                <div className="text-xs text-gray-800 leading-relaxed text-justify space-y-2">
+                  <p>
+                    Declaramos, para os devidos fins de direito, prestação de contas e fiscalização financeira perante a Secretaria de Estado de Educação de Mato Grosso (SEDUC/MT) e órgãos de controle, que a Unidade Escolar <b>E.E. André Maggi</b> apresenta o seguinte demonstrativo consolidado de débitos e saldos financeiros pendentes de quitação relativos aos contratos vigentes de fornecimento de Alimentação Escolar na presente data:
+                  </p>
+                </div>
+
+                {/* Table of Debts */}
+                <div className="my-6">
+                  <table className="w-full text-left border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-100 text-[10px] font-black uppercase text-gray-800 border-b border-gray-300">
+                        <th className="p-2.5 border-r border-gray-300">Nº Contrato</th>
+                        <th className="p-2.5 border-r border-gray-300">Fornecedor / Licitante</th>
+                        <th className="p-2.5 border-r border-gray-300 text-right">Valor Global (R$)</th>
+                        <th className="p-2.5 border-r border-gray-300 text-right">Valor Já Pago (R$)</th>
+                        <th className="p-2.5 text-right font-black text-red-700 bg-red-50">Débito em Aberto (R$)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-300 text-[11px]">
+                      {contracts.map(c => {
+                        const totalGlobal = (c.items || []).reduce((acc, i) => acc + (i.contractedQuantity * i.unitPrice), 0);
+                        const totalPaid = (c.items || []).reduce((acc, i) => acc + (i.acquiredQuantity * i.unitPrice), 0);
+                        const debt = Math.max(0, totalGlobal - totalPaid);
+
+                        return (
+                          <tr key={c.id}>
+                            <td className="p-2.5 border-r border-gray-300 font-bold">{c.number}</td>
+                            <td className="p-2.5 border-r border-gray-300 font-bold uppercase">{c.supplierName}</td>
+                            <td className="p-2.5 border-r border-gray-300 text-right font-medium">
+                              {totalGlobal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="p-2.5 border-r border-gray-300 text-right font-bold text-emerald-700">
+                              {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="p-2.5 text-right font-black text-red-700 bg-red-50/50">
+                              {debt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-gray-900 text-white font-black text-[11px] uppercase">
+                        <td colSpan={2} className="p-3">TOTAL GERAL CONSOLIDADO</td>
+                        <td className="p-3 text-right">
+                          R$ {stats.globalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="p-3 text-right text-emerald-400">
+                          R$ {stats.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="p-3 text-right text-red-400 bg-red-950/40">
+                          R$ {stats.remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Summary Statement */}
+                <div className="bg-red-50 border border-red-200 p-4 rounded-xl text-center space-y-1">
+                  <p className="text-[10px] font-black text-red-900 uppercase">MONTANTE TOTAL EM ABERTO / DÉBITOS PENDENTES:</p>
+                  <p className="text-2xl font-black text-red-700">
+                    R$ {stats.remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-[9px] font-bold text-red-600 uppercase">
+                    ({(100 - stats.executionPercent).toFixed(1)}% do saldo total orçamentário dos contratos vigentes)
+                  </p>
+                </div>
+
+                {/* Date & Signatures */}
+                <div className="pt-8 space-y-12">
+                  <p className="text-right text-xs font-bold uppercase text-gray-700">
+                    Colíder - MT, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-8 text-center pt-6">
+                    <div className="space-y-2">
+                      <div className="w-48 border-b-2 border-gray-800 mx-auto"></div>
+                      <p className="text-[10px] font-black uppercase text-gray-900">Gestor(a) da Merenda Escolar</p>
+                      <p className="text-[8px] font-bold uppercase text-gray-500">E.E. André Maggi • SEDUC/MT</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="w-48 border-b-2 border-gray-800 mx-auto"></div>
+                      <p className="text-[10px] font-black uppercase text-gray-900">Direção Escolar / Presidente CDCE</p>
+                      <p className="text-[8px] font-bold uppercase text-gray-500">E.E. André Maggi • SEDUC/MT</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
