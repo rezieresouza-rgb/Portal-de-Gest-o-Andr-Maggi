@@ -230,7 +230,7 @@ const Dashboard: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-            <FileText size={14} className="text-emerald-600" /> Resumo Consolidado dos Contratos
+            <FileText size={14} className="text-emerald-600" /> Acompanhamento de Valores: Pagos vs. A Pagar
           </h3>
           <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 uppercase">
             {stats.contractsCount} Contratos Registrados
@@ -239,7 +239,7 @@ const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 w-full min-w-0">
           
-          {/* CARD 1: VALOR EXECUTADO TOTAL */}
+          {/* CARD 1: VALORES JÁ PAGOS / EXECUTADOS */}
           <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-6 rounded-[2.5rem] text-white shadow-xl shadow-emerald-600/20 relative overflow-hidden flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300">
             <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
             <div>
@@ -248,29 +248,52 @@ const Dashboard: React.FC = () => {
                   <TrendingUp size={24} />
                 </div>
                 <span className="text-[10px] font-black bg-white/20 backdrop-blur-md px-3 py-1 rounded-full uppercase tracking-widest">
-                  {stats.executionPercent.toFixed(1)}% Executado
+                  {stats.executionPercent.toFixed(1)}% Pago
                 </span>
               </div>
-              <h3 className="text-emerald-100 text-[10px] font-black uppercase tracking-widest">Total Valor Executado</h3>
+              <h3 className="text-emerald-100 text-[10px] font-black uppercase tracking-widest">Valores Já Pagos (Executados)</h3>
               <p className="text-2xl sm:text-3xl font-black mt-2 leading-none tracking-tight">
                 R$ {stats.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-emerald-100 uppercase">
-              <span>Soma das guias recebidas</span>
+              <span>Entregas liquidadas e recebidas</span>
               <ArrowUpRight size={14} />
             </div>
           </div>
 
-          {/* CARD 2: VALOR GLOBAL DOS CONTRATOS */}
+          {/* CARD 2: VALORES A PAGAR / SALDO PENDENTE */}
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-800 p-6 rounded-[2.5rem] text-white shadow-xl shadow-blue-600/20 relative overflow-hidden flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300">
+            <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/20 backdrop-blur-md text-white rounded-2xl shrink-0">
+                  <PieChartIcon size={24} />
+                </div>
+                <span className="text-[10px] font-black bg-white/20 backdrop-blur-md px-3 py-1 rounded-full uppercase tracking-widest">
+                  {(100 - stats.executionPercent).toFixed(1)}% A Pagar
+                </span>
+              </div>
+              <h3 className="text-blue-100 text-[10px] font-black uppercase tracking-widest">Valores A Pagar (Saldo Pendente)</h3>
+              <p className="text-2xl sm:text-3xl font-black mt-2 leading-none tracking-tight">
+                R$ {stats.remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-blue-100 uppercase">
+              <span>Saldo a liquidar nos contratos</span>
+              <Clock size={14} />
+            </div>
+          </div>
+
+          {/* CARD 3: VALOR GLOBAL CONTRATADO */}
           <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between hover:border-emerald-200 transition-all">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl shrink-0">
+                <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0">
                   <Wallet size={24} />
                 </div>
-                <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase shrink-0">
-                  Teto Global
+                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase shrink-0">
+                  Teto Orçamentário
                 </span>
               </div>
               <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Valor Global Contratado</h3>
@@ -279,32 +302,11 @@ const Dashboard: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-gray-50 text-[10px] font-bold text-gray-400 uppercase truncate">
-              {stats.contractsCount} Contratos Vigentes
+              {stats.contractsCount} Contratos Homologados
             </div>
           </div>
 
-          {/* CARD 3: SALDO DISPONÍVEL */}
-          <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between hover:border-blue-200 transition-all">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl shrink-0">
-                  <PieChartIcon size={24} />
-                </div>
-                <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full uppercase shrink-0">
-                  {(100 - stats.executionPercent).toFixed(1)}% Livre
-                </span>
-              </div>
-              <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Saldo Restante Disponível</h3>
-              <p className="text-2xl sm:text-3xl font-black mt-2 text-blue-700 leading-none tracking-tight truncate">
-                R$ {stats.remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-gray-50 text-[10px] font-bold text-gray-400 uppercase truncate">
-              Disponível em Ata/Contrato
-            </div>
-          </div>
-
-          {/* CARD 4: BENEFICIÁRIOS & VIGÊNCIA */}
+          {/* CARD 4: BENEFICIÁRIOS & ATENDIMENTO */}
           <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between hover:border-amber-200 transition-all">
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -433,6 +435,79 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* DETALHAMENTO DE VALORES PAGOS X A PAGAR POR CONTRATO */}
+      <div className="bg-white p-6 sm:p-8 rounded-[3rem] border border-gray-100 shadow-sm min-w-0 w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-base sm:text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+              <Wallet className="text-emerald-600" size={20} /> Acompanhamento Detalhado dos Contratos
+            </h3>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Valores Já Pagos (Entregues) vs. Valores A Pagar (Saldo Pendente)</p>
+          </div>
+          <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 uppercase">
+            {contracts.length} Contratos Auditados
+          </span>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-gray-100">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                <th className="px-6 py-4">Contrato / Fornecedor</th>
+                <th className="px-6 py-4 text-right">Valor Global</th>
+                <th className="px-6 py-4 text-right">Valor Já Pago</th>
+                <th className="px-6 py-4 text-right">Valor A Pagar</th>
+                <th className="px-6 py-4 text-center">Progresso</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {contracts.map(c => {
+                const totalGlobal = (c.items || []).reduce((acc, i) => acc + (i.contractedQuantity * i.unitPrice), 0);
+                const totalPaid = (c.items || []).reduce((acc, i) => acc + (i.acquiredQuantity * i.unitPrice), 0);
+                const totalToPay = Math.max(0, totalGlobal - totalPaid);
+                const percentPaid = totalGlobal > 0 ? (totalPaid / totalGlobal) * 100 : 0;
+
+                return (
+                  <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="font-black text-gray-900 text-xs uppercase leading-tight">{c.number}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase truncate mt-0.5">{c.supplierName}</p>
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-gray-900 text-xs">
+                      R$ {totalGlobal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-emerald-600 text-xs">
+                      R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-blue-600 text-xs">
+                      R$ {totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="w-24 bg-gray-100 h-2 rounded-full mx-auto overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 transition-all duration-700"
+                          style={{ width: `${Math.min(100, percentPaid)}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] font-black text-gray-500 mt-1 block">
+                        {percentPaid.toFixed(0)}% Pago
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {contracts.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-gray-300 font-black uppercase text-xs">
+                    Nenhum contrato cadastrado
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
