@@ -972,7 +972,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                            type="checkbox"
                            className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                            checked={selectedStaffIds.length === filteredStaff.length && filteredStaff.length > 0}
-                           onChange={selectAllStaff}
+                           onChange={toggleSelectAll}
                         />
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                            {selectedStaffIds.length} Selecionados
