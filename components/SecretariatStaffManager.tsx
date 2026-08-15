@@ -284,6 +284,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                let targetStatus = 'AFASTADO';
                if (activeMovement.type === 'FÉRIAS') targetStatus = 'FERIAS';
                else if (activeMovement.type === 'LICENÇA PRÊMIO') targetStatus = 'LICENCA_PREMIO';
+               else if (activeMovement.type === 'LICENÇA MATERNIDADE / GESTANTE') targetStatus = 'AFASTADO';
                else if (activeMovement.type === 'ATESTADO') targetStatus = 'LICENCA_MEDICA';
                
                if (member.status !== targetStatus) {
@@ -363,7 +364,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       }
    }, [movementForm.startDate, movementForm.endDate]);
 
-   const MOVEMENT_TYPES: MovementType[] = ['TÉRMINO DE CONTRATO', 'DESLIGAMENTO', 'FÉRIAS', 'LICENÇA PRÊMIO', 'ATESTADO', 'AFASTAMENTO', 'RETORNO'];
+   const MOVEMENT_TYPES: MovementType[] = ['TÉRMINO DE CONTRATO', 'DESLIGAMENTO', 'FÉRIAS', 'LICENÇA PRÊMIO', 'LICENÇA MATERNIDADE / GESTANTE', 'ATESTADO', 'AFASTAMENTO', 'RETORNO'];
 
    const handleImportStaffPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -544,7 +545,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
          let newStatus: string | null = null;
          if (movementForm.type === 'TÉRMINO DE CONTRATO' || movementForm.type === 'DESLIGAMENTO') {
             newStatus = 'DESLIGADO';
-         } else if (movementForm.type === 'AFASTAMENTO' || movementForm.type === 'ATESTADO') {
+         } else if (movementForm.type === 'AFASTAMENTO' || movementForm.type === 'ATESTADO' || movementForm.type === 'LICENÇA MATERNIDADE / GESTANTE') {
             newStatus = 'AFASTADO';
          } else if (movementForm.type === 'FÉRIAS') {
             newStatus = 'FERIAS';
