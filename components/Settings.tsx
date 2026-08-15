@@ -64,6 +64,7 @@ const FUNCTIONS_LIST = [
    { id: "ASSISTENTE DE EDUCAÇÃO ESPECIAL", label: "Assis. Educação Especial" },
    { id: "APA", label: "APA" },
    { id: "SALA DE RECURSOS", label: "Sala de Recursos" },
+   { id: "LABORATÓRIO DE CIÊNCIAS", label: "Laboratório de Ciências" },
    { id: "VIGIA", label: "Vigia" },
 ];
 
