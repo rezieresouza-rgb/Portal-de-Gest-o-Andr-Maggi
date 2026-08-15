@@ -262,6 +262,14 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
          const statusUpdates: { id: string, status: string }[] = [];
 
          staff.forEach(member => {
+            const contractExpired = isContractExpired(member);
+            if (contractExpired) {
+               if (member.status === 'EM_ATIVIDADE') {
+                  statusUpdates.push({ id: member.id!, status: 'DESLIGADO' });
+               }
+               return;
+            }
+
             // Find the active movement for today
             const activeMovement = movementsData.find(m => 
                m.staffId === member.id && 
@@ -673,6 +681,16 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
    };
 
    // --- Contract Expiration Helper ---
+   const isContractExpired = (member: StaffMember): boolean => {
+      if (member.entryProfile !== 'CONTRATADO' || !member.contractTerm?.end) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endParts = member.contractTerm.end.split('-');
+      if (endParts.length !== 3) return false;
+      const endDate = new Date(Number(endParts[0]), Number(endParts[1]) - 1, Number(endParts[2]));
+      return endDate.getTime() < today.getTime();
+   };
+
    const getContractInfo = (member: StaffMember) => {
       if (member.entryProfile !== 'CONTRATADO' || !member.contractTerm?.end) return null;
       const today = new Date();
@@ -717,21 +735,18 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       staff.forEach(s => {
          if (s.entryProfile === 'CONTRATADO') {
             contratadosCount++;
-            if (s.contractTerm?.end) {
-               const parts = s.contractTerm.end.split('-');
-               if (parts.length === 3) {
-                  const endDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                  if (endDate.getTime() < today.getTime()) {
-                     expiredCount++;
-                  }
-               }
+            if (isContractExpired(s)) {
+               expiredCount++;
             }
          }
       });
 
+      const activeStaff = staff.filter(s => s.status === 'EM_ATIVIDADE' && !isContractExpired(s));
+      const inactiveStaff = staff.filter(s => s.status !== 'EM_ATIVIDADE' || isContractExpired(s));
+
       return {
-         ativos: staff.filter(s => s.status === 'EM_ATIVIDADE').length,
-         afastados: staff.filter(s => s.status !== 'EM_ATIVIDADE').length,
+         ativos: activeStaff.length,
+         afastados: inactiveStaff.length,
          contratos: contratadosCount,
          vencidos: expiredCount,
          movements: movementsData.length
@@ -742,10 +757,11 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       return staff.filter(member => {
          const matchSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) || member.registration.includes(searchTerm);
          const matchRole = roleFilter === 'TODOS' || member.role === roleFilter;
+         const expired = isContractExpired(member);
          const matchStatus = activeTab === 'ativos'
-            ? member.status === 'EM_ATIVIDADE'
+            ? member.status === 'EM_ATIVIDADE' && !expired
             : activeTab === 'afastados'
-               ? member.status !== 'EM_ATIVIDADE'
+               ? member.status !== 'EM_ATIVIDADE' || expired
                : activeTab === 'contratos'
                   ? member.entryProfile === 'CONTRATADO'
                   : true;
@@ -1029,8 +1045,8 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                                  <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 flex-wrap">
                                        <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight truncate">{member.name}</h4>
-                                       <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase border shrink-0 ${member.status === 'EM_ATIVIDADE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                                          {member.status.replace('_', ' ')}
+                                       <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase border shrink-0 ${isContractExpired(member) ? 'bg-red-100 text-red-800 border-red-200' : member.status === 'EM_ATIVIDADE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                                          {isContractExpired(member) ? 'CONTRATO VENCIDO' : member.status.replace('_', ' ')}
                                        </span>
                                        {contractInfo && (
                                           <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase border shrink-0 ${contractInfo.color}`}>
