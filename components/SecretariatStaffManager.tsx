@@ -1047,6 +1047,11 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><FileBadge size={12} className="text-blue-500" /> MAT: {member.registration}</span>
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><ShieldCheck size={12} className="text-emerald-500" /> {member.jobFunction}</span>
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><BookOpen size={12} className="text-amber-500" /> {member.qualification}</span>
+                                       {member.assignedSubjects && member.assignedSubjects.length > 0 && (
+                                          <span className="text-[10px] font-black text-amber-700 uppercase flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/70 shadow-sm">
+                                             <GraduationCap size={13} className="text-amber-600" /> {member.assignedSubjects.join(', ')}
+                                          </span>
+                                       )}
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><Clock size={12} /> {member.workload}h</span>
                                     </div>
                                  </div>
@@ -1202,19 +1207,40 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                               <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-2">
                                  <Scale size={16} /> Atribuição de Aula
                               </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">Disciplina Atribuída</label>
-                                    <select
-                                       value={form.assignedSubjects?.[0] || ''}
-                                       onChange={e => {
-                                          setForm({ ...form, assignedSubjects: [e.target.value] });
-                                       }}
-                                       className="w-full p-4 bg-white border border-amber-200 rounded-2xl font-black text-xs uppercase"
-                                    >
-                                       <option value="">Selecione...</option>
-                                       {["Matemática", "Português", "História", "Geografia", "Ciências", "Educação Física", "Artes", "Inglês", "APA"].map(d => <option key={d} value={d}>{d}</option>)}
-                                    </select>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                 <div className="space-y-1.5 md:col-span-2">
+                                    <div className="flex justify-between items-center ml-1">
+                                       <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Disciplinas Atribuídas (Multi-seleção)</label>
+                                       <span className="text-[9px] font-bold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                                          {form.assignedSubjects?.length || 0} selecionada(s)
+                                       </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 p-3.5 bg-white border border-amber-200 rounded-2xl min-h-[60px] items-center">
+                                       {["Matemática", "Português", "História", "Geografia", "Ciências", "Educação Física", "Artes", "Inglês", "APA"].map(subj => {
+                                          const isSelected = form.assignedSubjects?.includes(subj);
+                                          return (
+                                             <button
+                                                type="button"
+                                                key={subj}
+                                                onClick={() => {
+                                                   const current = form.assignedSubjects || [];
+                                                   const updated = isSelected
+                                                      ? current.filter(s => s !== subj)
+                                                      : [...current, subj];
+                                                   setForm({ ...form, assignedSubjects: updated });
+                                                }}
+                                                className={`px-3 py-2 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 border cursor-pointer ${
+                                                   isSelected
+                                                      ? "bg-amber-600 text-white border-amber-600 shadow-sm shadow-amber-600/20 scale-[1.02]"
+                                                      : "bg-amber-50/40 text-amber-900 border-amber-200/80 hover:bg-amber-100 hover:border-amber-300"
+                                                }`}
+                                             >
+                                                {isSelected ? <CheckCircle2 size={14} className="text-white" /> : <PlusCircle size={14} className="text-amber-500 opacity-60" />}
+                                                {subj}
+                                             </button>
+                                          );
+                                       })}
+                                    </div>
                                  </div>
                                  <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">Carga Horária (Horas)</label>
