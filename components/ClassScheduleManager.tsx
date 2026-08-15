@@ -69,7 +69,8 @@ const SUBJECTS = [
     'CIÊNCIAS',
     'ARTE',
     'ED. FÍSICA',
-    'INGLÊS'
+    'INGLÊS',
+    'APA'
 ];
 
 const ClassScheduleManager: React.FC = () => {

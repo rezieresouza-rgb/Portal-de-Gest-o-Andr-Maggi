@@ -1212,7 +1212,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                                        className="w-full p-4 bg-white border border-amber-200 rounded-2xl font-black text-xs uppercase"
                                     >
                                        <option value="">Selecione...</option>
-                                       {["Matemática", "Português", "História", "Geografia", "Ciências", "Educação Física", "Artes", "Inglês"].map(d => <option key={d} value={d}>{d}</option>)}
+                                       {["Matemática", "Português", "História", "Geografia", "Ciências", "Educação Física", "Artes", "Inglês", "APA"].map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
                                  </div>
                                  <div className="space-y-1.5">

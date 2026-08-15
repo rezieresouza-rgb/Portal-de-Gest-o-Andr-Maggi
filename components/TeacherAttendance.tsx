@@ -24,7 +24,7 @@ const CLASSES = SCHOOL_CLASSES;
 
 const SUBJECTS = [
   "MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA",
-  "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA"
+  "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA", "APA"
 ];
 
 const TeacherAttendance: React.FC<{ user: UserType }> = ({ user }) => {

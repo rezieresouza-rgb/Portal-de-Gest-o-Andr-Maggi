@@ -42,7 +42,7 @@ import { parseLessonPlanWithAI } from '../geminiService';
 
 const CURRICULAR_COMPONENTS = [
   "LÍNGUA PORTUGUESA", "MATEMÁTICA", "HISTÓRIA", "GEOGRAFIA", "CIÊNCIAS",
-  "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA"
+  "ARTE", "EDUCAÇÃO FÍSICA", "LÍNGUA INGLESA", "APA"
 ];
 
 const GRADE_LEVELS = SCHOOL_CLASSES;
