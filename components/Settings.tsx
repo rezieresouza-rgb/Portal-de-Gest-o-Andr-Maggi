@@ -64,6 +64,7 @@ const FUNCTIONS_LIST = [
    { id: "ASSISTENTE DE EDUCAÇÃO ESPECIAL", label: "Assis. Educação Especial" },
    { id: "APA", label: "APA" },
    { id: "SALA DE RECURSOS", label: "Sala de Recursos" },
+   { id: "VIGIA", label: "Vigia" },
 ];
 
 const Settings: React.FC = () => {
