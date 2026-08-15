@@ -24,7 +24,9 @@ import {
    CalendarDays,
    LayoutDashboard,
    Landmark,
-   LogOut
+   LogOut,
+   Trash2,
+   X
 } from 'lucide-react';
 import { BirthdayPerson, SchoolAnnouncement, SchoolEvent, User } from '../types';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
@@ -60,6 +62,46 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
          { id: '2', title: 'Reunião Pedagógica', message: 'Convocamos a equipe técnica para alinhamento sobre o projeto "Escola da Família".', date: '2026-03-12', author: 'COORDENAÇÃO', priority: 'NORMAL' }
       ];
    });
+
+   useEffect(() => {
+      try {
+         localStorage.setItem('school_announcements_v1', JSON.stringify(announcements));
+      } catch (e) {
+         console.error("Error saving announcements:", e);
+      }
+   }, [announcements]);
+
+   const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
+   const [newAnnouncement, setNewAnnouncement] = useState({
+      title: '',
+      message: '',
+      priority: 'NORMAL' as 'ALTA' | 'NORMAL',
+      author: 'DIREÇÃO'
+   });
+
+   const handleCreateAnnouncement = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newAnnouncement.title.trim() || !newAnnouncement.message.trim()) return;
+
+      const item: SchoolAnnouncement = {
+         id: `recado-${Date.now()}`,
+         title: newAnnouncement.title.trim(),
+         message: newAnnouncement.message.trim(),
+         date: new Date().toISOString().split('T')[0],
+         author: newAnnouncement.author || user.role || 'GESTÃO',
+         priority: newAnnouncement.priority
+      };
+
+      setAnnouncements(prev => [item, ...prev]);
+      setIsAddAnnouncementOpen(false);
+      setNewAnnouncement({ title: '', message: '', priority: 'NORMAL', author: 'DIREÇÃO' });
+   };
+
+   const handleDeleteAnnouncement = (id: string) => {
+      if (window.confirm('Deseja realmente remover este recado?')) {
+         setAnnouncements(prev => prev.filter(a => a.id !== id));
+      }
+   };
 
    const [birthdays, setBirthdays] = useState<BirthdayPerson[]>([]);
 
@@ -273,28 +315,50 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                   {/* RECADOS DA GESTÃO */}
                   {visibleBlocks.announcements && (
                      <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4 flex-wrap gap-2">
                            <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight flex items-center gap-3">
                               <Megaphone size={20} className="text-indigo-600" /> Mural da Gestão
                            </h3>
-                           <button className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-800 transition-colors">Ver todos</button>
+                           <button
+                              onClick={() => setIsAddAnnouncementOpen(true)}
+                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all active:scale-95"
+                           >
+                              <Plus size={16} /> Postar Recado
+                           </button>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
                            {announcements.map(notif => (
                               <div key={notif.id} className={`p-6 rounded-[2rem] border transition-all ${notif.priority === 'ALTA' ? 'bg-red-50/70 border-red-100 shadow-sm shadow-red-100/20' : 'bg-slate-50/60 border-slate-100/50'
                                  }`}>
                                  <div className="flex justify-between items-start mb-3">
-                                    <span className={`px-3 py-1 rounded text-[9px] font-black uppercase ${notif.priority === 'ALTA' ? 'bg-red-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600'
-                                       }`}>{notif.priority === 'ALTA' ? 'Urgente' : 'Informativo'}</span>
-                                    <span className="text-[10px] font-bold text-slate-400">{new Date(notif.date).toLocaleDateString('pt-BR')}</span>
+                                    <div className="flex items-center gap-2">
+                                       <span className={`px-3 py-1 rounded text-[9px] font-black uppercase ${notif.priority === 'ALTA' ? 'bg-red-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600'
+                                          }`}>{notif.priority === 'ALTA' ? 'Urgente' : 'Informativo'}</span>
+                                       <span className="text-[10px] font-bold text-slate-400">
+                                          {new Date(notif.date).toLocaleDateString('pt-BR')}
+                                       </span>
+                                    </div>
+                                    <button
+                                       onClick={() => handleDeleteAnnouncement(notif.id)}
+                                       className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                       title="Remover recado"
+                                    >
+                                       <Trash2 size={16} />
+                                    </button>
                                  </div>
                                  <h4 className="text-sm font-black text-slate-800 uppercase mb-2">{notif.title}</h4>
-                                 <p className="text-xs text-slate-600 font-medium leading-relaxed line-clamp-2">{notif.message}</p>
+                                 <p className="text-xs text-slate-600 font-medium leading-relaxed">{notif.message}</p>
                                  <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase">
                                     <ShieldCheck size={12} className="text-indigo-600" /> Resp: {notif.author}
                                  </div>
                               </div>
                            ))}
+                           {announcements.length === 0 && (
+                              <div className="py-8 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                                 <Megaphone size={24} className="mx-auto text-slate-300 mb-2" />
+                                 <p className="text-slate-400 font-bold uppercase text-xs">Nenhum recado postado</p>
+                              </div>
+                           )}
                         </div>
                      </div>
                   )}
@@ -417,6 +481,96 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                </div>
             </main>
          </div>
+
+         {/* MODAL NOVO RECADO */}
+         {isAddAnnouncementOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200 no-print">
+               <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden border border-slate-100">
+                  <div className="p-6 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+                     <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md">
+                           <Megaphone size={20} />
+                        </div>
+                        <div>
+                           <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Postar Novo Recado</h3>
+                           <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Mural da Gestão</p>
+                        </div>
+                     </div>
+                     <button onClick={() => setIsAddAnnouncementOpen(false)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                        <X size={20} />
+                     </button>
+                  </div>
+
+                  <form onSubmit={handleCreateAnnouncement} className="p-6 space-y-4">
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Título do Recado</label>
+                        <input
+                           required
+                           type="text"
+                           placeholder="Ex: Reunião Geral de Professores"
+                           value={newAnnouncement.title}
+                           onChange={e => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                           className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 transition-all text-slate-800"
+                        />
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prioridade</label>
+                           <select
+                              value={newAnnouncement.priority}
+                              onChange={e => setNewAnnouncement({ ...newAnnouncement, priority: e.target.value as any })}
+                              className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-[10px] uppercase outline-none focus:bg-white text-slate-800"
+                           >
+                              <option value="NORMAL">Informativo (Normal)</option>
+                              <option value="ALTA">Urgente (Destaque Vermelho)</option>
+                           </select>
+                        </div>
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Responsável</label>
+                           <select
+                              value={newAnnouncement.author}
+                              onChange={e => setNewAnnouncement({ ...newAnnouncement, author: e.target.value })}
+                              className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-[10px] uppercase outline-none focus:bg-white text-slate-800"
+                           >
+                              <option value="DIREÇÃO">Direção</option>
+                              <option value="COORDENAÇÃO">Coordenação</option>
+                              <option value="SECRETARIA">Secretaria</option>
+                              <option value="EQUIPE MULTI">Equipe Multi</option>
+                           </select>
+                        </div>
+                     </div>
+
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mensagem / Conteúdo</label>
+                        <textarea
+                           required
+                           value={newAnnouncement.message}
+                           onChange={e => setNewAnnouncement({ ...newAnnouncement, message: e.target.value })}
+                           placeholder="Descreva o comunicado ou aviso para toda a equipe..."
+                           className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs h-28 resize-none outline-none focus:bg-white focus:border-indigo-500 text-slate-800"
+                        />
+                     </div>
+
+                     <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                        <button
+                           type="button"
+                           onClick={() => setIsAddAnnouncementOpen(false)}
+                           className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                        >
+                           Cancelar
+                        </button>
+                        <button
+                           type="submit"
+                           className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                        >
+                           <Plus size={16} /> Publicar Recado
+                        </button>
+                     </div>
+                  </form>
+               </div>
+            </div>
+         )}
 
          <style>{`
         @media print {

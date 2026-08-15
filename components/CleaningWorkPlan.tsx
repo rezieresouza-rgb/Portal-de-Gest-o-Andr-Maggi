@@ -132,7 +132,8 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                     filename: `Plano_Trabalho_${nameStr}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'] }
                 };
                 try {
                     // @ts-ignore
@@ -553,47 +554,47 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
 
             {/* INDIVIDUAL PRINTABLE PLAN */}
             <div className="fixed top-0 left-0 w-full h-0 overflow-hidden pointer-events-none">
-                <div id="work-plan-print" className="bg-white p-8 font-sans w-[210mm] min-h-[297mm]">
-                    <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
+                <div id="work-plan-print" className="bg-white p-6 font-sans w-[210mm] min-h-[297mm]">
+                    <div className="text-center border-b-2 border-gray-800 pb-3 mb-4">
                         <h1 className="text-xl font-black uppercase text-gray-900">
                             {selectedEmployeeName === 'TODOS' ? 'Plano de Trabalho Geral' : 'Plano de Trabalho Individual'}
                         </h1>
-                        <p className="text-sm text-gray-600 uppercase font-bold mt-1">Escola Estadual Cívico-Militar André Antônio Maggi</p>
+                        <p className="text-xs text-gray-600 uppercase font-bold mt-1">Escola Estadual Cívico-Militar André Antônio Maggi</p>
                     </div>
 
-                    <div className="bg-gray-100 p-4 rounded-xl border border-gray-300 mb-8">
+                    <div className="bg-gray-100 p-3 rounded-xl border border-gray-300 mb-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <span className="text-[10px] font-black uppercase text-gray-500">Servidor(a) Responsável</span>
-                                <p className="text-base font-black text-gray-900 uppercase">
+                                <p className="text-sm font-black text-gray-900 uppercase">
                                     {selectedEmployeeName === 'TODOS' ? 'Toda a Equipe' : selectedEmployeeName}
                                 </p>
                             </div>
                             <div>
                                 <span className="text-[10px] font-black uppercase text-gray-500">Cargo / Função</span>
-                                <p className="text-base font-black text-gray-900 uppercase">Apoio Administrativo (Limpeza)</p>
+                                <p className="text-sm font-black text-gray-900 uppercase">Apoio Administrativo (Limpeza)</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mb-6">
-                        <h2 className="text-sm font-black uppercase border-b border-gray-300 pb-2 mb-4">Relação de Ambientes e Atribuições</h2>
+                    <div className="mb-4">
+                        <h2 className="text-xs font-black uppercase border-b border-gray-300 pb-1.5 mb-3">Relação de Ambientes e Atribuições</h2>
                         {Object.entries(groupedTasks).map(([block, areas]) => (
-                            <div key={block} className="mb-6 break-inside-avoid">
-                                <h3 className="text-xs font-black uppercase bg-gray-200 p-2 border-l-4 border-gray-800 mb-3">{block}</h3>
+                            <div key={block} className="mb-4">
+                                <h3 className="text-[11px] font-black uppercase bg-gray-200 p-1.5 border-l-4 border-gray-800 mb-2 break-inside-avoid">{block}</h3>
                                 {Object.entries(areas).map(([area, areaTasks]) => (
-                                    <div key={area} className="ml-4 mb-4">
-                                        <h4 className="text-[11px] font-black uppercase text-gray-800 mb-2 underline decoration-gray-300 underline-offset-4">{area}</h4>
-                                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                                    <div key={area} className="ml-3 mb-3 break-inside-avoid">
+                                        <h4 className="text-[10px] font-black uppercase text-gray-800 mb-1.5 underline decoration-gray-300 underline-offset-4">{area}</h4>
+                                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                                             {['DIARIA', 'SEMANAL', 'MENSAL', 'TRIMESTRAL'].map(freq => {
                                                 const freqTasks = areaTasks.filter(t => t.frequency === freq);
                                                 if (freqTasks.length === 0) return null;
                                                 return (
                                                     <div key={freq} className="break-inside-avoid">
-                                                        <span className="text-[9px] font-black uppercase text-gray-600 border border-gray-300 px-1.5 py-0.5 rounded bg-gray-50 mb-1 inline-block">
+                                                        <span className="text-[8px] font-black uppercase text-gray-600 border border-gray-300 px-1 py-0.5 rounded bg-gray-50 mb-0.5 inline-block">
                                                             {FREQUENCY_LABEL[freq]}
                                                         </span>
-                                                        <ul className="list-disc pl-3 mt-1">
+                                                        <ul className="list-disc pl-3 mt-0.5">
                                                             {freqTasks.map(t => (
                                                                 <li key={t.id} className="text-[9px] text-gray-700 leading-tight mb-0.5">
                                                                     {t.task_description}
@@ -615,7 +616,7 @@ const CleaningWorkPlan: React.FC<CleaningWorkPlanProps> = ({ employees }) => {
                         ))}
                     </div>
 
-                    <div className="mt-16 pt-8 border-t border-gray-400 grid grid-cols-2 gap-12 text-center text-gray-800 break-inside-avoid">
+                    <div className="mt-8 pt-6 border-t border-gray-400 grid grid-cols-2 gap-12 text-center text-gray-800 break-inside-avoid">
                         <div>
                             <div className="border-t border-gray-800 w-4/5 mx-auto pt-2">
                                 <p className="text-[10px] font-black uppercase text-gray-900">

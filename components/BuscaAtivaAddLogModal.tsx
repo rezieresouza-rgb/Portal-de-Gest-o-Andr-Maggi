@@ -379,7 +379,7 @@ export default function BuscaAtivaAddLogModal({ student, protocolItems, actionsS
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl border border-emerald-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[95vh]">
+            <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl border border-emerald-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[95vh]">
                 
                 {/* HEADER */}
                 <div className="px-8 pt-8 pb-4 flex justify-between items-start shrink-0 border-b border-gray-50 bg-gray-50/50">
