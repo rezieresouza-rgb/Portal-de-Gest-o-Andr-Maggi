@@ -44,6 +44,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
     { id: 'calendar', label: 'Estratégia 2026', icon: CalendarDays },
     { id: 'attendance', label: 'Conferência de Chamadas', icon: History },
     { id: 'students', label: 'Monitoramento Alunos', icon: Users },
+    { id: 'ficai', label: 'Fichas FICAI (ECA)', icon: FileText },
     { id: 'reports', label: 'Relatórios & Inteligência', icon: FileBarChart },
     { id: 'channels', label: 'Canais de Contato', icon: Settings2 },
   ];
@@ -118,6 +119,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'attendance' && <BuscaAtivaAttendanceHistory />}
+          {activeTab === 'ficai' && <BuscaAtivaFICAI />}
           {activeTab === 'reports' && <BuscaAtivaReports />}
           {activeTab === 'channels' && <BuscaAtivaContactChannels />}
 
