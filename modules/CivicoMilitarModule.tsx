@@ -568,7 +568,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const saveStudentStatesToStorage = async (list: StudentBehaviorState[]) => {
     setStudentStates(list);
     if (selectedStudentState) {
-      const updated = list.find(s => s.studentId === selectedStudentState.studentId);
+      const updated = list.find(s => String(s.studentId) === String(selectedStudentState.studentId));
       if (updated) setSelectedStudentState(updated);
     }
     
@@ -1256,13 +1256,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       newScore = Math.max(0, parseFloat((newScore - points).toFixed(2)));
     }
 
+    const updatedStudentState: StudentBehaviorState = {
+      ...selectedStudentState,
+      score: newScore,
+      occurrences: [occurrence, ...(selectedStudentState.occurrences || [])]
+    };
+    setSelectedStudentState(updatedStudentState);
+
     const updatedStates = studentStates.map(s => {
-      if (s.studentId === selectedStudentState.studentId) {
-        return {
-          ...s,
-          score: newScore,
-          occurrences: [occurrence, ...s.occurrences]
-        };
+      if (String(s.studentId) === String(selectedStudentState.studentId)) {
+        return updatedStudentState;
       }
       return s;
     });
@@ -1337,7 +1340,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const handleDeleteOccurrence = async (studentId: string, occId: string) => {
     if (!window.confirm('Excluir esta ocorrência? A nota de atitude do aluno será recalculada.')) return;
 
-    const student = studentStates.find(s => s.studentId === studentId);
+    const student = studentStates.find(s => String(s.studentId) === String(studentId));
     if (!student) return;
 
     const targetOcc = student.occurrences.find(o => o.id === occId);
@@ -1352,7 +1355,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
 
     const updatedStates = studentStates.map(s => {
-      if (s.studentId === studentId) {
+      if (String(s.studentId) === String(studentId)) {
         return {
           ...s,
           score: newScore,
@@ -1372,7 +1375,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const handleToggleLeader = (studentId: string) => {
     const updated = studentStates.map(s => {
-      if (s.studentId === studentId) {
+      if (String(s.studentId) === String(studentId)) {
         return { ...s, isClassLeader: !s.isClassLeader };
       }
       return s;
@@ -1382,7 +1385,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const handleToggleHighlight = (studentId: string) => {
     const updated = studentStates.map(s => {
-      if (s.studentId === studentId) {
+      if (String(s.studentId) === String(studentId)) {
         return { ...s, isCivicHighlight: !s.isCivicHighlight };
       }
       return s;
@@ -1648,7 +1651,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     let newScore = Math.max(0, parseFloat((studentState.score - points).toFixed(2)));
 
     const updatedStates = studentStates.map(s => {
-      if (s.studentId === studentState.studentId) {
+      if (String(s.studentId) === String(studentState.studentId)) {
         return {
           ...s,
           score: newScore,
