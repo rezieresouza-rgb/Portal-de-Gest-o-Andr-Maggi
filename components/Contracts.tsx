@@ -28,7 +28,11 @@ import {
   History,
   FileSearch,
   Zap,
-  Edit3
+  Edit3,
+  PackageSearch,
+  Package,
+  BarChart3,
+  CheckCircle2
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ContractStatus, Contract, ContractItem } from '../types';
@@ -199,6 +203,8 @@ const Contracts: React.FC = () => {
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [globalSearch, setGlobalSearch] = useState('');
   const [itemFilter, setItemFilter] = useState('');
+  const [mainViewMode, setMainViewMode] = useState<'contracts' | 'products'>('contracts');
+  const [productStatusFilter, setProductStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'DEPLETED'>('ALL');
 
   const [deliveryModal, setDeliveryModal] = useState<{ contractId: string, itemId: string, description: string } | null>(null);
   const [deliveryQty, setDeliveryQty] = useState<number | "">("");
@@ -470,6 +476,79 @@ const Contracts: React.FC = () => {
     }
     return result.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' }));
   }, [contracts, globalSearch]);
+
+  const allProductsList = useMemo(() => {
+    const list: Array<{
+      contractId: string;
+      contractNumber: string;
+      supplierName: string;
+      contractType: string;
+      contractStatus: string;
+      id: string;
+      description: string;
+      brand?: string;
+      unit: string;
+      unitPrice: number;
+      contractedQuantity: number;
+      acquiredQuantity: number;
+      remainingQuantity: number;
+      usagePercent: number;
+      totalValue: number;
+      spentValue: number;
+    }> = [];
+
+    contracts.forEach(c => {
+      c.items.forEach(i => {
+        const contracted = parseNumeric(i.contractedQuantity);
+        const acquired = parseNumeric(i.acquiredQuantity);
+        const remaining = Math.max(0, contracted - acquired);
+        const usagePercent = contracted > 0 ? (acquired / contracted) * 100 : 0;
+        const unitPrice = parseNumeric(i.unitPrice);
+        const totalValue = contracted * unitPrice;
+        const spentValue = acquired * unitPrice;
+
+        list.push({
+          contractId: c.id,
+          contractNumber: c.number,
+          supplierName: c.supplierName,
+          contractType: c.type,
+          contractStatus: c.status,
+          id: i.id,
+          description: i.description,
+          brand: i.brand,
+          unit: i.unit,
+          unitPrice,
+          contractedQuantity: contracted,
+          acquiredQuantity: acquired,
+          remainingQuantity: remaining,
+          usagePercent,
+          totalValue,
+          spentValue
+        });
+      });
+    });
+
+    return list.sort((a, b) => a.description.localeCompare(b.description, 'pt-BR', { sensitivity: 'base' }));
+  }, [contracts]);
+
+  const filteredProductsList = useMemo(() => {
+    return allProductsList.filter(p => {
+      const matchesSearch = !globalSearch ||
+        p.description.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        (p.brand && p.brand.toLowerCase().includes(globalSearch.toLowerCase())) ||
+        p.supplierName.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        p.contractNumber.toLowerCase().includes(globalSearch.toLowerCase());
+
+      let matchesStatus = true;
+      if (productStatusFilter === 'AVAILABLE') {
+        matchesStatus = p.remainingQuantity > 0;
+      } else if (productStatusFilter === 'DEPLETED') {
+        matchesStatus = p.remainingQuantity <= 0;
+      }
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [allProductsList, globalSearch, productStatusFilter]);
 
   const selectedContract = useMemo(() =>
     contracts.find(c => c.id === selectedContractId),
@@ -1839,7 +1918,7 @@ const Contracts: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="relative w-full md:w-80 no-print">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-              <input type="text" placeholder="Nº Contrato ou Fornecedor..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] font-black text-sm uppercase shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
+              <input type="text" placeholder="Nº Contrato, Produto ou Fornecedor..." value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-[1.5rem] font-black text-sm uppercase shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
             </div>
             <button onClick={() => setIsImportModalOpen(true)} className="p-4 bg-emerald-100 text-emerald-700 rounded-[1.5rem] hover:bg-emerald-200 transition-all shadow-lg flex items-center gap-3 group border border-emerald-200">
               <Zap size={24} className="group-hover:scale-110 transition-transform fill-emerald-500" />
@@ -1852,53 +1931,241 @@ const Contracts: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredContracts.map(contract => {
-            const { totalValue, totalSpent, daysRemaining } = calculateContractStats(contract);
-            const usagePercent = (totalSpent / totalValue) * 100;
-            return (
-              <div key={contract.id} onClick={() => setSelectedContractId(contract.id)} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between h-80">
-                <div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div className={`p-4 rounded-2xl ${contract.type.includes('Agric') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'} transition-transform group-hover:scale-110`}>
-                      {contract.type.includes('Agric') ? <Sprout size={28} /> : <FileText size={28} />}
-                    </div>
-                    <div className="text-right">
-                      <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${(daysRemaining as number) < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
-                        {daysRemaining < 0 ? 'Vencido' : `${daysRemaining} Dias`}
-                      </span>
-                    </div>
-                  </div>
+        {/* Toggle between Contracts view and Products Consolidate view */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-3 rounded-3xl border border-gray-100 shadow-sm no-print">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setMainViewMode('contracts')}
+              className={`flex-1 sm:flex-none px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                mainViewMode === 'contracts'
+                  ? 'bg-emerald-900 text-white shadow-lg shadow-emerald-900/20'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <FileText size={16} /> Visão por Contratos ({filteredContracts.length})
+            </button>
+            <button
+              onClick={() => setMainViewMode('products')}
+              className={`flex-1 sm:flex-none px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                mainViewMode === 'products'
+                  ? 'bg-emerald-900 text-white shadow-lg shadow-emerald-900/20'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <PackageSearch size={16} /> Busca por Produto / Consumo ({filteredProductsList.length})
+            </button>
+          </div>
 
-                  <h3 className="text-xl font-black text-gray-900 uppercase leading-tight mb-1">Contrato {contract.number}</h3>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{contract.supplierName}</p>
-
-                  <div className="mt-8 space-y-4">
-                    <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                      <span className="text-gray-400">Execução Financeira</span>
-                      <span className={usagePercent > 90 ? 'text-red-600' : 'text-emerald-600'}>{usagePercent.toFixed(0)}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
-                      <div className={`h-full transition-all duration-1000 ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
-                  <div>
-                    <p className="text-[8px] font-black text-gray-300 uppercase mb-0.5">Saldo Disponível</p>
-                    <p className="text-sm font-black text-gray-900">R$ {(totalValue - totalSpent).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
-                  </div>
-                  <div className="p-2 bg-gray-50 text-gray-400 group-hover:bg-emerald-600 group-hover:text-white rounded-xl transition-all">
-                    <ChevronRight size={20} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {mainViewMode === 'products' && (
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:inline">Filtrar Saldo:</span>
+              <select
+                value={productStatusFilter}
+                onChange={(e) => setProductStatusFilter(e.target.value as any)}
+                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-xs outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+              >
+                <option value="ALL">Todos os Produtos</option>
+                <option value="AVAILABLE">Com Saldo Disponível</option>
+                <option value="DEPLETED">Saldo Esgotado</option>
+              </select>
+            </div>
+          )}
         </div>
 
+        {mainViewMode === 'contracts' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredContracts.map(contract => {
+              const { totalValue, totalSpent, daysRemaining } = calculateContractStats(contract);
+              const usagePercent = (totalSpent / totalValue) * 100;
+              return (
+                <div key={contract.id} onClick={() => setSelectedContractId(contract.id)} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between h-80">
+                  <div>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className={`p-4 rounded-2xl ${contract.type.includes('Agric') ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'} transition-transform group-hover:scale-110`}>
+                        {contract.type.includes('Agric') ? <Sprout size={28} /> : <FileText size={28} />}
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${(daysRemaining as number) < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                          {daysRemaining < 0 ? 'Vencido' : `${daysRemaining} Dias`}
+                        </span>
+                      </div>
+                    </div>
 
+                    <h3 className="text-xl font-black text-gray-900 uppercase leading-tight mb-1">Contrato {contract.number}</h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{contract.supplierName}</p>
+
+                    <div className="mt-8 space-y-4">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase">
+                        <span className="text-gray-400">Execução Financeira</span>
+                        <span className={usagePercent > 90 ? 'text-red-600' : 'text-emerald-600'}>{usagePercent.toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+                        <div className={`h-full transition-all duration-1000 ${usagePercent > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usagePercent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <div>
+                      <p className="text-[8px] font-black text-gray-300 uppercase mb-0.5">Saldo Disponível</p>
+                      <p className="text-sm font-black text-gray-900">R$ {(totalValue - totalSpent).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                    </div>
+                    <div className="p-2 bg-gray-50 text-gray-400 group-hover:bg-emerald-600 group-hover:text-white rounded-xl transition-all">
+                      <ChevronRight size={20} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+                <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+                  <Package size={22} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total de Itens</p>
+                  <p className="text-xl font-black text-gray-900">{allProductsList.length} Produtos</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                  <CheckCircle2 size={22} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Com Saldo Ativo</p>
+                  <p className="text-xl font-black text-blue-900">{allProductsList.filter(p => p.remainingQuantity > 0).length} Itens</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+                <div className="p-3 bg-red-50 text-red-600 rounded-2xl">
+                  <AlertCircle size={22} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Saldo Esgotado</p>
+                  <p className="text-xl font-black text-red-900">{allProductsList.filter(p => p.remainingQuantity <= 0).length} Itens</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+                <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
+                  <DollarSign size={22} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Já Gasto</p>
+                  <p className="text-xl font-black text-purple-900">
+                    R$ {allProductsList.reduce((acc, p) => acc + p.spentValue, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Consolidated Products Table */}
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Consumo & Saldo Consolidado por Produto</h3>
+                  <p className="text-xs text-gray-500 font-bold tracking-tight">Quantidades contratadas vs. adquiridas/utilizadas em todos os contratos ativos</p>
+                </div>
+                {globalSearch && (
+                  <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 uppercase">
+                    Filtro: "{globalSearch}" ({filteredProductsList.length})
+                  </span>
+                )}
+              </div>
+
+              {filteredProductsList.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50/70 border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        <th className="py-4 px-6">Produto & Marca</th>
+                        <th className="py-4 px-6">Contrato & Fornecedor</th>
+                        <th className="py-4 px-6 text-right">Qtd Contratada</th>
+                        <th className="py-4 px-6 text-right">Qtd Utilizada / Adquirida</th>
+                        <th className="py-4 px-6 text-right">Saldo Restante</th>
+                        <th className="py-4 px-6 text-center">% Consumido</th>
+                        <th className="py-4 px-6 text-right">Preço Unit. / Total Gasto</th>
+                        <th className="py-4 px-6 text-center">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-700">
+                      {filteredProductsList.map((p) => {
+                        const isDepleted = p.remainingQuantity <= 0;
+                        const isHighUsage = p.usagePercent >= 80;
+
+                        return (
+                          <tr key={`${p.contractId}-${p.id}`} className="hover:bg-emerald-50/40 transition-colors">
+                            <td className="py-4 px-6">
+                              <div className="font-black text-gray-900 uppercase text-sm">{p.description}</div>
+                              {p.brand && (
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">Marca: {p.brand}</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="font-black text-emerald-800 uppercase">CT {p.contractNumber}</div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase truncate max-w-[180px]">{p.supplierName}</div>
+                            </td>
+                            <td className="py-4 px-6 text-right font-black text-gray-700">
+                              {formatQuantity(p.contractedQuantity)} <span className="text-[10px] text-gray-400">{p.unit}</span>
+                            </td>
+                            <td className="py-4 px-6 text-right font-black text-emerald-600 bg-emerald-50/50 rounded-xl">
+                              {formatQuantity(p.acquiredQuantity)} <span className="text-[10px] text-emerald-700">{p.unit}</span>
+                            </td>
+                            <td className="py-4 px-6 text-right font-black">
+                              <span className={isDepleted ? 'text-red-600 font-black' : 'text-gray-900'}>
+                                {formatQuantity(p.remainingQuantity)} <span className="text-[10px] text-gray-400">{p.unit}</span>
+                              </span>
+                              {isDepleted && (
+                                <div className="text-[9px] font-black text-red-600 uppercase tracking-tight">Esgotado</div>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-center">
+                              <div className="flex flex-col items-center">
+                                <span className={`text-[11px] font-black ${isDepleted ? 'text-red-600' : isHighUsage ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                  {p.usagePercent.toFixed(1)}%
+                                </span>
+                                <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1">
+                                  <div
+                                    className={`h-full ${isDepleted ? 'bg-red-500' : isHighUsage ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                    style={{ width: `${Math.min(100, p.usagePercent)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <div className="font-bold text-gray-500">R$ {p.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / {p.unit}</div>
+                              <div className="font-black text-gray-900">Total: R$ {p.spentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            </td>
+                            <td className="py-4 px-6 text-center">
+                              <button
+                                onClick={() => setSelectedContractId(p.contractId)}
+                                className="px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 mx-auto"
+                              >
+                                Ir p/ Contrato <ChevronRight size={12} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-16 text-center text-gray-400">
+                  <PackageSearch size={48} className="mx-auto mb-3 opacity-30" />
+                  <p className="font-black text-sm uppercase">Nenhum produto encontrado</p>
+                  <p className="text-xs font-bold text-gray-400 mt-1">Tente pesquisar por outro nome de alimento ou alterar os filtros.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
     )

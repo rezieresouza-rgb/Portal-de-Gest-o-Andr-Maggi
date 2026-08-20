@@ -285,7 +285,7 @@ const BuscaAtivaFICAI: React.FC = () => {
         referral_destination: 'CONSELHO_TUTELAR',
         priority: 'ALTA',
         date: todayDate
-      }]).catch(() => {});
+      }]);
 
       // 3. Salvar em LocalStorage
       const updatedLocal = [recordData, ...ficaiRecords];
@@ -335,8 +335,7 @@ const BuscaAtivaFICAI: React.FC = () => {
           status: updatedRecord.status,
           conselho_devolutiva: updatedRecord.conselhoDevolutiva
         })
-        .eq('id', updatedRecord.id)
-        .catch(() => {});
+        .eq('id', updatedRecord.id);
 
       // Atualiza no estado e localStorage
       const updatedList = ficaiRecords.map(r => r.id === updatedRecord.id ? updatedRecord : r);

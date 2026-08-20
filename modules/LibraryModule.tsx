@@ -45,6 +45,23 @@ import { suggestBooks, fetchBookSynopsis, fetchBookCover } from '../geminiServic
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 
+const BOOK_CATEGORIES = [
+  'Literatura Brasileira',
+  'Literatura Estrangeira',
+  'Literatura Juvenil',
+  'Infanto-Juvenil',
+  'Didático',
+  'Ficção Científica',
+  'Romance',
+  'Biografia',
+  'Poesia',
+  'História',
+  'Gibis/HQ',
+  'Dicionários/Enciclopédias',
+  'Laboratório APA',
+  'Outros'
+];
+
 const formatDate = (dateString?: string) => {
   if (!dateString) return '-';
   // Evita problemas de fuso horário ao não usar 'new Date()' para parsear strings YYYY-MM-DD
@@ -1823,7 +1840,9 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       onChange={e => setInventoryFilter({ ...inventoryFilter, category: e.target.value })}
                       className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
                       <option value="">TODAS AS CATEGORIAS</option>
-                      <option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Outros</option>
+                      {BOOK_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="space-y-1.5">
@@ -2280,7 +2299,11 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-gray-400 uppercase ml-1">Categoria</label>
-                        <select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white"><option>Literatura Brasileira</option><option>Literatura Estrangeira</option><option>Infanto-Juvenil</option><option>Didático</option><option>Ficção Científica</option><option>Romance</option><option>Biografia</option><option>Poesia</option><option>História</option><option>Gibis/HQ</option><option>Dicionários/Enciclopédias</option><option>Laboratório APA</option><option>Outros</option></select>
+                        <select value={bookForm.category} onChange={e => setBookForm({ ...bookForm, category: e.target.value })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase outline-none focus:bg-white">
+                          {BOOK_CATEGORIES.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 

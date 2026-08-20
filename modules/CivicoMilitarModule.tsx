@@ -43,6 +43,18 @@ import FatosObservadosInbox from '../components/FatosObservadosInbox';
 import CivicoMilitarReports from '../components/CivicoMilitarReports';
 import { CivicMediationReferralModal } from '../components/CivicMediationReferralModal';
 
+const generateUUID = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+
 export const CivicoMilitarLogoBadge: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl', showLabel?: boolean }> = ({ size = 'md', showLabel = false }) => {
   const badgeClasses = 
     size === 'sm' ? 'w-9 h-9' :
@@ -525,7 +537,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         responsible: i.responsible
       }));
       if (payload.length > 0) {
-        await supabase.from('civic_inspections').upsert(payload, { onConflict: 'id' });
+        const { error } = await supabase.from('civic_inspections').upsert(payload, { onConflict: 'id' });
+        if (error) console.error("Error upserting civic_inspections:", error);
       }
     } catch(e) { console.error(e); }
   };
@@ -546,7 +559,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         responsible: r.responsible
       }));
       if (payload.length > 0) {
-        await supabase.from('civic_routines').upsert(payload, { onConflict: 'id' });
+        const { error } = await supabase.from('civic_routines').upsert(payload, { onConflict: 'id' });
+        if (error) console.error("Error upserting civic_routines:", error);
       }
     } catch(e) { console.error(e); }
   };
@@ -568,7 +582,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         is_civic_highlight: b.isCivicHighlight
       }));
       if (behaviorsPayload.length > 0) {
-        await supabase.from('civic_student_behavior').upsert(behaviorsPayload, { onConflict: 'student_id' });
+        const { error: behErr } = await supabase.from('civic_student_behavior').upsert(behaviorsPayload, { onConflict: 'student_id' });
+        if (behErr) console.error("Error upserting civic_student_behavior:", behErr);
       }
 
       let occsPayload: any[] = [];
@@ -591,7 +606,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         });
       });
       if (occsPayload.length > 0) {
-        await supabase.from('civic_occurrences').upsert(occsPayload, { onConflict: 'id' });
+        const { error: occErr } = await supabase.from('civic_occurrences').upsert(occsPayload, { onConflict: 'id' });
+        if (occErr) console.error("Error upserting civic_occurrences:", occErr);
       }
     } catch(e) { console.error(e); }
   };
@@ -612,7 +628,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         };
       });
       if (payload.length > 0) {
-        await supabase.from('civic_documents').upsert(payload, { onConflict: 'id' });
+        const { error } = await supabase.from('civic_documents').upsert(payload, { onConflict: 'id' });
+        if (error) console.error("Error upserting civic_documents:", error);
       }
     } catch(e) { console.error(e); }
   };
@@ -1112,7 +1129,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     if (!studentObj) return;
 
     const record: InspectionRecord = {
-      id: `insp-${Date.now()}`,
+      id: generateUUID(),
       studentId: newInspection.studentId,
       studentName: studentObj.Nome,
       className: studentObj.Turma,
@@ -1136,10 +1153,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setIsInspectionModalOpen(false);
   };
 
-  const handleDeleteInspection = (id: string) => {
+  const handleDeleteInspection = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta inspeção?')) {
       const updated = inspections.filter(i => i.id !== id);
       saveInspectionsToStorage(updated);
+      try {
+        await supabase.from('civic_inspections').delete().eq('id', id);
+      } catch (e) {
+        console.error("Error deleting inspection from Supabase:", e);
+      }
     }
   };
 
@@ -1209,7 +1231,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
 
     const occurrence: BehaviorOccurrence = {
-      id: `occ-${Date.now()}`,
+      id: generateUUID(),
       type: newOccurrence.type,
       category: newOccurrence.type === 'MERIT' 
         ? newOccurrence.category 
@@ -1312,7 +1334,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setIsBehaviorModalOpen(false);
   };
 
-  const handleDeleteOccurrence = (studentId: string, occId: string) => {
+  const handleDeleteOccurrence = async (studentId: string, occId: string) => {
     if (!window.confirm('Excluir esta ocorrência? A nota de atitude do aluno será recalculada.')) return;
 
     const student = studentStates.find(s => s.studentId === studentId);
@@ -1341,6 +1363,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     });
 
     saveStudentStatesToStorage(updatedStates);
+    try {
+      await supabase.from('civic_occurrences').delete().eq('id', occId);
+    } catch (e) {
+      console.error("Error deleting occurrence from Supabase:", e);
+    }
   };
 
   const handleToggleLeader = (studentId: string) => {
@@ -1367,7 +1394,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     e.preventDefault();
 
     const record: CivicRoutineRecord = {
-      id: `rot-${Date.now()}`,
+      id: generateUUID(),
       date: routineForm.date,
       shift: routineForm.shift,
       formationOk: routineForm.formationOk,
@@ -1408,10 +1435,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }));
   };
 
-  const handleDeleteRoutine = (id: string) => {
+  const handleDeleteRoutine = async (id: string) => {
     if (window.confirm('Deseja excluir este registro de rotina cívica?')) {
       const updated = routines.filter(r => r.id !== id);
       saveRoutinesToStorage(updated);
+      try {
+        await supabase.from('civic_routines').delete().eq('id', id);
+      } catch (e) {
+        console.error("Error deleting routine from Supabase:", e);
+      }
     }
   };
 
@@ -1423,7 +1455,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
 
     const newDocRecord = {
-      id: `doc-${Date.now()}`,
+      id: generateUUID(),
       studentId: selectedStudentForDoc ? selectedStudentForDoc.CodigoAluno : 'BLANK',
       studentName: selectedStudentForDoc ? selectedStudentForDoc.Nome : 'Formulário em Branco',
       className: selectedStudentForDoc ? selectedStudentForDoc.Turma : 'N/A',
@@ -1500,11 +1532,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }, 200);
   };
 
-  const handleDeleteDocFromHistory = (id: string, e: React.MouseEvent) => {
+  const handleDeleteDocFromHistory = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm('Deseja excluir permanentemente este documento do histórico?')) {
       const updated = docHistory.filter(d => d.id !== id);
       saveDocHistoryToStorage(updated);
+      try {
+        await supabase.from('civic_documents').delete().eq('id', id);
+      } catch (err) {
+        console.error("Error deleting doc from Supabase:", err);
+      }
     }
   };
 
@@ -1595,7 +1632,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
 
     const occurrence: BehaviorOccurrence = {
-      id: `occ-${Date.now()}`,
+      id: generateUUID(),
       type: 'DEMERIT',
       category: category,
       categories: [category],
