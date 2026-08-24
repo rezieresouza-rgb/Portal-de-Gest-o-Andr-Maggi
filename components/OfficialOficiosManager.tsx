@@ -82,6 +82,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [printingOficio, setPrintingOficio] = useState<SchoolOficio | null>(null);
   const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
 
   // Form fields
