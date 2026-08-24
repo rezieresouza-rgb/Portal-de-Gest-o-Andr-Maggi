@@ -1,20 +1,22 @@
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+const fs = require('fs');
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://xxxx.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'xxxx';
+async function testCivicDocsStore() {
+  const envText = fs.readFileSync('.env.local', 'utf-8');
+  const urlMatch = envText.match(/VITE_SUPABASE_URL=(.*)/);
+  const keyMatch = envText.match(/VITE_SUPABASE_ANON_KEY=(.*)/);
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabaseUrl = urlMatch[1].trim();
+  const supabaseKey = keyMatch[1].trim();
 
-async function checkCivicDocs() {
-  console.log('Checking civic_documents table...');
-  const { data, error } = await supabase
-    .from('civic_documents')
-    .select('*')
-    .limit(5);
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  console.log('Error:', error);
-  console.log('Data:', data);
+  const { data, error } = await supabase.from('civic_documents').select('*').eq('template', 'official_oficio');
+  if (error) {
+    console.log('Error querying civic_documents:', error);
+  } else {
+    console.log('Successfully queried oficios inside civic_documents! Found:', data.length);
+  }
 }
 
-checkCivicDocs();
+testCivicDocsStore();

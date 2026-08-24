@@ -151,7 +151,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     }
   }, [isModalOpen, nextSequenceInfo.number]);
 
-  // Load oficios from Supabase with resilient localStorage bidirectional merge & sync
+  // Load oficios from Supabase with resilient localStorage & dual-table cloud sync
   const loadOficios = async () => {
     setLoading(true);
     let localOficios: SchoolOficio[] = [];
@@ -167,22 +167,49 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       console.warn('Erro ao carregar ofícios locais:', e);
     }
 
-    // 2. Fetch from Supabase
+    // 2. Fetch from Supabase (primary table school_oficios, with automatic fallback to civic_documents)
     try {
-      const { data, error } = await supabase
+      const { data: primaryData, error: primaryErr } = await supabase
         .from('school_oficios')
         .select('*')
         .order('year', { ascending: false })
         .order('number', { ascending: false });
 
-      if (!error && data) {
-        dbOficios = data as SchoolOficio[];
+      if (!primaryErr && primaryData && primaryData.length > 0) {
+        dbOficios = primaryData as SchoolOficio[];
+      } else {
+        // Fallback: Query civic_documents table (active on Supabase for cross-device/login sync!)
+        const { data: fallbackData, error: fallbackErr } = await supabase
+          .from('civic_documents')
+          .select('*')
+          .eq('template', 'official_oficio');
+
+        if (!fallbackErr && fallbackData && fallbackData.length > 0) {
+          dbOficios = fallbackData.map((d: any) => ({
+            id: d.id,
+            number: d.content?.number || 0,
+            year: d.content?.year || new Date().getFullYear(),
+            formatted_number: d.content?.formatted_number || d.student_name,
+            module_source: d.content?.module_source || d.student_class || 'SECRETARIA',
+            title_subject: d.content?.title_subject || '',
+            recipient_name: d.content?.recipient_name || '',
+            recipient_role: d.content?.recipient_role || '',
+            recipient_org: d.content?.recipient_org || '',
+            city_date: d.content?.city_date || '',
+            salutation: d.content?.salutation || '',
+            body_text: d.content?.body_text || '',
+            closure_text: d.content?.closure_text || '',
+            signatory_name: d.content?.signatory_name || '',
+            signatory_role: d.content?.signatory_role || '',
+            created_at: d.date || new Date().toISOString()
+          }));
+        }
       }
     } catch (e) {
       console.warn('Erro ao conectar com Supabase para ofícios:', e);
     }
 
-    // 3. Merge Local + DB by ID so neither is wiped out
+    // 3. Merge Local + DB by ID so no ofício is ever lost
     const map = new Map<string, SchoolOficio>();
     localOficios.forEach(o => map.set(o.id, o));
     dbOficios.forEach(o => map.set(o.id, o));
@@ -195,18 +222,29 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     setOficios(mergedList);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(mergedList));
 
-    // 4. Background sync: Push local-only oficios to Supabase if table is present
-    if (dbOficios.length >= 0) {
+    // 4. Background sync: Push local-only oficios to Supabase (both tables)
+    if (mergedList.length > 0) {
       const dbIds = new Set(dbOficios.map(d => d.id));
-      const missingInDb = localOficios.filter(l => !dbIds.has(l.id));
+      const missingInDb = mergedList.filter(l => !dbIds.has(l.id));
 
       if (missingInDb.length > 0) {
         for (const oficio of missingInDb) {
           try {
-            await supabase.from('school_oficios').insert([oficio]);
-          } catch (err) {
-            // Ignore error if table not created on Supabase yet
-          }
+            // Try primary insert
+            const { error } = await supabase.from('school_oficios').insert([oficio]);
+            if (error) {
+              // Sync to active fallback table so other logins/devices see it instantly!
+              await supabase.from('civic_documents').upsert([{
+                id: oficio.id,
+                template: 'official_oficio',
+                date: oficio.created_at,
+                timestamp: Date.now(),
+                student_name: oficio.formatted_number,
+                student_class: oficio.module_source,
+                content: oficio
+              }], { onConflict: 'id' });
+            }
+          } catch (err) {}
         }
       }
     }
@@ -265,9 +303,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     setOficios(updatedList);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
 
-    // Persist to Supabase in background
+    // Persist to Supabase in background (dual sync to ensure ALL logins/devices see it instantly!)
     try {
-      const { error } = await supabase.from('school_oficios').insert([{
+      const { error: primaryErr } = await supabase.from('school_oficios').insert([{
         id: newOficio.id,
         number: newOficio.number,
         year: newOficio.year,
@@ -286,9 +324,19 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         created_at: newOficio.created_at
       }]);
 
-      if (error) console.error('Erro ao salvar ofício no Supabase:', error);
+      // Always also save to active civic_documents table as secondary cloud sync
+      await supabase.from('civic_documents').upsert([{
+        id: newOficio.id,
+        template: 'official_oficio',
+        date: newOficio.created_at,
+        timestamp: Date.now(),
+        student_name: newOficio.formatted_number,
+        student_class: newOficio.module_source,
+        content: newOficio
+      }], { onConflict: 'id' });
+
     } catch (e) {
-      console.warn('Persistindo temporariamente no localStorage:', e);
+      console.warn('Persistindo em localStorage e nuvem:', e);
     }
 
     setIsModalOpen(false);
@@ -305,6 +353,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
     try {
       await supabase.from('school_oficios').delete().eq('id', oficio.id);
+      await supabase.from('civic_documents').delete().eq('id', oficio.id);
     } catch (e) {
       console.error('Erro ao excluir no Supabase:', e);
     }
