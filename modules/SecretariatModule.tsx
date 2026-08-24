@@ -26,6 +26,7 @@ import SecretariatNotificationCenter from '../components/SecretariatNotification
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import SecretariatAttendanceHistory from '../components/SecretariatAttendanceHistory';
 import SecretariatReports from '../components/SecretariatReports';
+import OfficialOficiosManager from '../components/OfficialOficiosManager';
 
 interface SecretariatModuleProps {
   user?: any;
@@ -33,11 +34,12 @@ interface SecretariatModuleProps {
 }
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'reports' | 'oficios'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
+    { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
     { id: 'attendance_history', label: 'Histórico de Chamadas', icon: ClipboardList },
     { id: 'classes', label: 'Gestão de Turmas', icon: Users },
     { id: 'staff', label: 'Servidores / RH', icon: Briefcase },
@@ -129,6 +131,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 custom-scrollbar min-w-0">
           {activeTab === 'dashboard' && <SecretariatDashboard />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
+          {activeTab === 'oficios' && <OfficialOficiosManager moduleSource="SECRETARIA" user={user} />}
           {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
           {activeTab === 'classes' && <SecretariatClassroomManager />}
           {activeTab === 'staff' && <SecretariatStaffManager user={user} />}

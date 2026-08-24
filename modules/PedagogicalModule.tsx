@@ -51,6 +51,7 @@ import PsychosocialReferralList from '../components/PsychosocialReferralList';
 import ClassScheduleManager from '../components/ClassScheduleManager';
 import SchoolProjectManager from '../components/SchoolProjectManager';
 import ClassCouncilManager from '../components/ClassCouncilManager';
+import OfficialOficiosManager from '../components/OfficialOficiosManager';
 
 import { User as UserType } from '../types';
 
@@ -61,7 +62,7 @@ interface PedagogicalModuleProps {
 
 const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) => {
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules' | 'class_council'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules' | 'class_council' | 'oficios'>('dashboard');
 
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'GRADES' | 'ATTENDANCE'>('ALL');
 
@@ -504,6 +505,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const menuItems = [
     { id: 'dashboard', label: 'Monitor Pedagógico', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
+    { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
     { id: 'schedules', label: 'Horários (Cronos)', icon: Clock },
     { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
     { id: 'performance', label: 'Alunos em Risco', icon: AlertTriangle },
@@ -518,6 +520,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'oficios':
+        return <OfficialOficiosManager moduleSource="COORDENACAO" user={user} />;
       case 'dashboard':
         return (
           <div className="space-y-8 animate-in fade-in duration-500">

@@ -42,6 +42,7 @@ import { User } from '../types';
 import FatosObservadosInbox from '../components/FatosObservadosInbox';
 import CivicoMilitarReports from '../components/CivicoMilitarReports';
 import { CivicMediationReferralModal } from '../components/CivicMediationReferralModal';
+import OfficialOficiosManager from '../components/OfficialOficiosManager';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -160,7 +161,7 @@ interface CivicRoutineRecord {
 }
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios'>('dashboard');
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -1792,6 +1793,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               }`}
           >
             <TrendingUp size={18} /> Relatórios
+          </button>
+          <button
+            onClick={() => setActiveTab('oficios')}
+            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'oficios'
+              ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
+              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+              }`}
+          >
+            <FileText size={18} /> Ofícios Expedidos
           </button>
         </nav>
 
@@ -4188,6 +4198,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
           {activeTab === 'relatorios' && (
              <CivicoMilitarReports studentStates={studentStates} inspections={inspections} routines={routines} />
+          )}
+
+          {activeTab === 'oficios' && (
+             <OfficialOficiosManager moduleSource="CIVICO_MILITAR" user={user} />
           )}
 
         </div>

@@ -1,0 +1,727 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../supabaseClient';
+import { 
+  FileText, Plus, Search, Printer, Trash2, Building2, Calendar, User, Check, 
+  Sparkles, Layers, Eye, X, Shield, BookOpen, Landmark, Filter, ArrowRight, Clock
+} from 'lucide-react';
+
+export interface SchoolOficio {
+  id: string;
+  number: number;
+  year: number;
+  formatted_number: string;
+  module_source: 'SECRETARIA' | 'COORDENACAO' | 'CIVICO_MILITAR';
+  title_subject: string;
+  recipient_name: string;
+  recipient_role?: string;
+  recipient_org?: string;
+  city_date: string;
+  salutation: string;
+  body_text: string;
+  closure_text: string;
+  signatory_name: string;
+  signatory_role: string;
+  created_at: string;
+}
+
+interface OfficialOficiosManagerProps {
+  moduleSource: 'SECRETARIA' | 'COORDENACAO' | 'CIVICO_MILITAR';
+  user?: any;
+}
+
+const LOCAL_STORAGE_KEY = 'portal_school_oficios_v1';
+
+const MODULE_LABELS: Record<'SECRETARIA' | 'COORDENACAO' | 'CIVICO_MILITAR', { label: string, badgeColor: string, icon: any }> = {
+  SECRETARIA: { label: 'Secretaria Escolar', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200', icon: Landmark },
+  COORDENACAO: { label: 'Coordenação Pedagógica', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200', icon: BookOpen },
+  CIVICO_MILITAR: { label: 'Cívico-Militar', badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: Shield }
+};
+
+const TEMPLATES = [
+  {
+    id: 'solicitacao_geral',
+    title: 'Solicitação Geral de Serviços / Infraestrutura',
+    subject: 'Solicitação de Reparos e Manutenção Predial',
+    salutation: 'Prezado(a) Senhor(a),',
+    body: 'Vimos por meio deste solicitar a realização de reparos e manutenção técnica nas dependências desta Unidade Escolar, visando garantir a segurança, integridade física e o adequado desenvolvimento das atividades letivas com a nossa comunidade escolar.\n\nContamos com a presteza de vossas providências e renovamos nossos protestos de elevada estima e consideração.',
+    closure: 'Atenciosamente,'
+  },
+  {
+    id: 'convocacao_pais',
+    title: 'Convocação de Pais / Responsável Legal',
+    subject: 'Convocação para Reunião Presencial com a Gestão Escolar',
+    salutation: 'Prezado(a) Responsável,',
+    body: 'Solicitamos o seu comparecimento a esta Unidade Escolar para tratarmos de assuntos pertinentes ao acompanhamento pedagógico e comportamental do(a) estudante matriculado(a) nesta instituição.\n\nPedimos a gentileza de comparecer munido de documento de identificação oficial com foto para atendimento junto à equipe gestora.',
+    closure: 'Atenciosamente,'
+  },
+  {
+    id: 'notificacao_conselho',
+    title: 'Notificação ao Conselho Tutelar (Infrequência / Evasão)',
+    subject: 'Notificação de Infrequência Escolar e Risco de Evasão',
+    salutation: 'Ilustríssimos(as) Senhores(as) Conselheiros(as),',
+    body: 'Encaminhamos a Vossas Senhorias o relatório de acompanhamento de frequência escolar do(a) estudante citado(a), tendo em vista o esgotamento dos recursos escolares e tentativas de contato direto com a família.\n\nSolicitamos a intervenção deste ilustre Conselho Tutelar para a garantia dos direitos fundamentais da criança e do adolescente e o imediato retorno do estudante à sala de aula.',
+    closure: 'Respeitosamente,'
+  },
+  {
+    id: 'comunicacao_dre',
+    title: 'Encaminhamento à DRE / SEDUC-MT',
+    subject: 'Encaminhamento de Documentação e Relatórios Oficiais',
+    salutation: 'Excelentíssimo(a) Senhor(a) Diretor(a) Regional,',
+    body: 'Cumprimentando-o(a) cordialmente, vimos apresentar a Vossa Excelência os relatórios e documentações anexas referentes às demandas administrativas e pedagógicas da Escola Estadual Cívico-Militar André Antônio Maggi.\n\nColocamo-nos à inteira disposição para prestar quaisquer esclarecimentos complementares que se façam necessários.',
+    closure: 'Respeitosamente,'
+  }
+];
+
+const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleSource, user }) => {
+  const [oficios, setOficios] = useState<SchoolOficio[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [moduleFilter, setModuleFilter] = useState<string>('ALL');
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [printingOficio, setPrintingOficio] = useState<SchoolOficio | null>(null);
+
+  // Form fields
+  const [formData, setFormData] = useState({
+    title_subject: '',
+    recipient_name: '',
+    recipient_role: '',
+    recipient_org: '',
+    city_date: `Colíder - MT, ${new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+    salutation: 'Prezado(a) Senhor(a),',
+    body_text: '',
+    closure_text: 'Atenciosamente,',
+    signatory_name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
+    signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
+  });
+
+  // Calculate next global sequential number for the current year
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
+
+  const nextSequenceInfo = useMemo(() => {
+    const oficiosThisYear = oficios.filter(o => o.year === currentYear);
+    const maxNum = oficiosThisYear.reduce((max, o) => Math.max(max, o.number || 0), 0);
+    const nextNum = maxNum + 1;
+    const formatted = `${String(nextNum).padStart(3, '0')}/${currentYear}`;
+    return { number: nextNum, formatted };
+  }, [oficios, currentYear]);
+
+  // Load oficios from Supabase with localStorage sync
+  const loadOficios = async () => {
+    setLoading(true);
+    let loaded: SchoolOficio[] = [];
+
+    try {
+      const { data, error } = await supabase
+        .from('school_oficios')
+        .select('*')
+        .order('year', { ascending: false })
+        .order('number', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        loaded = data as SchoolOficio[];
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(loaded));
+      } else {
+        const local = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (local) {
+          loaded = JSON.parse(local);
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao conectar com Supabase para ofícios, usando cache local:', e);
+      const local = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (local) {
+        loaded = JSON.parse(local);
+      }
+    } finally {
+      setOficios(loaded);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOficios();
+  }, []);
+
+  const handleApplyTemplate = (templateId: string) => {
+    const tmpl = TEMPLATES.find(t => t.id === templateId);
+    if (tmpl) {
+      setFormData(prev => ({
+        ...prev,
+        title_subject: tmpl.subject,
+        salutation: tmpl.salutation,
+        body_text: tmpl.body,
+        closure_text: tmpl.closure
+      }));
+    }
+  };
+
+  const handleSaveOficio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title_subject.trim() || !formData.recipient_name.trim() || !formData.body_text.trim()) {
+      alert('Por favor, preencha o assunto, o destinatário e o texto do ofício!');
+      return;
+    }
+
+    const newOficio: SchoolOficio = {
+      id: crypto.randomUUID(),
+      number: nextSequenceInfo.number,
+      year: currentYear,
+      formatted_number: nextSequenceInfo.formatted,
+      module_source: moduleSource,
+      title_subject: formData.title_subject.trim(),
+      recipient_name: formData.recipient_name.trim(),
+      recipient_role: formData.recipient_role.trim(),
+      recipient_org: formData.recipient_org.trim(),
+      city_date: formData.city_date.trim(),
+      salutation: formData.salutation.trim() || 'Prezado(a) Senhor(a),',
+      body_text: formData.body_text.trim(),
+      closure_text: formData.closure_text.trim() || 'Atenciosamente,',
+      signatory_name: formData.signatory_name.trim() || 'Gestão Escolar',
+      signatory_role: formData.signatory_role.trim() || 'Responsável',
+      created_at: new Date().toISOString()
+    };
+
+    // Update local state and localStorage immediately
+    const updatedList = [newOficio, ...oficios];
+    setOficios(updatedList);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
+
+    // Persist to Supabase in background
+    try {
+      const { error } = await supabase.from('school_oficios').insert([{
+        id: newOficio.id,
+        number: newOficio.number,
+        year: newOficio.year,
+        formatted_number: newOficio.formatted_number,
+        module_source: newOficio.module_source,
+        title_subject: newOficio.title_subject,
+        recipient_name: newOficio.recipient_name,
+        recipient_role: newOficio.recipient_role,
+        recipient_org: newOficio.recipient_org,
+        city_date: newOficio.city_date,
+        salutation: newOficio.salutation,
+        body_text: newOficio.body_text,
+        closure_text: newOficio.closure_text,
+        signatory_name: newOficio.signatory_name,
+        signatory_role: newOficio.signatory_role,
+        created_at: newOficio.created_at
+      }]);
+
+      if (error) console.error('Erro ao salvar ofício no Supabase:', error);
+    } catch (e) {
+      console.warn('Persistindo temporariamente no localStorage:', e);
+    }
+
+    setIsModalOpen(false);
+    alert(`Ofício nº ${newOficio.formatted_number} gerado com sucesso!`);
+  };
+
+  const handleDeleteOficio = async (oficio: SchoolOficio) => {
+    const confirmDel = window.confirm(`Tem certeza que deseja excluir permanentemente o Ofício nº ${oficio.formatted_number}?`);
+    if (!confirmDel) return;
+
+    const updatedList = oficios.filter(o => o.id !== oficio.id);
+    setOficios(updatedList);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
+
+    try {
+      await supabase.from('school_oficios').delete().eq('id', oficio.id);
+    } catch (e) {
+      console.error('Erro ao excluir no Supabase:', e);
+    }
+  };
+
+  const handlePrintOficio = (oficio: SchoolOficio) => {
+    setPrintingOficio(oficio);
+    setTimeout(() => {
+      window.print();
+    }, 400);
+  };
+
+  // Filtered list
+  const filteredOficios = useMemo(() => {
+    return oficios.filter(o => {
+      const matchModule = moduleFilter === 'ALL' || o.module_source === moduleFilter;
+      const term = searchTerm.toLowerCase().trim();
+      const matchSearch = !term ||
+        o.formatted_number.toLowerCase().includes(term) ||
+        o.title_subject.toLowerCase().includes(term) ||
+        o.recipient_name.toLowerCase().includes(term) ||
+        (o.recipient_org && o.recipient_org.toLowerCase().includes(term));
+      return matchModule && matchSearch;
+    });
+  }, [oficios, moduleFilter, searchTerm]);
+
+  const CurrentModuleInfo = MODULE_LABELS[moduleSource];
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+      
+      {/* Header & Quick Action */}
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6 print:hidden">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
+            <FileText size={26} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Emissão de Ofícios Escolares</h2>
+              <span className={`px-3 py-1 text-[9px] font-black rounded-full border uppercase ${CurrentModuleInfo.badgeColor}`}>
+                {CurrentModuleInfo.label}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              Contagem e registro sequencial unificado entre Secretaria, Coordenação e Cívico-Militar.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="bg-slate-100 px-4 py-2.5 rounded-2xl border border-slate-200 text-center flex-1 md:flex-initial">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Próximo Sequencial</span>
+            <span className="text-sm font-black text-indigo-700 font-mono">Ofício nº {nextSequenceInfo.formatted}</span>
+          </div>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2 flex-1 md:flex-initial"
+          >
+            <Plus size={18} /> Novo Ofício
+          </button>
+        </div>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center print:hidden">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar por número, assunto ou destinatário..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap hidden md:inline">Filtrar Origem:</span>
+          <select
+            value={moduleFilter}
+            onChange={e => setModuleFilter(e.target.value)}
+            className="w-full md:w-auto bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black uppercase text-slate-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+          >
+            <option value="ALL">Todos os Módulos ({oficios.length})</option>
+            <option value="SECRETARIA">Secretaria Escolar</option>
+            <option value="COORDENACAO">Coordenação Pedagógica</option>
+            <option value="CIVICO_MILITAR">Cívico-Militar</option>
+          </select>
+        </div>
+      </div>
+
+      {/* List / Table */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[400px] print:hidden">
+        {loading ? (
+          <div className="flex justify-center items-center h-64 text-indigo-500">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : filteredOficios.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-16 text-slate-400 text-center">
+            <FileText size={48} className="mb-4 text-slate-200" />
+            <h3 className="text-sm font-black uppercase text-slate-700 tracking-wider">Nenhum Ofício Registrado</h3>
+            <p className="text-xs text-slate-400 max-w-sm mt-1">
+              Utilize o botão "Novo Ofício" acima para gerar e emitir o primeiro documento oficial.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="p-4 pl-6">Nº Ofício</th>
+                  <th className="p-4">Módulo Emissor</th>
+                  <th className="p-4">Assunto / Título</th>
+                  <th className="p-4">Destinatário</th>
+                  <th className="p-4">Data de Emissão</th>
+                  <th className="p-4 pr-6 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredOficios.map((oficio) => {
+                  const moduleMeta = MODULE_LABELS[oficio.module_source] || MODULE_LABELS.SECRETARIA;
+                  const ModuleIcon = moduleMeta.icon;
+
+                  return (
+                    <tr key={oficio.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="p-4 pl-6 whitespace-nowrap">
+                        <span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
+                          {oficio.formatted_number}
+                        </span>
+                      </td>
+
+                      <td className="p-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 text-[9px] font-black rounded-lg border uppercase inline-flex items-center gap-1.5 ${moduleMeta.badgeColor}`}>
+                          <ModuleIcon size={12} /> {moduleMeta.label}
+                        </span>
+                      </td>
+
+                      <td className="p-4">
+                        <p className="text-xs font-black text-slate-900 uppercase leading-snug line-clamp-1">{oficio.title_subject}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 truncate max-w-xs">{oficio.salutation}</p>
+                      </td>
+
+                      <td className="p-4">
+                        <p className="text-xs font-bold text-slate-800 uppercase">{oficio.recipient_name}</p>
+                        {(oficio.recipient_role || oficio.recipient_org) && (
+                          <p className="text-[9px] font-semibold text-slate-400 uppercase truncate max-w-xs">
+                            {oficio.recipient_role} {oficio.recipient_org ? `• ${oficio.recipient_org}` : ''}
+                          </p>
+                        )}
+                      </td>
+
+                      <td className="p-4 whitespace-nowrap text-xs font-bold text-slate-500">
+                        {new Date(oficio.created_at).toLocaleDateString('pt-BR')}
+                      </td>
+
+                      <td className="p-4 pr-6 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handlePrintOficio(oficio)}
+                            className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                            title="Imprimir Ofício A4"
+                          >
+                            <Printer size={14} /> Imprimir (PDF)
+                          </button>
+                          <button
+                            onClick={() => handleDeleteOficio(oficio)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                            title="Excluir Registro"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* MODAL DE NOVO OFÍCIO */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto print:hidden">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
+            {/* Modal Header */}
+            <div className="p-6 md:p-8 bg-slate-900 text-white flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Novo Documento Oficial</span>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Emissão do Ofício nº {nextSequenceInfo.formatted}</h3>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveOficio} className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+              
+              {/* Templates Quick Select */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-amber-500" /> Modelos Rápidos de Texto (Opcional)
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {TEMPLATES.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => handleApplyTemplate(t.id)}
+                      className="p-3 text-left bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 rounded-xl transition-all group"
+                    >
+                      <p className="text-xs font-black text-slate-800 uppercase group-hover:text-indigo-600">{t.title}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase truncate mt-0.5">{t.subject}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Assunto do Ofício *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Solicitação de Manutenção na Quadra de Esportes"
+                    value={formData.title_subject}
+                    onChange={e => setFormData({ ...formData, title_subject: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Nome do Destinatário *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: João da Silva / Conselho Tutelar"
+                    value={formData.recipient_name}
+                    onChange={e => setFormData({ ...formData, recipient_name: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Cargo / Função do Destinatário
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Secretário Municipal de Obras"
+                    value={formData.recipient_role}
+                    onChange={e => setFormData({ ...formData, recipient_role: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Órgão / Empresa / Instituição
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Prefeitura Municipal de Colíder"
+                    value={formData.recipient_org}
+                    onChange={e => setFormData({ ...formData, recipient_org: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Cidade e Data
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.city_date}
+                    onChange={e => setFormData({ ...formData, city_date: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Vocativo Inicial
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.salutation}
+                    onChange={e => setFormData({ ...formData, salutation: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Fecho de Cortesia
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.closure_text}
+                    onChange={e => setFormData({ ...formData, closure_text: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  Corpo do Texto do Ofício *
+                </label>
+                <textarea
+                  required
+                  rows={6}
+                  value={formData.body_text}
+                  onChange={e => setFormData({ ...formData, body_text: e.target.value })}
+                  placeholder="Escreva a mensagem oficial aqui..."
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 leading-relaxed"
+                ></textarea>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Nome do Emissor / Assinante *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.signatory_name}
+                    onChange={e => setFormData({ ...formData, signatory_name: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Cargo / Função do Assinante *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.signatory_role}
+                    onChange={e => setFormData({ ...formData, signatory_role: e.target.value })}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest rounded-2xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-indigo-600/20"
+                >
+                  Gerar e Salvar Ofício
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ÁREA DE IMPRESSÃO DO OFÍCIO (PDF / A4) */}
+      {printingOficio && (
+        <div className="print-oficio-area">
+          <div className="pdf-page p-12" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000' }}>
+            
+            {/* Cabeçalho Oficial com Logo */}
+            <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-8">
+              <img src="/logo-escola.png" alt="Escola André Maggi" className="h-20 object-contain" />
+              <div className="text-center flex-1 mx-4">
+                <h1 className="text-base font-bold uppercase tracking-tight">Escola Estadual Cívico-Militar EE André Antônio Maggi</h1>
+                <p className="text-xs font-semibold uppercase mt-0.5">Governo do Estado de Mato Grosso • SEDUC-MT</p>
+                <p className="text-[10px] text-gray-600 uppercase mt-0.5">Av. Tancredo Neves, S/N • Colíder - MT</p>
+              </div>
+              <img src="/SEDUC 2.jpg" alt="Seduc MT" className="h-20 object-contain" />
+            </div>
+
+            {/* Número do Ofício (Alinhado à Direita) */}
+            <div className="text-right mb-6">
+              <p className="text-sm font-bold uppercase">
+                Ofício nº {printingOficio.formatted_number} / {MODULE_LABELS[printingOficio.module_source]?.label.toUpperCase()}
+              </p>
+            </div>
+
+            {/* Cidade e Data (Alinhado à Direita) */}
+            <div className="text-right mb-8 text-sm">
+              <p>{printingOficio.city_date}</p>
+            </div>
+
+            {/* Dados do Destinatário */}
+            <div className="mb-8 text-sm space-y-1">
+              <p className="font-bold">Ao(À) Senhor(a):</p>
+              <p className="font-bold uppercase text-base">{printingOficio.recipient_name}</p>
+              {printingOficio.recipient_role && <p className="uppercase">{printingOficio.recipient_role}</p>}
+              {printingOficio.recipient_org && <p className="uppercase font-semibold">{printingOficio.recipient_org}</p>}
+            </div>
+
+            {/* Assunto */}
+            <div className="mb-8 text-sm">
+              <p className="font-bold">
+                Assunto: <span className="underline">{printingOficio.title_subject}</span>
+              </p>
+            </div>
+
+            {/* Vocativo Inicial */}
+            <div className="mb-6 text-sm font-semibold">
+              <p>{printingOficio.salutation}</p>
+            </div>
+
+            {/* Corpo do Texto */}
+            <div className="mb-12 text-sm leading-relaxed text-justify space-y-4">
+              {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
+                <p key={idx} style={{ textIndent: '2rem' }}>
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+
+            {/* Fecho de Cortesia */}
+            <div className="mb-16 text-sm">
+              <p>{printingOficio.closure_text}</p>
+            </div>
+
+            {/* Assinatura */}
+            <div className="text-center w-3/4 mx-auto pt-8">
+              <div className="border-t border-black pt-2">
+                <p className="font-bold uppercase text-sm">{printingOficio.signatory_name}</p>
+                <p className="text-xs uppercase text-gray-700">{printingOficio.signatory_role}</p>
+                <p className="text-[10px] text-gray-500 uppercase mt-0.5">EE Cívico-Militar André Antônio Maggi</p>
+              </div>
+            </div>
+
+            {/* Rodapé do Documento */}
+            <div className="mt-16 text-center text-[9px] text-gray-500 uppercase tracking-widest border-t border-gray-300 pt-3">
+              Documento expedido eletronicamente pelo Portal de Gestão Escolar — EE André Maggi
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Estilos CSS para Impressão */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @media screen {
+          .print-oficio-area { display: none !important; }
+        }
+        @media print {
+          body * { visibility: hidden !important; }
+          .print-oficio-area, .print-oficio-area * { visibility: visible !important; }
+          .print-oficio-area { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important; 
+            display: block !important;
+            background: white !important;
+          }
+          .pdf-page { 
+            page-break-after: always !important; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+          }
+        }
+      `}} />
+
+    </div>
+  );
+};
+
+export default OfficialOficiosManager;
