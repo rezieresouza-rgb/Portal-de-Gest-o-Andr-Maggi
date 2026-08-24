@@ -30,6 +30,7 @@ interface OfficialOficiosManagerProps {
 }
 
 const LOCAL_STORAGE_KEY = 'portal_school_oficios_v1';
+const STARTING_SEQUENCE = 23; // Sequence starts at 23 as per official directive
 
 const MODULE_LABELS: Record<'SECRETARIA' | 'COORDENACAO' | 'CIVICO_MILITAR', { label: string, badgeColor: string, icon: any }> = {
   SECRETARIA: { label: 'Secretaria Escolar', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200', icon: Landmark },
@@ -81,6 +82,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [printingOficio, setPrintingOficio] = useState<SchoolOficio | null>(null);
+  const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -96,16 +98,23 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
   });
 
-  // Calculate next global sequential number for the current year
+  // Calculate next global sequential number for the current year (starts at 23)
   const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   const nextSequenceInfo = useMemo(() => {
     const oficiosThisYear = oficios.filter(o => o.year === currentYear);
     const maxNum = oficiosThisYear.reduce((max, o) => Math.max(max, o.number || 0), 0);
-    const nextNum = maxNum + 1;
-    const formatted = `${String(nextNum).padStart(3, '0')}/${currentYear}`;
+    const nextNum = maxNum >= STARTING_SEQUENCE ? maxNum + 1 : STARTING_SEQUENCE;
+    const formatted = `${String(nextNum).padStart(3, '0')}/${currentYear}/EECMAAMCOL/SEDUC/MT`;
     return { number: nextNum, formatted };
   }, [oficios, currentYear]);
+
+  // Sync customSequenceNumber when modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      setCustomSequenceNumber(String(nextSequenceInfo.number));
+    }
+  }, [isModalOpen, nextSequenceInfo.number]);
 
   // Load oficios from Supabase with localStorage sync
   const loadOficios = async () => {
@@ -164,11 +173,14 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       return;
     }
 
+    const seqNum = customSequenceNumber ? parseInt(customSequenceNumber) || nextSequenceInfo.number : nextSequenceInfo.number;
+    const formattedNum = `${String(seqNum).padStart(3, '0')}/${currentYear}/EECMAAMCOL/SEDUC/MT`;
+
     const newOficio: SchoolOficio = {
       id: crypto.randomUUID(),
-      number: nextSequenceInfo.number,
+      number: seqNum,
       year: currentYear,
-      formatted_number: nextSequenceInfo.formatted,
+      formatted_number: formattedNum,
       module_source: moduleSource,
       title_subject: formData.title_subject.trim(),
       recipient_name: formData.recipient_name.trim(),
@@ -215,11 +227,11 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     }
 
     setIsModalOpen(false);
-    alert(`Ofício nº ${newOficio.formatted_number} gerado com sucesso!`);
+    alert(`OFÍCIO Nº ${newOficio.formatted_number} gerado com sucesso!`);
   };
 
   const handleDeleteOficio = async (oficio: SchoolOficio) => {
-    const confirmDel = window.confirm(`Tem certeza que deseja excluir permanentemente o Ofício nº ${oficio.formatted_number}?`);
+    const confirmDel = window.confirm(`Tem certeza que deseja excluir permanentemente o OFÍCIO Nº ${oficio.formatted_number}?`);
     if (!confirmDel) return;
 
     const updatedList = oficios.filter(o => o.id !== oficio.id);
@@ -281,7 +293,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="bg-slate-100 px-4 py-2.5 rounded-2xl border border-slate-200 text-center flex-1 md:flex-initial">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Próximo Sequencial</span>
-            <span className="text-sm font-black text-indigo-700 font-mono">Ofício nº {nextSequenceInfo.formatted}</span>
+            <span className="text-xs font-black text-indigo-700 font-mono">OFÍCIO Nº {nextSequenceInfo.formatted}</span>
           </div>
 
           <button
@@ -332,7 +344,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             <FileText size={48} className="mb-4 text-slate-200" />
             <h3 className="text-sm font-black uppercase text-slate-700 tracking-wider">Nenhum Ofício Registrado</h3>
             <p className="text-xs text-slate-400 max-w-sm mt-1">
-              Utilize o botão "Novo Ofício" acima para gerar e emitir o primeiro documento oficial.
+              Utilize o botão "Novo Ofício" acima para gerar e emitir o primeiro documento oficial a partir de <strong className="text-indigo-600 font-mono">OFÍCIO Nº 023/{currentYear}/EECMAAMCOL/SEDUC/MT</strong>.
             </p>
           </div>
         ) : (
@@ -340,7 +352,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="p-4 pl-6">Nº Ofício</th>
+                  <th className="p-4 pl-6">Nº do Ofício</th>
                   <th className="p-4">Módulo Emissor</th>
                   <th className="p-4">Assunto / Título</th>
                   <th className="p-4">Destinatário</th>
@@ -356,8 +368,8 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                   return (
                     <tr key={oficio.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="p-4 pl-6 whitespace-nowrap">
-                        <span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
-                          {oficio.formatted_number}
+                        <span className="font-mono text-[11px] font-black text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 block max-w-max">
+                          OFÍCIO Nº {oficio.formatted_number}
                         </span>
                       </td>
 
@@ -424,7 +436,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 </div>
                 <div>
                   <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Novo Documento Oficial</span>
-                  <h3 className="text-lg font-black uppercase tracking-tight">Emissão do Ofício nº {nextSequenceInfo.formatted}</h3>
+                  <h3 className="text-base font-black uppercase tracking-tight font-mono">
+                    OFÍCIO Nº {customSequenceNumber ? String(customSequenceNumber).padStart(3, '0') : String(nextSequenceInfo.number).padStart(3, '0')}/{currentYear}/EECMAAMCOL/SEDUC/MT
+                  </h3>
                 </div>
               </div>
 
@@ -439,6 +453,25 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             {/* Form */}
             <form onSubmit={handleSaveOficio} className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
               
+              {/* Manual Sequence Number Override Bar */}
+              <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                  <span className="text-[9px] font-black text-indigo-900 uppercase tracking-widest block">Número Sequencial de Emissão</span>
+                  <p className="text-xs font-semibold text-slate-600">Altere o número se precisar ajustar a sequência manual.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-indigo-900 font-mono">Nº</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={customSequenceNumber}
+                    onChange={e => setCustomSequenceNumber(e.target.value)}
+                    className="w-24 p-2 bg-white border border-indigo-200 rounded-xl text-center font-mono font-black text-sm text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-300"
+                  />
+                  <span className="text-xs font-mono font-bold text-slate-500">/{currentYear}</span>
+                </div>
+              </div>
+
               {/* Templates Quick Select */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block flex items-center gap-1.5">
@@ -644,10 +677,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               />
             </div>
 
-            {/* Número do Ofício (Alinhado à Direita) */}
+            {/* Número do Ofício Formatado (Alinhado à Direita) */}
             <div className="text-right mb-6">
-              <p className="text-sm font-bold uppercase">
-                Ofício nº {printingOficio.formatted_number} / {MODULE_LABELS[printingOficio.module_source]?.label.toUpperCase()}
+              <p className="text-sm font-bold uppercase font-mono">
+                OFÍCIO Nº {printingOficio.formatted_number}
               </p>
             </div>
 
