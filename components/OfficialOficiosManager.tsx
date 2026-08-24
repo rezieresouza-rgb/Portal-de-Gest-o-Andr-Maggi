@@ -151,11 +151,23 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     }
   }, [isModalOpen, nextSequenceInfo.number]);
 
-  // Load oficios from Supabase with localStorage sync
+  // Load oficios from Supabase with resilient localStorage bidirectional merge & sync
   const loadOficios = async () => {
     setLoading(true);
-    let loaded: SchoolOficio[] = [];
+    let localOficios: SchoolOficio[] = [];
+    let dbOficios: SchoolOficio[] = [];
 
+    // 1. Read from localStorage first so no local ofício is EVER lost
+    try {
+      const local = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (local) {
+        localOficios = JSON.parse(local);
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar ofícios locais:', e);
+    }
+
+    // 2. Fetch from Supabase
     try {
       const { data, error } = await supabase
         .from('school_oficios')
@@ -163,25 +175,43 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         .order('year', { ascending: false })
         .order('number', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        loaded = data as SchoolOficio[];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(loaded));
-      } else {
-        const local = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (local) {
-          loaded = JSON.parse(local);
-        }
+      if (!error && data) {
+        dbOficios = data as SchoolOficio[];
       }
     } catch (e) {
-      console.warn('Erro ao conectar com Supabase para ofícios, usando cache local:', e);
-      const local = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (local) {
-        loaded = JSON.parse(local);
-      }
-    } finally {
-      setOficios(loaded);
-      setLoading(false);
+      console.warn('Erro ao conectar com Supabase para ofícios:', e);
     }
+
+    // 3. Merge Local + DB by ID so neither is wiped out
+    const map = new Map<string, SchoolOficio>();
+    localOficios.forEach(o => map.set(o.id, o));
+    dbOficios.forEach(o => map.set(o.id, o));
+
+    const mergedList = Array.from(map.values()).sort((a, b) => {
+      if (b.year !== a.year) return b.year - a.year;
+      return (b.number || 0) - (a.number || 0);
+    });
+
+    setOficios(mergedList);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(mergedList));
+
+    // 4. Background sync: Push local-only oficios to Supabase if table is present
+    if (dbOficios.length >= 0) {
+      const dbIds = new Set(dbOficios.map(d => d.id));
+      const missingInDb = localOficios.filter(l => !dbIds.has(l.id));
+
+      if (missingInDb.length > 0) {
+        for (const oficio of missingInDb) {
+          try {
+            await supabase.from('school_oficios').insert([oficio]);
+          } catch (err) {
+            // Ignore error if table not created on Supabase yet
+          }
+        }
+      }
+    }
+
+    setLoading(false);
   };
 
   useEffect(() => {

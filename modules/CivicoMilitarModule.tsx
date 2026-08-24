@@ -443,19 +443,36 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           })));
         }
 
-        // Load Documents
-        const { data: docData } = await supabase.from('civic_documents').select('*');
-        if (docData) {
-          setDocHistory(docData.map((d: any) => ({
-            id: d.id,
-            template: d.template,
-            date: d.date,
-            timestamp: d.timestamp,
-            studentName: d.student_name,
-            studentClass: d.student_class,
-            ...d.content
-          })).sort((a: any, b: any) => b.timestamp - a.timestamp));
-        }
+        // Load Documents from LocalStorage & Supabase with Resilient Bidirectional Merge
+        let localDocs: any[] = [];
+        try {
+          const stored = localStorage.getItem('civic_militar_docs_history_v1');
+          if (stored) localDocs = JSON.parse(stored);
+        } catch (e) {}
+
+        let dbDocs: any[] = [];
+        try {
+          const { data: docData, error: docErr } = await supabase.from('civic_documents').select('*');
+          if (!docErr && docData && docData.length > 0) {
+            dbDocs = docData.map((d: any) => ({
+              id: d.id,
+              template: d.template,
+              date: d.date,
+              timestamp: d.timestamp,
+              studentName: d.student_name,
+              studentClass: d.student_class,
+              ...d.content
+            }));
+          }
+        } catch (e) {}
+
+        const docMap = new Map<string, any>();
+        localDocs.forEach(d => docMap.set(d.id, d));
+        dbDocs.forEach(d => docMap.set(d.id, d));
+
+        const mergedDocs = Array.from(docMap.values()).sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
+        setDocHistory(mergedDocs);
+        localStorage.setItem('civic_militar_docs_history_v1', JSON.stringify(mergedDocs));
       } catch (err) {
         console.error('Error loading civic data:', err);
       }
@@ -615,6 +632,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const saveDocHistoryToStorage = async (list: any[]) => {
     setDocHistory(list);
+
+    // 1. Always save to localStorage immediately for guaranteed persistence
+    try {
+      localStorage.setItem('civic_militar_docs_history_v1', JSON.stringify(list));
+    } catch (e) {
+      console.warn('Erro ao salvar histórico de documentos no localStorage:', e);
+    }
+
+    // 2. Try Supabase upsert in background
     try {
       const payload = list.map(d => {
         const { id, template, date, timestamp, studentName, studentClass, ...rest } = d;
@@ -623,16 +649,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           template: d.template,
           date: d.date,
           timestamp: d.timestamp,
-          student_name: d.studentName,
-          student_class: d.studentClass,
+          student_name: d.studentName || '',
+          student_class: d.studentClass || '',
           content: rest
         };
       });
       if (payload.length > 0) {
         const { error } = await supabase.from('civic_documents').upsert(payload, { onConflict: 'id' });
-        if (error) console.error("Error upserting civic_documents:", error);
+        if (error) console.warn("Sincronização no Supabase (documentos salvos localmente):", error.message);
       }
-    } catch(e) { console.error(e); }
+    } catch(e) { console.warn(e); }
   };
 
   const handleSyncLocalToCloud = async () => {
