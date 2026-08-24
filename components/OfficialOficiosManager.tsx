@@ -689,9 +689,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               <p>{printingOficio.city_date}</p>
             </div>
 
-            {/* Dados do Destinatário (SEM NEGRITO conforme pedido) */}
+            {/* Dados do Destinatário */}
             <div className="mb-8 text-sm space-y-1 text-black font-normal">
-              <p className="font-normal">Ao(À) Senhor(a):</p>
+              <p className="font-bold">Ao(À) Senhor(a):</p>
               <p className="uppercase text-base font-normal">{printingOficio.recipient_name}</p>
               {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
               {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
