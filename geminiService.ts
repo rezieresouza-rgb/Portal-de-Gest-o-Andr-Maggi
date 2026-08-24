@@ -1159,3 +1159,83 @@ export const generateMaintenanceActionPlan = async (occurrences: any[]) => {
     return null;
   }
 };
+
+/**
+ * Redação Inteligente por IA para Corpo de Ofícios Escolares (SEDUC-MT / Redação Oficial)
+ */
+export const generateOficioBodyWithAI = async ({
+  promptText,
+  subject,
+  recipient,
+  tone = 'SOLICITACAO'
+}: {
+  promptText: string;
+  subject?: string;
+  recipient?: string;
+  tone?: 'SOLICITACAO' | 'CONVOCACAO' | 'NOTIFICACAO' | 'INFORMATIVO' | 'ENCAMINHAMENTO';
+}): Promise<string> => {
+  const ai = getAIClient();
+
+  if (!ai) {
+    return generateFallbackOficioText(promptText, subject, recipient, tone);
+  }
+
+  const systemInstruction = `Você é um especialista em Redação Oficial de Correspondência Pública e Atos Administrativos Escolares no Brasil, atuando na Escola Estadual Cívico-Militar André Antônio Maggi (SEDUC-MT).
+Seu objetivo é redigir o CORPO DO TEXTO de um Ofício oficial com base nas informações fornecidas pelo usuário.
+
+Diretrizes obrigatórias de redação:
+1. Siga o Padrão Oficial de Redação da Presidência da República e da Secretaria de Estado de Educação de Mato Grosso (SEDUC-MT).
+2. Utilize linguagem formal, culta, impessoal, clara, objetiva e respeitosa.
+3. Organize o texto em 2 a 4 parágrafos bem definidos, separados por duas quebras de linha (\\n\\n).
+4. O primeiro parágrafo deve introduzir o motivo/assunto do ofício com clareza.
+5. O(s) parágrafo(s) intermediário(s) deve(m) detalhar as justificativas, fundamentação normativa ou contexto escolar.
+6. O último parágrafo deve apresentar o pedido, encaminhamento ou expectativa de providências com cortesia oficial.
+7. Retorne APENAS o corpo do texto do ofício (não inclua cabeçalho, número, data, vocativo inicial como "Prezado Senhor", nem assinaturas, pois esses elementos são renderizados separadamente no documento).`;
+
+  const prompt = `Gere o corpo do texto para um ofício oficial com os seguintes dados:
+- Ideia principal / Rascunho informado: "${promptText}"
+- Assunto: "${subject || 'Não especificado'}"
+- Destinatário: "${recipient || 'Órgão / Autoridade Competente'}"
+- Tipo/Tom do Ofício: "${tone}"`;
+
+  try {
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        temperature: 0.3
+      }
+    }));
+
+    const resultText = response.text?.trim();
+    if (resultText) return resultText;
+    return generateFallbackOficioText(promptText, subject, recipient, tone);
+  } catch (err) {
+    console.warn("Erro ao gerar ofício por IA via Gemini, usando gerador estruturado:", err);
+    return generateFallbackOficioText(promptText, subject, recipient, tone);
+  }
+};
+
+const generateFallbackOficioText = (
+  promptText: string,
+  subject?: string,
+  recipient?: string,
+  tone?: string
+): string => {
+  const cleanPrompt = promptText.trim() || 'tratar de assuntos de interesse desta Unidade Escolar';
+  const cleanSubject = subject ? `referente a ${subject}` : '';
+
+  if (tone === 'CONVOCACAO') {
+    return `Cumprimentando-o(a) cordialmente, vimos por meio deste solicitar a presença de Vossa Senhoria junto a esta Unidade Escolar para ${cleanPrompt} ${cleanSubject}.\n\nRessaltamos a extrema importância do comparecimento para o devido acompanhamento das demandas institucionais e pedagógicas dos nossos estudantes.\n\nCertos de podermos contar com vossa habitual atenção e presteza, renovamos nossos protestos de elevada estima e consideração.`;
+  }
+  if (tone === 'NOTIFICACAO') {
+    return `Servimo-nos do presente para notificar Vossa Senhoria acerca dos fatos pertinentes a ${cleanPrompt} ${cleanSubject}, ocorridos no âmbito da Escola Estadual Cívico-Militar André Antônio Maggi.\n\nDiante da gravidade da situação, solicitamos a imediata adoção das medidas cabíveis para a regularização do cenário apresentado, em conformidade com as normas vigentes.\n\nPermanecemos à disposição para eventuais esclarecimentos complementares.`;
+  }
+  if (tone === 'ENCAMINHAMENTO') {
+    return `Encaminhamos a Vossa Excelência os relatórios e documentos anexos para análise e providências cabíveis no que tange a ${cleanPrompt} ${cleanSubject}.\n\nReiteramos a necessidade de urgência na apreciação da referida demanda, visando assegurar a continuidade dos serviços prestados à comunidade escolar.\n\nAproveitamos a oportunidade para renovar nossos votos de consideração e apreço.`;
+  }
+
+  return `Vimos por meio deste apresentar a Vossa Senhoria as solicitações e justificativas pertinentes a ${cleanPrompt} ${cleanSubject}, no âmbito desta Unidade Escolar.\n\nSalientamos que tais providências são indispensáveis para garantir a adequada infraestrutura, a segurança e a continuidade dos trabalhos administrativos e pedagógicos da instituição.\n\nContamos com a presteza de vossas providências e colocamo-nos à inteira disposição para prestar quaisquer esclarecimentos complementares.`;
+};
+

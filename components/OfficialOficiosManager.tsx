@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
+import { generateOficioBodyWithAI } from '../geminiService';
 import { 
   FileText, Plus, Search, Printer, Trash2, Building2, Calendar, User, Check, 
-  Sparkles, Layers, Eye, X, Shield, BookOpen, Landmark, Filter, ArrowRight, Clock
+  Sparkles, Layers, Eye, X, Shield, BookOpen, Landmark, Filter, ArrowRight, Clock, Wand2
 } from 'lucide-react';
 
 export interface SchoolOficio {
@@ -81,7 +82,6 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [printingOficio, setPrintingOficio] = useState<SchoolOficio | null>(null);
   const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
 
   // Form fields
@@ -97,6 +97,40 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     signatory_name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
     signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
   });
+
+  // AI Redaction Assistant States
+  const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
+  const [aiPromptInput, setAiPromptInput] = useState<string>('');
+  const [aiTone, setAiTone] = useState<'SOLICITACAO' | 'CONVOCACAO' | 'NOTIFICACAO' | 'INFORMATIVO' | 'ENCAMINHAMENTO'>('SOLICITACAO');
+
+  const handleGenerateAI = async () => {
+    if (!aiPromptInput.trim() && !formData.body_text.trim()) {
+      alert('Por favor, informe a ideia principal do ofício no campo de IA!');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const generatedText = await generateOficioBodyWithAI({
+        promptText: aiPromptInput.trim() || formData.body_text.trim(),
+        subject: formData.title_subject,
+        recipient: `${formData.recipient_name} ${formData.recipient_org ? `- ${formData.recipient_org}` : ''}`,
+        tone: aiTone
+      });
+
+      if (generatedText) {
+        setFormData(prev => ({
+          ...prev,
+          body_text: generatedText
+        }));
+      }
+    } catch (e) {
+      console.error('Erro ao gerar redação por IA:', e);
+      alert('Erro ao comunicar com a IA. Tente novamente.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   // Calculate next global sequential number for the current year (starts at 23)
   const currentYear = useMemo(() => new Date().getFullYear(), []);
@@ -584,16 +618,87 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 </div>
               </div>
 
+              {/* ASSISTENTE DE REDAÇÃO DE OFÍCIOS POR IA */}
+              <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 p-5 rounded-3xl border border-indigo-500/20 text-white space-y-3 shadow-xl">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center border border-indigo-400/30 shrink-0">
+                      <Sparkles size={18} className="text-amber-400 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-indigo-200 flex items-center gap-2">
+                        Redação Inteligente por IA <span className="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full">SEDUC-MT IA</span>
+                      </h4>
+                      <p className="text-[10px] text-slate-300 font-medium">Digite o resumo da solicitação e a IA redige o texto formal completo no padrão oficial.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <select
+                      value={aiTone}
+                      onChange={e => setAiTone(e.target.value as any)}
+                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase text-indigo-200 outline-none focus:bg-slate-900"
+                    >
+                      <option value="SOLICITACAO" className="bg-slate-900 text-white">Tom: Solicitação</option>
+                      <option value="CONVOCACAO" className="bg-slate-900 text-white">Tom: Convocação</option>
+                      <option value="NOTIFICACAO" className="bg-slate-900 text-white">Tom: Notificação</option>
+                      <option value="ENCAMINHAMENTO" className="bg-slate-900 text-white">Tom: Encaminhamento</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ex: solicitar reparo no telhado da quadra devido às fortes chuvas da semana"
+                    value={aiPromptInput}
+                    onChange={e => setAiPromptInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleGenerateAI(); } }}
+                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-indigo-400 transition-all font-medium"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateAI}
+                    disabled={isGeneratingAI || (!aiPromptInput.trim() && !formData.body_text.trim())}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 whitespace-nowrap shrink-0 active:scale-95"
+                  >
+                    {isGeneratingAI ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Redigindo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={16} /> Redigir com IA
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                  Corpo do Texto do Ofício *
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                    Corpo do Texto do Ofício *
+                  </label>
+                  {formData.body_text.trim() && (
+                    <button
+                      type="button"
+                      onClick={handleGenerateAI}
+                      disabled={isGeneratingAI}
+                      className="text-[9px] font-black text-indigo-600 hover:underline uppercase flex items-center gap-1"
+                    >
+                      <Wand2 size={12} /> Refinar Texto Atual com IA
+                    </button>
+                  )}
+                </div>
                 <textarea
                   required
                   rows={6}
                   value={formData.body_text}
                   onChange={e => setFormData({ ...formData, body_text: e.target.value })}
-                  placeholder="Escreva a mensagem oficial aqui..."
+                  placeholder="Escreva a mensagem oficial aqui ou utilize o assistente de IA acima..."
                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 leading-relaxed"
                 ></textarea>
               </div>
