@@ -659,19 +659,28 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
             <div id="student-report-print" className="bg-white p-8 md:p-12 rounded-[2.5rem] border border-slate-200/80 shadow-md space-y-8 print:p-0 print:border-none print:shadow-none print:rounded-none">
               
               {/* Cabeçalho Oficial do Relatório */}
-              <div className="border-b-2 border-slate-900 pb-6 text-center space-y-2">
-                <div className="flex justify-center items-center gap-3 mb-2">
-                  <Shield size={36} className="text-slate-900" />
+              <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+                <img 
+                  src="/logo-escola-oficial.png" 
+                  alt="Escola Cívico-Militar" 
+                  className="h-24 w-auto object-contain shrink-0" 
+                  onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                />
+                <div className="text-center flex-1 mx-3 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <h1 className="text-xs font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                  <h2 className="text-[11px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                  <h3 className="text-[11px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                  <h4 className="text-[10px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                  <h5 className="text-[10px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                  <h6 className="text-xs font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
+                  <p className="text-[10px] font-bold uppercase text-indigo-900 pt-1">Relatório Disciplinar Individual do Aluno - SISMIL</p>
                 </div>
-                <h1 className="text-lg font-black uppercase text-slate-900 tracking-tight">
-                  Escola Estadual Cívico-Militar EE André Maggi
-                </h1>
-                <h2 className="text-xs font-black uppercase text-indigo-800 tracking-widest">
-                  Relatório Disciplinar Individual do Aluno - SISMIL
-                </h2>
-                <p className="text-[9px] font-bold text-slate-500 uppercase">
-                  SEDUC/MT • Diretoria Regional de Educação • Colíder - MT
-                </p>
+                <img 
+                  src="/brasao_mt.png" 
+                  alt="Brasão do Estado de Mato Grosso" 
+                  className="h-24 w-auto object-contain shrink-0" 
+                  onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                />
               </div>
 
               {/* Bloco 1: Dados do Aluno */}

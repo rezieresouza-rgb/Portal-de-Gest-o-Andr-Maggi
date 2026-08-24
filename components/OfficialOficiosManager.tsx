@@ -620,15 +620,28 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         <div className="print-oficio-area">
           <div className="pdf-page p-12" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000' }}>
             
-            {/* Cabeçalho Oficial com Logo */}
+            {/* Cabeçalho Oficial com Logo Cívico-Militar de um lado, Brasão de MT do outro e Texto SEDUC no Meio */}
             <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-8">
-              <img src="/logo-escola.png" alt="Escola André Maggi" className="h-20 object-contain" />
-              <div className="text-center flex-1 mx-4">
-                <h1 className="text-base font-bold uppercase tracking-tight">Escola Estadual Cívico-Militar EE André Antônio Maggi</h1>
-                <p className="text-xs font-semibold uppercase mt-0.5">Governo do Estado de Mato Grosso • SEDUC-MT</p>
-                <p className="text-[10px] text-gray-600 uppercase mt-0.5">Av. Tancredo Neves, S/N • Colíder - MT</p>
+              <img 
+                src="/logo-escola-oficial.png" 
+                alt="Escola Cívico-Militar" 
+                className="h-24 w-auto object-contain shrink-0" 
+                onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+              />
+              <div className="text-center flex-1 mx-3 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                <h1 className="text-xs font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                <h2 className="text-[11px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                <h3 className="text-[11px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                <h4 className="text-[10px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                <h5 className="text-[10px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                <h6 className="text-xs font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
               </div>
-              <img src="/SEDUC 2.jpg" alt="Seduc MT" className="h-20 object-contain" />
+              <img 
+                src="/brasao_mt.png" 
+                alt="Brasão do Estado de Mato Grosso" 
+                className="h-24 w-auto object-contain shrink-0" 
+                onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+              />
             </div>
 
             {/* Número do Ofício (Alinhado à Direita) */}
