@@ -105,7 +105,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     const oficiosThisYear = oficios.filter(o => o.year === currentYear);
     const maxNum = oficiosThisYear.reduce((max, o) => Math.max(max, o.number || 0), 0);
     const nextNum = maxNum >= STARTING_SEQUENCE ? maxNum + 1 : STARTING_SEQUENCE;
-    const formatted = `${String(nextNum).padStart(3, '0')}/${currentYear}/EECMAAMCOL/SEDUC/MT`;
+    const formatted = `${String(nextNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
     return { number: nextNum, formatted };
   }, [oficios, currentYear]);
 
@@ -174,7 +174,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     }
 
     const seqNum = customSequenceNumber ? parseInt(customSequenceNumber) || nextSequenceInfo.number : nextSequenceInfo.number;
-    const formattedNum = `${String(seqNum).padStart(3, '0')}/${currentYear}/EECMAAMCOL/SEDUC/MT`;
+    const formattedNum = `${String(seqNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
 
     const newOficio: SchoolOficio = {
       id: crypto.randomUUID(),
@@ -344,7 +344,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             <FileText size={48} className="mb-4 text-slate-200" />
             <h3 className="text-sm font-black uppercase text-slate-700 tracking-wider">Nenhum Ofício Registrado</h3>
             <p className="text-xs text-slate-400 max-w-sm mt-1">
-              Utilize o botão "Novo Ofício" acima para gerar e emitir o primeiro documento oficial a partir de <strong className="text-indigo-600 font-mono">OFÍCIO Nº 023/{currentYear}/EECMAAMCOL/SEDUC/MT</strong>.
+              Utilize o botão "Novo Ofício" acima para gerar e emitir o primeiro documento oficial a partir de <strong className="text-indigo-600 font-mono">OFÍCIO Nº 023/{currentYear}/EECAAMCOL/SEDUC/MT</strong>.
             </p>
           </div>
         ) : (
@@ -437,7 +437,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 <div>
                   <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Novo Documento Oficial</span>
                   <h3 className="text-base font-black uppercase tracking-tight font-mono">
-                    OFÍCIO Nº {customSequenceNumber ? String(customSequenceNumber).padStart(3, '0') : String(nextSequenceInfo.number).padStart(3, '0')}/{currentYear}/EECMAAMCOL/SEDUC/MT
+                    OFÍCIO Nº {customSequenceNumber ? String(customSequenceNumber).padStart(3, '0') : String(nextSequenceInfo.number).padStart(3, '0')}/{currentYear}/EECAAMCOL/SEDUC/MT
                   </h3>
                 </div>
               </div>
@@ -651,14 +651,14 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       {/* ÁREA DE IMPRESSÃO DO OFÍCIO (PDF / A4) */}
       {printingOficio && (
         <div className="print-oficio-area">
-          <div className="pdf-page p-12" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000' }}>
+          <div className="pdf-page p-12" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
             
-            {/* Cabeçalho Oficial com Logo Cívico-Militar de um lado, Brasão de MT do outro e Texto SEDUC no Meio */}
+            {/* Cabeçalho Oficial com Logo Cívico-Militar e Brasão MT do Mesmo Tamanho */}
             <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-8">
               <img 
                 src="/logo-escola-oficial.png" 
                 alt="Escola Cívico-Militar" 
-                className="h-24 w-auto object-contain shrink-0" 
+                className="h-28 w-auto object-contain shrink-0 max-h-[112px]" 
                 onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
               />
               <div className="text-center flex-1 mx-3 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
@@ -672,45 +672,45 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               <img 
                 src="/brasao_mt.png" 
                 alt="Brasão do Estado de Mato Grosso" 
-                className="h-24 w-auto object-contain shrink-0" 
+                className="h-28 w-auto object-contain shrink-0 max-h-[112px]" 
                 onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
               />
             </div>
 
-            {/* Número do Ofício Formatado (Alinhado à Direita) */}
-            <div className="text-right mb-6">
-              <p className="text-sm font-bold uppercase font-mono">
+            {/* Número do Ofício Formatado (Alinhado à ESQUERDA conforme pedido) */}
+            <div className="text-left mb-6">
+              <p className="text-sm font-bold uppercase font-mono text-black">
                 OFÍCIO Nº {printingOficio.formatted_number}
               </p>
             </div>
 
             {/* Cidade e Data (Alinhado à Direita) */}
-            <div className="text-right mb-8 text-sm">
+            <div className="text-right mb-8 text-sm text-black">
               <p>{printingOficio.city_date}</p>
             </div>
 
-            {/* Dados do Destinatário */}
-            <div className="mb-8 text-sm space-y-1">
-              <p className="font-bold">Ao(À) Senhor(a):</p>
-              <p className="font-bold uppercase text-base">{printingOficio.recipient_name}</p>
-              {printingOficio.recipient_role && <p className="uppercase">{printingOficio.recipient_role}</p>}
-              {printingOficio.recipient_org && <p className="uppercase font-semibold">{printingOficio.recipient_org}</p>}
+            {/* Dados do Destinatário (SEM NEGRITO conforme pedido) */}
+            <div className="mb-8 text-sm space-y-1 text-black font-normal">
+              <p className="font-normal">Ao(À) Senhor(a):</p>
+              <p className="uppercase text-base font-normal">{printingOficio.recipient_name}</p>
+              {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
+              {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
             </div>
 
             {/* Assunto */}
-            <div className="mb-8 text-sm">
+            <div className="mb-8 text-sm text-black">
               <p className="font-bold">
                 Assunto: <span className="underline">{printingOficio.title_subject}</span>
               </p>
             </div>
 
             {/* Vocativo Inicial */}
-            <div className="mb-6 text-sm font-semibold">
+            <div className="mb-6 text-sm font-normal text-black">
               <p>{printingOficio.salutation}</p>
             </div>
 
             {/* Corpo do Texto */}
-            <div className="mb-12 text-sm leading-relaxed text-justify space-y-4">
+            <div className="mb-12 text-sm leading-relaxed text-justify space-y-4 text-black">
               {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
                 <p key={idx} style={{ textIndent: '2rem' }}>
                   {paragraph}
@@ -719,21 +719,21 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             </div>
 
             {/* Fecho de Cortesia */}
-            <div className="mb-16 text-sm">
+            <div className="mb-16 text-sm text-black font-normal">
               <p>{printingOficio.closure_text}</p>
             </div>
 
-            {/* Assinatura */}
-            <div className="text-center w-3/4 mx-auto pt-8">
+            {/* Assinatura (100% COR PRETA conforme pedido) */}
+            <div className="text-center w-3/4 mx-auto pt-8 text-black" style={{ color: '#000000' }}>
               <div className="border-t border-black pt-2">
-                <p className="font-bold uppercase text-sm">{printingOficio.signatory_name}</p>
-                <p className="text-xs uppercase text-gray-700">{printingOficio.signatory_role}</p>
-                <p className="text-[10px] text-gray-500 uppercase mt-0.5">EE Cívico-Militar André Antônio Maggi</p>
+                <p className="font-bold uppercase text-sm text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
+                <p className="text-xs uppercase text-black font-medium" style={{ color: '#000000' }}>{printingOficio.signatory_role}</p>
+                <p className="text-[10px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
               </div>
             </div>
 
             {/* Rodapé do Documento */}
-            <div className="mt-16 text-center text-[9px] text-gray-500 uppercase tracking-widest border-t border-gray-300 pt-3">
+            <div className="mt-16 text-center text-[9px] text-black font-normal uppercase tracking-widest border-t border-gray-400 pt-3">
               Documento expedido eletronicamente pelo Portal de Gestão Escolar — EE André Maggi
             </div>
 
@@ -757,6 +757,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             width: 100% !important; 
             display: block !important;
             background: white !important;
+            color: black !important;
           }
           .pdf-page { 
             page-break-after: always !important; 
