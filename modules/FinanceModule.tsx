@@ -87,6 +87,7 @@ interface Transaction {
   invoiceDate?: string;
   description: string;
   invoiceNumber?: string;
+  receiptNumber?: string;
   type: 'ENTRY' | 'EXPENSE';
   group: 'CUSTEIO' | 'CAPITAL' | 'OUTROS';
   value: number;
@@ -318,6 +319,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const [newTx, setNewTx] = useState({
     description: '',
     invoiceNumber: '',
+    receiptNumber: '',
     invoiceDate: '',
     value: '',
     type: 'EXPENSE' as 'ENTRY' | 'EXPENSE',
@@ -380,6 +382,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
           date: t.date || '',
           description: t.description || 'Sem descrição',
           invoiceNumber: t.invoice_number || '',
+          receiptNumber: t.receipt_number || t.receipt_code || '',
           invoiceDate: t.invoice_date || '',
           group: t.tx_group || 'CUSTEIO',
           type: t.type || 'EXPENSE',
@@ -694,7 +697,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         }
       }
 
-      const txPayload = {
+      const txPayload: any = {
         fund_id: currentFund.dbId,
         date: toISODateString(newTx.date),
         description: newTx.description.toUpperCase(),
@@ -714,14 +717,32 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         ...(receiptUrl ? { receipt_url: receiptUrl } : {})
       };
 
+      if (newTx.receiptNumber) {
+        txPayload.receipt_number = newTx.receiptNumber.toUpperCase();
+      }
+
       if (editingTx) {
-        const { error } = await supabase.from('transactions')
+        let { error } = await supabase.from('transactions')
           .update(txPayload)
           .eq('id', editingTx.id);
+
+        if (error && error.message?.includes('receipt_number')) {
+          delete txPayload.receipt_number;
+          const retry = await supabase.from('transactions').update(txPayload).eq('id', editingTx.id);
+          error = retry.error;
+        }
+
         if (error) throw error;
         addToast("Lançamento atualizado com sucesso!", "success");
       } else {
-        const { error } = await supabase.from('transactions').insert([txPayload]);
+        let { error } = await supabase.from('transactions').insert([txPayload]);
+
+        if (error && error.message?.includes('receipt_number')) {
+          delete txPayload.receipt_number;
+          const retry = await supabase.from('transactions').insert([txPayload]);
+          error = retry.error;
+        }
+
         if (error) throw error;
         addToast("Lançamento realizado com sucesso!", "success");
       }
@@ -729,7 +750,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       setIsModalOpen(false);
       setTempFile(null);
       setEditingTx(null);
-      setNewTx({ description: '', invoiceNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: activeTab === 'merenda' ? 'FEDERAL' : '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
+      setNewTx({ description: '', invoiceNumber: '', receiptNumber: '', invoiceDate: '', value: '', type: 'EXPENSE', group: 'CUSTEIO', category: '', integratedAction: '', fundingSource: activeTab === 'merenda' ? 'FEDERAL' : '', isFamilyAgriculture: false, isIndividualProducer: false, date: getLocalDateString(), time: getLocalTimeString() });
       fetchFinancialData();
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
@@ -1118,13 +1139,22 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                         )}
                                       </div>
                                     </div>
-                                    <div className="space-y-2">
-                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Número da Nota Fiscal</label>
-                                      <div className="relative">
-                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Hash size={18} /></div>
-                                        <input type="text" value={newTx.invoiceNumber} onChange={(e) => setNewTx({ ...newTx, invoiceNumber: e.target.value })} placeholder="Opcional" className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all" />
-                                      </div>
-                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                     <div className="space-y-2">
+                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Número da Nota Fiscal</label>
+                                       <div className="relative">
+                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><Hash size={18} /></div>
+                                         <input type="text" value={newTx.invoiceNumber} onChange={(e) => setNewTx({ ...newTx, invoiceNumber: e.target.value })} placeholder="Ex: NF-12345" className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all uppercase" />
+                                       </div>
+                                     </div>
+                                     <div className="space-y-2">
+                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nº Comprovante de Pagamento</label>
+                                       <div className="relative">
+                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><ReceiptText size={18} /></div>
+                                         <input type="text" value={newTx.receiptNumber || ''} onChange={(e) => setNewTx({ ...newTx, receiptNumber: e.target.value })} placeholder="Ex: COMP-987654 / TED" className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all uppercase" />
+                                       </div>
+                                     </div>
+                                   </div>
                                   </div>
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1649,9 +1679,10 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     <span className="block text-[9px] opacity-50 mt-0.5">{t.time || ''}</span>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                       <p className="font-black text-white uppercase leading-tight">{t.description}</p>
                                       {t.invoiceNumber && <span className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded text-[8px] font-black border border-white/10">NF: {t.invoiceNumber} {t.invoiceDate ? `(${t.invoiceDate.split('-').reverse().join('/')})` : ''}</span>}
+                                      {t.receiptNumber && <span className="bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] font-black border border-emerald-500/20">Comp: {t.receiptNumber}</span>}
                                     </div>
                                     <div className="flex items-center gap-2 mt-1"><span className="text-[8px] text-white/30 font-bold uppercase">{t.category}</span>{t.integratedAction && <span className="text-[8px] bg-purple-500/10 text-purple-300 px-1.5 py-0.5 rounded font-black uppercase border border-purple-500/20">{t.integratedAction}</span>}</div>
                                   </td>
@@ -1669,6 +1700,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                           setNewTx({
                                             description: t.description,
                                             invoiceNumber: t.invoiceNumber || '',
+                                            receiptNumber: t.receiptNumber || '',
                                             invoiceDate: t.invoiceDate || '',
                                             value: t.value.toString(),
                                             type: t.type,
