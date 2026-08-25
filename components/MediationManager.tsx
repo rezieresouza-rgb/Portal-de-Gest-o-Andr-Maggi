@@ -471,11 +471,53 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                <div className="flex items-center gap-6 shrink-0">
                   <div className="text-right">
                      <p className="text-[10px] font-black text-gray-400 uppercase">Progresso</p>
-                     <div className="flex items-center gap-1 mt-1">
+                     <div className="flex items-center gap-1 mt-1 justify-end">
                         {c.steps?.map((step, i) => (
                           <div key={i} className={"h-1.5 w-6 rounded-full " + (step.completed ? 'bg-rose-500' : 'bg-gray-100')} />
                         ))}
                      </div>
+                     {(() => {
+                        let latestDateStr = c.openedAt;
+
+                        if (c.logs && c.logs.length > 0) {
+                          const logDates = c.logs.map(l => l.date).filter(Boolean);
+                          if (logDates.length > 0) {
+                            logDates.sort().reverse();
+                            if (!latestDateStr || logDates[0] > latestDateStr) {
+                              latestDateStr = logDates[0];
+                            }
+                          }
+                        }
+
+                        if (c.steps && c.steps.length > 0) {
+                          const stepDates = c.steps.filter(s => s.completed && s.date).map(s => s.date!);
+                          if (stepDates.length > 0) {
+                            stepDates.sort().reverse();
+                            if (!latestDateStr || stepDates[0] > latestDateStr) {
+                              latestDateStr = stepDates[0];
+                            }
+                          }
+                        }
+
+                        if (!latestDateStr) return null;
+
+                        let formattedDate = latestDateStr;
+                        try {
+                          if (latestDateStr.includes('-')) {
+                            const parts = latestDateStr.split('T')[0].split('-');
+                            if (parts.length === 3) {
+                              formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                            }
+                          }
+                        } catch (e) {}
+
+                        return (
+                          <p className="text-[9px] font-black text-gray-400 uppercase mt-1 flex items-center justify-end gap-1">
+                             <Clock size={10} className="text-rose-500" />
+                             Atualizado em: <span className="font-extrabold text-rose-600">{formattedDate}</span>
+                          </p>
+                        );
+                     })()}
                   </div>
                   
                   <div className="flex flex-col gap-2">
