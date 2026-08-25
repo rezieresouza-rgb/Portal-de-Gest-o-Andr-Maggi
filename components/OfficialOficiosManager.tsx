@@ -137,8 +137,14 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   const nextSequenceInfo = useMemo(() => {
-    const oficiosThisYear = oficios.filter(o => o.year === currentYear);
-    const maxNum = oficiosThisYear.reduce((max, o) => Math.max(max, o.number || 0), 0);
+    const maxNum = oficios.reduce((max, o) => {
+      let num = o.number || 0;
+      if (!num && o.formatted_number) {
+        const match = o.formatted_number.match(/^(\d+)/);
+        if (match) num = parseInt(match[1], 10);
+      }
+      return Math.max(max, num);
+    }, 0);
     const nextNum = maxNum >= STARTING_SEQUENCE ? maxNum + 1 : STARTING_SEQUENCE;
     const formatted = `${String(nextNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
     return { number: nextNum, formatted };
