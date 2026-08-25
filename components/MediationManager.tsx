@@ -31,6 +31,7 @@ import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student
 import { supabase } from '../supabaseClient';
 
 interface MediationManagerProps {
+  user?: any;
   role: PsychosocialRole;
   onTabChange?: (tab: string) => void;
   initialSearch?: string;
@@ -62,7 +63,7 @@ const formatLocalDate = (dateStr?: string | null): string => {
   }
 };
 
-const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, initialSearch }) => {
+const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabChange, initialSearch }) => {
   const { students: dbStudents } = useStudents();
   const [cases, setCases] = useState<MediationCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,12 +83,33 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
   });
   const [activeTab, setActiveTab] = useState<'ativos' | 'historico'>('ativos');
 
+  // Automatic professional title resolution based on user login/name
+  const defaultProfessionalTitle = useMemo(() => {
+    const userNameUpper = (user?.name || '').toUpperCase();
+    const userLogin = user?.login || '';
+
+    if (userNameUpper.includes('DANUBIA') || userLogin.includes('35636524811') || role === 'MEDIAÇÃO' || role === 'MEDIACAO') {
+      return 'MEDIAÇÃO';
+    }
+    if (userNameUpper.includes('RAFAEL') || userNameUpper.includes('ANAIARA')) {
+      return 'EQUIPE PSICOSSOCIAL';
+    }
+    return role === 'PSICOSSOCIAL' ? 'EQUIPE PSICOSSOCIAL' : 'MEDIAÇÃO';
+  }, [user, role]);
+
   // [NOVO] Estados para o Diário de Atendimento
   const [newLog, setNewLog] = useState({
-    professional: role === 'PSICOSSOCIAL' ? 'EQUIPE PSICOSSOCIAL' : 'MEDIAÇÃO',
+    professional: defaultProfessionalTitle,
     content: '',
     date: new Date().toLocaleDateString('sv-SE')
   });
+
+  useEffect(() => {
+    setNewLog(prev => ({
+      ...prev,
+      professional: defaultProfessionalTitle
+    }));
+  }, [defaultProfessionalTitle]);
   const [isLogLoading, setIsLogLoading] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [editingLogContent, setEditingLogContent] = useState<string>('');
@@ -853,7 +875,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                                  className="w-full p-3 bg-white border border-rose-200 rounded-xl text-xs font-medium resize-none outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[60px]"
                               />
                               <div className="flex justify-between items-center mt-2">
-                                 <p className="text-[8px] font-black text-rose-400 uppercase">{newLog.professional}</p>
+                                 <select
+                                    value={newLog.professional}
+                                    onChange={(e) => setNewLog({ ...newLog, professional: e.target.value })}
+                                    className="bg-white border border-rose-200 rounded-lg px-2.5 py-1 text-[9px] font-black text-rose-600 uppercase outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer shadow-sm"
+                                    title="Selecione quem está realizando o registro"
+                                 >
+                                    <option value="MEDIAÇÃO">MEDIAÇÃO</option>
+                                    <option value="EQUIPE PSICOSSOCIAL">EQUIPE PSICOSSOCIAL</option>
+                                    <option value="GESTÃO ESCOLAR">GESTÃO ESCOLAR</option>
+                                 </select>
                                  <button 
                                     onClick={handleSaveLog}
                                     disabled={isLogLoading || !newLog.content.trim()}

@@ -33,12 +33,23 @@ import PsychosocialMeetingAtaManager from '../components/PsychosocialMeetingAtaM
 import { PsychosocialRole } from '../types';
 
 interface PsychosocialModuleProps {
+  user?: any;
   onExit: () => void;
 }
 
-const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
+const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'mediation' | 'campaigns' | 'agenda' | 'reports' | 'referrals' | 'calendar' | 'violation_notification' | 'atas'>('dashboard');
-  const [userRole, setUserRole] = useState<PsychosocialRole>('PSICOSSOCIAL');
+  
+  const isDanubia = user?.name?.toUpperCase().includes('DANUBIA') || user?.login?.includes('35636524811');
+  const [userRole, setUserRole] = useState<PsychosocialRole>(
+    isDanubia ? 'MEDIAÇÃO' : (user?.role === 'MEDIAÇÃO' || user?.role === 'MEDIACAO' ? 'MEDIAÇÃO' : 'PSICOSSOCIAL')
+  );
+
+  useEffect(() => {
+    if (isDanubia) {
+      setUserRole('MEDIAÇÃO');
+    }
+  }, [isDanubia]);
   /* 
    * MIGRAÇÃO SUPABASE: Notificações
    * Substituição do localStorage por tabela 'psychosocial_notifications'
@@ -234,6 +245,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit }) => {
           {activeTab === 'violation_notification' && <RightsViolationForm />}
           {activeTab === 'mediation' && (
             <MediationManager 
+              user={user}
               role={userRole} 
               onTabChange={(tab: any) => setActiveTab(tab)} 
               initialSearch={pendingSearch}
