@@ -144,6 +144,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     fundingSource: 'ALL',
     type: 'ALL',
     group: 'ALL',
+    month: 'ALL',
     startDate: '',
     endDate: ''
   });
@@ -2076,65 +2077,86 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                          </div>
                          
                          {/* FILTROS (TELA APENAS) */}
-                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 print:hidden">
-                            <select 
-                               value={reportFilters.fund} 
-                               onChange={e => setReportFilters({...reportFilters, fund: e.target.value})}
-                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
-                            >
-                               <option className="bg-gray-900" value="all">Todas as Fontes</option>
-                               {Object.values(funds).map(f => (
-                                 <option className="bg-gray-900" key={(f as any).id} value={(f as any).id}>{(f as any).name}</option>
-                               ))}
-                            </select>
+                          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 print:hidden">
+                             <select 
+                                value={reportFilters.fund} 
+                                onChange={e => setReportFilters({...reportFilters, fund: e.target.value})}
+                                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                             >
+                                <option className="bg-gray-900" value="all">Todas as Fontes</option>
+                                {Object.values(funds).map(f => (
+                                  <option className="bg-gray-900" key={(f as any).id} value={(f as any).id}>{(f as any).name}</option>
+                                ))}
+                             </select>
 
-                            {reportFilters.fund === 'merenda' && (
-                              <select 
-                                 value={reportFilters.fundingSource} 
-                                 onChange={e => setReportFilters({...reportFilters, fundingSource: e.target.value})}
-                                 className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
-                              >
-                                 <option className="bg-gray-900" value="ALL">Fed. & Est.</option>
-                                 <option className="bg-gray-900" value="FEDERAL">Apenas Federal</option>
-                                 <option className="bg-gray-900" value="ESTADUAL">Apenas Estadual</option>
-                              </select>
-                            )}
-                            
-                            <select 
-                               value={reportFilters.type} 
-                               onChange={e => setReportFilters({...reportFilters, type: e.target.value})}
-                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
-                            >
-                               <option className="bg-gray-900" value="ALL">Todas as Moviment.</option>
-                               <option className="bg-gray-900" value="ENTRY">Apenas Entradas</option>
-                               <option className="bg-gray-900" value="EXPENSE">Apenas Saídas</option>
-                            </select>
+                             {reportFilters.fund === 'merenda' && (
+                               <select 
+                                  value={reportFilters.fundingSource} 
+                                  onChange={e => setReportFilters({...reportFilters, fundingSource: e.target.value})}
+                                  className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                               >
+                                  <option className="bg-gray-900" value="ALL">Fed. & Est.</option>
+                                  <option className="bg-gray-900" value="FEDERAL">Apenas Federal</option>
+                                  <option className="bg-gray-900" value="ESTADUAL">Apenas Estadual</option>
+                               </select>
+                             )}
+                             
+                             <select 
+                                value={reportFilters.type} 
+                                onChange={e => setReportFilters({...reportFilters, type: e.target.value})}
+                                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                             >
+                                <option className="bg-gray-900" value="ALL">Todas as Moviment.</option>
+                                <option className="bg-gray-900" value="ENTRY">Apenas Entradas</option>
+                                <option className="bg-gray-900" value="EXPENSE">Apenas Saídas</option>
+                             </select>
 
-                            <select 
-                               value={reportFilters.group} 
-                               onChange={e => setReportFilters({...reportFilters, group: e.target.value})}
-                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
-                            >
-                               <option className="bg-gray-900" value="ALL">Custeio & Capital</option>
-                               <option className="bg-gray-900" value="CUSTEIO">Apenas Custeio</option>
-                               <option className="bg-gray-900" value="CAPITAL">Apenas Capital</option>
-                            </select>
+                             <select 
+                                value={reportFilters.group} 
+                                onChange={e => setReportFilters({...reportFilters, group: e.target.value})}
+                                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                             >
+                                <option className="bg-gray-900" value="ALL">Custeio & Capital</option>
+                                <option className="bg-gray-900" value="CUSTEIO">Apenas Custeio</option>
+                                <option className="bg-gray-900" value="CAPITAL">Apenas Capital</option>
+                             </select>
 
-                            <input 
-                               type="date" 
-                               value={reportFilters.startDate}
-                               onChange={e => setReportFilters({...reportFilters, startDate: e.target.value})}
-                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none invert opacity-80"
-                               title="Data Inicial"
-                            />
-                            <input 
-                               type="date" 
-                               value={reportFilters.endDate}
-                               onChange={e => setReportFilters({...reportFilters, endDate: e.target.value})}
-                               className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none invert opacity-80"
-                               title="Data Final"
-                            />
-                         </div>
+                             <select 
+                                value={reportFilters.month} 
+                                onChange={e => setReportFilters({...reportFilters, month: e.target.value})}
+                                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none"
+                                title="Filtrar por Mês"
+                             >
+                                <option className="bg-gray-900" value="ALL">Todos os Meses</option>
+                                <option className="bg-gray-900" value="01">01 - Janeiro</option>
+                                <option className="bg-gray-900" value="02">02 - Fevereiro</option>
+                                <option className="bg-gray-900" value="03">03 - Março</option>
+                                <option className="bg-gray-900" value="04">04 - Abril</option>
+                                <option className="bg-gray-900" value="05">05 - Maio</option>
+                                <option className="bg-gray-900" value="06">06 - Junho</option>
+                                <option className="bg-gray-900" value="07">07 - Julho</option>
+                                <option className="bg-gray-900" value="08">08 - Agosto</option>
+                                <option className="bg-gray-900" value="09">09 - Setembro</option>
+                                <option className="bg-gray-900" value="10">10 - Outubro</option>
+                                <option className="bg-gray-900" value="11">11 - Novembro</option>
+                                <option className="bg-gray-900" value="12">12 - Dezembro</option>
+                             </select>
+
+                             <input 
+                                type="date" 
+                                value={reportFilters.startDate}
+                                onChange={e => setReportFilters({...reportFilters, startDate: e.target.value})}
+                                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none invert opacity-80"
+                                title="Data Inicial"
+                             />
+                             <input 
+                                type="date" 
+                                value={reportFilters.endDate}
+                                onChange={e => setReportFilters({...reportFilters, endDate: e.target.value})}
+                                className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white text-xs font-bold outline-none invert opacity-80"
+                                title="Data Final"
+                             />
+                          </div>
 
                          {/* DADOS PROCESSADOS E EXIBIÇÃO */}
                          {(() => {
@@ -2151,6 +2173,14 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                            }
                            if (reportFilters.group !== 'ALL') {
                               filtered = filtered.filter(t => t.group === reportFilters.group);
+                           }
+                           if (reportFilters.month && reportFilters.month !== 'ALL') {
+                              filtered = filtered.filter(t => {
+                                if (!t.date) return false;
+                                const cleanDate = t.date.split('T')[0];
+                                const parts = cleanDate.split('-');
+                                return parts.length >= 2 && parts[1] === reportFilters.month;
+                              });
                            }
                            if (reportFilters.startDate) {
                               filtered = filtered.filter(t => t.date >= reportFilters.startDate);
@@ -2171,9 +2201,17 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
                            const fundLabel = reportFilters.fund === 'all' ? 'Todas as Fontes' : (funds[reportFilters.fund as SubModuleType]?.name || reportFilters.fund);
                            const groupLabel = reportFilters.group === 'ALL' ? 'Custeio & Capital' : reportFilters.group;
-                           const periodLabel = (reportFilters.startDate || reportFilters.endDate)
+
+                           const monthNamesMap: Record<string, string> = {
+                             '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+                             '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+                             '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+                           };
+                           const selectedMonthText = reportFilters.month !== 'ALL' ? `Mês: ${monthNamesMap[reportFilters.month] || reportFilters.month}` : '';
+                           const selectedDatesText = (reportFilters.startDate || reportFilters.endDate)
                              ? `${reportFilters.startDate ? new Date(reportFilters.startDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início'} até ${reportFilters.endDate ? new Date(reportFilters.endDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
-                             : 'Período Completo';
+                             : '';
+                           const periodLabel = [selectedMonthText, selectedDatesText].filter(Boolean).join(' | ') || 'Período Completo';
 
                            if (filtered.length === 0) {
                               return (
