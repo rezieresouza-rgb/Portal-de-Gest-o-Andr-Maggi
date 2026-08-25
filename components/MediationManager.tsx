@@ -22,7 +22,9 @@ import {
   PlusCircle,
   Trash2,
   ShieldCheck,
-  RotateCcw
+  RotateCcw,
+  Pencil,
+  Check
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 
@@ -64,6 +66,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     date: new Date().toLocaleDateString('sv-SE')
   });
   const [isLogLoading, setIsLogLoading] = useState(false);
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editingLogContent, setEditingLogContent] = useState<string>('');
 
   const masterStudents = useMemo(() => {
     return dbStudents.map(s => ({
@@ -283,6 +287,62 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
     } catch (err: any) {
       console.error(err);
       alert("Erro ao salvar log: " + err.message);
+    } finally {
+      setIsLogLoading(false);
+    }
+  };
+
+  const handleUpdateLog = async (logId: string) => {
+    if (!selectedCase || !editingLogContent.trim()) return;
+    setIsLogLoading(true);
+    try {
+      const updatedLogs = (selectedCase.logs || []).map(l => {
+        const currentId = l.id || `log-${l.date}`;
+        return currentId === logId ? { ...l, content: editingLogContent.trim() } : l;
+      });
+
+      const { error } = await supabase
+        .from('mediation_cases')
+        .update({ logs: updatedLogs })
+        .eq('id', selectedCase.id);
+
+      if (error) throw error;
+
+      setSelectedCase({ ...selectedCase, logs: updatedLogs });
+      setEditingLogId(null);
+      setEditingLogContent('');
+      await fetchCases();
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao editar o registro do diário: " + err.message);
+    } finally {
+      setIsLogLoading(false);
+    }
+  };
+
+  const handleDeleteLog = async (logId: string) => {
+    if (!selectedCase) return;
+    if (!window.confirm("Tem certeza que deseja excluir este registro do diário?")) return;
+
+    setIsLogLoading(true);
+    try {
+      const updatedLogs = (selectedCase.logs || []).filter(l => {
+        const currentId = l.id || `log-${l.date}`;
+        return currentId !== logId;
+      });
+
+      const { error } = await supabase
+        .from('mediation_cases')
+        .update({ logs: updatedLogs })
+        .eq('id', selectedCase.id);
+
+      if (error) throw error;
+
+      setSelectedCase({ ...selectedCase, logs: updatedLogs });
+      await fetchCases();
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao excluir o registro do diário: " + err.message);
     } finally {
       setIsLogLoading(false);
     }
@@ -784,18 +844,71 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                            {/* Lista da Linha do Tempo */}
                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                               {selectedCase.logs && selectedCase.logs.length > 0 ? (
-                                selectedCase.logs.map((log, idx) => (
-                                 <div key={log.id || idx} className="relative pl-6 pb-2 border-l-2 border-rose-100 last:border-0 last:pb-0">
-                                    <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-rose-500 shadow-sm" />
-                                    <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group hover:bg-white transition-all hover:shadow-md">
-                                       <div className="flex justify-between items-center mb-1.5">
-                                          <p className="text-[10px] font-black text-rose-600 uppercase tracking-tighter">{log.professional}</p>
-                                          <p className="text-[8px] font-bold text-gray-400">{new Date(log.date).toLocaleDateString('pt-BR')}</p>
-                                       </div>
-                                       <p className="text-xs text-gray-700 leading-relaxed font-medium">{log.content}</p>
-                                    </div>
-                                 </div>
-                                ))
+                                 selectedCase.logs.map((log, idx) => {
+                                   const logId = log.id || `log-idx-${idx}`;
+                                   const isEditing = editingLogId === logId;
+
+                                   return (
+                                     <div key={logId} className="relative pl-6 pb-2 border-l-2 border-rose-100 last:border-0 last:pb-0">
+                                        <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-rose-500 shadow-sm" />
+                                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group hover:bg-white transition-all hover:shadow-md">
+                                           <div className="flex justify-between items-center mb-1.5">
+                                              <p className="text-[10px] font-black text-rose-600 uppercase tracking-tighter">{log.professional}</p>
+                                              <div className="flex items-center gap-2">
+                                                 <p className="text-[8px] font-bold text-gray-400">{new Date(log.date).toLocaleDateString('pt-BR')}</p>
+                                                 {!isEditing && (
+                                                   <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                                                     <button
+                                                       onClick={() => {
+                                                         setEditingLogId(logId);
+                                                         setEditingLogContent(log.content);
+                                                       }}
+                                                       className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                                       title="Editar registro"
+                                                     >
+                                                       <Pencil size={12} />
+                                                     </button>
+                                                     <button
+                                                       onClick={() => handleDeleteLog(logId)}
+                                                       className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                                       title="Excluir registro"
+                                                     >
+                                                       <Trash2 size={12} />
+                                                     </button>
+                                                   </div>
+                                                 )}
+                                              </div>
+                                           </div>
+                                           {isEditing ? (
+                                             <div className="mt-2 space-y-2">
+                                               <textarea
+                                                 value={editingLogContent}
+                                                 onChange={(e) => setEditingLogContent(e.target.value)}
+                                                 className="w-full p-2.5 bg-white border border-blue-300 rounded-xl text-xs font-medium resize-none outline-none focus:ring-2 focus:ring-blue-500/20 min-h-[60px]"
+                                               />
+                                               <div className="flex justify-end gap-2">
+                                                 <button
+                                                   onClick={() => setEditingLogId(null)}
+                                                   className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[9px] font-black uppercase transition-all"
+                                                 >
+                                                   Cancelar
+                                                 </button>
+                                                 <button
+                                                   onClick={() => handleUpdateLog(logId)}
+                                                   disabled={!editingLogContent.trim() || isLogLoading}
+                                                   className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[9px] font-black uppercase transition-all flex items-center gap-1 shadow-sm"
+                                                 >
+                                                   <Check size={10} /> Salvar
+                                                 </button>
+                                               </div>
+                                             </div>
+                                           ) : (
+                                             <p className="text-xs text-gray-700 leading-relaxed font-medium whitespace-pre-wrap">{log.content}</p>
+                                           )}
+                                        </div>
+                                     </div>
+                                   );
+                                 })
                               ) : (
                                 <div className="py-10 text-center opacity-40">
                                    <Clock size={32} className="mx-auto mb-2" />
