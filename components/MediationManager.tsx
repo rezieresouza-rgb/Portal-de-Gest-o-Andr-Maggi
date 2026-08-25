@@ -39,6 +39,29 @@ interface MediationManagerProps {
 const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
+const formatLocalDate = (dateStr?: string | null): string => {
+  if (!dateStr) return '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+
+  if (typeof dateStr === 'string' && dateStr.includes('-')) {
+    const cleanStr = dateStr.split('T')[0];
+    const parts = cleanStr.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      if (y && m && d) {
+        return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+      }
+    }
+  }
+
+  try {
+    const parseable = dateStr.length === 10 ? `${dateStr}T12:00:00` : dateStr;
+    return new Date(parseable).toLocaleDateString('pt-BR');
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, initialSearch }) => {
   const { students: dbStudents } = useStudents();
   const [cases, setCases] = useState<MediationCase[]>([]);
@@ -855,7 +878,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                                            <div className="flex justify-between items-center mb-1.5">
                                               <p className="text-[10px] font-black text-rose-600 uppercase tracking-tighter">{log.professional}</p>
                                               <div className="flex items-center gap-2">
-                                                 <p className="text-[8px] font-bold text-gray-400">{new Date(log.date).toLocaleDateString('pt-BR')}</p>
+                                                 <p className="text-[8px] font-bold text-gray-400">{formatLocalDate(log.date)}</p>
                                                  {!isEditing && (
                                                    <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                                                      <button
@@ -934,7 +957,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                                      </div>
                                      <div>
                                         <p className={`text-[10px] font-black uppercase leading-none ${step.completed ? 'text-emerald-700' : 'text-gray-400'}`}>{step.label}</p>
-                                        {step.date && <p className="text-[8px] font-bold text-emerald-600 mt-1">{new Date(step.date).toLocaleDateString('pt-BR')}</p>}
+                                        {step.date && <p className="text-[8px] font-bold text-emerald-600 mt-1">{formatLocalDate(step.date)}</p>}
                                      </div>
                                   </div>
                                   {step.completed ? (
