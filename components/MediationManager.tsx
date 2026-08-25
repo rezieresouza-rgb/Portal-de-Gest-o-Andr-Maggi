@@ -21,7 +21,8 @@ import {
   UserPlus,
   PlusCircle,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  RotateCcw
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 
@@ -781,7 +782,32 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                                         {step.date && <p className="text-[8px] font-bold text-emerald-600 mt-1">{new Date(step.date).toLocaleDateString('pt-BR')}</p>}
                                      </div>
                                   </div>
-                                  {!step.completed && (
+                                  {step.completed ? (
+                                    <button 
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (!window.confirm(`Tem certeza que deseja reverter a etapa "${step.label}" para pendente?`)) return;
+                                        const updatedSteps = selectedCase.steps.map((s, i) => 
+                                          i === idx ? { ...s, completed: false, date: undefined } : s
+                                        );
+                                        try {
+                                          const { error } = await supabase
+                                            .from('mediation_cases')
+                                            .update({ steps: updatedSteps })
+                                            .eq('id', selectedCase.id);
+                                          if (error) throw error;
+                                          await fetchCases();
+                                          setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                        } catch (err) {
+                                          alert("Erro ao reverter etapa.");
+                                        }
+                                      }}
+                                      className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-[8px] font-black uppercase transition-all flex items-center gap-1 border border-amber-300 shadow-sm"
+                                      title="Clique para desfazer / reverter esta etapa"
+                                    >
+                                      <RotateCcw size={10} /> Reverter
+                                    </button>
+                                  ) : (
                                      <button 
                                        onClick={async (e) => {
                                          e.stopPropagation();
@@ -800,7 +826,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ role, onTabChange, 
                                            alert("Erro ao atualizar etapa.");
                                          }
                                        }}
-                                       className="px-3 py-1 bg-gray-900 text-white rounded-lg text-[8px] font-black uppercase hover:bg-rose-600 transition-all"
+                                       className="px-3 py-1 bg-gray-900 text-white rounded-lg text-[8px] font-black uppercase hover:bg-rose-600 transition-all shadow-sm"
                                      >
                                        Registrar
                                      </button>
