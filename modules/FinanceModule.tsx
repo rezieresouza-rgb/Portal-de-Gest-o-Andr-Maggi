@@ -543,7 +543,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     if (group === 'CAPITAL') {
       return ['Equipamentos e Material Permanente', 'Mobiliário Escolar', 'Equipamentos de Informática', 'Utensílios de Cozinha (Bens Permanentes)', 'Eletrodomésticos', 'Máquinas e Equipamentos'];
     }
-    const commonCusteio = ['Material de Consumo', 'Serviços de Terceiros - Pessoa Jurídica', 'Serviços de Terceiros - Pessoa Física', 'Pequenos Reparos e Manutenção Predial', 'Material Pedagógico e Esportivo', 'Material de Expediente', 'Material de Limpeza e Higiene'];
+    const commonCusteio = ['Gás', 'Telefone', 'EPI e Uniformes', 'Internet', 'Material de Consumo', 'Serviços de Terceiros - Pessoa Jurídica', 'Serviços de Terceiros - Pessoa Física', 'Pequenos Reparos e Manutenção Predial', 'Material Pedagógico e Esportivo', 'Material de Expediente', 'Material de Limpeza e Higiene'];
     if (fundId === 'merenda') return ['Aquisição de Gêneros Alimentícios', 'Gás de Cozinha', 'Material de Higiene (Cozinha)', ...commonCusteio];
     if (fundId === 'pdde_qualidade') return ['Material de Apoio Pedagógico', 'Conectividade e Internet', 'Capacitação e Formação', ...commonCusteio];
     if (fundId === 'ru') return ['Manutenção de Ar Condicionado', 'Pequenas Reformas', 'Serviços de Informática', 'Material de Informática', 'Materiais para Pequenos Reparos', ...commonCusteio];
