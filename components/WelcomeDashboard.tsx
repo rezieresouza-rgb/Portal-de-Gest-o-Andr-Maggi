@@ -32,6 +32,7 @@ import { BirthdayPerson, SchoolAnnouncement, SchoolEvent, User } from '../types'
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
 import { supabase } from '../supabaseClient';
 import CelebrationsWall from './CelebrationsWall';
+import SchoolEventsWall from './SchoolEventsWall';
 
 interface ModuleConfig {
    id: string;
@@ -363,8 +364,11 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                      </div>
                   )}
 
-                  {/* MURAL DE DATAS COMEMORATIVAS */}
+                  {/* MURAL DE DATAS COMEMORATIVAS PROFISSIONAIS */}
                   {visibleBlocks.celebrations && <CelebrationsWall />}
+
+                  {/* MURAL DE DATAS FESTIVAS E ESCOLARES (DIA DAS MÃES, PAIS, ETC.) */}
+                  {visibleBlocks.celebrations && <SchoolEventsWall />}
 
                   {/* WIDGET CALENDÁRIO 2026 UNIFICADO */}
                   <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
