@@ -84,6 +84,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [printingOficio, setPrintingOficio] = useState<SchoolOficio | null>(null);
   const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
+  const [staffRoleMap, setStaffRoleMap] = useState<Record<string, string>>({});
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -150,12 +151,19 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     return { number: nextNum, formatted };
   }, [oficios, currentYear]);
 
-  // Sync customSequenceNumber when modal opens
+  // Sync customSequenceNumber & signatory role from RH registration when modal opens
   useEffect(() => {
     if (isModalOpen) {
       setCustomSequenceNumber(String(nextSequenceInfo.number));
+      const cleanSignatoryName = formData.signatory_name.trim().toUpperCase();
+      if (staffRoleMap[cleanSignatoryName]) {
+        setFormData(prev => ({
+          ...prev,
+          signatory_role: staffRoleMap[cleanSignatoryName]
+        }));
+      }
     }
-  }, [isModalOpen, nextSequenceInfo.number]);
+  }, [isModalOpen, nextSequenceInfo.number, staffRoleMap]);
 
   // Load oficios from Supabase with resilient localStorage & dual-table cloud sync
   const loadOficios = async () => {
@@ -253,6 +261,24 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
           } catch (err) {}
         }
       }
+    }
+
+    // 5. Fetch staff members from Supabase to dynamically resolve signatory roles
+    try {
+      const { data: staffData } = await supabase.from('staff').select('name, function_role, role');
+      if (staffData && staffData.length > 0) {
+        const roleMap: Record<string, string> = {};
+        staffData.forEach((s: any) => {
+          if (s.name) {
+            const cleanName = s.name.trim().toUpperCase();
+            const r = s.function_role || s.role;
+            if (r) roleMap[cleanName] = r;
+          }
+        });
+        setStaffRoleMap(roleMap);
+      }
+    } catch (e) {
+      console.warn('Erro ao buscar cargos de servidores RH:', e);
     }
 
     setLoading(false);
@@ -914,14 +940,20 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               <p>{printingOficio.closure_text}</p>
             </div>
 
-            {/* Assinatura */}
-            <div className="text-center w-2/3 mx-auto pt-4 text-black" style={{ color: '#000000' }}>
-              <div className="border-t border-black pt-1.5">
-                <p className="font-bold uppercase text-xs text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
-                <p className="text-[11px] uppercase text-black font-medium" style={{ color: '#000000' }}>{printingOficio.signatory_role}</p>
-                <p className="text-[9px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
-              </div>
-            </div>
+            {/* Assinatura (Busca Dinâmica do Cargo Atual no RH do Servidor) */}
+            {(() => {
+              const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
+              const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
+              return (
+                <div className="text-center w-2/3 mx-auto pt-4 text-black" style={{ color: '#000000' }}>
+                  <div className="border-t border-black pt-1.5">
+                    <p className="font-bold uppercase text-xs text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
+                    <p className="text-[11px] uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
+                    <p className="text-[9px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Rodapé do Documento */}
             <div className="mt-8 text-center text-[8px] text-black font-normal uppercase tracking-widest border-t border-gray-300 pt-2">
