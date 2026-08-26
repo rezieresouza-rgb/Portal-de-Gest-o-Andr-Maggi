@@ -364,7 +364,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       }
    }, [movementForm.startDate, movementForm.endDate]);
 
-   const MOVEMENT_TYPES: MovementType[] = ['TÉRMINO DE CONTRATO', 'DESLIGAMENTO', 'FÉRIAS', 'LICENÇA PRÊMIO', 'LICENÇA MATERNIDADE / GESTANTE', 'ATESTADO', 'AFASTAMENTO', 'RETORNO'];
+   const MOVEMENT_TYPES: MovementType[] = ['TÉRMINO DE CONTRATO', 'DESLIGAMENTO', 'FÉRIAS', 'LICENÇA PRÊMIO', 'LICENÇA MATERNIDADE / GESTANTE', 'ATESTADO', 'AFASTAMENTO', 'RETORNO', 'REINTEGRAÇÃO / REVERSÃO DE DESLIGAMENTO'];
 
    const handleImportStaffPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -551,7 +551,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
             newStatus = 'FERIAS';
          } else if (movementForm.type === 'LICENÇA PRÊMIO') {
             newStatus = 'LICENCA_PREMIO';
-         } else if (movementForm.type === 'RETORNO') {
+         } else if (movementForm.type === 'RETORNO' || movementForm.type.includes('REINTEGRAÇÃO') || movementForm.type.includes('REVERSÃO') || movementForm.type.includes('REATIVAÇÃO')) {
             newStatus = 'EM_ATIVIDADE';
          }
 

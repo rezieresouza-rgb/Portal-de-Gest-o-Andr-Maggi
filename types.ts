@@ -44,7 +44,7 @@ export interface SchoolCalendarData {
   meses: MonthlyCalendar[];
 }
 
-export type MovementType = 'FÉRIAS' | 'LICENÇA PRÊMIO' | 'LICENÇA MATERNIDADE / GESTANTE' | 'ATESTADO' | 'AFASTAMENTO' | 'RETORNO' | 'TÉRMINO DE CONTRATO' | 'DESLIGAMENTO';
+export type MovementType = 'FÉRIAS' | 'LICENÇA PRÊMIO' | 'LICENÇA MATERNIDADE / GESTANTE' | 'ATESTADO' | 'AFASTAMENTO' | 'RETORNO' | 'TÉRMINO DE CONTRATO' | 'DESLIGAMENTO' | 'REINTEGRAÇÃO / REVERSÃO DE DESLIGAMENTO';
 
 export interface StaffMovement {
   id: string;
