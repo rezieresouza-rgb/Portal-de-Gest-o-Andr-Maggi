@@ -925,7 +925,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
             {/* Rodapé do Documento */}
             <div className="mt-8 text-center text-[8px] text-black font-normal uppercase tracking-widest border-t border-gray-300 pt-2">
-              Documento expedido eletronicamente pelo Portal de Gestão Escolar — EE André Maggi
+              DOCUMENTO EXPEDIDO ELETRONICAMENTE PELO PORTAL DE GESTÃO ESCOLAR — EECM ANDRÉ ANTÔNIO MAGGI
             </div>
 
           </div>
