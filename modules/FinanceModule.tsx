@@ -43,7 +43,8 @@ import {
   FileSearch,
   Printer,
   List,
-  Table
+  Table,
+  Pencil
 } from 'lucide-react';
 import { extractInvoiceInfo } from '../geminiService';
 import { supabase } from '../supabaseClient';
@@ -535,6 +536,31 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const totalTaxAmount = useMemo(() => {
     return afTaxReport.reduce((acc, curr) => acc + (curr.taxValue || 0), 0);
   }, [afTaxReport]);
+
+  const handleOpenEditFromReport = (t: any) => {
+    const targetFund = t.fundId || (t.fundName ? Object.keys(funds).find(k => funds[k as SubModuleType].name === t.fundName) : null);
+    if (targetFund && funds[targetFund as SubModuleType]) {
+      setActiveTab(targetFund as SubModuleType);
+    }
+    setEditingTx(t);
+    setNewTx({
+      description: t.description,
+      invoiceNumber: t.invoiceNumber || '',
+      receiptNumber: t.receiptNumber || '',
+      invoiceDate: t.invoiceDate || '',
+      value: t.value.toString(),
+      type: t.type,
+      group: t.group,
+      category: t.category,
+      integratedAction: t.integratedAction || '',
+      fundingSource: t.fundingSource || '',
+      isFamilyAgriculture: t.isFamilyAgriculture || false,
+      isIndividualProducer: t.isIndividualProducer || false,
+      date: t.date,
+      time: t.time || ''
+    });
+    setIsModalOpen(true);
+  };
 
   const getAvailableCategories = (group: string, fundId: string, type: 'ENTRY' | 'EXPENSE') => {
     if (type === 'ENTRY') {
@@ -2315,12 +2341,31 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                          </div>
                                        </div>
 
-                                       <div className="text-right shrink-0">
-                                         <span className={`text-sm font-black print:text-[11px] print:font-black ${
-                                           t.type === 'ENTRY' ? 'text-emerald-400 print:text-black' : 'text-rose-400 print:text-black'
-                                         }`}>
-                                           {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                         </span>
+                                       <div className="flex items-center gap-3 shrink-0">
+                                         <div className="text-right">
+                                           <span className={`text-sm font-black print:text-[11px] print:font-black ${
+                                             t.type === 'ENTRY' ? 'text-emerald-400 print:text-black' : 'text-rose-400 print:text-black'
+                                           }`}>
+                                             {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                           </span>
+                                         </div>
+
+                                         <div className="flex items-center gap-1.5 print:hidden">
+                                           <button
+                                             onClick={() => handleOpenEditFromReport(t)}
+                                             className="p-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center gap-1.5 text-xs font-bold shadow-sm"
+                                             title="Editar Lançamento / Nota"
+                                           >
+                                             <Pencil size={14} /> <span className="hidden sm:inline">Editar</span>
+                                           </button>
+                                           <button
+                                             onClick={() => handleDeleteTransaction(t.id)}
+                                             className="p-2 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl hover:bg-rose-600 hover:text-white transition-all flex items-center gap-1 text-xs font-bold shadow-sm"
+                                             title="Excluir Lançamento"
+                                           >
+                                             <Trash2 size={14} />
+                                           </button>
+                                         </div>
                                        </div>
                                      </div>
                                    ))}
@@ -2340,6 +2385,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                          <th className="px-4 py-3 font-black uppercase tracking-widest">NF</th>
                                          <th className="px-4 py-3 font-black uppercase tracking-widest">Tipo</th>
                                          <th className="px-4 py-3 font-black uppercase tracking-widest text-right">Valor</th>
+                                         <th className="px-4 py-3 font-black uppercase tracking-widest text-center print:hidden">Ações</th>
                                        </tr>
                                      </thead>
                                      <tbody className="divide-y divide-white/5">
@@ -2362,6 +2408,24 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                            </td>
                                            <td className={`px-4 py-3 font-black text-right ${t.type === 'ENTRY' ? 'text-blue-400' : 'text-red-400'}`}>
                                              {t.type === 'ENTRY' ? '+' : '-'} R$ {t.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                           </td>
+                                           <td className="px-4 py-3 text-center print:hidden">
+                                             <div className="flex items-center justify-center gap-1.5">
+                                               <button
+                                                 onClick={() => handleOpenEditFromReport(t)}
+                                                 className="p-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                                                 title="Editar Lançamento / Nota"
+                                               >
+                                                 <Pencil size={13} />
+                                               </button>
+                                               <button
+                                                 onClick={() => handleDeleteTransaction(t.id)}
+                                                 className="p-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg hover:bg-rose-600 hover:text-white transition-all"
+                                                 title="Excluir Lançamento"
+                                               >
+                                                 <Trash2 size={13} />
+                                               </button>
+                                             </div>
                                            </td>
                                          </tr>
                                        ))}
