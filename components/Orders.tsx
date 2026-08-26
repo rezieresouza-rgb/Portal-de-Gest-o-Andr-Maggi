@@ -90,33 +90,35 @@ const Orders: React.FC = () => {
 
   const fetchNextOrderNumber = async () => {
     try {
-      const year = new Date().getFullYear().toString();
       const { data, error } = await supabase
         .from('orders')
         .select('order_number')
-        .ilike('order_number', `${year}%`)
-        .order('order_number', { ascending: false })
-        .limit(20); // Buscamos mais registros para evitar erro de ordenação de texto
+        .limit(1000);
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Encontrar o maior valor numérico real na lista (evitando problemas de ordenação alfabética)
-        const numbers = data.map(o => parseInt(o.order_number.replace(/[^\d]/g, ''))).filter(n => !isNaN(n));
-        const maxNum = Math.max(...numbers, 0);
-        
+        const numbers = data
+          .map(o => {
+            const raw = (o.order_number || '').trim();
+            const cleaned = raw.replace(/[^\d]/g, '');
+            return cleaned ? parseInt(cleaned, 10) : NaN;
+          })
+          .filter(n => !isNaN(n) && n > 0);
+
+        const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
+
         if (maxNum > 0) {
-             setNextOrderNumber((maxNum + 1).toString());
-        } else {
-             setNextOrderNumber(`${year}0001`);
+          setNextOrderNumber((maxNum + 1).toString());
+          return;
         }
-      } else {
-        setNextOrderNumber(`${year}0001`);
       }
+      const year = new Date().getFullYear().toString();
+      setNextOrderNumber(`${year}0001`);
     } catch (err) {
       console.error("Erro ao buscar próximo número de pedido:", err);
       const year = new Date().getFullYear().toString();
-      setNextOrderNumber(`${year}0001`); // Fallback para o início do ano
+      setNextOrderNumber(`${year}0001`);
     }
   };
 
@@ -195,7 +197,7 @@ const Orders: React.FC = () => {
       try {
         await (window as any).html2pdf().set({
           margin: [8, 8, 8, 8],
-          filename: `Guia_Pedido_Merenda_${nextOrderNumber || 'Atual'}.pdf`,
+          filename: `Guia_Pedido_Merenda_${editingOrder ? editingOrder.orderNumber : (nextOrderNumber || 'Atual')}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -620,21 +622,26 @@ const Orders: React.FC = () => {
     let success = false;
     try {
       // Re-fetch next number to be sure
-      const year = new Date().getFullYear().toString();
       const { data: latest } = await supabase
         .from('orders')
         .select('order_number')
-        .ilike('order_number', `${year}%`)
-        .order('order_number', { ascending: false })
-        .limit(20);
+        .limit(1000);
 
       // Encontrar o verdadeiro maior número no momento do salvamento
       let orderNumber = nextOrderNumber;
       if (latest && latest.length > 0) {
-         const numbers = latest.map(o => parseInt(o.order_number.replace(/[^\d]/g, ''))).filter(n => !isNaN(n));
-         const maxNum = Math.max(...numbers, 0);
-         orderNumber = (maxNum + 1).toString();
-      } else if (!orderNumber) {
+         const numbers = latest.map(o => {
+           const raw = (o.order_number || '').trim();
+           const cleaned = raw.replace(/[^\d]/g, '');
+           return cleaned ? parseInt(cleaned, 10) : NaN;
+         }).filter(n => !isNaN(n) && n > 0);
+         const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
+         if (maxNum > 0) {
+           orderNumber = (maxNum + 1).toString();
+         }
+      } 
+      if (!orderNumber) {
+         const year = new Date().getFullYear().toString();
          orderNumber = `${year}0001`;
       }
 
@@ -659,9 +666,14 @@ const Orders: React.FC = () => {
           if (error.code === '23505' && attempts < 2) {
             // Conflict! Fetch NEW max and try again
             console.log(`Conflito no número ${finalOrderNumber}. Tentando auto-correção...`);
-            const { data: latestItems } = await supabase.from('orders').select('order_number').order('order_number', { ascending: false }).limit(20);
-            const nums = latestItems?.map(o => parseInt(o.order_number.replace(/[^\d]/g, ''))).filter(n => !isNaN(n)) || [];
-            finalOrderNumber = (Math.max(...nums, 0) + 1).toString();
+            const { data: latestItems } = await supabase.from('orders').select('order_number').limit(1000);
+            const nums = latestItems?.map(o => {
+              const raw = (o.order_number || '').trim();
+              const cleaned = raw.replace(/[^\d]/g, '');
+              return cleaned ? parseInt(cleaned, 10) : NaN;
+            }).filter(n => !isNaN(n) && n > 0) || [];
+            const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
+            finalOrderNumber = (maxNum + 1).toString();
             attempts++;
             continue;
           }
@@ -937,7 +949,7 @@ const Orders: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 text-[10px] font-bold uppercase">
                   <div>
                     <p className="text-gray-400 font-black">Nº Controle:</p>
-                    <p className="text-sm font-black text-emerald-600">#{nextOrderNumber || "CARR..."}</p>
+                    <p className="text-sm font-black text-emerald-600">#{editingOrder ? editingOrder.orderNumber : (nextOrderNumber || "CARR...")}</p>
                   </div>
                   <div>
                     <p className="text-gray-400 font-black">Nº Contrato:</p>

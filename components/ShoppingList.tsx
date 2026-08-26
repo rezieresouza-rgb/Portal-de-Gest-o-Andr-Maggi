@@ -426,8 +426,17 @@ const ShoppingList: React.FC = () => {
         groups[key].push(item);
       });
 
+      // Buscar maior número de pedido sequencial para evitar duplicidades
+      const { data: existingOrders } = await supabase.from('orders').select('order_number').limit(1000);
+      const existingNums = existingOrders?.map(o => {
+        const raw = (o.order_number || '').trim();
+        const cleaned = raw.replace(/[^\d]/g, '');
+        return cleaned ? parseInt(cleaned, 10) : NaN;
+      }).filter(n => !isNaN(n) && n > 0) || [];
+      let currentNextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : parseInt(`${new Date().getFullYear()}0001`, 10);
+
       for (const [contractId, groupItems] of Object.entries(groups)) {
-        const orderNumber = `${new Date().getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
+        const orderNumber = (currentNextNum++).toString();
         const totalValue = groupItems.reduce((acc, i) => acc + (i.quantity * i.unit_price), 0);
 
         // 1. Criar Pedido
