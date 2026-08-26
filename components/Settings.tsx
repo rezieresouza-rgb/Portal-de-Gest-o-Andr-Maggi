@@ -46,7 +46,7 @@ const MODULES_LIST = [
 const FUNCTIONS_LIST = [
    { id: "DIRETOR", label: "Diretor" },
    { id: "OFICIAL DE GESTÃO CIVICO-MILITAR", label: "Oficial de Gestão Civico-Militar" },
-   { id: "OFICIAL DE GESTÃO EDUCACIONAL", label: "Oficial de Gestão Educacional" },
+   { id: "GESTOR EDUCACIONAL MILITAR", label: "Gestor Educacional Militar" },
    { id: "COORDENADOR PEDAGÓGICO", label: "Coordenador Pedagógico" },
    { id: "SECRETÁRIO", label: "Secretário" },
    { id: "SECRETARIA", label: "Secretaria" },
@@ -74,7 +74,7 @@ const Settings: React.FC = () => {
       const defaultPerms = {
          'DIRETOR': MODULES_LIST.map(m => m.id),
          'OFICIAL DE GESTÃO CIVICO-MILITAR': ['civico_militar', 'scheduling', 'training'],
-         'OFICIAL DE GESTÃO EDUCACIONAL': ['civico_militar', 'scheduling', 'training'],
+         'GESTOR EDUCACIONAL MILITAR': ['civico_militar', 'scheduling', 'training'],
          'COORDENADOR PEDAGÓGICO': MODULES_LIST.map(m => m.id),
          'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
          'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
