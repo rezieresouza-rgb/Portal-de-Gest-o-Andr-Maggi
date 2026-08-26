@@ -839,92 +839,92 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         </div>
       )}
 
-      {/* ÁREA DE IMPRESSÃO DO OFÍCIO (PDF / A4) */}
+      {/* ÁREA DE IMPRESSÃO DO OFÍCIO (PDF / A4 - AJUSTADO PARA 1 PÁGINA) */}
       {printingOficio && (
         <div className="print-oficio-area">
-          <div className="pdf-page p-12" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
+          <div className="pdf-page p-6 sm:p-8" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
             
             {/* Cabeçalho Oficial com Logo Cívico-Militar e Brasão MT do Mesmo Tamanho */}
-            <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-8">
+            <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
               <img 
                 src="/logo-escola-oficial.png" 
                 alt="Escola Cívico-Militar" 
-                className="h-28 w-auto object-contain shrink-0 max-h-[112px]" 
+                className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
                 onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
               />
-              <div className="text-center flex-1 mx-3 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
-                <h1 className="text-xs font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
-                <h2 className="text-[11px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
-                <h3 className="text-[11px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
-                <h4 className="text-[10px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
-                <h5 className="text-[10px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
-                <h6 className="text-xs font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
+              <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
               </div>
               <img 
                 src="/brasao_mt.png" 
                 alt="Brasão do Estado de Mato Grosso" 
-                className="h-28 w-auto object-contain shrink-0 max-h-[112px]" 
+                className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
                 onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
               />
             </div>
 
-            {/* Número do Ofício Formatado (Alinhado à ESQUERDA conforme pedido) */}
-            <div className="text-left mb-6">
-              <p className="text-sm font-bold uppercase font-mono text-black">
+            {/* Número do Ofício Formatado (Alinhado à ESQUERDA) */}
+            <div className="text-left mb-3">
+              <p className="text-xs font-bold uppercase font-mono text-black">
                 OFÍCIO Nº {printingOficio.formatted_number}
               </p>
             </div>
 
             {/* Cidade e Data (Alinhado à Direita) */}
-            <div className="text-right mb-8 text-sm text-black">
+            <div className="text-right mb-4 text-xs text-black">
               <p>{printingOficio.city_date}</p>
             </div>
 
             {/* Dados do Destinatário */}
-            <div className="mb-8 text-sm space-y-1 text-black font-normal">
+            <div className="mb-4 text-xs space-y-0.5 text-black font-normal">
               <p className="font-bold">Ao(À) Senhor(a):</p>
-              <p className="uppercase text-base font-normal">{printingOficio.recipient_name}</p>
+              <p className="uppercase text-sm font-bold">{printingOficio.recipient_name}</p>
               {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
               {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
             </div>
 
             {/* Assunto */}
-            <div className="mb-8 text-sm text-black">
+            <div className="mb-4 text-xs text-black">
               <p className="font-bold">
                 Assunto: <span className="underline">{printingOficio.title_subject}</span>
               </p>
             </div>
 
             {/* Vocativo Inicial */}
-            <div className="mb-6 text-sm font-normal text-black">
+            <div className="mb-3 text-xs font-normal text-black">
               <p>{printingOficio.salutation}</p>
             </div>
 
             {/* Corpo do Texto */}
-            <div className="mb-12 text-sm leading-relaxed text-justify space-y-4 text-black">
+            <div className="mb-6 text-xs leading-relaxed text-justify space-y-3 text-black">
               {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
-                <p key={idx} style={{ textIndent: '2rem' }}>
+                <p key={idx} style={{ textIndent: '1.5rem' }}>
                   {paragraph}
                 </p>
               ))}
             </div>
 
             {/* Fecho de Cortesia */}
-            <div className="mb-16 text-sm text-black font-normal">
+            <div className="mb-8 text-xs text-black font-normal">
               <p>{printingOficio.closure_text}</p>
             </div>
 
-            {/* Assinatura (100% COR PRETA conforme pedido) */}
-            <div className="text-center w-3/4 mx-auto pt-8 text-black" style={{ color: '#000000' }}>
-              <div className="border-t border-black pt-2">
-                <p className="font-bold uppercase text-sm text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
-                <p className="text-xs uppercase text-black font-medium" style={{ color: '#000000' }}>{printingOficio.signatory_role}</p>
-                <p className="text-[10px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
+            {/* Assinatura */}
+            <div className="text-center w-2/3 mx-auto pt-4 text-black" style={{ color: '#000000' }}>
+              <div className="border-t border-black pt-1.5">
+                <p className="font-bold uppercase text-xs text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
+                <p className="text-[11px] uppercase text-black font-medium" style={{ color: '#000000' }}>{printingOficio.signatory_role}</p>
+                <p className="text-[9px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
               </div>
             </div>
 
             {/* Rodapé do Documento */}
-            <div className="mt-16 text-center text-[9px] text-black font-normal uppercase tracking-widest border-t border-gray-400 pt-3">
+            <div className="mt-8 text-center text-[8px] text-black font-normal uppercase tracking-widest border-t border-gray-300 pt-2">
               Documento expedido eletronicamente pelo Portal de Gestão Escolar — EE André Maggi
             </div>
 
@@ -932,13 +932,23 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         </div>
       )}
 
-      {/* Estilos CSS para Impressão */}
+      {/* Estilos CSS Otimizados para Impressão em 1 Única Página A4 */}
       <style dangerouslySetInnerHTML={{
         __html: `
         @media screen {
           .print-oficio-area { display: none !important; }
         }
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm 10mm 8mm 10mm;
+          }
+          html, body {
+            height: 100% !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           body * { visibility: hidden !important; }
           .print-oficio-area, .print-oficio-area * { visibility: visible !important; }
           .print-oficio-area { 
@@ -949,11 +959,16 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             display: block !important;
             background: white !important;
             color: black !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
           }
           .pdf-page { 
-            page-break-after: always !important; 
+            page-break-after: avoid !important; 
+            page-break-inside: avoid !important; 
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important; 
+            box-sizing: border-box !important;
+            max-height: 100vh !important;
           }
         }
       `}} />
