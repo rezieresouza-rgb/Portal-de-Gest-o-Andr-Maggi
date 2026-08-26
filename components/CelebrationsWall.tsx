@@ -37,6 +37,7 @@ const CELEBRATIONS: SchoolCelebration[] = [
   { id: '14', title: 'Dia do Orientador Educacional', day: 4, month: 12, category: 'Equipe Multi', iconType: 'ORIENTADOR' },
   { id: '15', title: 'Dia da Escola', day: 15, month: 3, category: 'Institucional', iconType: 'GERAL' },
   { id: '16', title: 'Dia do Estudante', day: 11, month: 8, category: 'Comunidade Escolar', iconType: 'GERAL' },
+  { id: '17', title: 'Dia do Soldado', day: 25, month: 8, category: 'Cívico-Militar', iconType: 'SOLDADO' },
 ];
 
 const CelebrationIcon = ({ type, size = 20 }: { type: string, size?: number }) => {
@@ -53,6 +54,7 @@ const CelebrationIcon = ({ type, size = 20 }: { type: string, size?: number }) =
     case 'TI': return <Monitor size={size} />;
     case 'VIGILANTE': return <ShieldCheck size={size} />;
     case 'ORIENTADOR': return <Users size={size} />;
+    case 'SOLDADO': return <ShieldCheck size={size} />;
     default: return <Briefcase size={size} />;
   }
 };

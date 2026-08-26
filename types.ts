@@ -102,7 +102,7 @@ export interface StaffMember {
 
 export interface SchoolAnnouncement { id: string; title: string; message: string; date: string; author: string; priority: 'ALTA' | 'NORMAL'; }
 export interface SchoolEvent { id: string; title: string; date: string; type: 'REUNIÃO' | 'FORMAÇÃO' | 'CONSELHO' | 'FESTIVO' | 'OUTRO'; location?: string; }
-export interface SchoolCelebration { id: string; title: string; day: number; month: number; category: string; iconType: 'PROFESSOR' | 'MERENDEIRA' | 'ZELADOR' | 'SECRETARIA' | 'GESTAO' | 'PSICOSSOCIAL' | 'GERAL' | 'COORDENADOR' | 'BIBLIOTECA' | 'MOTORISTA' | 'TI' | 'VIGILANTE' | 'ORIENTADOR'; }
+export interface SchoolCelebration { id: string; title: string; day: number; month: number; category: string; iconType: 'PROFESSOR' | 'MERENDEIRA' | 'ZELADOR' | 'SECRETARIA' | 'GESTAO' | 'PSICOSSOCIAL' | 'GERAL' | 'COORDENADOR' | 'BIBLIOTECA' | 'MOTORISTA' | 'TI' | 'VIGILANTE' | 'ORIENTADOR' | 'SOLDADO'; }
 export interface BirthdayPerson { id: string; name: string; role: string; day: number; month: number; }
 export type OccurrenceCategory = 'INDISCIPLINA' | 'CONFLITO' | 'ATRASO' | 'VIOLÊNCIA' | 'DESCUMPRIMENTO_REGRAS' | 'OUTRO';
 export type TramitationSector = 'PROFESSOR' | 'CIVICO_MILITAR' | 'MEDIACAO' | 'BUSCA_ATIVA' | 'PSICOSSOCIAL';
