@@ -202,8 +202,8 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
         opened_at: todayDate,
         description: fullReportText,
         involved_parties: involvedParties ? involvedParties.split(',').map(p => p.trim()) : [responsibleName],
-        teacher_name: responsibleName,
-        created_by: responsibleName,
+        teacher_name: responsibleName.toUpperCase().includes('CÍVICO') || responsibleName.toUpperCase().includes('MILITAR') ? responsibleName : `EQUIPE CÍVICO-MILITAR (${responsibleName})`,
+        created_by: `EQUIPE CÍVICO-MILITAR (${responsibleName})`,
         steps: [
           { id: 'A', label: 'Encaminhamento Cívico-Militar Recebido', completed: true, date: todayDate },
           { id: 'B', label: 'Escuta das Partes', completed: false },

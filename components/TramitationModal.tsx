@@ -114,6 +114,44 @@ export const TramitationModal: React.FC<TramitationModalProps> = ({
         console.warn("Inserindo no Supabase falhou:", error.message);
       }
 
+      // Se o destino for a Mediação Escolar, criar também na tabela mediation_cases para aparecer no Módulo de Mediação
+      if (targetSector === 'MEDIACAO') {
+        const activeResponsible = `COORDENAÇÃO PEDAGÓGICA (${user?.name || 'COORDENADOR'})`;
+        const fullDesc = `[ENCAMINHAMENTO DA COORDENAÇÃO PEDAGÓGICA] [Enviado por: ${user?.name || 'Coordenação'}]\nMotivo: ${reason.trim()}\n\nRelato Original do Fato: ${occurrence.description || ''}`;
+
+        const { error: caseErr } = await supabase.from('mediation_cases').insert([{
+          student_id: occurrence.student_id || occurrence.id || 'N/A',
+          student_name: occurrence.student_name || (occurrence as any).studentName || 'Estudante',
+          class_name: occurrence.class_name || (occurrence as any).className || 'Turma N/A',
+          type: 'CONFLITO',
+          severity: priority === 'CRITICA' ? 'CRÍTICA' : (priority === 'ALTA' ? 'ALTA' : 'MÉDIA'),
+          status: 'ABERTURA',
+          opened_at: new Date().toISOString().split('T')[0],
+          description: fullDesc,
+          involved_parties: [user?.name || 'Coordenação'],
+          teacher_name: activeResponsible,
+          created_by: activeResponsible,
+          origin_referral_id: occurrence.id,
+          steps: [
+            { id: '1', label: 'Encaminhado pela Coordenação Pedagógica', completed: true, date: new Date().toLocaleDateString('pt-BR') },
+            { id: '2', label: 'Escuta das Partes / Acolhimento', completed: false },
+            { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
+            { id: '4', label: 'Acordo / Finalização', completed: false }
+          ]
+        }]);
+
+        if (caseErr) {
+          console.warn('Aviso ao inserir em mediation_cases:', caseErr.message);
+        }
+
+        await supabase.from('psychosocial_notifications').insert([{
+          title: 'Encaminhamento para Mediação (Coordenação Pedagógica)',
+          message: `A Coordenação Pedagógica (${user?.name || 'Equipe'}) encaminhou o aluno ${occurrence.student_name} (${occurrence.class_name}) para a Mediação.`,
+          is_read: false,
+          created_at: new Date().toISOString()
+        }]);
+      }
+
       await supabase
         .from('occurrences')
         .update({
