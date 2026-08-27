@@ -870,7 +870,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         <div className="print-oficio-area">
           <div className="pdf-page p-6 sm:p-8" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
             
-            {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita do Mesmo Tamanho */}
+            {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita de Tamanhos Visuais Iguais */}
             <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
               <img 
                 src="/brasao_mt.png" 
@@ -889,7 +889,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               <img 
                 src="/logo-escola-oficial.png" 
                 alt="Escola Cívico-Militar" 
-                className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                className="h-28 w-auto object-contain shrink-0 max-h-[115px]" 
                 onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
               />
             </div>

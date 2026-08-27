@@ -678,7 +678,7 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
                 <img 
                   src="/logo-escola-oficial.png" 
                   alt="Escola Cívico-Militar" 
-                  className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                  className="h-28 w-auto object-contain shrink-0 max-h-[115px]" 
                   onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
                 />
               </div>

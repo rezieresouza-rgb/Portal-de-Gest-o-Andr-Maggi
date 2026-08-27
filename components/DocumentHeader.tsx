@@ -59,7 +59,7 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({ subtitle, documentType,
         <img
           src="/logo-escola-oficial.png"
           alt="Logo Escola Cívico-Militar"
-          className="h-24 w-auto object-contain max-w-[120px] max-h-[95px]"
+          className="h-28 w-auto object-contain max-w-[120px] max-h-[115px]"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = '/logo-escola.png';
           }}
