@@ -997,7 +997,7 @@ const BuscaAtivaFICAI: React.FC = () => {
               <div className="pt-12 grid grid-cols-2 gap-12 text-center text-xs">
                 <div>
                   <div className="border-t border-black pt-1">
-                    <strong>{selectedRecordForView.responsibleName}</strong>
+                    <strong>{selectedRecordForView?.responsibleName || 'EQUIPE BUSCA ATIVA ESCOLAR'}</strong>
                     <p className="text-[10px]">Equipe de Busca Ativa / Direção Escolar</p>
                   </div>
                 </div>

@@ -1604,7 +1604,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     };
     setSelectedStudentForDoc(student);
     setDocSearchTerm(student.Nome);
-    setDocFields(record.fields);
+    setDocFields(record.fields || {
+      studentName: record.studentName || '',
+      studentClass: record.className || '',
+      series: '',
+      shift: record.shiftName || '',
+      city: 'Colíder - MT',
+      date: record.date || new Date().toISOString().split('T')[0],
+      documentNumber: '',
+      achado: '',
+      obrigacoesPrazo: '',
+      gestorMilitar: 'ALEXSSANDRO GONÇALVES DE SOUZA - SUB TEN PM',
+      gestorEducacional: 'JOÃO PAULO DOS SANTOS NETO',
+      teacher: 'JOÃO PAULO DOS SANTOS NETO',
+      coordenadorName: 'DIREÇÃO / COORDENAÇÃO',
+      responsibleName: '',
+      responsibleRg: '',
+      responsibleCpf: '',
+      responsibleAddress: ''
+    });
   };
   const recentFatosObservados = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -4027,7 +4045,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           >
                             <td className="py-4 px-4 font-black text-slate-900 uppercase">{record.studentName}</td>
                             <td className="py-4 px-4 text-slate-600 font-medium uppercase">{record.className} • {record.shiftName}</td>
-                            <td className="py-4 px-4 text-slate-600 uppercase">{record.fields.responsibleName}</td>
+                            <td className="py-4 px-4 text-slate-600 uppercase">{record.fields?.responsibleName || record.fields?.responsible_name || '---'}</td>
                             <td className="py-4 px-4 text-blue-600 font-semibold">{record.templateLabel}</td>
                             <td className="py-4 px-4 text-slate-500 font-medium">{new Date(record.date).toLocaleDateString('pt-BR')}</td>
                             <td className="py-4 px-4 text-right space-x-2">
