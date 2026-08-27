@@ -868,95 +868,97 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       {/* ÁREA DE IMPRESSÃO DO OFÍCIO (PDF / A4 - AJUSTADO PARA 1 PÁGINA) */}
       {printingOficio && (
         <div className="print-oficio-area">
-          <div className="pdf-page p-6 sm:p-8" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
+          <div className="pdf-page p-6 sm:p-8 flex flex-col justify-between min-h-[275mm]" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
             
-            {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita de Tamanhos Visuais Iguais */}
-            <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
-              <img 
-                src="/brasao_mt.png" 
-                alt="Brasão do Estado de Mato Grosso" 
-                className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
-                onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
-              />
-              <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
-                <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
-                <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
-                <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
-                <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
-                <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
-                <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
-              </div>
-              <img 
-                src="/logo-escola-oficial.png" 
-                alt="Escola Cívico-Militar" 
-                className="h-28 w-auto object-contain shrink-0 max-h-[115px]" 
-                onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
-              />
-            </div>
-
-            {/* Número do Ofício Formatado (Alinhado à ESQUERDA) */}
-            <div className="text-left mb-3">
-              <p className="text-xs font-bold uppercase font-mono text-black">
-                OFÍCIO Nº {printingOficio.formatted_number}
-              </p>
-            </div>
-
-            {/* Cidade e Data (Alinhado à Direita) */}
-            <div className="text-right mb-4 text-xs text-black">
-              <p>{printingOficio.city_date}</p>
-            </div>
-
-            {/* Dados do Destinatário */}
-            <div className="mb-4 text-xs space-y-0.5 text-black font-normal">
-              <p className="font-bold">Ao(À) Senhor(a):</p>
-              <p className="uppercase text-sm font-bold">{printingOficio.recipient_name}</p>
-              {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
-              {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
-            </div>
-
-            {/* Assunto */}
-            <div className="mb-4 text-xs text-black">
-              <p className="font-bold">
-                Assunto: <span className="underline">{printingOficio.title_subject}</span>
-              </p>
-            </div>
-
-            {/* Vocativo Inicial */}
-            <div className="mb-3 text-xs font-normal text-black">
-              <p>{printingOficio.salutation}</p>
-            </div>
-
-            {/* Corpo do Texto */}
-            <div className="mb-6 text-xs leading-relaxed text-justify space-y-3 text-black">
-              {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
-                <p key={idx} style={{ textIndent: '1.5rem' }}>
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-
-            {/* Fecho de Cortesia */}
-            <div className="mb-8 text-xs text-black font-normal">
-              <p>{printingOficio.closure_text}</p>
-            </div>
-
-            {/* Assinatura (Busca Dinâmica do Cargo Atual no RH do Servidor) */}
-            {(() => {
-              const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
-              const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
-              return (
-                <div className="text-center w-2/3 mx-auto pt-4 text-black" style={{ color: '#000000' }}>
-                  <div className="border-t border-black pt-1.5">
-                    <p className="font-bold uppercase text-xs text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
-                    <p className="text-[11px] uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
-                    <p className="text-[9px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
-                  </div>
+            <div className="flex-1 flex flex-col justify-start">
+              {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita de Tamanhos Visuais Iguais */}
+              <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
+                <img 
+                  src="/brasao_mt.png" 
+                  alt="Brasão do Estado de Mato Grosso" 
+                  className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                  onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                />
+                <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                  <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                  <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                  <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                  <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                  <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
                 </div>
-              );
-            })()}
+                <img 
+                  src="/logo-escola-oficial.png" 
+                  alt="Escola Cívico-Militar" 
+                  className="h-28 w-auto object-contain shrink-0 max-h-[115px]" 
+                  onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                />
+              </div>
 
-            {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar no Modelo 2 Colunas do Print */}
-            <div className="mt-6 border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+              {/* Número do Ofício Formatado (Alinhado à ESQUERDA) */}
+              <div className="text-left mb-3">
+                <p className="text-xs font-bold uppercase font-mono text-black">
+                  OFÍCIO Nº {printingOficio.formatted_number}
+                </p>
+              </div>
+
+              {/* Cidade e Data (Alinhado à Direita) */}
+              <div className="text-right mb-4 text-xs text-black">
+                <p>{printingOficio.city_date}</p>
+              </div>
+
+              {/* Dados do Destinatário */}
+              <div className="mb-4 text-xs space-y-0.5 text-black font-normal">
+                <p className="font-bold">Ao(À) Senhor(a):</p>
+                <p className="uppercase text-sm font-bold">{printingOficio.recipient_name}</p>
+                {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
+                {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
+              </div>
+
+              {/* Assunto */}
+              <div className="mb-4 text-xs text-black">
+                <p className="font-bold">
+                  Assunto: <span className="underline">{printingOficio.title_subject}</span>
+                </p>
+              </div>
+
+              {/* Vocativo Inicial */}
+              <div className="mb-3 text-xs font-normal text-black">
+                <p>{printingOficio.salutation}</p>
+              </div>
+
+              {/* Corpo do Texto */}
+              <div className="mb-6 text-xs leading-relaxed text-justify space-y-3 text-black">
+                {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
+                  <p key={idx} style={{ textIndent: '1.5rem' }}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              {/* Fecho de Cortesia */}
+              <div className="mb-8 text-xs text-black font-normal">
+                <p>{printingOficio.closure_text}</p>
+              </div>
+
+              {/* Assinatura (Busca Dinâmica do Cargo Atual no RH do Servidor) */}
+              {(() => {
+                const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
+                const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
+                return (
+                  <div className="text-center w-2/3 mx-auto pt-4 text-black" style={{ color: '#000000' }}>
+                    <div className="border-t border-black pt-1.5">
+                      <p className="font-bold uppercase text-xs text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
+                      <p className="text-[11px] uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
+                      <p className="text-[9px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar Fixado na Parte Inferior */}
+            <div className="mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
               <div className="text-left space-y-0.5">
                 <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
                 <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
@@ -997,19 +999,25 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
-            display: block !important;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
             background: white !important;
             color: black !important;
             page-break-after: avoid !important;
             page-break-inside: avoid !important;
           }
           .pdf-page { 
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            height: 278mm !important;
+            min-height: 278mm !important;
             page-break-after: avoid !important; 
             page-break-inside: avoid !important; 
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important; 
             box-sizing: border-box !important;
-            max-height: 100vh !important;
           }
         }
       `}} />
