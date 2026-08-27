@@ -25,7 +25,8 @@ import {
   RotateCcw,
   Pencil,
   Check,
-  UserCheck
+  UserCheck,
+  HeartHandshake
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 
