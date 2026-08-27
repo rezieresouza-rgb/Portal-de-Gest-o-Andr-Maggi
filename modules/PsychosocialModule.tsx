@@ -135,8 +135,8 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
 
   const menuItems = [
     { id: 'dashboard', label: 'Monitor de Saúde', icon: LayoutDashboard },
+    { id: 'mediation', label: 'Triagens da Mediação (Fila)', icon: HeartHandshake },
     { id: 'calendar', label: 'Calendário 2026', icon: CalendarCheck },
-    { id: 'mediation', label: 'Atendimentos e Protocolos', icon: Scale },
     { id: 'atas', label: 'Atas de Reunião', icon: FileText },
     { id: 'violation_notification', label: 'Notificação de Violência', icon: ShieldAlert },
     { id: 'campaigns', label: 'Campanhas Escolares', icon: Megaphone },
@@ -149,7 +149,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
       <aside className="w-64 bg-rose-950 text-white flex flex-col no-print transition-all duration-300">
         <div className="p-6">
           <h1 className="text-xl font-bold flex items-center gap-2">
-            <span className="bg-rose-500 p-1.5 rounded-lg shadow-lg">🤝</span>
+            <span className="bg-rose-500 p-1.5 rounded-lg shadow-lg">🧠</span>
             Equipe Multi
           </h1>
         </div>
@@ -212,8 +212,8 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
               <HeartHandshake size={20} />
             </div>
             <div>
-              <h2 className="text-sm font-black text-gray-900 uppercase">Módulo: Mediação e Equipe Psicossocial</h2>
-              <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest">Proteção e Bem-estar Discente</p>
+              <h2 className="text-sm font-black text-gray-900 uppercase">Equipe Psicossocial & Proteção Discente</h2>
+              <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest">Atendimento Técnico Especializado • Exclusivo p/ Casos Triados pela Mediação Escolar</p>
             </div>
           </div>
 
@@ -244,11 +244,9 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
           {activeTab === 'atas' && <PsychosocialMeetingAtaManager />}
           {activeTab === 'violation_notification' && <RightsViolationForm />}
           {activeTab === 'mediation' && (
-            <MediationManager 
+            <PsychosocialReferralList 
               user={user}
-              role={userRole} 
-              onTabChange={(tab: any) => setActiveTab(tab)} 
-              initialSearch={pendingSearch}
+              role={userRole}
             />
           )}
           {activeTab === 'agenda' && <PsychosocialAgenda role={userRole} />}

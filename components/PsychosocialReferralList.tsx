@@ -85,14 +85,26 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
       const { data, error } = await query;
 
       if (data) {
-        const formatted: PsychosocialReferral[] = data.map(r => ({
+        // Roteamento exclusivo: Somente encaminhamentos triados pela Mediação Escolar chegam à Psicossocial
+        const filteredData = data.filter((r: any) => {
+          const tName = (r.teacher_name || '').toUpperCase();
+          const rReason = (r.reason || r.report || '').toUpperCase();
+          return tName.includes('MEDIAÇÃO') || 
+                 tName.includes('MEDIACAO') || 
+                 rReason.includes('TRIAGEM DA MEDIAÇÃO') || 
+                 rReason.includes('TRIADO VIA MEDIAÇÃO') ||
+                 r.origin_case_id ||
+                 r.referral_destination === 'PSICOSSOCIAL';
+        });
+
+        const formatted: PsychosocialReferral[] = filteredData.map(r => ({
           id: r.id,
           schoolUnit: r.school_unit,
           studentName: r.student_name,
           studentAge: r.student_age,
           className: r.class_name,
           teacherName: r.teacher_name,
-          priority: r.priority || 'MEDIA', // Ensure priority exists
+          priority: r.priority || 'MEDIA',
           previousStrategies: r.previous_strategies || '',
           attendanceFrequency: r.attendance_frequency || '0',
           adoptedProcedures: r.adopted_procedures || [],
@@ -100,10 +112,10 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           report: r.report || '',
           status: r.status as any,
           date: r.date,
-          observations: typeof r.observations === 'string' ? r.observations : JSON.stringify(r.observations), // Handle varying formats if any
+          observations: typeof r.observations === 'string' ? r.observations : JSON.stringify(r.observations),
           timestamp: new Date(r.created_at).getTime(),
-          reason: r.reason || r.report || 'Sem motivo especificado', // Fallback
-          feedback: r?.feedback, // [NOVO] Campo de devolutiva da mediação
+          reason: r.reason || r.report || 'Sem motivo especificado',
+          feedback: r?.feedback,
           referralDestination: r.referral_destination,
           mediationProcedures: r.mediation_procedures || []
         }));
@@ -330,30 +342,46 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+      
+      {/* Banner de Roteamento Exclusivo */}
+      <div className="bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 p-6 rounded-[2rem] text-white shadow-xl border border-rose-800/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-rose-600/30 text-rose-300 rounded-2xl border border-rose-500/30">
+            <HeartHandshake size={24} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-tight text-white">Central Técnica Psicossocial</h2>
+            <p className="text-xs text-rose-200/80 font-medium">Exibindo exclusivamente estudantes triados e encaminhados pelo Módulo de Mediação Escolar.</p>
+          </div>
+        </div>
+        <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-widest shrink-0">
+          Entrada Única: Mediação Escolar
+        </span>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black uppercase text-gray-900 border-b-4 border-violet-500 pb-1">Guia de Encaminhamento Psicossocial</h1>
-          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest mt-2 font-mono">Rede de Proteção à Criança e ao Adolescente</p>
+          <h1 className="text-xl font-black uppercase text-gray-900 border-b-4 border-rose-500 pb-1">Triagens Recebidas da Mediação Escolar</h1>
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest mt-2 font-mono">Acompanhamento Clínico & Apoio Técnico Especializado</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Buscar aluno ou turma..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-violet-100 transition-all w-48 placeholder:text-gray-300"
+              className="pl-9 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-rose-100 transition-all w-56 placeholder:text-gray-300"
             />
           </div>
           <button
             onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
+              alert('Atenção: Novos atendimentos e conflitos de alunos devem ser iniciados no Módulo de Mediação Escolar para escuta prévia e triagem.');
             }}
-            className="px-6 py-3 bg-violet-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-violet-700 transition-all flex items-center gap-2"
+            className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2"
           >
-            <PlusCircle size={18} /> Novo
+            <PlusCircle size={16} /> Novo Encaminhamento
           </button>
         </div>
       </div>
