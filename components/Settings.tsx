@@ -41,6 +41,8 @@ const MODULES_LIST = [
    { id: 'infraestrutura', label: 'Manutenção & Infraestrutura' },
    { id: 'patrimonio', label: 'Patrimônio' },
    { id: 'special_education', label: 'Sala de Recursos e APA' },
+   { id: 'civico_militar', label: 'Cívico-Militar' },
+   { id: 'training', label: 'Formação & Cursos' }
 ];
 
 const FUNCTIONS_LIST = [
@@ -59,7 +61,7 @@ const FUNCTIONS_LIST = [
    { id: "LIMPEZA", label: "Limpeza" },
    { id: "MANUTENCAO", label: "Manutenção / Infraestrutura" },
    { id: "NUTRIÇÃO", label: "Nutrição" },
-   { id: "AUXILIAR DE PÁTIO", label: "Auxiliar de Pátio" },
+   { id: "AUXILIAR DE PÁTIO", label: "Auxiliar de PÁTIO" },
    { id: "AUXILIAR DE COORDENAÇÃO PEDAGÓGICA", label: "Aux. de Coord. Pedagógica" },
    { id: "ASSISTENTE DE EDUCAÇÃO ESPECIAL", label: "Assis. Educação Especial" },
    { id: "APA", label: "APA" },
@@ -77,11 +79,13 @@ const Settings: React.FC = () => {
          'GESTOR EDUCACIONAL MILITAR': ['civico_militar', 'scheduling', 'training'],
          'COORDENADOR PEDAGÓGICO': MODULES_LIST.map(m => m.id),
          'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
+         'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
          'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
+         'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'mediacao'],
          'MONITOR': ['civico_militar', 'scheduling', 'training'],
          'BUSCA ATIVA': ['busca_ativa', 'secretariat'],
-         'MEDIADOR': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
-         'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+         'MEDIADOR': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+         'PSICOSSOCIAL': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
          'BIBLIOTECA': ['library', 'scheduling'],
          'LIMPEZA': ['limpeza', 'training'],
          'MANUTENCAO': ['infraestrutura', 'limpeza', 'training'],
@@ -90,11 +94,13 @@ const Settings: React.FC = () => {
          'AUXILIAR DE COORDENAÇÃO PEDAGÓGICA': ['pedagogical', 'scheduling', 'training'],
          'ASSISTENTE DE EDUCAÇÃO ESPECIAL': ['special_education', 'training'],
          'APA': ['special_education', 'training'],
-         'SALA DE RECURSOS': ['special_education', 'training']
+         'SALA DE RECURSOS': ['special_education', 'training'],
+         'LABORATÓRIO DE CIÊNCIAS': ['scheduling', 'training'],
+         'VIGIA': ['training']
       };
 
       try {
-         const saved = localStorage.getItem('portal_module_permissions_v6');
+         const saved = localStorage.getItem('portal_module_permissions_v8');
          const parsed = saved ? JSON.parse(saved) : null;
          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             // Garante que cargos novos ou não salvos recebam os defaults
@@ -107,7 +113,7 @@ const Settings: React.FC = () => {
    });
 
    useEffect(() => {
-      localStorage.setItem('portal_module_permissions_v5', JSON.stringify(permissions));
+      localStorage.setItem('portal_module_permissions_v8', JSON.stringify(permissions));
       window.dispatchEvent(new Event('storage'));
    }, [permissions]);
 

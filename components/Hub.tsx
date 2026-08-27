@@ -32,37 +32,68 @@ interface HubProps {
   onUserUpdate?: (updatedUser: User) => void;
 }
 
+const DEFAULT_PERMISSIONS: Record<string, string[]> = {
+  'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'settings'],
+  'ADMINISTRADOR': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'settings'],
+  'DIRETOR': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'settings'],
+  'COORDENADOR PEDAGÓGICO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training'],
+  'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
+  'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
+  'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'mediacao'],
+  'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
+  'PSICOSSOCIAL': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+  'MEDIADOR': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+  'OFICIAL DE GESTÃO CIVICO-MILITAR': ['civico_militar', 'scheduling', 'training'],
+  'GESTOR EDUCACIONAL MILITAR': ['civico_militar', 'scheduling', 'training'],
+  'MONITOR': ['civico_militar', 'scheduling', 'training'],
+  'BUSCA ATIVA': ['busca_ativa', 'secretariat'],
+  'BIBLIOTECA': ['library', 'scheduling'],
+  'LIMPEZA': ['limpeza', 'training'],
+  'MANUTENCAO': ['infraestrutura', 'limpeza', 'training'],
+  'AAE': ['merenda', 'limpeza', 'almoxarifado', 'training'],
+  'AAE_LIMPEZA': ['limpeza', 'almoxarifado', 'training'],
+  'AEE_NUTRICAO': ['merenda', 'almoxarifado', 'training'],
+  'NUTRIÇÃO': ['merenda', 'training'],
+  'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
+  'AUXILIAR DE PÁTIO': ['training'],
+  'AUXILIAR DE COORDENAÇÃO PEDAGÓGICA': ['pedagogical', 'scheduling', 'training'],
+  'ASSISTENTE DE EDUCAÇÃO ESPECIAL': ['special_education', 'training'],
+  'APA': ['special_education', 'training'],
+  'SALA DE RECURSOS': ['special_education', 'training'],
+  'LABORATÓRIO DE CIÊNCIAS': ['scheduling', 'training'],
+  'VIGIA': ['training']
+};
+
 const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate }) => {
-  const [dynamicPermissions, setDynamicPermissions] = useState<Record<string, string[]> | null>(null);
+  const [dynamicPermissions, setDynamicPermissions] = useState<Record<string, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem('portal_module_permissions_v8');
+      const parsed = saved ? JSON.parse(saved) : null;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return { ...DEFAULT_PERMISSIONS, ...parsed };
+      }
+    } catch (e) {
+      console.error("Error loading permissions:", e);
+    }
+    return DEFAULT_PERMISSIONS;
+  });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     const loadPermissions = () => {
       try {
-        const saved = localStorage.getItem('portal_module_permissions_v7');
+        const saved = localStorage.getItem('portal_module_permissions_v8');
         const parsed = saved ? JSON.parse(saved) : null;
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          setDynamicPermissions(parsed);
+          setDynamicPermissions({ ...DEFAULT_PERMISSIONS, ...parsed });
           return;
         }
       } catch (e) {
         console.error("Error loading permissions:", e);
       }
 
-      // Permissões Padrão Iniciais
-      const defaults = {
-        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training'],
-        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'mediacao'],
-        'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
-        'PSICOSSOCIAL': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
-        'MANUTENCAO': ['infraestrutura', 'limpeza', 'training'],
-        'AAE': ['merenda', 'limpeza', 'almoxarifado', 'training'],
-        'AAE_LIMPEZA': ['limpeza', 'almoxarifado', 'training'],
-        'AEE_NUTRICAO': ['merenda', 'almoxarifado', 'training'],
-        'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training']
-      };
-      localStorage.setItem('portal_module_permissions_v7', JSON.stringify(defaults));
-      setDynamicPermissions(defaults);
+      localStorage.setItem('portal_module_permissions_v8', JSON.stringify(DEFAULT_PERMISSIONS));
+      setDynamicPermissions(DEFAULT_PERMISSIONS);
     };
 
     loadPermissions();
@@ -93,8 +124,10 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
   // Regra de Ouro: GESTAO e ADMINISTRADOR sempre veem tudo.
   // Outros cargos seguem o mapeamento dinâmico baseado na Função Atual.
-  const isAdmin = user.role === 'GESTAO' || user.role === 'ADMINISTRADOR';
+  const isAdmin = user?.role === 'GESTAO' || user?.role === 'ADMINISTRADOR';
   const allowedModules = allModules.filter(mod => {
+    if (!user) return false;
+
     // Restrição específica para a servidora Luzia conforme solicitado
     const isLuzia = user.name?.toUpperCase().includes('LUZIA') || 
                     user.login?.toUpperCase().includes('LUZIA');
@@ -188,8 +221,9 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     }
 
     // Prioriza a Função para permissões dinâmicas, fallback para Role
-    const permissionKey = user.jobFunction || user.role;
-    const rolePermissions = dynamicPermissions[permissionKey] || [];
+    const rawKey = user.jobFunction || user.role || '';
+    const permissionKey = rawKey.trim().toUpperCase();
+    const rolePermissions = (dynamicPermissions && (dynamicPermissions[permissionKey] || dynamicPermissions[rawKey])) || DEFAULT_PERMISSIONS[permissionKey] || DEFAULT_PERMISSIONS[rawKey] || [];
     return rolePermissions.includes(mod.id);
   });
 
