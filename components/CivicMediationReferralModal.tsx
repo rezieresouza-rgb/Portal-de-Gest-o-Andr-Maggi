@@ -277,17 +277,17 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 sm:p-8 max-w-3xl w-full shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800 my-8">
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] max-w-4xl w-full shadow-2xl flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 text-slate-800">
         
-        {/* Header */}
-        <div className="flex justify-between items-start border-b border-slate-100 pb-5 mb-6">
+        {/* Header (Fixo) */}
+        <div className="flex justify-between items-center px-6 sm:px-8 py-5 border-b border-slate-100 shrink-0 bg-slate-50/50 rounded-t-[2.5rem]">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-amber-500 to-blue-600 rounded-2xl text-white shadow-lg shadow-amber-500/20">
-              <Scale size={26} />
+            <div className="p-3 bg-gradient-to-br from-amber-500 to-blue-600 rounded-2xl text-white shadow-lg shadow-amber-500/20 shrink-0">
+              <Scale size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
                 Encaminhamento para Mediação Escolar
               </h2>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
@@ -297,238 +297,242 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors shrink-0"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           
-          {/* Seção 1: Identificação do Aluno */}
-          <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl space-y-4">
-            <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center gap-2">
-              <User size={16} className="text-blue-600" /> Identificação do Estudante
-            </h3>
+          {/* Corpo do Formulário com Scroll Próprio */}
+          <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 custom-scrollbar">
+            
+            {/* Seção 1: Identificação do Aluno */}
+            <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl space-y-4">
+              <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center gap-2">
+                <User size={16} className="text-blue-600" /> Identificação do Estudante
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-2 relative">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                  Nome do Aluno *
-                </label>
-                <div className="relative">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2 relative">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Nome do Aluno *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Digite para buscar aluno..."
+                      value={studentSearch}
+                      onChange={e => {
+                        setStudentSearch(e.target.value);
+                        setSelectedStudent(prev => ({ ...prev, name: e.target.value }));
+                        setIsStudentDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsStudentDropdownOpen(true)}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <Search size={14} className="absolute right-3 top-3 text-slate-400" />
+                  </div>
+
+                  {/* Dropdown autocompletar */}
+                  {isStudentDropdownOpen && filteredStudents.length > 0 && (
+                    <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100">
+                      {filteredStudents.map(st => (
+                        <button
+                          key={st.id || st.name}
+                          type="button"
+                          onClick={() => {
+                            setSelectedStudent({
+                              id: String(st.id || st.registration_number || ''),
+                              name: st.name,
+                              class: st.class || 'N/A'
+                            });
+                            setStudentSearch(st.name);
+                            setIsStudentDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors flex justify-between items-center text-xs"
+                        >
+                          <span className="font-bold text-slate-800">{st.name}</span>
+                          <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-100/60 px-2 py-0.5 rounded">
+                            {st.class}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Turma *
+                  </label>
                   <input
                     type="text"
-                    placeholder="Digite para buscar aluno..."
-                    value={studentSearch}
-                    onChange={e => {
-                      setStudentSearch(e.target.value);
-                      setSelectedStudent(prev => ({ ...prev, name: e.target.value }));
-                      setIsStudentDropdownOpen(true);
-                    }}
-                    onFocus={() => setIsStudentDropdownOpen(true)}
+                    placeholder="Ex: 8º Ano A"
+                    value={selectedStudent.class}
+                    onChange={e => setSelectedStudent(prev => ({ ...prev, class: e.target.value }))}
                     className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
-                  <Search size={14} className="absolute right-3 top-3 text-slate-400" />
                 </div>
+              </div>
+            </div>
 
-                {/* Dropdown autocompletar */}
-                {isStudentDropdownOpen && filteredStudents.length > 0 && (
-                  <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100">
-                    {filteredStudents.map(st => (
-                      <button
-                        key={st.id || st.name}
-                        type="button"
-                        onClick={() => {
-                          setSelectedStudent({
-                            id: String(st.id || st.registration_number || ''),
-                            name: st.name,
-                            class: st.class || 'N/A'
-                          });
-                          setStudentSearch(st.name);
-                          setIsStudentDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors flex justify-between items-center text-xs"
-                      >
-                        <span className="font-bold text-slate-800">{st.name}</span>
-                        <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-100/60 px-2 py-0.5 rounded">
-                          {st.class}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+            {/* Seção 2: Motivo e Nível de Urgência */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  Motivo Principal do Encaminhamento *
+                </label>
+                <select
+                  value={reasonCategory}
+                  onChange={e => setReasonCategory(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {REASON_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                  Turma
+                  Nível de Prioridade / Urgência *
+                </label>
+                <select
+                  value={priority}
+                  onChange={e => setPriority(e.target.value as any)}
+                  className={`w-full border rounded-xl px-4 py-2.5 text-xs font-black uppercase focus:outline-none focus:ring-2 ${
+                    priority === 'CRÍTICA' ? 'bg-red-50 text-red-700 border-red-300 focus:ring-red-500' :
+                    priority === 'ALTA' ? 'bg-orange-50 text-orange-700 border-orange-300 focus:ring-orange-500' :
+                    priority === 'MEDIA' ? 'bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-500' :
+                    'bg-blue-50 text-blue-700 border-blue-300 focus:ring-blue-500'
+                  }`}
+                >
+                  <option value="BAIXA">Baixa (Acompanhamento de Convivência)</option>
+                  <option value="MEDIA">Média (Conflito Pontual em Sala/Pátio)</option>
+                  <option value="ALTA">Alta (Conflito Recorrente / Reincidente)</option>
+                  <option value="CRÍTICA">Crítica (Risco ou Agressão Grave)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                Outras Partes Envolvidas (Outros Alunos, Turmas ou Servidores)
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: Aluno João Silva (7º B), Aluna Maria (8º A)..."
+                value={involvedParties}
+                onChange={e => setInvolvedParties(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Seção 3: Procedimentos Já Adotados */}
+            <div>
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+                Ações Prévias Adotadas pela Monitoria Cívico-Militar
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                {PREVIOUS_PROCEDURES.map(proc => {
+                  const checked = adoptedProcedures.includes(proc);
+                  return (
+                    <button
+                      key={proc}
+                      type="button"
+                      onClick={() => toggleProcedure(proc)}
+                      className={`flex items-center gap-2 text-[10px] font-bold text-left p-2.5 rounded-lg transition-all ${
+                        checked
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {checked ? <CheckSquare size={14} className="shrink-0" /> : <Square size={14} className="text-slate-400 shrink-0" />}
+                      <span className="leading-tight">{proc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Seção 4: Relato Detalhado */}
+            <div>
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                Relato Detalhado do Incidente / Justificativa para Mediação *
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Descreva detalhadamente o ocorrido, antecedentes, comportamento do estudante e motivo específico da necessidade de intervenção por Mediação de Conflitos..."
+                value={report}
+                onChange={e => setReport(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
+                required
+              />
+            </div>
+
+            {/* Seção 5: Responsável pelo Encaminhamento */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+              <div>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  Responsável pelo Encaminhamento
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex: 8º Ano A"
-                  value={selectedStudent.class}
-                  onChange={e => setSelectedStudent(prev => ({ ...prev, class: e.target.value }))}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={responsibleName}
+                  onChange={e => setResponsibleName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 text-xs font-bold text-slate-900"
                   required
+                />
+              </div>
+              <div>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  Data do Registro
+                </label>
+                <input
+                  type="text"
+                  value={new Date().toLocaleDateString('pt-BR')}
+                  disabled
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-500"
                 />
               </div>
             </div>
           </div>
 
-          {/* Seção 2: Motivo e Nível de Urgência */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                Motivo Principal do Encaminhamento *
-              </label>
-              <select
-                value={reasonCategory}
-                onChange={e => setReasonCategory(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {REASON_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                Nível de Prioridade / Urgência *
-              </label>
-              <select
-                value={priority}
-                onChange={e => setPriority(e.target.value as any)}
-                className={`w-full border rounded-xl px-4 py-2.5 text-xs font-black uppercase focus:outline-none focus:ring-2 ${
-                  priority === 'CRÍTICA' ? 'bg-red-50 text-red-700 border-red-300 focus:ring-red-500' :
-                  priority === 'ALTA' ? 'bg-orange-50 text-orange-700 border-orange-300 focus:ring-orange-500' :
-                  priority === 'MEDIA' ? 'bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-500' :
-                  'bg-blue-50 text-blue-700 border-blue-300 focus:ring-blue-500'
-                }`}
-              >
-                <option value="BAIXA">Baixa (Acompanhamento de Convivência)</option>
-                <option value="MEDIA">Média (Conflito Pontual em Sala/Pátio)</option>
-                <option value="ALTA">Alta (Conflito Recorrente / Reincidente)</option>
-                <option value="CRÍTICA">Crítica (Risco ou Agressão Grave)</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-              Outras Partes Envolvidas (Outros Alunos, Turmas ou Servidores)
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: Aluno João Silva (7º B), Aluna Maria (8º A)..."
-              value={involvedParties}
-              onChange={e => setInvolvedParties(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Seção 3: Procedimentos Já Adotados */}
-          <div>
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">
-              Ações Prévias Adotadas pela Monitoria Cívico-Militar
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto p-3 bg-slate-50 border border-slate-200 rounded-xl">
-              {PREVIOUS_PROCEDURES.map(proc => {
-                const checked = adoptedProcedures.includes(proc);
-                return (
-                  <button
-                    key={proc}
-                    type="button"
-                    onClick={() => toggleProcedure(proc)}
-                    className={`flex items-center gap-2 text-[10px] font-bold text-left p-2 rounded-lg transition-all ${
-                      checked
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    {checked ? <CheckSquare size={14} /> : <Square size={14} className="text-slate-400" />}
-                    <span>{proc}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Seção 4: Relato Detalhado */}
-          <div>
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-              Relato Detalhado do Incidente / Justificativa para Mediação *
-            </label>
-            <textarea
-              rows={4}
-              placeholder="Descreva detalhadamente o ocorrido, antecedentes, comportamento do estudante e motivo específico da necessidade de intervenção por Mediação de Conflitos..."
-              value={report}
-              onChange={e => setReport(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
-              required
-            />
-          </div>
-
-          {/* Seção 5: Responsável pelo Encaminhamento */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-            <div>
-              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                Responsável pelo Encaminhamento
-              </label>
-              <input
-                type="text"
-                value={responsibleName}
-                onChange={e => setResponsibleName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 text-xs font-bold text-slate-900"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                Data do Registro
-              </label>
-              <input
-                type="text"
-                value={new Date().toLocaleDateString('pt-BR')}
-                disabled
-                className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-500"
-              />
-            </div>
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+          {/* Footer Actions (Fixo) */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 sm:px-8 py-4 bg-slate-50/80 border-t border-slate-200 shrink-0 rounded-b-[2.5rem]">
             <button
               type="button"
               onClick={handlePrint}
-              className="w-full sm:w-auto px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-black uppercase text-[10px] tracking-wider rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
-              <Printer size={16} /> Imprimir Termo Formal
+              <Printer size={15} /> Imprimir Termo Formal
             </button>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={onClose}
-                className="w-1/2 sm:w-auto px-5 py-3 border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold uppercase text-[10px] tracking-wider rounded-xl transition-colors"
+                className="w-1/2 sm:w-auto px-5 py-2.5 border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold uppercase text-[10px] tracking-wider rounded-xl transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-1/2 sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-amber-600 hover:from-blue-700 hover:to-amber-700 text-white font-black uppercase text-[10px] tracking-widest rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                className="w-1/2 sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-amber-600 hover:from-blue-700 hover:to-amber-700 text-white font-black uppercase text-[10px] tracking-widest rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" /> Registrando...
+                    <Loader2 size={15} className="animate-spin" /> Registrando...
                   </>
                 ) : (
                   <>
-                    <Send size={16} /> Enviar para Mediação
+                    <Send size={15} /> Enviar para Mediação
                   </>
                 )}
               </button>
