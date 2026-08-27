@@ -984,10 +984,11 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         @media print {
           @page {
             size: A4 portrait;
-            margin: 5mm 8mm 3mm 8mm;
+            margin: 0 !important;
           }
           html, body {
             height: 100% !important;
+            width: 100% !important;
             overflow: hidden !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -995,31 +996,30 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
           body * { visibility: hidden !important; }
           .print-oficio-area, .print-oficio-area * { visibility: visible !important; }
           .print-oficio-area { 
-            position: absolute !important; 
+            position: fixed !important; 
             left: 0 !important; 
             top: 0 !important; 
-            width: 100% !important; 
-            height: 100% !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important; 
+            height: 100vh !important;
             display: flex !important;
             flex-direction: column !important;
+            justify-content: space-between !important;
             background: white !important;
             color: black !important;
-            page-break-after: avoid !important;
-            page-break-inside: avoid !important;
+            box-sizing: border-box !important;
+            padding: 8mm 12mm 4mm 12mm !important;
           }
           .pdf-page { 
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
-            height: 288mm !important;
-            min-height: 288mm !important;
-            padding-bottom: 0px !important;
-            margin-bottom: 0px !important;
-            page-break-after: avoid !important; 
-            page-break-inside: avoid !important; 
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important; 
+            height: 100% !important;
+            width: 100% !important;
             box-sizing: border-box !important;
+            padding: 0 !important;
+            margin: 0 !important;
           }
         }
       `}} />
