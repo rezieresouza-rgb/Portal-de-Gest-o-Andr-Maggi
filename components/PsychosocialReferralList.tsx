@@ -277,6 +277,40 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
     }
   };
 
+  const handleProvideFeedbackToMediation = async (ref: PsychosocialReferral, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const feedbackText = window.prompt(
+      `Registrar Parecer / Devolutiva para a Mediação Escolar (${ref.studentName}):`,
+      ref.feedback || ''
+    );
+    if (feedbackText === null) return;
+
+    try {
+      await supabase
+        .from('psychosocial_referrals')
+        .update({ feedback: feedbackText })
+        .eq('id', ref.id);
+
+      if ((ref as any).origin_case_id) {
+        await supabase
+          .from('mediation_cases')
+          .update({ feedback: feedbackText })
+          .eq('id', (ref as any).origin_case_id);
+      } else {
+        await supabase
+          .from('mediation_cases')
+          .update({ feedback: feedbackText })
+          .ilike('student_name', ref.studentName);
+      }
+
+      alert('Parecer/Devolutiva registrada com sucesso e sincronizada com o Módulo de Mediação Escolar!');
+      fetchReferrals();
+    } catch (err: any) {
+      console.error('Erro ao enviar parecer para a Mediação:', err);
+      alert('Ocorreu um erro ao salvar o parecer.');
+    }
+  };
+
   const handleDelete = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (window.confirm("Confirmar exclusão?")) {
@@ -367,6 +401,9 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                   </button>
                   <button onClick={(e) => handleDelete(ref.id, e)} className="p-2 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-600 transition-all">
                     <Trash2 size={16} />
+                  </button>
+                  <button onClick={(e) => handleProvideFeedbackToMediation(ref, e)} title="Registrar Parecer/Devolutiva para a Mediação Escolar" className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1">
+                    <HeartHandshake size={12} /> Parecer p/ Mediação
                   </button>
                   <button onClick={(e) => handleSendToMediation(ref, e)} title="Enviar/Ver na Mediação" className="p-2 hover:bg-rose-50 rounded-lg text-gray-300 hover:text-rose-600 transition-all">
                     <Scale size={16} />

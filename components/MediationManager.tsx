@@ -131,6 +131,62 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
     ).slice(0, 5);
   }, [studentSearch, masterStudents]);
 
+  const [isTriaging, setIsTriaging] = useState(false);
+
+  const handleTriageToPsychosocial = async (c: MediationCase) => {
+    if (!c.id) return;
+    if (!window.confirm(`Deseja encaminhar o caso de ${c.studentName} para triagem e acompanhamento da Equipe Psicossocial?`)) return;
+
+    setIsTriaging(true);
+    try {
+      const todayDate = new Date().toISOString().split('T')[0];
+      const triageTag = `\n[TRIAGEM P/ PSICOSSOCIAL em ${new Date().toLocaleDateString('pt-BR')}] Encaminhado por: ${user?.name || 'PROFESSOR MEDIADOR'}`;
+
+      // 1. Inserir em psychosocial_referrals
+      const { error: refErr } = await supabase
+        .from('psychosocial_referrals')
+        .insert([{
+          student_name: c.studentName,
+          class_name: c.className,
+          reason: `[TRIAGEM DA MEDIAÇÃO] ${c.description}`,
+          priority: c.severity === 'CRÍTICA' ? 'CRÍTICA' : c.severity === 'ALTA' ? 'ALTA' : 'MEDIA',
+          status: 'AGUARDANDO',
+          teacher_name: `MEDIAÇÃO (${user?.name || 'MEDIADOR'})`,
+          report: `[TRIADO VIA MEDIAÇÃO] Estudante necessita de acolhimento e avaliação técnica da Equipe Psicossocial.`,
+          date: todayDate,
+          origin_case_id: c.id
+        }]);
+
+      if (refErr) console.warn('Aviso ao inserir em psychosocial_referrals:', refErr.message);
+
+      // 2. Inserir notificação
+      await supabase
+        .from('psychosocial_notifications')
+        .insert([{
+          title: 'Nova Triagem da Mediação Escolar',
+          message: `A Mediação triou o estudante ${c.studentName} (${c.className}) para atendimento psicossocial.`,
+          date: todayDate,
+          read: false
+        }]);
+
+      // 3. Atualizar descrição do caso na Mediação
+      const updatedDescription = `${c.description}${triageTag}`;
+      await supabase
+        .from('mediation_cases')
+        .update({ description: updatedDescription })
+        .eq('id', c.id);
+
+      setSelectedCase(prev => prev ? { ...prev, description: updatedDescription } : null);
+      alert(`O caso de ${c.studentName} foi triado e encaminhado com sucesso para a Equipe Psicossocial!`);
+      fetchCases();
+    } catch (err: any) {
+      console.error('Erro ao realizar triagem p/ Psicossocial:', err);
+      alert('Erro ao encaminhar para a Psicossocial. Verifique sua conexão.');
+    } finally {
+      setIsTriaging(false);
+    }
+  };
+
   const fetchCases = async () => {
     setLoading(true);
     try {
@@ -869,7 +925,22 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
               <div className="p-4 bg-rose-900 text-white shrink-0 shadow-lg">
                  <div className="flex justify-between items-center mb-3">
                     <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
-                    <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}</span>
+                    <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleTriageToPsychosocial(selectedCase)}
+                          disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
+                          className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md ${
+                            selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
+                              ? 'bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 cursor-default'
+                              : 'bg-gradient-to-r from-rose-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 text-white border border-rose-400/40 active:scale-95'
+                          }`}
+                        >
+                          <HeartHandshake size={13} />
+                          {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? 'Triado p/ Psicossocial' : 'Encaminhar à Psicossocial'}
+                        </button>
+                        <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}</span>
+                    </div>
                  </div>
                  <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl font-black">
@@ -917,6 +988,23 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                     {/* LADO ESQUERDO: Relato e Diário de Atendimento (Linha do Tempo) */}
                     <div className="flex flex-col gap-6 h-full min-h-0 overflow-hidden">
+                        {/* Parecer / Devolutiva da Psicossocial se existir */}
+                        {selectedCase.feedback && (
+                          <div className="bg-indigo-50 border border-indigo-200 p-5 rounded-[2rem] shadow-sm space-y-2 shrink-0">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-black text-indigo-900 uppercase tracking-wider flex items-center gap-2">
+                                <HeartHandshake size={16} className="text-indigo-600" /> Devolutiva da Equipe Psicossocial
+                              </h4>
+                              <span className="text-[8px] font-black uppercase bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-md">
+                                Parecer Técnico Registrado
+                              </span>
+                            </div>
+                            <p className="text-xs font-medium text-slate-700 leading-relaxed italic bg-white p-3.5 rounded-xl border border-indigo-100 whitespace-pre-wrap">
+                              "{selectedCase.feedback}"
+                            </p>
+                          </div>
+                        )}
+
                         {/* Relato Original */}
                         <div className="h-[200px] bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col shrink-0">
                             <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2 mb-3 shrink-0">

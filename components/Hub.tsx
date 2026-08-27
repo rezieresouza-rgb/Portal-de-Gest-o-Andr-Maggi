@@ -17,7 +17,8 @@ import {
   LogOut,
   User as UserIcon,
   Settings,
-  GraduationCap
+  GraduationCap,
+  Scale
 } from 'lucide-react';
 import { ModuleTypeExtended } from '../App';
 import { User, AccessLog } from '../types';
@@ -25,15 +26,15 @@ import WelcomeDashboard from './WelcomeDashboard';
 import ProfileModal from './ProfileModal';
 
 interface HubProps {
-  user: User;
+  user: User | null;
   onLogout: () => void;
-  onModuleSelect: (module: ModuleTypeExtended) => void;
-  onUserUpdate: (updatedUser: User) => void;
+  onModuleSelect: (mod: ModuleTypeExtended) => void;
+  onUserUpdate?: (updatedUser: User) => void;
 }
 
 const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate }) => {
-  const [dynamicPermissions, setDynamicPermissions] = useState<Record<string, string[]>>({});
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [dynamicPermissions, setDynamicPermissions] = useState<Record<string, string[]> | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
     const loadPermissions = () => {
@@ -50,10 +51,10 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
       // Permissões Padrão Iniciais
       const defaults = {
-        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training'],
-        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training'],
+        'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training'],
+        'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'mediacao'],
         'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training'],
-        'PSICOSSOCIAL': ['psychosocial', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
+        'PSICOSSOCIAL': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training'],
         'MANUTENCAO': ['infraestrutura', 'limpeza', 'training'],
         'AAE': ['merenda', 'limpeza', 'almoxarifado', 'training'],
         'AAE_LIMPEZA': ['limpeza', 'almoxarifado', 'training'],
@@ -74,7 +75,8 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     { id: 'merenda', title: 'Merenda Escolar', status: 'Estoque OK', statusColor: 'emerald', icon: <CookingPot size={20} /> },
     { id: 'finance', title: 'Financeiro', status: 'Saldo Ativo', statusColor: 'blue', icon: <Calculator size={20} /> },
     { id: 'busca_ativa', title: 'Busca Ativa', status: 'Alertas', statusColor: 'red', icon: <PhoneCall size={20} /> },
-    { id: 'psychosocial', title: 'Mediação & Apoio', status: 'Equipe Ativa', statusColor: 'rose', icon: <HeartHandshake size={20} /> },
+    { id: 'mediacao', title: 'Mediação Escolar', status: 'Justiça Restaurativa', statusColor: 'indigo', icon: <Scale size={20} /> },
+    { id: 'psychosocial', title: 'Equipe Psicossocial', status: 'Proteção Discente', statusColor: 'rose', icon: <HeartHandshake size={20} /> },
     { id: 'pedagogical', title: 'Coordenação Pedagógica', status: 'Coordenação', statusColor: 'purple', icon: <Globe size={20} /> },
     { id: 'teacher', title: 'Área do Professor', status: 'Diário', statusColor: 'emerald', icon: <Users size={20} /> },
     { id: 'scheduling', title: 'Agendas', status: 'Reservas', statusColor: 'fuchsia', icon: <CalendarDays size={20} /> },

@@ -25,7 +25,7 @@ import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { INITIAL_STUDENTS } from './constants/initialData';
 
-export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'settings';
+export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'mediacao' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'settings';
 
 const App: React.FC = () => {
   const [isPending, startTransition] = useTransition();
@@ -59,7 +59,7 @@ const App: React.FC = () => {
       const validModules: ModuleTypeExtended[] = [
         'hub', 'merenda', 'finance', 'library', 'scheduling', 'teacher',
         'pedagogical', 'almoxarifado', 'patrimonio', 'limpeza', 'infraestrutura',
-        'busca_ativa', 'psychosocial', 'secretariat', 'special_education', 'civico_militar', 'training', 'settings'
+        'busca_ativa', 'psychosocial', 'mediacao', 'secretariat', 'special_education', 'civico_militar', 'training', 'settings'
       ];
       if (validModules.includes(saved as ModuleTypeExtended)) {
         return saved as ModuleTypeExtended;
@@ -243,6 +243,7 @@ const App: React.FC = () => {
       case 'infraestrutura': return <InfrastructureModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'busca_ativa': return <BuscaAtivaModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'psychosocial': return <PsychosocialModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'mediacao': return <MediationModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'secretariat': return <SecretariatModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'special_education': return <SpecialEducationModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'civico_militar': return <CivicoMilitarModule user={user} onExit={() => handleModuleChange('hub')} />;
