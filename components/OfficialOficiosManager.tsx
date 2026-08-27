@@ -984,7 +984,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 8mm 10mm;
+            margin: 5mm 8mm 3mm 8mm;
           }
           html, body {
             height: 100% !important;
@@ -1011,8 +1011,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
-            height: 278mm !important;
-            min-height: 278mm !important;
+            height: 288mm !important;
+            min-height: 288mm !important;
+            padding-bottom: 0px !important;
+            margin-bottom: 0px !important;
             page-break-after: avoid !important; 
             page-break-inside: avoid !important; 
             -webkit-print-color-adjust: exact !important; 
