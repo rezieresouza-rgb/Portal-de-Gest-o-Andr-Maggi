@@ -155,7 +155,7 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
       const nowTimestamp = Date.now();
       const referralId = `civic-ref-${nowTimestamp}`;
 
-      const fullReportText = `[ORIGEM: CÍVICO-MILITAR]\nPrioridade: ${priority}\nMotivo: ${reasonCategory}\nOutras Partes Envolvidas: ${involvedParties || 'Nenhuma'}\n\nRelato do Incidente/Fato:\n${report}`;
+      const fullReportText = `[ORIGEM: CÍVICO-MILITAR] [Enviado por: ${responsibleName}]\nPrioridade: ${priority}\nMotivo: ${reasonCategory}\nOutras Partes Envolvidas: ${involvedParties || 'Nenhuma'}\n\nRelato do Incidente/Fato:\n${report}`;
 
       // 1. Inserir em psychosocial_referrals (Encaminhamento para Mediação)
       const referralPayload = {
@@ -201,7 +201,9 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
         status: 'ABERTURA',
         opened_at: todayDate,
         description: fullReportText,
-        involved_parties: involvedParties ? involvedParties.split(',').map(p => p.trim()) : [],
+        involved_parties: involvedParties ? involvedParties.split(',').map(p => p.trim()) : [responsibleName],
+        teacher_name: responsibleName,
+        created_by: responsibleName,
         steps: [
           { id: 'A', label: 'Encaminhamento Cívico-Militar Recebido', completed: true, date: todayDate },
           { id: 'B', label: 'Escuta das Partes', completed: false },
@@ -214,7 +216,7 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
             id: `log-${nowTimestamp}`,
             date: todayDate,
             professional: `MONITORIA CÍVICO-MILITAR (${responsibleName})`,
-            content: `Encaminhamento criado via Módulo Cívico-Militar. Motivo: ${reasonCategory}.`
+            content: `Encaminhamento criado via Módulo Cívico-Militar por ${responsibleName}. Motivo: ${reasonCategory}.`
           }
         ],
         origin_referral_id: referralId

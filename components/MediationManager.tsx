@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   RotateCcw,
   Pencil,
-  Check
+  Check,
+  UserCheck
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 
@@ -133,13 +134,30 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const fetchCases = async () => {
     setLoading(true);
     try {
-      // Começamos buscando sem ordenação fixa para evitar quebra se a coluna created_at não existir
       const { data, error } = await supabase
         .from('mediation_cases')
         .select('*');
 
       if (error) throw error;
       
+      // Buscar encaminhamentos psicossociais em paralelo para capturar teacher_name se houver vínculo
+      let referralsMap: Record<string, string> = {};
+      try {
+        const { data: refData } = await supabase
+          .from('psychosocial_referrals')
+          .select('id, teacher_name, student_name');
+        if (refData) {
+          refData.forEach((r: any) => {
+            if (r.id && r.teacher_name) referralsMap[r.id] = r.teacher_name;
+            if (r.student_name && r.teacher_name && !referralsMap[r.student_name.trim().toUpperCase()]) {
+              referralsMap[r.student_name.trim().toUpperCase()] = r.teacher_name;
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Aviso ao carregar referências psicossociais:', e);
+      }
+
       // Ordenação em memória para maior robustez
       const sortedData = [...(data || [])].sort((a, b) => {
         const dateA = a.created_at || a.opened_at || a.id || '';
@@ -159,30 +177,45 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           { id: 'G', label: 'Acordo / Finalização', completed: false }
         ];
         
-        // Preserva o status das etapas existentes e adiciona as novas
         const mergedSteps = baseSteps.map(baseStep => {
            const existing = existingSteps.find((s: any) => s.label === baseStep.label);
            return existing ? existing : baseStep;
         });
 
-        // Retorna o formatado
+        // Tentar resolver o nome do professor/solicitante
+        let resolvedTeacherName = c.teacher_name || c.created_by || c.referred_by || '';
+        if (!resolvedTeacherName && c.origin_referral_id && referralsMap[c.origin_referral_id]) {
+          resolvedTeacherName = referralsMap[c.origin_referral_id];
+        }
+        if (!resolvedTeacherName && c.student_name && referralsMap[c.student_name.trim().toUpperCase()]) {
+          resolvedTeacherName = referralsMap[c.student_name.trim().toUpperCase()];
+        }
+        if (!resolvedTeacherName && c.description) {
+          const match = c.description.match(/\[(?:Enviado por|Encaminhado por|Professor|Solicitante):\s*([^\]]+)\]/i);
+          if (match && match[1]) resolvedTeacherName = match[1].trim();
+        }
+        if (!resolvedTeacherName && c.involved_parties && c.involved_parties.length > 0 && c.involved_parties[0] && c.involved_parties[0] !== 'EQUIPE MULTI') {
+          resolvedTeacherName = c.involved_parties[0];
+        }
+
         return {
-        id: c.id,
-        studentId: c.student_id,
-        studentName: c.student_name || 'Estudante não identificado',
-        className: c.class_name || 'N/A',
-        type: c.type || 'OUTRO',
-        severity: c.severity || 'MÉDIA',
-        status: (c.status as MediationStatus) || 'ABERTURA',
-        openedAt: c.opened_at,
-        closedAt: c.closed_at,
-        description: c.description || '',
-        involvedParties: c.involved_parties || [],
-        steps: mergedSteps,
-        originReferralId: c.origin_referral_id,
-        feedback: c?.feedback,
-        logs: c.logs || []
-      };
+          id: c.id,
+          studentId: c.student_id,
+          studentName: c.student_name || 'Estudante não identificado',
+          className: c.class_name || 'N/A',
+          type: c.type || 'OUTRO',
+          severity: c.severity || 'MÉDIA',
+          status: (c.status as MediationStatus) || 'ABERTURA',
+          openedAt: c.opened_at,
+          closedAt: c.closed_at,
+          description: c.description || '',
+          involvedParties: c.involved_parties || [],
+          steps: mergedSteps,
+          originReferralId: c.origin_referral_id,
+          feedback: c?.feedback,
+          logs: c.logs || [],
+          teacherName: resolvedTeacherName || undefined
+        };
       });
       setCases(formatted);
     } catch (error: any) {
@@ -246,7 +279,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
     ];
 
     try {
-      const originPrefix = newCase.originType ? `[Origem: ${newCase.originType}] ` : '[Origem: Demanda Espontânea (Aluno)] ';
+      const activeUserName = user?.name || 'PROFESSOR / SOLICITANTE';
+      const originPrefix = newCase.originType ? `[Origem: ${newCase.originType}] [Enviado por: ${activeUserName}] ` : `[Origem: Demanda Espontânea (Aluno)] [Enviado por: ${activeUserName}] `;
 
       const payload = {
         student_id: newCase.studentId && newCase.studentId !== 'N/A' ? newCase.studentId : null,
@@ -257,8 +291,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         status: 'ABERTURA',
         opened_at: new Date().toLocaleDateString('sv-SE'),
         description: originPrefix + newCase.description,
-        involved_parties: newCase.involved_parties || [],
+        involved_parties: newCase.involvedParties || [activeUserName],
         steps: steps,
+        teacher_name: activeUserName,
+        created_by: activeUserName
       };
 
       const { data, error } = await supabase
@@ -531,32 +567,21 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     {c.status === 'CONCLUÍDO' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
                   </div>
                   <div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{c.studentName}</h4>
                         <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
                           {c.status}
                         </span>
-                        {(() => {
-                           if (c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]')) {
-                             return <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-widest shadow-sm">Fonte: Busca Ativa</span>;
-                           }
-                           const originMatch = c.description?.match(/\[Origem:\s*([^\]]+)\]/i);
-                           let sourceText = '';
-                           if (originMatch) {
-                              if (originMatch[1].includes('Encaminhamento Psicossocial')) {
-                                sourceText = c.involvedParties?.[0] || 'Encaminhamento';
-                              } else {
-                                sourceText = originMatch[1];
-                              }
-                           } else if ((c.originReferralId || c.description?.includes('[Vínculo Direto]')) && c.involvedParties?.[0]) {
-                              sourceText = c.involvedParties[0];
-                           }
-                           
-                           if (sourceText && sourceText !== 'EQUIPE MULTI') {
-                              return <span className="max-w-[120px] truncate px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 text-[7px] font-black uppercase tracking-widest shadow-sm" title={sourceText}>Fonte: {sourceText.split(' ')[0]}</span>;
-                           }
-                           return null;
-                        })()}
+                        {c.teacherName ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Solicitado/Enviado por: ${c.teacherName}`}>
+                            <UserCheck size={11} className="text-indigo-600 shrink-0" />
+                            Enviado por: {c.teacherName}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-100 text-[7px] font-bold uppercase tracking-widest">
+                            Demandante não registrado
+                          </span>
+                        )}
                         {c.status === 'CONCLUÍDO' && c.closedAt === today && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
                             Concluído Hoje
@@ -830,15 +855,15 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                        <h3 className="text-xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                            <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest leading-none shrink-0">{selectedCase.className} • Caso {selectedCase.type}</p>
-                           {selectedCase.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') ? (
-                             <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-100 border border-emerald-500/30 text-[7px] font-black uppercase tracking-widest leading-none shrink-0">
-                               Fonte: Busca Ativa
+                           {selectedCase.teacherName ? (
+                             <span className="px-2.5 py-0.5 rounded bg-white/20 text-white border border-white/30 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
+                                <UserCheck size={11} /> Enviado por: {selectedCase.teacherName}
                              </span>
-                           ) : (selectedCase.originReferralId || selectedCase.description?.includes('[Vínculo Direto]') || selectedCase.description?.includes('[Origem: Encaminhamento Psicossocial]')) && selectedCase.involvedParties?.[0] && selectedCase.involvedParties[0] !== 'EQUIPE MULTI' ? (
-                             <span className="max-w-[140px] truncate px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-100 border border-indigo-500/40 text-[7px] font-black uppercase tracking-widest leading-none shrink-0" title={selectedCase.involvedParties[0]}>
-                               Fonte: Prof(a). {selectedCase.involvedParties[0].split(' ')[0]}
+                           ) : (
+                             <span className="px-2.5 py-0.5 rounded bg-white/10 text-white/70 text-[8px] font-bold uppercase tracking-widest leading-none shrink-0">
+                                Demanda Direta
                              </span>
-                           ) : null}
+                           )}
                         </div>
                     </div>
                  </div>

@@ -173,6 +173,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
 
         // [NOVO] Integração Automática com Módulo de Mediação (Supabase)
         try {
+          const activeTeacher = referralData.teacher_name || user?.name || 'EQUIPE MULTI';
           const { error: mediationError } = await supabase.from('mediation_cases').insert([{
             student_id: 'N/A',
             student_name: referralData.student_name,
@@ -181,8 +182,10 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             severity: referralData.priority === 'ALTA' ? 'ALTA' : (referralData.priority === 'BAIXA' ? 'BAIXA' : 'MÉDIA'),
             status: 'ABERTURA',
             opened_at: referralData.date,
-            description: `[Origem: Encaminhamento Psicossocial] Motivo/Relato: ${referralData.report || referralData.reason || 'Sem descrição detalhada.'}`,
-            involved_parties: [referralData.teacher_name],
+            description: `[Origem: Encaminhamento Psicossocial] [Enviado por: ${activeTeacher}]\nMotivo/Relato: ${referralData.report || referralData.reason || 'Sem descrição detalhada.'}`,
+            involved_parties: [activeTeacher],
+            teacher_name: activeTeacher,
+            created_by: activeTeacher,
             steps: [
               { id: '1', label: 'Análise do Encaminhamento', completed: true, date: referralData.date },
               { id: '2', label: 'Escuta das Partes', completed: false },
