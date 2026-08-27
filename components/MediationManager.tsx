@@ -184,6 +184,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
         // Tentar resolver o nome do professor/solicitante
         let resolvedTeacherName = c.teacher_name || c.created_by || c.referred_by || '';
+        if (!resolvedTeacherName && (c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || c.description?.includes('[VIA BUSCA ATIVA]') || c.description?.includes('Busca Ativa'))) {
+          resolvedTeacherName = 'BUSCA ATIVA ESCOLAR';
+        }
         if (!resolvedTeacherName && c.origin_referral_id && referralsMap[c.origin_referral_id]) {
           resolvedTeacherName = referralsMap[c.origin_referral_id];
         }
@@ -572,16 +575,37 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                         <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
                           {c.status}
                         </span>
-                        {c.teacherName ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Solicitado/Enviado por: ${c.teacherName}`}>
-                            <UserCheck size={11} className="text-indigo-600 shrink-0" />
-                            Enviado por: {c.teacherName}
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-100 text-[7px] font-bold uppercase tracking-widest">
-                            Demandante não registrado
-                          </span>
-                        )}
+                        {(() => {
+                           const isBuscaAtiva = (c.teacherName && c.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
+                                                c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
+                                                c.description?.includes('[VIA BUSCA ATIVA]') ||
+                                                c.description?.includes('Busca Ativa');
+
+                           if (isBuscaAtiva) {
+                             const displaySource = (c.teacherName && c.teacherName.includes('(')) ? c.teacherName : 'Busca Ativa Escolar';
+                             return (
+                               <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title="Encaminhado via Busca Ativa Escolar">
+                                 <Search size={11} className="text-emerald-700 shrink-0" />
+                                 Enviado por: {displaySource}
+                               </span>
+                             );
+                           }
+
+                           if (c.teacherName) {
+                             return (
+                               <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Solicitado/Enviado por: ${c.teacherName}`}>
+                                 <UserCheck size={11} className="text-indigo-600 shrink-0" />
+                                 Enviado por: {c.teacherName}
+                               </span>
+                             );
+                           }
+
+                           return (
+                             <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-100 text-[7px] font-bold uppercase tracking-widest">
+                               Demandante não registrado
+                             </span>
+                           );
+                        })()}
                         {c.status === 'CONCLUÍDO' && c.closedAt === today && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
                             Concluído Hoje
@@ -855,15 +879,35 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                        <h3 className="text-xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                            <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest leading-none shrink-0">{selectedCase.className} • Caso {selectedCase.type}</p>
-                           {selectedCase.teacherName ? (
-                             <span className="px-2.5 py-0.5 rounded bg-white/20 text-white border border-white/30 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
-                                <UserCheck size={11} /> Enviado por: {selectedCase.teacherName}
-                             </span>
-                           ) : (
-                             <span className="px-2.5 py-0.5 rounded bg-white/10 text-white/70 text-[8px] font-bold uppercase tracking-widest leading-none shrink-0">
-                                Demanda Direta
-                             </span>
-                           )}
+                           {(() => {
+                               const isBuscaAtiva = (selectedCase.teacherName && selectedCase.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
+                                                    selectedCase.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
+                                                    selectedCase.description?.includes('[VIA BUSCA ATIVA]') ||
+                                                    selectedCase.description?.includes('Busca Ativa');
+
+                               if (isBuscaAtiva) {
+                                 const displaySource = (selectedCase.teacherName && selectedCase.teacherName.includes('(')) ? selectedCase.teacherName : 'Busca Ativa Escolar';
+                                 return (
+                                   <span className="px-2.5 py-0.5 rounded bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
+                                     <Search size={11} /> Enviado por: {displaySource}
+                                   </span>
+                                 );
+                               }
+
+                               if (selectedCase.teacherName) {
+                                 return (
+                                   <span className="px-2.5 py-0.5 rounded bg-white/20 text-white border border-white/30 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
+                                     <UserCheck size={11} /> Enviado por: {selectedCase.teacherName}
+                                   </span>
+                                 );
+                               }
+
+                               return (
+                                 <span className="px-2.5 py-0.5 rounded bg-white/10 text-white/70 text-[8px] font-bold uppercase tracking-widest leading-none shrink-0">
+                                   Demanda Direta
+                                 </span>
+                               );
+                            })()}
                         </div>
                     </div>
                  </div>

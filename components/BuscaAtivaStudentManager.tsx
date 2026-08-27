@@ -307,7 +307,8 @@ const BuscaAtivaStudentManager: React.FC = () => {
         `• ${new Date(log.date + 'T12:00:00').toLocaleDateString('pt-BR')}: ${log.description}`
       ).join('\n');
 
-      const fullDescription = `[ENCAMINHAMENTO BUSCA ATIVA]
+      const activeResponsible = newReferral.responsible ? `BUSCA ATIVA (${newReferral.responsible})` : 'BUSCA ATIVA ESCOLAR';
+      const fullDescription = `[ENCAMINHAMENTO BUSCA ATIVA] [Enviado por: ${activeResponsible}]
 TIPO: ${newReferral.type}
 URGÊNCIA: ${newReferral.priority}
 FALTAS NO ANO: ${studentInfo?.absences || 0}
@@ -326,7 +327,9 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
         status: 'ABERTURA',
         opened_at: newReferral.date || currentDate,
         description: fullDescription,
-        involved_parties: [newReferral.responsible],
+        involved_parties: [activeResponsible],
+        teacher_name: activeResponsible,
+        created_by: activeResponsible,
         origin_referral_id: linkedReferralId,
         steps: [
           { id: '1', label: 'Análise de Busca Ativa', completed: true, date: currentDate },
