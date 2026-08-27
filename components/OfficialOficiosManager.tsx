@@ -955,10 +955,18 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               );
             })()}
 
-            {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar */}
-            <div className="mt-8 text-center text-[7.5px] leading-tight text-black font-normal border-t border-black/30 pt-2 space-y-0.5" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
-              <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo, CEP: 78049-906 – Cuiabá-MT • Fone (65) 3613-6300</p>
-              <p>Site: www.seduc.mt.gov.br • Rua Borba Gato, nº 80, Bairro Torre, CEP: 78500-000 – Colíder-MT • Fones +55 (66) 99682-7608 • Email: escola.158330@edu.mt.gov.br</p>
+            {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar no Modelo 2 Colunas do Print */}
+            <div className="mt-6 border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+              <div className="text-left space-y-0.5">
+                <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
+                <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
+                <p>Site: www.seduc.mt.gov.br</p>
+              </div>
+              <div className="text-left space-y-0.5 pl-6">
+                <p>Rua Borba Gato, nº 80, Bairro Torre</p>
+                <p>CEP: 78500-000 – Colíder-MT Fones +55 (66) 99682-7608</p>
+                <p>Email: escola.158330@edu.mt.gov.br</p>
+              </div>
             </div>
 
           </div>
