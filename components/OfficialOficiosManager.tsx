@@ -897,38 +897,38 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
               {/* Número do Ofício Formatado (Alinhado à ESQUERDA) */}
               <div className="text-left mb-3">
-                <p className="text-xs font-bold uppercase font-mono text-black">
+                <p className="text-sm font-bold uppercase font-mono text-black">
                   OFÍCIO Nº {printingOficio.formatted_number}
                 </p>
               </div>
 
               {/* Cidade e Data (Alinhado à Direita) */}
-              <div className="text-right mb-4 text-xs text-black">
+              <div className="text-right mb-4 text-sm text-black">
                 <p>{printingOficio.city_date}</p>
               </div>
 
               {/* Dados do Destinatário */}
-              <div className="mb-4 text-xs space-y-0.5 text-black font-normal">
+              <div className="mb-4 text-sm space-y-0.5 text-black font-normal">
                 <p className="font-bold">Ao(À) Senhor(a):</p>
-                <p className="uppercase text-sm font-bold">{printingOficio.recipient_name}</p>
+                <p className="uppercase text-base font-bold">{printingOficio.recipient_name}</p>
                 {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
                 {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
               </div>
 
               {/* Assunto */}
-              <div className="mb-4 text-xs text-black">
+              <div className="mb-4 text-sm text-black">
                 <p className="font-bold">
                   Assunto: <span className="underline">{printingOficio.title_subject}</span>
                 </p>
               </div>
 
               {/* Vocativo Inicial */}
-              <div className="mb-3 text-xs font-normal text-black">
+              <div className="mb-3 text-sm font-normal text-black">
                 <p>{printingOficio.salutation}</p>
               </div>
 
-              {/* Corpo do Texto */}
-              <div className="mb-6 text-xs leading-relaxed text-justify space-y-3 text-black">
+              {/* Corpo do Texto Principal (Aumentado para leitura perfeita 12pt/14px) */}
+              <div className="mb-6 text-[14px] leading-relaxed text-justify space-y-3 text-black font-normal">
                 {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
                   <p key={idx} style={{ textIndent: '1.5rem' }}>
                     {paragraph}
@@ -937,7 +937,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               </div>
 
               {/* Fecho de Cortesia */}
-              <div className="mb-8 text-xs text-black font-normal">
+              <div className="mb-6 text-sm text-black font-normal">
                 <p>{printingOficio.closure_text}</p>
               </div>
 
@@ -946,11 +946,11 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
                 const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
                 return (
-                  <div className="text-center w-2/3 mx-auto pt-4 text-black" style={{ color: '#000000' }}>
+                  <div className="text-center w-2/3 mx-auto pt-3 text-black" style={{ color: '#000000' }}>
                     <div className="border-t border-black pt-1.5">
-                      <p className="font-bold uppercase text-xs text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
-                      <p className="text-[11px] uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
-                      <p className="text-[9px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
+                      <p className="font-bold uppercase text-sm text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
+                      <p className="text-xs uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
+                      <p className="text-[10px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
                     </div>
                   </div>
                 );
