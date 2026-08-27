@@ -172,14 +172,31 @@ export interface PsychosocialMeetingAta {
   id: string;
   number: string;
   year: string;
-  pauta: string;
+  pauta?: string;
   date: string;
-  location: string;
-  participants: string[];
-  objectives: string;
-  definitions: string[]; // Itens Organizados em tópicos
-  forwarding: string[]; // Tarefas a fazer e quem as fará
-  responsible: string;
+  location?: string;
+  participants?: string[];
+  objectives?: string;
+  definitions?: string[]; // Itens Organizados em tópicos
+  forwarding?: string[]; // Tarefas a fazer e quem as fará
+  responsible?: string;
+  
+  // Modelo Professor Mediador
+  responsavelMediacao?: string;
+  horarioInicio?: string;
+  horarioTermino?: string;
+  descricaoConflito?: string;
+  dataOcorrido?: string;
+  parte1Nome?: string;
+  interessesParte1?: string;
+  parte2Nome?: string;
+  interessesParte2?: string;
+  desenvolvimentoSessao?: string;
+  compromissoParte1?: string;
+  compromissoParte2?: string;
+  compromissoMutuo?: string;
+  encerramentoEncaminhamentos?: string;
+
   timestamp: number;
 }
 

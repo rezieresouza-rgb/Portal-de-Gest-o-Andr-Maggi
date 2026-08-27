@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, 
@@ -7,18 +6,15 @@ import {
   Printer, 
   X, 
   Save, 
-  History, 
-  ChevronRight, 
-  Search, 
-  ShieldCheck, 
   ArrowLeft,
   Users,
-  CheckCircle2,
   Clock,
   Loader2,
   PlusCircle,
-  Hash,
-  FileBadge
+  ShieldCheck,
+  Calendar,
+  UserCheck,
+  FileCheck
 } from 'lucide-react';
 import { PsychosocialMeetingAta } from '../types';
 
@@ -29,50 +25,63 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [printingAta, setPrintingAta] = useState<PsychosocialMeetingAta | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState<Omit<PsychosocialMeetingAta, 'id' | 'timestamp'>>({
     number: '',
     year: new Date().getFullYear().toString(),
     pauta: '',
-    date: new Date().toLocaleDateString('sv-SE'),
+    date: new Date().toISOString().split('T')[0],
     location: 'SALA DE MEDIAÇÃO - EE ANDRÉ ANTÔNIO MAGGI',
     participants: [''],
     objectives: '',
     definitions: [''],
     forwarding: [''],
-    responsible: 'COORDENADOR DE MEDIAÇÃO'
+    responsible: 'PROFESSOR MEDIADOR',
+    responsavelMediacao: '',
+    horarioInicio: '08:00',
+    horarioTermino: '09:00',
+    descricaoConflito: '',
+    dataOcorrido: new Date().toISOString().split('T')[0],
+    parte1Nome: '',
+    interessesParte1: '',
+    parte2Nome: '',
+    interessesParte2: '',
+    desenvolvimentoSessao: '',
+    compromissoParte1: '',
+    compromissoParte2: '',
+    compromissoMutuo: '',
+    encerramentoEncaminhamentos: ''
   });
 
   useEffect(() => {
     localStorage.setItem('psychosocial_atas_v2', JSON.stringify(atas));
   }, [atas]);
 
-  const addField = (field: 'participants' | 'definitions' | 'forwarding') => {
-    setForm({ ...form, [field]: [...form[field], ''] });
-  };
-
-  const removeField = (field: 'participants' | 'definitions' | 'forwarding', index: number) => {
-    const newList = [...form[field]];
-    newList.splice(index, 1);
-    setForm({ ...form, [field]: newList });
-  };
-
-  const updateField = (field: 'participants' | 'definitions' | 'forwarding', index: number, value: string) => {
-    const newList = [...form[field]];
-    newList[index] = value;
-    setForm({ ...form, [field]: newList });
-  };
+  // Sequência automática do número da ata
+  useEffect(() => {
+    if (viewMode === 'form' && !form.number) {
+      const currentYear = new Date().getFullYear().toString();
+      const yearAtas = atas.filter(a => a.year === currentYear);
+      const nextNum = (yearAtas.length + 1).toString().padStart(2, '0');
+      setForm(prev => ({ ...prev, number: nextNum }));
+    }
+  }, [viewMode, atas]);
 
   const handleSave = () => {
+    if (!form.descricaoConflito && !form.pauta) {
+      alert("Por favor, preencha a descrição breve do conflito/assunto.");
+      return;
+    }
+
     const newAta: PsychosocialMeetingAta = {
       id: `ata-${Date.now()}`,
       ...form,
       timestamp: Date.now()
     };
     setAtas([newAta, ...atas]);
-    alert("Ata lavrada com sucesso!");
+    alert("Ata de Mediação registrada com sucesso!");
     setViewMode('list');
     resetForm();
   };
@@ -82,49 +91,49 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
       number: '',
       year: new Date().getFullYear().toString(),
       pauta: '',
-      date: new Date().toLocaleDateString('sv-SE'),
+      date: new Date().toISOString().split('T')[0],
       location: 'SALA DE MEDIAÇÃO - EE ANDRÉ ANTÔNIO MAGGI',
       participants: [''],
       objectives: '',
       definitions: [''],
       forwarding: [''],
-      responsible: 'COORDENADOR DE MEDIAÇÃO'
+      responsible: 'PROFESSOR MEDIADOR',
+      responsavelMediacao: '',
+      horarioInicio: '08:00',
+      horarioTermino: '09:00',
+      descricaoConflito: '',
+      dataOcorrido: new Date().toISOString().split('T')[0],
+      parte1Nome: '',
+      interessesParte1: '',
+      parte2Nome: '',
+      interessesParte2: '',
+      desenvolvimentoSessao: '',
+      compromissoParte1: '',
+      compromissoParte2: '',
+      compromissoMutuo: '',
+      encerramentoEncaminhamentos: ''
     });
   };
 
-  const exportPDF = async (ataToExport: PsychosocialMeetingAta) => {
-    setIsExporting(true);
-    const element = document.getElementById(`print-ata-${ataToExport.id}`);
-    if (!element) return setIsExporting(false);
-
-    try {
-      // @ts-ignore
-      await window.html2pdf().set({
-        margin: 10,
-        filename: `ATA_${ataToExport.number}_${ataToExport.year}_Mediação.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).from(element).save();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsExporting(false);
-    }
+  const handlePrint = (ata: PsychosocialMeetingAta) => {
+    setPrintingAta(ata);
+    setTimeout(() => {
+      window.print();
+    }, 300);
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       
       {/* HEADER */}
-      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 no-print">
         <div className="flex items-center gap-6">
           <div className="p-4 bg-rose-50 text-rose-600 rounded-3xl">
             <FileText size={32} />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Registro de Atas</h2>
-            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Instrumento oficial conforme modelo SEDUC/MT</p>
+            <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Atas de Reunião de Mediação</h2>
+            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Modelo Oficial Professor Mediador - SEDUC/MT</p>
           </div>
         </div>
         <button 
@@ -132,220 +141,491 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
           className="px-8 py-3.5 bg-rose-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-rose-700 transition-all flex items-center gap-2"
         >
           {viewMode === 'list' ? <Plus size={16} /> : <ArrowLeft size={16} />}
-          {viewMode === 'list' ? 'Lavrar Nova Ata' : 'Voltar ao Acervo'}
+          {viewMode === 'list' ? 'Lavrar Nova Ata de Mediação' : 'Voltar ao Acervo'}
         </button>
       </div>
 
       {viewMode === 'list' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           {atas.map(ata => (
-             <div key={ata.id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-rose-300 hover:shadow-xl transition-all group flex flex-col justify-between">
-                <div>
-                   <div className="flex justify-between items-start mb-6">
-                      <div className="p-3 bg-gray-50 text-gray-400 rounded-2xl group-hover:bg-rose-600 group-hover:text-white transition-all">
-                        <FileText size={24} />
-                      </div>
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(ata.date).toLocaleDateString('pt-BR')}</span>
-                   </div>
-                   <h3 className="text-lg font-black text-gray-900 uppercase leading-tight mb-2">ATA {ata.number}/{ata.year}</h3>
-                   <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4">Pauta: {ata.pauta}</p>
-                   <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase border-t border-gray-50 pt-4">
-                      <Users size={14} className="text-rose-400" /> {ata.participants.length} Presentes
-                   </div>
-                </div>
-                <div className="mt-8 flex gap-2">
-                   <button 
-                     onClick={() => exportPDF(ata)}
-                     className="flex-1 py-3 bg-gray-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
-                   >
-                      <Printer size={14} /> Imprimir PDF
-                   </button>
-                   <button 
-                     onClick={() => setAtas(atas.filter(a => a.id !== ata.id))}
-                     className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"
-                   >
-                      <Trash2 size={18} />
-                   </button>
-                </div>
-
-                {/* TEMPLATE PARA PDF (HIDDEN NO DOM) */}
-                <div className="hidden">
-                  <div id={`print-ata-${ata.id}`} className="p-16 space-y-12 text-gray-900 font-sans bg-white border-[1px] border-gray-200 min-h-[297mm]">
-                    <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-8 gap-4">
-                       <div className="flex items-center justify-start flex-1">
-                          <img src="/brasao_mt.png" alt="Brasão MT" className="h-20 w-auto object-contain" />
-                       </div>
-                       <div className="flex-[2] flex flex-col justify-center text-center">
-                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Governo do Estado de Mato Grosso</p>
-                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Secretaria de Estado de Educação</p>
-                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">Diretoria Regional de Ensino de Sinop</p>
-                          <p className="text-[11px] font-black uppercase leading-tight text-gray-900">EECM André Antônio Maggi</p>
-                       </div>
-                       <div className="flex items-center justify-end flex-1">
-                          <img src="/logo-escola-oficial.png" alt="Escola Logo" className="h-20 w-auto object-contain" />
-                       </div>
-                    </div>
-
-                    <div className="space-y-8">
-                       <h1 className="text-xl font-black uppercase text-center underline tracking-widest">ATA {ata.number}/{ata.year}</h1>
-                       
-                       <div className="space-y-4 text-xs leading-relaxed">
-                          <p><strong>Pauta:</strong> {ata.pauta}</p>
-                          <p><strong>Data:</strong> {new Date(ata.date).toLocaleDateString('pt-BR')}</p>
-                          <p><strong>Local:</strong> {ata.location}</p>
-                          
-                          <div className="space-y-2 pt-2">
-                             <p><strong>Presentes:</strong></p>
-                             <ul className="space-y-1 pl-4">
-                                {ata.participants.filter(p => p.trim()).map((p, i) => (
-                                  <li key={i}>{p}</li>
-                                ))}
-                             </ul>
-                          </div>
-
-                          <p className="pt-2"><strong>Objetivos:</strong> {ata.objectives}</p>
-
-                          <div className="space-y-3 pt-4">
-                             <p><strong>Acompanhamento e definições:</strong> Tudo o que foi dito durante a reunião, com a identificação de quem o disse. (Organizado em tópicos)</p>
-                             <ul className="space-y-2 pl-6">
-                                {ata.definitions.filter(d => d.trim()).map((d, i) => (
-                                  <li key={i} className="flex gap-3"><span>●</span> <span>{d}</span></li>
-                                ))}
-                             </ul>
-                          </div>
-
-                          <div className="space-y-3 pt-4">
-                             <p><strong>Encaminhamentos:</strong> Tudo o que se decidiu fazer. (Listagem de tarefas e responsáveis)</p>
-                             <ul className="space-y-2 pl-6">
-                                {ata.forwarding.filter(f => f.trim()).map((f, i) => (
-                                  <li key={i} className="flex gap-3"><span>●</span> <span>{f}</span></li>
-                                ))}
-                             </ul>
-                          </div>
-                       </div>
-                    </div>
-
-                    <div className="pt-32 grid grid-cols-2 gap-20">
-                       <div className="border-t-2 border-black text-center pt-4">
-                          <p className="text-[10px] font-black uppercase">Assinaturas de quem lavrou a ATA</p>
-                       </div>
-                       <div className="border-t-2 border-black text-center pt-4">
-                          <p className="text-[10px] font-black uppercase">Testemunhas</p>
-                       </div>
-                    </div>
-
-                    <div className="pt-20 flex justify-center opacity-30">
-                       <ShieldCheck size={16} />
-                       <p className="text-[8px] font-black uppercase tracking-[0.4em] ml-2">Documento Autenticado Eletronicamente - Portal André Maggi</p>
-                    </div>
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 no-print">
+           {atas.length === 0 ? (
+             <div className="col-span-full bg-white p-12 rounded-[2.5rem] text-center border border-dashed border-gray-200">
+               <FileText className="mx-auto text-gray-300 mb-3" size={48} />
+               <p className="text-sm font-bold text-gray-500 uppercase">Nenhuma ata de mediação registrada ainda.</p>
+               <button
+                 onClick={() => setViewMode('form')}
+                 className="mt-4 px-6 py-2.5 bg-rose-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-rose-700 transition-all"
+               >
+                 Lavrar Primeira Ata
+               </button>
              </div>
-           ))}
+           ) : (
+             atas.map(ata => (
+               <div key={ata.id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-rose-300 hover:shadow-xl transition-all group flex flex-col justify-between">
+                  <div>
+                     <div className="flex justify-between items-start mb-6">
+                        <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl group-hover:bg-rose-600 group-hover:text-white transition-all">
+                          <FileCheck size={24} />
+                        </div>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          {new Date(ata.date).toLocaleDateString('pt-BR')}
+                        </span>
+                     </div>
+                     <h3 className="text-lg font-black text-gray-900 uppercase leading-tight mb-2">ATA Nº {ata.number}/{ata.year}</h3>
+                     <p className="text-xs font-bold text-gray-700 line-clamp-2 uppercase mb-3">
+                       {ata.descricaoConflito || ata.pauta || 'Mediação Escolar'}
+                     </p>
+                     
+                     <div className="space-y-1 text-[10px] font-medium text-gray-500 border-t border-gray-50 pt-3">
+                       {ata.responsavelMediacao && <p><strong>Mediador(a):</strong> {ata.responsavelMediacao}</p>}
+                       {ata.parte1Nome && <p><strong>Parte 1:</strong> {ata.parte1Nome}</p>}
+                       {ata.parte2Nome && <p><strong>Parte 2:</strong> {ata.parte2Nome}</p>}
+                     </div>
+                  </div>
+                  
+                  <div className="mt-6 flex gap-2 border-t border-gray-100 pt-4">
+                     <button 
+                       onClick={() => handlePrint(ata)}
+                       className="flex-1 py-3 bg-gray-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                     >
+                        <Printer size={14} /> Imprimir / PDF
+                     </button>
+                     <button 
+                       onClick={() => {
+                         if (window.confirm(`Deseja excluir a ATA Nº ${ata.number}/${ata.year}?`)) {
+                           setAtas(atas.filter(a => a.id !== ata.id));
+                         }
+                       }}
+                       className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                       title="Excluir Ata"
+                     >
+                        <Trash2 size={16} />
+                     </button>
+                  </div>
+               </div>
+             ))
+           )}
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
-           <div className="bg-white p-10 rounded-[3.5rem] border border-gray-100 shadow-xl space-y-10">
+        /* FORMULÁRIO COMPLETO MODELO PROFESSOR MEDIADOR */
+        <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500 no-print">
+           <div className="bg-white p-8 md:p-10 rounded-[3.5rem] border border-gray-100 shadow-xl space-y-8">
               
-              <div className="flex justify-between items-center border-b border-gray-50 pb-8">
-                 <div className="flex items-center gap-5">
-                    <div className="p-4 bg-rose-600 text-white rounded-3xl shadow-lg">
-                       <PlusCircle size={28} />
+              <div className="flex justify-between items-center border-b border-gray-100 pb-6">
+                 <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-rose-600 text-white rounded-2xl shadow-md">
+                       <PlusCircle size={26} />
                     </div>
                     <div>
-                       <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Lavrar Nova Ata</h3>
-                       <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest mt-1">Escrituração oficial da mediação escolar</p>
+                       <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Lavrar Ata Modelo Professor Mediador</h3>
+                       <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest mt-0.5">Formulário oficial de mediação de conflitos escolares</p>
                     </div>
                  </div>
               </div>
 
-              <div className="space-y-10">
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-1.5">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Número da Ata</label>
-                       <input type="text" placeholder="Ex: 01" value={form.number} onChange={e => setForm({...form, number: e.target.value})} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white" />
+              <div className="space-y-8 text-xs">
+                 
+                 {/* BLOCO 1: IDENTIFICAÇÃO */}
+                 <div className="space-y-4 bg-rose-50/40 p-6 rounded-3xl border border-rose-100/60">
+                    <h4 className="text-xs font-black text-rose-900 uppercase tracking-widest flex items-center gap-2 border-b border-rose-100 pb-2">
+                       <FileCheck size={16} /> 1. Identificação da Mediação
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Número da Ata</label>
+                          <input 
+                            type="text" 
+                            placeholder="Ex: 01" 
+                            value={form.number} 
+                            onChange={e => setForm({...form, number: e.target.value})} 
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs text-center outline-none focus:border-rose-500" 
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Ano</label>
+                          <input 
+                            value={form.year} 
+                            onChange={e => setForm({...form, year: e.target.value})} 
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs text-center outline-none focus:border-rose-500" 
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Data da Mediação</label>
+                          <input 
+                            type="date" 
+                            value={form.date} 
+                            onChange={e => setForm({...form, date: e.target.value})} 
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs outline-none focus:border-rose-500" 
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Horários (Início / Término)</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="time" 
+                              value={form.horarioInicio} 
+                              onChange={e => setForm({...form, horarioInicio: e.target.value})} 
+                              className="w-1/2 p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs text-center outline-none focus:border-rose-500" 
+                            />
+                            <input 
+                              type="time" 
+                              value={form.horarioTermino} 
+                              onChange={e => setForm({...form, horarioTermino: e.target.value})} 
+                              className="w-1/2 p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs text-center outline-none focus:border-rose-500" 
+                            />
+                          </div>
+                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ano</label>
-                       <input value={form.year} onChange={e => setForm({...form, year: e.target.value})} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none text-center" />
-                    </div>
-                    <div className="space-y-1.5">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Data de Realização</label>
-                       <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none" />
+
+                    <div>
+                       <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Responsável pela Mediação (Professor Mediador)</label>
+                       <input 
+                         type="text"
+                         value={form.responsavelMediacao} 
+                         onChange={e => setForm({...form, responsavelMediacao: e.target.value.toUpperCase()})} 
+                         placeholder="NOME COMPLETO DO PROFESSOR MEDIADOR / MEDIADORA" 
+                         className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs uppercase outline-none focus:border-rose-500" 
+                       />
                     </div>
                  </div>
 
-                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pauta / Assunto</label>
-                    <input value={form.pauta} onChange={e => setForm({...form, pauta: e.target.value.toUpperCase()})} placeholder="EX: CONSELHO DE CLASSE OU MEDIAÇÃO ESPECÍFICA" className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white uppercase" />
+                 {/* BLOCO 2: DETALHAMENTO */}
+                 <div className="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-200/80">
+                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 border-b border-slate-200 pb-2">
+                       <UserCheck size={16} /> 2. Detalhamento do Conflito e Partes
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="md:col-span-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Descrição Breve do Conflito</label>
+                          <input 
+                            type="text"
+                            value={form.descricaoConflito} 
+                            onChange={e => setForm({...form, descricaoConflito: e.target.value})} 
+                            placeholder="Ex: Desentendimento verbal entre alunos durante a aula de Educação Física" 
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium text-xs outline-none focus:border-rose-500" 
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Data do Ocorrido</label>
+                          <input 
+                            type="date" 
+                            value={form.dataOcorrido} 
+                            onChange={e => setForm({...form, dataOcorrido: e.target.value})} 
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-xs outline-none focus:border-rose-500" 
+                          />
+                       </div>
+                    </div>
+
+                    {/* Parte 1 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl border border-gray-100">
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Nome da Parte 1 (Aluno / Envolvido)</label>
+                          <input 
+                            type="text"
+                            value={form.parte1Nome} 
+                            onChange={e => setForm({...form, parte1Nome: e.target.value.toUpperCase()})} 
+                            placeholder="NOME COMPLETO E TURMA DA PARTE 1" 
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white focus:border-rose-500" 
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Interesses / Necessidades da Parte 1</label>
+                          <textarea 
+                            value={form.interessesParte1} 
+                            onChange={e => setForm({...form, interessesParte1: e.target.value})} 
+                            placeholder="Relato e necessidades expressas pela Parte 1..." 
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-normal h-16 outline-none focus:bg-white resize-none" 
+                          />
+                       </div>
+                    </div>
+
+                    {/* Parte 2 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl border border-gray-100">
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Nome da Parte 2 (Aluno / Responsável / Envolvido)</label>
+                          <input 
+                            type="text"
+                            value={form.parte2Nome} 
+                            onChange={e => setForm({...form, parte2Nome: e.target.value.toUpperCase()})} 
+                            placeholder="NOME COMPLETO E TURMA/CARGO DA PARTE 2" 
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white focus:border-rose-500" 
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Interesses / Necessidades da Parte 2</label>
+                          <textarea 
+                            value={form.interessesParte2} 
+                            onChange={e => setForm({...form, interessesParte2: e.target.value})} 
+                            placeholder="Relato e necessidades expressas pela Parte 2..." 
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-normal h-16 outline-none focus:bg-white resize-none" 
+                          />
+                       </div>
+                    </div>
                  </div>
 
-                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                       <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Participantes / Presentes</h4>
-                       <button onClick={() => addField('participants')} className="text-rose-600 font-black text-[9px] uppercase hover:underline">+ Adicionar Nome</button>
+                 {/* BLOCO 3: DESENVOLVIMENTO DA SESSÃO */}
+                 <div className="space-y-2">
+                    <label className="text-xs font-black text-gray-900 uppercase tracking-widest block">3. Desenvolvimento da Sessão</label>
+                    <textarea 
+                      value={form.desenvolvimentoSessao} 
+                      onChange={e => setForm({...form, desenvolvimentoSessao: e.target.value})} 
+                      placeholder="Descreva o desenrolar do diálogo, esclarecimentos prestados e escuta ativa promovida durante a sessão de mediação..." 
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-normal h-32 outline-none focus:bg-white resize-none" 
+                    />
+                 </div>
+
+                 {/* BLOCO 4: ACORDO / ENCAMINHAMENTO */}
+                 <div className="space-y-4 bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
+                    <h4 className="text-xs font-black text-emerald-900 uppercase tracking-widest flex items-center gap-2 border-b border-emerald-200/60 pb-2">
+                       <ShieldCheck size={16} /> 4. Acordo / Encaminhamento (Compromissos Mútuos)
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div>
+                          <label className="text-[10px] font-black text-emerald-900 uppercase tracking-widest block mb-1">Compromisso da Parte 1</label>
+                          <textarea 
+                            value={form.compromissoParte1} 
+                            onChange={e => setForm({...form, compromissoParte1: e.target.value})} 
+                            placeholder="O que a Parte 1 se compromete a fazer..." 
+                            className="w-full p-3 bg-white border border-emerald-200 rounded-xl text-xs font-normal h-20 outline-none focus:border-emerald-500 resize-none" 
+                          />
+                       </div>
+                       <div>
+                          <label className="text-[10px] font-black text-emerald-900 uppercase tracking-widest block mb-1">Compromisso da Parte 2</label>
+                          <textarea 
+                            value={form.compromissoParte2} 
+                            onChange={e => setForm({...form, compromissoParte2: e.target.value})} 
+                            placeholder="O que a Parte 2 se compromete a fazer..." 
+                            className="w-full p-3 bg-white border border-emerald-200 rounded-xl text-xs font-normal h-20 outline-none focus:border-emerald-500 resize-none" 
+                          />
+                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                       {form.participants.map((p, i) => (
-                         <div key={i} className="flex gap-2">
-                            <input value={p} onChange={e => updateField('participants', i, e.target.value.toUpperCase())} placeholder="NOME COMPLETO" className="flex-1 p-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none" />
-                            <button onClick={() => removeField('participants', i)} className="p-3 text-gray-300 hover:text-red-500"><Trash2 size={16}/></button>
-                         </div>
-                       ))}
+
+                    <div>
+                       <label className="text-[10px] font-black text-emerald-900 uppercase tracking-widest block mb-1">Compromisso Mútuo / Acordo Comum</label>
+                       <textarea 
+                         value={form.compromissoMutuo} 
+                         onChange={e => setForm({...form, compromissoMutuo: e.target.value})} 
+                         placeholder="Acordos gerais estabelecidos em conjunto por ambas as partes..." 
+                         className="w-full p-3 bg-white border border-emerald-200 rounded-xl text-xs font-normal h-20 outline-none focus:border-emerald-500 resize-none" 
+                       />
                     </div>
                  </div>
 
-                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Objetivos da Reunião</label>
-                    <textarea value={form.objectives} onChange={e => setForm({...form, objectives: e.target.value})} placeholder="Motivos pelos quais a reunião foi proposta..." className="w-full p-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-medium h-24 outline-none focus:bg-white resize-none" />
+                 {/* BLOCO 5: ENCERRAMENTO E ENCAMINHAMENTOS */}
+                 <div className="space-y-2">
+                    <label className="text-xs font-black text-gray-900 uppercase tracking-widest block">5. Encerramento e Encaminhamentos Finais</label>
+                    <textarea 
+                      value={form.encerramentoEncaminhamentos} 
+                      onChange={e => setForm({...form, encerramentoEncaminhamentos: e.target.value})} 
+                      placeholder="Registros finais, encaminhamento para equipe de coordenação ou acompanhamento futuro..." 
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-normal h-20 outline-none focus:bg-white resize-none" 
+                    />
                  </div>
 
-                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                       <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Acompanhamento e Definições (Tópicos)</h4>
-                       <button onClick={() => addField('definitions')} className="text-rose-600 font-black text-[9px] uppercase hover:underline">+ Novo Tópico</button>
-                    </div>
-                    <div className="space-y-3">
-                       {form.definitions.map((d, i) => (
-                         <div key={i} className="flex gap-2">
-                            <textarea value={d} onChange={e => updateField('definitions', i, e.target.value)} placeholder="Descreva o que foi dito ou decidido..." className="flex-1 p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-medium h-20 outline-none focus:bg-white resize-none" />
-                            <button onClick={() => removeField('definitions', i)} className="p-4 text-gray-300 hover:text-red-500"><X size={16}/></button>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-
-                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                       <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Encaminhamentos (Tarefas)</h4>
-                       <button onClick={() => addField('forwarding')} className="text-rose-600 font-black text-[9px] uppercase hover:underline">+ Nova Tarefa</button>
-                    </div>
-                    <div className="space-y-3">
-                       {form.forwarding.map((f, i) => (
-                         <div key={i} className="flex gap-2">
-                            <input value={f} onChange={e => updateField('forwarding', i, e.target.value)} placeholder="O que será feito e por quem..." className="flex-1 p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-medium outline-none focus:bg-white" />
-                            <button onClick={() => removeField('forwarding', i)} className="p-4 text-gray-300 hover:text-red-500"><X size={16}/></button>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-
-                 <button onClick={handleSave} className="w-full py-5 bg-rose-600 text-white rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-3">
-                    <Save size={24} /> Efetivar e Registrar ATA
+                 <button 
+                   onClick={handleSave} 
+                   className="w-full py-5 bg-rose-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-3"
+                 >
+                    <Save size={20} /> Registrar e Finalizar Ata de Mediação
                  </button>
               </div>
            </div>
         </div>
       )}
 
-      {isExporting && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-gray-950/40 backdrop-blur-sm">
-           <div className="flex flex-col items-center gap-4">
-              <Loader2 className="animate-spin text-white" size={48} />
-              <p className="text-white font-black uppercase text-xs tracking-widest">Lavrando Documento...</p>
+      {/* ÁREA DE IMPRESSÃO DA ATA (PDF/PRINT - MODELO PROFESSOR MEDIADOR) */}
+      {printingAta && (
+        <div className="print-ata-area">
+           <div className="pdf-page p-6 sm:p-8 flex flex-col justify-between min-h-[275mm] text-black font-serif">
+              
+              <div className="flex-1 flex flex-col justify-start">
+                 {/* CABEÇALHO OFICIAL DAS ATAS */}
+                 <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
+                   <img 
+                     src="/brasao_mt.png" 
+                     alt="Brasão MT" 
+                     className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                     onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                   />
+                   <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                     <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                     <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                     <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                     <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                     <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                     <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
+                   </div>
+                   <img 
+                     src="/logo-escola-oficial.png" 
+                     alt="Escola Logo" 
+                     className="h-28 w-auto object-contain shrink-0 max-h-[115px]" 
+                     onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                   />
+                 </div>
+
+                 {/* TÍTULO DA ATA MODELO PROFESSOR MEDIADOR */}
+                 <div className="text-center my-4 space-y-1">
+                   <h2 className="text-base font-bold uppercase text-black tracking-wider">
+                     ATA Nº {printingAta.number}/{printingAta.year}
+                   </h2>
+                   <p className="text-xs font-semibold text-gray-800 uppercase tracking-widest">
+                     (MEDIAÇÃO ESCOLAR — PROFESSOR MEDIADOR)
+                   </p>
+                 </div>
+
+                 {/* CONTEÚDO E SEÇÕES DA ATA */}
+                 <div className="text-xs leading-relaxed text-justify space-y-4 text-black font-serif">
+                    
+                    {/* 1. IDENTIFICAÇÃO */}
+                    <div className="space-y-1 border-b border-gray-300 pb-2">
+                       <p className="font-bold uppercase text-sm">Identificação:</p>
+                       <p><strong>Responsável pela mediação:</strong> {printingAta.responsavelMediacao || printingAta.responsible || '---'}</p>
+                       <p><strong>Data da Mediação:</strong> {new Date(printingAta.date).toLocaleDateString('pt-BR')}</p>
+                       <p><strong>Horário de Início:</strong> {printingAta.horarioInicio || '---'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Horário de Término:</strong> {printingAta.horarioTermino || '---'}</p>
+                    </div>
+
+                    {/* 2. DETALHAMENTO */}
+                    <div className="space-y-1 border-b border-gray-300 pb-2">
+                       <p className="font-bold uppercase text-sm">Detalhamento:</p>
+                       <p><strong>Descrição Breve do Conflito:</strong> {printingAta.descricaoConflito || printingAta.pauta || '---'}</p>
+                       <p><strong>Data do Ocorrido:</strong> {printingAta.dataOcorrido ? new Date(printingAta.dataOcorrido).toLocaleDateString('pt-BR') : '---'}</p>
+                       <p><strong>Interesses/Necessidades da Parte 1 ({printingAta.parte1Nome || 'Parte 1'}):</strong> {printingAta.interessesParte1 || '---'}</p>
+                       <p><strong>Interesses/Necessidades da Parte 2 ({printingAta.parte2Nome || 'Parte 2'}):</strong> {printingAta.interessesParte2 || '---'}</p>
+                    </div>
+
+                    {/* 3. DESENVOLVIMENTO DA SESSÃO */}
+                    <div className="space-y-1 border-b border-gray-300 pb-2">
+                       <p className="font-bold uppercase text-sm">Desenvolvimento da Sessão:</p>
+                       <p className="whitespace-pre-line text-justify">{printingAta.desenvolvimentoSessao || (printingAta.definitions && printingAta.definitions.join('\n')) || '---'}</p>
+                    </div>
+
+                    {/* 4. ACORDO / ENCAMINHAMENTO */}
+                    <div className="space-y-1 border-b border-gray-300 pb-2">
+                       <p className="font-bold uppercase text-sm">Acordo/Encaminhamento:</p>
+                       <p className="italic text-gray-700">As partes firmaram os seguintes compromissos mútuos:</p>
+                       <p><strong>Compromisso da Parte 1 ({printingAta.parte1Nome || 'Parte 1'}):</strong> {printingAta.compromissoParte1 || '---'}</p>
+                       <p><strong>Compromisso da Parte 2 ({printingAta.parte2Nome || 'Parte 2'}):</strong> {printingAta.compromissoParte2 || '---'}</p>
+                       <p><strong>Compromisso Mútuo:</strong> {printingAta.compromissoMutuo || (printingAta.forwarding && printingAta.forwarding.join('\n')) || '---'}</p>
+                    </div>
+
+                    {/* 5. ENCERRAMENTO E ENCAMINHAMENTOS */}
+                    {printingAta.encerramentoEncaminhamentos && (
+                      <div className="space-y-1 border-b border-gray-300 pb-2">
+                         <p className="font-bold uppercase text-sm">Encerramento e Encaminhamentos:</p>
+                         <p className="whitespace-pre-line">{printingAta.encerramentoEncaminhamentos}</p>
+                      </div>
+                    )}
+
+                    {/* 6. ASSINATURAS */}
+                    <div className="space-y-4 pt-2">
+                       <p className="font-bold uppercase text-xs">Assinaturas:</p>
+                       <p className="italic text-[11px] text-gray-800">
+                         A presente Ata, com o Acordo/Encaminhamento, foi redigida e segue para a coleta das assinaturas.
+                       </p>
+
+                       <div className="grid grid-cols-2 gap-x-8 gap-y-8 pt-6 text-center text-xs">
+                          <div>
+                             <div className="border-t border-black pt-1">
+                               <p className="font-bold uppercase">{printingAta.responsavelMediacao || printingAta.responsible || 'Professor(a) Mediador(a)'}</p>
+                               <p className="text-[10px] text-gray-600">Mediador(a)</p>
+                             </div>
+                          </div>
+
+                          <div>
+                             <div className="border-t border-black pt-1">
+                               <p className="font-bold uppercase">{printingAta.parte1Nome || 'Parte 1'}</p>
+                               <p className="text-[10px] text-gray-600">Estudante / Parte 1</p>
+                             </div>
+                          </div>
+
+                          <div>
+                             <div className="border-t border-black pt-1">
+                               <p className="font-bold uppercase">{printingAta.parte2Nome || 'Parte 2'}</p>
+                               <p className="text-[10px] text-gray-600">Estudante / Parte 2 / Responsável</p>
+                             </div>
+                          </div>
+
+                          <div>
+                             <div className="border-t border-black pt-1">
+                               <p className="font-bold uppercase">EQUIPE DE MEDIAÇÃO ESCOLAR / DIREÇÃO</p>
+                               <p className="text-[10px] text-gray-600">Testemunha / Gestão Escolar</p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                 </div>
+              </div>
+
+              {/* RODAPÉ OFICIAL DAS ATAS */}
+              <div className="mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+                <div className="text-left space-y-0.5">
+                  <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
+                  <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
+                  <p>Site: www.seduc.mt.gov.br</p>
+                </div>
+                <div className="text-left space-y-0.5 pl-6">
+                  <p>Rua Borba Gato, nº 80, Bairro Torre</p>
+                  <p>CEP: 78500-000 – Colíder-MT Fones +55 (66) 99682-7608</p>
+                  <p>Email: escola.158330@edu.mt.gov.br</p>
+                </div>
+              </div>
+
            </div>
         </div>
       )}
+
+      {/* ESTILOS CSS DE IMPRESSÃO */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @media screen {
+          .print-ata-area { display: none !important; }
+        }
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0 !important;
+          }
+          html, body {
+            height: 100% !important;
+            width: 100% !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body * { visibility: hidden !important; }
+          .no-print { display: none !important; }
+          .print-ata-area, .print-ata-area * { visibility: visible !important; }
+          .print-ata-area { 
+            position: fixed !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important; 
+            height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            background: white !important;
+            color: black !important;
+            box-sizing: border-box !important;
+            padding: 8mm 12mm 4mm 12mm !important;
+          }
+          .pdf-page { 
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            height: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+        }
+      `}} />
     </div>
   );
 };
