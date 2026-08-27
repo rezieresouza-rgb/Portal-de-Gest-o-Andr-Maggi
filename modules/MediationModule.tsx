@@ -27,25 +27,25 @@ import PsychosocialReports from '../components/PsychosocialReports';
 import { supabase } from '../supabaseClient';
 
 interface MediationModuleProps {
-  user: User | null;
+  user?: any;
   onExit: () => void;
 }
 
-export const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
+const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'cases' | 'atas' | 'agenda' | 'reports'>('dashboard');
   const [userRole, setUserRole] = useState<PsychosocialRole>('PSICOSSOCIAL');
   const [casesCount, setCasesCount] = useState({ total: 0, active: 0, agreements: 0, triaged: 0 });
 
   const fetchStats = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('mediation_cases')
         .select('*');
-      if (data) {
+      if (data && Array.isArray(data)) {
         const total = data.length;
-        const active = data.filter((c: any) => c.status !== 'CONCLUÍDO' && c.status !== 'CONCLUIDO').length;
-        const agreements = data.filter((c: any) => c.status === 'CONCLUÍDO' || c.status === 'CONCLUIDO').length;
-        const triaged = data.filter((c: any) => c.feedback || (c.description && c.description.includes('PSICOSSOCIAL'))).length;
+        const active = data.filter((c: any) => c && c.status !== 'CONCLUÍDO' && c.status !== 'CONCLUIDO').length;
+        const agreements = data.filter((c: any) => c && (c.status === 'CONCLUÍDO' || c.status === 'CONCLUIDO')).length;
+        const triaged = data.filter((c: any) => c && (c.feedback || (typeof c.description === 'string' && c.description.includes('PSICOSSOCIAL')))).length;
         setCasesCount({ total, active, agreements, triaged });
       }
     } catch (err) {

@@ -39,7 +39,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   useEffect(() => {
     const loadPermissions = () => {
       try {
-        const saved = localStorage.getItem('portal_module_permissions_v6');
+        const saved = localStorage.getItem('portal_module_permissions_v7');
         const parsed = saved ? JSON.parse(saved) : null;
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           setDynamicPermissions(parsed);
@@ -61,7 +61,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
         'AEE_NUTRICAO': ['merenda', 'almoxarifado', 'training'],
         'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training']
       };
-      localStorage.setItem('portal_module_permissions_v6', JSON.stringify(defaults));
+      localStorage.setItem('portal_module_permissions_v7', JSON.stringify(defaults));
       setDynamicPermissions(defaults);
     };
 
