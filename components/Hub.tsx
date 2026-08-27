@@ -34,7 +34,7 @@ interface HubProps {
 
 const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate }) => {
   const [dynamicPermissions, setDynamicPermissions] = useState<Record<string, string[]> | null>(null);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     const loadPermissions = () => {
