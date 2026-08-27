@@ -661,10 +661,10 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
               {/* Cabeçalho Oficial do Relatório */}
               <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
                 <img 
-                  src="/logo-escola-oficial.png" 
-                  alt="Escola Cívico-Militar" 
-                  className="h-24 w-auto object-contain shrink-0" 
-                  onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                  src="/brasao_mt.png" 
+                  alt="Brasão do Estado de Mato Grosso" 
+                  className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                  onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
                 />
                 <div className="text-center flex-1 mx-3 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
                   <h1 className="text-xs font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
@@ -676,10 +676,10 @@ const CivicoMilitarReports: React.FC<CivicoMilitarReportsProps> = ({ studentStat
                   <p className="text-[10px] font-bold uppercase text-indigo-900 pt-1">Relatório Disciplinar Individual do Aluno - SISMIL</p>
                 </div>
                 <img 
-                  src="/brasao_mt.png" 
-                  alt="Brasão do Estado de Mato Grosso" 
-                  className="h-24 w-auto object-contain shrink-0" 
-                  onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                  src="/logo-escola-oficial.png" 
+                  alt="Escola Cívico-Militar" 
+                  className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                  onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
                 />
               </div>
 

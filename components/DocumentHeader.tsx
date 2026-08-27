@@ -9,19 +9,19 @@ interface DocumentHeaderProps {
 const DocumentHeader: React.FC<DocumentHeaderProps> = ({ subtitle, documentType, className = '' }) => {
   return (
     <div className={`flex items-center justify-between border-b-2 border-black pb-4 mb-6 w-full max-w-[210mm] mx-auto print:flex print:visible font-sans ${className}`}>
-      {/* Lado Esquerdo: Logo da Escola Cívico-Militar */}
+      {/* Lado Esquerdo: Brasão do Estado de Mato Grosso */}
       <div className="flex items-center justify-start shrink-0">
         <img
-          src="/logo-escola-oficial.png"
-          alt="Logo Escola Cívico-Militar"
-          className="h-24 w-auto object-contain max-w-[120px]"
+          src="/brasao_mt.png"
+          alt="Brasão do Estado de Mato Grosso"
+          className="h-24 w-auto object-contain max-w-[120px] max-h-[95px]"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = '/logo-escola.png';
+            (e.currentTarget as HTMLImageElement).src = '/SEDUC 2.jpg';
           }}
         />
       </div>
 
-      {/* Meio: Texto Oficial do Estado / SEDUC do Print do Usuário */}
+      {/* Meio: Texto Oficial do Estado / SEDUC */}
       <div className="text-center flex-1 mx-3 space-y-0.5">
         <h1 className="text-xs md:text-sm font-bold uppercase text-black leading-tight">
           Governo do Estado de Mato Grosso
@@ -54,14 +54,14 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({ subtitle, documentType,
         )}
       </div>
 
-      {/* Lado Direito: Brasão do Estado de Mato Grosso */}
+      {/* Lado Direito: Logo da Escola Cívico-Militar */}
       <div className="flex items-center justify-end shrink-0">
         <img
-          src="/brasao_mt.png"
-          alt="Brasão do Estado de Mato Grosso"
-          className="h-24 w-auto object-contain max-w-[120px]"
+          src="/logo-escola-oficial.png"
+          alt="Logo Escola Cívico-Militar"
+          className="h-24 w-auto object-contain max-w-[120px] max-h-[95px]"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = '/SEDUC 2.jpg';
+            (e.currentTarget as HTMLImageElement).src = '/logo-escola.png';
           }}
         />
       </div>

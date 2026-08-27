@@ -870,13 +870,13 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         <div className="print-oficio-area">
           <div className="pdf-page p-6 sm:p-8" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
             
-            {/* Cabeçalho Oficial com Logo Cívico-Militar e Brasão MT do Mesmo Tamanho */}
+            {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita do Mesmo Tamanho */}
             <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
               <img 
-                src="/logo-escola-oficial.png" 
-                alt="Escola Cívico-Militar" 
+                src="/brasao_mt.png" 
+                alt="Brasão do Estado de Mato Grosso" 
                 className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
-                onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
               />
               <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
                 <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
@@ -887,10 +887,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
               </div>
               <img 
-                src="/brasao_mt.png" 
-                alt="Brasão do Estado de Mato Grosso" 
+                src="/logo-escola-oficial.png" 
+                alt="Escola Cívico-Militar" 
                 className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
-                onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
               />
             </div>
 
