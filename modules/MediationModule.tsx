@@ -36,10 +36,6 @@ export const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }
   const [userRole, setUserRole] = useState<PsychosocialRole>('PSICOSSOCIAL');
   const [casesCount, setCasesCount] = useState({ total: 0, active: 0, agreements: 0, triaged: 0 });
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
   const fetchStats = async () => {
     try {
       const { data } = await supabase
@@ -56,6 +52,10 @@ export const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }
       console.error('Erro ao buscar estatísticas da mediação:', err);
     }
   };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   const navItems = [
     { id: 'dashboard', label: 'Painel & Clima Escolar', icon: <Scale size={18} /> },
