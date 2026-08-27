@@ -26,7 +26,8 @@ import {
    Landmark,
    LogOut,
    Trash2,
-   X
+   X,
+   PartyPopper
 } from 'lucide-react';
 import { BirthdayPerson, SchoolAnnouncement, SchoolEvent, User } from '../types';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
@@ -166,6 +167,10 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
 
    const today = new Date().getDate();
    const currentMonth = new Date().getMonth() + 1;
+
+   const todayBirthdays = useMemo(() => {
+      return birthdays.filter(b => b.day === today);
+   }, [birthdays, today]);
 
    const exportAgendaPDF = async () => {
       const element = document.getElementById('weekly-agenda-block');
@@ -448,31 +453,93 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
 
                   {/* ANIVERSARIANTES DO MÊS */}
                   {visibleBlocks.birthdays && (
-                     <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
-                        <div className="flex items-center gap-2 mb-2">
-                           <div className="p-2 bg-amber-50 text-amber-600 rounded-xl shadow-sm border border-amber-100"><Cake size={16} /></div>
-                           <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight leading-tight">Aniversariantes Mês de {new Date().toLocaleDateString('pt-BR', { month: 'long' })}</h3>
+                     <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-5">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                           <div className="flex items-center gap-2">
+                              <div className="p-2 bg-amber-50 text-amber-600 rounded-xl shadow-sm border border-amber-100"><Cake size={16} /></div>
+                              <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight leading-tight">Aniversariantes ({new Date().toLocaleDateString('pt-BR', { month: 'long' })})</h3>
+                           </div>
+                           {todayBirthdays.length > 0 && (
+                              <span className="text-[8px] font-black bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full uppercase border border-rose-100 flex items-center gap-1 animate-pulse shadow-sm">
+                                 <Sparkles size={10} /> Hoje!
+                              </span>
+                           )}
                         </div>
 
-                        <div className="space-y-2">
-                           {birthdays.map(b => (
-                              <div key={b.id} className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${b.day === today ? 'bg-indigo-50/80 border-indigo-100 shadow-sm shadow-indigo-100/10' : 'bg-slate-50/50 border-transparent hover:bg-slate-100/50'
-                                 }`}>
-                                 <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${b.day === today ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500'
-                                       }`}>
-                                       {b.name[0]}
-                                    </div>
-                                    <div>
-                                       <p className="text-[10px] font-black text-slate-800 uppercase leading-none truncate w-32">{b.name.split(' ').slice(0, 2).join(' ')}</p>
-                                       <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">{b.role}</p>
-                                    </div>
-                                 </div>
-                                 <div className="text-right">
-                                    <p className={`text-sm font-black ${b.day === today ? 'text-indigo-600' : 'text-slate-400'}`}>{b.day}</p>
-                                 </div>
+                        {/* BANNER DE DESTAQUE PARA ANIVERSARIANTE DO DIA (ESTILO MURAL DE HONRA) */}
+                        {todayBirthdays.length > 0 && (
+                           <div className="p-6 bg-gradient-to-br from-amber-400 via-rose-500 to-pink-600 rounded-[2rem] text-white shadow-lg shadow-rose-500/20 animate-in zoom-in-95 duration-500 relative overflow-hidden space-y-4">
+                              <div className="absolute -top-4 -right-4 p-4 opacity-20 animate-pulse">
+                                 <PartyPopper size={90} />
                               </div>
-                           ))}
+                              <div className="relative z-10 flex items-center justify-between">
+                                 <div className="flex items-center gap-2">
+                                    <span className="p-1 bg-white/20 backdrop-blur-md rounded-lg text-white">
+                                       <Sparkles size={14} />
+                                    </span>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-amber-100">Destaque do Dia 🎂</p>
+                                 </div>
+                                 <span className="text-[8px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                                    {todayBirthdays.length === 1 ? 'Celebração Hoje' : `${todayBirthdays.length} Celebrações Hoje`}
+                                 </span>
+                              </div>
+
+                              <div className="space-y-2 relative z-10">
+                                 {todayBirthdays.map(tb => (
+                                    <div key={tb.id} className="bg-white/15 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 flex items-center justify-between gap-3 shadow-sm">
+                                       <div className="flex items-center gap-3 min-w-0">
+                                          <div className="w-10 h-10 rounded-xl bg-white text-rose-600 flex items-center justify-center font-black text-sm shadow-md shrink-0 animate-bounce">
+                                             <Cake size={20} />
+                                          </div>
+                                          <div className="min-w-0">
+                                             <h4 className="text-sm font-black leading-tight uppercase truncate">{tb.name}</h4>
+                                             <p className="text-[8px] text-rose-100 font-bold uppercase tracking-wider mt-0.5 truncate">{tb.role}</p>
+                                          </div>
+                                       </div>
+                                       <span className="px-2.5 py-1 bg-white text-rose-600 rounded-xl font-black text-[10px] uppercase shadow-sm shrink-0">
+                                          {tb.day} {new Date().toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}
+                                       </span>
+                                    </div>
+                                 ))}
+                              </div>
+
+                              <p className="text-[10px] font-medium opacity-95 italic pt-1 leading-snug relative z-10">
+                                 "Parabéns pelo seu dia! Toda a equipe André Maggi deseja muita saúde, paz e realizações!" 🎉
+                              </p>
+                           </div>
+                        )}
+
+                        <div className="space-y-2">
+                           {birthdays.map(b => {
+                              const isToday = b.day === today;
+                              return (
+                                 <div key={b.id} className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${isToday
+                                    ? 'bg-gradient-to-r from-rose-50 to-amber-50 border-rose-200 shadow-sm shadow-rose-100/30'
+                                    : 'bg-slate-50/50 border-transparent hover:bg-slate-100/50'
+                                    }`}>
+                                    <div className="flex items-center gap-3 min-w-0">
+                                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${isToday ? 'bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-md' : 'bg-slate-100 text-slate-500'
+                                          }`}>
+                                          {isToday ? <Cake size={16} /> : b.name[0]}
+                                       </div>
+                                       <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                             <p className={`text-[10px] font-black uppercase leading-none truncate w-32 ${isToday ? 'text-rose-700' : 'text-slate-800'}`}>{b.name.split(' ').slice(0, 2).join(' ')}</p>
+                                             {isToday && (
+                                                <span className="text-[7px] font-black bg-rose-500 text-white px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                                                   Hoje!
+                                                </span>
+                                             )}
+                                          </div>
+                                          <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5 truncate">{b.role}</p>
+                                       </div>
+                                    </div>
+                                    <div className="text-right shrink-0 pl-2">
+                                       <p className={`text-sm font-black ${isToday ? 'text-rose-600' : 'text-slate-400'}`}>{b.day}</p>
+                                    </div>
+                                 </div>
+                              );
+                           })}
                            {birthdays.length === 0 && (
                               <div className="py-8 text-center text-slate-400 text-[10px] font-bold uppercase">
                                  Nenhum aniversariante este mês
