@@ -12,6 +12,7 @@ import CleaningModule from './modules/CleaningModule';
 import InfrastructureModule from './modules/InfrastructureModule';
 import BuscaAtivaModule from './modules/BuscaAtivaModule';
 import PsychosocialModule from './modules/PsychosocialModule';
+import MediationModule from './modules/MediationModule';
 import SecretariatModule from './modules/SecretariatModule';
 import SpecialEducationModule from './modules/SpecialEducationModule';
 import CivicoMilitarModule from './modules/CivicoMilitarModule';
