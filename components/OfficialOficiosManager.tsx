@@ -955,9 +955,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               );
             })()}
 
-            {/* Rodapé do Documento */}
-            <div className="mt-8 text-center text-[8px] text-black font-normal uppercase tracking-widest border-t border-gray-300 pt-2">
-              DOCUMENTO EXPEDIDO ELETRONICAMENTE PELO PORTAL DE GESTÃO ESCOLAR — EECM ANDRÉ ANTÔNIO MAGGI
+            {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar */}
+            <div className="mt-8 text-center text-[7.5px] leading-tight text-black font-normal border-t border-black/30 pt-2 space-y-0.5" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+              <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo, CEP: 78049-906 – Cuiabá-MT • Fone (65) 3613-6300</p>
+              <p>Site: www.seduc.mt.gov.br • Rua Borba Gato, nº 80, Bairro Torre, CEP: 78500-000 – Colíder-MT • Fones +55 (66) 99682-7608 • Email: escola.158330@edu.mt.gov.br</p>
             </div>
 
           </div>
