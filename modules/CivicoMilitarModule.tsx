@@ -1821,15 +1821,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <MessageSquare size={18} /> Caixa de Fatos
           </button>
           <button
-            onClick={() => setActiveTab('mediacao')}
-            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'mediacao'
-              ? 'bg-gradient-to-r from-amber-600 to-blue-600 text-white shadow-xl shadow-amber-600/10'
-              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-              }`}
-          >
-            <Scale size={18} /> Mediação Escolar
-          </button>
-          <button
             onClick={() => setActiveTab('relatorios')}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'relatorios'
               ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/10'
@@ -1893,7 +1884,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 flex-wrap">
+            <button 
+              onClick={() => {
+                setMediationTargetStudent(undefined);
+                setMediationInitialReport('');
+                setIsMediationModalOpen(true);
+              }} 
+              className="text-[10px] flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-blue-600 hover:from-amber-600 hover:to-blue-700 text-white px-4 py-2 rounded-full font-black uppercase tracking-widest transition-all shadow-md hover:shadow-lg active:scale-95 no-print" 
+              title="Encaminhar aluno ou fato diretamente para a equipe de Mediação Escolar"
+            >
+              <Scale size={14} />
+              Encaminhar p/ Mediação
+            </button>
             <button onClick={handleSyncLocalToCloud} className="text-[10px] flex items-center gap-1 bg-amber-100 hover:bg-amber-200 text-amber-700 px-4 py-2 rounded-full font-black uppercase tracking-widest transition-colors no-print" title="Sincronizar dados deste computador para a nuvem">
               <RefreshCw size={14} />
               Migrar Dados
@@ -4076,169 +4079,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
              />
           )}
 
-          {activeTab === 'mediacao' && (
-            <div className="space-y-8">
-              {/* Top Banner & Stats */}
-              <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl border border-blue-900/50 relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="space-y-2">
-                    <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1.5">
-                      <Scale size={12} /> Resolução Conflitiva & Mediação Escolar
-                    </span>
-                    <h2 className="text-2xl font-black uppercase tracking-tight text-white">
-                      Encaminhamentos para a Mediação
-                    </h2>
-                    <p className="text-xs text-slate-300 font-medium max-w-2xl leading-relaxed">
-                      Gestão de processos de escuta ativa, círculos de paz e encaminhamentos disciplinares efetuados pela Monitoria Cívico-Militar para a equipe de Mediação de Conflitos.
-                    </p>
-                  </div>
 
-                  <button
-                    onClick={() => {
-                      setMediationTargetStudent(undefined);
-                      setMediationInitialReport('');
-                      setIsMediationModalOpen(true);
-                    }}
-                    className="px-6 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-950 font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-3 shrink-0"
-                  >
-                    <Plus size={18} /> Novo Encaminhamento
-                  </button>
-                </div>
-
-                {/* Dashboard Mini-Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-800">
-                  <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total de Encaminhamentos</span>
-                    <span className="text-2xl font-black text-white">{civicReferrals.length}</span>
-                  </div>
-                  <div className="bg-amber-500/10 backdrop-blur-md p-4 rounded-2xl border border-amber-500/20">
-                    <span className="text-[9px] font-black text-amber-300 uppercase tracking-widest block mb-1">Aguardando Triagem</span>
-                    <span className="text-2xl font-black text-amber-400">
-                      {civicReferrals.filter(r => r.status === 'AGUARDANDO_TRIAGEM' || r.status === 'EM_TRIAGEM' || r.status === 'PENDENTE').length}
-                    </span>
-                  </div>
-                  <div className="bg-blue-500/10 backdrop-blur-md p-4 rounded-2xl border border-blue-500/20">
-                    <span className="text-[9px] font-black text-blue-300 uppercase tracking-widest block mb-1">Em Mediação / Círculo</span>
-                    <span className="text-2xl font-black text-blue-400">
-                      {civicReferrals.filter(r => r.status === 'EM_ACOMPANHAMENTO' || r.status === 'EM_MEDIACAO').length}
-                    </span>
-                  </div>
-                  <div className="bg-emerald-500/10 backdrop-blur-md p-4 rounded-2xl border border-emerald-500/20">
-                    <span className="text-[9px] font-black text-emerald-300 uppercase tracking-widest block mb-1">Acordos / Concluídos</span>
-                    <span className="text-2xl font-black text-emerald-400">
-                      {civicReferrals.filter(r => r.status === 'CONCLUÍDO' || r.status === 'CONCLUIDO').length}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabela de Encaminhamentos */}
-              <div className="bg-white rounded-[2.5rem] border border-slate-200/80 shadow-sm p-8 space-y-6 text-slate-800">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                    <FileText size={18} className="text-blue-600" /> Histórico de Registros Enviados
-                  </h3>
-
-                  <div className="relative w-full md:w-80">
-                    <Search size={16} className="absolute left-4 top-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por aluno ou turma..."
-                      value={mediationSearchTerm}
-                      onChange={e => setMediationSearchTerm(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-[9px] font-black uppercase text-slate-400 tracking-wider">
-                        <th className="py-4 px-4">Estudante / Turma</th>
-                        <th className="py-4 px-4">Data Registro</th>
-                        <th className="py-4 px-4">Prioridade</th>
-                        <th className="py-4 px-4">Motivo / Enquadramento</th>
-                        <th className="py-4 px-4">Responsável</th>
-                        <th className="py-4 px-4">Status</th>
-                        <th className="py-4 px-4 text-right">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {civicReferrals
-                        .filter(ref => {
-                          const nameMatch = (ref.student_name || ref.studentName || '').toLowerCase().includes(mediationSearchTerm.toLowerCase());
-                          const classMatch = (ref.class_name || ref.className || '').toLowerCase().includes(mediationSearchTerm.toLowerCase());
-                          return nameMatch || classMatch;
-                        })
-                        .map(ref => {
-                          const sName = ref.student_name || ref.studentName || 'Estudante';
-                          const cName = ref.class_name || ref.className || 'N/A';
-                          const prio = ref.priority || 'MEDIA';
-                          const rDate = ref.date ? new Date(ref.date).toLocaleDateString('pt-BR') : 'N/A';
-                          const resp = ref.teacher_name || ref.responsibleName || 'Monitoria Cívico-Militar';
-                          const stLabel = (ref.status === 'CONCLUÍDO' || ref.status === 'CONCLUIDO') ? 'Concluído' :
-                                         (ref.status === 'EM_ACOMPANHAMENTO' || ref.status === 'EM_MEDIACAO') ? 'Em Mediação' : 'Aguardando Triagem';
-
-                          return (
-                            <tr key={ref.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-4 px-4 font-black text-slate-900 uppercase">
-                                {sName}
-                                <span className="block text-[9px] font-bold text-blue-600 lowercase">{cName}</span>
-                              </td>
-                              <td className="py-4 px-4 text-slate-600 font-bold">{rDate}</td>
-                              <td className="py-4 px-4">
-                                <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase ${
-                                  prio === 'CRÍTICA' ? 'bg-red-100 text-red-700 border border-red-200' :
-                                  prio === 'ALTA' ? 'bg-orange-100 text-orange-700 border border-orange-200' :
-                                  prio === 'MEDIA' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                                  'bg-blue-100 text-blue-700 border border-blue-200'
-                                }`}>
-                                  {prio}
-                                </span>
-                              </td>
-                              <td className="py-4 px-4 text-slate-700 max-w-xs truncate font-semibold">
-                                {ref.report || ref.reason || 'Conflito Comportamental'}
-                              </td>
-                              <td className="py-4 px-4 text-slate-600 text-[10px] font-bold uppercase">{resp}</td>
-                              <td className="py-4 px-4">
-                                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase ${
-                                  stLabel === 'Concluído' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                                  stLabel === 'Em Mediação' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                                  'bg-amber-50 text-amber-700 border border-amber-200'
-                                }`}>
-                                  {stLabel}
-                                </span>
-                              </td>
-                              <td className="py-4 px-4 text-right">
-                                <button
-                                  onClick={() => {
-                                    setMediationTargetStudent({ name: sName, class: cName });
-                                    setMediationInitialReport(ref.report || '');
-                                    setIsMediationModalOpen(true);
-                                  }}
-                                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 rounded-xl text-[9px] font-black uppercase transition-all"
-                                >
-                                  Ver / Ficha
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-
-                      {civicReferrals.length === 0 && !mediationLoading && (
-                        <tr>
-                          <td colSpan={7} className="py-12 text-center text-slate-400 uppercase font-bold text-xs">
-                            Nenhum encaminhamento registrado para a Mediação Escolar até o momento.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
 
           {activeTab === 'relatorios' && (
              <CivicoMilitarReports studentStates={studentStates} inspections={inspections} routines={routines} />
