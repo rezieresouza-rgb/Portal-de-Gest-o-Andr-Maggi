@@ -46,6 +46,15 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [loading, setLoading] = useState(false);
+  const [printingReferral, setPrintingReferral] = useState<PsychosocialReferral | null>(null);
+
+  const handlePrintReferral = (ref: PsychosocialReferral, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setPrintingReferral(ref);
+    setTimeout(() => {
+      window.print();
+    }, 250);
+  };
 
   // Form State
   const [newReferral, setNewReferral] = useState({
@@ -428,39 +437,31 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                   }`}>
                   Prioridade {ref.priority}
                 </span>
-                <div className="flex gap-2">
-                  <button onClick={(e) => {
-                    e.stopPropagation();
-                    const card = e.currentTarget.closest('[onClick]');
-                    if (card) (card as HTMLElement).click();
-                  }} className="p-2 hover:bg-violet-50 rounded-lg text-gray-300 hover:text-violet-600 transition-all">
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={(e) => handleDelete(ref.id, e)} className="p-2 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-600 transition-all">
-                    <Trash2 size={16} />
-                  </button>
-                  <button onClick={(e) => handleProvideFeedbackToMediation(ref, e)} title="Registrar Parecer/Devolutiva para a Mediação Escolar" className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1">
-                    <HeartHandshake size={12} /> Parecer p/ Mediação
-                  </button>
-                  <button onClick={(e) => handleSendToMediation(ref, e)} title="Enviar/Ver na Mediação" className="p-2 hover:bg-rose-50 rounded-lg text-gray-300 hover:text-rose-600 transition-all">
-                    <Scale size={16} />
-                  </button>
+                
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${ref.status === 'CONCLUIDO' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`} />
+                  <span className="text-[10px] font-black uppercase text-gray-500">{ref.status || 'AGUARDANDO'}</span>
                 </div>
               </div>
 
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">{ref.studentName}</h3>
-              <p className="text-xs font-bold text-gray-400 uppercase mb-4">{ref.className}</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">{ref.studentName}</h3>
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-3">{ref.className}</p>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase">{new Date(ref.date).toLocaleDateString('pt-BR')}</span>
+              </div>
 
               <div className="space-y-3">
-                <div className="bg-gray-50 p-4 rounded-[2rem] border border-gray-100">
-                  <p className="text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Motivo do Encaminhamento</p>
+                <div className="bg-gray-50 p-4 rounded-[1.8rem] border border-gray-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase mb-1.5 tracking-widest">Motivo do Encaminhamento</p>
                   <p className="text-xs text-gray-600 font-medium line-clamp-3 leading-relaxed italic">"{ref.reason}"</p>
                 </div>
 
-                {/* [NOVO] Devolutiva da Mediação */}
+                {/* Devolutiva da Mediação */}
                 {ref?.feedback && (
-                  <div className="bg-emerald-50 p-4 rounded-[2rem] border border-emerald-100 animate-in fade-in slide-in-from-top-2 duration-700 shadow-sm shadow-emerald-100/50">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase mb-2 tracking-widest flex items-center gap-2">
+                  <div className="bg-emerald-50 p-4 rounded-[1.8rem] border border-emerald-100 animate-in fade-in slide-in-from-top-2 duration-700 shadow-sm shadow-emerald-100/50">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase mb-1.5 tracking-widest flex items-center gap-2">
                        <CheckCircle2 size={12} strokeWidth={3} /> Devolutiva da Mediação
                     </p>
                     <p className="text-[11px] text-emerald-800 font-bold leading-relaxed">
@@ -471,12 +472,50 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-50">
-               <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${ref.status === 'CONCLUIDO' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`} />
-                  <span className="text-[10px] font-black uppercase text-gray-400">{ref.status || 'AGUARDANDO'}</span>
-               </div>
-               <span className="text-[10px] font-bold text-gray-300 uppercase">{new Date(ref.date).toLocaleDateString()}</span>
+            {/* BARRA DE AÇÕES DO CARD */}
+            <div className="mt-6 flex gap-2 border-t border-gray-100 pt-4">
+               <button 
+                 type="button"
+                 onClick={(e) => handlePrintReferral(ref, e)}
+                 className="flex-1 py-3 bg-gray-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-sm"
+               >
+                  <Printer size={14} /> Imprimir / PDF
+               </button>
+               <button 
+                 type="button"
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   setEditingId(ref.id);
+                   setNewReferral({
+                     student_name: ref.studentName,
+                     class_name: ref.className,
+                     reason: ref.reason || '',
+                     priority: ref.priority,
+                     status: ref.status,
+                     observations: typeof ref.observations === 'string' ? ref.observations : '',
+                     student_age: ref.studentAge || '',
+                     school_unit: (ref.schoolUnit && ref.schoolUnit !== 'Unidade Escolar') ? ref.schoolUnit : 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
+                     teacher_name: ref.teacherName || '',
+                     previous_strategies: ref.previousStrategies || '',
+                     attendance_frequency: ref.attendanceFrequency || '',
+                     adopted_procedures: ref.adoptedProcedures || [],
+                     report: ref.report || ''
+                   });
+                   setIsModalOpen(true);
+                 }}
+                 className="p-3 bg-gray-100 hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-xl transition-all"
+                 title="Editar Encaminhamento"
+               >
+                  <Edit2 size={15} />
+               </button>
+               <button 
+                 type="button"
+                 onClick={(e) => handleDelete(ref.id, e)}
+                 className="p-3 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                 title="Excluir Encaminhamento"
+               >
+                  <Trash2 size={15} />
+               </button>
             </div>
           </div>
         ))}
@@ -531,6 +570,223 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           </div>
         </div>
       )}
+
+      {/* ÁREA DE IMPRESSÃO DA FICHA DE ENCAMINHAMENTO (PDF / IMPRESSÃO) */}
+      {printingReferral && (
+        <div className="print-referral-area">
+          <div className="pdf-page p-6 sm:p-8 flex flex-col justify-between min-h-[275mm] text-black font-serif">
+            
+            <div className="flex-1 flex flex-col justify-start">
+              {/* CABEÇALHO OFICIAL SEDUC/MT */}
+              <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
+                <img 
+                  src="/brasao_mt.png" 
+                  alt="Brasão MT" 
+                  className="h-24 w-auto object-contain shrink-0 max-h-[90px]" 
+                  onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                />
+                <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                  <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                  <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                  <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                  <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                  <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
+                </div>
+                <img 
+                  src="/logo-escola-oficial.png" 
+                  alt="Escola Logo" 
+                  className="h-28 w-auto object-contain shrink-0 max-h-[110px]" 
+                  onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                />
+              </div>
+
+              {/* TÍTULO */}
+              <div className="text-center my-3">
+                <h2 className="text-base font-bold uppercase text-black tracking-wider" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  ENCAMINHAMENTO PARA MEDIAÇÃO
+                </h2>
+              </div>
+
+              {/* IDENTIFICAÇÃO */}
+              <div className="text-xs space-y-1.5 border border-black p-3 mb-3 leading-relaxed">
+                <p><strong>Unidade Escolar:</strong> {printingReferral.schoolUnit || 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI'}</p>
+                <p><strong>Nome do estudante:</strong> {printingReferral.studentName || '________________________________________'}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <p><strong>Idade:</strong> {printingReferral.studentAge ? `${printingReferral.studentAge} anos` : '____ anos'}</p>
+                  <p><strong>Ano/Turma:</strong> {printingReferral.className || '____________'}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <p><strong>Professor:</strong> {printingReferral.teacherName || '________________________'}</p>
+                  <p><strong>Data:</strong> {new Date(printingReferral.date).toLocaleDateString('pt-BR')}</p>
+                </div>
+              </div>
+
+              {/* ESTRATÉGIAS */}
+              <div className="text-xs space-y-1 mb-3">
+                <p className="font-bold uppercase">Estratégias já realizadas pela PROFESSOR :</p>
+                <div className="border border-black p-2.5 min-h-[60px] text-justify leading-relaxed whitespace-pre-line">
+                  {printingReferral.previousStrategies || "________________________________________________________________________________________________________________________________________________________________________________________________________________________________"}
+                </div>
+              </div>
+
+              {/* ASPECTOS OBSERVADOS */}
+              <div className="text-xs space-y-2 mb-3">
+                <p className="font-bold uppercase">Marque com X a alternativa corresponde ao que foi observado.</p>
+
+                {/* Aprendizagem */}
+                <div className="space-y-0.5">
+                  <p className="font-bold text-[11px] uppercase">Aspectos relacionados à aprendizagem</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[10.5px]">
+                    {[
+                      "Dificuldade de Leitura;",
+                      "Dificuldade em decodificar palavras e números;",
+                      "Dificuldade em compreender textos;",
+                      "Dificuldade de escrita."
+                    ].map(item => (
+                      <div key={item} className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-xs">
+                          ({printingReferral.observedAspects?.learning?.includes(item) ? ' X ' : '   '})
+                        </span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comportamentais */}
+                <div className="space-y-0.5 pt-1">
+                  <p className="font-bold text-[11px] uppercase">Aspectos comportamentais</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[10.5px]">
+                    {[
+                      "Dificuldades em manter o foco;",
+                      "Esquecimento frequente de instruções ou tarefas;",
+                      "Muita Dificuldade de se manter sentado ao decorrer da aula;",
+                      "Dificuldade em esperar a vez;",
+                      "Mudança brusca de comportamento."
+                    ].map(item => (
+                      <div key={item} className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-xs">
+                          ({printingReferral.observedAspects?.behavioral?.includes(item) ? ' X ' : '   '})
+                        </span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Emocionais */}
+                <div className="space-y-0.5 pt-1">
+                  <p className="font-bold text-[11px] uppercase">Aspectos Emocionais</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[10.5px]">
+                    {[
+                      "Preocupação excessiva com desempenho escolar;",
+                      "Medo de fracassar ou decepcionar os outros;",
+                      "Baixa Autoestima;",
+                      "Sentimentos de inadequação;",
+                      "Tristeza frequente."
+                    ].map(item => (
+                      <div key={item} className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-xs">
+                          ({printingReferral.observedAspects?.emotional?.includes(item) ? ' X ' : '   '})
+                        </span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* BREVE RELATO */}
+              <div className="text-xs space-y-1 mb-4">
+                <p className="font-bold uppercase">Escreva um breve relato:</p>
+                <div className="border border-black p-2.5 min-h-[90px] text-justify leading-relaxed whitespace-pre-line">
+                  {printingReferral.report || printingReferral.reason || "________________________________________________________________________________________________________________________________________________________________________________________________________________________________"}
+                </div>
+              </div>
+
+              {/* ASSINATURAS */}
+              <div className="grid grid-cols-2 gap-12 text-center text-xs pt-6">
+                <div>
+                  <div className="border-t border-black pt-1">
+                    <p className="font-bold uppercase">{printingReferral.teacherName || 'PROFESSOR(A)'}</p>
+                    <p className="text-[10px] text-gray-600">Professor(a) Solicitante</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-t border-black pt-1">
+                    <p className="font-bold uppercase">EQUIPE DE MEDIAÇÃO ESCOLAR</p>
+                    <p className="text-[10px] text-gray-600">Ciente e Recebido em ____/____/________</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* RODAPÉ OFICIAL */}
+            <div className="mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+              <div className="text-left space-y-0.5">
+                <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
+                <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
+                <p>Site: www.seduc.mt.gov.br</p>
+              </div>
+              <div className="text-left space-y-0.5 pl-6">
+                <p>Rua Borba Gato, nº 80, Bairro Torre</p>
+                <p>CEP: 78500-000 – Colíder-MT Fones +55 (66) 99682-7608</p>
+                <p>Email: escola.158330@edu.mt.gov.br</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ESTILOS CSS DE IMPRESSÃO */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @media screen {
+          .print-referral-area { display: none !important; }
+        }
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm 10mm 8mm 10mm !important;
+          }
+          html, body {
+            height: auto !important;
+            width: 100% !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body * { visibility: hidden !important; }
+          .no-print { display: none !important; }
+          .print-referral-area, .print-referral-area * { visibility: visible !important; }
+          .print-referral-area { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important; 
+            min-height: 100% !important;
+            display: block !important;
+            background: white !important;
+            color: black !important;
+            box-sizing: border-box !important;
+            padding: 0 !important;
+          }
+          .pdf-page { 
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            min-height: 275mm !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            page-break-inside: avoid !important;
+          }
+        }
+      `}} />
     </div>
   );
 };
