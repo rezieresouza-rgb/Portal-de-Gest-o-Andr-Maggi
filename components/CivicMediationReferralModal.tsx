@@ -192,8 +192,7 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
 
       // 2. Inserir diretamente um caso ativo na tabela mediation_cases (para a equipe da mediação)
       const mediationCasePayload = {
-        id: `case-${nowTimestamp}`,
-        student_id: selectedStudent.id || `std-${nowTimestamp}`,
+        student_id: selectedStudent.id && selectedStudent.id !== 'N/A' ? selectedStudent.id : null,
         student_name: selectedStudent.name,
         class_name: selectedStudent.class || 'N/A',
         type: reasonCategory.includes('Bullying') ? 'BULLYING' : reasonCategory.includes('Conflito') ? 'CONFLITO' : 'DISCIPLINAR',
@@ -202,8 +201,6 @@ export const CivicMediationReferralModal: React.FC<CivicMediationReferralModalPr
         opened_at: todayDate,
         description: fullReportText,
         involved_parties: involvedParties ? involvedParties.split(',').map(p => p.trim()) : [responsibleName],
-        teacher_name: responsibleName.toUpperCase().includes('CÍVICO') || responsibleName.toUpperCase().includes('MILITAR') ? responsibleName : `EQUIPE CÍVICO-MILITAR (${responsibleName})`,
-        created_by: `EQUIPE CÍVICO-MILITAR (${responsibleName})`,
         steps: [
           { id: 'A', label: 'Encaminhamento Cívico-Militar Recebido', completed: true, date: todayDate },
           { id: 'B', label: 'Escuta das Partes', completed: false },

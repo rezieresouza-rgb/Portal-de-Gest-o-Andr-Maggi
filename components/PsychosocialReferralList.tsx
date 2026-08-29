@@ -196,8 +196,6 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             opened_at: referralData.date,
             description: `[Origem: Encaminhamento Psicossocial] [Enviado por: ${activeTeacher}]\nMotivo/Relato: ${referralData.report || referralData.reason || 'Sem descrição detalhada.'}`,
             involved_parties: [activeTeacher],
-            teacher_name: activeTeacher,
-            created_by: activeTeacher,
             steps: [
               { id: '1', label: 'Análise do Encaminhamento', completed: true, date: referralData.date },
               { id: '2', label: 'Escuta das Partes', completed: false },

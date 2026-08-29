@@ -129,8 +129,6 @@ export const TramitationModal: React.FC<TramitationModalProps> = ({
           opened_at: new Date().toISOString().split('T')[0],
           description: fullDesc,
           involved_parties: [user?.name || 'Coordenação'],
-          teacher_name: activeResponsible,
-          created_by: activeResponsible,
           origin_referral_id: occurrence.id,
           steps: [
             { id: '1', label: 'Encaminhado pela Coordenação Pedagógica', completed: true, date: new Date().toLocaleDateString('pt-BR') },

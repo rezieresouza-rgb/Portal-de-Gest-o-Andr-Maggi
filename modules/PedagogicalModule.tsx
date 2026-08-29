@@ -52,6 +52,7 @@ import ClassScheduleManager from '../components/ClassScheduleManager';
 import SchoolProjectManager from '../components/SchoolProjectManager';
 import ClassCouncilManager from '../components/ClassCouncilManager';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
+import OfficialAtasManager from '../components/OfficialAtasManager';
 
 import { User as UserType } from '../types';
 
@@ -506,6 +507,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     { id: 'dashboard', label: 'Monitor Pedagógico', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
     { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
+    { id: 'atas', label: 'Registro de Atas', icon: FileSpreadsheet },
     { id: 'schedules', label: 'Horários (Cronos)', icon: Clock },
     { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
     { id: 'performance', label: 'Alunos em Risco', icon: AlertTriangle },
@@ -522,6 +524,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     switch (activeTab) {
       case 'oficios':
         return <OfficialOficiosManager moduleSource="COORDENACAO" user={user} />;
+      case 'atas':
+        return <OfficialAtasManager moduleSource="COORDENACAO" user={user} />;
       case 'dashboard':
         return (
           <div className="space-y-8 animate-in fade-in duration-500">

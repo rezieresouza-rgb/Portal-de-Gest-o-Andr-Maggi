@@ -27,6 +27,8 @@ import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import SecretariatAttendanceHistory from '../components/SecretariatAttendanceHistory';
 import SecretariatReports from '../components/SecretariatReports';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
+import OfficialAtasManager from '../components/OfficialAtasManager';
+import { FileSpreadsheet } from 'lucide-react';
 
 interface SecretariatModuleProps {
   user?: any;
@@ -34,12 +36,13 @@ interface SecretariatModuleProps {
 }
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'reports' | 'oficios'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'reports' | 'oficios' | 'atas'>('dashboard');
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
     { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
+    { id: 'atas', label: 'Registro de Atas', icon: FileSpreadsheet },
     { id: 'attendance_history', label: 'Histórico de Chamadas', icon: ClipboardList },
     { id: 'classes', label: 'Gestão de Turmas', icon: Users },
     { id: 'staff', label: 'Servidores / RH', icon: Briefcase },
@@ -132,6 +135,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           {activeTab === 'dashboard' && <SecretariatDashboard />}
           {activeTab === 'calendar' && <UnifiedSchoolCalendar />}
           {activeTab === 'oficios' && <OfficialOficiosManager moduleSource="SECRETARIA" user={user} />}
+          {activeTab === 'atas' && <OfficialAtasManager moduleSource="SECRETARIA" user={user} />}
           {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
           {activeTab === 'classes' && <SecretariatClassroomManager />}
           {activeTab === 'staff' && <SecretariatStaffManager user={user} />}

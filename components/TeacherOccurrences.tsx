@@ -237,8 +237,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   opened_at: form.date,
                   description: fullReport,
                   involved_parties: [activeTeacher],
-                  teacher_name: activeTeacher,
-                  created_by: activeTeacher,
                   steps: [
                     { id: '1', label: 'Encaminhamento via Fato Observado', completed: true, date: form.date },
                     { id: '2', label: 'Escuta das Partes', completed: false },

@@ -16,10 +16,19 @@ import {
   UserCheck,
   FileCheck
 } from 'lucide-react';
-import { PsychosocialMeetingAta } from '../types';
+import { PsychosocialMeetingAta, MediationCase } from '../types';
+import { supabase } from '../supabaseClient';
 
-const PsychosocialMeetingAtaManager: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
+interface PsychosocialMeetingAtaManagerProps {
+  initialCase?: MediationCase | null;
+  onBack?: () => void;
+}
+
+const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps> = ({
+  initialCase,
+  onBack
+}) => {
+  const [viewMode, setViewMode] = useState<'list' | 'form'>(initialCase ? 'form' : 'list');
   const [atas, setAtas] = useState<PsychosocialMeetingAta[]>(() => {
     const saved = localStorage.getItem('psychosocial_atas_v2');
     return saved ? JSON.parse(saved) : [];
@@ -31,22 +40,22 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
   const [form, setForm] = useState<Omit<PsychosocialMeetingAta, 'id' | 'timestamp'>>({
     number: '',
     year: new Date().getFullYear().toString(),
-    pauta: '',
+    pauta: initialCase ? `SESSÃO DE MEDIAÇÃO ESCOLAR - ${initialCase.studentName}` : '',
     date: new Date().toISOString().split('T')[0],
     location: 'SALA DE MEDIAÇÃO - EE ANDRÉ ANTÔNIO MAGGI',
-    participants: [''],
-    objectives: '',
+    participants: initialCase ? [initialCase.studentName, ...(initialCase.involvedParties || [])] : [''],
+    objectives: initialCase ? `Acolhimento, escuta ativa e restauração do clima de convivência referente ao fato envolvendo ${initialCase.studentName}.` : '',
     definitions: [''],
     forwarding: [''],
     responsible: 'PROFESSOR MEDIADOR',
-    responsavelMediacao: '',
+    responsavelMediacao: initialCase?.teacherName || 'PROFESSOR MEDIADOR',
     horarioInicio: '08:00',
     horarioTermino: '09:00',
-    descricaoConflito: '',
-    dataOcorrido: new Date().toISOString().split('T')[0],
-    parte1Nome: '',
+    descricaoConflito: initialCase ? (initialCase.description?.replace(/\[[^\]]+\]/g, '').trim() || '') : '',
+    dataOcorrido: initialCase?.openedAt || new Date().toISOString().split('T')[0],
+    parte1Nome: initialCase?.studentName || '',
     interessesParte1: '',
-    parte2Nome: '',
+    parte2Nome: initialCase?.involvedParties?.[0] || '',
     interessesParte2: '',
     desenvolvimentoSessao: '',
     compromissoParte1: '',
@@ -54,6 +63,23 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
     compromissoMutuo: '',
     encerramentoEncaminhamentos: ''
   });
+
+  // Atualizar quando initialCase mudar
+  useEffect(() => {
+    if (initialCase) {
+      setViewMode('form');
+      setForm(prev => ({
+        ...prev,
+        pauta: `SESSÃO DE MEDIAÇÃO ESCOLAR - ${initialCase.studentName}`,
+        parte1Nome: initialCase.studentName,
+        parte2Nome: initialCase.involvedParties?.[0] || '',
+        descricaoConflito: initialCase.description?.replace(/\[[^\]]+\]/g, '').trim() || '',
+        dataOcorrido: initialCase.openedAt || new Date().toISOString().split('T')[0],
+        participants: [initialCase.studentName, ...(initialCase.involvedParties || [])],
+        responsavelMediacao: initialCase.teacherName || 'PROFESSOR MEDIADOR'
+      }));
+    }
+  }, [initialCase]);
 
   useEffect(() => {
     localStorage.setItem('psychosocial_atas_v2', JSON.stringify(atas));
@@ -69,7 +95,7 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
     }
   }, [viewMode, atas]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.descricaoConflito && !form.pauta) {
       alert("Por favor, preencha a descrição breve do conflito/assunto.");
       return;
@@ -81,9 +107,30 @@ const PsychosocialMeetingAtaManager: React.FC = () => {
       timestamp: Date.now()
     };
     setAtas([newAta, ...atas]);
-    alert("Ata de Mediação registrada com sucesso!");
+
+    // Se houver caso vinculado, salvar log no Supabase
+    if (initialCase?.id) {
+      try {
+        const ataLog = {
+          id: `log-${Date.now()}`,
+          date: form.date,
+          professional: form.responsavelMediacao || 'PROFESSOR MEDIADOR',
+          content: `[ATA OFICIAL SEDUC LAVRADA Nº ${newAta.number}/${newAta.year}] Ata de mediação registrada formalmente para ${form.parte1Nome} e ${form.parte2Nome || 'envolvidos'}.`
+        };
+        const updatedLogs = [ataLog, ...(initialCase.logs || [])];
+        await supabase
+          .from('mediation_cases')
+          .update({ logs: updatedLogs })
+          .eq('id', initialCase.id);
+      } catch (err) {
+        console.warn('Aviso ao registrar ata no caso de mediação:', err);
+      }
+    }
+
+    alert("Ata de Mediação registrada e salva no histórico com sucesso!");
     setViewMode('list');
     resetForm();
+    if (onBack) onBack();
   };
 
   const resetForm = () => {

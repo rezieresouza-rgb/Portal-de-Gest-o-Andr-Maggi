@@ -34,7 +34,8 @@ import {
   RefreshCw,
   Scale,
   HeartHandshake,
-  Send
+  Send,
+  FileSpreadsheet
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
@@ -43,6 +44,7 @@ import FatosObservadosInbox from '../components/FatosObservadosInbox';
 import CivicoMilitarReports from '../components/CivicoMilitarReports';
 import { CivicMediationReferralModal } from '../components/CivicMediationReferralModal';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
+import OfficialAtasManager from '../components/OfficialAtasManager';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -161,7 +163,7 @@ interface CivicRoutineRecord {
 }
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas'>('dashboard');
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -1838,6 +1840,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           >
             <FileText size={18} /> Ofícios Expedidos
           </button>
+          <button
+            onClick={() => setActiveTab('atas')}
+            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'atas'
+              ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
+              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+              }`}
+          >
+            <FileSpreadsheet size={18} /> Registro de Atas
+          </button>
         </nav>
 
         {/* Info Card */}
@@ -1872,6 +1883,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'comportamento' && 'Gestão de Conduta e Atitude'}
                 {activeTab === 'honra' && 'Quadro de Honra e Destaques'}
                 {activeTab === 'documentos' && 'Preenchimento de Documentos'}
+                {activeTab === 'oficios' && 'Ofícios Escolares Expedidos'}
+                {activeTab === 'atas' && 'Registro de Atas e Deliberações'}
               </h2>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                 {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares • Escola Cívico-Militar E.E. André Maggi'}
@@ -1880,6 +1893,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'comportamento' && 'Histórico de Méritos e Deméritos • Regulamento Disciplinar'}
                 {activeTab === 'honra' && 'Líderes de Turma e Destaques de Atitude'}
                 {activeTab === 'documentos' && 'Emissão e Impressão de Fichas Oficiais Timbradas'}
+                {activeTab === 'oficios' && 'Emissão, Sequencial e Arquivo de Ofícios Oficiais'}
+                {activeTab === 'atas' && 'Escrituração Oficial de Atas de Reunião, Conselhos e Deliberações'}
               </p>
             </div>
           </div>
@@ -4087,6 +4102,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
           {activeTab === 'oficios' && (
              <OfficialOficiosManager moduleSource="CIVICO_MILITAR" user={user} />
+          )}
+
+          {activeTab === 'atas' && (
+             <OfficialAtasManager moduleSource="CIVICO_MILITAR" user={user} />
           )}
 
         </div>

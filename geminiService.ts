@@ -1239,3 +1239,110 @@ const generateFallbackOficioText = (
   return `Vimos por meio deste apresentar a Vossa Senhoria as solicitações e justificativas pertinentes a ${cleanPrompt} ${cleanSubject}, no âmbito desta Unidade Escolar.\n\nSalientamos que tais providências são indispensáveis para garantir a adequada infraestrutura, a segurança e a continuidade dos trabalhos administrativos e pedagógicos da instituição.\n\nContamos com a presteza de vossas providências e colocamo-nos à inteira disposição para prestar quaisquer esclarecimentos complementares.`;
 };
 
+/**
+ * Redação Inteligente por IA para Atas Escolares Oficiais (SEDUC-MT / Redação de Atas Públicas)
+ */
+export const generateAtaWithAI = async ({
+  promptText,
+  pauta,
+  category = 'GERAL',
+  location = 'Escola Estadual Cívico-Militar André Antônio Maggi',
+  date,
+  participants = [],
+  tone = 'PADRAO'
+}: {
+  promptText: string;
+  pauta?: string;
+  category?: string;
+  location?: string;
+  date?: string;
+  participants?: string[];
+  tone?: 'PADRAO' | 'DISCIPLINAR' | 'PEDAGOGICO' | 'CONCILIADOR' | 'DELIBERATIVO';
+}): Promise<{
+  objectives: string;
+  deliberations: string;
+  forwarding: string;
+}> => {
+  const ai = getAIClient();
+
+  if (!ai) {
+    return generateFallbackAtaText(promptText, pauta, category, location, date, participants, tone);
+  }
+
+  const systemInstruction = `Você é um secretário executivo e especialista em Redação Oficial de Atos Administrativos e Atas Escolares Públicas no Brasil, atuando na Escola Estadual Cívico-Militar André Antônio Maggi (SEDUC-MT).
+Seu objetivo é redigir o CONTEÚDO ESTRUTURADO de uma Ata de Reunião Oficial com base nos apontamentos fornecidos.
+
+Diretrizes obrigatórias de redação de Atas:
+1. Siga rigorosamente as normas de redação oficial da SEDUC-MT e da administração pública.
+2. Utilize linguagem formal, culta, impessoal, no pretérito perfeito (ex: "reuniram-se", "foi deliberado", "ficou acordado").
+3. O conteúdo deve ser estritamente objetivo, fidedigno aos fatos relatados e articulado de forma clara e cronológica.
+4. Retorne sua resposta OBRIGATORIAMENTE em formato JSON com 3 campos:
+   - "objectives": Texto conciso descrevendo a finalidade e os objetivos principais da reunião/sessão.
+   - "deliberations": Registro detalhado e formal das discussões, fatos apresentados, manifestações e deliberações acordadas (organizado em parágrafos ou tópicos formais).
+   - "forwarding": Ações práticas a serem executadas, prazos e os responsáveis definidos durante a reunião.`;
+
+  const prompt = `Elabore os textos da Ata Oficial com as seguintes informações:
+- Pauta / Assunto: "${pauta || 'Não especificado'}"
+- Categoria da Reunião: "${category}"
+- Local: "${location}"
+- Data: "${date || 'Hoje'}"
+- Participantes citados: "${participants.join(', ') || 'Equipe escolar e interessados'}"
+- Rascunho / Apontamentos dos fatos: "${promptText}"
+- Tom / Foco: "${tone}"
+
+Retorne um objeto JSON válido com as chaves: "objectives", "deliberations", "forwarding".`;
+
+  try {
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        temperature: 0.3,
+        responseMimeType: 'application/json'
+      }
+    }));
+
+    const resultText = response.text?.trim();
+    if (resultText) {
+      const parsed = JSON.parse(resultText);
+      return {
+        objectives: parsed.objectives || '',
+        deliberations: parsed.deliberations || '',
+        forwarding: parsed.forwarding || ''
+      };
+    }
+    return generateFallbackAtaText(promptText, pauta, category, location, date, participants, tone);
+  } catch (err) {
+    console.warn("Erro ao gerar ata por IA via Gemini, usando gerador estruturado:", err);
+    return generateFallbackAtaText(promptText, pauta, category, location, date, participants, tone);
+  }
+};
+
+const generateFallbackAtaText = (
+  promptText: string,
+  pauta?: string,
+  category?: string,
+  location?: string,
+  date?: string,
+  participants: string[] = [],
+  tone?: string
+): { objectives: string; deliberations: string; forwarding: string; } => {
+  const cleanPauta = pauta || 'Alinhamento Institucional e Acompanhamento Escolar';
+  const cleanPrompt = promptText.trim() || 'tratar dos assuntos pertinentes ao bom andamento das atividades escolares e disciplinares.';
+
+  let objectives = `A presente reunião teve como objetivo principal deliberar acerca de "${cleanPauta}", procedendo ao alinhamento das ações cabíveis entre os membros participantes e a equipe gestora da Unidade Escolar.`;
+
+  let deliberations = `Iniciada a sessão no local designado (${location}), foram expostos os pontos relativos à pauta em questão. Constatou-se a relevância de: ${cleanPrompt}\n\nApós ampla discussão e manifestação dos presentes, ficou estabelecido que as diretrizes pedagógicas e disciplinares estabelecidas pelo regimento da Escola Cívico-Militar e pela SEDUC-MT devem ser integralmente cumpridas, zelando pelo respeito mútuo, assiduidade e excelência no ambiente escolar.`;
+
+  if (category === 'DISCIPLINAR' || category === 'CIVICO_MILITAR') {
+    deliberations = `Instalada a reunião de alinhamento disciplinar e comportamental, foram apresentados aos presentes os registros e relatórios relativos à conduta discente e cumprimento das normas da Escola Cívico-Militar. Detalhou-se que: ${cleanPrompt}\n\nOs responsáveis foram formalmente cientificados das normas disciplinares e dos deveres do estudante. Ficou firmado o compromisso conjunto entre a família e a escola para a correção imediata das atitudes incompatíveis com o regimento escolar.`;
+  } else if (category === 'CONSELHO_CLASSE' || category === 'PEDAGOGICO') {
+    deliberations = `Reunidos os membros do Conselho de Classe e corpo docente, procedeu-se à avaliação do desempenho acadêmico, assiduidade e participação discente no período letivo. Ponderou-se sobre: ${cleanPrompt}\n\nDeliberou-se pela aplicação de estratégias de intervenção pedagógica diferenciada, recuperação paralela contínua e intensificação do acompanhamento aos estudantes que demandam suporte pedagógico suplementar.`;
+  }
+
+  let forwarding = `1. Registro formal dos compromissos assumidos na presente ata para acompanhamento contínuo.\n2. Notificação e comunicação aos setores pertinentes da Unidade Escolar.\n3. Estabelecimento do prazo de 15 (quinze) dias para reavaliação dos resultados e cumprimento das deliberações.`;
+
+  return { objectives, deliberations, forwarding };
+};
+

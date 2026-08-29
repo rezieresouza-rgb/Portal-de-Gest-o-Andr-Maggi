@@ -200,6 +200,36 @@ export interface PsychosocialMeetingAta {
   timestamp: number;
 }
 
+export interface AtaParticipant {
+  id?: string;
+  name: string;
+  role: string;
+  document?: string;
+}
+
+export interface SchoolAta {
+  id: string;
+  number: number;
+  year: number;
+  formatted_number: string;
+  module_source: 'SECRETARIA' | 'COORDENACAO' | 'CIVICO_MILITAR' | 'GESTAO';
+  category: 'DISCIPLINAR' | 'PEDAGOGICO' | 'PAIS_RESPONSAVEIS' | 'CONSELHO_CLASSE' | 'GESTAO_ALINHAMENTO' | 'GERAL';
+  pauta_assunto: string;
+  meeting_date: string;
+  meeting_time_start: string;
+  meeting_time_end: string;
+  location: string;
+  participants: AtaParticipant[];
+  objectives: string;
+  content_deliberations: string;
+  forwarding_actions: string;
+  signatory_name: string;
+  signatory_role: string;
+  signatories?: { name: string; role?: string }[];
+  created_at: string;
+}
+
+
 export interface PedagogicalIntervention {
   id: string;
   student_name: string;

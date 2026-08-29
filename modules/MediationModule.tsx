@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Scale, 
   HeartHandshake, 
@@ -17,13 +17,18 @@ import {
   Share2, 
   Clock, 
   Award,
-  BookOpen
+  BookOpen,
+  Sparkles,
+  BarChart3,
+  FileCheck,
+  AlertTriangle
 } from 'lucide-react';
-import { User, PsychosocialRole } from '../types';
+import { User, PsychosocialRole, MediationCase } from '../types';
 import MediationManager from '../components/MediationManager';
 import PsychosocialMeetingAtaManager from '../components/PsychosocialMeetingAtaManager';
 import PsychosocialAgenda from '../components/PsychosocialAgenda';
 import PsychosocialReports from '../components/PsychosocialReports';
+import MediationRestorativeGuideModal from '../components/MediationRestorativeGuideModal';
 import { supabase } from '../supabaseClient';
 
 interface MediationModuleProps {
@@ -35,6 +40,9 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'cases' | 'atas' | 'agenda' | 'reports'>('dashboard');
   const [userRole, setUserRole] = useState<PsychosocialRole>('PSICOSSOCIAL');
   const [casesCount, setCasesCount] = useState({ total: 0, active: 0, agreements: 0, triaged: 0 });
+  const [rawCases, setRawCases] = useState<any[]>([]);
+  const [caseForAta, setCaseForAta] = useState<MediationCase | null>(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -42,6 +50,7 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
         .from('mediation_cases')
         .select('*');
       if (data && Array.isArray(data)) {
+        setRawCases(data);
         const total = data.length;
         const active = data.filter((c: any) => c && c.status !== 'CONCLUÍDO' && c.status !== 'CONCLUIDO').length;
         const agreements = data.filter((c: any) => c && (c.status === 'CONCLUÍDO' || c.status === 'CONCLUIDO')).length;
@@ -56,6 +65,41 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  // Análise estatística de conflitos por turma e tipo
+  const conflictAnalytics = useMemo(() => {
+    const typeDistribution: Record<string, number> = { CONFLITO: 0, BULLYING: 0, DISCIPLINAR: 0, OUTRO: 0 };
+    const classDistribution: Record<string, number> = {};
+
+    rawCases.forEach(c => {
+      const type = c.type || 'CONFLITO';
+      typeDistribution[type] = (typeDistribution[type] || 0) + 1;
+
+      const cls = (c.class_name || 'N/A').toUpperCase().trim();
+      if (cls && cls !== 'N/A') {
+        classDistribution[cls] = (classDistribution[cls] || 0) + 1;
+      }
+    });
+
+    const topClasses = Object.entries(classDistribution)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const resolutionRate = casesCount.total > 0
+      ? Math.round((casesCount.agreements / casesCount.total) * 100)
+      : 100;
+
+    return {
+      typeDistribution,
+      topClasses,
+      resolutionRate
+    };
+  }, [rawCases, casesCount]);
+
+  const handleOpenAtaForCase = (c: MediationCase) => {
+    setCaseForAta(c);
+    setActiveTab('atas');
+  };
 
   const navItems = [
     { id: 'dashboard', label: 'Painel & Clima Escolar', icon: <Scale size={18} /> },
@@ -91,7 +135,10 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
+              onClick={() => {
+                if (item.id !== 'atas') setCaseForAta(null);
+                setActiveTab(item.id as any);
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
                 activeTab === item.id
                   ? 'bg-gradient-to-r from-indigo-600 to-amber-600 text-white shadow-lg shadow-indigo-600/20'
@@ -102,6 +149,17 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
               <span>{item.label}</span>
             </button>
           ))}
+
+          {/* Botão de Atalho para o Guia Restaurativo */}
+          <div className="pt-4 border-t border-slate-800/80 mt-2">
+            <button
+              onClick={() => setIsGuideOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-all shadow-sm"
+            >
+              <BookOpen size={16} />
+              <span>Guia de Perguntas</span>
+            </button>
+          </div>
         </nav>
 
         {/* Rodapé da Sidebar (Perfil e Sair) */}
@@ -150,6 +208,14 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsGuideOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-800 rounded-full border border-amber-200 shadow-sm hover:bg-amber-100 transition-all font-black text-[10px] uppercase tracking-wider"
+            >
+              <BookOpen size={13} className="text-amber-600" />
+              Guia de Círculos SEDUC
+            </button>
+
             <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200 shadow-sm">
               <ShieldCheck size={14} className="text-emerald-600" />
               <span className="text-[10px] font-black uppercase tracking-widest">Cultura de Paz Ativa</span>
@@ -184,12 +250,20 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => setActiveTab('cases')}
-                    className="px-6 py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-slate-950 font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-2 shrink-0"
-                  >
-                    <Plus size={18} /> Novo Protocolo de Mediação
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                    <button
+                      onClick={() => setIsGuideOpen(true)}
+                      className="px-5 py-4 bg-white/10 hover:bg-white/20 text-amber-300 border border-amber-400/30 font-black uppercase text-xs tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      <BookOpen size={16} /> Roteiros SEDUC
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('cases')}
+                      className="px-6 py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-slate-950 font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus size={18} /> Novo Protocolo
+                    </button>
+                  </div>
                 </div>
 
                 {/* KPI Cards */}
@@ -211,6 +285,110 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
                     <span className="text-2xl font-black text-indigo-400">{casesCount.triaged || 0}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* PAINEL DE INTELIGÊNCIA & CLIMA ESCOLAR (ANALYTICS) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Eficácia Restaurativa */}
+                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                        Indicador de Eficácia
+                      </span>
+                      <ShieldCheck size={18} className="text-emerald-600" />
+                    </div>
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight mt-3">
+                      Taxa de Resolução com Acordo
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      Percentual de atendimentos de mediação concluídos com pactuação de paz mútua.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-3xl font-black text-emerald-600">{conflictAnalytics.resolutionRate}%</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{casesCount.agreements} de {casesCount.total} casos</span>
+                    </div>
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                        style={{ width: `${conflictAnalytics.resolutionRate}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tipologia de Conflitos */}
+                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                      Tipologia
+                    </span>
+                    <BarChart3 size={18} className="text-indigo-600" />
+                  </div>
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                    Distribuição por Natureza
+                  </h3>
+                  <div className="space-y-2.5 pt-1">
+                    {Object.entries(conflictAnalytics.typeDistribution).map(([tipo, qtd]) => {
+                      const pct = casesCount.total > 0 ? Math.round((qtd / casesCount.total) * 100) : 0;
+                      return (
+                        <div key={tipo} className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-black uppercase">
+                            <span className="text-slate-700">{tipo}</span>
+                            <span className="text-slate-400">{qtd} ({pct}%)</span>
+                          </div>
+                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                tipo === 'BULLYING' ? 'bg-purple-500' :
+                                tipo === 'CONFLITO' ? 'bg-amber-500' :
+                                tipo === 'DISCIPLINAR' ? 'bg-rose-500' : 'bg-slate-400'
+                              }`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Turmas com Maior Demanda */}
+                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
+                      Mapa de Calor
+                    </span>
+                    <AlertTriangle size={18} className="text-amber-500" />
+                  </div>
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                    Turmas com Maior Atenção
+                  </h3>
+                  <div className="space-y-2 pt-1">
+                    {conflictAnalytics.topClasses.length > 0 ? (
+                      conflictAnalytics.topClasses.map(([turma, qtd], i) => (
+                        <div key={turma} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">
+                              {i + 1}
+                            </span>
+                            <span className="text-xs font-black text-slate-800 uppercase">{turma}</span>
+                          </div>
+                          <span className="text-[10px] font-black bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600">
+                            {qtd} {qtd === 1 ? 'caso' : 'casos'}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 italic py-4 text-center">Nenhum dado registrado ainda.</p>
+                    )}
+                  </div>
+                </div>
+
               </div>
 
               {/* Seção Informativa dos 3 Pilares da Mediação */}
@@ -248,7 +426,12 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
 
               {/* Gerenciador de Atendimentos */}
               <div className="bg-white rounded-[2.5rem] border border-slate-200/80 p-8 shadow-sm">
-                <MediationManager user={user} role={userRole} />
+                <MediationManager
+                  user={user}
+                  role={userRole}
+                  onTabChange={setActiveTab as any}
+                  onOpenAtaForCase={handleOpenAtaForCase}
+                />
               </div>
             </div>
           )}
@@ -256,14 +439,25 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
           {/* TAB 2: ATENDIMENTOS & CÍRCULOS */}
           {activeTab === 'cases' && (
             <div className="bg-white rounded-[2.5rem] border border-slate-200/80 p-8 shadow-sm animate-in fade-in duration-300">
-              <MediationManager user={user} role={userRole} />
+              <MediationManager
+                user={user}
+                role={userRole}
+                onTabChange={setActiveTab as any}
+                onOpenAtaForCase={handleOpenAtaForCase}
+              />
             </div>
           )}
 
           {/* TAB 3: CENTRAL DE ATAS DO MEDIADOR */}
           {activeTab === 'atas' && (
             <div className="bg-white rounded-[2.5rem] border border-slate-200/80 p-8 shadow-sm animate-in fade-in duration-300">
-              <PsychosocialMeetingAtaManager />
+              <PsychosocialMeetingAtaManager
+                initialCase={caseForAta}
+                onBack={() => {
+                  setCaseForAta(null);
+                  setActiveTab('cases');
+                }}
+              />
             </div>
           )}
 
@@ -282,6 +476,12 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
           )}
         </div>
       </main>
+
+      {/* MODAL GLOBAL DO GUIA RESTAURATIVO (SEDUC/MT) */}
+      <MediationRestorativeGuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+      />
     </div>
   );
 };

@@ -25,3 +25,6 @@ dist-ssr
 
 .vercel
 .env*
+scratch/
+scratch_*.txt
+word/

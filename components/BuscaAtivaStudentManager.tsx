@@ -328,8 +328,6 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
         opened_at: newReferral.date || currentDate,
         description: fullDescription,
         involved_parties: [activeResponsible],
-        teacher_name: activeResponsible,
-        created_by: activeResponsible,
         origin_referral_id: linkedReferralId,
         steps: [
           { id: '1', label: 'Análise de Busca Ativa', completed: true, date: currentDate },

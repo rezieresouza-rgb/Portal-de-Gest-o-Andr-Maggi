@@ -26,17 +26,23 @@ import {
   Pencil,
   Check,
   UserCheck,
-  HeartHandshake
+  HeartHandshake,
+  BookOpen,
+  FileCheck,
+  Send,
+  Sparkles
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
-
 import { supabase } from '../supabaseClient';
+import MediationRestorativeGuideModal from './MediationRestorativeGuideModal';
+import MediationAgreementTermModal from './MediationAgreementTermModal';
 
 interface MediationManagerProps {
   user?: any;
   role: PsychosocialRole;
   onTabChange?: (tab: string) => void;
   initialSearch?: string;
+  onOpenAtaForCase?: (c: MediationCase) => void;
 }
 
 const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
@@ -65,7 +71,7 @@ const formatLocalDate = (dateStr?: string | null): string => {
   }
 };
 
-const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabChange, initialSearch }) => {
+const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabChange, initialSearch, onOpenAtaForCase }) => {
   const { students: dbStudents } = useStudents();
   const [cases, setCases] = useState<MediationCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +79,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const [selectedCase, setSelectedCase] = useState<MediationCase | null>(null);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [studentSearch, setStudentSearch] = useState('');
+
+  // Novos Modais Integrados de Mediação Restaurativa
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [isAgreementTermModalOpen, setIsAgreementTermModalOpen] = useState(false);
   
   const [newCase, setNewCase] = useState<Partial<MediationCase> & { originType?: string }>({
     type: 'CONFLITO',
@@ -115,6 +125,45 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const [isLogLoading, setIsLogLoading] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [editingLogContent, setEditingLogContent] = useState<string>('');
+
+  const handleSendFeedbackToRequester = async (c: MediationCase) => {
+    const defaultMsg = `O caso do estudante ${c.studentName} (${c.className}) foi acolhido pela Mediação Escolar. Foi realizada escuta e pactuado compromisso de convivência.`;
+    const feedbackText = window.prompt(
+      `Digite o parecer da devolutiva institucional para ${c.teacherName || 'o solicitante'}:`,
+      defaultMsg
+    );
+    if (!feedbackText || !feedbackText.trim()) return;
+
+    try {
+      const todayDate = new Date().toISOString().split('T')[0];
+      await supabase.from('psychosocial_notifications').insert([{
+        title: `Devolutiva da Mediação Escolar: ${c.studentName}`,
+        message: `Para: ${c.teacherName || 'Solicitante'}\nEstudante: ${c.studentName} (${c.className})\nParecer: ${feedbackText.trim()}`,
+        date: todayDate,
+        read: false
+      }]);
+
+      const logEntry = {
+        id: `log-${Date.now()}`,
+        date: todayDate,
+        professional: defaultProfessionalTitle,
+        content: `[DEVOLUTIVA INSTITUCIONAL ENVIADA] Destinatário: ${c.teacherName || 'Solicitante'}. Parecer: "${feedbackText.trim()}"`
+      };
+
+      const updatedLogs = [logEntry, ...(c.logs || [])];
+      await supabase
+        .from('mediation_cases')
+        .update({ logs: updatedLogs, feedback: feedbackText.trim() })
+        .eq('id', c.id);
+
+      setSelectedCase(prev => prev ? { ...prev, logs: updatedLogs, feedback: feedbackText.trim() } : null);
+      await fetchCases();
+      alert(`Devolutiva enviada com sucesso para ${c.teacherName || 'a equipe solicitante'}!`);
+    } catch (err: any) {
+      console.error('Erro ao enviar devolutiva:', err);
+      alert('Erro ao enviar devolutiva: ' + err.message);
+    }
+  };
 
   const masterStudents = useMemo(() => {
     return dbStudents.map(s => ({
@@ -352,9 +401,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         opened_at: new Date().toLocaleDateString('sv-SE'),
         description: originPrefix + newCase.description,
         involved_parties: newCase.involvedParties || [activeUserName],
-        steps: steps,
-        teacher_name: activeUserName,
-        created_by: activeUserName
+        steps: steps
       };
 
       const { data, error } = await supabase
@@ -632,6 +679,18 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                         <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
                           {c.status}
                         </span>
+                        {(() => {
+                          const studentCasesCount = cases.filter(x => x.studentName?.trim().toUpperCase() === c.studentName?.trim().toUpperCase()).length;
+                          if (studentCasesCount > 1) {
+                            return (
+                              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Este estudante possui ${studentCasesCount} casos no histórico`}>
+                                <AlertTriangle size={11} className="text-amber-700 shrink-0" />
+                                Reincidente ({studentCasesCount}x)
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                         {(() => {
                            const isBuscaAtiva = (c.teacherName && c.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
                                                 c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
@@ -923,67 +982,143 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       {selectedCase && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
            <div className="bg-white w-full h-full shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-              <div className="p-4 bg-rose-900 text-white shrink-0 shadow-lg">
-                 <div className="flex justify-between items-center mb-3">
-                    <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
-                    <div className="flex items-center gap-3">
+               <div className="p-5 bg-gradient-to-r from-rose-900 via-indigo-950 to-slate-900 text-white shrink-0 shadow-lg border-b border-rose-800/40">
+                  <div className="flex justify-between items-center mb-3">
+                     <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
+                     <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/20">
+                          Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}
+                        </span>
+                     </div>
+                  </div>
+                  
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                     <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl font-black shrink-0 border border-white/10 shadow-inner">
+                           {(selectedCase.studentName || '?')[0]}
+                        </div>
+                        <div>
+                           <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
+                              {(() => {
+                                const count = cases.filter(c => c.studentName?.trim().toUpperCase() === selectedCase.studentName?.trim().toUpperCase()).length;
+                                if (count > 1) {
+                                  return (
+                                    <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[8px] uppercase tracking-wider flex items-center gap-1 shadow-md">
+                                      <AlertTriangle size={11} /> Reincidente ({count} Casos)
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
+                           </div>
+                           <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest leading-none shrink-0">{selectedCase.className} • Caso {selectedCase.type}</p>
+                              {(() => {
+                                  const isBuscaAtiva = (selectedCase.teacherName && selectedCase.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
+                                                       selectedCase.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
+                                                       selectedCase.description?.includes('[VIA BUSCA ATIVA]') ||
+                                                       selectedCase.description?.includes('Busca Ativa');
+
+                                  if (isBuscaAtiva) {
+                                    const displaySource = (selectedCase.teacherName && selectedCase.teacherName.includes('(')) ? selectedCase.teacherName : 'Busca Ativa Escolar';
+                                    return (
+                                      <span className="px-2.5 py-0.5 rounded bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
+                                        <Search size={11} /> Enviado por: {displaySource}
+                                      </span>
+                                    );
+                                  }
+
+                                  if (selectedCase.teacherName) {
+                                    return (
+                                      <span className="px-2.5 py-0.5 rounded bg-white/20 text-white border border-white/30 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
+                                        <UserCheck size={11} /> Enviado por: {selectedCase.teacherName}
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <span className="px-2.5 py-0.5 rounded bg-white/10 text-white/70 text-[8px] font-bold uppercase tracking-widest leading-none shrink-0">
+                                      Demanda Direta
+                                    </span>
+                                  );
+                               })()}
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* BARRA DE AÇÕES RÁPIDAS DA JUSTIÇA RESTAURATIVA */}
+                     <div className="flex items-center gap-2 flex-wrap pt-2 md:pt-0">
+                        {/* 1. Guia Restaurativo */}
+                        <button
+                          type="button"
+                          onClick={() => setIsGuideModalOpen(true)}
+                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-white/10 hover:bg-white/20 text-amber-300 border border-amber-300/30 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          title="Abrir Guia de Perguntas Restaurativas da SEDUC/MT"
+                        >
+                          <BookOpen size={13} />
+                          Guia de Perguntas
+                        </button>
+
+                        {/* 2. Termo de Compromisso Restaurativo */}
+                        <button
+                          type="button"
+                          onClick={() => setIsAgreementTermModalOpen(true)}
+                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-400 flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
+                          title="Gerar e imprimir Termo Formal de Compromisso Restaurativo com follow-up"
+                        >
+                          <FileCheck size={13} />
+                          Pacto / Termo
+                        </button>
+
+                        {/* 3. Lavrar Ata Oficial SEDUC */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenAtaForCase) {
+                              onOpenAtaForCase(selectedCase);
+                              setSelectedCase(null);
+                            } else if (onTabChange) {
+                              onTabChange('atas');
+                              setSelectedCase(null);
+                            }
+                          }}
+                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-400 flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
+                          title="Preencher Ata Oficial SEDUC a partir deste caso"
+                        >
+                          <FileText size={13} />
+                          Lavrar Ata SEDUC
+                        </button>
+
+                        {/* 4. Devolutiva ao Solicitante */}
+                        <button
+                          type="button"
+                          onClick={() => handleSendFeedbackToRequester(selectedCase)}
+                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-white/15 hover:bg-white/25 text-white border border-white/30 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                          title="Enviar devolutiva institucional para o professor ou monitor que encaminhou o caso"
+                        >
+                          <Send size={13} />
+                          Devolutiva
+                        </button>
+
+                        {/* 5. Triagem Psicossocial */}
                         <button
                           type="button"
                           onClick={() => handleTriageToPsychosocial(selectedCase)}
                           disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
-                          className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md ${
+                          className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md ${
                             selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
-                              ? 'bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 cursor-default'
-                              : 'bg-gradient-to-r from-rose-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 text-white border border-rose-400/40 active:scale-95'
+                              ? 'bg-purple-900/50 text-purple-200 border border-purple-400/30 cursor-default'
+                              : 'bg-purple-600 hover:bg-purple-700 text-white border border-purple-400 active:scale-95'
                           }`}
+                          title="Encaminhar para triagem e acompanhamento técnico da Equipe Psicossocial"
                         >
                           <HeartHandshake size={13} />
-                          {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? 'Triado p/ Psicossocial' : 'Encaminhar à Psicossocial'}
+                          {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? 'Triado Psicossocial' : 'Triagem Psicossocial'}
                         </button>
-                        <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/20">Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}</span>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl font-black">
-                       {(selectedCase.studentName || '?')[0]}
-                    </div>
-                    <div>
-                       <h3 className="text-xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                           <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest leading-none shrink-0">{selectedCase.className} • Caso {selectedCase.type}</p>
-                           {(() => {
-                               const isBuscaAtiva = (selectedCase.teacherName && selectedCase.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
-                                                    selectedCase.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
-                                                    selectedCase.description?.includes('[VIA BUSCA ATIVA]') ||
-                                                    selectedCase.description?.includes('Busca Ativa');
-
-                               if (isBuscaAtiva) {
-                                 const displaySource = (selectedCase.teacherName && selectedCase.teacherName.includes('(')) ? selectedCase.teacherName : 'Busca Ativa Escolar';
-                                 return (
-                                   <span className="px-2.5 py-0.5 rounded bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
-                                     <Search size={11} /> Enviado por: {displaySource}
-                                   </span>
-                                 );
-                               }
-
-                               if (selectedCase.teacherName) {
-                                 return (
-                                   <span className="px-2.5 py-0.5 rounded bg-white/20 text-white border border-white/30 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
-                                     <UserCheck size={11} /> Enviado por: {selectedCase.teacherName}
-                                   </span>
-                                 );
-                               }
-
-                               return (
-                                 <span className="px-2.5 py-0.5 rounded bg-white/10 text-white/70 text-[8px] font-bold uppercase tracking-widest leading-none shrink-0">
-                                   Demanda Direta
-                                 </span>
-                               );
-                            })()}
-                        </div>
-                    </div>
-                 </div>
-              </div>
+                      </div>
+                   </div>
+                </div>
 
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50/30">
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
@@ -1268,10 +1403,34 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                   >
                     Excluir Caso
                   </button>
-                  <button onClick={() => setSelectedCase(null)} className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all min-w-[140px]">Fechar Aba</button>
-               </div>
-           </div>
-        </div>
+                   <button onClick={() => setSelectedCase(null)} className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all min-w-[140px]">Fechar Aba</button>
+                </div>
+            </div>
+         </div>
+       )}
+
+      {/* GUIA DE PERGUNTAS RESTAURATIVAS (SEDUC/MT) */}
+      <MediationRestorativeGuideModal
+        isOpen={isGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
+        onSelectQuestions={(text) => {
+          setNewLog(prev => ({
+            ...prev,
+            content: (prev.content ? `${prev.content}\n\n` : '') + text
+          }));
+        }}
+      />
+
+      {/* TERMO FORMAL DE COMPROMISSO RESTAURATIVO / PACTO DE CONVIVÊNCIA */}
+      {selectedCase && (
+        <MediationAgreementTermModal
+          isOpen={isAgreementTermModalOpen}
+          onClose={() => setIsAgreementTermModalOpen(false)}
+          mediationCase={selectedCase}
+          onAgreementSaved={async () => {
+            await fetchCases();
+          }}
+        />
       )}
     </div>
   );
