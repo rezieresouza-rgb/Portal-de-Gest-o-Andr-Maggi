@@ -983,37 +983,37 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
       {/* MODAL DETALHES DO CASO EXISTENTE - 100% TELA CHEIA */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[200] bg-white w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-200">
-          <div className="w-full h-full flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[200] bg-white w-full h-full flex flex-col justify-between overflow-hidden animate-in fade-in duration-200">
+          <div className="w-full h-full flex flex-col justify-between overflow-hidden">
             
-            {/* CABEÇALHO ELEGANTE E MODERNO (TELA CHEIA) */}
-            <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-white/10 flex flex-col gap-4">
+            {/* CABEÇALHO ELEGANTE E COMPACTO (TELA CHEIA) */}
+            <div className="px-6 sm:px-8 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-white/10 flex flex-col gap-3">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-xl font-black text-indigo-200 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-lg font-black text-indigo-200 shadow-inner">
                     {(selectedCase.studentName || '?')[0]}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-xl font-bold tracking-tight text-white">{selectedCase.studentName}</h3>
+                      <h3 className="text-lg font-bold tracking-tight text-white">{selectedCase.studentName}</h3>
                       {(() => {
                         const count = cases.filter(c => c.studentName?.trim().toUpperCase() === selectedCase.studentName?.trim().toUpperCase()).length;
                         if (count > 1) {
                           return (
-                            <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[10px] tracking-wide border border-amber-500/30 flex items-center gap-1">
-                              <AlertTriangle size={11} /> Reincidente ({count} Casos)
+                            <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[9px] tracking-wide border border-amber-500/30 flex items-center gap-1">
+                              <AlertTriangle size={10} /> Reincidente ({count} Casos)
                             </span>
                           );
                         }
                         return null;
                       })()}
                     </div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-slate-300">
-                      <span className="font-medium bg-white/10 px-2 py-0.5 rounded-md text-[11px] text-indigo-200">{selectedCase.className}</span>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap text-[11px] text-slate-300">
+                      <span className="font-semibold bg-white/10 px-2 py-0.5 rounded-md text-[10px] text-indigo-200">{selectedCase.className}</span>
                       <span className="text-slate-400">•</span>
                       <span className="text-slate-300 font-medium">Caso: {selectedCase.type}</span>
                       <span className="text-slate-400">•</span>
-                      <span className="text-slate-400 font-mono text-[11px]">Protocolo #{selectedCase.id?.substring(0,8)}</span>
+                      <span className="text-slate-400 font-mono text-[10px]">Protocolo #{selectedCase.id?.substring(0,8)}</span>
                     </div>
                   </div>
                 </div>
@@ -1032,10 +1032,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                         setSelectedCase(null);
                       }
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 transition-all shadow-md active:scale-95"
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition-all shadow-md active:scale-95"
                     title="Preencher Ata Oficial SEDUC a partir deste caso"
                   >
-                    <FileText size={15} />
+                    <FileText size={14} />
                     <span>Lavrar Ata SEDUC</span>
                   </button>
 
@@ -1044,7 +1044,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     <button
                       type="button"
                       onClick={() => setIsActionMenuOpen(!isActionMenuOpen)}
-                      className="px-3 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                      className="px-3 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
                     >
                       <span>Mais Ações</span>
                       <ChevronDown size={14} className={`transition-transform duration-200 ${isActionMenuOpen ? 'rotate-180' : ''}`} />
@@ -1108,26 +1108,26 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                       setSelectedCase(null);
                       setIsActionMenuOpen(false);
                     }} 
-                    className="p-2.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all ml-1"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all ml-1"
                     title="Fechar janela"
                   >
-                    <X size={20} />
+                    <X size={18} />
                   </button>
                 </div>
               </div>
 
               {/* NAVEGAÇÃO POR ABAS EXECUTIVAS */}
-              <div className="flex items-center gap-2 border-t border-white/10 pt-3">
+              <div className="flex items-center gap-2 border-t border-white/10 pt-2.5">
                 <button
                   type="button"
                   onClick={() => setActiveCaseTab('timeline')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                     activeCaseTab === 'timeline'
                       ? 'bg-white text-slate-900 shadow-md font-extrabold'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <History size={15} />
+                  <History size={14} />
                   <span>Diário & Atendimentos</span>
                   {selectedCase.logs && selectedCase.logs.length > 0 && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
@@ -1141,13 +1141,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                 <button
                   type="button"
                   onClick={() => setActiveCaseTab('steps')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                     activeCaseTab === 'steps'
                       ? 'bg-white text-slate-900 shadow-md font-extrabold'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <CheckCircle2 size={15} />
+                  <CheckCircle2 size={14} />
                   <span>Etapas do Processo</span>
                   {selectedCase.steps && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
@@ -1161,13 +1161,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                 <button
                   type="button"
                   onClick={() => setActiveCaseTab('resolution')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                     activeCaseTab === 'resolution'
                       ? 'bg-white text-slate-900 shadow-md font-extrabold'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <MessageSquareIcon size={15} />
+                  <MessageSquareIcon size={14} />
                   <span>Acordo & Devolutiva</span>
                   {selectedCase.feedback && (
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -1177,7 +1177,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
             </div>
 
             {/* CORPO DO MODAL BASEADO NA ABA ATIVA */}
-            <div className="flex-1 overflow-hidden p-6 sm:p-8 bg-slate-50/50 flex flex-col min-h-0">
+            <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-slate-50/50 flex flex-col min-h-0">
               
               {/* ABA 1: DIÁRIO & ATENDIMENTOS */}
               {activeCaseTab === 'timeline' && (
@@ -1479,22 +1479,22 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
             </div>
 
-            {/* RODAPÉ LIMPO E SIMPLIFICADO */}
-            <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+            {/* RODAPÉ LIMPO E SEMPRE VISÍVEL */}
+            <div className="px-6 sm:px-8 py-3 bg-white border-t border-slate-200 flex items-center justify-between gap-3 shrink-0 shadow-lg z-20">
               <button 
                 onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
-                className="px-4 py-2.5 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                className="px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
                 title="Excluir este caso"
               >
-                <Trash2 size={15} /> Excluir Caso
+                <Trash2 size={14} /> Excluir Caso
               </button>
 
               <div className="flex items-center gap-3">
                 <button 
                   onClick={handleSaveFeedback}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
                 >
-                  <Save size={15} /> Salvar Rascunho
+                  <Save size={14} /> Salvar Rascunho
                 </button>
 
                 <button 
@@ -1523,9 +1523,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                       alert("Erro ao encerrar caso.");
                     }
                   }}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 active:scale-95"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
                 >
-                  <ShieldCheck size={16} /> Encerrar com Acordo
+                  <ShieldCheck size={15} /> Encerrar com Acordo
                 </button>
 
                 <button 
@@ -1533,7 +1533,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     setSelectedCase(null);
                     setIsActionMenuOpen(false);
                   }} 
-                  className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shadow-sm"
                 >
                   Fechar
                 </button>
