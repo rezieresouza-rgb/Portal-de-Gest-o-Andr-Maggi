@@ -31,7 +31,12 @@ import {
   Building2,
   BookmarkCheck,
   Flame,
-  FileCheck
+  FileCheck,
+  Image as ImageIcon,
+  Camera,
+  UploadCloud,
+  Maximize2,
+  ZoomIn
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { MediationCalendarAction, MediationCalendarMonth, MediationActionType } from '../types';
@@ -326,6 +331,50 @@ const ACTION_TYPE_OPTIONS: { id: MediationActionType; label: string; icon: strin
   { id: 'OUTRO', label: 'Outra Ação Restaurativa', icon: '✨' }
 ];
 
+// Helper para comprimir e redimensionar imagem antes do upload
+const compressImageFile = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.78);
+          resolve(compressedBase64);
+        } else {
+          resolve(event.target?.result as string);
+        }
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 interface MediationCalendarManagerProps {
   user?: any;
   role?: string;
@@ -344,6 +393,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [editingActionId, setEditingActionId] = useState<string | null>(null);
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<Partial<MediationCalendarAction>>({
@@ -360,8 +410,11 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
     partnerships: '',
     description: '',
     outcomes: '',
+    photos: [],
     status: 'CONCLUÍDA'
   });
+
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   // Carregar Ações do Supabase / LocalStorage
   const fetchActions = async () => {
@@ -386,6 +439,10 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
       if (data && Array.isArray(data)) {
         const dbActions: MediationCalendarAction[] = data.map((d: any) => {
           const c = typeof d.content === 'object' && d.content !== null ? d.content : {};
+          const photoList: string[] = Array.isArray(c.photos) 
+            ? c.photos 
+            : c.photo ? [c.photo] : (Array.isArray(c.evidenceUrls) ? c.evidenceUrls : []);
+
           return {
             id: d.id,
             month: c.month || 'FEVEREIRO',
@@ -401,6 +458,8 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
             partnerships: c.partnerships || '',
             description: c.description || '',
             outcomes: c.outcomes || '',
+            photos: photoList,
+            photo: photoList[0] || undefined,
             status: c.status || 'CONCLUÍDA',
             createdAt: d.created_at
           };
@@ -450,6 +509,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
       partnerships: '',
       description: '',
       outcomes: '',
+      photos: [],
       status: 'CONCLUÍDA'
     });
     setIsModalOpen(true);
@@ -458,8 +518,47 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
   // Abrir Modal para Editar Ação Existente
   const handleOpenEditAction = (action: MediationCalendarAction) => {
     setEditingActionId(action.id);
-    setFormData({ ...action });
+    const photoList = action.photos || (action.photo ? [action.photo] : []);
+    setFormData({ ...action, photos: photoList });
     setIsModalOpen(true);
+  };
+
+  // Upload de Fotos da Ação
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const newBase64Photos: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+          const compressed = await compressImageFile(file);
+          newBase64Photos.push(compressed);
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        photos: [...(prev.photos || []), ...newBase64Photos]
+      }));
+    } catch (err) {
+      console.error('Erro ao processar imagem:', err);
+      alert('Erro ao carregar imagem. Tente uma foto com tamanho menor.');
+    } finally {
+      setIsUploadingPhoto(false);
+      // Reset input
+      e.target.value = '';
+    }
+  };
+
+  // Remover foto da lista
+  const handleRemovePhoto = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      photos: (prev.photos || []).filter((_, idx) => idx !== index)
+    }));
   };
 
   // Salvar Ação (Supabase + LocalStorage)
@@ -471,6 +570,8 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
     }
 
     const actionId = editingActionId || `act-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const actionPhotos = formData.photos || [];
+    
     const actionPayload: MediationCalendarAction = {
       id: actionId,
       month: (formData.month || 'FEVEREIRO') as MediationCalendarMonth,
@@ -486,6 +587,9 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
       partnerships: formData.partnerships?.trim() || '',
       description: formData.description?.trim() || '',
       outcomes: formData.outcomes?.trim() || '',
+      photos: actionPhotos,
+      photo: actionPhotos[0] || undefined,
+      evidenceUrls: actionPhotos,
       status: (formData.status || 'CONCLUÍDA') as any,
       createdAt: new Date().toISOString()
     };
@@ -587,6 +691,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
     const totalActions = actions.length;
     const completedActions = actions.filter(a => a.status === 'CONCLUÍDA').length;
     const totalParticipants = actions.reduce((acc, a) => acc + (a.participantCount || 0), 0);
+    const totalPhotos = actions.reduce((acc, a) => acc + ((a.photos?.length) || (a.photo ? 1 : 0)), 0);
     
     // Contagem por Mês
     const actionsPerMonth: Record<string, number> = {};
@@ -602,6 +707,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
       totalActions,
       completedActions,
       totalParticipants,
+      totalPhotos,
       actionsPerMonth,
       activeMonthsCount,
       completionCoverage
@@ -623,7 +729,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
             Calendário do Núcleo de Mediação Escolar
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-            Planejamento pedagógico e restaurativo, orientativos oficiais, marcos legais e registro sistemático das ações, palestras e círculos de construção de paz executados na escola.
+            Planejamento pedagógico e restaurativo, orientativos oficiais, marcos legais e registro sistemático com fotos das ações, palestras e círculos de paz executados na escola.
           </p>
         </div>
 
@@ -683,11 +789,11 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-            <ShieldCheck size={24} />
+            <ImageIcon size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Taxa de Cobertura</p>
-            <p className="text-2xl font-black text-purple-600">{stats.completionCoverage}%</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fotos Anexadas</p>
+            <p className="text-2xl font-black text-purple-600">{stats.totalPhotos}</p>
           </div>
         </div>
       </div>
@@ -779,7 +885,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
                         </div>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right flex items-center gap-2">
                         <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-wider text-white">
                           {monthActions.length} {monthActions.length === 1 ? 'Ação' : 'Ações'}
                         </span>
@@ -839,20 +945,47 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
                             <CheckCircle2 size={13} className="text-emerald-600" />
                             Ações Executadas na Escola ({monthActions.length}):
                           </span>
-                          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
-                            {monthActions.map(act => (
-                              <div key={act.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                                <div>
-                                  <p className="font-bold text-slate-800">{act.title}</p>
-                                  <p className="text-[10px] text-slate-500">
-                                    {act.classes.join(', ') || 'Geral'} • {act.participantCount} participantes
-                                  </p>
+                          <div className="space-y-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
+                            {monthActions.map(act => {
+                              const actPhotos = act.photos || (act.photo ? [act.photo] : []);
+                              return (
+                                <div key={act.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="font-bold text-slate-800">{act.title}</p>
+                                      <p className="text-[10px] text-slate-500">
+                                        {act.classes.join(', ') || 'Geral'} • {act.participantCount} participantes
+                                      </p>
+                                    </div>
+                                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[9px] font-black uppercase">
+                                      {act.status}
+                                    </span>
+                                  </div>
+
+                                  {/* Fotos da Ação */}
+                                  {actPhotos.length > 0 && (
+                                    <div className="flex items-center gap-1.5 overflow-x-auto pt-1">
+                                      {actPhotos.map((p, pIdx) => (
+                                        <button
+                                          key={pIdx}
+                                          type="button"
+                                          onClick={() => setPreviewPhotoUrl(p)}
+                                          className="relative group/photo shrink-0 rounded-lg overflow-hidden border border-slate-300 hover:opacity-90"
+                                        >
+                                          <img src={p} alt="Evidência" className="w-10 h-10 object-cover" />
+                                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/photo:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                            <ZoomIn size={12} />
+                                          </div>
+                                        </button>
+                                      ))}
+                                      <span className="text-[9px] text-slate-400 font-bold ml-1">
+                                        {actPhotos.length} foto(s)
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[9px] font-black uppercase">
-                                  {act.status}
-                                </span>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -886,6 +1019,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
             <div className="grid grid-cols-1 gap-4">
               {filteredActions.map(action => {
                 const monthInfo = OFFICIAL_CALENDAR_2026.find(m => m.id === action.month);
+                const actionPhotos = action.photos || (action.photo ? [action.photo] : []);
 
                 return (
                   <div 
@@ -953,6 +1087,30 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
                         <div className="p-3 bg-emerald-50/60 border border-emerald-150 rounded-xl text-xs text-emerald-950">
                           <strong className="block text-emerald-800 font-bold mb-0.5">Resultados / Impactos / Combinados:</strong>
                           {action.outcomes}
+                        </div>
+                      )}
+
+                      {/* Galeria de Fotos / Evidências */}
+                      {actionPhotos.length > 0 && (
+                        <div className="pt-2">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2 flex items-center gap-1.5">
+                            <ImageIcon size={13} className="text-purple-600" />
+                            Registro Fotográfico ({actionPhotos.length} foto{actionPhotos.length > 1 ? 's' : ''}):
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {actionPhotos.map((p, pIdx) => (
+                              <div
+                                key={pIdx}
+                                onClick={() => setPreviewPhotoUrl(p)}
+                                className="relative group cursor-pointer rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all w-24 h-24 bg-slate-100"
+                              >
+                                <img src={p} alt="Foto da ação" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                  <ZoomIn size={18} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1158,6 +1316,56 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
                 </div>
               </div>
 
+              {/* CAMPO DE FOTOS / EVIDÊNCIAS FOTOGRÁFICAS */}
+              <div className="space-y-2 p-4 bg-purple-50/50 border border-purple-100 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
+                    <Camera size={14} className="text-purple-600" />
+                    Fotos / Registro Fotográfico da Ação:
+                  </label>
+                  <span className="text-[9px] text-purple-600 font-bold">
+                    {(formData.photos || []).length} foto(s) selecionada(s)
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="cursor-pointer px-4 py-3 bg-white hover:bg-purple-50 border border-purple-200 hover:border-purple-400 rounded-xl text-xs font-bold text-purple-700 transition-all flex items-center gap-2 shadow-sm">
+                    <UploadCloud size={16} />
+                    <span>{isUploadingPhoto ? 'Processando foto...' : 'Adicionar Foto(s)'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      disabled={isUploadingPhoto}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="text-[10px] text-slate-400">
+                    Formatos JPG, PNG • Compressão automática para economia de espaço
+                  </span>
+                </div>
+
+                {/* Galeria de Fotos no Formulário */}
+                {(formData.photos || []).length > 0 && (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {(formData.photos || []).map((photoUrl, pIdx) => (
+                      <div key={pIdx} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-purple-200 bg-white shadow-sm">
+                        <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(pIdx)}
+                          className="absolute top-1 right-1 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors shadow-md"
+                          title="Remover foto"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Mediador Responsável & Parcerias */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1231,6 +1439,30 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ZOOM / VISUALIZAÇÃO DE FOTO */}
+      {previewPhotoUrl && (
+        <div 
+          className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setPreviewPhotoUrl(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] bg-transparent flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setPreviewPhotoUrl(null)}
+              className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+            <img 
+              src={previewPhotoUrl} 
+              alt="Foto ampliada da ação" 
+              className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/20" 
+            />
+            <p className="text-white/80 text-xs font-semibold mt-3">Registro Fotográfico da Ação de Mediação Escolar</p>
           </div>
         </div>
       )}
@@ -1331,31 +1563,44 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
                       </tr>
                     </thead>
                     <tbody>
-                      {actions.map((act, idx) => (
-                        <tr key={act.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'}>
-                          <td className="p-2 border-t border-r border-slate-300 font-semibold whitespace-nowrap">
-                            {new Date(act.executionDate + 'T12:00:00').toLocaleDateString('pt-BR')}<br />
-                            <span className="text-[9px] text-slate-500 uppercase">{act.month}</span>
-                          </td>
-                          <td className="p-2 border-t border-r border-slate-300">
-                            <strong className="text-slate-900 block">{act.orientativoNumber}</strong>
-                            <span className="text-[10px] text-slate-600">{act.theme}</span>
-                          </td>
-                          <td className="p-2 border-t border-r border-slate-300">
-                            <strong className="text-slate-900 block">{act.title}</strong>
-                            <span className="text-[10px] text-slate-600">{act.description}</span>
-                          </td>
-                          <td className="p-2 border-t border-r border-slate-300">
-                            {act.classes.join(', ') || act.targetAudience || 'Geral'}
-                          </td>
-                          <td className="p-2 border-t border-r border-slate-300 text-center font-bold">
-                            {act.participantCount}
-                          </td>
-                          <td className="p-2 border-t border-slate-300 text-center font-bold uppercase text-[9px]">
-                            {act.status}
-                          </td>
-                        </tr>
-                      ))}
+                      {actions.map((act, idx) => {
+                        const actPhotos = act.photos || (act.photo ? [act.photo] : []);
+                        return (
+                          <tr key={act.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'}>
+                            <td className="p-2 border-t border-r border-slate-300 font-semibold whitespace-nowrap">
+                              {new Date(act.executionDate + 'T12:00:00').toLocaleDateString('pt-BR')}<br />
+                              <span className="text-[9px] text-slate-500 uppercase">{act.month}</span>
+                            </td>
+                            <td className="p-2 border-t border-r border-slate-300">
+                              <strong className="text-slate-900 block">{act.orientativoNumber}</strong>
+                              <span className="text-[10px] text-slate-600">{act.theme}</span>
+                            </td>
+                            <td className="p-2 border-t border-r border-slate-300">
+                              <strong className="text-slate-900 block">{act.title}</strong>
+                              <span className="text-[10px] text-slate-600">{act.description}</span>
+                              {actPhotos.length > 0 && (
+                                <div className="flex items-center gap-1 mt-1.5">
+                                  {actPhotos.slice(0, 3).map((p, pIdx) => (
+                                    <img key={pIdx} src={p} alt="Foto" className="w-12 h-12 object-cover rounded-md border border-slate-300" />
+                                  ))}
+                                  {actPhotos.length > 3 && (
+                                    <span className="text-[8px] font-bold text-slate-400">+{actPhotos.length - 3}</span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-2 border-t border-r border-slate-300">
+                              {act.classes.join(', ') || act.targetAudience || 'Geral'}
+                            </td>
+                            <td className="p-2 border-t border-r border-slate-300 text-center font-bold">
+                              {act.participantCount}
+                            </td>
+                            <td className="p-2 border-t border-slate-300 text-center font-bold uppercase text-[9px]">
+                              {act.status}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 ) : (

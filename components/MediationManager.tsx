@@ -34,7 +34,11 @@ import {
   ChevronDown,
   Printer,
   Calendar,
-  CalendarDays
+  CalendarDays,
+  Camera,
+  Image as ImageIcon,
+  UploadCloud,
+  ZoomIn
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { supabase } from '../supabaseClient';
@@ -148,6 +152,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
     category: 'CONFLITO',
     date: new Date().toLocaleDateString('sv-SE')
   });
+  const [newLogPhoto, setNewLogPhoto] = useState<string | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     setNewLog(prev => ({
@@ -587,6 +593,44 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
     }
   };
 
+  const handleLogPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new window.Image();
+        img.src = reader.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 1000;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setNewLogPhoto(canvas.toDataURL('image/jpeg', 0.75));
+          } else {
+            setNewLogPhoto(reader.result as string);
+          }
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveLog = async () => {
     if (!selectedCase || !newLog.content) return alert("Descreva o atendimento antes de salvar.");
     
@@ -597,7 +641,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         date: newLog.date || new Date().toLocaleDateString('sv-SE'),
         professional: user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar',
         content: newLog.content.trim(),
-        category: newLog.category || 'CONFLITO'
+        category: newLog.category || 'CONFLITO',
+        photo: newLogPhoto || undefined
       };
 
       const updatedLogs = [logEntry, ...(selectedCase.logs || [])];
@@ -611,6 +656,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
       setSelectedCase({ ...selectedCase, logs: updatedLogs });
       setNewLog({ ...newLog, content: '', category: 'CONFLITO' });
+      setNewLogPhoto(null);
       await fetchCases();
       alert("Atendimento registrado no diário com sucesso!");
       setActiveCaseTab('timeline');
@@ -1466,17 +1512,39 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                             Registrar Atendimento / Ação
                           </span>
 
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-extrabold uppercase text-slate-400">Tipo:</span>
-                            <select
-                              value={newLog.category || 'CONFLITO'}
-                              onChange={(e) => setNewLog(prev => ({ ...prev, category: e.target.value }))}
-                              className="bg-white border border-slate-300 text-slate-800 text-[11px] font-bold px-2.5 py-1 rounded-lg outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
-                            >
-                              {ATTENDANCE_CATEGORIES.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.label}</option>
-                              ))}
-                            </select>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-extrabold uppercase text-slate-400">Tipo:</span>
+                              <select
+                                value={newLog.category || 'CONFLITO'}
+                                onChange={(e) => setNewLog(prev => ({ ...prev, category: e.target.value }))}
+                                className="bg-white border border-slate-300 text-slate-800 text-[11px] font-bold px-2.5 py-1 rounded-lg outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                              >
+                                {ATTENDANCE_CATEGORIES.map(cat => (
+                                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <label className="cursor-pointer px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-[11px] font-bold text-slate-700 transition-all flex items-center gap-1.5 shadow-sm">
+                              <Camera size={13} className="text-indigo-600" />
+                              <span>{newLogPhoto ? 'Foto OK' : 'Anexar Foto'}</span>
+                              <input type="file" accept="image/*" onChange={handleLogPhotoUpload} className="hidden" />
+                            </label>
+
+                            {newLogPhoto && (
+                              <div className="relative inline-block w-7 h-7 rounded-lg overflow-hidden border border-indigo-400 shrink-0">
+                                <img src={newLogPhoto} alt="Foto" className="w-full h-full object-cover" />
+                                <button 
+                                  type="button" 
+                                  onClick={() => setNewLogPhoto(null)} 
+                                  className="absolute inset-0 bg-red-600/70 text-white flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                                  title="Remover foto"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1576,7 +1644,25 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                                     </div>
                                   </div>
                                 ) : (
-                                  <p className="text-xs text-slate-700 leading-relaxed font-normal whitespace-pre-wrap pl-0.5">{log.content}</p>
+                                  <div className="space-y-2">
+                                    <p className="text-slate-700 text-xs font-normal leading-relaxed whitespace-pre-wrap">
+                                      {log.content}
+                                    </p>
+                                    {log.photo && (
+                                      <div className="pt-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewPhoto(log.photo!)}
+                                          className="relative group/photo rounded-xl overflow-hidden border border-slate-200 hover:opacity-90 block shadow-sm"
+                                        >
+                                          <img src={log.photo} alt="Foto do atendimento" className="w-20 h-20 object-cover" />
+                                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/photo:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                            <ZoomIn size={14} />
+                                          </div>
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             );
@@ -1917,6 +2003,30 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           mediationCase={selectedCase}
           userName={user?.name}
         />
+      )}
+
+      {/* MODAL DE ZOOM / VISUALIZAÇÃO DE FOTO DO ATENDIMENTO */}
+      {previewPhoto && (
+        <div 
+          className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setPreviewPhoto(null)}
+        >
+          <div className="relative max-w-3xl max-h-[85vh] bg-transparent flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setPreviewPhoto(null)}
+              className="absolute -top-10 right-0 p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+            <img 
+              src={previewPhoto} 
+              alt="Foto ampliada do atendimento" 
+              className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/20" 
+            />
+            <p className="text-white/80 text-xs font-semibold mt-3">Registro Fotográfico do Atendimento de Mediação</p>
+          </div>
+        </div>
       )}
     </div>
   );

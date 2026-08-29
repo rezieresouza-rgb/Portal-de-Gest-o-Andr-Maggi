@@ -422,7 +422,7 @@ export type PsychosocialRole = 'PSICOSSOCIAL' | 'GESTAO' | 'PROFESSOR';
 export type MediationStatus = 'ABERTURA' | 'PLANEJAMENTO' | 'EXECUÇÃO' | 'CONCLUÍDO';
 export type CaseSeverity = 'BAIXA' | 'MÉDIA' | 'ALTA' | 'CRÍTICA';
 export interface MediationStep { id: string; label: string; completed: boolean; date?: string; }
-export interface MediationLog { id: string; date: string; professional: string; content: string; category?: string; }
+export interface MediationLog { id: string; date: string; professional: string; content: string; category?: string; photo?: string; photos?: string[]; }
 export type MediationCaseType = 'CONFLITO' | 'BULLYING' | 'FAMILIAR' | 'INFREQUÊNCIA' | 'EMOCIONAL' | 'DISCIPLINAR' | 'CELULAR' | 'DISCRIMINAÇÃO' | 'OUTRO' | string;
 export interface MediationCase { id: string; studentId: string; studentName: string; className: string; type: MediationCaseType; severity: CaseSeverity; status: MediationStatus; openedAt: string; closedAt?: string; description: string; involvedParties: string[]; steps: MediationStep[]; logs: MediationLog[]; feedback?: string; originReferralId?: string; teacherName?: string; }
 export type MediationCalendarMonth = 
@@ -464,6 +464,8 @@ export interface MediationCalendarAction {
   outcomes?: string;
   status: 'PLANEJADA' | 'EM_ANDAMENTO' | 'CONCLUÍDA' | 'CANCELADA';
   evidenceUrls?: string[];
+  photos?: string[];
+  photo?: string;
   createdAt?: string;
 }
 
