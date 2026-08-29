@@ -277,24 +277,51 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       const formatted: MediationCase[] = sortedData.map(c => {
         const existingSteps = c.steps || [];
         const baseSteps = [
-          { id: 'A', label: 'Acolhimento Inicial', completed: true, date: c.opened_at },
-          { id: 'B', label: 'Escuta das Partes', completed: false },
-          { id: 'C', label: 'Comunicação com Pais e/ou Responsáveis', completed: false },
-          { id: 'D', label: 'Reunião com os Responsáveis', completed: false },
-          { id: 'E', label: 'Círculo de Mediação / Paz', completed: false },
-          { id: 'F', label: 'Palestra Educativa / Ação de Conscientização', completed: false },
-          { id: 'G', label: 'Encaminhamento à Rede / Apoio', completed: false },
-          { id: 'H', label: 'Acordo Restaurativo / Finalização', completed: false }
+          { id: 'A', key: 'acolhimento', label: 'Acolhimento Inicial', completed: true, date: c.opened_at },
+          { id: 'B', key: 'escuta', label: 'Escuta das Partes', completed: false },
+          { id: 'C', key: 'comunicacao', label: 'Comunicação com Pais e/ou Responsáveis', completed: false },
+          { id: 'D', key: 'reuniao', label: 'Reunião com os Responsáveis', completed: false },
+          { id: 'E', key: 'circulo', label: 'Círculo de Mediação / Paz', completed: false },
+          { id: 'F', key: 'palestra', label: 'Palestra Educativa / Ação de Conscientização', completed: false },
+          { id: 'G', key: 'encaminhamento', label: 'Encaminhamento à Rede / Apoio', completed: false },
+          { id: 'H', key: 'acordo', label: 'Acordo / Finalização', completed: false }
         ];
-        
+
+        const matchBaseKey = (labelStr: string) => {
+          const l = (labelStr || '').toLowerCase();
+          if (l.includes('acolhimento')) return 'acolhimento';
+          if (l.includes('escuta')) return 'escuta';
+          if (l.includes('comunicação') || l.includes('comunicacao')) return 'comunicacao';
+          if (l.includes('reunião') || l.includes('reuniao')) return 'reuniao';
+          if (l.includes('círculo') || l.includes('circulo')) return 'circulo';
+          if (l.includes('palestra')) return 'palestra';
+          if (l.includes('encaminhamento')) return 'encaminhamento';
+          if (l.includes('acordo') || l.includes('finalização') || l.includes('finalizacao')) return 'acordo';
+          return null;
+        };
+
         const mergedSteps = baseSteps.map(baseStep => {
-           const existing = existingSteps.find((s: any) => s.label === baseStep.label);
-           return existing ? existing : baseStep;
+          const existing = existingSteps.find((s: any) => matchBaseKey(s.label) === baseStep.key);
+          if (existing) {
+            return {
+              id: baseStep.id,
+              label: baseStep.label,
+              completed: !!existing.completed,
+              date: existing.date || (baseStep.key === 'acolhimento' ? c.opened_at : undefined)
+            };
+          }
+          return {
+            id: baseStep.id,
+            label: baseStep.label,
+            completed: baseStep.key === 'acolhimento',
+            date: baseStep.key === 'acolhimento' ? c.opened_at : undefined
+          };
         });
 
-        // Preservar etapas personalizadas criadas pelo mediador
+        // Preservar apenas etapas verdadeiramente personalizadas (sem duplicatas)
         existingSteps.forEach((s: any) => {
-          if (!baseSteps.some(b => b.label === s.label) && !mergedSteps.some(m => m.label === s.label)) {
+          const baseKey = matchBaseKey(s.label);
+          if (!baseKey && !mergedSteps.some(m => m.label?.toLowerCase() === s.label?.toLowerCase())) {
             mergedSteps.push(s);
           }
         });
@@ -394,8 +421,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       { id: 'C', label: 'Comunicação com Pais e/ou Responsáveis', completed: false },
       { id: 'D', label: 'Reunião com os Responsáveis', completed: false },
       { id: 'E', label: 'Círculo de Mediação / Paz', completed: false },
-      { id: 'F', label: 'Encaminhamento à Rede', completed: false },
-      { id: 'G', label: 'Acordo / Finalização', completed: false }
+      { id: 'F', label: 'Palestra Educativa / Ação de Conscientização', completed: false },
+      { id: 'G', label: 'Encaminhamento à Rede / Apoio', completed: false },
+      { id: 'H', label: 'Acordo / Finalização', completed: false }
     ];
 
     try {
