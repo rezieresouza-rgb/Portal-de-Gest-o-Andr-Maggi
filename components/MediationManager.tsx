@@ -32,7 +32,9 @@ import {
   Send,
   Sparkles,
   ChevronDown,
-  Printer
+  Printer,
+  Calendar,
+  CalendarDays
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { supabase } from '../supabaseClient';

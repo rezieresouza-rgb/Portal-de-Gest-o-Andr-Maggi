@@ -3,6 +3,7 @@ import {
   Scale, 
   HeartHandshake, 
   FileText, 
+  Calendar,
   CalendarDays, 
   TrendingUp, 
   ShieldCheck, 
