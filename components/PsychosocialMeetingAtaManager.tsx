@@ -37,6 +37,7 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
   });
 
   const [printingAta, setPrintingAta] = useState<PsychosocialMeetingAta | null>(null);
+  const [viewingAta, setViewingAta] = useState<PsychosocialMeetingAta | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   const [form, setForm] = useState<Omit<PsychosocialMeetingAta, 'id' | 'timestamp'>>({
@@ -277,6 +278,13 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
       compromissoMutuo: '',
       encerramentoEncaminhamentos: ''
     });
+  };
+
+  const handlePrint = (ata: PsychosocialMeetingAta) => {
+    setPrintingAta(ata);
+    setTimeout(() => {
+      window.print();
+    }, 250);
   };
 
   const handleDeleteAta = async (ata: PsychosocialMeetingAta) => {
@@ -778,12 +786,12 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
         @media print {
           @page {
             size: A4 portrait;
-            margin: 0 !important;
+            margin: 8mm 10mm 8mm 10mm !important;
           }
           html, body {
-            height: 100% !important;
+            height: auto !important;
             width: 100% !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             margin: 0 !important;
             padding: 0 !important;
           }
@@ -791,30 +799,27 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
           .no-print { display: none !important; }
           .print-ata-area, .print-ata-area * { visibility: visible !important; }
           .print-ata-area { 
-            position: fixed !important; 
+            position: absolute !important; 
             left: 0 !important; 
             top: 0 !important; 
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100vw !important; 
-            height: 100vh !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
+            width: 100% !important; 
+            min-height: 100% !important;
+            display: block !important;
             background: white !important;
             color: black !important;
             box-sizing: border-box !important;
-            padding: 8mm 12mm 4mm 12mm !important;
+            padding: 0 !important;
           }
           .pdf-page { 
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
-            height: 100% !important;
+            min-height: 275mm !important;
             width: 100% !important;
             box-sizing: border-box !important;
             padding: 0 !important;
             margin: 0 !important;
+            page-break-inside: avoid !important;
           }
         }
       `}} />
