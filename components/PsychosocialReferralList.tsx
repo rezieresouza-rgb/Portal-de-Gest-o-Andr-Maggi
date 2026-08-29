@@ -43,7 +43,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
 }) => {
   const [referrals, setReferrals] = useState<PsychosocialReferral[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingReferral, setEditingReferral] = useState<PsychosocialReferral | null>(null);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [loading, setLoading] = useState(false);
   const [printingReferral, setPrintingReferral] = useState<PsychosocialReferral | null>(null);
@@ -106,28 +106,52 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                  r.referral_destination === 'PSICOSSOCIAL';
         });
 
-        const formatted: PsychosocialReferral[] = filteredData.map(r => ({
-          id: r.id,
-          schoolUnit: r.school_unit,
-          studentName: r.student_name,
-          studentAge: r.student_age,
-          className: r.class_name,
-          teacherName: r.teacher_name,
-          priority: r.priority || 'MEDIA',
-          previousStrategies: r.previous_strategies || '',
-          attendanceFrequency: r.attendance_frequency || '0',
-          adoptedProcedures: r.adopted_procedures || [],
-          observedAspects: r.observations || { learning: [], behavioral: [], emotional: [] },
-          report: r.report || '',
-          status: r.status as any,
-          date: r.date,
-          observations: typeof r.observations === 'string' ? r.observations : JSON.stringify(r.observations),
-          timestamp: new Date(r.created_at).getTime(),
-          reason: r.reason || r.report || 'Sem motivo especificado',
-          feedback: r?.feedback,
-          referralDestination: r.referral_destination,
-          mediationProcedures: r.mediation_procedures || []
-        }));
+        const formatted: PsychosocialReferral[] = filteredData.map(r => {
+          let parsedObs = { learning: [] as string[], behavioral: [] as string[], emotional: [] as string[] };
+          if (r.observations) {
+            if (typeof r.observations === 'object' && r.observations !== null) {
+              parsedObs = {
+                learning: Array.isArray(r.observations.learning) ? r.observations.learning : [],
+                behavioral: Array.isArray(r.observations.behavioral) ? r.observations.behavioral : [],
+                emotional: Array.isArray(r.observations.emotional) ? r.observations.emotional : []
+              };
+            } else if (typeof r.observations === 'string') {
+              try {
+                const json = JSON.parse(r.observations);
+                if (typeof json === 'object' && json !== null) {
+                  parsedObs = {
+                    learning: Array.isArray(json.learning) ? json.learning : [],
+                    behavioral: Array.isArray(json.behavioral) ? json.behavioral : [],
+                    emotional: Array.isArray(json.emotional) ? json.emotional : []
+                  };
+                }
+              } catch (e) {}
+            }
+          }
+
+          return {
+            id: r.id,
+            schoolUnit: r.school_unit,
+            studentName: r.student_name,
+            studentAge: r.student_age,
+            className: r.class_name,
+            teacherName: r.teacher_name,
+            priority: r.priority || 'MEDIA',
+            previousStrategies: r.previous_strategies || '',
+            attendanceFrequency: r.attendance_frequency || '0',
+            adoptedProcedures: r.adopted_procedures || [],
+            observedAspects: parsedObs,
+            report: r.report || r.reason || '',
+            status: r.status as any,
+            date: r.date,
+            observations: parsedObs,
+            timestamp: new Date(r.created_at).getTime(),
+            reason: r.reason || r.report || 'Sem motivo especificado',
+            feedback: r?.feedback,
+            referralDestination: r.referral_destination,
+            mediationProcedures: r.mediation_procedures || []
+          };
+        });
         setReferrals(formatted);
       }
     } catch (error) {
@@ -144,88 +168,79 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
 
     return () => { subscription.unsubscribe(); };
   }, [user?.name, role]);
-;
 
   const handleCreateOrUpdate = async (formData: PsychosocialReferral) => {
     setLoading(true);
     try {
+      const isEditing = Boolean(editingReferral?.id);
       const referralData = {
         student_name: formData.studentName,
         class_name: formData.className,
         reason: formData.report || 'Encaminhamento',
-        priority: newReferral.priority,
-        status: formData.status,
+        priority: formData.priority || 'MEDIA',
+        status: formData.status || 'PENDENTE',
         observations: formData.observedAspects,
         school_unit: formData.schoolUnit,
         teacher_name: formData.teacherName,
-        date: new Date().toLocaleDateString('sv-SE'),
+        date: formData.date || new Date().toLocaleDateString('sv-SE'),
         student_age: formData.studentAge,
         previous_strategies: formData.previousStrategies,
         attendance_frequency: formData.attendanceFrequency,
-        adopted_procedures: formData.adopted_procedures,
+        adopted_procedures: formData.adoptedProcedures,
         report: formData.report,
-        referral_destination: formData.referralDestination,
+        referral_destination: formData.referralDestination || 'MEDIACAO',
         mediation_procedures: formData.mediationProcedures || []
       };
 
-      if (editingId) {
+      if (isEditing && editingReferral) {
         // UPDATE
         const { error } = await supabase
           .from('psychosocial_referrals')
           .update(referralData)
-          .eq('id', editingId);
+          .eq('id', editingReferral.id);
 
         if (error) throw error;
       } else {
         // INSERT
-        const { error, data } = await supabase
+        const { error } = await supabase
           .from('psychosocial_referrals')
-          .insert([referralData])
-          .select();
+          .insert([referralData]);
 
         if (error) throw error;
 
-        // Notification
-        await supabase.from('psychosocial_notifications').insert([{
-          title: 'Novo Encaminhamento',
-          message: `Aluno ${newReferral.student_name} encaminhado.`,
-          is_read: false
-        }]);
-
-        // [NOVO] Integração Automática com Módulo de Mediação (Supabase)
+        // Auto vincular / criar caso de abertura na Mediação Escolar
         try {
-          const activeTeacher = referralData.teacher_name || user?.name || 'EQUIPE MULTI';
-          const { error: mediationError } = await supabase.from('mediation_cases').insert([{
+          const activeTeacher = referralData.teacher_name || user?.name || 'PROFESSOR';
+          await supabase.from('mediation_cases').insert([{
+            origin_referral_id: formData.id,
             student_id: 'N/A',
-            student_name: referralData.student_name,
-            class_name: referralData.class_name,
+            student_name: formData.studentName,
+            class_name: formData.className,
             type: 'OUTRO',
-            severity: referralData.priority === 'ALTA' ? 'ALTA' : (referralData.priority === 'BAIXA' ? 'BAIXA' : 'MÉDIA'),
+            severity: formData.priority === 'ALTA' ? 'ALTA' : (formData.priority === 'BAIXA' ? 'BAIXA' : 'MÉDIA'),
             status: 'ABERTURA',
             opened_at: referralData.date,
-            description: `[Origem: Encaminhamento Psicossocial] [Enviado por: ${activeTeacher}]\nMotivo/Relato: ${referralData.report || referralData.reason || 'Sem descrição detalhada.'}`,
+            description: `[Origem: Encaminhamento do Professor] Relato: ${formData.report || formData.reason || 'Sem relato'} | Unidade: ${formData.schoolUnit}`,
             involved_parties: [activeTeacher],
             steps: [
-              { id: '1', label: 'Análise do Encaminhamento', completed: true, date: referralData.date },
+              { id: '1', label: 'Encaminhamento Recebido do Professor', completed: true, date: referralData.date },
               { id: '2', label: 'Escuta das Partes', completed: false },
               { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
               { id: '4', label: 'Acordo / Finalização', completed: false }
             ]
           }]);
-
-          if (mediationError) console.error('Erro ao criar caso de mediação automático:', mediationError);
-        } catch (e) {
-          console.error('Erro na integração com mediação:', e);
+        } catch (caseErr) {
+          console.warn("Aviso ao criar caso correspondente na mediação:", caseErr);
         }
       }
 
       await fetchReferrals();
       setIsModalOpen(false);
+      setEditingReferral(null);
       resetForm();
-      // alert("Salvo com sucesso!"); // Removed alert for smoother UX or use toast later
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar:", error);
-      alert(`Erro ao salvar encaminhamento: ${error.message || 'Erro desconhecido'}. Verifique se as tabelas foram criadas no Supabase.`);
+      alert(`Erro ao salvar encaminhamento: ${error?.message || 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
     }
@@ -394,6 +409,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           </div>
           <button
             onClick={() => {
+              setEditingReferral(null);
               resetForm();
               setIsModalOpen(true);
             }}
@@ -409,22 +425,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           <div 
              key={ref.id} 
              onClick={() => {
-               setEditingId(ref.id);
-               setNewReferral({
-                 student_name: ref.studentName,
-                 class_name: ref.className,
-                 reason: ref.reason || '',
-                 priority: ref.priority,
-                 status: ref.status,
-                 observations: typeof ref.observations === 'string' ? ref.observations : '',
-                 student_age: ref.studentAge || '',
-                 school_unit: ref.schoolUnit || 'Unidade Escolar',
-                 teacher_name: ref.teacherName || '',
-                 previous_strategies: ref.previousStrategies || '',
-                 attendance_frequency: ref.attendanceFrequency || '',
-                 adopted_procedures: ref.adoptedProcedures || [],
-                 report: ref.report || ''
-               });
+               setEditingReferral(ref);
                setIsModalOpen(true);
              }}
              className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-violet-200 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between"
@@ -485,22 +486,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                  type="button"
                  onClick={(e) => {
                    e.stopPropagation();
-                   setEditingId(ref.id);
-                   setNewReferral({
-                     student_name: ref.studentName,
-                     class_name: ref.className,
-                     reason: ref.reason || '',
-                     priority: ref.priority,
-                     status: ref.status,
-                     observations: typeof ref.observations === 'string' ? ref.observations : '',
-                     student_age: ref.studentAge || '',
-                     school_unit: (ref.schoolUnit && ref.schoolUnit !== 'Unidade Escolar') ? ref.schoolUnit : 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
-                     teacher_name: ref.teacherName || '',
-                     previous_strategies: ref.previousStrategies || '',
-                     attendance_frequency: ref.attendanceFrequency || '',
-                     adopted_procedures: ref.adoptedProcedures || [],
-                     report: ref.report || ''
-                   });
+                   setEditingReferral(ref);
                    setIsModalOpen(true);
                  }}
                  className="p-3 bg-gray-100 hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-xl transition-all"
@@ -528,6 +514,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             {role === 'PROFESSOR' && (
               <button
                 onClick={() => {
+                  setEditingReferral(null);
                   resetForm();
                   setIsModalOpen(true);
                 }}
@@ -546,24 +533,34 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             {loading && <div className="text-white mb-4 animate-pulse font-black uppercase text-xs tracking-widest">Salvando encaminhamento...</div>}
             <div className="w-full max-w-5xl px-4">
               <PsychosocialReferralForm 
-                onCancel={() => setIsModalOpen(false)} 
+                onCancel={() => {
+                  setIsModalOpen(false);
+                  setEditingReferral(null);
+                }} 
                 onSave={handleCreateOrUpdate} 
-                initialData={{
-                  id: editingId || `ref-${Date.now()}`,
-                  studentName: newReferral.student_name,
-                  className: newReferral.class_name,
-                  report: newReferral.reason || newReferral.report,
-                  status: (newReferral.status as any) || 'PENDENTE',
-                  observedAspects: typeof newReferral.observations === 'string' || !newReferral.observations ? { learning: [], behavioral: [], emotional: [] } : (newReferral.observations as any),
-                  schoolUnit: (newReferral.school_unit && newReferral.school_unit !== 'Unidade Escolar') ? newReferral.school_unit : 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
-                  teacherName: newReferral.teacher_name || user?.name || 'PROFESSOR',
-                  date: new Date().toLocaleDateString('sv-SE'),
-                  studentAge: newReferral.student_age,
-                  previousStrategies: newReferral.previous_strategies,
-                  attendanceFrequency: newReferral.attendance_frequency,
-                  adoptedProcedures: newReferral.adopted_procedures,
-                  referralDestination: 'MEDIACAO',
-                  timestamp: Date.now()
+                initialData={editingReferral ? {
+                  id: editingReferral.id,
+                  studentName: editingReferral.studentName,
+                  studentAge: editingReferral.studentAge,
+                  className: editingReferral.className,
+                  teacherName: editingReferral.teacherName || user?.name || 'PROFESSOR',
+                  schoolUnit: (editingReferral.schoolUnit && editingReferral.schoolUnit !== 'Unidade Escolar') ? editingReferral.schoolUnit : 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
+                  previousStrategies: editingReferral.previousStrategies || '',
+                  attendanceFrequency: editingReferral.attendanceFrequency || '0',
+                  adoptedProcedures: editingReferral.adoptedProcedures || [],
+                  observedAspects: editingReferral.observedAspects || { learning: [], behavioral: [], emotional: [] },
+                  report: editingReferral.report || editingReferral.reason || '',
+                  status: editingReferral.status || 'PENDENTE',
+                  priority: editingReferral.priority || 'MEDIA',
+                  date: editingReferral.date || new Date().toISOString().split('T')[0],
+                  referralDestination: 'MEDIACAO'
+                } : {
+                  id: `ref-${Date.now()}`,
+                  schoolUnit: 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
+                  teacherName: user?.name || 'PROFESSOR',
+                  date: new Date().toISOString().split('T')[0],
+                  observedAspects: { learning: [], behavioral: [], emotional: [] },
+                  referralDestination: 'MEDIACAO'
                 }} 
               />
             </div>

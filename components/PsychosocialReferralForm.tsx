@@ -32,7 +32,7 @@ interface PsychosocialReferralFormProps {
 
 const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onCancel, onSave, initialData }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [formData, setFormData] = useState<PsychosocialReferral>({
+  const [formData, setFormData] = useState<PsychosocialReferral>(() => ({
     id: initialData?.id || `ref-${Date.now()}`,
     schoolUnit: (initialData?.schoolUnit && initialData.schoolUnit !== 'Unidade Escolar') ? initialData.schoolUnit : 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
     studentName: initialData?.studentName || '',
@@ -42,12 +42,12 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
     previousStrategies: initialData?.previousStrategies || '',
     attendanceFrequency: initialData?.attendanceFrequency || '0',
     adoptedProcedures: initialData?.adoptedProcedures || [],
-    observedAspects: initialData?.observedAspects || {
-      learning: [],
-      behavioral: [],
-      emotional: [],
+    observedAspects: {
+      learning: Array.isArray(initialData?.observedAspects?.learning) ? initialData.observedAspects.learning : [],
+      behavioral: Array.isArray(initialData?.observedAspects?.behavioral) ? initialData.observedAspects.behavioral : [],
+      emotional: Array.isArray(initialData?.observedAspects?.emotional) ? initialData.observedAspects.emotional : [],
     },
-    report: initialData?.report || '',
+    report: initialData?.report || initialData?.reason || '',
     status: (initialData?.status as any) || 'PENDENTE',
     priority: (initialData?.priority as any) || 'MEDIA',
     date: initialData?.date || new Date().toISOString().split('T')[0],
@@ -55,7 +55,36 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
     referralDestination: 'MEDIACAO',
     reason: initialData?.reason || 'Encaminhamento para Mediação Escolar',
     mediationProcedures: initialData?.mediationProcedures || []
-  });
+  }));
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        id: initialData.id || `ref-${Date.now()}`,
+        schoolUnit: (initialData.schoolUnit && initialData.schoolUnit !== 'Unidade Escolar') ? initialData.schoolUnit : 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
+        studentName: initialData.studentName || '',
+        studentAge: initialData.studentAge || '',
+        className: initialData.className || '',
+        teacherName: initialData.teacherName || 'PROFESSOR(A)',
+        previousStrategies: initialData.previousStrategies || '',
+        attendanceFrequency: initialData.attendanceFrequency || '0',
+        adoptedProcedures: initialData.adoptedProcedures || [],
+        observedAspects: {
+          learning: Array.isArray(initialData.observedAspects?.learning) ? initialData.observedAspects.learning : [],
+          behavioral: Array.isArray(initialData.observedAspects?.behavioral) ? initialData.observedAspects.behavioral : [],
+          emotional: Array.isArray(initialData.observedAspects?.emotional) ? initialData.observedAspects.emotional : [],
+        },
+        report: initialData.report || initialData.reason || '',
+        status: (initialData.status as any) || 'PENDENTE',
+        priority: (initialData.priority as any) || 'MEDIA',
+        date: initialData.date || new Date().toISOString().split('T')[0],
+        timestamp: initialData.timestamp || Date.now(),
+        referralDestination: 'MEDIACAO',
+        reason: initialData.reason || 'Encaminhamento para Mediação Escolar',
+        mediationProcedures: initialData.mediationProcedures || []
+      });
+    }
+  }, [initialData]);
 
   const ASPECTS = {
     learning: {
@@ -390,7 +419,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
               </div>
               <div className="space-y-2">
                 {ASPECTS.learning.items.map(aspect => {
-                  const isChecked = formData.observedAspects.learning.includes(aspect);
+                  const isChecked = Boolean(formData.observedAspects?.learning?.includes(aspect));
                   return (
                     <button
                       key={aspect}
@@ -422,7 +451,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
               </div>
               <div className="space-y-2">
                 {ASPECTS.behavioral.items.map(aspect => {
-                  const isChecked = formData.observedAspects.behavioral.includes(aspect);
+                  const isChecked = Boolean(formData.observedAspects?.behavioral?.includes(aspect));
                   return (
                     <button
                       key={aspect}
@@ -454,7 +483,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
               </div>
               <div className="space-y-2">
                 {ASPECTS.emotional.items.map(aspect => {
-                  const isChecked = formData.observedAspects.emotional.includes(aspect);
+                  const isChecked = Boolean(formData.observedAspects?.emotional?.includes(aspect));
                   return (
                     <button
                       key={aspect}
