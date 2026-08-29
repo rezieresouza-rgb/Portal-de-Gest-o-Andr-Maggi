@@ -610,7 +610,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       setSelectedCase({ ...selectedCase, logs: updatedLogs });
       setNewLog({ ...newLog, content: '', category: 'CONFLITO' });
       await fetchCases();
-      alert("Atendimento registrado no diário!");
+      alert("Atendimento registrado no diário com sucesso!");
+      setActiveCaseTab('history');
     } catch (err: any) {
       console.error(err);
       alert("Erro ao salvar log: " + err.message);
@@ -1567,16 +1568,9 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200">
-                          Total: {selectedCase.logs?.length || 0} Ações
+                        <span className="px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200">
+                          Total de Registros: {selectedCase.logs?.length || 0}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveCaseTab('attendance')}
-                          className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                        >
-                          <Plus size={14} /> Novo Atendimento
-                        </button>
                       </div>
                     </div>
 
@@ -1665,21 +1659,14 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                         })}
                       </div>
                     ) : (
-                      <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+                      <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-2">
                         <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto">
                           <History size={28} />
                         </div>
                         <h5 className="text-sm font-bold text-slate-700">Nenhum atendimento registrado no histórico ainda</h5>
                         <p className="text-xs text-slate-500 max-w-md mx-auto">
-                          Você pode registrar escutas, conversas com a família e ações restaurativas na aba de Novo Atendimento.
+                          Os atendimentos registrados na aba <strong>"Novo Atendimento"</strong> serão listados aqui em ordem cronológica.
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => setActiveCaseTab('attendance')}
-                          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md inline-flex items-center gap-2 active:scale-95"
-                        >
-                          <Plus size={15} /> Registrar Primeiro Atendimento
-                        </button>
                       </div>
                     )}
                   </div>
