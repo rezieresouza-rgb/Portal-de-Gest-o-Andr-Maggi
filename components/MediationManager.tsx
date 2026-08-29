@@ -1527,7 +1527,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                                   className="px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
                                 >
                                   <Check size={13} /> Concluir Etapa
-                              {step.label?.includes('Encaminhamento') && (
+                                </button>
+                              )}
                                 <button
                                   type="button"
                                   onClick={(e) => {
