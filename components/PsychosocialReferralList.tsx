@@ -262,7 +262,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
       adopted_procedures: [],
       report: ''
     });
-    setEditingId(null);
+    setEditingReferral(null);
   }
 
   const handleSendToMediation = async (ref: PsychosocialReferral, e: React.MouseEvent) => {
