@@ -34,7 +34,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState<PsychosocialReferral>({
     id: initialData?.id || `ref-${Date.now()}`,
-    schoolUnit: initialData?.schoolUnit || 'E.E. CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
+    schoolUnit: (initialData?.schoolUnit && initialData.schoolUnit !== 'Unidade Escolar') ? initialData.schoolUnit : 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
     studentName: initialData?.studentName || '',
     studentAge: initialData?.studentAge || '',
     className: initialData?.className || '',
