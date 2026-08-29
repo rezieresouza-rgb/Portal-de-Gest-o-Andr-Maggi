@@ -29,6 +29,8 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
   onBack
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'form'>(initialCase ? 'form' : 'list');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [atas, setAtas] = useState<PsychosocialMeetingAta[]>(() => {
     const saved = localStorage.getItem('psychosocial_atas_v2');
     return saved ? JSON.parse(saved) : [];
@@ -64,6 +66,97 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
     encerramentoEncaminhamentos: ''
   });
 
+  const fetchCloudAtas = async () => {
+    try {
+      setLoading(true);
+      let localAtas: PsychosocialMeetingAta[] = [];
+      const saved = localStorage.getItem('psychosocial_atas_v2');
+      if (saved) {
+        try {
+          localAtas = JSON.parse(saved);
+        } catch (e) {}
+      }
+
+      const { data, error } = await supabase
+        .from('civic_documents')
+        .select('*')
+        .eq('template', 'psychosocial_ata')
+        .order('created_at', { ascending: false });
+
+      let dbAtas: PsychosocialMeetingAta[] = [];
+      if (data && Array.isArray(data)) {
+        dbAtas = data.map((d: any) => {
+          const content = typeof d.content === 'object' && d.content !== null ? d.content : {};
+          return {
+            id: d.id,
+            number: content.number || d.student_name?.match(/ATA Nº (\d+)/)?.[1] || '01',
+            year: content.year || (d.date ? d.date.split('-')[0] : new Date().getFullYear().toString()),
+            pauta: content.pauta || d.student_name || 'Mediação Escolar',
+            date: content.date || d.date || new Date().toISOString().split('T')[0],
+            location: content.location || 'SALA DE MEDIAÇÃO - EE ANDRÉ ANTÔNIO MAGGI',
+            participants: content.participants || [],
+            objectives: content.objectives || '',
+            definitions: content.definitions || [],
+            forwarding: content.forwarding || [],
+            responsible: content.responsible || 'PROFESSOR MEDIADOR',
+            timestamp: d.timestamp || (d.created_at ? new Date(d.created_at).getTime() : Date.now()),
+            responsavelMediacao: content.responsavelMediacao,
+            horarioInicio: content.horarioInicio,
+            horarioTermino: content.horarioTermino,
+            descricaoConflito: content.descricaoConflito,
+            dataOcorrido: content.dataOcorrido,
+            parte1Nome: content.parte1Nome,
+            interessesParte1: content.interessesParte1,
+            parte2Nome: content.parte2Nome,
+            interessesParte2: content.interessesParte2,
+            desenvolvimentoSessao: content.desenvolvimentoSessao,
+            compromissoParte1: content.compromissoParte1,
+            compromissoParte2: content.compromissoParte2,
+            compromissoMutuo: content.compromissoMutuo,
+            encerramentoEncaminhamentos: content.encerramentoEncaminhamentos
+          };
+        });
+      }
+
+      const map = new Map<string, PsychosocialMeetingAta>();
+      localAtas.forEach(a => {
+        const key = a.id || `ata-${a.number}-${a.year}`;
+        map.set(key, a);
+      });
+      dbAtas.forEach(a => {
+        map.set(a.id, a);
+      });
+
+      const merged = Array.from(map.values()).sort((a, b) => {
+        const yearDiff = (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+        if (yearDiff !== 0) return yearDiff;
+        return (parseInt(b.number) || 0) - (parseInt(a.number) || 0);
+      });
+
+      setAtas(merged);
+      localStorage.setItem('psychosocial_atas_v2', JSON.stringify(merged));
+    } catch (err) {
+      console.error('Erro ao carregar atas da mediação do Supabase:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCloudAtas();
+
+    const channel = supabase
+      .channel('civic_documents_mediation_atas')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'civic_documents', filter: 'template=eq.psychosocial_ata' }, () => {
+        fetchCloudAtas();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Atualizar quando initialCase mudar
   useEffect(() => {
     if (initialCase) {
@@ -81,10 +174,6 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
     }
   }, [initialCase]);
 
-  useEffect(() => {
-    localStorage.setItem('psychosocial_atas_v2', JSON.stringify(atas));
-  }, [atas]);
-
   // Sequência automática do número da ata
   useEffect(() => {
     if (viewMode === 'form' && !form.number) {
@@ -101,14 +190,42 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
       return;
     }
 
+    setIsSaving(true);
+    const generatedId = crypto.randomUUID();
     const newAta: PsychosocialMeetingAta = {
-      id: `ata-${Date.now()}`,
+      id: generatedId,
       ...form,
       timestamp: Date.now()
     };
-    setAtas([newAta, ...atas]);
 
-    // Se houver caso vinculado, salvar log no Supabase
+    const updatedList = [newAta, ...atas.filter(a => a.id !== generatedId)];
+    setAtas(updatedList);
+    localStorage.setItem('psychosocial_atas_v2', JSON.stringify(updatedList));
+
+    // 1. Salvar no Supabase (tabela civic_documents)
+    try {
+      const docPayload = {
+        id: generatedId,
+        template: 'psychosocial_ata',
+        date: form.date,
+        timestamp: Date.now(),
+        student_name: `ATA Nº ${form.number}/${form.year} - ${form.parte1Nome || form.pauta || 'Mediação'}`,
+        student_class: 'MEDIACAO',
+        content: newAta
+      };
+
+      const { error: dbError } = await supabase
+        .from('civic_documents')
+        .upsert([docPayload], { onConflict: 'id' });
+
+      if (dbError) {
+        console.error('Erro ao persistir ata no Supabase:', dbError);
+      }
+    } catch (e) {
+      console.error('Erro de rede ao salvar ata:', e);
+    }
+
+    // 2. Se houver caso vinculado, salvar log no Supabase
     if (initialCase?.id) {
       try {
         const ataLog = {
@@ -127,7 +244,8 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
       }
     }
 
-    alert("Ata de Mediação registrada e salva no histórico com sucesso!");
+    setIsSaving(false);
+    alert("Ata de Mediação registrada e salva no histórico e na nuvem com sucesso!");
     setViewMode('list');
     resetForm();
     if (onBack) onBack();
@@ -162,11 +280,24 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
     });
   };
 
-  const handlePrint = (ata: PsychosocialMeetingAta) => {
-    setPrintingAta(ata);
-    setTimeout(() => {
-      window.print();
-    }, 300);
+  const handleDeleteAta = async (ata: PsychosocialMeetingAta) => {
+    if (!window.confirm(`Deseja excluir permanentemente a ATA Nº ${ata.number}/${ata.year}?`)) return;
+    const filtered = atas.filter(a => a.id !== ata.id);
+    setAtas(filtered);
+    localStorage.setItem('psychosocial_atas_v2', JSON.stringify(filtered));
+
+    try {
+      if (ata.id && !ata.id.startsWith('ata-')) {
+        await supabase.from('civic_documents').delete().eq('id', ata.id);
+      } else {
+        await supabase.from('civic_documents').delete().match({
+          template: 'psychosocial_ata',
+          date: ata.date
+        });
+      }
+    } catch (e) {
+      console.error('Erro ao excluir ata da nuvem:', e);
+    }
   };
 
   return (
@@ -193,6 +324,12 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
       </div>
 
       {viewMode === 'list' ? (
+        loading ? (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-gray-100 shadow-sm">
+            <Loader2 className="animate-spin text-rose-600 mb-3" size={36} />
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Carregando atas da nuvem...</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 no-print">
            {atas.length === 0 ? (
              <div className="col-span-full bg-white p-12 rounded-[2.5rem] text-center border border-dashed border-gray-200">
@@ -237,11 +374,7 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
                         <Printer size={14} /> Imprimir / PDF
                      </button>
                      <button 
-                       onClick={() => {
-                         if (window.confirm(`Deseja excluir a ATA Nº ${ata.number}/${ata.year}?`)) {
-                           setAtas(atas.filter(a => a.id !== ata.id));
-                         }
-                       }}
+                       onClick={() => handleDeleteAta(ata)}
                        className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"
                        title="Excluir Ata"
                      >
@@ -252,6 +385,7 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
              ))
            )}
         </div>
+        )
       ) : (
         /* FORMULÁRIO COMPLETO MODELO PROFESSOR MEDIADOR */
         <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500 no-print">
@@ -471,12 +605,14 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
                     />
                  </div>
 
-                 <button 
-                   onClick={handleSave} 
-                   className="w-full py-5 bg-rose-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-3"
-                 >
-                    <Save size={20} /> Registrar e Finalizar Ata de Mediação
-                 </button>
+                  <button 
+                    onClick={handleSave} 
+                    disabled={isSaving}
+                    className="w-full py-5 bg-rose-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                     {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />} 
+                     {isSaving ? 'Salvando Ata na Nuvem...' : 'Registrar e Finalizar Ata de Mediação'}
+                  </button>
               </div>
            </div>
         </div>
