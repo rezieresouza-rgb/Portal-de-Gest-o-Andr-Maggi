@@ -981,13 +981,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         </div>
       )}
 
-      {/* MODAL DETALHES DO CASO EXISTENTE - 100% TELA CHEIA */}
+      {/* MODAL DETALHES DO CASO EXISTENTE - MODAL COMPACTO E ELEGANTE */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[200] bg-white w-full h-full flex flex-col justify-between overflow-hidden animate-in fade-in duration-200">
-          <div className="w-full h-full flex flex-col justify-between overflow-hidden">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-950/65 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-5xl h-[86vh] max-h-[820px] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200">
             
-            {/* CABEÇALHO ELEGANTE E COMPACTO (TELA CHEIA) */}
-            <div className="px-6 sm:px-8 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-white/10 flex flex-col gap-3">
+            {/* CABEÇALHO ELEGANTE E COMPACTO */}
+            <div className="px-6 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-white/10 flex flex-col gap-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-lg font-black text-indigo-200 shadow-inner">
