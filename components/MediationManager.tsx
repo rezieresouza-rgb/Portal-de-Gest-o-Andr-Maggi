@@ -454,12 +454,11 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
     if (!selectedCase || !newLog.content) return alert("Descreva o atendimento antes de salvar.");
     
     setIsLogLoading(true);
-    try {
       const logEntry: any = {
         id: `log-${Date.now()}`,
-        date: newLog.date,
-        professional: newLog.professional,
-        content: newLog.content
+        date: newLog.date || new Date().toLocaleDateString('sv-SE'),
+        professional: user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar',
+        content: newLog.content.trim()
       };
 
       const updatedLogs = [logEntry, ...(selectedCase.logs || [])];
@@ -1251,23 +1250,15 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                           placeholder="Descreva a ação ou conversa realizada hoje com o estudante ou responsáveis..."
                           className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 font-normal resize-none outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 min-h-[70px] transition-all"
                         />
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">Setor:</span>
-                            <select
-                              value={newLog.professional}
-                              onChange={(e) => setNewLog({ ...newLog, professional: e.target.value })}
-                              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
-                            >
-                              <option value="MEDIAÇÃO">MEDIAÇÃO</option>
-                              <option value="EQUIPE PSICOSSOCIAL">EQUIPE PSICOSSOCIAL</option>
-                              <option value="GESTÃO ESCOLAR">GESTÃO ESCOLAR</option>
-                            </select>
-                          </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                          <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5">
+                            <UserCheck size={14} className="text-indigo-600" />
+                            <span>Registrado por: <strong className="text-slate-800 font-bold">{user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar'}</strong></span>
+                          </span>
                           <button 
                             onClick={handleSaveLog}
                             disabled={isLogLoading || !newLog.content.trim()}
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 shadow-sm flex items-center gap-1.5"
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 shadow-sm flex items-center justify-center gap-1.5"
                           >
                             {isLogLoading ? 'Salvando...' : 'Adicionar Registro'}
                           </button>
