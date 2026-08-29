@@ -282,13 +282,21 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           { id: 'C', label: 'Comunicação com Pais e/ou Responsáveis', completed: false },
           { id: 'D', label: 'Reunião com os Responsáveis', completed: false },
           { id: 'E', label: 'Círculo de Mediação / Paz', completed: false },
-          { id: 'F', label: 'Encaminhamento à Rede', completed: false },
-          { id: 'G', label: 'Acordo / Finalização', completed: false }
+          { id: 'F', label: 'Palestra Educativa / Ação de Conscientização', completed: false },
+          { id: 'G', label: 'Encaminhamento à Rede / Apoio', completed: false },
+          { id: 'H', label: 'Acordo Restaurativo / Finalização', completed: false }
         ];
         
         const mergedSteps = baseSteps.map(baseStep => {
            const existing = existingSteps.find((s: any) => s.label === baseStep.label);
            return existing ? existing : baseStep;
+        });
+
+        // Preservar etapas personalizadas criadas pelo mediador
+        existingSteps.forEach((s: any) => {
+          if (!baseSteps.some(b => b.label === s.label) && !mergedSteps.some(m => m.label === s.label)) {
+            mergedSteps.push(s);
+          }
         });
 
         // Tentar resolver o nome do professor/solicitante
@@ -1351,34 +1359,66 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                 <div className="flex-1 overflow-y-auto custom-scrollbar w-full flex justify-center">
                   <div className="max-w-5xl w-full space-y-6">
                     <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
-                      <div>
-                        <h4 className="text-base font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                          <CheckCircle2 size={18} className="text-emerald-600" />
-                          Roteiro de Mediação & Etapas Obrigatórias
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Marque ou desmarque cada etapa conforme o atendimento avança.
-                        </p>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                          <h4 className="text-base font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <CheckCircle2 size={18} className="text-emerald-600" />
+                            Roteiro de Mediação & Etapas do Processo
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Marque ou desmarque cada etapa conforme o atendimento, palestras e ações restaurativas avançam.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const stepName = window.prompt("Digite o nome da nova etapa, palestra ou ação restaurativa (ex: Palestra sobre Bullying no 9º A):");
+                            if (!stepName || !stepName.trim()) return;
+
+                            const newStep = {
+                              id: `custom-step-${Date.now()}`,
+                              label: stepName.trim(),
+                              completed: false
+                            };
+
+                            const updatedSteps = [...(selectedCase.steps || []), newStep];
+                            try {
+                              const { error } = await supabase
+                                .from('mediation_cases')
+                                .update({ steps: updatedSteps })
+                                .eq('id', selectedCase.id);
+                              if (error) throw error;
+                              setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                              await fetchCases();
+                            } catch (err: any) {
+                              alert("Erro ao adicionar etapa: " + err.message);
+                            }
+                          }}
+                          className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto shadow-sm active:scale-95"
+                        >
+                          <Plus size={14} /> Adicionar Etapa / Palestra
+                        </button>
                       </div>
 
                       <div className="grid grid-cols-1 gap-3.5">
                         {selectedCase.steps?.map((step, idx) => (
                           <div 
                             key={idx} 
-                            className={`p-4 rounded-xl border transition-all flex items-center justify-between ${
+                            className={`p-4 rounded-xl border transition-all flex items-center justify-between gap-3 ${
                               step.completed 
                                 ? 'bg-emerald-50/70 border-emerald-200' 
                                 : 'bg-white border-slate-200 hover:border-slate-300'
                             }`}
                           >
-                            <div className="flex items-center gap-3.5">
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
                                 step.completed ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
                               }`}>
                                 {step.completed ? <Check size={16} /> : idx + 1}
                               </div>
-                              <div>
-                                <p className={`text-xs font-bold ${step.completed ? 'text-emerald-900' : 'text-slate-800'}`}>
+                              <div className="min-w-0">
+                                <p className={`text-xs font-bold truncate sm:whitespace-normal ${step.completed ? 'text-emerald-900' : 'text-slate-800'}`}>
                                   {step.label}
                                 </p>
                                 {step.date && (
@@ -1389,55 +1429,83 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                               </div>
                             </div>
 
-                            {step.completed ? (
-                              <button 
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (!window.confirm(`Deseja reverter a etapa "${step.label}" para pendente?`)) return;
-                                  const updatedSteps = selectedCase.steps.map((s, i) => 
-                                    i === idx ? { ...s, completed: false, date: undefined } : s
-                                  );
-                                  try {
-                                    const { error } = await supabase
-                                      .from('mediation_cases')
-                                      .update({ steps: updatedSteps })
-                                      .eq('id', selectedCase.id);
-                                    if (error) throw error;
-                                    await fetchCases();
-                                    setSelectedCase({ ...selectedCase, steps: updatedSteps });
-                                  } catch (err) {
-                                    alert("Erro ao reverter etapa.");
-                                  }
-                                }}
-                                className="px-3.5 py-1.5 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
-                                title="Clique para desfazer / reverter esta etapa"
-                              >
-                                <RotateCcw size={12} /> Desfazer
-                              </button>
-                            ) : (
-                              <button 
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  const updatedSteps = selectedCase.steps.map((s, i) => 
-                                    i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
-                                  );
-                                  try {
-                                    const { error } = await supabase
-                                      .from('mediation_cases')
-                                      .update({ steps: updatedSteps })
-                                      .eq('id', selectedCase.id);
-                                    if (error) throw error;
-                                    await fetchCases();
-                                    setSelectedCase({ ...selectedCase, steps: updatedSteps });
-                                  } catch (err) {
-                                    alert("Erro ao atualizar etapa.");
-                                  }
-                                }}
-                                className="px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
-                              >
-                                <Check size={13} /> Concluir Etapa
-                              </button>
-                            )}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {step.completed ? (
+                                <button 
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!window.confirm(`Deseja reverter a etapa "${step.label}" para pendente?`)) return;
+                                    const updatedSteps = selectedCase.steps.map((s, i) => 
+                                      i === idx ? { ...s, completed: false, date: undefined } : s
+                                    );
+                                    try {
+                                      const { error } = await supabase
+                                        .from('mediation_cases')
+                                        .update({ steps: updatedSteps })
+                                        .eq('id', selectedCase.id);
+                                      if (error) throw error;
+                                      await fetchCases();
+                                      setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                    } catch (err) {
+                                      alert("Erro ao reverter etapa.");
+                                    }
+                                  }}
+                                  className="px-3.5 py-1.5 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
+                                  title="Clique para desfazer / reverter esta etapa"
+                                >
+                                  <RotateCcw size={12} /> Desfazer
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const updatedSteps = selectedCase.steps.map((s, i) => 
+                                      i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
+                                    );
+                                    try {
+                                      const { error } = await supabase
+                                        .from('mediation_cases')
+                                        .update({ steps: updatedSteps })
+                                        .eq('id', selectedCase.id);
+                                      if (error) throw error;
+                                      await fetchCases();
+                                      setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                    } catch (err) {
+                                      alert("Erro ao atualizar etapa.");
+                                    }
+                                  }}
+                                  className="px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
+                                >
+                                  <Check size={13} /> Concluir Etapa
+                                </button>
+                              )}
+
+                              {/* Opção de excluir etapa personalizada */}
+                              {step.id?.startsWith('custom-step-') && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!window.confirm(`Deseja remover a etapa "${step.label}"?`)) return;
+                                    const updatedSteps = selectedCase.steps.filter((_, i) => i !== idx);
+                                    try {
+                                      const { error } = await supabase
+                                        .from('mediation_cases')
+                                        .update({ steps: updatedSteps })
+                                        .eq('id', selectedCase.id);
+                                      if (error) throw error;
+                                      await fetchCases();
+                                      setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                    } catch (err) {
+                                      alert("Erro ao remover etapa.");
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                  title="Excluir esta etapa personalizada"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
