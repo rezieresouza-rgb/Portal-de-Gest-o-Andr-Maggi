@@ -111,7 +111,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [isAgreementTermModalOpen, setIsAgreementTermModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [activeCaseTab, setActiveCaseTab] = useState<'attendance' | 'history' | 'steps' | 'resolution'>('attendance');
+  const [activeCaseTab, setActiveCaseTab] = useState<'timeline' | 'steps' | 'resolution'>('timeline');
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   
   const [newCase, setNewCase] = useState<Partial<MediationCase> & { originType?: string }>({
@@ -611,7 +611,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       setNewLog({ ...newLog, content: '', category: 'CONFLITO' });
       await fetchCases();
       alert("Atendimento registrado no diário com sucesso!");
-      setActiveCaseTab('history');
+      setActiveCaseTab('timeline');
     } catch (err: any) {
       console.error(err);
       alert("Erro ao salvar log: " + err.message);
@@ -1326,47 +1326,31 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
               </div>
 
               {/* NAVEGAÇÃO POR ABAS EXECUTIVAS */}
-              <div className="flex items-center gap-2 border-t border-white/10 pt-2.5 flex-wrap">
-                {/* Aba 1: Novo Atendimento */}
+              <div className="flex items-center gap-2 border-t border-white/10 pt-2.5">
                 <button
                   type="button"
-                  onClick={() => setActiveCaseTab('attendance')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    activeCaseTab === 'attendance'
-                      ? 'bg-white text-slate-900 shadow-md font-extrabold'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <UserCheck size={14} />
-                  <span>Novo Atendimento</span>
-                </button>
-
-                {/* Aba 2: Histórico de Ações */}
-                <button
-                  type="button"
-                  onClick={() => setActiveCaseTab('history')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    activeCaseTab === 'history'
+                  onClick={() => setActiveCaseTab('timeline')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeCaseTab === 'timeline'
                       ? 'bg-white text-slate-900 shadow-md font-extrabold'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <History size={14} />
-                  <span>Histórico de Ações</span>
+                  <span>Diário & Atendimentos</span>
                   {selectedCase.logs && selectedCase.logs.length > 0 && (
                     <span className={`px-2 py-0.2 rounded-full text-[10px] font-extrabold ${
-                      activeCaseTab === 'history' ? 'bg-indigo-600 text-white' : 'bg-white/20 text-white'
+                      activeCaseTab === 'timeline' ? 'bg-indigo-600 text-white' : 'bg-white/20 text-white'
                     }`}>
                       {selectedCase.logs.length}
                     </span>
                   )}
                 </button>
 
-                {/* Aba 3: Etapas do Processo */}
                 <button
                   type="button"
                   onClick={() => setActiveCaseTab('steps')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                     activeCaseTab === 'steps'
                       ? 'bg-white text-slate-900 shadow-md font-extrabold'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -1383,11 +1367,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                   )}
                 </button>
 
-                {/* Aba 4: Acordo & Devolutiva */}
                 <button
                   type="button"
                   onClick={() => setActiveCaseTab('resolution')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                     activeCaseTab === 'resolution'
                       ? 'bg-white text-slate-900 shadow-md font-extrabold'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -1405,8 +1388,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
             {/* CORPO DO MODAL BASEADO NA ABA ATIVA */}
             <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-slate-50/50 flex flex-col min-h-0">
               
-              {/* ABA 1: NOVO ATENDIMENTO */}
-              {activeCaseTab === 'attendance' && (
+              {/* ABA 1: DIÁRIO & ATENDIMENTOS (LAYOUT LIMPO E INTEGRADO) */}
+              {activeCaseTab === 'timeline' && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full h-full min-h-0 flex-1">
                   
                   {/* Coluna Esquerda: Relato e Contexto */}
@@ -1458,217 +1441,143 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     </div>
                   </div>
 
-                  {/* Coluna Direita: Formulário de Registro de Atendimento */}
+                  {/* Coluna Direita: Diário de Atendimento e Linha do Tempo */}
                   <div className="lg:col-span-7 flex flex-col h-full min-h-0">
                     <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col h-full min-h-0 space-y-4">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                            <UserCheck size={16} />
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                              Registrar Ação / Atendimento
-                            </h4>
-                            <p className="text-[11px] text-slate-400">Escuta, mediação ou diálogo com familiares</p>
+                      
+                      {/* Caixa de Novo Registro com Dropdown de Categoria Limpo */}
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5 shrink-0">
+                        {/* Linha 1: Título e Seletor de Tipo */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                            <UserCheck size={14} className="text-indigo-600" />
+                            Registrar Atendimento / Ação
+                          </span>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-extrabold uppercase text-slate-400">Tipo:</span>
+                            <select
+                              value={newLog.category || 'CONFLITO'}
+                              onChange={(e) => setNewLog(prev => ({ ...prev, category: e.target.value }))}
+                              className="bg-white border border-slate-300 text-slate-800 text-[11px] font-bold px-2.5 py-1 rounded-lg outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                            >
+                              {ATTENDANCE_CATEGORIES.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.label}</option>
+                              ))}
+                            </select>
                           </div>
                         </div>
 
-                        {selectedCase.logs && selectedCase.logs.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setActiveCaseTab('history')}
-                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 shrink-0"
-                          >
-                            <History size={13} />
-                            Ver Histórico ({selectedCase.logs.length}) →
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Seletor de Tipo / Categoria de Atendimento */}
-                      <div className="shrink-0 space-y-1.5">
-                        <label className="text-[10px] font-black uppercase text-slate-500 block flex items-center gap-1.5">
-                          <Target size={13} className="text-indigo-600" />
-                          Selecione o Tipo / Motivo deste Atendimento:
-                        </label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {ATTENDANCE_CATEGORIES.map(cat => {
-                            const isSelected = (newLog.category || 'CONFLITO') === cat.id;
-                            return (
-                              <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => setNewLog(prev => ({ ...prev, category: cat.id }))}
-                                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
-                                  isSelected
-                                    ? `${cat.color} ring-2 ring-indigo-500 shadow-sm scale-105`
-                                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-white hover:border-slate-300'
-                                }`}
-                              >
-                                {cat.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Área de Texto Ampla */}
-                      <div className="flex-1 flex flex-col min-h-0 space-y-1.5">
-                        <label className="text-[10px] font-black uppercase text-slate-500 block flex items-center gap-1.5">
-                          <FileText size={13} className="text-indigo-600" />
-                          Descrição Detalhada do Atendimento Realizado:
-                        </label>
+                        {/* Campo de Texto */}
                         <textarea 
                           value={newLog.content}
                           onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
-                          placeholder="Descreva a escuta realizada, relatos dos envolvidos, combinados pactuados e próximos encaminhamentos..."
-                          className="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 font-normal resize-none outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 min-h-[140px] transition-all leading-relaxed"
+                          placeholder="Descreva a escuta realizada, relatos dos estudantes/familiares e combinados..."
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 font-normal resize-none outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 min-h-[65px] transition-all"
                         />
-                      </div>
 
-                      {/* Rodapé da Caixa de Registro */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 shrink-0">
-                        <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5">
-                          <UserCheck size={14} className="text-indigo-600" />
-                          <span>Registrado por: <strong className="text-slate-800 font-bold">{user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar'}</strong></span>
-                        </span>
-                        <button 
-                          onClick={handleSaveLog}
-                          disabled={isLogLoading || !newLog.content.trim()}
-                          className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 active:scale-95"
-                        >
-                          <Save size={14} />
-                          <span>{isLogLoading ? 'Salvando...' : 'Salvar no Histórico'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ABA 2: HISTÓRICO DE AÇÕES EFETUADAS */}
-              {activeCaseTab === 'history' && (
-                <div className="flex-1 overflow-y-auto custom-scrollbar w-full flex justify-center p-1">
-                  <div className="max-w-5xl w-full space-y-4">
-                    {/* Cabeçalho do Histórico */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                          <History size={20} />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                            Histórico de Ações & Atendimentos
-                          </h4>
-                          <p className="text-xs text-slate-500">
-                            Linha do tempo cronológica de todas as intervenções realizadas neste caso
-                          </p>
+                        {/* Rodapé da Caixa de Registro */}
+                        <div className="flex items-center justify-between gap-2 pt-0.5">
+                          <span className="text-[10px] text-slate-500 truncate">
+                            Por: <strong className="text-slate-700 font-semibold">{user?.name ? `${user.name} (Mediador)` : 'Mediação'}</strong>
+                          </span>
+                          <button 
+                            onClick={handleSaveLog}
+                            disabled={isLogLoading || !newLog.content.trim()}
+                            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 shadow-sm flex items-center gap-1.5 active:scale-95 shrink-0"
+                          >
+                            <Save size={13} />
+                            <span>{isLogLoading ? 'Salvando...' : 'Adicionar Registro'}</span>
+                          </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200">
-                          Total de Registros: {selectedCase.logs?.length || 0}
-                        </span>
-                      </div>
-                    </div>
+                      {/* Lista de Registros da Linha do Tempo */}
+                      <div className="flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scrollbar space-y-3 pt-1">
+                        {selectedCase.logs && selectedCase.logs.length > 0 ? (
+                          selectedCase.logs.map((log, idx) => {
+                            const logId = log.id || `log-idx-${idx}`;
+                            const isEditing = editingLogId === logId;
 
-                    {/* Lista de Registros do Histórico */}
-                    {selectedCase.logs && selectedCase.logs.length > 0 ? (
-                      <div className="space-y-3">
-                        {selectedCase.logs.map((log, idx) => {
-                          const logId = log.id || `log-idx-${idx}`;
-                          const isEditing = editingLogId === logId;
-
-                          return (
-                            <div key={logId} className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group space-y-3">
-                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold uppercase tracking-wide">
-                                    {log.professional}
-                                  </span>
-                                  {log.category && (
-                                    <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
-                                      ATTENDANCE_CATEGORIES.find(c => c.id === log.category)?.color || 'bg-slate-100 text-slate-700 border-slate-200'
-                                    }`}>
-                                      {ATTENDANCE_CATEGORIES.find(c => c.id === log.category)?.label || log.category}
+                            return (
+                              <div key={logId} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 hover:bg-white hover:shadow-sm transition-all group space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                      {log.professional}
                                     </span>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
-                                    <Calendar size={13} className="text-slate-400" />
-                                    {formatLocalDate(log.date)}
-                                  </span>
-                                  {!isEditing && (
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        onClick={() => {
-                                          setEditingLogId(logId);
-                                          setEditingLogContent(log.content);
-                                        }}
-                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                        title="Editar este registro"
-                                      >
-                                        <Pencil size={13} />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteLog(logId)}
-                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                        title="Excluir este registro"
-                                      >
-                                        <Trash2 size={13} />
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {isEditing ? (
-                                <div className="space-y-2 pt-1">
-                                  <textarea
-                                    value={editingLogContent}
-                                    onChange={(e) => setEditingLogContent(e.target.value)}
-                                    className="w-full p-3.5 bg-slate-50 border border-indigo-300 rounded-xl text-xs font-normal resize-none outline-none focus:ring-2 focus:ring-indigo-500/20 min-h-[90px]"
-                                  />
-                                  <div className="flex justify-end gap-2">
-                                    <button
-                                      onClick={() => setEditingLogId(null)}
-                                      className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition-all"
-                                    >
-                                      Cancelar
-                                    </button>
-                                    <button
-                                      onClick={() => handleUpdateLog(logId)}
-                                      disabled={!editingLogContent.trim() || isLogLoading}
-                                      className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
-                                    >
-                                      {isLogLoading ? 'Salvando...' : 'Salvar Alteração'}
-                                    </button>
+                                    {log.category && (
+                                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
+                                        ATTENDANCE_CATEGORIES.find(c => c.id === log.category)?.color || 'bg-slate-100 text-slate-700 border-slate-200'
+                                      }`}>
+                                        {ATTENDANCE_CATEGORIES.find(c => c.id === log.category)?.label || log.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[11px] text-slate-400 font-medium">{formatLocalDate(log.date)}</span>
+                                    {!isEditing && (
+                                      <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                          onClick={() => {
+                                            setEditingLogId(logId);
+                                            setEditingLogContent(log.content);
+                                          }}
+                                          className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                                          title="Editar registro"
+                                        >
+                                          <Pencil size={12} />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteLog(logId)}
+                                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                          title="Excluir registro"
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
-                              ) : (
-                                <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap pl-1 font-normal">
-                                  {log.content}
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })}
+
+                                {isEditing ? (
+                                  <div className="space-y-2 pt-1">
+                                    <textarea
+                                      value={editingLogContent}
+                                      onChange={(e) => setEditingLogContent(e.target.value)}
+                                      className="w-full p-2.5 bg-white border border-indigo-300 rounded-xl text-xs font-normal resize-none outline-none focus:ring-2 focus:ring-indigo-500/20 min-h-[60px]"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <button
+                                        onClick={() => setEditingLogId(null)}
+                                        className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition-all"
+                                      >
+                                        Cancelar
+                                      </button>
+                                      <button
+                                        onClick={() => handleUpdateLog(logId)}
+                                        disabled={!editingLogContent.trim() || isLogLoading}
+                                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
+                                      >
+                                        <Check size={12} /> Salvar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-700 leading-relaxed font-normal whitespace-pre-wrap pl-0.5">{log.content}</p>
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400 space-y-2">
+                            <Clock size={32} className="text-slate-300 stroke-1" />
+                            <p className="text-xs font-semibold">Nenhum atendimento registrado no diário ainda.</p>
+                            <p className="text-[11px] text-slate-400">Use o campo acima para registrar as escutas e ações deste caso.</p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-2">
-                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto">
-                          <History size={28} />
-                        </div>
-                        <h5 className="text-sm font-bold text-slate-700">Nenhum atendimento registrado no histórico ainda</h5>
-                        <p className="text-xs text-slate-500 max-w-md mx-auto">
-                          Os atendimentos registrados na aba <strong>"Novo Atendimento"</strong> serão listados aqui em ordem cronológica.
-                        </p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               )}
