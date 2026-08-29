@@ -30,7 +30,8 @@ import {
   BookOpen,
   FileCheck,
   Send,
-  Sparkles
+  Sparkles,
+  ChevronDown
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { supabase } from '../supabaseClient';
@@ -83,6 +84,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   // Novos Modais Integrados de Mediação Restaurativa
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [isAgreementTermModalOpen, setIsAgreementTermModalOpen] = useState(false);
+  const [activeCaseTab, setActiveCaseTab] = useState<'timeline' | 'steps' | 'resolution'>('timeline');
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   
   const [newCase, setNewCase] = useState<Partial<MediationCase> & { originType?: string }>({
     type: 'CONFLITO',
@@ -978,436 +981,572 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         </div>
       )}
 
-      {/* MODAL DETALHES DO CASO EXISTENTE */}
+      {/* MODAL DETALHES DO CASO EXISTENTE - INTERFACE REFORMULADA E LIMPA */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-rose-950/60 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white w-full h-full shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-               <div className="p-5 bg-gradient-to-r from-rose-900 via-indigo-950 to-slate-900 text-white shrink-0 shadow-lg border-b border-rose-800/40">
-                  <div className="flex justify-between items-center mb-3">
-                     <button onClick={() => setSelectedCase(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
-                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/20">
-                          Protocolo #{selectedCase.id?.substring(0,8) || 'N/A'}
-                        </span>
-                     </div>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200 p-2 sm:p-4 md:p-6">
+          <div className="bg-white w-full max-w-6xl h-[94vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-300">
+            
+            {/* CABEÇALHO ELEGANTE E MODERNO */}
+            <div className="px-6 py-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-white/10 flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-xl font-black text-indigo-200 shadow-inner">
+                    {(selectedCase.studentName || '?')[0]}
                   </div>
-                  
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl font-black shrink-0 border border-white/10 shadow-inner">
-                           {(selectedCase.studentName || '?')[0]}
-                        </div>
-                        <div>
-                           <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-xl font-black uppercase tracking-tight leading-none">{selectedCase.studentName}</h3>
-                              {(() => {
-                                const count = cases.filter(c => c.studentName?.trim().toUpperCase() === selectedCase.studentName?.trim().toUpperCase()).length;
-                                if (count > 1) {
-                                  return (
-                                    <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[8px] uppercase tracking-wider flex items-center gap-1 shadow-md">
-                                      <AlertTriangle size={11} /> Reincidente ({count} Casos)
-                                    </span>
-                                  );
-                                }
-                                return null;
-                              })()}
-                           </div>
-                           <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              <p className="text-rose-300 font-bold uppercase text-[9px] tracking-widest leading-none shrink-0">{selectedCase.className} • Caso {selectedCase.type}</p>
-                              {(() => {
-                                  const isBuscaAtiva = (selectedCase.teacherName && selectedCase.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
-                                                       selectedCase.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
-                                                       selectedCase.description?.includes('[VIA BUSCA ATIVA]') ||
-                                                       selectedCase.description?.includes('Busca Ativa');
-
-                                  if (isBuscaAtiva) {
-                                    const displaySource = (selectedCase.teacherName && selectedCase.teacherName.includes('(')) ? selectedCase.teacherName : 'Busca Ativa Escolar';
-                                    return (
-                                      <span className="px-2.5 py-0.5 rounded bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
-                                        <Search size={11} /> Enviado por: {displaySource}
-                                      </span>
-                                    );
-                                  }
-
-                                  if (selectedCase.teacherName) {
-                                    return (
-                                      <span className="px-2.5 py-0.5 rounded bg-white/20 text-white border border-white/30 text-[8px] font-black uppercase tracking-widest leading-none shrink-0 flex items-center gap-1">
-                                        <UserCheck size={11} /> Enviado por: {selectedCase.teacherName}
-                                      </span>
-                                    );
-                                  }
-
-                                  return (
-                                    <span className="px-2.5 py-0.5 rounded bg-white/10 text-white/70 text-[8px] font-bold uppercase tracking-widest leading-none shrink-0">
-                                      Demanda Direta
-                                    </span>
-                                  );
-                               })()}
-                           </div>
-                        </div>
-                     </div>
-
-                     {/* BARRA DE AÇÕES RÁPIDAS DA JUSTIÇA RESTAURATIVA */}
-                     <div className="flex items-center gap-2 flex-wrap pt-2 md:pt-0">
-                        {/* 1. Guia Restaurativo */}
-                        <button
-                          type="button"
-                          onClick={() => setIsGuideModalOpen(true)}
-                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-white/10 hover:bg-white/20 text-amber-300 border border-amber-300/30 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-                          title="Abrir Guia de Perguntas Restaurativas da SEDUC/MT"
-                        >
-                          <BookOpen size={13} />
-                          Guia de Perguntas
-                        </button>
-
-                        {/* 2. Termo de Compromisso Restaurativo */}
-                        <button
-                          type="button"
-                          onClick={() => setIsAgreementTermModalOpen(true)}
-                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-400 flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
-                          title="Gerar e imprimir Termo Formal de Compromisso Restaurativo com follow-up"
-                        >
-                          <FileCheck size={13} />
-                          Pacto / Termo
-                        </button>
-
-                        {/* 3. Lavrar Ata Oficial SEDUC */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (onOpenAtaForCase) {
-                              onOpenAtaForCase(selectedCase);
-                              setSelectedCase(null);
-                            } else if (onTabChange) {
-                              onTabChange('atas');
-                              setSelectedCase(null);
-                            }
-                          }}
-                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-400 flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
-                          title="Preencher Ata Oficial SEDUC a partir deste caso"
-                        >
-                          <FileText size={13} />
-                          Lavrar Ata SEDUC
-                        </button>
-
-                        {/* 4. Devolutiva ao Solicitante */}
-                        <button
-                          type="button"
-                          onClick={() => handleSendFeedbackToRequester(selectedCase)}
-                          className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider bg-white/15 hover:bg-white/25 text-white border border-white/30 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-                          title="Enviar devolutiva institucional para o professor ou monitor que encaminhou o caso"
-                        >
-                          <Send size={13} />
-                          Devolutiva
-                        </button>
-
-                        {/* 5. Triagem Psicossocial */}
-                        <button
-                          type="button"
-                          onClick={() => handleTriageToPsychosocial(selectedCase)}
-                          disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
-                          className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md ${
-                            selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
-                              ? 'bg-purple-900/50 text-purple-200 border border-purple-400/30 cursor-default'
-                              : 'bg-purple-600 hover:bg-purple-700 text-white border border-purple-400 active:scale-95'
-                          }`}
-                          title="Encaminhar para triagem e acompanhamento técnico da Equipe Psicossocial"
-                        >
-                          <HeartHandshake size={13} />
-                          {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? 'Triado Psicossocial' : 'Triagem Psicossocial'}
-                        </button>
-                      </div>
-                   </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-xl font-bold tracking-tight text-white">{selectedCase.studentName}</h3>
+                      {(() => {
+                        const count = cases.filter(c => c.studentName?.trim().toUpperCase() === selectedCase.studentName?.trim().toUpperCase()).length;
+                        if (count > 1) {
+                          return (
+                            <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[10px] tracking-wide border border-amber-500/30 flex items-center gap-1">
+                              <AlertTriangle size={11} /> Reincidente ({count} Casos)
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-slate-300">
+                      <span className="font-medium bg-white/10 px-2 py-0.5 rounded-md text-[11px] text-indigo-200">{selectedCase.className}</span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-300 font-medium">Caso: {selectedCase.type}</span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-400 font-mono text-[11px]">Protocolo #{selectedCase.id?.substring(0,8)}</span>
+                    </div>
+                  </div>
                 </div>
 
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50/30">
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                    {/* LADO ESQUERDO: Relato e Diário de Atendimento (Linha do Tempo) */}
-                    <div className="flex flex-col gap-6 h-full min-h-0 overflow-hidden">
-                        {/* Parecer / Devolutiva da Psicossocial se existir */}
-                        {selectedCase.feedback && (
-                          <div className="bg-indigo-50 border border-indigo-200 p-5 rounded-[2rem] shadow-sm space-y-2 shrink-0">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-xs font-black text-indigo-900 uppercase tracking-wider flex items-center gap-2">
-                                <HeartHandshake size={16} className="text-indigo-600" /> Devolutiva da Equipe Psicossocial
-                              </h4>
-                              <span className="text-[8px] font-black uppercase bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-md">
-                                Parecer Técnico Registrado
-                              </span>
-                            </div>
-                            <p className="text-xs font-medium text-slate-700 leading-relaxed italic bg-white p-3.5 rounded-xl border border-indigo-100 whitespace-pre-wrap">
-                              "{selectedCase.feedback}"
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Relato Original */}
-                        <div className="h-[200px] bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col shrink-0">
-                            <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2 mb-3 shrink-0">
-                               <FileText size={12} className="text-rose-600" /> Relato Original
-                            </h4>
-                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                               <p className="text-sm text-gray-600 leading-relaxed font-medium capitalize whitespace-pre-wrap">
-                                  {selectedCase.description}
-                               </p>
-                            </div>
-                        </div>
-
-                        {/* Diário de Atendimento (Linha do Tempo) */}
-                        <div className="flex-1 bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col min-h-0 overflow-hidden">
-                           <h4 className="text-[9px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2 mb-4 shrink-0">
-                              <History size={14} /> Diário de Atendimento / Linha do Tempo
-                           </h4>
-
-                           {/* Input de Novo Registro */}
-                           <div className="bg-rose-50/50 p-4 rounded-[1.5rem] border border-rose-100 mb-4 shrink-0">
-                              <textarea 
-                                 value={newLog.content}
-                                 onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
-                                 placeholder="Descreva a ação realizada hoje..."
-                                 className="w-full p-3 bg-white border border-rose-200 rounded-xl text-xs font-medium resize-none outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[60px]"
-                              />
-                              <div className="flex justify-between items-center mt-2">
-                                 <select
-                                    value={newLog.professional}
-                                    onChange={(e) => setNewLog({ ...newLog, professional: e.target.value })}
-                                    className="bg-white border border-rose-200 rounded-lg px-2.5 py-1 text-[9px] font-black text-rose-600 uppercase outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer shadow-sm"
-                                    title="Selecione quem está realizando o registro"
-                                 >
-                                    <option value="MEDIAÇÃO">MEDIAÇÃO</option>
-                                    <option value="EQUIPE PSICOSSOCIAL">EQUIPE PSICOSSOCIAL</option>
-                                    <option value="GESTÃO ESCOLAR">GESTÃO ESCOLAR</option>
-                                 </select>
-                                 <button 
-                                    onClick={handleSaveLog}
-                                    disabled={isLogLoading || !newLog.content.trim()}
-                                    className="px-4 py-1.5 bg-rose-600 text-white rounded-lg text-[9px] font-black uppercase hover:bg-rose-700 transition-all disabled:opacity-50"
-                                 >
-                                    {isLogLoading ? 'Salvando...' : 'Registrar Ação'}
-                                 </button>
-                              </div>
-                           </div>
-
-                           {/* Lista da Linha do Tempo */}
-                           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
-                              {selectedCase.logs && selectedCase.logs.length > 0 ? (
-                                 selectedCase.logs.map((log, idx) => {
-                                   const logId = log.id || `log-idx-${idx}`;
-                                   const isEditing = editingLogId === logId;
-
-                                   return (
-                                     <div key={logId} className="relative pl-6 pb-2 border-l-2 border-rose-100 last:border-0 last:pb-0">
-                                        <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-rose-500 shadow-sm" />
-                                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group hover:bg-white transition-all hover:shadow-md">
-                                           <div className="flex justify-between items-center mb-1.5">
-                                              <p className="text-[10px] font-black text-rose-600 uppercase tracking-tighter">{log.professional}</p>
-                                              <div className="flex items-center gap-2">
-                                                 <p className="text-[8px] font-bold text-gray-400">{formatLocalDate(log.date)}</p>
-                                                 {!isEditing && (
-                                                   <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                                                     <button
-                                                       onClick={() => {
-                                                         setEditingLogId(logId);
-                                                         setEditingLogContent(log.content);
-                                                       }}
-                                                       className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                                                       title="Editar registro"
-                                                     >
-                                                       <Pencil size={12} />
-                                                     </button>
-                                                     <button
-                                                       onClick={() => handleDeleteLog(logId)}
-                                                       className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                                       title="Excluir registro"
-                                                     >
-                                                       <Trash2 size={12} />
-                                                     </button>
-                                                   </div>
-                                                 )}
-                                              </div>
-                                           </div>
-                                           {isEditing ? (
-                                             <div className="mt-2 space-y-2">
-                                               <textarea
-                                                 value={editingLogContent}
-                                                 onChange={(e) => setEditingLogContent(e.target.value)}
-                                                 className="w-full p-2.5 bg-white border border-blue-300 rounded-xl text-xs font-medium resize-none outline-none focus:ring-2 focus:ring-blue-500/20 min-h-[60px]"
-                                               />
-                                               <div className="flex justify-end gap-2">
-                                                 <button
-                                                   onClick={() => setEditingLogId(null)}
-                                                   className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[9px] font-black uppercase transition-all"
-                                                 >
-                                                   Cancelar
-                                                 </button>
-                                                 <button
-                                                   onClick={() => handleUpdateLog(logId)}
-                                                   disabled={!editingLogContent.trim() || isLogLoading}
-                                                   className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[9px] font-black uppercase transition-all flex items-center gap-1 shadow-sm"
-                                                 >
-                                                   <Check size={10} /> Salvar
-                                                 </button>
-                                               </div>
-                                             </div>
-                                           ) : (
-                                             <p className="text-xs text-gray-700 leading-relaxed font-medium whitespace-pre-wrap">{log.content}</p>
-                                           )}
-                                        </div>
-                                     </div>
-                                   );
-                                 })
-                              ) : (
-                                <div className="py-10 text-center opacity-40">
-                                   <Clock size={32} className="mx-auto mb-2" />
-                                   <p className="text-[9px] font-black uppercase">Nenhum registro no diário</p>
-                                </div>
-                              )}
-                           </div>
-                        </div>
-                    </div>
-
-                    {/* LADO DIREITO: Etapas e Devolutiva */}
-                    <div className="flex flex-col gap-6 h-full">
-                       <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm shrink-0">
-                           <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2 mb-3">
-                              <History size={12} className="text-rose-600" /> Etapas do Processo
-                           </h4>
-                           <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
-                             {selectedCase.steps?.map((step, idx) => (
-                               <div key={idx} className={`p-3 rounded-2xl border-2 transition-all flex items-center justify-between ${step.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-dashed border-gray-200'}`}>
-                                  <div className="flex items-center gap-3">
-                                     <div className={`p-1.5 rounded-lg ${step.completed ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-300'}`}>
-                                        {step.completed ? <CheckCircle2 size={14}/> : <Clock size={14}/>}
-                                     </div>
-                                     <div>
-                                        <p className={`text-[10px] font-black uppercase leading-none ${step.completed ? 'text-emerald-700' : 'text-gray-400'}`}>{step.label}</p>
-                                        {step.date && <p className="text-[8px] font-bold text-emerald-600 mt-1">{formatLocalDate(step.date)}</p>}
-                                     </div>
-                                  </div>
-                                  {step.completed ? (
-                                    <button 
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        if (!window.confirm(`Tem certeza que deseja reverter a etapa "${step.label}" para pendente?`)) return;
-                                        const updatedSteps = selectedCase.steps.map((s, i) => 
-                                          i === idx ? { ...s, completed: false, date: undefined } : s
-                                        );
-                                        try {
-                                          const { error } = await supabase
-                                            .from('mediation_cases')
-                                            .update({ steps: updatedSteps })
-                                            .eq('id', selectedCase.id);
-                                          if (error) throw error;
-                                          await fetchCases();
-                                          setSelectedCase({ ...selectedCase, steps: updatedSteps });
-                                        } catch (err) {
-                                          alert("Erro ao reverter etapa.");
-                                        }
-                                      }}
-                                      className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-[8px] font-black uppercase transition-all flex items-center gap-1 border border-amber-300 shadow-sm"
-                                      title="Clique para desfazer / reverter esta etapa"
-                                    >
-                                      <RotateCcw size={10} /> Reverter
-                                    </button>
-                                  ) : (
-                                     <button 
-                                       onClick={async (e) => {
-                                         e.stopPropagation();
-                                         const updatedSteps = selectedCase.steps.map((s, i) => 
-                                           i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
-                                         );
-                                         try {
-                                           const { error } = await supabase
-                                             .from('mediation_cases')
-                                             .update({ steps: updatedSteps })
-                                             .eq('id', selectedCase.id);
-                                           if (error) throw error;
-                                           await fetchCases();
-                                           setSelectedCase({ ...selectedCase, steps: updatedSteps });
-                                         } catch (err) {
-                                           alert("Erro ao atualizar etapa.");
-                                         }
-                                       }}
-                                       className="px-3 py-1 bg-gray-900 text-white rounded-lg text-[8px] font-black uppercase hover:bg-rose-600 transition-all shadow-sm"
-                                     >
-                                       Registrar
-                                     </button>
-                                  )}
-                               </div>
-                             ))}
-                           </div>
-                       </div>
-
-                       <div className="flex-1 bg-white p-5 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group shadow-sm flex flex-col min-h-[200px]">
-                           <div className="absolute top-0 right-0 p-4 opacity-5 text-emerald-900 pointer-events-none">
-                               <MessageSquareIcon size={100} strokeWidth={1} />
-                           </div>
-                           
-                           <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 mb-2 shrink-0">
-                              <CheckCircle2 size={12} /> Acordo Final / Devolutiva de Resolução
-                           </h4>
-                           
-                           <textarea 
-                              value={selectedCase?.feedback || ''}
-                              onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
-                              placeholder="Escreva aqui a resposta/devolutiva detalhada..."
-                              className="w-full flex-1 p-5 bg-emerald-50/30 border-2 border-emerald-100 rounded-[1.5rem] text-sm font-bold resize-none outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-inner focus:border-emerald-400"
-                           />
-                        </div>
-                    </div>
-                 </div>
-              </div>
-
-              <div className="p-4 bg-white border-t border-gray-50 flex flex-wrap gap-3">
-                  <button 
-                    onClick={handleSaveFeedback}
-                    className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-emerald-700 transition-all min-w-[140px] flex items-center justify-center gap-2"
-                  >
-                    <Save size={14} /> Salvar Devolutiva
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      if (!window.confirm("Deseja encerrar este caso com acordo?")) return;
-                      try {
-                         // Primeiro salva a devolutiva se houver algo escrito
-                         if (selectedCase?.feedback?.trim()) {
-                            const { error: medError } = await supabase
-                               .from('mediation_cases')
-                               .update({ feedback: selectedCase.feedback.trim() })
-                               .eq('id', selectedCase.id);
-                            if (medError) console.error("Erro ao salvar devolutiva no encerramento:", medError);
-                         }
-
-                         const { error } = await supabase
-                           .from('mediation_cases')
-                           .update({ 
-                             status: 'CONCLUÍDO', 
-                             closed_at: new Date().toLocaleDateString('sv-SE') 
-                           })
-                           .eq('id', selectedCase.id);
-                         if (error) throw error;
-                         await fetchCases();
-                         alert("Caso encerrado com sucesso! Ele continuará visível na aba Ativos hoje.");
-                      } catch (err) {
-                         alert("Erro ao encerrar caso.");
+                {/* AÇÕES RÁPIDAS NO TOPO */}
+                <div className="flex items-center gap-2">
+                  {/* Botão Principal: Lavrar Ata SEDUC */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onOpenAtaForCase) {
+                        onOpenAtaForCase(selectedCase);
+                        setSelectedCase(null);
+                      } else if (onTabChange) {
+                        onTabChange('atas');
+                        setSelectedCase(null);
                       }
                     }}
-                    className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-rose-700 transition-all min-w-[140px] flex items-center justify-center gap-2"
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 transition-all shadow-md active:scale-95"
+                    title="Preencher Ata Oficial SEDUC a partir deste caso"
                   >
-                    <ShieldCheck size={14} /> Encerrar com Acordo
+                    <FileText size={15} />
+                    <span>Lavrar Ata SEDUC</span>
                   </button>
 
+                  {/* Dropdown de Mais Ações */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsActionMenuOpen(!isActionMenuOpen)}
+                      className="px-3 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                    >
+                      <span>Mais Ações</span>
+                      <ChevronDown size={14} className={`transition-transform duration-200 ${isActionMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isActionMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-1.5 divide-y divide-slate-800/80 animate-in fade-in zoom-in-95 duration-150 text-xs">
+                        <div className="p-1 space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsActionMenuOpen(false);
+                              setIsGuideModalOpen(true);
+                            }}
+                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-amber-300 flex items-center gap-2 font-medium transition-colors"
+                          >
+                            <BookOpen size={14} /> Guia de Perguntas (SEDUC)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsActionMenuOpen(false);
+                              setIsAgreementTermModalOpen(true);
+                            }}
+                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-emerald-300 flex items-center gap-2 font-medium transition-colors"
+                          >
+                            <FileCheck size={14} /> Pacto / Termo de Compromisso
+                          </button>
+                        </div>
+                        <div className="p-1 space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsActionMenuOpen(false);
+                              handleSendFeedbackToRequester(selectedCase);
+                            }}
+                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-slate-200 flex items-center gap-2 font-medium transition-colors"
+                          >
+                            <Send size={14} /> Enviar Devolutiva ao Solicitante
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsActionMenuOpen(false);
+                              handleTriageToPsychosocial(selectedCase);
+                            }}
+                            disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
+                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-purple-300 flex items-center gap-2 font-medium transition-colors disabled:opacity-50"
+                          >
+                            <HeartHandshake size={14} /> 
+                            {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? 'Triado p/ Psicossocial' : 'Triagem p/ Psicossocial'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Fechar */}
                   <button 
-                    onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
-                    className="flex-1 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-100 transition-all min-w-[140px]"
+                    onClick={() => {
+                      setSelectedCase(null);
+                      setIsActionMenuOpen(false);
+                    }} 
+                    className="p-2.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all ml-1"
+                    title="Fechar janela"
                   >
-                    Excluir Caso
+                    <X size={20} />
                   </button>
-                   <button onClick={() => setSelectedCase(null)} className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all min-w-[140px]">Fechar Aba</button>
                 </div>
+              </div>
+
+              {/* NAVEGAÇÃO POR ABAS EXECUTIVAS */}
+              <div className="flex items-center gap-2 border-t border-white/10 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveCaseTab('timeline')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeCaseTab === 'timeline'
+                      ? 'bg-white text-slate-900 shadow-md font-extrabold'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <History size={15} />
+                  <span>Diário & Atendimentos</span>
+                  {selectedCase.logs && selectedCase.logs.length > 0 && (
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                      activeCaseTab === 'timeline' ? 'bg-indigo-100 text-indigo-800' : 'bg-white/20 text-white'
+                    }`}>
+                      {selectedCase.logs.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveCaseTab('steps')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeCaseTab === 'steps'
+                      ? 'bg-white text-slate-900 shadow-md font-extrabold'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <CheckCircle2 size={15} />
+                  <span>Etapas do Processo</span>
+                  {selectedCase.steps && (
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                      activeCaseTab === 'steps' ? 'bg-emerald-100 text-emerald-800' : 'bg-white/20 text-white'
+                    }`}>
+                      {selectedCase.steps.filter(s => s.completed).length}/{selectedCase.steps.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveCaseTab('resolution')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeCaseTab === 'resolution'
+                      ? 'bg-white text-slate-900 shadow-md font-extrabold'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <MessageSquareIcon size={15} />
+                  <span>Acordo & Devolutiva</span>
+                  {selectedCase.feedback && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  )}
+                </button>
+              </div>
             </div>
-         </div>
-       )}
+
+            {/* CORPO DO MODAL BASEADO NA ABA ATIVA */}
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 custom-scrollbar">
+              
+              {/* ABA 1: DIÁRIO & ATENDIMENTOS */}
+              {activeCaseTab === 'timeline' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+                  
+                  {/* Coluna Esquerda: Relato e Contexto */}
+                  <div className="lg:col-span-5 space-y-4">
+                    {/* Relato Original */}
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <FileText size={14} className="text-indigo-600" />
+                        Relato Original do Caso
+                      </h4>
+                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 text-slate-700 text-xs font-normal leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto custom-scrollbar">
+                        {selectedCase.description || 'Sem descrição informada.'}
+                      </div>
+                    </div>
+
+                    {/* Parecer / Devolutiva da Psicossocial (se houver) */}
+                    {selectedCase.feedback && (
+                      <div className="bg-indigo-50/60 border border-indigo-200 p-5 rounded-2xl shadow-sm space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <HeartHandshake size={15} className="text-indigo-600" /> Parecer Psicossocial
+                          </h4>
+                          <span className="text-[9px] font-bold uppercase bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-md">
+                            Registrado
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 leading-relaxed italic bg-white p-3.5 rounded-xl border border-indigo-100 whitespace-pre-wrap">
+                          "{selectedCase.feedback}"
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Resumo do Status */}
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Atual</p>
+                        <p className={`text-xs font-extrabold uppercase mt-0.5 ${
+                          selectedCase.status === 'CONCLUÍDO' ? 'text-emerald-600' : 'text-amber-600'
+                        }`}>
+                          {selectedCase.status || 'ABERTURA'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data de Abertura</p>
+                        <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                          {formatLocalDate(selectedCase.openedAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Coluna Direita: Diário de Atendimento e Timeline */}
+                  <div className="lg:col-span-7 space-y-4">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                          <History size={15} className="text-indigo-600" />
+                          Diário de Atendimento & Evolução
+                        </h4>
+                        <span className="text-[10px] text-slate-400 font-medium">Linha do tempo oficial</span>
+                      </div>
+
+                      {/* Caixa de Novo Registro */}
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <textarea 
+                          value={newLog.content}
+                          onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
+                          placeholder="Descreva a ação ou conversa realizada hoje com o estudante ou responsáveis..."
+                          className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 font-normal resize-none outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 min-h-[70px] transition-all"
+                        />
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Setor:</span>
+                            <select
+                              value={newLog.professional}
+                              onChange={(e) => setNewLog({ ...newLog, professional: e.target.value })}
+                              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                            >
+                              <option value="MEDIAÇÃO">MEDIAÇÃO</option>
+                              <option value="EQUIPE PSICOSSOCIAL">EQUIPE PSICOSSOCIAL</option>
+                              <option value="GESTÃO ESCOLAR">GESTÃO ESCOLAR</option>
+                            </select>
+                          </div>
+                          <button 
+                            onClick={handleSaveLog}
+                            disabled={isLogLoading || !newLog.content.trim()}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 shadow-sm flex items-center gap-1.5"
+                          >
+                            {isLogLoading ? 'Salvando...' : 'Adicionar Registro'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Lista de Registros da Linha do Tempo */}
+                      <div className="space-y-3 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar pt-2">
+                        {selectedCase.logs && selectedCase.logs.length > 0 ? (
+                          selectedCase.logs.map((log, idx) => {
+                            const logId = log.id || `log-idx-${idx}`;
+                            const isEditing = editingLogId === logId;
+
+                            return (
+                              <div key={logId} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 hover:bg-white hover:shadow-sm transition-all group">
+                                <div className="flex justify-between items-center mb-1.5">
+                                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                    {log.professional}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[11px] text-slate-400 font-medium">{formatLocalDate(log.date)}</span>
+                                    {!isEditing && (
+                                      <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                          onClick={() => {
+                                            setEditingLogId(logId);
+                                            setEditingLogContent(log.content);
+                                          }}
+                                          className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                                          title="Editar registro"
+                                        >
+                                          <Pencil size={12} />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteLog(logId)}
+                                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                          title="Excluir registro"
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {isEditing ? (
+                                  <div className="mt-2 space-y-2">
+                                    <textarea
+                                      value={editingLogContent}
+                                      onChange={(e) => setEditingLogContent(e.target.value)}
+                                      className="w-full p-2.5 bg-white border border-indigo-300 rounded-xl text-xs font-normal resize-none outline-none focus:ring-2 focus:ring-indigo-500/20 min-h-[60px]"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <button
+                                        onClick={() => setEditingLogId(null)}
+                                        className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition-all"
+                                      >
+                                        Cancelar
+                                      </button>
+                                      <button
+                                        onClick={() => handleUpdateLog(logId)}
+                                        disabled={!editingLogContent.trim() || isLogLoading}
+                                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
+                                      >
+                                        <Check size={12} /> Salvar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-700 leading-relaxed font-normal whitespace-pre-wrap">{log.content}</p>
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="py-12 text-center text-slate-400 space-y-1">
+                            <Clock size={28} className="mx-auto text-slate-300" />
+                            <p className="text-xs font-semibold">Nenhum atendimento registrado no diário ainda.</p>
+                            <p className="text-[11px] text-slate-400">Use a caixa acima para registrar os atendimentos e conversas.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ABA 2: ETAPAS DO PROCESSO */}
+              {activeCaseTab === 'steps' && (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-emerald-600" />
+                        Roteiro de Mediação & Etapas Obrigatórias
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Marque ou desmarque cada etapa conforme o atendimento avança.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      {selectedCase.steps?.map((step, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`p-4 rounded-xl border transition-all flex items-center justify-between ${
+                            step.completed 
+                              ? 'bg-emerald-50/70 border-emerald-200' 
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                              step.completed ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {step.completed ? <Check size={16} /> : idx + 1}
+                            </div>
+                            <div>
+                              <p className={`text-xs font-bold ${step.completed ? 'text-emerald-900' : 'text-slate-800'}`}>
+                                {step.label}
+                              </p>
+                              {step.date && (
+                                <p className="text-[11px] font-medium text-emerald-700 mt-0.5">
+                                  Concluído em: {formatLocalDate(step.date)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {step.completed ? (
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!window.confirm(`Deseja reverter a etapa "${step.label}" para pendente?`)) return;
+                                const updatedSteps = selectedCase.steps.map((s, i) => 
+                                  i === idx ? { ...s, completed: false, date: undefined } : s
+                                );
+                                try {
+                                  const { error } = await supabase
+                                    .from('mediation_cases')
+                                    .update({ steps: updatedSteps })
+                                    .eq('id', selectedCase.id);
+                                  if (error) throw error;
+                                  await fetchCases();
+                                  setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                } catch (err) {
+                                  alert("Erro ao reverter etapa.");
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
+                              title="Clique para desfazer / reverter esta etapa"
+                            >
+                              <RotateCcw size={12} /> Desfazer
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const updatedSteps = selectedCase.steps.map((s, i) => 
+                                  i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
+                                );
+                                try {
+                                  const { error } = await supabase
+                                    .from('mediation_cases')
+                                    .update({ steps: updatedSteps })
+                                    .eq('id', selectedCase.id);
+                                  if (error) throw error;
+                                  await fetchCases();
+                                  setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                } catch (err) {
+                                  alert("Erro ao atualizar etapa.");
+                                }
+                              }}
+                              className="px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
+                            >
+                              <Check size={13} /> Concluir Etapa
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ABA 3: ACORDO FINAL & DEVOLUTIVA */}
+              {activeCaseTab === 'resolution' && (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <MessageSquareIcon size={16} className="text-emerald-600" />
+                        Acordo Restaurativo Final & Devolutiva
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Escreva aqui a resolução do caso, acordos firmados entre as partes e o parecer final que será sincronizado com o professor solicitante.
+                      </p>
+                    </div>
+
+                    <textarea 
+                      value={selectedCase?.feedback || ''}
+                      onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
+                      placeholder="Descreva o desfecho do caso, os combinados e acordos restaurativos firmados com os estudantes e familiares..."
+                      className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-normal text-slate-800 leading-relaxed resize-none outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 min-h-[220px] transition-all"
+                    />
+
+                    <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/70 text-xs text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                      <span>Este texto será exibido na devolutiva oficial e nos relatórios de mediação.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* RODAPÉ LIMPO E SIMPLIFICADO */}
+            <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+              <button 
+                onClick={(e) => selectedCase.id && handleDeleteCase(e as any, selectedCase.id)}
+                className="px-4 py-2.5 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                title="Excluir este caso"
+              >
+                <Trash2 size={15} /> Excluir Caso
+              </button>
+
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleSaveFeedback}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
+                >
+                  <Save size={15} /> Salvar Rascunho
+                </button>
+
+                <button 
+                  onClick={async () => {
+                    if (!window.confirm("Deseja encerrar este caso com acordo restaurativo?")) return;
+                    try {
+                      if (selectedCase?.feedback?.trim()) {
+                        await supabase
+                          .from('mediation_cases')
+                          .update({ feedback: selectedCase.feedback.trim() })
+                          .eq('id', selectedCase.id);
+                      }
+
+                      const { error } = await supabase
+                        .from('mediation_cases')
+                        .update({ 
+                          status: 'CONCLUÍDO', 
+                          closed_at: new Date().toLocaleDateString('sv-SE') 
+                        })
+                        .eq('id', selectedCase.id);
+                      if (error) throw error;
+                      await fetchCases();
+                      alert("Caso encerrado com sucesso com acordo!");
+                      setSelectedCase(null);
+                    } catch (err) {
+                      alert("Erro ao encerrar caso.");
+                    }
+                  }}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 active:scale-95"
+                >
+                  <ShieldCheck size={16} /> Encerrar com Acordo
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setSelectedCase(null);
+                    setIsActionMenuOpen(false);
+                  }} 
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* GUIA DE PERGUNTAS RESTAURATIVAS (SEDUC/MT) */}
       <MediationRestorativeGuideModal
