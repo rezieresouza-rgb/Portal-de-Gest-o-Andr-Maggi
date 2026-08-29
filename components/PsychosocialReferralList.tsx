@@ -83,7 +83,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
 
       // [NOVO] Filtro exclusivo para professor: só vê seus próprios encaminhamentos
       if (role === 'PROFESSOR' && user?.name) {
-        query = query.eq('teacher_name', user.name);
+        query = query.ilike('teacher_name', `%${user.name.trim()}%`);
       }
 
       // [NOVO] Filtro de destino (Roteamento entre módulos)
