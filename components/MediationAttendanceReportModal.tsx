@@ -176,10 +176,17 @@ export const MediationAttendanceReportModal: React.FC<MediationAttendanceReportM
                   {mediationCase.logs.map((log, idx) => (
                     <div key={idx} className="p-3 bg-white space-y-1">
                       <div className="flex items-center justify-between text-[10px]">
-                        <span className="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 uppercase">
-                          {log.professional || 'Mediador Escolar'}
-                        </span>
-                        <span className="font-semibold text-slate-400">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 uppercase">
+                            {log.professional || 'Mediador Escolar'}
+                          </span>
+                          {log.category && (
+                            <span className="font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300 uppercase text-[9px]">
+                              Motivo: {log.category}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-semibold text-slate-500">
                           Data: {formatLocalDate(log.date)}
                         </span>
                       </div>

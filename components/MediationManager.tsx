@@ -48,7 +48,31 @@ interface MediationManagerProps {
   onOpenAtaForCase?: (c: MediationCase) => void;
 }
 
-const CASE_TYPES = ['CONFLITO', 'BULLYING', 'DISCIPLINAR', 'OUTRO'];
+const CASE_TYPES = [
+  'CONFLITO',
+  'BULLYING',
+  'FAMILIAR',
+  'INFREQUÊNCIA',
+  'EMOCIONAL',
+  'DISCIPLINAR',
+  'CELULAR',
+  'DISCRIMINAÇÃO',
+  'OUTRO'
+];
+
+const ATTENDANCE_CATEGORIES = [
+  { id: 'BULLYING', label: 'Bullying / Cyberbullying', color: 'bg-rose-100 text-rose-800 border-rose-300' },
+  { id: 'FAMILIAR', label: 'Questão Familiar / Guarda', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  { id: 'INFREQUÊNCIA', label: 'Infrequência / Busca Ativa', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+  { id: 'CONFLITO', label: 'Conflito entre Colegas', color: 'bg-orange-100 text-orange-800 border-orange-300' },
+  { id: 'EMOCIONAL', label: 'Acolhimento Emocional', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+  { id: 'DISCIPLINAR', label: 'Indisciplina / Regras', color: 'bg-slate-200 text-slate-800 border-slate-300' },
+  { id: 'RESPONSÁVEIS', label: 'Atendimento aos Pais', color: 'bg-teal-100 text-teal-800 border-teal-300' },
+  { id: 'PALESTRA', label: 'Palestra / Ação Coletiva', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
+  { id: 'CELULAR', label: 'Celular / Redes Sociais', color: 'bg-cyan-100 text-cyan-800 border-cyan-300' },
+  { id: 'OUTRO', label: 'Outro / Geral', color: 'bg-gray-100 text-gray-800 border-gray-300' }
+];
+
 const SEVERITIES: CaseSeverity[] = ['BAIXA', 'MÉDIA', 'ALTA', 'CRÍTICA'];
 
 const formatLocalDate = (dateStr?: string | null): string => {
@@ -119,6 +143,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const [newLog, setNewLog] = useState({
     professional: defaultProfessionalTitle,
     content: '',
+    category: 'CONFLITO',
     date: new Date().toLocaleDateString('sv-SE')
   });
 
@@ -569,7 +594,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         id: `log-${Date.now()}`,
         date: newLog.date || new Date().toLocaleDateString('sv-SE'),
         professional: user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar',
-        content: newLog.content.trim()
+        content: newLog.content.trim(),
+        category: newLog.category || 'CONFLITO'
       };
 
       const updatedLogs = [logEntry, ...(selectedCase.logs || [])];
@@ -582,7 +608,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       if (error) throw error;
 
       setSelectedCase({ ...selectedCase, logs: updatedLogs });
-      setNewLog({ ...newLog, content: '' });
+      setNewLog({ ...newLog, content: '', category: 'CONFLITO' });
       await fetchCases();
       alert("Atendimento registrado no diário!");
     } catch (err: any) {
@@ -1127,7 +1153,32 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap text-[11px] text-slate-300">
                       <span className="font-semibold bg-white/10 px-2 py-0.5 rounded-md text-[10px] text-indigo-200">{selectedCase.className}</span>
                       <span className="text-slate-400">•</span>
-                      <span className="text-slate-300 font-medium">Caso: {selectedCase.type}</span>
+                      <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-lg border border-white/15">
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Tipo:</span>
+                        <select
+                          value={selectedCase.type || 'OUTRO'}
+                          onChange={async (e) => {
+                            const newType = e.target.value;
+                            try {
+                              const { error } = await supabase
+                                .from('mediation_cases')
+                                .update({ type: newType })
+                                .eq('id', selectedCase.id);
+                              if (error) throw error;
+                              setSelectedCase(prev => prev ? { ...prev, type: newType } : null);
+                              await fetchCases();
+                            } catch (err: any) {
+                              alert("Erro ao alterar tipo do caso: " + err.message);
+                            }
+                          }}
+                          className="bg-transparent text-white text-[11px] font-extrabold outline-none cursor-pointer hover:text-indigo-300"
+                          title="Clique para alterar a classificação geral deste caso"
+                        >
+                          {CASE_TYPES.map(t => (
+                            <option key={t} value={t} className="bg-slate-900 text-white">{t}</option>
+                          ))}
+                        </select>
+                      </div>
                       <span className="text-slate-400">•</span>
                       <span className="text-slate-400 font-mono text-[10px]">Protocolo #{selectedCase.id?.substring(0,8)}</span>
                     </div>
@@ -1400,8 +1451,35 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                         <span className="text-[11px] text-slate-400 font-medium">Linha do tempo oficial</span>
                       </div>
 
-                      {/* Caixa de Novo Registro */}
+                      {/* Caixa de Novo Registro com Seletor de Categoria */}
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 shrink-0">
+                        {/* Seletor de Tipo / Categoria de Atendimento */}
+                        <div>
+                          <label className="text-[10px] font-black uppercase text-slate-500 block mb-1.5 flex items-center gap-1.5">
+                            <Target size={13} className="text-indigo-600" />
+                            Tipo / Motivo deste Atendimento:
+                          </label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {ATTENDANCE_CATEGORIES.map(cat => {
+                              const isSelected = (newLog.category || 'CONFLITO') === cat.id;
+                              return (
+                                <button
+                                  key={cat.id}
+                                  type="button"
+                                  onClick={() => setNewLog(prev => ({ ...prev, category: cat.id }))}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
+                                    isSelected
+                                      ? `${cat.color} ring-2 ring-indigo-500 shadow-sm scale-105`
+                                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                  }`}
+                                >
+                                  {cat.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         <textarea 
                           value={newLog.content}
                           onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
@@ -1433,9 +1511,18 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                             return (
                               <div key={logId} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 hover:bg-white hover:shadow-sm transition-all group">
                                 <div className="flex justify-between items-center mb-1.5">
-                                  <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wide">
-                                    {log.professional}
-                                  </span>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                      {log.professional}
+                                    </span>
+                                    {log.category && (
+                                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
+                                        ATTENDANCE_CATEGORIES.find(c => c.id === log.category)?.color || 'bg-slate-100 text-slate-700 border-slate-200'
+                                      }`}>
+                                        {ATTENDANCE_CATEGORIES.find(c => c.id === log.category)?.label || log.category}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-[11px] text-slate-400 font-medium">{formatLocalDate(log.date)}</span>
                                     {!isEditing && (
