@@ -186,9 +186,57 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
   const [isTriaging, setIsTriaging] = useState(false);
 
-  const handleTriageToPsychosocial = async (c: MediationCase) => {
+  const handleTogglePsychosocialTriage = async (c: MediationCase) => {
     if (!c.id) return;
-    if (!window.confirm(`Deseja encaminhar o caso de ${c.studentName} para triagem e acompanhamento da Equipe Psicossocial?`)) return;
+    const isCurrentlyTriaged = c.description?.includes('[TRIAGEM P/ PSICOSSOCIAL');
+
+    if (isCurrentlyTriaged) {
+      if (!window.confirm(`Este caso de "${c.studentName}" já foi encaminhado para a Psicossocial.\n\nDeseja CANCELAR este encaminhamento e remover o caso da fila da Equipe Psicossocial?`)) return;
+
+      setIsTriaging(true);
+      try {
+        // 1. Remover da tabela psychosocial_referrals
+        await supabase
+          .from('psychosocial_referrals')
+          .delete()
+          .or(`origin_case_id.eq.${c.id},and(student_name.ilike.${c.studentName.trim()},teacher_name.ilike.%MEDIAÇÃO%)`);
+
+        // 2. Limpar a tag da descrição
+        const cleanDescription = (c.description || '').replace(/\n?\[TRIAGEM P\/ PSICOSSOCIAL[^\]]*\][^\n]*/gi, '').trim();
+
+        // 3. Registrar log de cancelamento no diário
+        const cancelLog = {
+          id: `log-${Date.now()}`,
+          date: new Date().toISOString(),
+          professional: user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar',
+          content: 'Encaminhamento para a Equipe Psicossocial foi CANCELADO pelo mediador.'
+        };
+        const updatedLogs = [cancelLog, ...(c.logs || [])];
+
+        const { error } = await supabase
+          .from('mediation_cases')
+          .update({ 
+            description: cleanDescription,
+            logs: updatedLogs
+          })
+          .eq('id', c.id);
+
+        if (error) throw error;
+
+        setSelectedCase(prev => prev ? { ...prev, description: cleanDescription, logs: updatedLogs } : null);
+        alert(`O encaminhamento de "${c.studentName}" para a Psicossocial foi CANCELADO com sucesso!`);
+        await fetchCases();
+      } catch (err: any) {
+        console.error('Erro ao cancelar triagem:', err);
+        alert('Erro ao cancelar encaminhamento: ' + err.message);
+      } finally {
+        setIsTriaging(false);
+      }
+      return;
+    }
+
+    // Caso NÃO esteja triado: realizar o encaminhamento
+    if (!window.confirm(`Deseja encaminhar o caso de "${c.studentName}" para triagem e acompanhamento da Equipe Psicossocial?`)) return;
 
     setIsTriaging(true);
     try {
@@ -201,7 +249,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         .insert([{
           student_name: c.studentName,
           class_name: c.className,
-          reason: `[TRIAGEM DA MEDIAÇÃO] ${c.description}`,
+          reason: `[TRIAGEM DA MEDIAÇÃO] ${c.description || 'Encaminhamento para avaliação técnica.'}`,
           priority: c.severity === 'CRÍTICA' ? 'CRÍTICA' : c.severity === 'ALTA' ? 'ALTA' : 'MEDIA',
           status: 'AGUARDANDO',
           teacher_name: `MEDIAÇÃO (${user?.name || 'MEDIADOR'})`,
@@ -222,19 +270,42 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           read: false
         }]);
 
-      // 3. Atualizar descrição do caso na Mediação
-      const updatedDescription = `${c.description}${triageTag}`;
-      await supabase
+      // 3. Atualizar etapa de encaminhamento
+      const updatedSteps = (c.steps || []).map(s => {
+        if (s.label?.toLowerCase().includes('encaminhamento')) {
+          return { ...s, completed: true, date: todayDate };
+        }
+        return s;
+      });
+
+      // 4. Registrar log na timeline
+      const triageLog = {
+        id: `log-${Date.now()}`,
+        date: new Date().toISOString(),
+        professional: user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar',
+        content: 'Caso triado e ENCAMINHADO para acompanhamento da Equipe Psicossocial.'
+      };
+      const updatedLogs = [triageLog, ...(c.logs || [])];
+
+      // 5. Atualizar descrição e caso na Mediação
+      const updatedDescription = `${c.description || ''}${triageTag}`;
+      const { error: caseErr } = await supabase
         .from('mediation_cases')
-        .update({ description: updatedDescription })
+        .update({ 
+          description: updatedDescription,
+          steps: updatedSteps,
+          logs: updatedLogs
+        })
         .eq('id', c.id);
 
-      setSelectedCase(prev => prev ? { ...prev, description: updatedDescription } : null);
-      alert(`O caso de ${c.studentName} foi triado e encaminhado com sucesso para a Equipe Psicossocial!`);
-      fetchCases();
+      if (caseErr) throw caseErr;
+
+      setSelectedCase(prev => prev ? { ...prev, description: updatedDescription, steps: updatedSteps, logs: updatedLogs } : null);
+      alert(`O caso de "${c.studentName}" foi encaminhado com sucesso para a Equipe Psicossocial!`);
+      await fetchCases();
     } catch (err: any) {
       console.error('Erro ao realizar triagem p/ Psicossocial:', err);
-      alert('Erro ao encaminhar para a Psicossocial. Verifique sua conexão.');
+      alert('Erro ao encaminhar para a Psicossocial: ' + (err.message || 'Verifique sua conexão.'));
     } finally {
       setIsTriaging(false);
     }
@@ -1062,20 +1133,24 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
                 {/* AÇÕES RÁPIDAS NO TOPO */}
                 <div className="flex items-center gap-2">
-                  {/* Botão: Encaminhar p/ Psicossocial */}
+                  {/* Botão: Encaminhar / Cancelar Psicossocial */}
                   <button
                     type="button"
-                    onClick={() => handleTriageToPsychosocial(selectedCase)}
-                    disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
+                    onClick={() => handleTogglePsychosocialTriage(selectedCase)}
+                    disabled={isTriaging}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${
                       selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
-                        ? 'bg-purple-900/60 text-purple-200 border border-purple-400/40 cursor-default'
+                        ? 'bg-purple-900/80 text-purple-200 border border-purple-400/50 hover:bg-rose-900/80 hover:text-rose-200 hover:border-rose-400'
                         : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20'
                     }`}
-                    title="Encaminhar este caso para acompanhamento e triagem da Equipe Psicossocial"
+                    title={
+                      selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
+                        ? 'Caso já encaminhado. Clique para CANCELAR / REVERTER o encaminhamento.'
+                        : 'Encaminhar este caso para acompanhamento da Equipe Psicossocial'
+                    }
                   >
                     <HeartHandshake size={14} />
-                    <span>{selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? '✓ Triado p/ Psicossocial' : 'Encaminhar p/ Psicossocial'}</span>
+                    <span>{selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? '✓ Triado (Clique p/ Cancelar)' : 'Encaminhar p/ Psicossocial'}</span>
                   </button>
 
                   {/* Botão Principal: Lavrar Ata SEDUC */}
@@ -1147,13 +1222,13 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                             type="button"
                             onClick={() => {
                               setIsActionMenuOpen(false);
-                              handleTriageToPsychosocial(selectedCase);
+                              handleTogglePsychosocialTriage(selectedCase);
                             }}
-                            disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
-                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-purple-300 flex items-center gap-2 font-medium transition-colors disabled:opacity-50"
+                            disabled={isTriaging}
+                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-purple-300 flex items-center gap-2 font-medium transition-colors"
                           >
                             <HeartHandshake size={14} /> 
-                            {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? 'Triado p/ Psicossocial' : 'Triagem p/ Psicossocial'}
+                            {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? 'Cancelar Encaminhamento Psicossocial' : 'Encaminhar p/ Psicossocial'}
                           </button>
                         </div>
                       </div>
@@ -1535,18 +1610,22 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleTriageToPsychosocial(selectedCase);
+                                    handleTogglePsychosocialTriage(selectedCase);
                                   }}
-                                  disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
+                                  disabled={isTriaging}
                                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-sm ${
                                     selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
-                                      ? 'bg-purple-100 text-purple-800 border border-purple-300 cursor-default'
+                                      ? 'bg-purple-100 text-purple-800 border border-purple-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'
                                       : 'bg-purple-600 hover:bg-purple-700 text-white'
                                   }`}
-                                  title="Encaminhar este caso para a Equipe Psicossocial"
+                                  title={
+                                    selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
+                                      ? 'Clique para CANCELAR / DESFAZER o encaminhamento ao Psicossocial'
+                                      : 'Encaminhar este caso para a Equipe Psicossocial'
+                                  }
                                 >
                                   <HeartHandshake size={13} />
-                                  <span>{selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? '✓ Triado p/ Psicossocial' : 'Encaminhar p/ Psicossocial'}</span>
+                                  <span>{selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? '✓ Triado (Cancelar)' : 'Encaminhar p/ Psicossocial'}</span>
                                 </button>
                               )}
 
