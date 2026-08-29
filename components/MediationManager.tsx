@@ -761,6 +761,12 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                              </span>
                            );
                         })()}
+                        {c.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title="Caso encaminhado para a Equipe Psicossocial">
+                            <HeartHandshake size={11} className="text-purple-600 shrink-0" />
+                            Triado p/ Psicossocial
+                          </span>
+                        )}
                         {c.status === 'CONCLUÍDO' && c.closedAt === today && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
                             Concluído Hoje
@@ -1056,6 +1062,22 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
                 {/* AÇÕES RÁPIDAS NO TOPO */}
                 <div className="flex items-center gap-2">
+                  {/* Botão: Encaminhar p/ Psicossocial */}
+                  <button
+                    type="button"
+                    onClick={() => handleTriageToPsychosocial(selectedCase)}
+                    disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${
+                      selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
+                        ? 'bg-purple-900/60 text-purple-200 border border-purple-400/40 cursor-default'
+                        : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20'
+                    }`}
+                    title="Encaminhar este caso para acompanhamento e triagem da Equipe Psicossocial"
+                  >
+                    <HeartHandshake size={14} />
+                    <span>{selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? '✓ Triado p/ Psicossocial' : 'Encaminhar p/ Psicossocial'}</span>
+                  </button>
+
                   {/* Botão Principal: Lavrar Ata SEDUC */}
                   <button
                     type="button"
@@ -1505,6 +1527,23 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                                   className="px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
                                 >
                                   <Check size={13} /> Concluir Etapa
+                              {step.label?.includes('Encaminhamento') && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTriageToPsychosocial(selectedCase);
+                                  }}
+                                  disabled={isTriaging || selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-sm ${
+                                    selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL')
+                                      ? 'bg-purple-100 text-purple-800 border border-purple-300 cursor-default'
+                                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                                  }`}
+                                  title="Encaminhar este caso para a Equipe Psicossocial"
+                                >
+                                  <HeartHandshake size={13} />
+                                  <span>{selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? '✓ Triado p/ Psicossocial' : 'Encaminhar p/ Psicossocial'}</span>
                                 </button>
                               )}
 
