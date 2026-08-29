@@ -454,6 +454,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
     if (!selectedCase || !newLog.content) return alert("Descreva o atendimento antes de salvar.");
     
     setIsLogLoading(true);
+    try {
       const logEntry: any = {
         id: `log-${Date.now()}`,
         date: newLog.date || new Date().toLocaleDateString('sv-SE'),
