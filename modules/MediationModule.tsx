@@ -29,6 +29,7 @@ import PsychosocialMeetingAtaManager from '../components/PsychosocialMeetingAtaM
 import PsychosocialAgenda from '../components/PsychosocialAgenda';
 import PsychosocialReports from '../components/PsychosocialReports';
 import MediationRestorativeGuideModal from '../components/MediationRestorativeGuideModal';
+import MediationCalendarManager from '../components/MediationCalendarManager';
 import { supabase } from '../supabaseClient';
 
 interface MediationModuleProps {
@@ -37,7 +38,7 @@ interface MediationModuleProps {
 }
 
 const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'cases' | 'atas' | 'agenda' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'cases' | 'atas' | 'agenda' | 'reports' | 'calendar'>('dashboard');
   const [userRole, setUserRole] = useState<PsychosocialRole>('PSICOSSOCIAL');
   const [casesCount, setCasesCount] = useState({ total: 0, active: 0, agreements: 0, triaged: 0 });
   const [rawCases, setRawCases] = useState<any[]>([]);
@@ -104,8 +105,9 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
   const navItems = [
     { id: 'dashboard', label: 'Painel & Clima Escolar', icon: <Scale size={18} /> },
     { id: 'cases', label: 'Atendimentos & Círculos', icon: <HeartHandshake size={18} /> },
+    { id: 'calendar', label: 'Calendário de Ações 2026', icon: <CalendarDays size={18} /> },
     { id: 'atas', label: 'Central de Atas (SEDUC)', icon: <FileText size={18} /> },
-    { id: 'agenda', label: 'Agenda de Conciliação', icon: <CalendarDays size={18} /> },
+    { id: 'agenda', label: 'Agenda de Conciliação', icon: <Calendar size={18} /> },
     { id: 'reports', label: 'Indicadores & Triagens', icon: <TrendingUp size={18} /> },
   ];
 
@@ -250,10 +252,16 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                  <div className="flex flex-col sm:flex-row gap-3 shrink-0 flex-wrap">
+                    <button
+                      onClick={() => setActiveTab('calendar')}
+                      className="px-5 py-4 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 font-black uppercase text-xs tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      <CalendarDays size={16} /> Calendário 2026
+                    </button>
                     <button
                       onClick={() => setIsGuideOpen(true)}
-                      className="px-5 py-4 bg-white/10 hover:bg-white/20 text-amber-300 border border-amber-400/30 font-black uppercase text-xs tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg"
+                      className="px-5 py-4 bg-white/10 hover:bg-white/20 text-slate-200 border border-white/20 font-black uppercase text-xs tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg"
                     >
                       <BookOpen size={16} /> Roteiros SEDUC
                     </button>
@@ -444,6 +452,17 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
                 role={userRole}
                 onTabChange={setActiveTab as any}
                 onOpenAtaForCase={handleOpenAtaForCase}
+              />
+            </div>
+          )}
+
+          {/* TAB: CALENDÁRIO DE AÇÕES DA MEDIAÇÃO 2026 (SEDUC/MT) */}
+          {activeTab === 'calendar' && (
+            <div className="animate-in fade-in duration-300">
+              <MediationCalendarManager
+                user={user}
+                role={userRole}
+                onOpenNewCase={() => setActiveTab('cases')}
               />
             </div>
           )}

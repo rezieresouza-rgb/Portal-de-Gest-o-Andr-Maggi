@@ -425,6 +425,48 @@ export interface MediationStep { id: string; label: string; completed: boolean; 
 export interface MediationLog { id: string; date: string; professional: string; content: string; category?: string; }
 export type MediationCaseType = 'CONFLITO' | 'BULLYING' | 'FAMILIAR' | 'INFREQUÊNCIA' | 'EMOCIONAL' | 'DISCIPLINAR' | 'CELULAR' | 'DISCRIMINAÇÃO' | 'OUTRO' | string;
 export interface MediationCase { id: string; studentId: string; studentName: string; className: string; type: MediationCaseType; severity: CaseSeverity; status: MediationStatus; openedAt: string; closedAt?: string; description: string; involvedParties: string[]; steps: MediationStep[]; logs: MediationLog[]; feedback?: string; originReferralId?: string; teacherName?: string; }
+export type MediationCalendarMonth = 
+  | 'FEVEREIRO' 
+  | 'MARÇO' 
+  | 'ABRIL' 
+  | 'MAIO' 
+  | 'JUNHO' 
+  | 'JULHO' 
+  | 'AGOSTO' 
+  | 'SETEMBRO' 
+  | 'OUTUBRO' 
+  | 'NOVEMBRO';
+
+export type MediationActionType = 
+  | 'PALESTRA' 
+  | 'CÍRCULO_DE_PAZ' 
+  | 'OFICINA' 
+  | 'CAMPANHA' 
+  | 'CAPACITAÇÃO' 
+  | 'REUNIÃO_FAMILIAR' 
+  | 'AÇÃO_COLETIVA' 
+  | 'OUTRO';
+
+export interface MediationCalendarAction {
+  id: string;
+  month: MediationCalendarMonth;
+  orientativoNumber: string;
+  theme: string;
+  title: string;
+  actionType: MediationActionType;
+  targetAudience: string;
+  classes: string[];
+  participantCount: number;
+  executionDate: string;
+  responsibleMediator: string;
+  partnerships?: string;
+  description: string;
+  outcomes?: string;
+  status: 'PLANEJADA' | 'EM_ANDAMENTO' | 'CONCLUÍDA' | 'CANCELADA';
+  evidenceUrls?: string[];
+  createdAt?: string;
+}
+
 export interface PsychosocialAppointment { id: string; studentId: string; studentName: string; date: string; time: string; professionalName: string; type: 'ESCUTA_INDIVIDUAL' | 'CIRCULO_PAZ' | 'REUNIAO_FAMILIAR' | 'VISITA_DOMICILIAR'; notes: string; isConfidential: boolean; }
 export type CampaignStatus = 'PLANEJAMENTO' | 'ATIVO' | 'CONCLUÍDO';
 export interface CampaignMaterial { id: string; name: string; type: 'PDF' | 'VÍDEO' | 'LINK' | 'IMAGEM'; url: string; }
