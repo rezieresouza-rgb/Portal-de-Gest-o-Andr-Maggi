@@ -248,7 +248,6 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
     alert("Ata de Mediação registrada e salva no histórico e na nuvem com sucesso!");
     setViewMode('list');
     resetForm();
-    if (onBack) onBack();
   };
 
   const resetForm = () => {
@@ -314,13 +313,23 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
             <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Modelo Oficial Professor Mediador - SEDUC/MT</p>
           </div>
         </div>
-        <button 
-          onClick={() => setViewMode(viewMode === 'list' ? 'form' : 'list')}
-          className="px-8 py-3.5 bg-rose-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-rose-700 transition-all flex items-center gap-2"
-        >
-          {viewMode === 'list' ? <Plus size={16} /> : <ArrowLeft size={16} />}
-          {viewMode === 'list' ? 'Lavrar Nova Ata de Mediação' : 'Voltar ao Acervo'}
-        </button>
+        <div className="flex items-center gap-3">
+          {initialCase && viewMode === 'form' && onBack && (
+            <button 
+              onClick={onBack}
+              className="px-6 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2"
+            >
+              <ArrowLeft size={16} /> Voltar ao Caso
+            </button>
+          )}
+          <button 
+            onClick={() => setViewMode(viewMode === 'list' ? 'form' : 'list')}
+            className="px-8 py-3.5 bg-rose-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-rose-700 transition-all flex items-center gap-2"
+          >
+            {viewMode === 'list' ? <Plus size={16} /> : <ArrowLeft size={16} />}
+            {viewMode === 'list' ? 'Lavrar Nova Ata de Mediação' : 'Voltar ao Acervo'}
+          </button>
+        </div>
       </div>
 
       {viewMode === 'list' ? (
