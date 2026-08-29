@@ -31,12 +31,14 @@ import {
   FileCheck,
   Send,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Printer
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { supabase } from '../supabaseClient';
 import MediationRestorativeGuideModal from './MediationRestorativeGuideModal';
 import MediationAgreementTermModal from './MediationAgreementTermModal';
+import MediationAttendanceReportModal from './MediationAttendanceReportModal';
 
 interface MediationManagerProps {
   user?: any;
@@ -84,6 +86,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   // Novos Modais Integrados de Mediação Restaurativa
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [isAgreementTermModalOpen, setIsAgreementTermModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [activeCaseTab, setActiveCaseTab] = useState<'timeline' | 'steps' | 'resolution'>('timeline');
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   
@@ -1153,6 +1156,17 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     <span>{selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') ? '✓ Triado (Clique p/ Cancelar)' : 'Encaminhar p/ Psicossocial'}</span>
                   </button>
 
+                  {/* Botão: Imprimir Relatório Oficial */}
+                  <button
+                    type="button"
+                    onClick={() => setIsReportModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                    title="Gerar e Imprimir Relatório Oficial de Atendimento com cabeçalho SEDUC"
+                  >
+                    <Printer size={14} />
+                    <span>Imprimir Relatório</span>
+                  </button>
+
                   {/* Botão Principal: Lavrar Ata SEDUC */}
                   <button
                     type="button"
@@ -1186,6 +1200,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     {isActionMenuOpen && (
                       <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-1.5 divide-y divide-slate-800/80 animate-in fade-in zoom-in-95 duration-150 text-xs">
                         <div className="p-1 space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsActionMenuOpen(false);
+                              setIsReportModalOpen(true);
+                            }}
+                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-800 text-indigo-300 flex items-center gap-2 font-medium transition-colors"
+                          >
+                            <Printer size={14} /> Imprimir Relatório de Atendimento
+                          </button>
                           <button
                             type="button"
                             onClick={() => {
@@ -1707,6 +1731,15 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
               </button>
 
               <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                  title="Gerar e imprimir relatório deste caso"
+                >
+                  <Printer size={14} /> Imprimir Relatório
+                </button>
+
                 <button 
                   onClick={handleSaveFeedback}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
@@ -1782,6 +1815,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           onAgreementSaved={async () => {
             await fetchCases();
           }}
+        />
+      )}
+
+      {/* RELATÓRIO OFICIAL DE ATENDIMENTO PARA IMPRESSÃO */}
+      {selectedCase && (
+        <MediationAttendanceReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          mediationCase={selectedCase}
+          userName={user?.name}
         />
       )}
     </div>
