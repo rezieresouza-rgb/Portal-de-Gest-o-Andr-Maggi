@@ -85,8 +85,8 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
       const { data, error } = await query;
 
       if (data) {
-        // Roteamento exclusivo: Somente encaminhamentos triados pela Mediação Escolar chegam à Psicossocial
-        const filteredData = data.filter((r: any) => {
+        // Para professor, exibe seus próprios encaminhamentos. Para psicossocial, filtra apenas os triados pela mediação.
+        const filteredData = role === 'PROFESSOR' ? data : data.filter((r: any) => {
           const tName = (r.teacher_name || '').toUpperCase();
           const rReason = (r.reason || r.report || '').toUpperCase();
           return tName.includes('MEDIAÇÃO') || 
@@ -348,19 +348,29 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             <HeartHandshake size={24} />
           </div>
           <div>
-            <h2 className="text-sm font-black uppercase tracking-tight text-white">Central Técnica Psicossocial</h2>
-            <p className="text-xs text-rose-200/80 font-medium">Exibindo exclusivamente estudantes triados e encaminhados pelo Módulo de Mediação Escolar.</p>
+            <h2 className="text-sm font-black uppercase tracking-tight text-white">
+              {role === 'PROFESSOR' ? 'Encaminhamentos para a Mediação Escolar' : 'Central Técnica Psicossocial'}
+            </h2>
+            <p className="text-xs text-rose-200/80 font-medium">
+              {role === 'PROFESSOR' 
+                ? 'Registre estudantes para acolhimento, escuta ativa e resolução pacífica pela equipe de Mediação Escolar.' 
+                : 'Exibindo exclusivamente estudantes triados e encaminhados pelo Módulo de Mediação Escolar.'}
+            </p>
           </div>
         </div>
         <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-widest shrink-0">
-          Entrada Única: Mediação Escolar
+          {role === 'PROFESSOR' ? 'Área Docente' : 'Entrada Única: Mediação Escolar'}
         </span>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-black uppercase text-gray-900 border-b-4 border-rose-500 pb-1">Triagens Recebidas da Mediação Escolar</h1>
-          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest mt-2 font-mono">Acompanhamento Clínico & Apoio Técnico Especializado</p>
+          <h1 className="text-xl font-black uppercase text-gray-900 border-b-4 border-rose-500 pb-1">
+            {role === 'PROFESSOR' ? 'Meus Encaminhamentos para a Mediação' : 'Triagens Recebidas da Mediação Escolar'}
+          </h1>
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest mt-2 font-mono">
+            {role === 'PROFESSOR' ? 'Acompanhamento do Atendimento e Devolutivas' : 'Acompanhamento Clínico & Apoio Técnico Especializado'}
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -375,9 +385,10 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           </div>
           <button
             onClick={() => {
-              alert('Atenção: Novos atendimentos e conflitos de alunos devem ser iniciados no Módulo de Mediação Escolar para escuta prévia e triagem.');
+              resetForm();
+              setIsModalOpen(true);
             }}
-            className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2"
+            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2"
           >
             <PlusCircle size={16} /> Novo Encaminhamento
           </button>
@@ -470,9 +481,22 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           </div>
         ))}
         {filtered.length === 0 && (
-          <div className="col-span-full py-24 text-center border-2 border-dashed border-gray-100 rounded-[3rem] bg-gray-50">
-            <HeartHandshake size={48} className="mx-auto mb-4 text-gray-200" />
-            <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Nenhum encaminhamento registrado</p>
+          <div className="col-span-full py-24 text-center border-2 border-dashed border-gray-100 rounded-[3rem] bg-gray-50 flex flex-col items-center justify-center">
+            <HeartHandshake size={48} className="mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500 font-black uppercase text-xs tracking-widest">
+              {role === 'PROFESSOR' ? 'Nenhum encaminhamento enviado por você ainda.' : 'Nenhum encaminhamento registrado.'}
+            </p>
+            {role === 'PROFESSOR' && (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setIsModalOpen(true);
+                }}
+                className="mt-4 px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2"
+              >
+                <PlusCircle size={16} /> Fazer Primeiro Encaminhamento
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -492,13 +516,14 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                   report: newReferral.reason || newReferral.report,
                   status: (newReferral.status as any) || 'PENDENTE',
                   observedAspects: typeof newReferral.observations === 'string' || !newReferral.observations ? { learning: [], behavioral: [], emotional: [] } : (newReferral.observations as any),
-                  schoolUnit: newReferral.school_unit,
-                  teacherName: newReferral.teacher_name,
+                  schoolUnit: newReferral.school_unit || 'E.E. ANDRÉ ANTÔNIO MAGGI',
+                  teacherName: newReferral.teacher_name || user?.name || 'PROFESSOR',
                   date: new Date().toLocaleDateString('sv-SE'),
                   studentAge: newReferral.student_age,
                   previousStrategies: newReferral.previous_strategies,
                   attendanceFrequency: newReferral.attendance_frequency,
                   adoptedProcedures: newReferral.adopted_procedures,
+                  referralDestination: 'MEDIACAO',
                   timestamp: Date.now()
                 }} 
               />
