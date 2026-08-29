@@ -1177,28 +1177,28 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
             </div>
 
             {/* CORPO DO MODAL BASEADO NA ABA ATIVA */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 custom-scrollbar">
+            <div className="flex-1 overflow-hidden p-6 sm:p-8 bg-slate-50/50 flex flex-col min-h-0">
               
               {/* ABA 1: DIÁRIO & ATENDIMENTOS */}
               {activeCaseTab === 'timeline' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full h-full min-h-0 flex-1">
                   
                   {/* Coluna Esquerda: Relato e Contexto */}
-                  <div className="lg:col-span-5 space-y-4">
+                  <div className="lg:col-span-5 flex flex-col gap-4 h-full min-h-0">
                     {/* Relato Original */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
-                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <FileText size={14} className="text-indigo-600" />
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col flex-1 min-h-0">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-3 shrink-0">
+                        <FileText size={15} className="text-indigo-600" />
                         Relato Original do Caso
                       </h4>
-                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 text-slate-700 text-xs font-normal leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto custom-scrollbar">
+                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 text-slate-700 text-xs font-normal leading-relaxed whitespace-pre-wrap flex-1 overflow-y-auto custom-scrollbar">
                         {selectedCase.description || 'Sem descrição informada.'}
                       </div>
                     </div>
 
                     {/* Parecer / Devolutiva da Psicossocial (se houver) */}
                     {selectedCase.feedback && (
-                      <div className="bg-indigo-50/60 border border-indigo-200 p-5 rounded-2xl shadow-sm space-y-2">
+                      <div className="bg-indigo-50/60 border border-indigo-200 p-5 rounded-2xl shadow-sm space-y-2 shrink-0">
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
                             <HeartHandshake size={15} className="text-indigo-600" /> Parecer Psicossocial
@@ -1214,10 +1214,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     )}
 
                     {/* Resumo do Status */}
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between shrink-0">
                       <div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Atual</p>
-                        <p className={`text-xs font-extrabold uppercase mt-0.5 ${
+                        <p className={`text-sm font-black uppercase mt-0.5 ${
                           selectedCase.status === 'CONCLUÍDO' ? 'text-emerald-600' : 'text-amber-600'
                         }`}>
                           {selectedCase.status || 'ABERTURA'}
@@ -1233,23 +1233,23 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                   </div>
 
                   {/* Coluna Direita: Diário de Atendimento e Timeline */}
-                  <div className="lg:col-span-7 space-y-4">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="lg:col-span-7 flex flex-col h-full min-h-0">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col h-full min-h-0 space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                         <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                          <History size={15} className="text-indigo-600" />
+                          <History size={16} className="text-indigo-600" />
                           Diário de Atendimento & Evolução
                         </h4>
-                        <span className="text-[10px] text-slate-400 font-medium">Linha do tempo oficial</span>
+                        <span className="text-[11px] text-slate-400 font-medium">Linha do tempo oficial</span>
                       </div>
 
                       {/* Caixa de Novo Registro */}
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 shrink-0">
                         <textarea 
                           value={newLog.content}
                           onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
                           placeholder="Descreva a ação ou conversa realizada hoje com o estudante ou responsáveis..."
-                          className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 font-normal resize-none outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 min-h-[70px] transition-all"
+                          className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 font-normal resize-none outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 min-h-[75px] transition-all"
                         />
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                           <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5">
@@ -1259,7 +1259,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                           <button 
                             onClick={handleSaveLog}
                             disabled={isLogLoading || !newLog.content.trim()}
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 shadow-sm flex items-center justify-center gap-1.5"
+                            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 shadow-sm flex items-center justify-center gap-1.5 active:scale-95"
                           >
                             {isLogLoading ? 'Salvando...' : 'Adicionar Registro'}
                           </button>
@@ -1267,7 +1267,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                       </div>
 
                       {/* Lista de Registros da Linha do Tempo */}
-                      <div className="space-y-3 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar pt-2">
+                      <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar space-y-3 pt-1">
                         {selectedCase.logs && selectedCase.logs.length > 0 ? (
                           selectedCase.logs.map((log, idx) => {
                             const logId = log.id || `log-idx-${idx}`;
@@ -1276,7 +1276,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                             return (
                               <div key={logId} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 hover:bg-white hover:shadow-sm transition-all group">
                                 <div className="flex justify-between items-center mb-1.5">
-                                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                  <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 rounded-md text-[10px] font-bold uppercase tracking-wide">
                                     {log.professional}
                                   </span>
                                   <div className="flex items-center gap-2">
@@ -1334,10 +1334,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                             );
                           })
                         ) : (
-                          <div className="py-12 text-center text-slate-400 space-y-1">
-                            <Clock size={28} className="mx-auto text-slate-300" />
+                          <div className="h-full flex flex-col items-center justify-center py-16 text-slate-400 space-y-2">
+                            <Clock size={36} className="text-slate-300 stroke-1" />
                             <p className="text-xs font-semibold">Nenhum atendimento registrado no diário ainda.</p>
-                            <p className="text-[11px] text-slate-400">Use a caixa acima para registrar os atendimentos e conversas.</p>
+                            <p className="text-[11px] text-slate-400">Use o campo acima para registrar as evoluções deste caso.</p>
                           </div>
                         )}
                       </div>
@@ -1348,97 +1348,99 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
               {/* ABA 2: ETAPAS DO PROCESSO */}
               {activeCaseTab === 'steps' && (
-                <div className="max-w-4xl mx-auto space-y-6">
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                        <CheckCircle2 size={16} className="text-emerald-600" />
-                        Roteiro de Mediação & Etapas Obrigatórias
-                      </h4>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Marque ou desmarque cada etapa conforme o atendimento avança.
-                      </p>
-                    </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar w-full flex justify-center">
+                  <div className="max-w-5xl w-full space-y-6">
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+                      <div>
+                        <h4 className="text-base font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                          <CheckCircle2 size={18} className="text-emerald-600" />
+                          Roteiro de Mediação & Etapas Obrigatórias
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Marque ou desmarque cada etapa conforme o atendimento avança.
+                        </p>
+                      </div>
 
-                    <div className="grid grid-cols-1 gap-3">
-                      {selectedCase.steps?.map((step, idx) => (
-                        <div 
-                          key={idx} 
-                          className={`p-4 rounded-xl border transition-all flex items-center justify-between ${
-                            step.completed 
-                              ? 'bg-emerald-50/70 border-emerald-200' 
-                              : 'bg-white border-slate-200 hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3.5">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
-                              step.completed ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
-                            }`}>
-                              {step.completed ? <Check size={16} /> : idx + 1}
-                            </div>
-                            <div>
-                              <p className={`text-xs font-bold ${step.completed ? 'text-emerald-900' : 'text-slate-800'}`}>
-                                {step.label}
-                              </p>
-                              {step.date && (
-                                <p className="text-[11px] font-medium text-emerald-700 mt-0.5">
-                                  Concluído em: {formatLocalDate(step.date)}
+                      <div className="grid grid-cols-1 gap-3.5">
+                        {selectedCase.steps?.map((step, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`p-4 rounded-xl border transition-all flex items-center justify-between ${
+                              step.completed 
+                                ? 'bg-emerald-50/70 border-emerald-200' 
+                                : 'bg-white border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                                step.completed ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {step.completed ? <Check size={16} /> : idx + 1}
+                              </div>
+                              <div>
+                                <p className={`text-xs font-bold ${step.completed ? 'text-emerald-900' : 'text-slate-800'}`}>
+                                  {step.label}
                                 </p>
-                              )}
+                                {step.date && (
+                                  <p className="text-[11px] font-medium text-emerald-700 mt-0.5">
+                                    Concluído em: {formatLocalDate(step.date)}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          {step.completed ? (
-                            <button 
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (!window.confirm(`Deseja reverter a etapa "${step.label}" para pendente?`)) return;
-                                const updatedSteps = selectedCase.steps.map((s, i) => 
-                                  i === idx ? { ...s, completed: false, date: undefined } : s
-                                );
-                                try {
-                                  const { error } = await supabase
-                                    .from('mediation_cases')
-                                    .update({ steps: updatedSteps })
-                                    .eq('id', selectedCase.id);
-                                  if (error) throw error;
-                                  await fetchCases();
-                                  setSelectedCase({ ...selectedCase, steps: updatedSteps });
-                                } catch (err) {
-                                  alert("Erro ao reverter etapa.");
-                                }
-                              }}
-                              className="px-3 py-1.5 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
-                              title="Clique para desfazer / reverter esta etapa"
-                            >
-                              <RotateCcw size={12} /> Desfazer
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                const updatedSteps = selectedCase.steps.map((s, i) => 
-                                  i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
-                                );
-                                try {
-                                  const { error } = await supabase
-                                    .from('mediation_cases')
-                                    .update({ steps: updatedSteps })
-                                    .eq('id', selectedCase.id);
-                                  if (error) throw error;
-                                  await fetchCases();
-                                  setSelectedCase({ ...selectedCase, steps: updatedSteps });
-                                } catch (err) {
-                                  alert("Erro ao atualizar etapa.");
-                                }
-                              }}
-                              className="px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
-                            >
-                              <Check size={13} /> Concluir Etapa
-                            </button>
-                          )}
-                        </div>
-                      ))}
+                            {step.completed ? (
+                              <button 
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!window.confirm(`Deseja reverter a etapa "${step.label}" para pendente?`)) return;
+                                  const updatedSteps = selectedCase.steps.map((s, i) => 
+                                    i === idx ? { ...s, completed: false, date: undefined } : s
+                                  );
+                                  try {
+                                    const { error } = await supabase
+                                      .from('mediation_cases')
+                                      .update({ steps: updatedSteps })
+                                      .eq('id', selectedCase.id);
+                                    if (error) throw error;
+                                    await fetchCases();
+                                    setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                  } catch (err) {
+                                    alert("Erro ao reverter etapa.");
+                                  }
+                                }}
+                                className="px-3.5 py-1.5 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
+                                title="Clique para desfazer / reverter esta etapa"
+                              >
+                                <RotateCcw size={12} /> Desfazer
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const updatedSteps = selectedCase.steps.map((s, i) => 
+                                    i === idx ? { ...s, completed: true, date: new Date().toLocaleDateString('sv-SE') } : s
+                                  );
+                                  try {
+                                    const { error } = await supabase
+                                      .from('mediation_cases')
+                                      .update({ steps: updatedSteps })
+                                      .eq('id', selectedCase.id);
+                                    if (error) throw error;
+                                    await fetchCases();
+                                    setSelectedCase({ ...selectedCase, steps: updatedSteps });
+                                  } catch (err) {
+                                    alert("Erro ao atualizar etapa.");
+                                  }
+                                }}
+                                className="px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
+                              >
+                                <Check size={13} /> Concluir Etapa
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1446,28 +1448,30 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
               {/* ABA 3: ACORDO FINAL & DEVOLUTIVA */}
               {activeCaseTab === 'resolution' && (
-                <div className="max-w-4xl mx-auto space-y-6">
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                        <MessageSquareIcon size={16} className="text-emerald-600" />
-                        Acordo Restaurativo Final & Devolutiva
-                      </h4>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Escreva aqui a resolução do caso, acordos firmados entre as partes e o parecer final que será sincronizado com o professor solicitante.
-                      </p>
-                    </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar w-full flex justify-center">
+                  <div className="max-w-5xl w-full space-y-6">
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
+                      <div>
+                        <h4 className="text-base font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                          <MessageSquareIcon size={18} className="text-emerald-600" />
+                          Acordo Restaurativo Final & Devolutiva
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Escreva aqui a resolução do caso, acordos firmados entre as partes e o parecer final que será sincronizado com o professor solicitante.
+                        </p>
+                      </div>
 
-                    <textarea 
-                      value={selectedCase?.feedback || ''}
-                      onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
-                      placeholder="Descreva o desfecho do caso, os combinados e acordos restaurativos firmados com os estudantes e familiares..."
-                      className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-normal text-slate-800 leading-relaxed resize-none outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 min-h-[220px] transition-all"
-                    />
+                      <textarea 
+                        value={selectedCase?.feedback || ''}
+                        onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
+                        placeholder="Descreva o desfecho do caso, os combinados e acordos restaurativos firmados com os estudantes e familiares..."
+                        className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-normal text-slate-800 leading-relaxed resize-none outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 min-h-[300px] transition-all"
+                      />
 
-                    <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/70 text-xs text-emerald-800 flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                      <span>Este texto será exibido na devolutiva oficial e nos relatórios de mediação.</span>
+                      <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/70 text-xs text-emerald-800 flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                        <span>Este texto será exibido na devolutiva oficial e nos relatórios de mediação.</span>
+                      </div>
                     </div>
                   </div>
                 </div>
