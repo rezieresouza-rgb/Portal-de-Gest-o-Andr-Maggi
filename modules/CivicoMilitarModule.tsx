@@ -207,6 +207,32 @@ export const getEECMSuggestedMeasure = (params: {
   };
 };
 
+export const getBehaviorStatus = (score: number) => {
+  if (score >= 10.0) return { label: 'EXCEPCIONAL', color: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
+  if (score >= 9.0) return { label: 'ÓTIMO', color: 'text-emerald-500 bg-emerald-50 border-emerald-100' };
+  if (score >= 7.0) return { label: 'BOM', color: 'text-blue-500 bg-blue-50 border-blue-100' };
+  if (score >= 5.0) return { label: 'REGULAR', color: 'text-amber-500 bg-amber-50 border-amber-100' };
+  if (score >= 2.0) return { label: 'INSUFICIENTE', color: 'text-orange-500 bg-orange-50 border-orange-100' };
+  return { label: 'INCOMPATÍVEL', color: 'text-red-600 bg-red-50 border-red-100' };
+};
+
+export const getOccurrenceSeverity = (occ: any): string => {
+  if (!occ) return 'LEVE';
+  if (occ.type === 'MERIT') return 'LEVE';
+  const cats = occ.categories && occ.categories.length > 0 ? occ.categories : [occ.category];
+  let maxSeverity = 'LEVE';
+  for (const cat of cats) {
+    if (!cat) continue;
+    const matchNum = cat.match(/^(\d+)\./);
+    const itemNum = matchNum ? parseInt(matchNum[1], 10) : 0;
+    if (itemNum >= 63 && itemNum <= 91) return 'GRAVE';
+    if (cat.toLowerCase().includes('grave')) return 'GRAVE';
+    if (itemNum >= 27 && itemNum <= 62) maxSeverity = 'MÉDIA';
+    else if (cat.toLowerCase().includes('média') || cat.toLowerCase().includes('media')) maxSeverity = 'MÉDIA';
+  }
+  return maxSeverity;
+};
+
 export const CivicoMilitarLogoBadge: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl', showLabel?: boolean }> = ({ size = 'md', showLabel = false }) => {
   const badgeClasses = 
     size === 'sm' ? 'w-9 h-9' :
@@ -356,6 +382,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
   }, [activeTab]);
 
+  // Main lists loaded from LocalStorage & Supabase
+  const [inspections, setInspections] = useState<InspectionRecord[]>([]);
+  const [routines, setRoutines] = useState<CivicRoutineRecord[]>([]);
+  const [studentStates, setStudentStates] = useState<StudentBehaviorState[]>([]);
+  const [dbStudents, setDbStudents] = useState<any[]>(INITIAL_STUDENTS);
+
   // Documentações States
   const [docSearchTerm, setDocSearchTerm] = useState('');
   const [selectedStudentForDoc, setSelectedStudentForDoc] = useState<any | null>(null);
@@ -494,12 +526,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-
-  // Main lists loaded from LocalStorage
-  const [inspections, setInspections] = useState<InspectionRecord[]>([]);
-  const [routines, setRoutines] = useState<CivicRoutineRecord[]>([]);
-  const [studentStates, setStudentStates] = useState<StudentBehaviorState[]>([]);
-  const [dbStudents, setDbStudents] = useState<any[]>(INITIAL_STUDENTS);
 
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
@@ -1203,29 +1229,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       return '';
     }).filter(Boolean).join('\n');
   };
-
-  // Behavior Categories depending on score
-  const getBehaviorStatus = (score: number) => {
-    if (score >= 10.0) return { label: 'EXCEPCIONAL', color: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
-    if (score >= 9.0) return { label: 'ÓTIMO', color: 'text-emerald-500 bg-emerald-50 border-emerald-100' };
-    if (score >= 7.0) return { label: 'BOM', color: 'text-blue-500 bg-blue-50 border-blue-100' };
-    if (score >= 5.0) return { label: 'REGULAR', color: 'text-amber-500 bg-amber-50 border-amber-100' };
-    if (score >= 2.0) return { label: 'INSUFICIENTE', color: 'text-orange-500 bg-orange-50 border-orange-100' };
-    return { label: 'INCOMPATÍVEL', color: 'text-red-600 bg-red-50 border-red-100' };
-  };
-
-  const getOccurrenceSeverity = (occ: any): string => {
-    if (occ.type === 'MERIT') return 'LEVE';
-    const cats = occ.categories && occ.categories.length > 0 ? occ.categories : [occ.category];
-    let maxSeverity = 'LEVE';
-    for (const cat of cats) {
-      const dem = demeritOptions.find(d => d.category === cat);
-      if (dem) {
-        if (dem.severity === 'GRAVE') maxSeverity = 'GRAVE';
-        else if (dem.severity === 'MÉDIA' && maxSeverity !== 'GRAVE') maxSeverity = 'MÉDIA';
-      }
-    }
-    return maxSeverity;};
 
   // Dashboard Advanced Stats
   const advancedStats = useMemo(() => {
