@@ -34,7 +34,9 @@ import {
   ChevronDown,
   Printer,
   Calendar,
-  CalendarDays
+  CalendarDays,
+  School,
+  Layers
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { supabase } from '../supabaseClient';
@@ -52,6 +54,7 @@ interface MediationManagerProps {
 
 const CASE_TYPES = [
   'CONFLITO',
+  'CÍRCULO DE PAZ',
   'BULLYING',
   'FAMILIAR',
   'INFREQUÊNCIA',
@@ -63,10 +66,11 @@ const CASE_TYPES = [
 ];
 
 const ATTENDANCE_CATEGORIES = [
+  { id: 'CIRCULO_PAZ', label: 'Círculo de Paz / Roda Restaurativa', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  { id: 'CONFLITO', label: 'Conflito entre Colegas', color: 'bg-orange-100 text-orange-800 border-orange-300' },
   { id: 'BULLYING', label: 'Bullying / Cyberbullying', color: 'bg-rose-100 text-rose-800 border-rose-300' },
   { id: 'FAMILIAR', label: 'Questão Familiar / Guarda', color: 'bg-purple-100 text-purple-800 border-purple-300' },
   { id: 'INFREQUÊNCIA', label: 'Infrequência / Busca Ativa', color: 'bg-amber-100 text-amber-800 border-amber-300' },
-  { id: 'CONFLITO', label: 'Conflito entre Colegas', color: 'bg-orange-100 text-orange-800 border-orange-300' },
   { id: 'EMOCIONAL', label: 'Acolhimento Emocional', color: 'bg-blue-100 text-blue-800 border-blue-300' },
   { id: 'DISCIPLINAR', label: 'Indisciplina / Regras', color: 'bg-slate-200 text-slate-800 border-slate-300' },
   { id: 'RESPONSÁVEIS', label: 'Atendimento aos Pais', color: 'bg-teal-100 text-teal-800 border-teal-300' },
@@ -116,14 +120,38 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const [activeCaseTab, setActiveCaseTab] = useState<'register' | 'timeline' | 'steps' | 'resolution'>('register');
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   
-  const [newCase, setNewCase] = useState<Partial<MediationCase> & { originType?: string }>({
+  const availableClasses = useMemo(() => {
+    const set = new Set<string>();
+    dbStudents.forEach(s => {
+      const cls = s.Turma || (s as any).className;
+      if (cls && cls.trim()) set.add(cls.trim().toUpperCase());
+    });
+    const list = Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return list.length > 0 ? list : [
+      '6º ANO A', '6º ANO B', '6º ANO C',
+      '7º ANO A', '7º ANO B', '7º ANO C',
+      '8º ANO A', '8º ANO B', '8º ANO C',
+      '9º ANO A', '9º ANO B', '9º ANO C',
+      '1º ANO A', '1º ANO B', '2º ANO A', '2º ANO B', '3º ANO A', '3º ANO B'
+    ];
+  }, [dbStudents]);
+
+  const [newCase, setNewCase] = useState<Partial<MediationCase> & { 
+    originType?: string;
+    targetScope?: 'INDIVIDUAL' | 'GRUPO' | 'TURMA';
+    selectedStudentsList?: { id: string; name: string; className: string }[];
+    estimatedCount?: number;
+  }>({
     type: 'CONFLITO',
     severity: 'MÉDIA',
     description: '',
     involvedParties: [],
     studentName: '',
     className: '',
-    originType: 'Demanda Espontânea (Aluno)'
+    originType: 'Demanda Espontânea (Aluno)',
+    targetScope: 'INDIVIDUAL',
+    selectedStudentsList: [],
+    estimatedCount: 28
   });
   const [activeTab, setActiveTab] = useState<'ativos' | 'historico'>('ativos');
 
@@ -512,8 +540,37 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
   const handleCreateCase = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCase.studentName || !newCase.description) {
-       return alert("Por favor, selecione um aluno e descreva o relato do fato.");
+
+    let studentNameFinal = newCase.studentName || '';
+    let classNameFinal = newCase.className || '';
+    let involvedPartiesFinal = newCase.involvedParties || [];
+
+    if (newCase.targetScope === 'TURMA') {
+      if (!newCase.className) {
+        return alert("Por favor, selecione a turma do círculo.");
+      }
+      studentNameFinal = `Turma: ${newCase.className}`;
+      classNameFinal = newCase.className;
+      involvedPartiesFinal = [`Toda a Turma (${newCase.estimatedCount || 28} Estudantes)`];
+      if (!newCase.type) newCase.type = 'CÍRCULO DE PAZ';
+    } else if (newCase.targetScope === 'GRUPO') {
+      if (!newCase.selectedStudentsList || newCase.selectedStudentsList.length === 0) {
+        if (!studentNameFinal) {
+          return alert("Por favor, adicione pelo menos um estudante ao grupo.");
+        }
+      } else {
+        const firstStudent = newCase.selectedStudentsList[0];
+        studentNameFinal = studentNameFinal.trim() || `Grupo (${newCase.selectedStudentsList.map(s => s.name.split(' ')[0]).join(', ')})`;
+        classNameFinal = classNameFinal || firstStudent.className || 'Múltiplas Turmas';
+        involvedPartiesFinal = newCase.selectedStudentsList.map(s => `${s.name} (${s.className})`);
+      }
+      if (!newCase.type) newCase.type = 'CONFLITO';
+    } else {
+      if (!studentNameFinal) return alert("Por favor, selecione o aluno principal.");
+    }
+
+    if (!newCase.description?.trim()) {
+      return alert("Por favor, preencha o relato do fato ou tema do círculo.");
     }
 
     const steps = [
@@ -521,7 +578,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       { id: 'B', label: 'Escuta das Partes', completed: false },
       { id: 'C', label: 'Comunicação com Pais e/ou Responsáveis', completed: false },
       { id: 'D', label: 'Reunião com os Responsáveis', completed: false },
-      { id: 'E', label: 'Círculo de Mediação / Paz', completed: false },
+      { id: 'E', label: 'Círculo de Mediação / Paz', completed: newCase.targetScope === 'TURMA' },
       { id: 'F', label: 'Palestra Educativa / Ação de Conscientização', completed: false },
       { id: 'G', label: 'Encaminhamento à Rede / Apoio', completed: false },
       { id: 'H', label: 'Acordo / Finalização', completed: false }
@@ -529,18 +586,23 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
     try {
       const activeUserName = user?.name || 'PROFESSOR / SOLICITANTE';
+      const scopePrefix = newCase.targetScope === 'TURMA'
+        ? `[CÍRCULO DE PAZ COM TURMA TODA - ${classNameFinal}] `
+        : newCase.targetScope === 'GRUPO'
+        ? `[CÍRCULO EM GRUPO - ${newCase.selectedStudentsList?.length || 'Vários'} Estudantes] `
+        : '';
       const originPrefix = newCase.originType ? `[Origem: ${newCase.originType}] [Enviado por: ${activeUserName}] ` : `[Origem: Demanda Espontânea (Aluno)] [Enviado por: ${activeUserName}] `;
 
       const payload = {
         student_id: newCase.studentId && newCase.studentId !== 'N/A' ? newCase.studentId : null,
-        student_name: newCase.studentName,
-        class_name: newCase.className,
-        type: newCase.type,
-        severity: newCase.severity,
+        student_name: studentNameFinal,
+        class_name: classNameFinal,
+        type: newCase.type || (newCase.targetScope === 'TURMA' ? 'CÍRCULO DE PAZ' : 'CONFLITO'),
+        severity: newCase.severity || 'MÉDIA',
         status: 'ABERTURA',
         opened_at: new Date().toLocaleDateString('sv-SE'),
-        description: originPrefix + newCase.description,
-        involved_parties: newCase.involvedParties || [activeUserName],
+        description: scopePrefix + originPrefix + newCase.description.trim(),
+        involved_parties: involvedPartiesFinal.length > 0 ? involvedPartiesFinal : [activeUserName],
         steps: steps
       };
 
@@ -557,9 +619,20 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       console.log('Caso salvo com sucesso:', data);
       await fetchCases();
       setIsModalOpen(false);
-      setNewCase({ type: 'CONFLITO', severity: 'MÉDIA', description: '', involvedParties: [], studentName: '', className: '', originType: 'Demanda Espontânea (Aluno)' });
+      setNewCase({ 
+        type: 'CONFLITO', 
+        severity: 'MÉDIA', 
+        description: '', 
+        involvedParties: [], 
+        studentName: '', 
+        className: '', 
+        originType: 'Demanda Espontânea (Aluno)',
+        targetScope: 'INDIVIDUAL',
+        selectedStudentsList: [],
+        estimatedCount: 28
+      });
       setStudentSearch('');
-      alert("Novo caso de mediação aberto e registrado no histórico!");
+      alert("Novo caso / círculo registrado no histórico de mediação com sucesso!");
     } catch (error: any) {
       console.error("Erro fatal ao salvar caso:", error);
       alert("❌ Erro ao salvar o caso: " + (error.message || error.details || "Verifique sua conexão ou se as colunas da tabela estão corretas."));
@@ -815,160 +888,181 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-         {filteredCases.map(c => (
-            <div 
-              key={c.id} 
-              onClick={() => setSelectedCase(c)}
-              className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-xl transition-all cursor-pointer group flex flex-col md:flex-row items-center justify-between gap-8"
-            >
-               <div className="flex items-center gap-6 flex-1">
-                  <div className={"w-14 h-14 rounded-2xl flex items-center justify-center border-2 " + getStatusStyle(c.status)}>
-                    {c.status === 'CONCLUÍDO' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
-                  </div>
-                  <div>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{c.studentName}</h4>
-                        <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
-                          {c.status}
-                        </span>
-                        {(() => {
-                          const studentCasesCount = cases.filter(x => x.studentName?.trim().toUpperCase() === c.studentName?.trim().toUpperCase()).length;
-                          if (studentCasesCount > 1) {
-                            return (
-                              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Este estudante possui ${studentCasesCount} casos no histórico`}>
-                                <AlertTriangle size={11} className="text-amber-700 shrink-0" />
-                                Reincidente ({studentCasesCount}x)
-                              </span>
-                            );
-                          }
-                          return null;
-                        })()}
-                        {(() => {
-                           const isBuscaAtiva = (c.teacherName && c.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
-                                                c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
-                                                c.description?.includes('[VIA BUSCA ATIVA]') ||
-                                                c.description?.includes('Busca Ativa');
+         {filteredCases.map(c => {
+            const isTurmaCase = c.studentName?.startsWith('Turma:') || c.description?.includes('[CÍRCULO DE PAZ COM TURMA TODA') || c.type === 'CÍRCULO DE PAZ';
+            const isGrupoCase = c.studentName?.startsWith('Grupo') || c.description?.includes('[CÍRCULO EM GRUPO');
 
-                           if (isBuscaAtiva) {
-                             const displaySource = (c.teacherName && c.teacherName.includes('(')) ? c.teacherName : 'Busca Ativa Escolar';
+            return (
+              <div 
+                key={c.id} 
+                onClick={() => setSelectedCase(c)}
+                className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-rose-200 hover:shadow-xl transition-all cursor-pointer group flex flex-col md:flex-row items-center justify-between gap-8"
+              >
+                 <div className="flex items-center gap-6 flex-1">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${
+                      isTurmaCase ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                      isGrupoCase ? 'bg-indigo-50 text-indigo-600 border-indigo-200' :
+                      getStatusStyle(c.status)
+                    }`}>
+                      {isTurmaCase ? <School size={26} /> : isGrupoCase ? <Users size={26} /> : c.status === 'CONCLUÍDO' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h4 className="text-lg font-black text-gray-900 uppercase leading-none">{c.studentName}</h4>
+                          <span className={"px-2 py-0.5 rounded text-[8px] font-black uppercase border " + getStatusStyle(c.status)}>
+                            {c.status}
+                          </span>
+                          {isTurmaCase && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                              <School size={11} className="text-emerald-700 shrink-0" />
+                              Turma Toda
+                            </span>
+                          )}
+                          {isGrupoCase && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                              <Users size={11} className="text-indigo-700 shrink-0" />
+                              Círculo em Grupo
+                            </span>
+                          )}
+                          {(() => {
+                            const studentCasesCount = cases.filter(x => x.studentName?.trim().toUpperCase() === c.studentName?.trim().toUpperCase()).length;
+                            if (studentCasesCount > 1 && !isTurmaCase && !isGrupoCase) {
+                              return (
+                                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Este estudante possui ${studentCasesCount} casos no histórico`}>
+                                  <AlertTriangle size={11} className="text-amber-700 shrink-0" />
+                                  Reincidente ({studentCasesCount}x)
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                          {(() => {
+                             const isBuscaAtiva = (c.teacherName && c.teacherName.toUpperCase().includes('BUSCA ATIVA')) || 
+                                                  c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || 
+                                                  c.description?.includes('[VIA BUSCA ATIVA]') ||
+                                                  c.description?.includes('Busca Ativa');
+
+                             if (isBuscaAtiva) {
+                               const displaySource = (c.teacherName && c.teacherName.includes('(')) ? c.teacherName : 'Busca Ativa Escolar';
+                               return (
+                                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title="Encaminhado via Busca Ativa Escolar">
+                                   <Search size={11} className="text-emerald-700 shrink-0" />
+                                   Enviado por: {displaySource}
+                                 </span>
+                               );
+                             }
+
+                             if (c.teacherName) {
+                               return (
+                                 <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Solicitado/Enviado por: ${c.teacherName}`}>
+                                   <UserCheck size={11} className="text-indigo-600 shrink-0" />
+                                   Enviado por: {c.teacherName}
+                                 </span>
+                               );
+                             }
+
                              return (
-                               <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title="Encaminhado via Busca Ativa Escolar">
-                                 <Search size={11} className="text-emerald-700 shrink-0" />
-                                 Enviado por: {displaySource}
+                               <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-100 text-[7px] font-bold uppercase tracking-widest">
+                                 Demandante não registrado
                                </span>
                              );
-                           }
-
-                           if (c.teacherName) {
-                             return (
-                               <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title={`Solicitado/Enviado por: ${c.teacherName}`}>
-                                 <UserCheck size={11} className="text-indigo-600 shrink-0" />
-                                 Enviado por: {c.teacherName}
-                               </span>
-                             );
-                           }
-
-                           return (
-                             <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-100 text-[7px] font-bold uppercase tracking-widest">
-                               Demandante não registrado
-                             </span>
-                           );
-                        })()}
-                        {c.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title="Caso encaminhado para a Equipe Psicossocial">
-                            <HeartHandshake size={11} className="text-purple-600 shrink-0" />
-                            Triado p/ Psicossocial
+                          })()}
+                          {c.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300 text-[8px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm" title="Caso encaminhado para a Equipe Psicossocial">
+                              <HeartHandshake size={11} className="text-purple-600 shrink-0" />
+                              Triado p/ Psicossocial
+                            </span>
+                          )}
+                          {c.status === 'CONCLUÍDO' && c.closedAt === today && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
+                              Concluído Hoje
+                            </span>
+                          )}
+                       </div>
+                       <div className="flex items-center gap-4 mt-2">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12}/> {c.className}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Target size={12}/> {c.type}</span>
+                          <span className={"text-[10px] font-black uppercase flex items-center gap-1 " + getSeverityColor(c.severity)}>
+                             <AlertTriangle size={12}/> Risco {c.severity}
                           </span>
-                        )}
-                        {c.status === 'CONCLUÍDO' && c.closedAt === today && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white border border-emerald-700 text-[7px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 animate-pulse">
-                            Concluído Hoje
-                          </span>
-                        )}
-                     </div>
-                     <div className="flex items-center gap-4 mt-2">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12}/> {c.className}</span>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Target size={12}/> {c.type}</span>
-                        <span className={"text-[10px] font-black uppercase flex items-center gap-1 " + getSeverityColor(c.severity)}>
-                           <AlertTriangle size={12}/> Risco {c.severity}
-                        </span>
-                     </div>
-                  </div>
-               </div>
+                       </div>
+                    </div>
+                 </div>
 
-               <div className="flex items-center gap-6 shrink-0">
-                  <div className="text-right">
-                     <p className="text-[10px] font-black text-gray-400 uppercase">Progresso</p>
-                     <div className="flex items-center gap-1 mt-1 justify-end">
-                        {c.steps?.map((step, i) => (
-                          <div key={i} className={"h-1.5 w-6 rounded-full " + (step.completed ? 'bg-rose-500' : 'bg-gray-100')} />
-                        ))}
-                     </div>
-                     {(() => {
-                        let latestDateStr = c.openedAt;
+                 <div className="flex items-center gap-6 shrink-0">
+                    <div className="text-right">
+                       <p className="text-[10px] font-black text-gray-400 uppercase">Progresso</p>
+                       <div className="flex items-center gap-1 mt-1 justify-end">
+                          {c.steps?.map((step, i) => (
+                            <div key={i} className={"h-1.5 w-6 rounded-full " + (step.completed ? 'bg-rose-500' : 'bg-gray-100')} />
+                          ))}
+                       </div>
+                       {(() => {
+                          let latestDateStr = c.openedAt;
 
-                        if (c.logs && c.logs.length > 0) {
-                          const logDates = c.logs.map(l => l.date).filter(Boolean);
-                          if (logDates.length > 0) {
-                            logDates.sort().reverse();
-                            if (!latestDateStr || logDates[0] > latestDateStr) {
-                              latestDateStr = logDates[0];
+                          if (c.logs && c.logs.length > 0) {
+                            const logDates = c.logs.map(l => l.date).filter(Boolean);
+                            if (logDates.length > 0) {
+                              logDates.sort().reverse();
+                              if (!latestDateStr || logDates[0] > latestDateStr) {
+                                latestDateStr = logDates[0];
+                              }
                             }
                           }
-                        }
 
-                        if (c.steps && c.steps.length > 0) {
-                          const stepDates = c.steps.filter(s => s.completed && s.date).map(s => s.date!);
-                          if (stepDates.length > 0) {
-                            stepDates.sort().reverse();
-                            if (!latestDateStr || stepDates[0] > latestDateStr) {
-                              latestDateStr = stepDates[0];
+                          if (c.steps && c.steps.length > 0) {
+                            const stepDates = c.steps.filter(s => s.completed && s.date).map(s => s.date!);
+                            if (stepDates.length > 0) {
+                              stepDates.sort().reverse();
+                              if (!latestDateStr || stepDates[0] > latestDateStr) {
+                                latestDateStr = stepDates[0];
+                              }
                             }
                           }
-                        }
 
-                        if (!latestDateStr) return null;
+                          if (!latestDateStr) return null;
 
-                        let formattedDate = latestDateStr;
-                        try {
-                          if (latestDateStr.includes('-')) {
-                            const parts = latestDateStr.split('T')[0].split('-');
-                            if (parts.length === 3) {
-                              formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                          let formattedDate = latestDateStr;
+                          try {
+                            if (latestDateStr.includes('-')) {
+                              const parts = latestDateStr.split('T')[0].split('-');
+                              if (parts.length === 3) {
+                                formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                              }
                             }
-                          }
-                        } catch (e) {}
+                          } catch (e) {}
 
-                        return (
-                          <p className="text-[9px] font-black text-gray-400 uppercase mt-1 flex items-center justify-end gap-1">
-                             <Clock size={10} className="text-rose-500" />
-                             Atualizado em: <span className="font-extrabold text-rose-600">{formattedDate}</span>
-                          </p>
-                        );
-                     })()}
-                  </div>
-                  
-                  <div className="flex flex-col gap-2">
-                     <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-rose-600 group-hover:text-white rounded-xl transition-all">
-                        <ChevronRight size={24}/>
-                     </div>
-                     <button 
-                       onClick={(e) => handleDeleteCase(e, c.id)}
-                       className="p-3 bg-gray-50 text-gray-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
-                       title="Excluir Caso"
-                     >
-                        <Trash2 size={16}/>
-                     </button>
-                  </div>
-               </div>
+                          return (
+                            <p className="text-[9px] font-black text-gray-400 uppercase mt-1 flex items-center justify-end gap-1">
+                               <Clock size={10} className="text-rose-500" />
+                               Atualizado em: <span className="font-extrabold text-rose-600">{formattedDate}</span>
+                            </p>
+                          );
+                       })()}
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                       <div className="p-3 bg-gray-50 text-gray-300 group-hover:bg-rose-600 group-hover:text-white rounded-xl transition-all">
+                          <ChevronRight size={24}/>
+                       </div>
+                       <button 
+                         onClick={(e) => handleDeleteCase(e, c.id)}
+                         className="p-3 bg-gray-50 text-gray-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
+                         title="Excluir Caso"
+                       >
+                          <Trash2 size={16}/>
+                       </button>
+                    </div>
+                 </div>
+              </div>
+            );
+          })}
+          {filteredCases.length === 0 && (
+            <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+               <Scale size={48} className="mx-auto mb-4 text-gray-100" />
+               <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Nenhum caso de mediação registrado</p>
             </div>
-         ))}
-         {filteredCases.length === 0 && (
-           <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
-                        <Scale size={48} className="mx-auto mb-4 text-gray-100" />
-              <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Nenhum caso de mediação registrado</p>
-           </div>
-         )}
+          )}
       </div>
 
       {/* MODAL DE CRIAÇÃO DE NOVO CASO */}
@@ -981,8 +1075,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                        <Plus size={28} strokeWidth={3} />
                     </div>
                     <div>
-                       <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Novo Caso de Mediação</h3>
-                       <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest mt-1">Abertura de Protocolo Interno</p>
+                       <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Novo Caso / Círculo Restaurativo</h3>
+                       <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest mt-1">Abertura de Protocolo e Registro Restaurativo</p>
                     </div>
                  </div>
                  <button onClick={() => setIsModalOpen(false)} className="p-3 bg-white text-gray-400 hover:text-red-500 rounded-2xl shadow-sm transition-all">
@@ -991,73 +1085,299 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
               </div>
 
               <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                 <form onSubmit={handleCreateCase} className="space-y-8">
+                 <form onSubmit={handleCreateCase} className="space-y-8 max-w-4xl mx-auto">
                     
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Aluno Principal</label>
-                        
-                        {newCase.studentName ? (
-                           <div className="flex items-center justify-between p-5 bg-rose-50 rounded-2xl border-2 border-rose-100 animate-in fade-in zoom-in-95">
-                              <div className="flex items-center gap-4">
-                                 <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg rotate-3">
-                                    {newCase.studentName.charAt(0)}
-                                 </div>
-                                 <div>
-                                    <p className="font-black text-gray-900 uppercase tracking-tight">{newCase.studentName}</p>
-                                    <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest">{newCase.className}</p>
-                                 </div>
-                              </div>
-                              <button 
-                                 type="button"
-                                 onClick={() => {
-                                    setNewCase({ ...newCase, studentName: '', studentId: '', className: '' });
-                                    setStudentSearch('');
-                                 }}
-                                 className="p-3 hover:bg-rose-100 rounded-xl text-rose-600 transition-all active:scale-95"
-                              >
-                                 <X size={20} />
-                              </button>
-                           </div>
-                        ) : (
-                           <div className="relative">
-                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                              <input 
-                                 type="text" 
-                                 placeholder="Digite o nome para buscar aluno..." 
-                                 value={studentSearch}
-                                 onChange={e => setStudentSearch(e.target.value)}
-                                 className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all uppercase"
-                              />
-                              
-                              {studentSearch.length >= 3 && filteredStudents.length > 0 && (
-                                 <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden divide-y divide-gray-50 z-[100] animate-in slide-in-from-top-2">
-                                    {filteredStudents.map((s: any) => (
-                                       <button 
-                                          key={s.CodigoAluno || s.id}
-                                          type="button"
-                                          onClick={() => {
-                                             setNewCase({ 
-                                               ...newCase, 
-                                               studentName: (s.Nome || s.name), 
-                                               studentId: (s.CodigoAluno || s.id), 
-                                               className: (s.Turma || s.className || 'N/A') 
-                                             });
-                                             setStudentSearch('');
-                                          }}
-                                          className="w-full text-left p-4 hover:bg-rose-50 transition-colors flex justify-between items-center group"
-                                       >
-                                          <div>
-                                             <p className="text-xs font-black uppercase text-gray-900 group-hover:text-rose-600">{s.Nome || s.name}</p>
-                                             <p className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma || s.className}</p>
-                                          </div>
-                                          <PlusCircle size={16} className="text-gray-200 group-hover:text-rose-400 transition-colors" />
-                                       </button>
-                                    ))}
-                                 </div>
-                              )}
-                           </div>
-                        )}
+                    {/* SELETOR DE MODALIDADE DO CASO / CÍRCULO */}
+                    <div className="space-y-2.5">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                        Modalidade do Atendimento / Círculo
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewCase(prev => ({
+                              ...prev,
+                              targetScope: 'INDIVIDUAL',
+                              type: prev.type === 'CÍRCULO DE PAZ' ? 'CONFLITO' : prev.type,
+                              studentName: '',
+                              studentId: '',
+                              className: ''
+                            }));
+                          }}
+                          className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all text-center ${
+                            newCase.targetScope === 'INDIVIDUAL' || !newCase.targetScope
+                              ? 'bg-rose-50 border-rose-500 text-rose-900 shadow-md ring-2 ring-rose-500/20'
+                              : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 hover:border-gray-200'
+                          }`}
+                        >
+                          <User size={22} className={newCase.targetScope === 'INDIVIDUAL' || !newCase.targetScope ? 'text-rose-600' : 'text-gray-400'} />
+                          <span className="text-xs font-black uppercase">Individual</span>
+                          <span className="text-[10px] text-gray-500">1 Estudante</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewCase(prev => ({
+                              ...prev,
+                              targetScope: 'GRUPO',
+                              type: prev.type || 'CONFLITO',
+                              studentName: '',
+                              studentId: '',
+                              className: ''
+                            }));
+                          }}
+                          className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all text-center ${
+                            newCase.targetScope === 'GRUPO'
+                              ? 'bg-indigo-50 border-indigo-500 text-indigo-900 shadow-md ring-2 ring-indigo-500/20'
+                              : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 hover:border-gray-200'
+                          }`}
+                        >
+                          <Users size={22} className={newCase.targetScope === 'GRUPO' ? 'text-indigo-600' : 'text-gray-400'} />
+                          <span className="text-xs font-black uppercase">Grupo de Alunos</span>
+                          <span className="text-[10px] text-gray-500">Múltiplos Envolvidos</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const defaultClass = availableClasses[0] || '9º ANO A';
+                            setNewCase(prev => ({
+                              ...prev,
+                              targetScope: 'TURMA',
+                              type: 'CÍRCULO DE PAZ',
+                              className: defaultClass,
+                              studentName: `Turma: ${defaultClass}`
+                            }));
+                          }}
+                          className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all text-center ${
+                            newCase.targetScope === 'TURMA'
+                              ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-md ring-2 ring-emerald-500/20'
+                              : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 hover:border-gray-200'
+                          }`}
+                        >
+                          <School size={22} className={newCase.targetScope === 'TURMA' ? 'text-emerald-600' : 'text-gray-400'} />
+                          <span className="text-xs font-black uppercase">Turma Inteira</span>
+                          <span className="text-[10px] text-gray-500">Círculo de Paz na Turma</span>
+                        </button>
+                      </div>
                     </div>
+
+                    {/* SELEÇÃO DINÂMICA BASEADA NO ESCOPO */}
+                    {newCase.targetScope === 'TURMA' && (
+                      <div className="space-y-4 p-6 bg-emerald-50/70 border-2 border-emerald-200 rounded-3xl animate-in fade-in">
+                        <div className="flex items-center gap-2 text-emerald-800 font-black text-xs uppercase tracking-wide">
+                          <School size={18} className="text-emerald-600" />
+                          <span>Selecione a Turma da Escola para o Círculo de Paz:</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Turma</label>
+                            <select
+                              value={newCase.className || availableClasses[0] || '9º ANO A'}
+                              onChange={(e) => {
+                                const cls = e.target.value;
+                                setNewCase(prev => ({
+                                  ...prev,
+                                  className: cls,
+                                  studentName: `Turma: ${cls}`
+                                }));
+                              }}
+                              className="w-full p-4 bg-white border border-emerald-200 rounded-2xl font-black text-sm uppercase outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm"
+                            >
+                              {availableClasses.map(cls => (
+                                <option key={cls} value={cls}>{cls}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Estimativa de Alunos Presentes na Roda</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="60"
+                              value={newCase.estimatedCount || 28}
+                              onChange={(e) => setNewCase(prev => ({ ...prev, estimatedCount: parseInt(e.target.value) || 28 }))}
+                              className="w-full p-4 bg-white border border-emerald-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                              placeholder="Ex: 28"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-emerald-700 font-medium">
+                          💡 Este registro criará um caso e histórico coletivo para a turma <strong>{newCase.className || 'selecionada'}</strong>, permitindo registrar intervenções, pactuações da turma e lavrar atas de círculo para a turma toda.
+                        </p>
+                      </div>
+                    )}
+
+                    {newCase.targetScope === 'GRUPO' && (
+                      <div className="space-y-4 p-6 bg-indigo-50/70 border-2 border-indigo-200 rounded-3xl animate-in fade-in">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2 text-indigo-900 font-black text-xs uppercase tracking-wide">
+                            <Users size={18} className="text-indigo-600" />
+                            <span>Estudantes que Participarão do Círculo em Grupo:</span>
+                          </div>
+                          <span className="text-[10px] font-extrabold bg-indigo-200 text-indigo-900 px-3 py-1 rounded-full">
+                            {newCase.selectedStudentsList?.length || 0} Estudantes Selecionados
+                          </span>
+                        </div>
+
+                        {/* Lista de Chips dos Alunos Adicionados */}
+                        {newCase.selectedStudentsList && newCase.selectedStudentsList.length > 0 && (
+                          <div className="flex flex-wrap gap-2 p-3 bg-white border border-indigo-100 rounded-2xl max-h-36 overflow-y-auto custom-scrollbar">
+                            {newCase.selectedStudentsList.map((stu) => (
+                              <span 
+                                key={stu.id} 
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-900 rounded-xl text-xs font-bold shadow-sm"
+                              >
+                                <span>{stu.name}</span>
+                                <span className="text-[10px] text-indigo-600 bg-indigo-200/80 px-1.5 py-0.5 rounded font-semibold">{stu.className}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setNewCase(prev => ({
+                                      ...prev,
+                                      selectedStudentsList: prev.selectedStudentsList?.filter(s => s.id !== stu.id)
+                                    }));
+                                  }}
+                                  className="hover:text-red-600 ml-1"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Busca para Adicionar Alunos no Grupo */}
+                        <div className="relative">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                          <input 
+                            type="text" 
+                            placeholder="Digite o nome para buscar e adicionar alunos ao grupo..." 
+                            value={studentSearch}
+                            onChange={e => setStudentSearch(e.target.value)}
+                            className="w-full pl-12 pr-6 py-4 bg-white border border-indigo-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all uppercase shadow-sm"
+                          />
+                          {studentSearch.length >= 2 && filteredStudents.length > 0 && (
+                            <div className="absolute left-0 right-0 mt-2 bg-white border border-indigo-100 rounded-2xl shadow-2xl overflow-hidden divide-y divide-gray-50 z-[100] max-h-48 overflow-y-auto custom-scrollbar">
+                              {filteredStudents.map((s: any) => {
+                                const sId = s.CodigoAluno || s.id;
+                                const sName = s.Nome || s.name;
+                                const sClass = s.Turma || s.className || 'N/A';
+                                const isAlreadyAdded = newCase.selectedStudentsList?.some(x => x.id === sId);
+
+                                return (
+                                  <button 
+                                    key={sId}
+                                    type="button"
+                                    disabled={isAlreadyAdded}
+                                    onClick={() => {
+                                      if (!isAlreadyAdded) {
+                                        setNewCase(prev => ({
+                                          ...prev,
+                                          selectedStudentsList: [...(prev.selectedStudentsList || []), { id: sId, name: sName, className: sClass }]
+                                        }));
+                                        setStudentSearch('');
+                                      }
+                                    }}
+                                    className={`w-full text-left p-3.5 hover:bg-indigo-50 transition-colors flex justify-between items-center ${isAlreadyAdded ? 'opacity-40 cursor-not-allowed bg-slate-50' : ''}`}
+                                  >
+                                    <div>
+                                      <p className="text-xs font-black uppercase text-gray-900">{sName}</p>
+                                      <p className="text-[9px] font-bold text-gray-400 uppercase">{sClass}</p>
+                                    </div>
+                                    <span className="text-xs text-indigo-600 font-bold">
+                                      {isAlreadyAdded ? 'Adicionado' : '+ Adicionar ao Grupo'}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Nome Opcional do Grupo */}
+                        <div>
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Nome / Identificação do Grupo (Opcional)</label>
+                          <input 
+                            type="text"
+                            value={newCase.studentName || ''}
+                            onChange={e => setNewCase(prev => ({ ...prev, studentName: e.target.value }))}
+                            placeholder="Ex: Grupo de Estudantes do 8º e 9º Ano"
+                            className="w-full p-4 bg-white border border-indigo-200 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-indigo-500 uppercase shadow-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {(!newCase.targetScope || newCase.targetScope === 'INDIVIDUAL') && (
+                      <div className="space-y-4">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Aluno Principal</label>
+                          
+                          {newCase.studentName ? (
+                              <div className="flex items-center justify-between p-5 bg-rose-50 rounded-2xl border-2 border-rose-100 animate-in fade-in zoom-in-95">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg rotate-3">
+                                      {newCase.studentName.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="font-black text-gray-900 uppercase tracking-tight">{newCase.studentName}</p>
+                                      <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest">{newCase.className}</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                      setNewCase({ ...newCase, studentName: '', studentId: '', className: '' });
+                                      setStudentSearch('');
+                                    }}
+                                    className="p-3 hover:bg-rose-100 rounded-xl text-rose-600 transition-all active:scale-95"
+                                >
+                                    <X size={20} />
+                                </button>
+                              </div>
+                          ) : (
+                              <div className="relative">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Digite o nome para buscar aluno..." 
+                                    value={studentSearch}
+                                    onChange={e => setStudentSearch(e.target.value)}
+                                    className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all uppercase"
+                                />
+                                
+                                {studentSearch.length >= 3 && filteredStudents.length > 0 && (
+                                    <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden divide-y divide-gray-50 z-[100] animate-in slide-in-from-top-2">
+                                      {filteredStudents.map((s: any) => (
+                                          <button 
+                                            key={s.CodigoAluno || s.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setNewCase({ 
+                                                  ...newCase, 
+                                                  studentName: (s.Nome || s.name), 
+                                                  studentId: (s.CodigoAluno || s.id), 
+                                                  className: (s.Turma || s.className || 'N/A') 
+                                                });
+                                                setStudentSearch('');
+                                            }}
+                                            className="w-full text-left p-4 hover:bg-rose-50 transition-colors flex justify-between items-center group"
+                                          >
+                                            <div>
+                                                <p className="text-xs font-black uppercase text-gray-900 group-hover:text-rose-600">{s.Nome || s.name}</p>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase">{s.Turma || s.className}</p>
+                                            </div>
+                                            <PlusCircle size={16} className="text-gray-200 group-hover:text-rose-400 transition-colors" />
+                                          </button>
+                                      ))}
+                                    </div>
+                                )}
+                              </div>
+                          )}
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                        <div className="space-y-1.5 md:col-span-1">
@@ -1075,7 +1395,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                           </select>
                        </div>
                        <div className="space-y-1.5 md:col-span-1">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo do Conflito</label>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo do Conflito / Tema</label>
                           <select 
                              value={newCase.type} 
                              onChange={e => setNewCase({...newCase, type: e.target.value as any})}
@@ -1097,25 +1417,29 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     </div>
 
                     <div className="space-y-1.5">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Relato do Fato</label>
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                         {newCase.targetScope === 'TURMA' ? 'Objetivo e Tema do Círculo de Paz com a Turma' : 'Relato do Fato / Motivo do Atendimento'}
+                       </label>
                         <textarea 
                            required
                            value={newCase.description}
                            onChange={e => setNewCase({...newCase, description: e.target.value})}
-                           placeholder="Descreva detalhadamente o ocorrido..."
-                           className="w-full p-8 bg-gray-50 border border-gray-100 rounded-[2.5rem] text-base font-medium min-h-[300px] resize-none outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all"
+                           placeholder={newCase.targetScope === 'TURMA' ? "Descreva o tema, a dinâmica ou o motivo do Círculo de Paz realizado com a turma..." : "Descreva detalhadamente o ocorrido ou o motivo do atendimento..."}
+                           className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl text-sm font-medium min-h-[220px] resize-none outline-none focus:bg-white focus:ring-4 focus:ring-rose-500/5 transition-all"
                         />
                     </div>
 
-                    <div className="space-y-4">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Outras Partes Envolvidas</label>
-                       <input 
-                          type="text" 
-                          placeholder="Nomes separados por vírgula..."
-                          onChange={e => setNewCase({...newCase, involvedParties: e.target.value.split(',').map(s => s.trim().toUpperCase())})}
-                          className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
-                       />
-                    </div>
+                    {(!newCase.targetScope || newCase.targetScope === 'INDIVIDUAL') && (
+                      <div className="space-y-4">
+                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Outras Partes Envolvidas (Opcional)</label>
+                         <input 
+                            type="text" 
+                            placeholder="Nomes separados por vírgula..."
+                            onChange={e => setNewCase({...newCase, involvedParties: e.target.value.split(',').map(s => s.trim().toUpperCase())})}
+                            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all uppercase"
+                         />
+                      </div>
+                    )}
 
                     <div className="p-6 bg-rose-50 rounded-[2.5rem] border-2 border-rose-100 border-dashed space-y-3">
                        <div className="flex items-center gap-2 text-rose-600">
@@ -1145,15 +1469,36 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
             <div className="px-6 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-white/10 flex flex-col gap-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-lg font-black text-indigo-200 shadow-inner">
-                    {(selectedCase.studentName || '?')[0]}
-                  </div>
+                  {(() => {
+                    const isTurma = selectedCase.studentName?.startsWith('Turma:') || selectedCase.type === 'CÍRCULO DE PAZ';
+                    const isGrupo = selectedCase.studentName?.startsWith('Grupo') || selectedCase.description?.includes('[CÍRCULO EM GRUPO');
+
+                    return (
+                      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg font-black shadow-inner ${
+                        isTurma ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300' :
+                        isGrupo ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300' :
+                        'bg-rose-500/20 border-rose-400/30 text-rose-200'
+                      }`}>
+                        {isTurma ? <School size={20} /> : isGrupo ? <Users size={20} /> : (selectedCase.studentName || '?')[0]}
+                      </div>
+                    );
+                  })()}
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-lg font-bold tracking-tight text-white">{selectedCase.studentName}</h3>
+                      {selectedCase.studentName?.startsWith('Turma:') && (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold text-[9px] tracking-wide border border-emerald-500/30 flex items-center gap-1">
+                          <School size={10} /> Círculo com Turma Toda
+                        </span>
+                      )}
+                      {selectedCase.studentName?.startsWith('Grupo') && (
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold text-[9px] tracking-wide border border-indigo-500/30 flex items-center gap-1">
+                          <Users size={10} /> Círculo em Grupo
+                        </span>
+                      )}
                       {(() => {
                         const count = cases.filter(c => c.studentName?.trim().toUpperCase() === selectedCase.studentName?.trim().toUpperCase()).length;
-                        if (count > 1) {
+                        if (count > 1 && !selectedCase.studentName?.startsWith('Turma:') && !selectedCase.studentName?.startsWith('Grupo')) {
                           return (
                             <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[9px] tracking-wide border border-amber-500/30 flex items-center gap-1">
                               <AlertTriangle size={10} /> Reincidente ({count} Casos)
@@ -1855,21 +2200,47 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                 <div className="flex-1 overflow-y-auto custom-scrollbar w-full flex justify-center">
                   <div className="max-w-5xl w-full space-y-6">
                     <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
-                      <div>
-                        <h4 className="text-base font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                          <MessageSquareIcon size={18} className="text-emerald-600" />
-                          Acordo Restaurativo Final & Devolutiva
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Escreva aqui a resolução do caso, acordos firmados entre as partes e o parecer final que será sincronizado com o professor solicitante.
-                        </p>
+                      <div className="flex justify-between items-start flex-wrap gap-4">
+                        <div>
+                          <h4 className="text-base font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <MessageSquareIcon size={18} className="text-emerald-600" />
+                            Acordo Restaurativo Final & Devolutiva
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Escreva aqui a resolução do caso, acordos firmados entre as partes e o parecer final que será sincronizado com o professor solicitante e equipe técnica.
+                          </p>
+                        </div>
+
+                        {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') && (
+                          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold shadow-sm">
+                            <HeartHandshake size={14} className="text-rose-600 animate-pulse" />
+                            <span>Triado para Equipe Psicossocial</span>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Caixa de Informação Integrada */}
+                      {selectedCase.description?.includes('[TRIAGEM P/ PSICOSSOCIAL') && (
+                        <div className="p-4 bg-gradient-to-r from-rose-50 to-indigo-50 rounded-2xl border border-rose-200/80 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase text-rose-700 tracking-wider flex items-center gap-1.5">
+                              <HeartHandshake size={14} /> Integração com Equipe Psicossocial
+                            </span>
+                            <span className="text-[9px] font-bold bg-white text-rose-700 px-2 py-0.5 rounded border border-rose-200 uppercase">
+                              Fila Técnica Ativa
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                            Este caso foi encaminhado para a <strong>Equipe Psicossocial</strong> (Psicologia / Serviço Social) para escuta clínica e articulação com a Rede de Proteção Externa (Conselho Tutelar / CAPSi). O parecer e as orientações técnicas inseridas aqui sincronizam automaticamente com o prontuário.
+                          </p>
+                        </div>
+                      )}
 
                       <textarea 
                         value={selectedCase?.feedback || ''}
                         onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
                         placeholder="Descreva o desfecho do caso, os combinados e acordos restaurativos firmados com os estudantes e familiares..."
-                        className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-normal text-slate-800 leading-relaxed resize-none outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 min-h-[300px] transition-all"
+                        className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-normal text-slate-800 leading-relaxed resize-none outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 min-h-[260px] transition-all"
                       />
 
                       <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/70 text-xs text-emerald-800 flex items-center gap-2">

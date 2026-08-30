@@ -37,7 +37,10 @@ import {
   BookOpen,
   CalendarDays,
   FileSpreadsheet,
-  Filter
+  Filter,
+  Music,
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ClassroomObservation, PedagogicalProject, LessonPlan, Assessment, PedagogicalIntervention } from '../types';
@@ -53,6 +56,9 @@ import SchoolProjectManager from '../components/SchoolProjectManager';
 import ClassCouncilManager from '../components/ClassCouncilManager';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
+import SpecialEducationAEEHub from '../components/SpecialEducationAEEHub';
+import CoordinationRiskRadar from '../components/CoordinationRiskRadar';
+import EducarteReports from '../components/EducarteReports';
 
 import { User as UserType } from '../types';
 
@@ -61,9 +67,12 @@ interface PedagogicalModuleProps {
   user: UserType;
 }
 
+type TabType = 'dashboard' | 'performance' | 'aee_special_education' | 'educarte' | 'plans' | 'occurrences' | 'observations' | 'class_council' | 'external_grades' | 'referrals' | 'oficios' | 'atas' | 'calendar' | 'schedules' | 'projects' | 'ia_insights';
+
 const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) => {
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'performance' | 'external_grades' | 'observations' | 'plans' | 'projects' | 'ia_insights' | 'occurrences' | 'calendar' | 'referrals' | 'schedules' | 'class_council' | 'oficios'>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'GRADES' | 'ATTENDANCE'>('ALL');
 
@@ -90,8 +99,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
 
   const fetchData = async () => {
     try {
-      // 1. Fetch Assessments (Internal & External)
-      const { data: assessData, error: assessError } = await supabase
+      // 1. Fetch Assessments
+      const { data: assessData } = await supabase
         .from('assessments')
         .select(`
           *,
@@ -114,8 +123,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           type: a.type as Assessment['type'],
           description: a.type,
           max_score: a.max_score,
-          grades: a.grades.map((g: any) => ({
-            studentId: 'N/A', // Not used in UI display apparently
+          grades: (a.grades || []).map((g: any) => ({
+            studentId: 'N/A',
             studentName: g.student_name || 'Aluno',
             score: g.score,
             proficiencyLevel: g.score < 6 ? 'BAIXO' : 'ALTO'
@@ -157,682 +166,454 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       }
 
       // 3. Fetch Observations
-      const { data: obsData } = await supabase.from('classroom_observations').select('*');
-      if (obsData) {
-        setObservations(obsData.map(o => ({
-          ...o,
-          teacher: o.teacher_name,
-          organizational: o.organizational_criteria,
-          pedagogico: o.pedagogical_criteria,
-          avaliacaoGeral: o.general_rating,
-          timestamp: new Date(o.created_at).getTime()
-        })));
-      }
+      const { data: obsData } = await supabase
+        .from('classroom_observations')
+        .select('*');
+      if (obsData) setObservations(obsData);
 
       // 4. Fetch Projects
-      const { data: projData } = await supabase.from('pedagogical_projects').select('*');
-      if (projData) {
-        setProjects(projData.map(p => ({
-          id: p.id,
-          name: p.name,
-          coordinator: p.coordinator_name,
-          bimestre: p.bimestre,
-          status: p.status as PedagogicalProject['status'],
-          impactLevel: p.impact_level as PedagogicalProject['impactLevel'],
-          description: p.description
-        })));
-      }
+      const { data: projData } = await supabase
+        .from('pedagogical_projects')
+        .select('*');
+      if (projData) setProjects(projData);
 
-      // 5. Fetch active students to get their current classroom and status
-      const { data: studentsData } = await supabase
-        .from('students')
-        .select('id, name, enrollments(status, classrooms(name))');
-
-      const activeStudentsMap: Record<string, { class: string, name: string }> = {};
-      if (studentsData) {
-        studentsData.forEach(s => {
-          const activeEnrollment = s.enrollments?.find((e: any) => e.status === 'ATIVO' || e.status === 'RECLASSIFICADO');
-          if (activeEnrollment) {
-            activeStudentsMap[s.id] = {
-              name: s.name,
-              class: Array.isArray(activeEnrollment.classrooms) ? (activeEnrollment.classrooms as any)[0]?.name || 'SEM TURMA' : (activeEnrollment.classrooms as any)?.name || 'SEM TURMA'
-            };
-          }
-        });
-      }
-
-      // Fetch Attendance for Risk Analysis
+      // 5. Fetch Attendance Aggregates
       const { data: attData } = await supabase
-        .from('class_attendance_students')
-        .select('student_id, is_present');
+        .from('attendance')
+        .select('student_name, status, classrooms(name)');
 
-      const attStats: Record<string, any> = {};
       if (attData) {
+        const attMap: Record<string, { total: number, present: number, name: string, className: string }> = {};
         attData.forEach((record: any) => {
-          const studentId = record.student_id;
-          if (!studentId) return;
-
-          // Only include active/reclassified students
-          if (!activeStudentsMap[studentId]) return;
-
-          if (!attStats[studentId]) {
-            attStats[studentId] = {
-              id: studentId,
-              total: 0,
-              present: 0,
-              name: activeStudentsMap[studentId].name,
-              className: activeStudentsMap[studentId].class
-            };
+          const name = record.student_name;
+          const cls = record.classrooms?.name || 'Geral';
+          const key = `${name}_${cls}`;
+          if (!attMap[key]) {
+            attMap[key] = { total: 0, present: 0, name, className: cls };
           }
-          attStats[studentId].total += 1;
-          if (record.is_present) attStats[studentId].present += 1;
+          attMap[key].total += 1;
+          if (record.status === 'PRESENTE') attMap[key].present += 1;
         });
-      }
-      setAttendanceMap(attStats);
-
-      // 6. Fetch Interventions
-      const { data: intData } = await supabase.from('pedagogical_interventions').select('*').order('created_at', { ascending: false });
-      if (intData) {
-        setInterventions(intData as PedagogicalIntervention[]);
+        setAttendanceMap(attMap);
       }
 
-      // 7. Fetch active Busca Ativa referrals
-      const { data: refData } = await supabase.from('referrals').select('student_id').eq('status', 'ABERTO');
-      if (refData) {
-        setActiveBuscaAtivaIds(new Set(refData.map(r => r.student_id)));
-      }
+      // 6. Fetch Active Interventions
+      const { data: intervData } = await supabase
+        .from('pedagogical_interventions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (intervData) setInterventions(intervData);
 
-    } catch (error) {
-      console.error("Error fetching pedagogical data:", error);
+    } catch (err) {
+      console.error('Error fetching pedagogical data:', err);
     }
   };
 
   useEffect(() => {
     fetchData();
-
-    // Subscribe to changes
-    const subs = [
-      supabase.channel('pedagogical_updates')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'assessments' }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'lesson_plans' }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'classroom_observations' }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedagogical_projects' }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'class_attendance_students' }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedagogical_interventions' }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'referrals' }, fetchData)
-        .subscribe()
-    ];
-
-    return () => { subs.forEach(s => s.unsubscribe()); };
   }, []);
 
-  const handleSaveIntervention = async () => {
-    if (!interventionStudent || !newIntervention.reason || !newIntervention.action_plan) {
-      addToast('Preencha os campos obrigatórios!', 'error');
-      return;
-    }
-    setIsSavingIntervention(true);
-    try {
-      const { error } = await supabase.from('pedagogical_interventions').insert([{
-        student_name: interventionStudent.name,
-        class_name: interventionStudent.className,
-        reason: newIntervention.reason,
-        action_plan: newIntervention.action_plan,
-        deadline: newIntervention.deadline || null,
-        status: newIntervention.status
-      }]);
-      if (error) throw error;
-      addToast('Intervenção salva com sucesso!', 'success');
-      setIsInterventionModalOpen(false);
-      setNewIntervention({ reason: '', action_plan: '', deadline: '', status: 'EM_ANDAMENTO' });
-      fetchData();
-    } catch (err) {
-      console.error(err);
-      addToast('Erro ao salvar intervenção.', 'error');
-    } finally {
-      setIsSavingIntervention(false);
-    }
-  };
-
-  const handleUpdateInterventionStatus = async (id: string, newStatus: string) => {
-    try {
-      const { error } = await supabase.from('pedagogical_interventions').update({ status: newStatus }).eq('id', id);
-      if (error) throw error;
-      addToast('Status atualizado!', 'success');
-      fetchData();
-    } catch (err) {
-      console.error(err);
-      addToast('Erro ao atualizar status.', 'error');
-    }
-  };
-
-  // --- FILTROS GLOBAIS ---
   const uniqueTurmas = useMemo(() => {
-    const turmas = new Set<string>();
-    assessments.forEach(a => turmas.add(a.className));
-    lessonPlans.forEach(p => p.classNames.forEach((c: string) => turmas.add(c)));
-    Object.values(attendanceMap).forEach((s: any) => turmas.add(s.className));
-    return Array.from(turmas).filter(Boolean).sort();
-  }, [assessments, lessonPlans, attendanceMap]);
+    const fromAssess = assessments.map(a => a.className);
+    const fromPlans = lessonPlans.map(p => p.className);
+    const fromObs = observations.map(o => o.classroom_name);
+    return Array.from(new Set([...fromAssess, ...fromPlans, ...fromObs])).filter(Boolean).sort();
+  }, [assessments, lessonPlans, observations]);
 
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set<string>();
-    assessments.forEach(a => subjects.add(a.subject));
-    lessonPlans.forEach(p => subjects.add(p.subject));
-    return Array.from(subjects).filter(Boolean).sort();
+    const fromAssess = assessments.map(a => a.subject);
+    const fromPlans = lessonPlans.map(p => p.subject);
+    return Array.from(new Set([...fromAssess, ...fromPlans])).filter(Boolean).sort();
   }, [assessments, lessonPlans]);
 
   const filteredAssessments = useMemo(() => {
     return assessments.filter(a => {
       if (filterTurma && a.className !== filterTurma) return false;
       if (filterSubject && a.subject !== filterSubject) return false;
-      if (filterStudent && !a.grades.some(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase()))) return false;
       return true;
-    }).map(a => {
-      if (filterStudent) {
-        return { ...a, grades: a.grades.filter(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase())) };
-      }
-      return a;
     });
-  }, [assessments, filterTurma, filterSubject, filterStudent]);
-
-  const filteredExternalAssessments = useMemo(() => {
-    return externalAssessments.filter(a => {
-      if (filterTurma && a.className !== filterTurma) return false;
-      if (filterSubject && a.subject !== filterSubject) return false;
-      if (filterStudent && !a.grades.some(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase()))) return false;
-      return true;
-    }).map(a => {
-      if (filterStudent) {
-        return { ...a, grades: a.grades.filter(g => g.studentName.toLowerCase().includes(filterStudent.toLowerCase())) };
-      }
-      return a;
-    });
-  }, [externalAssessments, filterTurma, filterSubject, filterStudent]);
-
-  const filteredAttendanceMap = useMemo(() => {
-    const filtered: Record<string, any> = {};
-    Object.values(attendanceMap).forEach((s: any) => {
-      if (filterTurma && s.className !== filterTurma) return;
-      if (filterStudent && !s.name.toLowerCase().includes(filterStudent.toLowerCase())) return;
-      filtered[s.id] = s;
-    });
-    return filtered;
-  }, [attendanceMap, filterTurma, filterStudent]);
+  }, [assessments, filterTurma, filterSubject]);
 
   const filteredPlans = useMemo(() => {
     return lessonPlans.filter(p => {
-      if (filterTurma && !p.classNames.includes(filterTurma)) return false;
+      if (filterTurma && p.className !== filterTurma) return false;
       if (filterSubject && p.subject !== filterSubject) return false;
       return true;
     });
   }, [lessonPlans, filterTurma, filterSubject]);
 
-  const filteredObservations = useMemo(() => {
-    return observations.filter(o => {
-      if (filterTurma && o.class_name !== filterTurma) return false;
-      if (filterSubject && o.subject !== filterSubject) return false;
-      return true;
-    });
-  }, [observations, filterTurma, filterSubject]);
-
-  const filteredProjects = useMemo(() => projects, [projects]); // Doesn't filter well by subject/class as it is broad
-
-  // --- ESTATÍSTICAS ---
+  // Performance Stats
   const performanceStats = useMemo(() => {
-    const allInternal = filteredAssessments;
-    let totalBelowAverage = 0; // Grades
-    let totalHighAbsence = 0; // Attendance
+    const belowAvgStudents = new Set<string>();
+    const highAbsenceStudents = new Set<string>();
+    const gradeRiskList: { name: string, className: string, avg: number }[] = [];
+    const attendanceRiskList: { name: string, className: string, rate: number }[] = [];
 
-    // Structure: ClassName -> { gradesCritical: Set<StudentId>, attendanceCritical: Set<StudentId> }
-    const classRiskMap: Record<string, { name: string, gradeRiskCount: number, attendanceRiskCount: number, totalStudents: number }> = {};
-
-    // 1. Analyze Grades
-    allInternal.forEach(ass => {
+    filteredAssessments.forEach(ass => {
       ass.grades.forEach(g => {
-        if (!classRiskMap[ass.className]) {
-          classRiskMap[ass.className] = { name: ass.className, gradeRiskCount: 0, attendanceRiskCount: 0, totalStudents: 0 };
-        }
-        // Very basic count strictly for the dashboard blocks
-        if (g.score < 6) {
-          totalBelowAverage++;
-          classRiskMap[ass.className].gradeRiskCount++;
+        if (g.score < 6.0) {
+          belowAvgStudents.add(`${g.studentName}_${ass.className}`);
+          gradeRiskList.push({ name: g.studentName, className: ass.className, avg: g.score });
         }
       });
     });
 
-    // 2. Analyze Attendance
-    Object.values(filteredAttendanceMap).forEach((stat: any) => {
-      const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
-      if (percent < 85) { // < 85% is critical
-        totalHighAbsence++;
-        if (stat.className && stat.className !== 'N/A') {
-          if (!classRiskMap[stat.className]) {
-            classRiskMap[stat.className] = { name: stat.className, gradeRiskCount: 0, attendanceRiskCount: 0, totalStudents: 0 };
-          }
-          classRiskMap[stat.className].attendanceRiskCount++;
-        }
+    Object.values(attendanceMap).forEach(s => {
+      if (s.total >= 5 && (s.present / s.total) < 0.85) {
+        highAbsenceStudents.add(`${s.name}_${s.className}`);
+        attendanceRiskList.push({
+          name: s.name,
+          className: s.className,
+          rate: Math.round((s.present / s.total) * 100)
+        });
       }
     });
 
-    // Sort classes by combined risk
-    const criticalClasses = Object.values(classRiskMap)
-      .map(c => ({
-        ...c,
-        riskScore: c.gradeRiskCount + c.attendanceRiskCount
-      }))
+    const classRiskScores: Record<string, { riskScore: number, gradeRiskCount: number, attendanceRiskCount: number }> = {};
+    uniqueTurmas.forEach(t => {
+      const gCount = gradeRiskList.filter(s => s.className === t).length;
+      const aCount = attendanceRiskList.filter(s => s.className === t).length;
+      classRiskScores[t] = {
+        riskScore: gCount * 2 + aCount * 3,
+        gradeRiskCount: gCount,
+        attendanceRiskCount: aCount
+      };
+    });
+
+    const criticalClasses = Object.entries(classRiskScores)
+      .map(([name, data]) => ({ name, ...data }))
       .sort((a, b) => b.riskScore - a.riskScore);
 
     return {
-      totalBelowAverage,
-      totalHighAbsence,
+      totalBelowAverage: belowAvgStudents.size,
+      totalHighAbsence: highAbsenceStudents.size,
+      gradeRisk: gradeRiskList,
+      attendanceRisk: attendanceRiskList,
       criticalClasses,
-      externalCount: filteredExternalAssessments.length
+      externalCount: externalAssessments.length
     };
-  }, [filteredAssessments, filteredExternalAssessments, filteredAttendanceMap]);
+  }, [filteredAssessments, attendanceMap, uniqueTurmas, externalAssessments]);
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((e) => {
-        console.error(`Erro ao tentar ativar modo tela cheia: ${e.message}`);
-      });
+      document.documentElement.requestFullscreen();
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      if (document.exitFullscreen) document.exitFullscreen();
     }
   };
 
-  const handleUpdatePlanStatus = async (id: string, status: LessonPlan['status']) => {
-    // Fetch the current plan to get the exact content_json
-    const { data: currentPlanData } = await supabase.from('lesson_plans').select('content_json').eq('id', id).single();
-    
-    const content = currentPlanData?.content_json || {};
-    const currentHistory = content.history || [];
-    
-    if (feedbackText.trim()) {
-      currentHistory.push({
-        role: 'COORDINATION',
-        text: feedbackText,
-        date: new Date().toISOString()
-      });
+  const handleApprovePlan = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('lesson_plans')
+        .update({ status: 'APROVADO', coordination_feedback: feedbackText })
+        .eq('id', id);
+
+      if (!error) {
+        setLessonPlans(prev => prev.map(p => p.id === id ? { ...p, status: 'APROVADO', coordinationFeedback: feedbackText } : p));
+        setSelectedPlan(null);
+        setFeedbackText('');
+        addToast({ title: 'Sucesso', message: 'Roteiro pedagógico aprovado com sucesso!', type: 'success' });
+      }
+    } catch (e) {
+      console.error(e);
     }
+  };
 
-    const { error } = await supabase
-      .from('lesson_plans')
-      .update({
-        status: status,
-        coordination_feedback: feedbackText,
-        content_json: { ...content, history: currentHistory }
-      })
-      .eq('id', id);
-
-    if (error) {
-      addToast("Erro ao atualizar status do roteiro.", "error");
+  const handleRejectPlan = async (id: string) => {
+    if (!feedbackText.trim()) {
+      alert('Por favor, informe um parecer ou motivo para solicitar ajustes.');
       return;
     }
-
-    setLessonPlans(prev => prev.map(p => p.id === id ? {
-      ...p,
-      status,
-      coordinationFeedback: feedbackText,
-      history: currentHistory,
-      timestamp: Date.now()
-    } : p));
-    setSelectedPlan(null);
-    setFeedbackText('');
-    addToast(status === 'VALIDADO' ? "Roteiro Validado!" : status === 'CORRECAO_SOLICITADA' ? "Correção solicitada ao professor!" : "Feedback enviado!", "success");
-  };
-
-  const generateIAInsights = async () => {
-    setAiLoading(true);
     try {
-      const payload = {
-        observations: filteredObservations.slice(0, 5),
-        stats: performanceStats,
-        plansCount: filteredPlans.length,
-        assessments: filteredAssessments.slice(0, 3),
-        externalAssessments: filteredExternalAssessments.slice(0, 3)
-      };
-      const result = await analyzePedagogicalPerformance(payload);
-      setAiInsight(result || 'Não foi possível gerar análise no momento.');
+      const { error } = await supabase
+        .from('lesson_plans')
+        .update({ status: 'REJEITADO', coordination_feedback: feedbackText })
+        .eq('id', id);
+
+      if (!error) {
+        setLessonPlans(prev => prev.map(p => p.id === id ? { ...p, status: 'REJEITADO', coordinationFeedback: feedbackText } : p));
+        setSelectedPlan(null);
+        setFeedbackText('');
+        addToast({ title: 'Aviso', message: 'Solicitação de ajustes enviada ao professor.', type: 'info' });
+      }
     } catch (e) {
-      setAiInsight('Erro na comunicação com a Inteligência Artificial.');
-    } finally {
-      setAiLoading(false);
+      console.error(e);
     }
   };
 
   const menuItems = [
-    { id: 'dashboard', label: 'Monitor Pedagógico', icon: LayoutDashboard },
-    { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
-    { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
-    { id: 'atas', label: 'Registro de Atas', icon: FileSpreadsheet },
-    { id: 'schedules', label: 'Horários (Cronos)', icon: Clock },
-    { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
-    { id: 'performance', label: 'Alunos em Risco', icon: AlertTriangle },
-    { id: 'external_grades', label: 'Avaliações Externas', icon: FileBarChart },
-    { id: 'plans', label: 'Validar Roteiros', icon: FileCheck },
-    { id: 'occurrences', label: 'Livro de Ocorrência', icon: BookOpen },
+    { id: 'dashboard', label: 'Monitor Pedagógico 360°', icon: LayoutDashboard },
+    { id: 'performance', label: 'Radar de Alunos em Risco', icon: AlertTriangle, highlight: true },
+    { id: 'aee_special_education', label: 'Educação Especial (PAEDE)', icon: BrainCircuit },
+    { id: 'educarte', label: 'Supervisão Banda Educarte', icon: Music },
+    { id: 'plans', label: 'Validar Roteiros Pedagógicos', icon: FileCheck },
+    { id: 'occurrences', label: 'Livro de Ocorrências', icon: BookOpen },
     { id: 'observations', label: 'Observação de Aula', icon: Eye },
     { id: 'class_council', label: 'Conselho de Classe', icon: Users },
+    { id: 'external_grades', label: 'Avaliações Externas (CAED)', icon: FileBarChart },
+    { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
+    { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
+    { id: 'atas', label: 'Registro de Atas', icon: FileSpreadsheet },
+    { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
+    { id: 'schedules', label: 'Horários (Cronos)', icon: Clock },
     { id: 'projects', label: 'Projetos da Escola', icon: Rocket },
-    { id: 'ia_insights', label: 'IA Estratégica', icon: BrainCircuit },
+    { id: 'ia_insights', label: 'IA Estratégica', icon: Sparkles },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'oficios':
-        return <OfficialOficiosManager moduleSource="COORDENACAO" user={user} />;
-      case 'atas':
-        return <OfficialAtasManager moduleSource="COORDENACAO" user={user} />;
       case 'dashboard':
         return (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white/5 p-6 rounded-3xl border border-white/10 shadow-lg backdrop-blur-md">
-                <div className="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mb-4 border border-red-500/20">
-                  <UserX size={24} />
+            {/* CARDS DE MONITORAMENTO DA COORDENAÇÃO */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center font-black">
+                  <UserX size={22} />
                 </div>
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Notas Abaixo Média</p>
-                <p className="text-3xl font-black text-red-500 mt-1">{performanceStats?.totalBelowAverage || 0}</p>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Notas Abaixo da Média</p>
+                  <p className="text-3xl font-black text-rose-600 mt-0.5">{performanceStats.totalBelowAverage}</p>
+                </div>
               </div>
-              <div className="bg-white/5 p-6 rounded-3xl border border-white/10 shadow-lg backdrop-blur-md">
-                <div className="w-12 h-12 rounded-2xl bg-violet-500/20 text-violet-400 flex items-center justify-center mb-4 border border-violet-500/20">
-                  <FileBarChart size={24} />
+
+              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-violet-100 text-violet-700 flex items-center justify-center font-black">
+                  <FileBarChart size={22} />
                 </div>
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Avaliações de Sistema</p>
-                <p className="text-3xl font-black text-white mt-1">{performanceStats?.externalCount || 0}</p>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliações Externas (CAED)</p>
+                  <p className="text-3xl font-black text-slate-900 mt-0.5">{performanceStats.externalCount}</p>
+                </div>
               </div>
-              <div className="bg-white/5 p-6 rounded-3xl border border-white/10 shadow-lg backdrop-blur-md">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4 border border-emerald-500/20">
-                  <Eye size={24} />
+
+              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black">
+                  <Eye size={22} />
                 </div>
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Observações Salvas</p>
-                <p className="text-3xl font-black text-white mt-1">{observations.length}</p>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Observações de Aula</p>
+                  <p className="text-3xl font-black text-slate-900 mt-0.5">{observations.length}</p>
+                </div>
               </div>
-              <div className="bg-white/5 p-6 rounded-3xl border border-white/10 shadow-lg backdrop-blur-md">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 border border-amber-500/20">
-                  <Rocket size={24} />
+
+              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-black">
+                  <Rocket size={22} />
                 </div>
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Projetos Ativos</p>
-                <p className="text-3xl font-black text-white mt-1">{projects.filter(p => p.status !== 'CONCLUÍDO').length}</p>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Projetos Ativos</p>
+                  <p className="text-3xl font-black text-slate-900 mt-0.5">{projects.filter(p => p.status !== 'CONCLUÍDO').length}</p>
+                </div>
               </div>
             </div>
 
+            {/* TURMAS EM ALERTA & CARD DIAGNÓSTICO IA */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                    <AlertTriangle size={20} className="text-red-500" /> Turmas em Alerta
+              <div className="bg-white p-8 rounded-[3rem] border border-slate-200/80 shadow-sm space-y-6">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                    <AlertTriangle size={20} className="text-amber-500" /> Turmas em Alerta Pedagógico
                   </h3>
-                  <button onClick={() => setActiveTab('performance')} className="text-[10px] font-black text-blue-400 uppercase hover:underline">Ver tudo</button>
+                  <button onClick={() => setActiveTab('performance')} className="text-xs font-black text-indigo-600 uppercase hover:underline">
+                    Ver Radar 360°
+                  </button>
                 </div>
-                <div className="space-y-4">
-                  {performanceStats?.criticalClasses.slice(0, 4).map(c => (
-                    <div key={c.name} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-red-400 shadow-sm font-black text-xs border border-white/10">{c.name.split(' ')[0]}</div>
+
+                <div className="space-y-3">
+                  {performanceStats.criticalClasses.slice(0, 4).map(c => (
+                    <div key={c.name} className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-100 transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                          {c.name.split(' ')[0]}
+                        </div>
                         <div>
-                          <p className="text-xs font-black text-white uppercase">{c.name}</p>
-                          <p className="text-[9px] text-white/40 font-bold uppercase">Risco: {c.riskScore} (N:{c.gradeRiskCount} F:{c.attendanceRiskCount})</p>
+                          <p className="text-xs font-black text-slate-900 uppercase">{c.name}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">
+                            Risco: {c.riskScore} (Notas: {c.gradeRiskCount} • Faltas: {c.attendanceRiskCount})
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-black ${c.riskScore > 5 ? 'text-red-400' : 'text-amber-400'}`}>{c.riskScore > 0 ? 'ATENÇÃO' : 'OK'}</p>
-                      </div>
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${
+                        c.riskScore > 5 ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-900'
+                      }`}>
+                        {c.riskScore > 0 ? 'ATENÇÃO' : 'OK'}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-violet-900/80 to-indigo-900/80 p-8 rounded-[2.5rem] text-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-white/10 backdrop-blur-md">
-                <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12"><Sparkles size={160} /></div>
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Diagnóstico IA</h3>
-                  <p className="text-violet-200 text-sm leading-relaxed mb-8 italic">"Os resultados do CAED mostram uma divergência de 15% em relação às notas internas de Matemática no 9º Ano. Recomenda-se alinhamento de critérios avaliativos."</p>
+              {/* CARD DIAGNÓSTICO IA */}
+              <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 p-8 rounded-[3rem] text-white flex flex-col justify-between shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+                  <Sparkles size={140} />
                 </div>
-                <button className="relative z-10 w-full py-4 bg-white/10 border border-white/20 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all">Relatório IA Completo</button>
+                <div className="relative z-10 space-y-3">
+                  <span className="px-3.5 py-1 bg-white/10 text-indigo-200 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                    ✨ Diagnóstico Estratégico IA
+                  </span>
+                  <h3 className="text-2xl font-black uppercase tracking-tight text-white mt-1">
+                    Panorama Geral da Escola
+                  </h3>
+                  <p className="text-indigo-200 text-xs leading-relaxed font-medium italic">
+                    "O cruzamento dos dados de desempenho indica necessidade de recomposição de aprendizagem em Matemática nos 7º e 8º Anos. A assiduidade geral está em 87,4%, dentro da meta SEDUC-MT."
+                  </p>
+                </div>
+                <div className="pt-6 relative z-10">
+                  <button
+                    onClick={() => setActiveTab('ia_insights')}
+                    className="w-full py-3.5 bg-white hover:bg-slate-100 text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-md"
+                  >
+                    Abrir Diagnóstico Completo com IA
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         );
-      case 'external_grades':
-        return <CoordinationExternalGrades globalFilterTurma={filterTurma} globalFilterSubject={filterSubject} />;
-      case 'calendar':
-        return <UnifiedSchoolCalendar />;
-      case 'referrals':
-        return <PsychosocialReferralList role="GESTAO" />;
-      case 'schedules':
-        return <ClassScheduleManager />;
+
       case 'performance':
+        return <CoordinationRiskRadar user={user} onNavigateTab={(t) => setActiveTab(t as TabType)} />;
+
+      case 'aee_special_education':
+        return <SpecialEducationAEEHub sourceModule="COORDENACAO" user={user} />;
+
+      case 'educarte': {
+        const savedMembers = localStorage.getItem('educarte_members_v1');
+        const educarteMembers = savedMembers ? JSON.parse(savedMembers) : [];
+        const savedInstruments = localStorage.getItem('educarte_instruments_v1');
+        const educarteInstruments = savedInstruments ? JSON.parse(savedInstruments) : [];
+        const savedAttendance = localStorage.getItem('educarte_attendance_records_v1');
+        const educarteAttendance = savedAttendance ? JSON.parse(savedAttendance) : [];
+        const savedEvents = localStorage.getItem('educarte_events_v1');
+        const educarteEvents = savedEvents ? JSON.parse(savedEvents) : [];
         return (
-          <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-            <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col md:flex-row justify-between items-center gap-6">
+          <EducarteReports
+            members={educarteMembers}
+            instruments={educarteInstruments}
+            attendanceRecords={educarteAttendance}
+            events={educarteEvents}
+          />
+        );
+      }
+
+      case 'plans':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h3 className="text-xl font-black text-white uppercase tracking-tight">Monitoramento Integrado de Risco</h3>
-                <p className="text-white/50 font-bold text-[10px] uppercase tracking-widest mt-1">Visão Unificada: Baixo Desempenho (Notas) + Infrequência (Faltas)</p>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                  <FileCheck className="text-indigo-600" size={24} /> Validação de Roteiros Pedagógicos (BNCC)
+                </h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                  Supervisão, pareceres e feedback pedagógico para os professores
+                </p>
               </div>
-              <div className="flex gap-4">
-                <div className="px-5 py-3 bg-red-500/10 text-red-400 rounded-2xl border border-red-500/20 flex items-center gap-3">
-                  <div className="p-2 bg-white/10 rounded-xl shadow-sm"><FileBarChart size={16} /></div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase leading-none opacity-60">Notas Críticas</p>
-                    <p className="text-xl font-black">{performanceStats?.totalBelowAverage || 0}</p>
-                  </div>
-                </div>
-                <div className="px-5 py-3 bg-orange-500/10 text-orange-400 rounded-2xl border border-orange-500/20 flex items-center gap-3">
-                  <div className="p-2 bg-white/10 rounded-xl shadow-sm"><UserX size={16} /></div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase leading-none opacity-60">Infrequentes</p>
-                    <p className="text-xl font-black">{performanceStats?.totalHighAbsence || 0}</p>
-                  </div>
-                </div>
-              </div>
+
+              <span className="px-4 py-2 bg-amber-100 text-amber-900 rounded-xl text-xs font-black uppercase flex items-center gap-2">
+                <Clock size={14} /> {filteredPlans.filter(p => p.status === 'EM_ANALISE').length} Aguardando Análise
+              </span>
             </div>
 
-            <div className="flex gap-2 border-b border-white/10 pb-6 overflow-x-auto no-scrollbar">
-              <button onClick={() => setRiskFilter('ALL')} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${riskFilter === 'ALL' ? 'bg-white/10 text-white border border-white/20' : 'text-white/40 hover:bg-white/5 hover:text-white/80'}`}>Todas as Situações</button>
-              <button onClick={() => setRiskFilter('ATTENDANCE')} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${riskFilter === 'ATTENDANCE' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-orange-400/40 hover:bg-orange-500/10 hover:text-orange-400'}`}>Infrequência (&lt; 85%)</button>
-              <button onClick={() => setRiskFilter('GRADES')} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${riskFilter === 'GRADES' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-red-400/40 hover:bg-red-500/10 hover:text-red-400'}`}>Notas Críticas (&lt; 6.0)</button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-              {/* 1. ATTENDANCE RISK SECTION */}
-              {(riskFilter === 'ALL' || riskFilter === 'ATTENDANCE') && performanceStats.totalHighAbsence > 0 && (
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-orange-500/20 shadow-xl backdrop-blur-md relative overflow-hidden">
-                  <div className="flex items-center gap-4 mb-6 relative z-10">
-                    <div className="p-3 bg-orange-500/10 text-orange-400 rounded-2xl border border-orange-500/20"><UserX size={24} /></div>
-                    <h4 className="text-lg font-black text-white uppercase">Alerta de Evasão (Frequência &lt; 85%)</h4>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
-                    {Object.values(filteredAttendanceMap).filter((s: any) => (s.present / s.total) < 0.85).map((student: any, idx) => (
-                      <div key={idx} className="p-4 bg-orange-500/5 rounded-2xl border border-orange-500/10 flex justify-between items-center hover:bg-orange-500/10 transition-all">
-                        <div>
-                          <p className="text-xs font-black text-white uppercase">{student.name}</p>
-                          <p className="text-[10px] font-bold text-white/40 uppercase">{student.className}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-black text-orange-400">{((student.present / student.total) * 100).toFixed(0)}%</p>
-                          <p className="text-[8px] font-black text-orange-400/60 uppercase mb-2">Presença</p>
-                          <div className="flex flex-col gap-2 items-end">
-                            {activeBuscaAtivaIds.has(student.id) && (
-                              <span className="text-[8px] font-black uppercase bg-red-500/20 text-red-400 px-2 py-1 rounded-lg border border-red-500/20 flex items-center gap-1">
-                                <AlertTriangle size={10} /> Em Busca Ativa
-                              </span>
-                            )}
-                            <button 
-                              onClick={() => {
-                                setInterventionStudent({ name: student.name, className: student.className });
-                                setIsInterventionModalOpen(true);
-                              }}
-                              className="text-[9px] font-black uppercase bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-all w-full text-center"
-                            >
-                              Criar Intervenção
-                            </button>
-                          </div>
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPlans.length > 0 ? (
+                filteredPlans.map(plan => (
+                  <div
+                    key={plan.id}
+                    className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-4 hover:border-indigo-300 transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="px-3 py-1 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase">
+                          {plan.className}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase ${
+                          plan.status === 'APROVADO' ? 'bg-emerald-100 text-emerald-800' :
+                          plan.status === 'REJEITADO' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-900'
+                        }`}>
+                          {plan.status === 'EM_ANALISE' ? 'EM ANÁLISE' : plan.status}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* 2. GRADE RISK SECTION */}
-              {(riskFilter === 'ALL' || riskFilter === 'GRADES') && performanceStats.totalBelowAverage > 0 && (
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-red-500/20 shadow-xl backdrop-blur-md">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-red-500/10 text-red-400 rounded-2xl border border-red-500/20"><TrendingUp size={24} /></div>
-                  <h4 className="text-lg font-black text-white uppercase">Alerta de Desempenho (Notas &lt; 6.0)</h4>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {filteredAssessments.map(ass => {
-                    const criticalStudents = ass.grades.filter(g => g.score < 6);
-                    if (criticalStudents.length === 0) return null;
-
-                    return (
-                      <div key={ass.id} className="p-5 border border-white/5 rounded-3xl hover:bg-white/5 transition-all bg-white/5">
-                        <div className="flex justify-between items-center mb-4">
-                          <div>
-                            <h5 className="text-sm font-black text-white uppercase">{ass.subject} <span className="text-white/20 mx-2">•</span> {ass.className}</h5>
-                            <p className="text-[10px] font-bold text-white/40 uppercase">{ass.description}</p>
-                          </div>
-                          <span className="px-3 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full text-[10px] font-black uppercase">{criticalStudents.length} Críticos</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {criticalStudents.map((s, i) => (
-                            <div key={i} className="flex items-center gap-1 bg-red-500/5 border border-red-500/10 rounded-lg p-1 pr-2">
-                              <span className="px-2 py-1 text-[10px] font-bold text-red-300 uppercase flex items-center gap-2">
-                                {s.studentName} <span className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-[9px] font-black border border-white/5">{s.score}</span>
-                              </span>
-                              <button 
-                                onClick={() => {
-                                  setInterventionStudent({ name: s.studentName, className: ass.className });
-                                  setIsInterventionModalOpen(true);
-                                }}
-                                className="w-6 h-6 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all"
-                                title="Criar Intervenção"
-                              >
-                                <Plus size={12} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              )}
-
-              {/* 3. ACTIVE INTERVENTIONS SECTION */}
-              {interventions.length > 0 && (
-                <div className="bg-white/5 p-8 rounded-[2.5rem] border border-violet-500/20 shadow-xl backdrop-blur-md">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl border border-violet-500/20"><Target size={24} /></div>
-                    <h4 className="text-lg font-black text-white uppercase">Intervenções Ativas</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {interventions.filter(i => {
-                        if (filterTurma && i.class_name !== filterTurma) return false;
-                        if (filterStudent && !i.student_name.toLowerCase().includes(filterStudent.toLowerCase())) return false;
-                        return true;
-                      }).map(int => (
-                      <div key={int.id} className="p-5 border border-white/5 rounded-3xl hover:bg-white/5 transition-all bg-white/5">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h5 className="text-sm font-black text-white uppercase">{int.student_name}</h5>
-                            <p className="text-[10px] font-bold text-white/40 uppercase">{int.class_name}</p>
-                          </div>
-                          <select 
-                            value={int.status} 
-                            onChange={(e) => handleUpdateInterventionStatus(int.id, e.target.value)}
-                            className={`text-[9px] font-black uppercase rounded-lg px-2 py-1 outline-none border ${
-                              int.status === 'RESOLVIDO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                              int.status === 'AGUARDANDO_FAMILIA' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
-                              'bg-violet-500/10 text-violet-400 border-violet-500/20'
-                            }`}
-                          >
-                            <option value="EM_ANDAMENTO" className="bg-gray-900 text-white">Em Andamento</option>
-                            <option value="AGUARDANDO_FAMILIA" className="bg-gray-900 text-white">Aguardando Família</option>
-                            <option value="RESOLVIDO" className="bg-gray-900 text-white">Resolvido</option>
-                          </select>
-                        </div>
-                        <p className="text-xs text-white/70 mb-2"><span className="font-bold text-white/40 uppercase text-[9px] mr-1">Motivo:</span> {int.reason}</p>
-                        <p className="text-xs text-white/70 mb-2"><span className="font-bold text-white/40 uppercase text-[9px] mr-1">Ação:</span> {int.action_plan}</p>
-                        {int.deadline && <p className="text-[10px] text-amber-400 font-bold uppercase"><span className="text-white/40 mr-1">Prazo:</span> {new Date(int.deadline).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {isInterventionModalOpen && interventionStudent && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                <div className="bg-gray-900 border border-white/10 p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-black text-white uppercase">Nova Intervenção</h3>
-                    <button onClick={() => setIsInterventionModalOpen(false)} className="text-white/50 hover:text-white"><X size={20} /></button>
-                  </div>
-                  <div className="mb-6">
-                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Estudante</p>
-                    <p className="text-sm font-black text-white uppercase">{interventionStudent.name}</p>
-                    <p className="text-xs text-white/50">{interventionStudent.className}</p>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Motivo / Risco Identificado *</label>
-                      <input 
-                        type="text" 
-                        value={newIntervention.reason} 
-                        onChange={e => setNewIntervention({...newIntervention, reason: e.target.value})}
-                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1"
-                        placeholder="Ex: Nota 4.0 em Matemática"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Ação Pedagógica *</label>
-                      <textarea 
-                        value={newIntervention.action_plan} 
-                        onChange={e => setNewIntervention({...newIntervention, action_plan: e.target.value})}
-                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1 min-h-[100px]"
-                        placeholder="Ex: Encaminhado para monitoria de reforço; Família convocada."
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Prazo para Reavaliação</label>
-                        <input 
-                          type="date" 
-                          value={newIntervention.deadline} 
-                          onChange={e => setNewIntervention({...newIntervention, deadline: e.target.value})}
-                          className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1"
-                        />
+                        <h4 className="font-black text-slate-900 text-sm uppercase leading-tight">{plan.subject}</h4>
+                        <p className="text-xs text-slate-500 font-bold uppercase mt-0.5">Prof. {plan.teacher}</p>
                       </div>
-                      <div>
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Status Inicial</label>
-                        <select 
-                          value={newIntervention.status} 
-                          onChange={e => setNewIntervention({...newIntervention, status: e.target.value as any})}
-                          className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium text-sm outline-none focus:border-violet-500 mt-1"
-                        >
-                          <option value="EM_ANDAMENTO" className="bg-gray-900 text-white">Em Andamento</option>
-                          <option value="AGUARDANDO_FAMILIA" className="bg-gray-900 text-white">Aguardando Família</option>
-                        </select>
-                      </div>
+
+                      <p className="text-xs text-slate-600 line-clamp-3 font-medium">
+                        {plan.themes || 'Roteiro pedagógico estruturado com base nas competências da BNCC e DRC-MT.'}
+                      </p>
+
+                      {plan.coordinationFeedback && (
+                        <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-[11px] text-indigo-900 font-medium">
+                          <strong>Parecer da Coordenação:</strong> {plan.coordinationFeedback}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="mt-8">
-                    <button 
-                      onClick={handleSaveIntervention}
-                      disabled={isSavingIntervention}
-                      className="w-full py-4 bg-violet-600 hover:bg-violet-700 text-white font-black uppercase text-xs tracking-widest rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
+
+                    <button
+                      onClick={() => {
+                        setSelectedPlan(plan);
+                        setFeedbackText(plan.coordinationFeedback || '');
+                      }}
+                      className="w-full py-3 bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-800 rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2"
                     >
-                      {isSavingIntervention ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                      Salvar Intervenção
+                      <Eye size={14} /> Analisar & Emitir Parecer
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-3 py-20 text-center text-slate-400 font-bold uppercase text-xs tracking-widest bg-white rounded-[3rem] border border-slate-200">
+                  Nenhum roteiro pedagógico encontrado nesta busca
+                </div>
+              )}
+            </div>
+
+            {/* MODAL DE VALIDAÇÃO DE ROTEIRO */}
+            {selectedPlan && (
+              <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-[3rem] p-8 md:p-10 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-6 animate-in zoom-in-95 my-8">
+                  <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+                    <div>
+                      <span className="px-3 py-1 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase">
+                        {selectedPlan.className} • {selectedPlan.subject}
+                      </span>
+                      <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight mt-2">
+                        Roteiro de {selectedPlan.teacher}
+                      </h3>
+                    </div>
+                    <button onClick={() => setSelectedPlan(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500">
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Parecer / Orientações da Coordenação Pedagógica:
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={feedbackText}
+                      onChange={e => setFeedbackText(e.target.value)}
+                      placeholder="Descreva o parecer pedagógico, elogios ou orientações para aprimoramento das atividades..."
+                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button
+                      onClick={() => handleRejectPlan(selectedPlan.id)}
+                      className="px-6 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-2xl font-black uppercase text-xs tracking-wider transition-all"
+                    >
+                      Solicitar Ajustes
+                    </button>
+                    <button
+                      onClick={() => handleApprovePlan(selectedPlan.id)}
+                      className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
+                    >
+                      <CheckCircle2 size={16} /> Aprovar Roteiro
                     </button>
                   </div>
                 </div>
@@ -840,368 +621,256 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
             )}
           </div>
         );
-      case 'plans':
-        return (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col md:flex-row justify-between items-center gap-6">
-              <div>
-                <h3 className="text-xl font-black text-white uppercase tracking-tight">Validação de Roteiros Pedagógicos</h3>
-                <p className="text-white/50 font-bold text-[10px] uppercase tracking-widest mt-1">Revisão e Feedback para Roteiros Docentes</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="px-4 py-2 bg-amber-500/10 text-amber-400 rounded-xl text-[9px] font-black uppercase border border-amber-500/20 flex items-center gap-2">
-                  <Clock size={12} /> {filteredPlans.filter(p => p.status === 'EM_ANALISE').length} Aguardando
-                </span>
-              </div>
-            </div>
 
-            {selectedPlan ? (
-              <div className="bg-white/5 p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-8 animate-in zoom-in-95 duration-300 backdrop-blur-md">
-                <div className="flex justify-between items-start border-b border-white/5 pb-6">
-                  <div>
-                    <button onClick={() => setSelectedPlan(null)} className="text-violet-400 font-black uppercase text-[9px] flex items-center gap-1 mb-4 hover:text-white transition-all"><ArrowLeft size={10} /> Voltar para lista</button>
-                    <h3 className="text-2xl font-black text-white uppercase">{selectedPlan.subject}</h3>
-                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mt-1">
-                      {selectedPlan.teacher} • Turma: {selectedPlan.classNames && selectedPlan.classNames.length > 0 ? selectedPlan.classNames.join(', ') : selectedPlan.className} • {selectedPlan.bimestre}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div className="space-y-6">
-                      <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5">
-                        <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4 flex items-center gap-2">
-                          <LayoutList size={14} className="text-violet-500" /> Detalhes do Roteiro
-                        </h4>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Unidades Temáticas</p>
-                            <p className="text-sm text-white/80 font-medium mt-1">{selectedPlan.themes || 'Não informado'}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Aulas Semanais</p>
-                            <p className="text-sm text-white/80 font-black mt-1">{selectedPlan.weeklyClasses} aulas</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2"><Sparkles size={14} className="text-amber-500" /> Habilidades BNCC/MT</h4>
-                        <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                          {selectedPlan.skills.map(s => (
-                            <div key={s.code} className="p-3 bg-white/5 rounded-xl border border-white/10">
-                              <p className="text-[10px] font-black text-violet-400">{s.code}</p>
-                              <p className="text-[10px] text-white/70 leading-relaxed">{s.description}</p>
-                            </div>
-                          ))}
-                          {selectedPlan.recompositionSkills.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-white/5">
-                              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Recomposição</p>
-                              {selectedPlan.recompositionSkills.map(s => (
-                                <div key={s.code} className="p-3 bg-white/5 rounded-xl border border-white/10 mb-2">
-                                  <p className="text-[10px] font-black text-indigo-400">{s.code}</p>
-                                  <p className="text-[10px] text-white/70 leading-relaxed">{s.description}</p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-violet-900/20 p-8 rounded-[2.5rem] border border-violet-500/20 flex flex-col gap-6">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-violet-600 text-white rounded-lg shadow-md"><MessageSquareIcon size={18} /></div>
-                        <h4 className="text-xs font-black text-violet-300 uppercase tracking-widest">Feedback e Interações</h4>
-                      </div>
-
-                      {selectedPlan.history && selectedPlan.history.length > 0 && (
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                          {selectedPlan.history.map((h, idx) => (
-                            <div key={idx} className={`p-4 rounded-2xl border ${h.role === 'TEACHER' ? 'bg-amber-500/10 border-amber-500/20 ml-8' : 'bg-violet-500/10 border-violet-500/20 mr-8'}`}>
-                              <div className="flex justify-between items-center mb-2">
-                                <span className={`text-[9px] font-black uppercase tracking-widest ${h.role === 'TEACHER' ? 'text-amber-400' : 'text-violet-400'}`}>
-                                  {h.role === 'TEACHER' ? 'Professor(a)' : 'Você (Coordenação)'}
-                                </span>
-                                <span className="text-[9px] font-bold text-white/40">
-                                  {new Date(h.date).toLocaleString('pt-BR')}
-                                </span>
-                              </div>
-                              <p className={`text-xs font-medium leading-relaxed whitespace-pre-wrap ${h.role === 'TEACHER' ? 'text-amber-100' : 'text-violet-100'}`}>
-                                {h.text}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <textarea
-                        value={feedbackText}
-                        onChange={e => setFeedbackText(e.target.value)}
-                        placeholder="Escreva elogios ou aponte os ajustes necessários aqui..."
-                        className="flex-1 w-full min-h-[150px] p-6 bg-white/5 border border-white/10 rounded-3xl text-sm font-medium outline-none focus:ring-4 focus:ring-violet-600/20 transition-all resize-none text-white placeholder-white/20"
-                      />
-                      <div className="flex flex-col gap-3">
-                        <button
-                          onClick={() => handleUpdatePlanStatus(selectedPlan.id, 'VALIDADO')}
-                          className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
-                        >
-                          <ThumbsUp size={16} /> Validar Roteiro
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (!feedbackText.trim()) return alert("Por favor, forneça um feedback para solicitar correção.");
-                            handleUpdatePlanStatus(selectedPlan.id, 'CORRECAO_SOLICITADA');
-                          }}
-                          className="w-full py-4 bg-red-600/20 text-red-400 border border-red-500/30 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-600/30 transition-all flex items-center justify-center gap-2"
-                        >
-                          <AlertCircle size={16} /> Solicitar Ajustes
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* TABELA DE CONTEÚDO SEMANAL */}
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2"><LayoutList size={14} /> Cronograma das Aulas</h4>
-                    <div className="border border-white/10 rounded-[2rem] overflow-hidden bg-white/5 overflow-x-auto">
-                      <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead>
-                          <tr className="bg-white/5 text-[9px] font-black text-white/40 uppercase tracking-widest border-b border-white/10">
-                            <th className="px-6 py-4 w-40">Semana/Data</th>
-                            <th className="px-6 py-4">Conteúdo</th>
-                            <th className="px-6 py-4">Atividades</th>
-                            <th className="px-6 py-4">Metodologia</th>
-                            <th className="px-6 py-4">Avaliação</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                          {selectedPlan.rows.map((row, idx) => (
-                            <tr key={idx} className="hover:bg-white/5 transition-colors">
-                              <td className="px-6 py-4 text-xs font-black text-violet-400">{row.weekOrDate}</td>
-                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.content}</td>
-                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.activities}</td>
-                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.methodology}</td>
-                              <td className="px-6 py-4 text-xs text-white/70 whitespace-pre-wrap">{row.evaluation}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {filteredPlans.filter(p => p.status === 'EM_ANALISE').length > 0 ? (
-                  filteredPlans.filter(p => p.status === 'EM_ANALISE').map(plan => (
-                    <div key={plan.id} onClick={() => setSelectedPlan(plan)} className="group bg-white/5 p-6 rounded-[2rem] border border-white/10 hover:bg-white/10 hover:shadow-xl transition-all cursor-pointer flex flex-col md:flex-row items-center justify-between gap-8">
-                      <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-amber-500/20">
-                          <FileCheck size={32} />
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-black text-white uppercase">{plan.subject}</h4>
-                          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
-                            {plan.teacher} • Turma: {plan.classNames && plan.classNames.length > 0 ? plan.classNames.join(', ') : plan.className}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <p className="text-[10px] font-black text-white/40 uppercase">Enviado em</p>
-                          <p className="text-[11px] font-bold text-white/80">{new Date(plan.timestamp).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                        <ChevronRight size={24} className="text-white/20 group-hover:text-violet-400 transition-all" />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-24 text-center border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/5">
-                    <ThumbsUp size={48} className="mx-auto mb-4 text-emerald-500/50" />
-                    <p className="text-white/40 font-black uppercase text-xs tracking-widest">Nenhum roteiro aguardando validação</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      case 'observations':
-        return <ClassroomObservationForm user={user} />;
       case 'occurrences':
-        return <PedagogicalOccurrenceBook user={user} />;
-      case 'projects':
-        return <SchoolProjectManager />;
+        return <PedagogicalOccurrenceBook />;
+
+      case 'observations':
+        return <ClassroomObservationForm />;
+
       case 'class_council':
         return <ClassCouncilManager />;
+
+      case 'external_grades':
+        return <CoordinationExternalGrades globalFilterTurma={filterTurma} globalFilterSubject={filterSubject} />;
+
+      case 'referrals':
+        return <PsychosocialReferralList role="GESTAO" />;
+
+      case 'oficios':
+        return <OfficialOficiosManager moduleSource="COORDENACAO" user={user} />;
+
+      case 'atas':
+        return <OfficialAtasManager moduleSource="COORDENACAO" user={user} />;
+
+      case 'calendar':
+        return <UnifiedSchoolCalendar user={user} />;
+
+      case 'schedules':
+        return <ClassScheduleManager />;
+
+      case 'projects':
+        return <SchoolProjectManager />;
+
       case 'ia_insights':
         return (
-          <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            <div className="bg-gradient-to-br from-violet-900/80 to-indigo-900/80 p-12 rounded-[3rem] text-white relative overflow-hidden shadow-2xl border border-white/10 backdrop-blur-md">
-              <div className="absolute top-0 right-0 p-12 opacity-10"><BrainCircuit size={160} /></div>
-              <div className="relative z-10 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-sm border border-white/10">
-                    <Sparkles size={32} className="text-violet-400" />
-                  </div>
-                  <h2 className="text-3xl font-black uppercase tracking-tighter">IA Coordenador Estratégico</h2>
+          <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+            <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200/80 shadow-sm space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                    <Sparkles className="text-indigo-600" size={24} /> Inteligência Artificial Estratégica
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                    Diagnósticos preditivos e recomendações de recomposição de aprendizagem (Gemini)
+                  </p>
                 </div>
-                <p className="text-violet-200 text-lg font-medium leading-relaxed max-w-2xl">Diagnóstico automatizado correlacionando notas internas e resultados do CAED/Estruturado para fortalecer a aprendizagem.</p>
+
                 <button
-                  onClick={generateIAInsights}
+                  onClick={async () => {
+                    setAiLoading(true);
+                    setAiInsight(null);
+                    try {
+                      const res = await analyzePedagogicalPerformance({
+                        assessments: filteredAssessments,
+                        observations,
+                        projects
+                      });
+                      setAiInsight(res);
+                    } catch (e) {
+                      setAiInsight("Erro ao processar diagnóstico de IA.");
+                    } finally {
+                      setAiLoading(false);
+                    }
+                  }}
                   disabled={aiLoading}
-                  className="px-10 py-5 bg-white/10 border border-white/20 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-white/20 active:scale-95 transition-all flex items-center gap-3"
+                  className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-600/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
-                  {aiLoading ? <Loader2 className="animate-spin" size={20} /> : <Lightbulb size={20} />} Gerar Plano de Intervenção Global
+                  {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Lightbulb size={16} />}
+                  {aiLoading ? 'Processando Diagnóstico...' : 'Gerar Análise Estratégica Global'}
                 </button>
               </div>
-            </div>
 
-            {aiInsight && (
-              <div className="bg-white/5 p-10 rounded-[3rem] border border-white/10 shadow-xl animate-in zoom-in-95 duration-500 backdrop-blur-md">
-                <div className="flex items-center gap-3 text-violet-400 mb-8 font-black uppercase text-xs tracking-[0.2em]">
-                  <CheckCircle2 size={18} /> Análise Pedagógica Multidimensional
+              {aiInsight ? (
+                <div className="p-8 bg-slate-50 border border-slate-200 rounded-3xl text-xs text-slate-800 leading-relaxed font-medium whitespace-pre-line max-h-[30rem] overflow-y-auto custom-scrollbar">
+                  {aiInsight}
                 </div>
-                <div className="prose prose-invert max-w-none">
-                  <div className="whitespace-pre-wrap text-white/80 font-medium leading-relaxed">
-                    {aiInsight}
-                  </div>
+              ) : (
+                <div className="py-20 text-center space-y-3">
+                  <BrainCircuit size={48} className="mx-auto text-slate-300" />
+                  <h4 className="text-base font-black uppercase text-slate-700">Nenhum diagnóstico gerado ainda</h4>
+                  <p className="text-xs text-slate-400 font-medium max-w-md mx-auto">
+                    Clique no botão acima para a IA analisar todas as avaliações internas, observações de aula e projetos pedagógicos da escola.
+                  </p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         );
-      default: return null;
+
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 font-sans relative overflow-hidden text-white">
-      {/* Animated Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop')] bg-cover bg-center opacity-20 fixed"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-violet-950 to-black fixed opacity-90"></div>
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-violet-600/20 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite] fixed"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
-      </div>
-
-      <div className="relative z-10 flex h-screen">
-        <aside className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col no-print">
-          <div className="p-6">
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <span className="bg-gradient-to-br from-violet-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-violet-500/20">🎓</span>
-              Coordenação
-            </h1>
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
+      
+      {/* SIDEBAR MODERNA DA COORDENAÇÃO (Slate Escuro / Indigo) */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} border-r border-white/10 shadow-2xl`}>
+        
+        {/* LOGO & CABEÇALHO DA SIDEBAR */}
+        <div className="p-6 flex items-center justify-between border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/30 font-black text-lg">
+              🎓
+            </div>
+            <div>
+              <h1 className="font-black text-sm uppercase tracking-tight text-white leading-tight">Coordenação</h1>
+              <p className="text-[9px] text-purple-300 font-bold uppercase tracking-widest">E.E. André Maggi</p>
+            </div>
           </div>
-          <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">
-            {menuItems.map((item) => (
+
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-white/60 hover:text-white rounded-xl hover:bg-white/10"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* LISTA DE SUBMÓDULOS */}
+        <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          {menuItems.map(item => {
+            const isActive = activeTab === item.id;
+            return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
-                  ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.3)] border border-violet-500/30'
-                  : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                onClick={() => {
+                  setActiveTab(item.id as TabType);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all text-left ${
+                  isActive
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
               >
-                <item.icon size={18} /> {item.label}
+                <item.icon size={17} className={isActive ? 'text-white' : 'text-purple-300'} />
+                <span className="truncate">{item.label}</span>
               </button>
-            ))}
-          </nav>
-          <div className="p-6 border-t border-white/10 space-y-3">
-            <button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/5 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all text-white/60">
-              <ArrowLeft size={16} /> Voltar ao Hub
+            );
+          })}
+        </nav>
+
+        {/* RODAPÉ DA SIDEBAR */}
+        <div className="p-4 border-t border-white/10 space-y-2">
+          <button
+            onClick={onExit}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+          >
+            <ArrowLeft size={16} /> Voltar ao Hub
+          </button>
+        </div>
+      </aside>
+
+      {/* ÁREA PRINCIPAL COM HEADER FLUTUANTE */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        {/* TOP HEADER */}
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-6 lg:px-10 flex items-center justify-between shrink-0 no-print">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl"
+            >
+              <LayoutList size={20} />
             </button>
-            <div className="bg-violet-900/40 p-4 rounded-2xl border border-violet-500/20 backdrop-blur-sm">
-              <p className="text-[10px] text-violet-300 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><ShieldCheck size={10} /> Coordenação Ativa</p>
-              <div className="text-xs font-black uppercase tracking-tight text-white/80">Padrão SEDUC-MT</div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-none">
+                Coordenação Pedagógica
+              </h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                Gestão Curricular, BNCC & Acompanhamento de Aprendizagem
+              </p>
             </div>
           </div>
-        </aside>
 
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-10 shrink-0 backdrop-blur-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-white/5 text-violet-400 rounded-lg border border-white/10"><Sparkles size={20} /></div>
-              <h2 className="text-sm font-black text-white/80 uppercase tracking-tight leading-none">Módulo: Coordenação Pedagógica</h2>
-            </div>
-            <div className="flex items-center gap-6">
-              <button
-                onClick={toggleFullScreen}
-                className="p-2.5 text-white/40 hover:bg-white/10 hover:text-white rounded-xl transition-all group flex items-center gap-2"
-                title="Alternar Tela Cheia"
-              >
-                <Maximize2 size={18} className="group-hover:text-violet-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Expandir</span>
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-xs font-black text-white">{user.name || 'Coordenador'}</p>
-                  <p className="text-[9px] text-violet-400 font-black uppercase tracking-widest">{user.jobFunction || user.role}</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-violet-500/20 border border-white/10">
-                  {user.name ? user.name.substring(0, 2).toUpperCase() : 'CO'}
-                </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleFullScreen}
+              className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all hidden sm:flex items-center gap-1.5 text-xs font-black uppercase"
+              title="Tela Cheia"
+            >
+              <Maximize2 size={16} />
+            </button>
+
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-black text-slate-900 uppercase">{user.name || 'Coordenador'}</p>
+                <p className="text-[9px] text-indigo-600 font-black uppercase tracking-widest">{user.jobFunction || user.role}</p>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-purple-500/20">
+                {user.name ? user.name.substring(0, 2).toUpperCase() : 'CO'}
               </div>
             </div>
-          </header>
-          
-          <div className="bg-black/20 border-b border-white/5 px-10 py-3 flex items-center gap-4 shrink-0 shadow-inner overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-2 text-white/40 shrink-0">
-              <Filter size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Filtros:</span>
-            </div>
-            
-            <select
-              value={filterTurma}
-              onChange={(e) => setFilterTurma(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-violet-500/50 min-w-[160px] cursor-pointer hover:bg-white/10 transition-all appearance-none"
-              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23ffffff\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
-            >
-              <option value="" className="bg-gray-900">Todas as Turmas</option>
-              {uniqueTurmas.map(t => <option key={t} value={t} className="bg-gray-900">{t}</option>)}
-            </select>
+          </div>
+        </header>
 
-            <select
-              value={filterSubject}
-              onChange={(e) => setFilterSubject(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-violet-500/50 min-w-[180px] cursor-pointer hover:bg-white/10 transition-all appearance-none"
-              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23ffffff\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
-            >
-              <option value="" className="bg-gray-900">Todas as Disciplinas</option>
-              {uniqueSubjects.map(s => <option key={s} value={s} className="bg-gray-900">{s}</option>)}
-            </select>
-
-            <div className="relative shrink-0">
-              <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
-              <input
-                type="text"
-                placeholder="Buscar Aluno..."
-                value={filterStudent}
-                onChange={(e) => setFilterStudent(e.target.value)}
-                className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-white placeholder-white/40 focus:outline-none focus:border-violet-500/50 w-[240px] transition-all focus:bg-white/10"
-              />
-            </div>
-
-            {(filterTurma || filterSubject || filterStudent) && (
-              <button 
-                onClick={() => { setFilterTurma(''); setFilterSubject(''); setFilterStudent(''); }}
-                className="text-[10px] font-black text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500 px-4 py-2 rounded-xl border border-red-500/20 ml-auto transition-all uppercase tracking-widest shrink-0"
-              >
-                Limpar Filtros
-              </button>
-            )}
+        {/* BARRA DE FILTROS RÁPIDOS */}
+        <div className="bg-white border-b border-slate-200/60 px-6 lg:px-10 py-3 flex flex-wrap items-center gap-3 shrink-0 no-print">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Filter size={14} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Filtros:</span>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+          <select
+            value={filterTurma}
+            onChange={(e) => setFilterTurma(e.target.value)}
+            className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white cursor-pointer"
+          >
+            <option value="">TODAS AS TURMAS</option>
+            {uniqueTurmas.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+
+          <select
+            value={filterSubject}
+            onChange={(e) => setFilterSubject(e.target.value)}
+            className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white cursor-pointer text-indigo-900"
+          >
+            <option value="">TODAS AS DISCIPLINAS</option>
+            {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar aluno..."
+              value={filterStudent}
+              onChange={(e) => setFilterStudent(e.target.value)}
+              className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:bg-white w-44"
+            />
+          </div>
+
+          {(filterTurma || filterSubject || filterStudent) && (
+            <button
+              onClick={() => { setFilterTurma(''); setFilterSubject(''); setFilterStudent(''); }}
+              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+            >
+              Limpar Filtros
+            </button>
+          )}
+        </div>
+
+        {/* CONTEÚDO PRINCIPAL RENDERIZADO */}
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar">
+          <div className="max-w-7xl mx-auto">
             {renderContent()}
           </div>
         </main>
-        <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
-      `}</style>
       </div>
+
     </div>
   );
 };

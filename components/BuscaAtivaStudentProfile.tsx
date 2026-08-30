@@ -27,6 +27,7 @@ import {
 import { Referral } from '../types';
 import { supabase } from '../supabaseClient';
 import BuscaAtivaAddLogModal from './BuscaAtivaAddLogModal';
+import { extractPhoneNumbers, buildWhatsAppUrl, generateBuscaAtivaMessage, ParsedPhone } from '../utils/phoneUtils';
 
 interface ActionItem {
   id: string;
@@ -284,6 +285,44 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
   const actionsArray = Object.values(actionsStatus) as { status: string, notes: string, completed_at: string | null }[];
   const protocolProgress = Math.round((actionsArray.filter(a => a.status === 'CONCLUIDO').length / ACTION_ITEMS.length) * 100) || 0;
 
+  const guardianName = student.guardian_name || student.guardianName || student.NomeMae || 'Responsável Legal';
+  const rawPhone = student.contact_phone || student.contactPhone || student.Telefone || '';
+  const studentAddress = student.address || student.Endereco || '';
+  const parsedPhones = extractPhoneNumbers(rawPhone);
+
+  const handleSendWhatsAppToParent = (phoneToUse?: string) => {
+    const target = phoneToUse || (parsedPhones.length > 0 ? parsedPhones[0].cleaned : '');
+    if (!target) {
+      const manualPhone = prompt(
+        `Nenhum telefone cadastrado na Secretaria para ${guardianName}.\n\nDigite o número com DDD para abrir o WhatsApp:`
+      );
+      if (manualPhone) {
+        const parsed = extractPhoneNumbers(manualPhone);
+        if (parsed.length > 0) {
+          const msg = generateBuscaAtivaMessage('GENERAL_CHECK', {
+            studentName: student.name,
+            className: student.class,
+            guardianName: guardianName,
+            absencesCount: student.absences,
+            attendanceRate: student.attendance
+          });
+          window.open(buildWhatsAppUrl(parsed[0].cleaned, msg), '_blank');
+        }
+      }
+      return;
+    }
+
+    const message = generateBuscaAtivaMessage('GENERAL_CHECK', {
+      studentName: student.name,
+      className: student.class,
+      guardianName: guardianName,
+      absencesCount: student.absences,
+      attendanceRate: student.attendance
+    });
+
+    window.open(buildWhatsAppUrl(target, message), '_blank');
+  };
+
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-emerald-950/40 backdrop-blur-sm animate-in fade-in duration-300 p-3 sm:p-6">
       <div className="bg-white w-full max-w-5xl max-h-[92vh] shadow-2xl rounded-[3rem] overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
@@ -308,8 +347,68 @@ const BuscaAtivaStudentProfile: React.FC<BuscaAtivaStudentProfileProps> = ({ stu
         </div>
 
         {/* CONTEÚDO SCROLL */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-gray-50/50">
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-6 bg-gray-50/50">
            
+           {/* DADOS DA SECRETARIA & CONTATO FAMILIAR */}
+           <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 shadow-sm space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-gray-100">
+                 <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+                       <Phone size={18} />
+                    </div>
+                    <div>
+                       <h4 className="text-xs font-black uppercase text-gray-900 tracking-wider">Contato Familiar Cadastrado na Secretaria</h4>
+                       <p className="text-[10px] text-gray-500 font-medium">Dados oficiais para notificação e busca ativa</p>
+                    </div>
+                 </div>
+
+                 {parsedPhones.length > 0 && (
+                    <button
+                       onClick={() => handleSendWhatsAppToParent()}
+                       className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                    >
+                       <Phone size={12} /> WhatsApp Principal
+                    </button>
+                 )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Responsável Legal</span>
+                    <p className="font-bold text-slate-900 uppercase">{guardianName}</p>
+                 </div>
+
+                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Telefone(s) Secretaria</span>
+                    {parsedPhones.length > 0 ? (
+                       <div className="space-y-1.5">
+                          {parsedPhones.map((p, idx) => (
+                             <div key={idx} className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-slate-900">{p.formatted} {p.label && <span className="text-[10px] text-slate-500 font-normal">({p.label})</span>}</span>
+                                <button
+                                   onClick={() => handleSendWhatsAppToParent(p.cleaned)}
+                                   className="text-[9px] font-black text-emerald-600 hover:text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 hover:bg-emerald-100 transition-all"
+                                   title="Enviar mensagem para este número"
+                                >
+                                   WhatsApp
+                                </button>
+                             </div>
+                          ))}
+                       </div>
+                    ) : (
+                       <p className="font-bold text-rose-500">{rawPhone || 'Não cadastrado'}</p>
+                    )}
+                 </div>
+
+                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Endereço Residencial</span>
+                    <p className="font-bold text-slate-900 line-clamp-2 uppercase" title={studentAddress}>
+                       {studentAddress || 'Não informado na secretaria'}
+                    </p>
+                 </div>
+              </div>
+           </div>
+
            {/* CARDS DE STATUS RÁPIDO */}
            <div className="grid grid-cols-2 gap-4">
               <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">

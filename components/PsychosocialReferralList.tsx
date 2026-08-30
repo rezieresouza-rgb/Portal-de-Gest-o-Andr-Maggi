@@ -81,21 +81,56 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
         .select('*')
         .order('date', { ascending: false });
 
-      // [NOVO] Filtro exclusivo para professor: só vê seus próprios encaminhamentos
       if (role === 'PROFESSOR' && user?.name) {
         query = query.ilike('teacher_name', `%${user.name.trim()}%`);
       }
 
-      // [NOVO] Filtro de destino (Roteamento entre módulos)
       if (filterDestination) {
         query = query.eq('referral_destination', filterDestination);
       }
 
       const { data, error } = await query;
 
-      if (data) {
-        // Para professor, exibe seus próprios encaminhamentos. Para psicossocial, filtra apenas os triados pela mediação.
-        const filteredData = role === 'PROFESSOR' ? data : data.filter((r: any) => {
+      // Buscar também casos de mediação que foram triados para o psicossocial
+      const { data: medData } = await supabase
+        .from('mediation_cases')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const triagedFromMediation = (medData || []).filter((c: any) => 
+        (typeof c.description === 'string' && c.description.includes('PSICOSSOCIAL')) ||
+        (c.feedback && c.feedback.includes('PSICOSSOCIAL'))
+      );
+
+      const existingNames = new Set((data || []).map((r: any) => (r.student_name || '').toUpperCase().trim()));
+
+      const formattedFromMed: PsychosocialReferral[] = triagedFromMediation
+        .filter((c: any) => !existingNames.has((c.student_name || '').toUpperCase().trim()))
+        .map((c: any) => ({
+          id: `med-${c.id}`,
+          schoolUnit: 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
+          studentName: c.student_name || 'Estudante',
+          studentAge: 'N/A',
+          className: c.class_name || 'N/A',
+          teacherName: 'PROFESSOR MEDIADOR',
+          priority: c.severity === 'CRÍTICA' ? 'ALTA' : (c.severity === 'BAIXA' ? 'BAIXA' : 'MEDIA'),
+          previousStrategies: 'Pré-círculo e acolhimento na Mediação Escolar',
+          attendanceFrequency: '100',
+          adoptedProcedures: ['Mediação de Conflitos', 'Escuta Qualificada'],
+          observedAspects: { learning: [], behavioral: ['Conflito Interpessoal'], emotional: ['Vulnerabilidade Identificada'] },
+          report: c.description || 'Caso encaminhado pela Mediação Escolar para acompanhamento especializado.',
+          status: c.status === 'CONCLUÍDO' || c.status === 'CONCLUIDO' ? 'CONCLUÍDO' : 'PENDENTE',
+          date: c.opened_at ? c.opened_at.split('T')[0] : new Date().toLocaleDateString('sv-SE'),
+          timestamp: new Date(c.created_at || Date.now()).getTime(),
+          reason: c.description || 'Triagem da Mediação Escolar',
+          feedback: c.feedback,
+          referralDestination: 'PSICOSSOCIAL',
+          mediationProcedures: ['Acolhimento', 'Triagem Psicossocial'],
+          origin_case_id: c.id
+        }));
+
+      if (data || formattedFromMed.length > 0) {
+        const filteredData = role === 'PROFESSOR' ? (data || []) : (data || []).filter((r: any) => {
           const tName = (r.teacher_name || '').toUpperCase();
           const rReason = (r.reason || r.report || '').toUpperCase();
           return tName.includes('MEDIAÇÃO') || 
@@ -106,7 +141,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                  r.referral_destination === 'PSICOSSOCIAL';
         });
 
-        const formatted: PsychosocialReferral[] = filteredData.map(r => {
+        const formattedDb: PsychosocialReferral[] = filteredData.map(r => {
           let parsedObs = { learning: [] as string[], behavioral: [] as string[], emotional: [] as string[] };
           if (r.observations) {
             if (typeof r.observations === 'object' && r.observations !== null) {
@@ -145,14 +180,16 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             status: r.status as any,
             date: r.date,
             observations: parsedObs,
-            timestamp: new Date(r.created_at).getTime(),
+            timestamp: new Date(r.created_at || Date.now()).getTime(),
             reason: r.reason || r.report || 'Sem motivo especificado',
             feedback: r?.feedback,
             referralDestination: r.referral_destination,
-            mediationProcedures: r.mediation_procedures || []
+            mediationProcedures: r.mediation_procedures || [],
+            origin_case_id: r.origin_case_id
           };
         });
-        setReferrals(formatted);
+
+        setReferrals([...formattedFromMed, ...formattedDb]);
       }
     } catch (error) {
       console.error("Erro ao buscar encaminhamentos:", error);
@@ -415,7 +452,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             }}
             className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2"
           >
-            <PlusCircle size={16} /> Novo Encaminhamento
+            <PlusCircle size={16} /> {role === 'PROFESSOR' ? 'Novo Encaminhamento' : 'Nova Avaliação Técnica'}
           </button>
         </div>
       </div>

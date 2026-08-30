@@ -1,30 +1,15 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
-import {
   Users,
-  TrendingDown,
   AlertTriangle,
   ShieldAlert,
   ArrowRight,
   Send,
   MessageCircle,
-  FileCheck,
   CheckCircle2,
   Loader2,
   Clock,
-  MessageSquare as MessageSquareIcon,
   History,
-  TrendingUp,
   LayoutDashboard,
   Search,
   Plus,
@@ -32,452 +17,492 @@ import {
   Calendar,
   AlertCircle,
   BarChart3,
-  Sparkles
+  Sparkles,
+  HeartHandshake,
+  UserCheck,
+  FileText,
+  Phone,
+  RefreshCw,
+  School,
+  Building2,
+  ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 import BuscaAtivaStudentProfile from './BuscaAtivaStudentProfile';
-
+import { extractPhoneNumbers, buildWhatsAppUrl, generateBuscaAtivaMessage } from '../utils/phoneUtils';
 
 interface BuscaAtivaDashboardProps {
-  onNavigate: (tab: 'dashboard' | 'students' | 'ficai' | 'calendar' | 'referrals' | 'attendance' | 'channels' | 'reports' | 'datastudio') => void;
+  onNavigate: (tab: 'dashboard' | 'students' | 'commitments' | 'ficai' | 'attendance' | 'reports') => void;
 }
 
 const BuscaAtivaDashboard: React.FC<BuscaAtivaDashboardProps> = ({ onNavigate }) => {
   const { students: dbStudents, loading: studentsLoading } = useStudents();
+  
   const [stats, setStats] = useState({
     totalStudents: 0,
+    todayAbsencesCount: 0,
     criticalCount: 0,
-    recoveredCount: 0,
-    ficaiCount: 0
+    bolsaFamiliaAlertCount: 0,
+    ficaiCount: 0,
+    termsCount: 0
   });
 
-  const [chartData, setChartData] = useState<{ name: string, faltas: number }[]>([]);
-  const [criticalCases, setCriticalCases] = useState<any[]>([]);
   const [todayAbsentees, setTodayAbsentees] = useState<any[]>([]);
+  const [criticalCases, setCriticalCases] = useState<any[]>([]);
   const [viewingProfile, setViewingProfile] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
-  const [referrals, setReferrals] = useState<any[]>([]);
 
-  // Initialize and subscribe to changes
-  useEffect(() => {
-    if (!studentsLoading && dbStudents.length > 0) {
-      fetchDashboardData();
-
-      // Subscribe to real-time attendance changes
-      const channel = supabase
-        .channel('busca-ativa-dashboard-realtime')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'class_attendance_students' },
-          () => {
-            console.log('Attendance changed, updating dashboard...');
-            fetchDashboardData();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [studentsLoading, dbStudents]);
+  // Filtrar apenas estudantes do 6º ao 9º Ano que estejam ATIVOS ou RECLASSIFICADOS (exclui TRANSFERIDOS, EVADIDOS, ETC)
+  const fundamentalStudents = useMemo(() => {
+    return dbStudents.filter(s => {
+      const statusUpper = (s.status || '').toUpperCase();
+      if (statusUpper.startsWith('TRANSFERIDO') || statusUpper === 'INATIVO' || statusUpper === 'ABANDONO' || statusUpper === 'FALECIDO' || statusUpper === 'CANCELADO' || statusUpper === 'DESISTENTE') {
+        return false;
+      }
+      const turma = (s.Turma || s.className || '').toUpperCase();
+      if (turma.includes('TRANSFERIDO') || turma === 'SEM TURMA') return false;
+      return turma.includes('6º') || turma.includes('7º') || turma.includes('8º') || turma.includes('9º') ||
+             turma.includes('6') || turma.includes('7') || turma.includes('8') || turma.includes('9');
+    });
+  }, [dbStudents]);
 
   const fetchDashboardData = async () => {
     setIsProcessing(true);
     try {
-      // 1. Fetch Today's Absentees using optimized server-side query
       const today = new Date().toLocaleDateString('sv-SE');
-      const { data: todayData, error: todayError } = await supabase
+
+      // 1. Ausentes Hoje (apenas estudantes ativos no sistema)
+      const { data: todayData } = await supabase
         .from('class_attendance_students')
         .select('student_id, student_name, class_attendance_records!inner(classroom_name, date)')
         .eq('is_present', false)
         .eq('class_attendance_records.date', today);
 
-      if (todayError) {
-        console.error("Error fetching today's absentees:", todayError);
-      }
-
       const dailyAbsences: Record<string, any> = {};
       if (todayData) {
         todayData.forEach(r => {
-          const sid = r.student_id;
+          const sid = String(r.student_id);
+          const studentObj = dbStudents.find(s => 
+            String(s.id) === sid || 
+            String(s.registration_number) === sid || 
+            String(s.CodigoAluno) === sid ||
+            (s.name && r.student_name && s.name.trim().toLowerCase() === r.student_name.trim().toLowerCase())
+          );
+
+          // Se o estudante foi transferido de escola ou turma antiga, NÃO constar como falta/ausente
+          const statusUpper = (studentObj?.status || '').toUpperCase();
+          if (statusUpper.startsWith('TRANSFERIDO') || statusUpper === 'INATIVO' || statusUpper === 'ABANDONO' || statusUpper === 'FALECIDO' || statusUpper === 'CANCELADO' || statusUpper === 'DESISTENTE') {
+            return;
+          }
+
+          const guardian = studentObj?.guardian_name || studentObj?.guardianName || studentObj?.NomeMae || 'Responsável Legal';
+          const phone = studentObj?.contact_phone || studentObj?.contactPhone || studentObj?.Telefone || '';
+
           dailyAbsences[sid] = {
             id: sid,
             name: r.student_name,
-            class: (r.class_attendance_records as any)?.classroom_name
+            class: (r.class_attendance_records as any)?.classroom_name || studentObj?.class || studentObj?.Turma || '6º ao 9º Ano',
+            guardianName: guardian,
+            guardianPhone: phone,
+            address: studentObj?.address || studentObj?.Endereco || '',
+            parsedPhones: extractPhoneNumbers(phone)
           };
         });
       }
-      setTodayAbsentees(Object.values(dailyAbsences));
+      const absenteesList = Object.values(dailyAbsences);
+      setTodayAbsentees(absenteesList);
 
-      // 2. Fetch all attendance history in parallel pages for overall stats
-      const { count, error: countError } = await supabase
+      // 2. Histórico de presenças para cálculo do semáforo
+      const { data: attendanceData } = await supabase
         .from('class_attendance_students')
+        .select('student_id, is_present');
+
+      const attendanceMap: Record<string, { present: number, total: number }> = {};
+      if (attendanceData) {
+        attendanceData.forEach(rec => {
+          const sid = String(rec.student_id);
+          if (!attendanceMap[sid]) attendanceMap[sid] = { present: 0, total: 0 };
+          attendanceMap[sid].total += 1;
+          if (rec.is_present) attendanceMap[sid].present += 1;
+        });
+      }
+
+      // 3. FICAIs registradas
+      const { count: ficaiTotal } = await supabase
+        .from('ficai_records')
         .select('*', { count: 'exact', head: true });
 
-      if (countError) throw countError;
+      // 4. Termos de Compromisso
+      const { count: termsTotal } = await supabase
+        .from('parent_commitment_terms')
+        .select('*', { count: 'exact', head: true });
 
-      const total = count || 0;
-      const pageSize = 1000;
-      const pageCount = Math.ceil(total / pageSize);
-      const promises = [];
+      // Analisar estudantes críticos
+      let criticals: any[] = [];
+      let bolsaAlerts = 0;
 
-      for (let i = 0; i < pageCount; i++) {
-        const start = i * pageSize;
-        const end = start + pageSize - 1;
-        promises.push(
-          supabase
-            .from('class_attendance_students')
-            .select('student_id, is_present')
-            .range(start, end)
-        );
-      }
+      fundamentalStudents.forEach(s => {
+        const sid = String(s.id);
+        const sReg = String(s.registration_number || '');
+        const stats = attendanceMap[sid] || attendanceMap[sReg] || { present: 18, total: 20 };
+        const total = stats.total > 0 ? stats.total : 20;
+        const present = stats.total > 0 ? stats.present : 18;
+        const absences = total - present;
+        const rate = Math.round((present / total) * 100);
 
-      const results = await Promise.all(promises);
-      const studentStats: Record<string, { total: number, present: number }> = {};
+        if (rate < 85) bolsaAlerts++;
 
-      results.forEach(({ data, error }) => {
-        if (error) {
-          console.error("Error fetching attendance history page:", error);
-          return;
-        }
-        if (data) {
-          data.forEach(r => {
-            const sid = r.student_id;
-            if (!studentStats[sid]) studentStats[sid] = { total: 0, present: 0 };
-            studentStats[sid].total++;
-            if (r.is_present) studentStats[sid].present++;
+        if (rate < 75 || absences >= 5) {
+          const guardian = s.guardian_name || s.guardianName || s.NomeMae || 'Responsável Legal';
+          const phone = s.contact_phone || s.contactPhone || s.Telefone || '';
+          criticals.push({
+            id: sid,
+            name: s.Nome || s.name,
+            class: s.Turma || s.class || s.className,
+            guardianName: guardian,
+            guardianPhone: phone,
+            address: s.address || s.Endereco || '',
+            parsedPhones: extractPhoneNumbers(phone),
+            rate,
+            absences,
+            status: 'CRITICO'
           });
         }
       });
 
-      // 3. Fetch Referrals
-      const { data: referralsData } = await supabase
-        .from('referrals')
-        .select('*');
-
-      let critical = 0;
-      const criticalList: any[] = [];
-      const infrequencyByYear: Record<string, number> = {};
-
-      // Filter active students only (matching Secretariat logic)
-      const activeStudents = dbStudents.filter((s: any) => 
-        s.status === 'ATIVO' || s.status === 'RECLASSIFICADO'
-      );
-
-      activeStudents.forEach((s: any) => {
-        const stat = studentStats[s.registration_number] || studentStats[s.id] || { total: 0, present: 0 };
-        const percent = stat.total > 0 ? (stat.present / stat.total) * 100 : 100;
-
-        // Threshold for risk (e.g., < 90% attendance = > 10% absences)
-        if (percent < 90) { 
-          critical++;
-          criticalList.push({
-            id: s.id,
-            name: s.name,
-            class: s.class,
-            absences: `${Math.round(100 - percent)}%`,
-            status: 'Faltoso',
-            contact_phone: s.contact_phone
-          });
-        }
-
-        // Aggregate for chart by Year
-        const turmParts = s.class.split(' ');
-        const year = turmParts.length >= 2 ? turmParts[0] + ' ' + turmParts[1] : s.class;
-        
-        if (!infrequencyByYear[year]) infrequencyByYear[year] = 0;
-        if (percent < 90) infrequencyByYear[year]++;
-      });
-
-      // Process referrals
-      let recovered = 0;
-      let ficai = 0;
-      if (referralsData) {
-        recovered = referralsData.filter(r => r.status === 'CONCLUÍDO').length;
-        ficai = referralsData.filter(r => r.type === 'CONSELHO_TUTELAR' && r.status !== 'CONCLUÍDO').length;
-        setReferrals(referralsData);
-      } else {
-        setReferrals([]);
-      }
+      // Ordenar os mais críticos primeiro
+      criticals.sort((a, b) => b.absences - a.absences);
+      setCriticalCases(criticals.slice(0, 10));
 
       setStats({
-        totalStudents: activeStudents.length,
-        criticalCount: critical,
-        recoveredCount: recovered,
-        ficaiCount: ficai
+        totalStudents: fundamentalStudents.length,
+        todayAbsencesCount: absenteesList.length,
+        criticalCount: criticals.length,
+        bolsaFamiliaAlertCount: bolsaAlerts,
+        ficaiCount: ficaiTotal || 0,
+        termsCount: termsTotal || 0
       });
-
-      // Format Chart Data
-      const sortedYears = Object.keys(infrequencyByYear).sort();
-      const chart = sortedYears.map(key => ({
-        name: key,
-        faltas: infrequencyByYear[key]
-      }));
-      setChartData(chart);
-
-      // Top 5 Critical
-      setCriticalCases(criticalList.sort((a,b) => parseInt(b.absences) - parseInt(a.absences)).slice(0, 5));
-
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+    } catch (err) {
+      console.error('Erro ao buscar dados do dashboard Busca Ativa:', err);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleForwardToMediation = async (student: any) => {
-    if (!window.confirm(`Deseja encaminhar ${student.name} para a Equipe de Mediação devido à infrequência crítica?`)) return;
-
-    const { data: existing } = await supabase
-      .from('psychosocial_referrals')
-      .select('id')
-      .eq('student_name', student.name)
-      .eq('status', 'AGUARDANDO_TRIAGEM')
-      .single();
-
-    if (existing) {
-      return alert("Este aluno já possui um encaminhamento pendente.");
+  useEffect(() => {
+    if (!studentsLoading) {
+      fetchDashboardData();
     }
+  }, [studentsLoading, fundamentalStudents]);
 
-    const { error } = await supabase.from('psychosocial_referrals').insert([{
-      student_name: student.name,
-      class_name: student.class,
-      teacher_name: 'BUSCA ATIVA',
-      school_unit: 'ESCOLA ANDRÉ MAGGI',
-      date: new Date().toLocaleDateString('sv-SE'),
-      report: `[VIA BUSCA ATIVA] Aluno apresenta ${student.absences} de infrequência. Risco iminente de evasão.`,
-      status: 'AGUARDANDO_TRIAGEM',
-      student_age: 'Não informado',
-      attendance_frequency: student.absences,
-      previous_strategies: 'Monitoramento de Frequência',
-      adopted_procedures: ['BUSCA_ATIVA'],
-      observations: { learning: [], behavioral: [], emotional: [] }
-    }]);
-
-    if (error) {
-      console.error(error);
-      alert("Erro ao encaminhar.");
-    } else {
-      alert("Encaminhamento realizado com sucesso!");
-      await supabase.from('psychosocial_notifications').insert([{
-        title: 'Alerta de Busca Ativa',
-        message: `A Busca Ativa encaminhou ${student.name} por infrequência crítica (${student.absences}).`,
-        is_read: false
-      }]);
-    }
-  };
-
-  const handleWhatsAppAlert = (student: any) => {
-    const phone = student.contact_phone || '';
-    if (!phone) {
-      alert("Telefone do responsável não cadastrado para este aluno.");
+  const handleSendWhatsAppToday = (student: any) => {
+    const phones = extractPhoneNumbers(student.rawContact || student.guardianPhone);
+    if (phones.length === 0) {
+      alert(`Nenhum telefone encontrado no cadastro da secretaria para ${student.name}.`);
       return;
     }
-    
-    // Clean phone number (remove non-digits)
-    const cleanPhone = phone.replace(/\D/g, '');
-    const finalPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
-    
-    const message = `Olá! Somos da Escola André Maggi. Notamos que o aluno *${student.name}* (${student.class}) teve uma frequência de *${student.absences} de faltas* recentemente. Gostaríamos de saber se está tudo bem e reforçar a importância da presença escolar. Podemos ajudar em algo?`;
-    
-    const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`;
+
+    const msg = generateBuscaAtivaMessage('ABSENCE_TODAY', {
+      studentName: student.name,
+      className: student.class,
+      guardianName: student.guardianName
+    });
+
+    const targetPhone = phones[0].cleaned;
+    const url = buildWhatsAppUrl(targetPhone, msg);
     window.open(url, '_blank');
   };
 
-  if (studentsLoading || (isProcessing && chartData.length === 0)) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 size={48} className="animate-spin text-emerald-600" />
-        <p className="text-gray-400 font-black uppercase text-xs tracking-widest animate-pulse">Sincronizando Busca Ativa em Tempo Real...</p>
-      </div>
-    );
-  }
+  const handleSendWhatsAppCritical = (student: any) => {
+    const phones = extractPhoneNumbers(student.rawContact || student.guardianPhone);
+    if (phones.length === 0) {
+      alert(`Nenhum telefone encontrado no cadastro da secretaria para ${student.name}.`);
+      return;
+    }
+
+    const msg = generateBuscaAtivaMessage('GENERAL_CHECK', {
+      studentName: student.name,
+      className: student.class,
+      guardianName: student.guardianName,
+      absencesCount: student.absencesCount,
+      attendanceRate: student.attendanceRate
+    });
+
+    const targetPhone = phones[0].cleaned;
+    const url = buildWhatsAppUrl(targetPhone, msg);
+    window.open(url, '_blank');
+  };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-
-      {/* BANNER ATALHO PARA PAINEL GOOGLE DATA STUDIO */}
-      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 p-6 sm:p-8 rounded-[2.5rem] text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-emerald-800/50">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-emerald-500/20 text-emerald-400 rounded-2xl shrink-0 border border-emerald-500/30">
-            <BarChart3 size={32} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-[10px] font-black text-amber-400 uppercase tracking-widest bg-amber-500/10 px-3 py-0.5 rounded-full border border-amber-500/20 w-fit">
-              <Sparkles size={10} /> Relatório Oficial COGER / DRE-SINOP / SEDUC-MT
+    <div className="space-y-8 animate-in fade-in duration-300 pb-16">
+      
+      {/* BANNER PRINCIPAL COM IDENTIDADE CÍVICO-MILITAR & SEDUC */}
+      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl border border-emerald-800/40 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30 text-[10px] font-black uppercase tracking-widest">
+              <ShieldCheck size={14} className="text-emerald-400" />
+              Ensino Fundamental • 6º ao 9º Ano • SEDUC/MT
             </div>
-            <h3 className="text-lg font-black uppercase text-white tracking-tight">Painel Interativo de Busca Ativa no Google Data Studio</h3>
-            <p className="text-xs text-slate-300 font-medium">Acesse o dashboard consolidado em tempo real com indicadores territoriais e filtros por escola.</p>
+            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+              Central de Busca Ativa & Permanência Discente
+            </h1>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Monitoramento diário de chamadas, prevenção à infrequência escolar (Art. 56 do ECA), convocações presenciais e garantia do direito de aprender.
+            </p>
+          </div>
+
+          {/* ATALHOS RÁPIDOS */}
+          <div className="flex flex-col sm:flex-row gap-3 shrink-0 flex-wrap">
+            <button
+              onClick={() => onNavigate('students')}
+              className="px-5 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95"
+            >
+              <Users size={16} /> Monitoramento (6º ao 9º)
+            </button>
+            <button
+              onClick={() => onNavigate('commitments')}
+              className="px-5 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 active:scale-95"
+            >
+              <UserCheck size={16} /> Convocações & Termos
+            </button>
+            <button
+              onClick={() => onNavigate('ficai')}
+              className="px-5 py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 active:scale-95"
+            >
+              <FileText size={16} /> Central FICAI
+            </button>
           </div>
         </div>
 
-        <button
-          onClick={() => onNavigate('datastudio')}
-          className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all shrink-0 flex items-center gap-2 active:scale-95"
-        >
-          <BarChart3 size={16} /> Abrir Painel Data Studio
-        </button>
-      </div>
-
-      {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total de Alunos</p>
-          <p className="text-3xl font-black text-gray-900 mt-1">{stats.totalStudents}</p>
-        </div>
-        <div className="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm">
-          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Infrequentes (&gt;10%)</p>
-          <p className="text-3xl font-black text-red-700 mt-1">{stats.criticalCount}</p>
-        </div>
-        <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm">
-          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Casos Resgatados</p>
-          <p className="text-3xl font-black text-emerald-700 mt-1">{stats.recoveredCount}</p>
-        </div>
-        <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 shadow-sm">
-          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">FICAis em Aberto</p>
-          <p className="text-3xl font-black text-amber-700 mt-1">{stats.ficaiCount}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* GRÁFICO DE INFREQUÊNCIA */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Alunos em Alerta por Ano</h3>
-            {isProcessing && <Loader2 size={16} className="animate-spin text-emerald-600" />}
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 700 }} />
-                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="faltas" radius={[8, 8, 0, 0]} barSize={40}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.faltas > 20 ? '#ef4444' : '#10b981'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* ALUNOS FALTOSOS HOJE */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-              <Users className="text-amber-500" /> Faltosos Hoje
-            </h3>
-            <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase">Frequência</span>
-          </div>
-          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-            {todayAbsentees.length > 0 ? todayAbsentees.map((s, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-amber-100 transition-all">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-black text-xs uppercase">
-                    {s.name ? s.name[0] : '?'}
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-gray-900 uppercase leading-tight">{s.name}</p>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase">{s.class}</p>
-                  </div>
-                </div>
-                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
-              </div>
-            )) : (
-              <div className="py-12 text-center">
-                <CheckCircle2 size={32} className="mx-auto text-emerald-200 mb-3" />
-                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Tudo em ordem hoje</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* CASOS CRÍTICOS */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-              <ShieldAlert className="text-red-500" /> Casos de Urgência
-            </h3>
-            {isProcessing && <Loader2 size={16} className="animate-spin text-red-500" />}
-          </div>
-          <div className="space-y-4">
-            {criticalCases.length > 0 ? criticalCases.map((c, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-100 transition-all group cursor-pointer" onClick={() => setViewingProfile(c)}>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-12 rounded-xl bg-red-100 text-red-600 flex flex-col items-center justify-center font-black">
-                    <span className="text-sm leading-none">{c.absences}</span>
-                    <span className="text-[7px] uppercase tracking-widest mt-0.5 opacity-80">Faltas</span>
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-gray-900 uppercase leading-tight">{c.name}</p>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase">{c.class} • Alerta: {c.status}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setViewingProfile(c); }}
-                    className="p-2 bg-gray-900 text-white border border-gray-800 rounded-lg hover:bg-black transition-all shadow-sm"
-                    title="Ver Acompanhamento"
-                  >
-                    <History size={16} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleWhatsAppAlert(c); }}
-                    className="p-2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                    title="Aviso WhatsApp"
-                  >
-                    <MessageSquareIcon size={16} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleForwardToMediation(c); }}
-                    className="p-2 bg-white text-red-600 border border-red-100 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                    title="Encaminhar para Mediação"
-                  >
-                    <Send size={16} />
-                  </button>
-                </div>
-              </div>
-            )) : (
-              <p className="text-center py-8 text-gray-300 font-bold uppercase text-xs">Nenhum caso crítico detectado</p>
-            )}
-          </div>
-          <button 
-            onClick={() => onNavigate('reports')}
-            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all"
+        {/* CARDS DE KPI INTEGRADOS */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-emerald-800/50">
+          <div 
+            onClick={() => onNavigate('students')}
+            className="bg-white/5 hover:bg-white/10 transition-all cursor-pointer backdrop-blur-md p-4 rounded-2xl border border-white/10"
           >
-            Ver Painel Completo de Risco
-          </button>
+            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest block mb-1">Total Alunos (6º ao 9º)</span>
+            <span className="text-2xl font-black text-white">{stats.totalStudents}</span>
+          </div>
+
+          <div 
+            onClick={() => onNavigate('students')}
+            className="bg-amber-500/10 hover:bg-amber-500/20 transition-all cursor-pointer backdrop-blur-md p-4 rounded-2xl border border-amber-500/20"
+          >
+            <span className="text-[9px] font-black text-amber-300 uppercase tracking-widest block mb-1">Casos em Alerta Preventivo</span>
+            <span className="text-2xl font-black text-amber-400">{stats.criticalCount}</span>
+          </div>
+
+          <div 
+            onClick={() => onNavigate('commitments')}
+            className="bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer backdrop-blur-md p-4 rounded-2xl border border-emerald-500/20"
+          >
+            <span className="text-[9px] font-black text-emerald-300 uppercase tracking-widest block mb-1">Termos de Compromisso</span>
+            <span className="text-2xl font-black text-emerald-400">{stats.termsCount}</span>
+          </div>
+
+          <div 
+            onClick={() => onNavigate('ficai')}
+            className="bg-rose-500/10 hover:bg-rose-500/20 transition-all cursor-pointer backdrop-blur-md p-4 rounded-2xl border border-red-500/20"
+          >
+            <span className="text-[9px] font-black text-rose-300 uppercase tracking-widest block mb-1">Fichas FICAI (Conselho)</span>
+            <span className="text-2xl font-black text-rose-400">{stats.ficaiCount}</span>
+          </div>
         </div>
       </div>
 
-      {/* PLANO DE AÇÃO BUSCA ATIVA */}
-      <div className="bg-emerald-900 p-10 rounded-[3rem] text-white space-y-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-12 opacity-10"><Users size={180} /></div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-10">
-          <div className="space-y-4">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center"><Send size={24} /></div>
-            <h4 className="text-lg font-black uppercase tracking-tight">Encaminhamentos</h4>
-            <p className="text-emerald-100/70 text-xs font-medium leading-relaxed">Fluxo ágil para envio de casos críticos aos conselhos e redes de apoio psicossocial.</p>
+      {/* DUAS COLUNAS PRINCIPAIS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* RADAR DE AUSÊNCIAS DE HOJE (AÇÃO IMEDIATA) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
+                  <Clock size={24} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                    Radar de Ausências de Hoje ({todayAbsentees.length})
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Discentes ausentes na chamada de hoje para contato preventivo com os pais</p>
+                </div>
+              </div>
+
+              <button
+                onClick={fetchDashboardData}
+                className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl transition-all"
+                title="Atualizar Chamadas"
+              >
+                <RefreshCw size={16} />
+              </button>
+            </div>
+
+            {/* LISTA DE AUSENTES HOJE */}
+            <div className="space-y-3">
+              {todayAbsentees.map(student => (
+                <div 
+                  key={student.id}
+                  className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/80 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all group"
+                >
+                  <div className="flex items-center gap-3.5 flex-1">
+                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-black text-xs shrink-0">
+                      {student.name.charAt(0)}
+                    </div>
+                    <div className="space-y-0.5 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs font-black text-slate-900 uppercase">{student.name}</p>
+                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded uppercase">
+                          {student.class}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Resp: <strong className="text-slate-700">{student.guardianName}</strong> • {student.guardianPhone}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleSendWhatsAppToday(student)}
+                    className="ml-3 flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 shadow-sm active:scale-95"
+                  >
+                    <MessageCircle size={14} />
+                    <span>WhatsApp Pais</span>
+                  </button>
+                </div>
+              ))}
+
+              {todayAbsentees.length === 0 && (
+                <div className="text-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <CheckCircle2 size={32} className="mx-auto text-emerald-500 mb-2" />
+                  <p className="text-xs font-bold text-slate-600 uppercase">Nenhuma ausência crítica registrada nas chamadas de hoje!</p>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="space-y-4">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center"><MessageCircle size={24} /></div>
-            <h4 className="text-lg font-black uppercase tracking-tight">Canais de Contato</h4>
-            <p className="text-emerald-100/70 text-xs font-medium leading-relaxed">Integração com WhatsApp para avisos automáticos de faltas aos responsáveis após 3 dias.</p>
+
+          {/* FLUXO INSTITUCIONAL DA BUSCA ATIVA (3 PILARES) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div 
+              onClick={() => onNavigate('students')}
+              className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:border-emerald-300 transition-all cursor-pointer space-y-2"
+            >
+              <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-black text-xs">
+                1
+              </div>
+              <h4 className="text-xs font-black uppercase text-slate-900">Monitoramento Diário</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Acompanhamento individual de assiduidade e contato ágil pelo WhatsApp da secretaria.
+              </p>
+            </div>
+
+            <div 
+              onClick={() => onNavigate('commitments')}
+              className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:border-indigo-300 transition-all cursor-pointer space-y-2"
+            >
+              <div className="w-9 h-9 bg-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center font-black text-xs">
+                2
+              </div>
+              <h4 className="text-xs font-black uppercase text-slate-900">Convocação na Escola</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Reunião presencial com os pais para assinatura do Termo de Compromisso e orientações.
+              </p>
+            </div>
+
+            <div 
+              onClick={() => onNavigate('ficai')}
+              className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:border-rose-300 transition-all cursor-pointer space-y-2"
+            >
+              <div className="w-9 h-9 bg-rose-100 text-rose-700 rounded-xl flex items-center justify-center font-black text-xs">
+                3
+              </div>
+              <h4 className="text-xs font-black uppercase text-slate-900">Ficha FICAI (ECA)</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Encaminhamento formal ao Conselho Tutelar e Ministério Público em caso de reincidência.
+              </p>
+            </div>
           </div>
-          <div className="space-y-4">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center"><FileCheck size={24} /></div>
-            <h4 className="text-lg font-black uppercase tracking-tight">Rede de Proteção</h4>
-            <p className="text-emerald-100/70 text-xs font-medium leading-relaxed">Acompanhamento compartilhado com CRAS/CREAS e Unidade de Saúde da família.</p>
+        </div>
+
+        {/* CASOS COM RISCO CRÍTICO DE EVASÃO (ALERTA VERMELHO / ART. 56 ECA) */}
+        <div className="space-y-6">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-red-50 text-red-600 rounded-2xl">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                  Alerta Crítico ECA ({criticalCases.length})
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">Casos que atingiram o limite de faltas (Art. 56)</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {criticalCases.map(student => (
+                <div 
+                  key={student.id}
+                  className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 hover:border-rose-300 transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black text-slate-900 uppercase">{student.name}</p>
+                    <span className="text-[9px] font-black bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full uppercase">
+                      {student.absences} faltas ({student.rate}%)
+                    </span>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Turma: <strong className="text-slate-700">{student.class}</strong> • Resp: {student.guardianName}
+                  </p>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => handleSendWhatsAppCritical(student)}
+                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm"
+                      title="WhatsApp para o Responsável"
+                    >
+                      <MessageCircle size={12} /> WhatsApp
+                    </button>
+                    <button
+                      onClick={() => onNavigate('commitments')}
+                      className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                    >
+                      Convocar Pais
+                    </button>
+                    <button
+                      onClick={() => onNavigate('ficai')}
+                      className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                    >
+                      Emitir FICAI
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {criticalCases.length === 0 && (
+                <div className="text-center p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <CheckCircle2 size={28} className="mx-auto text-emerald-500 mb-1" />
+                  <p className="text-xs font-bold text-slate-500 uppercase">Nenhum caso em nível crítico no momento.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {viewingProfile && <BuscaAtivaStudentProfile student={viewingProfile} referrals={referrals} onClose={() => setViewingProfile(null)} />}
-
+      {/* MODAL DE PERFIL INDIVIDUAL DO ALUNO */}
+      {viewingProfile && (
+        <BuscaAtivaStudentProfile
+          student={viewingProfile}
+          onClose={() => setViewingProfile(null)}
+          onAddAction={() => {}}
+        />
+      )}
     </div>
   );
 };

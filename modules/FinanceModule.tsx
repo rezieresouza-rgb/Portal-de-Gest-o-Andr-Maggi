@@ -44,13 +44,160 @@ import {
   Printer,
   List,
   Table,
-  Pencil
+  Pencil,
+  ShieldAlert,
+  CheckCircle2,
+  HelpCircle,
+  Activity,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { extractInvoiceInfo } from '../geminiService';
 import { supabase } from '../supabaseClient';
 import { useToast } from '../components/Toast';
 import { User } from '../types';
 import BudgetModule from './BudgetModule';
+import PAFPlanManager, { PAF_OFFICIAL_CLASSES_2026, PAFMaterialClass } from '../components/PAFPlanManager';
+
+// TETO HOMOLOGADO OFICIAL PAF / RECURSO ÚNICO 2026 (SEDUC/MT)
+export const RU_OFFICIAL_BUDGET_2026 = {
+  total: 510236.42,
+  custeio: 466909.01,
+  capital: 43327.41,
+};
+
+export interface ClassificationResult {
+  group: 'CUSTEIO' | 'CAPITAL';
+  confidence: number;
+  title: string;
+  categorySuggestion: string;
+  legalBasis: string;
+  accountingRules: string[];
+  alerts: string[];
+}
+
+export function classifyPurchaseItem(description: string, value?: number): ClassificationResult {
+  const desc = (description || '').toLowerCase().trim();
+  
+  const capitalKeywords = [
+    'ar condicionado', 'ar-condicionado', 'split', 'inverter', 'condicionador de ar',
+    'computador', 'computadores', 'notebook', 'desktop', 'pc ', 'laptop', 'tablet',
+    'impressora', 'multifuncional', 'projetor', 'data show', 'datashow',
+    'televisao', 'televisão', 'smart tv', 'tv ', 'monitor',
+    'mesa', 'mesas', 'cadeira', 'cadeiras', 'carteira', 'carteiras', 'longarina',
+    'armario', 'armário', 'armarios', 'gaveteiro', 'estante', 'arquivo de aco',
+    'bebedouro', 'geladeira', 'refrigerador', 'freezer', 'fogao', 'fogão industrial',
+    'microondas', 'micro-ondas', 'forno', 'liquidificador industrial', 'batedeira industrial',
+    'ventilador', 'ventiladores', 'climatizador',
+    'caixa de som', 'amplificador', 'microfone sem fio', 'mesa de som',
+    'quadro branco', 'lousa digital', 'tela de projecao',
+    'nobreak', 'servidor', 'switch gerenciado', 'rack',
+    'camera de seguranca', 'câmera', 'dvr', 'sistema de cftv',
+    'bomba dagua', 'bomba d\'agua', 'bomba dágua', 'bomba hidraulica',
+    'cortador de grama', 'rocadeira', 'lavadora de alta pressao', 'aspirador industrial',
+    'escada de aluminio'
+  ];
+
+  const custeioKeywords = [
+    'manutencao', 'manutenção', 'conserto', 'reparo', 'revisão', 'revisao',
+    'recarga', 'instalacao', 'instalação', 'higienizacao', 'higienização',
+    'troca de peca', 'peca de reposicao', 'peça', 'gas r410', 'gas r22', 'gas de cozinha',
+    'papel a4', 'resma', 'toner', 'cartucho', 'tinta',
+    'limpeza', 'detergente', 'desinfetante', 'sabao', 'vassoura', 'saco de lixo',
+    'lampada', 'fio', 'disjuntor', 'tomada', 'torneira', 'cano', 'conexao',
+    'pedreiro', 'eletricista', 'pintor', 'chaveiro', 'diaria', 'frete',
+    'reforma', 'pintura', 'verniz', 'cimento', 'tijolo', 'areia',
+    'alimentacao', 'lanche', 'dedetizacao', 'extintor'
+  ];
+
+  const hasCusteioModifier = custeioKeywords.some(w => desc.includes(w));
+  const hasCapitalMatch = capitalKeywords.some(w => desc.includes(w));
+
+  if (hasCusteioModifier) {
+    let pafCat = 'Material de Expediente e Secretaria';
+    if (desc.includes('ar') || desc.includes('climatiz') || desc.includes('pint') || desc.includes('jardin') || desc.includes('pedreir') || desc.includes('eletric') || desc.includes('dedetiz')) {
+      pafCat = 'Serviços de Manutenção, Climatização, Pintura e Jardinagem';
+    } else if (desc.includes('limp') || desc.includes('deterg') || desc.includes('sabao') || desc.includes('higien')) {
+      pafCat = 'Itens de Limpeza e Higiene';
+    } else if (desc.includes('ciment') || desc.includes('areia') || desc.includes('tijol') || desc.includes('cano') || desc.includes('torneir') || desc.includes('lampad') || desc.includes('fio') || desc.includes('disjuntor')) {
+      pafCat = 'Material para Manutenção de Bens Imóveis (Predial)';
+    } else if (desc.includes('compressor') || desc.includes('peca') || desc.includes('peça') || desc.includes('gas r410')) {
+      pafCat = 'Peças de Reposição e Manutenção de Equipamentos';
+    } else if (desc.includes('gas de cozinha') || desc.includes('gás de cozinha') || desc.includes('panela') || desc.includes('copo') || desc.includes('prato')) {
+      pafCat = 'Itens e Utensílios de Cozinha (Consumo)';
+    } else if (desc.includes('cortina') || desc.includes('mural') || desc.includes('sob medida')) {
+      pafCat = 'Serviços de Confecção e Instalações sob Medida';
+    } else if (desc.includes('internet') || desc.includes('tarifa') || desc.includes('telefone') || desc.includes('cartorio')) {
+      pafCat = 'Pagamento de Tarifas, Telefone, Internet e Tributos';
+    } else if (desc.includes('uniforme') || desc.includes('avental')) {
+      pafCat = 'Confecção de Uniformes';
+    } else if (desc.includes('epi') || desc.includes('bota') || desc.includes('touca') || desc.includes('luva') || desc.includes('mascara')) {
+      pafCat = 'EPIs (Equipamento de Proteção Individual)';
+    } else if (desc.includes('bola') || desc.includes('esporte') || desc.includes('colete') || desc.includes('cone')) {
+      pafCat = 'Itens e Materiais Esportivos';
+    } else if (desc.includes('eva') || desc.includes('tinta guache') || desc.includes('cartolina') || desc.includes('lapis')) {
+      pafCat = 'Material Pedagógico e Didático';
+    } else if (desc.includes('toner') || desc.includes('papel') || desc.includes('pasta') || desc.includes('resma')) {
+      pafCat = 'Material de Expediente e Secretaria';
+    }
+
+    return {
+      group: 'CUSTEIO',
+      confidence: 0.95,
+      title: 'Material de Consumo / Serviço de Manutenção',
+      categorySuggestion: pafCat,
+      legalBasis: 'Portaria STN nº 448/2002 e Lei Federal nº 4.320/1964, Art. 12 (Despesas Correntes).',
+      accountingRules: [
+        'Despesa prevista no Plano de Aplicação Financeira (PAF - SYDLE 089416/2026).',
+        'NÃO gera incorporação patrimonial (não recebe plaqueta de tombamento).',
+        'Exige Termo de Atesto de Recebimento do Serviço/Material assinado pelo fiscal/diretor.',
+        'Nota Fiscal deve detalhar os serviços executados ou insumos entregues.'
+      ],
+      alerts: []
+    };
+  }
+
+  if (hasCapitalMatch) {
+    let pafCat = 'Mobiliários em Geral e Ativo Permanente (CAPITAL)';
+    if (desc.includes('computador') || desc.includes('notebook') || desc.includes('nobreak') || desc.includes('roteador') || desc.includes('scanner') || desc.includes('projetor')) {
+      pafCat = 'Equipamentos de TI e Processamento de Dados (CAPITAL)';
+    } else if (desc.includes('fogao') || desc.includes('fogão') || desc.includes('freezer') || desc.includes('geladeira') || desc.includes('liquidificador') || desc.includes('micro-ondas') || desc.includes('exaustor') || desc.includes('aspirador')) {
+      pafCat = 'Equipamentos de Cozinha e Eletrodomésticos (CAPITAL)';
+    } else if (desc.includes('armario') || desc.includes('armário') || desc.includes('cadeira') || desc.includes('carteira') || desc.includes('mesa') || desc.includes('estante') || desc.includes('quadro branco')) {
+      pafCat = 'Mobiliários em Geral e Ativo Permanente (CAPITAL)';
+    }
+
+    return {
+      group: 'CAPITAL',
+      confidence: 0.95,
+      title: 'Material Permanente / Equipamento (Ativo Imobilizado)',
+      categorySuggestion: pafCat,
+      legalBasis: 'Portaria STN nº 448/2002 c/c Lei nº 4.320/1964, Art. 12, § 4º (Investimentos/Material Permanente).',
+      accountingRules: [
+        'Bem com vida útil estimada superior a 2 (dois) anos que não perde a identidade física com o uso.',
+        'OBRIGATÓRIO: Realizar o tombamento patrimonial (colocar plaqueta/código de patrimônio no bem).',
+        'Cadastrar no Livro/Relatório de Bens Permanentes da Escola e no SIGED/SEDUC.',
+        'A Nota Fiscal deve conter marca, modelo, número de série e especificação técnica.'
+      ],
+      alerts: [
+        'Atenção ao limite máximo anual de Capital do Recurso Único (R$ 43.327,41). Não use Custeio para pagar este item!'
+      ]
+    };
+  }
+
+  return {
+    group: 'CUSTEIO',
+    confidence: 0.70,
+    title: 'Provável Custeio (Material de Consumo / Operacional)',
+    categorySuggestion: 'Material de Expediente e Secretaria',
+    legalBasis: 'Regra Geral de Execução Orçamentária Escolar (SEDUC/MT).',
+    accountingRules: [
+      'Se o item tiver durabilidade inferior a 2 anos ou for consumido com o uso, deve ser registrado como CUSTEIO.',
+      'Se for um equipamento durável que permanecerá na escola por anos, altere para CAPITAL e providencie o tombamento.'
+    ],
+    alerts: []
+  };
+}
 
 const DEFAULT_FUNDS = [
   { name: 'ru', full_name: 'Recurso Único (ESTADUAL)', budget_year: new Date().getFullYear().toString() },
@@ -59,7 +206,7 @@ const DEFAULT_FUNDS = [
   { name: 'pdde_qualidade', full_name: 'PDDE Qualidade (FEDERAL)', budget_year: new Date().getFullYear().toString() },
 ];
 
-type SubModuleType = 'dashboard' | 'ru' | 'merenda' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget' | 'transaction_reports' | 'ecf';
+type SubModuleType = 'dashboard' | 'ru' | 'paf_plan' | 'merenda' | 'pdde_basico' | 'pdde_qualidade' | 'reports' | 'budget' | 'transaction_reports' | 'ecf';
 
 interface ECFReportData {
   referenceYear: string;
@@ -128,6 +275,11 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const [tempFile, setTempFile] = useState<File | null>(null);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [activeContracts, setActiveContracts] = useState<any[]>([]);
+
+  // [NOVO] Estados para Simulador & Classificador Custeio vs Capital
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const [simItemName, setSimItemName] = useState('');
+  const [simValue, setSimValue] = useState('');
 
   // [NOVO] Estados para Filtros
   const [filters, setFilters] = useState({
@@ -372,20 +524,16 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       const newFundsState: Record<string, FundData> = {};
 
       fundsData?.forEach(fund => {
-        // Mapear nome do banco 'ru' para chave 'ru' etc. 
-        // Supondo que o nome no banco seja a chave usada (ex: 'ru', 'merenda')
-        // Se o banco tiver nomes diferentes, precisaremos de um mapa ou ajustar a seed.
-        // Na seed usamos: 'ru', 'merenda', 'pdde_basico', 'pdde_qualidade' no campo NAME.
-        const key = fund.name;
-        const config = fundConfig[key] || { color: 'gray', icon: Wallet };
+        const key = (fund.name || '').toLowerCase().trim();
+        const config = fundConfig[key] || { color: 'blue', icon: Coins };
 
         const fundTransactions = transactionsData?.filter(t => t.fund_id === fund.id).map(t => ({
           id: t.id,
-          date: t.date || '',
+          date: t.date ? String(t.date).split('T')[0] : '',
           description: t.description || 'Sem descrição',
           invoiceNumber: t.invoice_number || '',
           receiptNumber: t.receipt_number || t.receipt_code || '',
-          invoiceDate: t.invoice_date || '',
+          invoiceDate: t.invoice_date ? String(t.invoice_date).split('T')[0] : '',
           group: t.tx_group || 'CUSTEIO',
           type: t.type || 'EXPENSE',
           value: Number(t.gross_value) || 0,
@@ -400,24 +548,29 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
           time: t.time || ''
         })) || [];
 
-        // Calcular alocado? Por enquanto fixo ou vindo de algum lugar?
-        // Vamos manter o allocated fixo por enquanto ou zero.
-        let allocated = 0;
-        if (key === 'ru') allocated = 50000;
-        if (key === 'merenda') allocated = 30000;
-        if (key === 'pdde_basico') allocated = 15000;
-        if (key === 'pdde_qualidade') allocated = 20000;
+        if (newFundsState[key]) {
+          newFundsState[key].transactions = [...newFundsState[key].transactions, ...fundTransactions];
+          if (fundTransactions.length > 0) {
+            newFundsState[key].dbId = fund.id;
+          }
+        } else {
+          let allocated = 0;
+          if (key === 'ru') allocated = 50000;
+          if (key === 'merenda') allocated = 30000;
+          if (key === 'pdde_basico') allocated = 15000;
+          if (key === 'pdde_qualidade') allocated = 20000;
 
-        newFundsState[key] = {
-          id: key as SubModuleType,
-          dbId: fund.id, // Guardar ID do banco para inserts
-          name: fund.full_name?.split('(')[0].trim() || fund.name, // Exibir nome amigável
-          fullName: fund.full_name || fund.name,
-          allocated,
-          color: config.color,
-          icon: config.icon,
-          transactions: fundTransactions
-        } as FundData & { dbId: string };
+          newFundsState[key] = {
+            id: key as SubModuleType,
+            dbId: fund.id,
+            name: fund.full_name?.split('(')[0].trim() || fund.name,
+            fullName: fund.full_name || fund.name,
+            allocated,
+            color: config.color,
+            icon: config.icon,
+            transactions: fundTransactions
+          } as FundData & { dbId: string };
+        }
       });
 
       setFunds(newFundsState);
@@ -432,9 +585,14 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
   const handleInitializeDatabase = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.from('funds').insert(DEFAULT_FUNDS);
-      if (error) throw error;
-      addToast("Banco de dados do Financeiro inicializado com sucesso!", "success");
+      const { data: existing } = await supabase.from('funds').select('name');
+      const existingNames = new Set(existing?.map(f => f.name) || []);
+      const fundsToInsert = DEFAULT_FUNDS.filter(f => !existingNames.has(f.name));
+      if (fundsToInsert.length > 0) {
+        const { error } = await supabase.from('funds').insert(fundsToInsert);
+        if (error) throw error;
+      }
+      addToast("Banco de dados do Financeiro sincronizado com sucesso!", "success");
       await fetchFinancialData();
     } catch (error: any) {
       console.error("Erro ao inicializar banco:", error);
@@ -564,7 +722,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
   const getAvailableCategories = (group: string, fundId: string, type: 'ENTRY' | 'EXPENSE') => {
     if (type === 'ENTRY') {
-      return ['Repasse Federal', 'Repasse Estadual', 'Rendimento de Aplicação', 'Saldo Exercício Ano Anterior'];
+      return ['Repasse Federal', 'Repasse Estadual', 'Emenda Parlamentar', 'Rendimento de Aplicação', 'Saldo Exercício Ano Anterior'];
+    }
+    if (fundId === 'ru' || fundId === 'paf_plan') {
+      if (group === 'CAPITAL') {
+        return PAF_OFFICIAL_CLASSES_2026.filter(c => c.group === 'CAPITAL').map(c => c.name);
+      }
+      return PAF_OFFICIAL_CLASSES_2026.filter(c => c.group === 'CUSTEIO').map(c => c.name);
     }
     if (group === 'CAPITAL') {
       return ['Equipamentos e Material Permanente', 'Mobiliário Escolar', 'Equipamentos de Informática', 'Utensílios de Cozinha (Bens Permanentes)', 'Eletrodomésticos', 'Máquinas e Equipamentos'];
@@ -572,7 +736,6 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     const commonCusteio = ['Gás', 'Telefone', 'EPI e Uniformes', 'Internet', 'Material de Consumo', 'Serviços de Terceiros - Pessoa Jurídica', 'Serviços de Terceiros - Pessoa Física', 'Pequenos Reparos e Manutenção Predial', 'Material Pedagógico e Esportivo', 'Material de Expediente', 'Material de Limpeza e Higiene'];
     if (fundId === 'merenda') return ['Aquisição de Gêneros Alimentícios', 'Gás de Cozinha', 'Material de Higiene (Cozinha)', ...commonCusteio];
     if (fundId === 'pdde_qualidade') return ['Material de Apoio Pedagógico', 'Conectividade e Internet', 'Capacitação e Formação', ...commonCusteio];
-    if (fundId === 'ru') return ['Manutenção de Ar Condicionado', 'Pequenas Reformas', 'Serviços de Informática', 'Material de Informática', 'Materiais para Pequenos Reparos', ...commonCusteio];
     return commonCusteio;
   };
 
@@ -598,6 +761,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         setNewTx(prev => ({ ...prev, category: 'Saldo Exercício Ano Anterior' }));
       } else if (descUpper === 'RENDIMENTO') {
         setNewTx(prev => ({ ...prev, category: 'Rendimento de Aplicação' }));
+      } else if (descUpper.includes('EMENDA')) {
+        setNewTx(prev => ({ ...prev, category: 'Emenda Parlamentar' }));
       } else if (
         descUpper === '1ª PARCELA' ||
         descUpper === '2ª PARCELA' ||
@@ -853,6 +1018,15 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
             >
               <PieChart size={18} /> Balanço Global
+            </button>
+
+            <button
+              onClick={() => setActiveTab('paf_plan')}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'paf_plan'
+                ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] border border-emerald-400/30'
+                : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >
+              <Target size={18} /> Plano PAF 2026 (SYDLE)
             </button>
 
             <button
@@ -1120,7 +1294,9 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                                   '1ª Parcela',
                                                   '2ª Parcela',
                                                   '3ª Parcela',
-                                                  '4ª Parcela'
+                                                  '4ª Parcela',
+                                                  'Emenda',
+                                                  'Emenda Parlamentar'
                                                 ];
                                                 if (newTx.description && !options.some(o => o.toUpperCase() === newTx.description.toUpperCase())) {
                                                   options.push(newTx.description);
@@ -1218,17 +1394,49 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                   </div>
 
                                   {activeTab !== 'merenda' && (
-                                    <div className="space-y-2">
-                                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Categoria Contábil</label>
-                                      <div className="relative">
-                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><FileCheck size={18} /></div>
-                                        <select value={newTx.category} onChange={(e) => setNewTx({ ...newTx, category: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 appearance-none outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all uppercase">
-                                          {getAvailableCategories(newTx.group, activeTab, newTx.type).map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300"><ChevronRight size={18} className="rotate-90" /></div>
-                                      </div>
-                                    </div>
-                                  )}
+                                     <div className="space-y-2">
+                                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Categoria Contábil / Classe PAF</label>
+                                       <div className="relative">
+                                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"><FileCheck size={18} /></div>
+                                         <select value={newTx.category} onChange={(e) => setNewTx({ ...newTx, category: e.target.value })} className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-[1.5rem] text-sm font-bold text-gray-900 appearance-none outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all uppercase">
+                                           {getAvailableCategories(newTx.group, activeTab, newTx.type).map(c => <option key={c} value={c}>{c}</option>)}
+                                         </select>
+                                         <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300"><ChevronRight size={18} className="rotate-90" /></div>
+                                       </div>
+
+                                       {/* MONITOR EM TEMPO REAL DA CLASSE DO PAF (SYDLE) */}
+                                       {(() => {
+                                         if (newTx.type !== 'EXPENSE' || (activeTab !== 'ru' && activeTab !== 'paf_plan')) return null;
+                                         const pafClass = PAF_OFFICIAL_CLASSES_2026.find(c => c.name === newTx.category || c.id === newTx.category);
+                                         if (!pafClass) return null;
+
+                                         const spentInClass = (funds['ru']?.transactions || [])
+                                           .filter(t => t.type === 'EXPENSE' && (t.category === pafClass.name || pafClass.keywords.some(kw => (t.description || '').toLowerCase().includes(kw))))
+                                           .reduce((sum, t) => sum + (Number(t.value) || 0), 0);
+
+                                         const saldoClass = pafClass.budgetedValue - spentInClass;
+                                         const thisVal = parseFloat(newTx.value) || 0;
+                                         const saldoApos = saldoClass - thisVal;
+
+                                         return (
+                                           <div className={`p-3.5 rounded-2xl border text-xs space-y-1.5 animate-in fade-in ${
+                                             saldoApos < 0 ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-blue-50 border-blue-200 text-blue-900'
+                                           }`}>
+                                             <div className="flex items-center justify-between font-black uppercase text-[9px] tracking-wider">
+                                               <span className="flex items-center gap-1.5"><Target size={12} /> Teto PAF (SYDLE): {pafClass.name}</span>
+                                               <span>Previsto: R$ {pafClass.budgetedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                             </div>
+                                             <div className="flex items-center justify-between text-[11px] font-bold">
+                                               <span>Já Gasto: R$ {spentInClass.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                               <span className={saldoApos < 0 ? 'text-rose-600 font-black' : 'text-emerald-700 font-black'}>
+                                                 Saldo Restante: R$ {saldoApos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                               </span>
+                                             </div>
+                                           </div>
+                                         );
+                                       })()}
+                                     </div>
+                                   )}
                                 </div>
 
                                 {/* CONDITIONAL SECTIONS */}
@@ -1516,6 +1724,205 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                               <p className={`text-2xl font-black ${stats?.balance! < 0 ? 'text-red-600' : 'text-white'}`}>R$ {stats?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</p>
                             </div>
                           </div>
+                        ) : activeTab === 'ru' ? (
+                          /* PAINEL RECURSO ÚNICO COM SENTINELA DE BLINDAGEM PAF 2026 (R$ 510.236,42) */
+                          <div className="space-y-6 flex-1 w-full">
+                            {/* LINHA 1: CARDS DE SALDO E TETOS OFICIAIS */}
+                            <div className="flex gap-6 w-full flex-col lg:flex-row">
+                              {/* SALDO EM CONTA REAL */}
+                              <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col justify-center min-w-[220px] text-center lg:text-left">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Saldo em Conta Real</p>
+                                  <span className="text-[8px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Banco</span>
+                                </div>
+                                <p className={`text-3xl font-black ${stats?.balance! < 0 ? 'text-rose-400' : 'text-white'} tracking-tighter`}>
+                                  R$ {stats?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                                </p>
+                                <p className="text-[9px] text-white/40 font-bold uppercase mt-1">
+                                  Entradas: R$ {(stats?.totalEntries || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
+
+                              {/* CUSTEIO CARD (PAF 2026 - R$ 466.909,01) */}
+                              {(() => {
+                                const tetoCusteio = RU_OFFICIAL_BUDGET_2026.custeio;
+                                const gasto = stats?.expensesCusteio || 0;
+                                const pct = tetoCusteio > 0 ? (gasto / tetoCusteio) * 100 : 0;
+                                const saldoTeto = tetoCusteio - gasto;
+                                const color = pct >= 95 ? 'red' : pct >= 80 ? 'amber' : 'blue';
+
+                                return (
+                                  <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex-1 flex flex-col justify-center min-w-[250px]">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full bg-${color === 'blue' ? 'blue' : color === 'red' ? 'rose' : 'amber'}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Teto Custeio (PAF)</p>
+                                      </div>
+                                      <p className={`text-[10px] font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-blue-300'}`}>
+                                        RESTANTE: R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
+                                    </div>
+                                    <div className="flex justify-between items-end mb-2">
+                                      <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                      <div className="text-right">
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Teto: R$ {tetoCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      </div>
+                                    </div>
+                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                      <div className={`h-full bg-${color === 'blue' ? 'blue' : color === 'red' ? 'rose' : 'amber'}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2">
+                                      <p className={`text-[10px] font-black ${pct >= 95 ? 'text-rose-400' : pct >= 80 ? 'text-amber-400' : 'text-blue-400'}`}>{pct.toFixed(1)}% Usado</p>
+                                      {pct >= 95 && <div className="flex items-center gap-1 text-rose-400"><AlertCircle size={10} /><span className="text-[8px] font-black uppercase">Estourando</span></div>}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* CAPITAL CARD (PAF 2026 - R$ 43.327,41) */}
+                              {(() => {
+                                const tetoCapital = RU_OFFICIAL_BUDGET_2026.capital;
+                                const gasto = stats?.expensesCapital || 0;
+                                const pct = tetoCapital > 0 ? (gasto / tetoCapital) * 100 : 0;
+                                const saldoTeto = tetoCapital - gasto;
+                                const color = pct >= 95 ? 'red' : pct >= 80 ? 'amber' : 'purple';
+
+                                return (
+                                  <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex-1 flex flex-col justify-center min-w-[250px]">
+                                    <div className="flex justify-between items-center mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full bg-${color === 'purple' ? 'purple' : color === 'red' ? 'rose' : 'amber'}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Teto Capital (Permanente)</p>
+                                      </div>
+                                      <p className={`text-[10px] font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-purple-300'}`}>
+                                        RESTANTE: R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
+                                    </div>
+                                    <div className="flex justify-between items-end mb-2">
+                                      <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                      <div className="text-right">
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Teto: R$ {tetoCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      </div>
+                                    </div>
+                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                      <div className={`h-full bg-${color === 'purple' ? 'purple' : color === 'red' ? 'rose' : 'amber'}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2">
+                                      <p className={`text-[10px] font-black ${pct >= 95 ? 'text-rose-400' : pct >= 80 ? 'text-amber-400' : 'text-purple-400'}`}>{pct.toFixed(1)}% Usado</p>
+                                      {pct >= 95 && <div className="flex items-center gap-1 text-rose-400"><AlertCircle size={10} /><span className="text-[8px] font-black uppercase">Estourando</span></div>}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+
+                            {/* LINHA 2: BANNER SENTINELA DE BLINDAGEM ORÇAMENTÁRIA & SIMULADOR */}
+                            {(() => {
+                              const totalGasto = stats?.totalExpenses || 0;
+                              const tetoTotal = RU_OFFICIAL_BUDGET_2026.total;
+                              const pctTotal = tetoTotal > 0 ? (totalGasto / tetoTotal) * 100 : 0;
+                              const saldoGeralTeto = tetoTotal - totalGasto;
+                              const saldoBanco = stats?.balance || 0;
+
+                              const isDanger = saldoBanco < 0 || pctTotal >= 95;
+                              const isCritical = pctTotal >= 85 && !isDanger;
+                              const isWarning = pctTotal >= 70 && !isCritical && !isDanger;
+
+                              // Detecção das parcelas creditadas
+                              const ruTxs = funds['ru']?.transactions || [];
+                              const p1 = ruTxs.some(t => t.type === 'ENTRY' && t.description?.toUpperCase().includes('1ª PARCELA'));
+                              const p2 = ruTxs.some(t => t.type === 'ENTRY' && t.description?.toUpperCase().includes('2ª PARCELA'));
+                              const p3 = ruTxs.some(t => t.type === 'ENTRY' && t.description?.toUpperCase().includes('3ª PARCELA'));
+                              const p4 = ruTxs.some(t => t.type === 'ENTRY' && t.description?.toUpperCase().includes('4ª PARCELA'));
+
+                              return (
+                                <div className={`p-6 rounded-[2.5rem] border shadow-2xl backdrop-blur-md flex flex-col xl:flex-row gap-6 items-center justify-between transition-all ${
+                                  isDanger
+                                    ? 'bg-rose-950/40 border-rose-500/40'
+                                    : isCritical
+                                    ? 'bg-orange-950/40 border-orange-500/40'
+                                    : isWarning
+                                    ? 'bg-amber-950/40 border-amber-500/40'
+                                    : 'bg-gradient-to-r from-blue-950/60 to-indigo-950/60 border-blue-500/30'
+                                }`}>
+                                  {/* Info Sentinela & Semáforo */}
+                                  <div className="space-y-2 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 ${
+                                        isDanger
+                                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                          : isCritical
+                                          ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                                          : isWarning
+                                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                      }`}>
+                                        <ShieldCheck size={12} />
+                                        {isDanger
+                                          ? 'ZONA DE PERIGO • RISCO DE INSOLVÊNCIA'
+                                          : isCritical
+                                          ? 'ZONA CRÍTICA • MAIS DE 85% CONSUMIDO'
+                                          : isWarning
+                                          ? 'ZONA DE ATENÇÃO • MODERE NOVOS GASTOS'
+                                          : 'ZONA SEGURA • GESTÃO EQUILIBRADA'}
+                                      </span>
+
+                                      <span className="text-[10px] font-bold text-white/50">
+                                        Teto Homologado: <strong>R$ {tetoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                      </span>
+                                    </div>
+
+                                    <p className="text-xs text-slate-200 leading-relaxed font-medium">
+                                      {isDanger
+                                        ? '⚠️ Atenção Máxima: Saldo bancário negativo ou consumo acima de 95% do teto. Não autorize novos empenhos sem reprogramação.'
+                                        : isCritical
+                                        ? '⚡ Alerta Preventivo: Você já utilizou mais de 85% do teto anual do PAF. Guarde reserva para contas essenciais da escola.'
+                                        : isWarning
+                                        ? '💡 Aviso de Consumo: Acompanhe o calendário de repasses para não antecipar despesas antes da entrada das próximas cotas.'
+                                        : '✅ Gestão Saudável: O ritmo de execução financeira está dentro dos parâmetros normativos da SEDUC-MT.'}
+                                    </p>
+
+                                    {/* MONITOR DAS 4 PARCELAS */}
+                                    <div className="pt-2 flex flex-wrap items-center gap-2">
+                                      <span className="text-[9px] font-black uppercase text-white/40 mr-1">Repasses Trimestrais:</span>
+                                      <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase inline-flex items-center gap-1 border ${
+                                        p1 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 text-white/40 border-white/10'
+                                      }`}>
+                                        {p1 ? '✓ 1ª Parcela (Creditada)' : '⏳ 1ª Parcela'}
+                                      </span>
+                                      <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase inline-flex items-center gap-1 border ${
+                                        p2 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 text-white/40 border-white/10'
+                                      }`}>
+                                        {p2 ? '✓ 2ª Parcela (Creditada)' : '⏳ 2ª Parcela'}
+                                      </span>
+                                      <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase inline-flex items-center gap-1 border ${
+                                        p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 text-white/40 border-white/10'
+                                      }`}>
+                                        {p3 ? '✓ 3ª Parcela (Creditada)' : '⏳ 3ª Parcela'}
+                                      </span>
+                                      <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase inline-flex items-center gap-1 border ${
+                                        p4 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 text-white/40 border-white/10'
+                                      }`}>
+                                        {p4 ? '✓ 4ª Parcela (Creditada)' : '⏳ 4ª Parcela'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* BOTÃO DO SIMULADOR CUSTEIO VS CAPITAL */}
+                                  <div className="shrink-0 w-full xl:w-auto">
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsSimulatorOpen(true)}
+                                      className="w-full xl:w-auto px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2.5 active:scale-95 border border-blue-400/30"
+                                    >
+                                      <Scale size={18} className="text-blue-200" />
+                                      <span>Simular Compra (Custeio vs Capital)</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
                         ) : (
                           <div className="flex gap-6 w-full flex-col lg:flex-row">
                             <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col justify-center min-w-[200px] text-center lg:text-left">
@@ -1525,7 +1932,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                               </p>
                             </div>
                             
-                            {/* CUSTEIO CARD */}
+                            {/* CUSTEIO CARD (PDDE / Outros) */}
                             {(() => {
                               const orcado = stats?.entriesCusteio || 0;
                               const gasto = stats?.expensesCusteio || 0;
@@ -1561,7 +1968,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                               );
                             })()}
 
-                            {/* CAPITAL CARD */}
+                            {/* CAPITAL CARD (PDDE / Outros) */}
                             {(() => {
                               const orcado = stats?.entriesCapital || 0;
                               const gasto = stats?.expensesCapital || 0;
@@ -1803,6 +2210,31 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                         })}
                       </div>
                     </div>
+                  )}
+
+                  {activeTab === 'paf_plan' && (
+                    <PAFPlanManager
+                      ruTransactions={funds['ru']?.transactions || []}
+                      onOpenNewExpenseWithClass={(materialClass) => {
+                        setNewTx({
+                          description: '',
+                          invoiceNumber: '',
+                          receiptNumber: '',
+                          invoiceDate: '',
+                          value: '',
+                          type: 'EXPENSE',
+                          group: materialClass.group,
+                          category: materialClass.name,
+                          integratedAction: '',
+                          fundingSource: 'ESTADUAL',
+                          isFamilyAgriculture: false,
+                          isIndividualProducer: false,
+                          date: new Date().toISOString().split('T')[0],
+                          time: ''
+                        });
+                        setIsModalOpen(true);
+                      }}
+                    />
                   )}
 
                   {activeTab === 'reports' && (
@@ -2880,6 +3312,256 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
             </div>
           </div>
         </main>
+
+        {/* MODAL SIMULADOR & CLASSIFICADOR INTELIGENTE CUSTEIO VS CAPITAL */}
+        {isSimulatorOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto no-print">
+            <div className="bg-slate-900 border border-slate-700/80 text-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
+              
+              {/* Header */}
+              <div className="p-6 md:p-8 bg-gradient-to-r from-blue-900/60 to-indigo-900/60 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3.5 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/30">
+                    <Scale size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black uppercase tracking-tight text-white">
+                      Simulador & Classificador de Despesas
+                    </h3>
+                    <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-0.5">
+                      Análise Contábil • Custeio vs Capital • SEDUC-MT / Portaria STN nº 448
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsSimulatorOpen(false)}
+                  className="p-2.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              {/* Corpo */}
+              <div className="p-6 md:p-8 space-y-6">
+                
+                {/* Entradas do Simulador */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-2">
+                      O que você planeja comprar ou contratar na escola?
+                    </label>
+                    <input
+                      type="text"
+                      value={simItemName}
+                      onChange={e => setSimItemName(e.target.value)}
+                      placeholder="Ex: 5 Aparelhos de Ar-Condicionado 18k BTUs, Conserto da Bomba D'água, 10 Resmas A4..."
+                      className="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-sm font-bold text-white outline-none focus:ring-2 focus:ring-blue-500 focus:bg-slate-800/80 transition-all placeholder-slate-500"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Atalhos rápidos de teste */}
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    <span className="text-[9px] font-black uppercase text-slate-500 mr-1">Exemplos rápidos:</span>
+                    {[
+                      'Ar-Condicionado 18.000 BTUs',
+                      'Manutenção de Ar-Condicionado',
+                      '5 Resmas de Papel A4',
+                      'Smart TV 55 Polegadas',
+                      'Conserto de Bomba D\'água',
+                      'Armário de Aço',
+                      'Pintura do Muro Escolar',
+                      'Recarga de Extintores'
+                    ].map(ex => (
+                      <button
+                        key={ex}
+                        type="button"
+                        onClick={() => setSimItemName(ex)}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[9px] font-bold transition-colors"
+                      >
+                        {ex}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-2">
+                      Valor Estimado do Orçamento (R$)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">R$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={simValue}
+                        onChange={e => setSimValue(e.target.value)}
+                        placeholder="0,00 (Opcional para cálculo de impacto)"
+                        className="w-full pl-12 pr-4 py-4 bg-slate-800 border border-slate-700 rounded-2xl text-base font-black text-white outline-none focus:ring-2 focus:ring-blue-500 focus:bg-slate-800/80 transition-all placeholder-slate-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card de Análise & Classificação */}
+                {simItemName.trim().length > 0 && (() => {
+                  const result = classifyPurchaseItem(simItemName, Number(simValue) || 0);
+                  const isCapital = result.group === 'CAPITAL';
+                  const parsedVal = parseFloat(simValue) || 0;
+
+                  const tetoRubrica = isCapital ? RU_OFFICIAL_BUDGET_2026.capital : RU_OFFICIAL_BUDGET_2026.custeio;
+                  const gastoAtual = isCapital ? (stats?.expensesCapital || 0) : (stats?.expensesCusteio || 0);
+                  const saldoAtualRubrica = tetoRubrica - gastoAtual;
+                  const saldoAposCompra = saldoAtualRubrica - parsedVal;
+                  const saldoContaReal = stats?.balance || 0;
+                  const saldoContaAposCompra = saldoContaReal - parsedVal;
+
+                  const excedeRubrica = parsedVal > 0 && saldoAposCompra < 0;
+                  const excedeConta = parsedVal > 0 && saldoContaAposCompra < 0;
+
+                  return (
+                    <div className={`p-6 rounded-3xl border transition-all space-y-4 ${
+                      isCapital ? 'bg-purple-950/40 border-purple-500/40' : 'bg-blue-950/40 border-blue-500/40'
+                    }`}>
+                      {/* Badge Principal */}
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider inline-flex items-center gap-2 shadow-lg ${
+                            isCapital
+                              ? 'bg-purple-600 text-white shadow-purple-600/30'
+                              : 'bg-blue-600 text-white shadow-blue-600/30'
+                          }`}>
+                            {isCapital ? '🏛️ CAPITAL (Material Permanente)' : '📦 CUSTEIO (Consumo / Serviço)'}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-300">
+                            {result.title}
+                          </span>
+                        </div>
+
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-3 py-1 rounded-lg border border-slate-700">
+                          Sugestão: <strong>{result.categorySuggestion}</strong>
+                        </span>
+                      </div>
+
+                      {/* Fundamento Legal */}
+                      <div className="bg-slate-900/70 p-4 rounded-2xl border border-white/5 space-y-1.5">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          Base Normativa & Contábil
+                        </p>
+                        <p className="text-xs text-slate-300 font-medium">
+                          {result.legalBasis}
+                        </p>
+                      </div>
+
+                      {/* Regras e Cuidados para Prestação de Contas */}
+                      <div className="space-y-1.5">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          Procedimento Obrigatório na Prestação de Contas:
+                        </p>
+                        <ul className="space-y-1">
+                          {result.accountingRules.map((rule, idx) => (
+                            <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
+                              <span className="text-blue-400 font-bold">•</span>
+                              <span>{rule}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Impacto Financeiro da Compra Simulada */}
+                      {parsedVal > 0 && (
+                        <div className="pt-3 border-t border-white/10 space-y-3">
+                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                            Simulação de Impacto Financeiro (PAF 2026):
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
+                              <p className="text-[8px] font-black uppercase text-slate-400">Teto {isCapital ? 'Capital' : 'Custeio'}</p>
+                              <p className="text-sm font-black text-white">R$ {tetoRubrica.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              <p className="text-[8px] text-slate-400 mt-0.5">Gasto atual: R$ {gastoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+
+                            <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
+                              <p className="text-[8px] font-black uppercase text-slate-400">Saldo Restante na Rubrica</p>
+                              <p className={`text-sm font-black ${saldoAposCompra < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                R$ {saldoAposCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <p className="text-[8px] text-slate-400 mt-0.5">Após deduzir R$ {parsedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+
+                            <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
+                              <p className="text-[8px] font-black uppercase text-slate-400">Saldo em Conta Real</p>
+                              <p className={`text-sm font-black ${saldoContaAposCompra < 0 ? 'text-rose-400' : 'text-white'}`}>
+                                R$ {saldoContaAposCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <p className="text-[8px] text-slate-400 mt-0.5">Disponível em banco hoje</p>
+                            </div>
+                          </div>
+
+                          {/* Status da Compra */}
+                          <div className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                            excedeRubrica || excedeConta
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          }`}>
+                            {excedeRubrica || excedeConta ? (
+                              <>
+                                <AlertCircle size={16} className="text-rose-400 shrink-0" />
+                                <span>ALERTA: Esta compra ultrapassa o limite orçamentário da rubrica ou o saldo disponível em conta!</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                                <span>COMPRA SEGURA: O valor está dentro do limite da rubrica e do caixa atual da escola!</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Botão de Transferir para o Formulário de Lançamento */}
+                      <div className="pt-2 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewTx({
+                              ...newTx,
+                              description: simItemName.toUpperCase(),
+                              value: simValue || '',
+                              type: 'EXPENSE',
+                              group: isCapital ? 'CAPITAL' : 'CUSTEIO',
+                              category: result.categorySuggestion
+                            });
+                            setIsSimulatorOpen(false);
+                            setIsModalOpen(true);
+                          }}
+                          className="px-5 py-2.5 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md active:scale-95"
+                        >
+                          <span>Abrir Lançamento Pré-Preenchido</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })()}
+
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 bg-slate-950/60 border-t border-white/5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsSimulatorOpen(false)}
+                  className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
+                >
+                  Fechar Simulador
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
         <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

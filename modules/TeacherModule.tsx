@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
@@ -20,7 +19,11 @@ import {
   FileSpreadsheet,
   Menu,
   X,
-  CalendarDays
+  CalendarDays,
+  Sparkles,
+  Home,
+  CheckCircle2,
+  Layers
 } from 'lucide-react';
 import TeacherAttendance from '../components/TeacherAttendance';
 import TeacherAssessmentSchedule from '../components/TeacherAssessmentSchedule';
@@ -30,18 +33,18 @@ import TeacherLessonPlan from '../components/TeacherLessonPlan';
 import TeacherGrades from '../components/TeacherGrades';
 import TeacherPedagogicalRequests from '../components/TeacherPedagogicalRequests';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
-import PsychosocialReferralList from '../components/PsychosocialReferralList';
-import { SecretariatNotification } from '../types';
+import TeacherDashboardHome from '../components/TeacherDashboardHome';
+import { SecretariatNotification, User as UserType } from '../types';
 
 interface TeacherModuleProps {
-  user: any;
+  user: UserType;
   onExit: () => void;
 }
 
-type SubTab = 'attendance' | 'occurrences' | 'dashboard' | 'history' | 'lesson_plan' | 'grades' | 'material_requests' | 'calendar' | 'referrals' | 'evaluations';
+type SubTab = 'dashboard' | 'attendance' | 'grades' | 'evaluations' | 'occurrences' | 'lesson_plan' | 'performance' | 'calendar' | 'material_requests';
 
 const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('attendance');
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('dashboard');
   const [isLocked, setIsLocked] = useState(false);
   const [notifications, setNotifications] = useState<SecretariatNotification[]>([]);
   const [showNotifBar, setShowNotifBar] = useState(false);
@@ -87,180 +90,197 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
   };
 
   const menuItems = [
+    { id: 'dashboard', label: 'Meu Dia Letivo', icon: Home, highlight: true },
     { id: 'attendance', label: 'Diário de Presença', icon: UserCheck },
     { id: 'grades', label: 'Lançar Notas', icon: GradeIcon },
     { id: 'evaluations', label: 'Cronograma de Avaliações', icon: CalendarDays },
-    { id: 'referrals', label: 'Encaminhamentos para Mediação', icon: FileSpreadsheet },
+    { id: 'occurrences', label: 'Ocorrências & Encaminhamentos', icon: AlertCircle },
+    { id: 'lesson_plan', label: 'Roteiro Pedagógico (BNCC)', icon: FileEdit },
+    { id: 'performance', label: 'Desempenho da Turma', icon: LayoutDashboard },
     { id: 'calendar', label: 'Calendário Letivo', icon: CalendarCheck },
     { id: 'material_requests', label: 'Solicitar Materiais', icon: Package },
-    { id: 'occurrences', label: 'Lançar Ocorrência', icon: AlertCircle },
-    { id: 'lesson_plan', label: 'Roteiro Pedagógico', icon: FileEdit },
-    { id: 'dashboard', label: 'Desempenho Turma', icon: LayoutDashboard },
-    { id: 'history', label: 'Histórico de Aula', icon: History },
   ];
 
   const renderContent = () => {
     switch (activeSubTab) {
+      case 'dashboard':
+        return <TeacherDashboardHome user={user} onNavigate={(tabId) => setActiveSubTab(tabId as SubTab)} />;
       case 'attendance':
         return <TeacherAttendance user={user} />;
-      case 'calendar':
-        return <UnifiedSchoolCalendar user={user} />;
       case 'grades':
         return <TeacherGrades user={user} />;
       case 'evaluations':
         return <TeacherAssessmentSchedule user={user} />;
-      case 'referrals':
-        return <PsychosocialReferralList role="PROFESSOR" user={user} />;
-      case 'material_requests':
-        return <TeacherPedagogicalRequests user={user} />;
       case 'occurrences':
         return <TeacherOccurrences user={user} />;
       case 'lesson_plan':
         return <TeacherLessonPlan user={user} />;
-      case 'dashboard':
+      case 'performance':
         return <TeacherPerformance user={user} />;
-      case 'history':
-        return (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
-            <ClipboardList size={64} className="mb-6 opacity-20" />
-            <h3 className="text-xl font-black uppercase tracking-widest">Registros de Aula</h3>
-            <p className="text-sm font-medium mt-2">Os diários salvos serão listados aqui em breve.</p>
-          </div>
-        );
+      case 'calendar':
+        return <UnifiedSchoolCalendar user={user} />;
+      case 'material_requests':
+        return <TeacherPedagogicalRequests user={user} />;
       default:
-        return (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
-            <Lock size={64} className="mb-6 opacity-20" />
-            <h3 className="text-xl font-black uppercase tracking-widest">Módulo Pedagógico</h3>
-            <p className="text-sm font-medium mt-2">Esta funcionalidade está sendo homologada pela Direção.</p>
-          </div>
-        );
+        return <TeacherDashboardHome user={user} onNavigate={(tabId) => setActiveSubTab(tabId as SubTab)} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans relative">
-      {/* Sidebar do Professor - Responsiva */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-amber-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="p-6 flex items-center justify-between">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <span className="bg-amber-500 p-1.5 rounded-lg shadow-lg">🍎</span>
-            Área Docente
-          </h1>
-          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-white/50 hover:text-white">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
+      
+      {/* SIDEBAR MODERNA DO PROFESSOR (Slate Escuro / Indigo) */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} border-r border-white/10 shadow-2xl`}>
+        
+        {/* LOGO & CABEÇALHO DA SIDEBAR */}
+        <div className="p-6 flex items-center justify-between border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 font-black text-lg">
+              🍎
+            </div>
+            <div>
+              <h1 className="text-base font-black uppercase tracking-tight leading-none text-white">Portal Docente</h1>
+              <p className="text-[9px] font-black uppercase tracking-widest text-blue-300 mt-0.5">E.E. André Maggi</p>
+            </div>
+          </div>
+
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-white/50 hover:text-white rounded-xl hover:bg-white/10">
             <X size={20} />
           </button>
         </div>
 
-        <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveSubTab(item.id as SubTab);
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeSubTab === item.id
-                ? 'bg-amber-900 text-white shadow-lg'
-                : 'text-amber-100/50 hover:bg-amber-900/30'
+        {/* LISTA DE NAVEGAÇÃO */}
+        <nav className="flex-1 mt-4 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          {menuItems.map((item) => {
+            const isActive = activeSubTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveSubTab(item.id as SubTab);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/30 scale-[1.02]'
+                    : 'text-slate-300/70 hover:bg-white/10 hover:text-white'
                 }`}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon size={18} />
-                {item.label}
-              </div>
-            </button>
-          ))}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} />
+                  <span>{item.label}</span>
+                </div>
+                {item.highlight && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="p-6 border-t border-amber-900 space-y-3">
+        {/* RODAPÉ DA SIDEBAR */}
+        <div className="p-5 border-t border-white/10 space-y-3">
           <button
             onClick={onExit}
-            className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all border border-white/10 shadow-sm active:scale-95"
           >
             <ArrowLeft size={16} /> Voltar ao Hub
           </button>
 
-          <div className="bg-amber-900/50 p-4 rounded-2xl border border-amber-800/50">
-            <p className="text-[10px] text-amber-300 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-              <ShieldCheck size={10} /> Diário Digital
-            </p>
-            <div className="text-xs font-black uppercase tracking-tight text-amber-400">Escola André Maggi</div>
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <ShieldCheck size={18} />
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-[9px] font-black uppercase text-amber-300 tracking-widest leading-none">Diário Oficial</p>
+              <p className="text-xs font-black uppercase text-white truncate mt-0.5">Ano Letivo 2026</p>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* Backdrop para mobile */}
+      {/* BACKDROP PARA MOBILE */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-950/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* Main Content Area */}
+      {/* ÁREA PRINCIPAL DE CONTEÚDO */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Barra de Notificação da Secretaria */}
+        
+        {/* BARRA DE NOTIFICAÇÃO DA SECRETARIA */}
         {showNotifBar && notifications.length > 0 && (
-          <div className="bg-indigo-600 text-white px-10 py-3 flex items-center justify-between animate-in slide-in-from-top duration-500 no-print">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 md:px-10 py-3 flex items-center justify-between animate-in slide-in-from-top duration-500 no-print shadow-md">
             <div className="flex items-center gap-4">
-              <div className="p-1.5 bg-white/20 rounded-lg animate-pulse"><Bell size={16} /></div>
+              <div className="p-1.5 bg-white/20 rounded-xl animate-pulse"><Bell size={16} /></div>
               <div className="flex flex-col">
-                <p className="text-[10px] font-black uppercase tracking-widest leading-none">Aviso da Secretaria</p>
-                <p className="text-sm font-bold">{notifications[0].title}: {notifications[0].message}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest leading-none text-blue-200">Aviso da Secretaria / Coordenação</p>
+                <p className="text-xs md:text-sm font-bold mt-0.5">{notifications[0].title}: {notifications[0].message}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button onClick={() => markAsRead(notifications[0].id)} className="px-4 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all">Marcar Ciente</button>
-              <button onClick={() => setShowNotifBar(false)}><X size={18} /></button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => markAsRead(notifications[0].id)} className="px-3.5 py-1.5 bg-white/20 hover:bg-white/30 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+                Marcar Ciente
+              </button>
+              <button onClick={() => setShowNotifBar(false)} className="p-1 hover:bg-white/20 rounded-lg"><X size={18} /></button>
             </div>
           </div>
         )}
 
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0">
+        {/* HEADER SUPERIOR */}
+        <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 lg:px-10 shrink-0 shadow-sm z-10">
           <div className="flex items-center gap-3 lg:gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-2.5 bg-amber-50 text-amber-600 rounded-xl"
+              className="lg:hidden p-2.5 bg-slate-100 text-slate-700 rounded-2xl hover:bg-slate-200 transition-colors"
             >
               <Menu size={20} />
             </button>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg hidden sm:block">
-              <GraduationCap size={20} />
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl hidden sm:flex items-center justify-center">
+              <GraduationCap size={22} />
             </div>
             <div>
-              <h2 className="text-xs lg:text-sm font-black text-gray-900 uppercase tracking-tight leading-none">
+              <h2 className="text-sm lg:text-base font-black text-slate-900 uppercase tracking-tight leading-none">
                 {menuItems.find(i => i.id === activeSubTab)?.label}
               </h2>
-              {isLocked && (
-                <span className="text-[8px] font-black text-amber-600 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
-                  <Lock size={8} strokeWidth={3} /> Blindagem Ativa
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                  E.E. André Antônio Maggi
                 </span>
-              )}
+                {isLocked && (
+                  <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                    <Lock size={8} strokeWidth={3} /> Blindagem Ativa
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6">
             <button
               onClick={toggleFullScreen}
-              className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group flex items-center gap-2"
+              className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-2xl transition-colors group flex items-center gap-2"
               title="Alternar Tela Cheia"
             >
-              <Maximize2 size={18} className="group-hover:text-amber-600" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Expandir</span>
+              <Maximize2 size={18} className="group-hover:text-blue-600" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Tela Cheia</span>
             </button>
-            <div className="hidden lg:flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs font-black text-gray-900">{user?.name || 'Professor'}</p>
-                <p className="text-[9px] text-amber-600 font-black uppercase tracking-widest">Matutino / Vespertino</p>
+
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{user?.name || 'Professor'}</p>
+                <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest">{user?.role || 'DOCENTE'}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white font-black text-sm">
-                {user?.name ? user.name.substring(0, 2).toUpperCase() : 'CP'}
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20">
+                {user?.name ? user.name.substring(0, 2).toUpperCase() : 'PR'}
               </div>
             </div>
           </div>
         </header>
 
+        {/* CONTAINER DO CONTEÚDO */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           {renderContent()}
         </div>
@@ -269,8 +289,8 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(217, 119, 6, 0.2); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(37, 99, 235, 0.3); }
       `}</style>
     </div>
   );

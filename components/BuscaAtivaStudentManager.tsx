@@ -22,6 +22,8 @@ import BuscaAtivaAddLogModal from './BuscaAtivaAddLogModal';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
 
+import { extractPhoneNumbers, buildWhatsAppUrl, generateBuscaAtivaMessage } from '../utils/phoneUtils';
+
 const BuscaAtivaStudentManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<{ id: string, name: string, class: string } | null>(null);
@@ -37,7 +39,15 @@ const BuscaAtivaStudentManager: React.FC = () => {
 
   useEffect(() => {
     if (dbStudents) {
-      const active = dbStudents.filter(s => s.status === 'ATIVO' || s.status === 'RECLASSIFICADO');
+      const active = dbStudents.filter(s => {
+        const statusUpper = (s.status || '').toUpperCase();
+        if (statusUpper.startsWith('TRANSFERIDO') || statusUpper === 'INATIVO' || statusUpper === 'ABANDONO' || statusUpper === 'FALECIDO' || statusUpper === 'CANCELADO' || statusUpper === 'DESISTENTE') {
+          return false;
+        }
+        const turma = (s.Turma || s.className || '').toUpperCase();
+        if (turma.includes('TRANSFERIDO') || turma === 'SEM TURMA') return false;
+        return true;
+      });
       setStudents(active);
     }
   }, [dbStudents]);
@@ -191,6 +201,9 @@ const BuscaAtivaStudentManager: React.FC = () => {
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       const lastInt = allActions.length > 0 ? allActions[0] : null;
+      const guardian = s.guardian_name || s.guardianName || s.NomeMae || 'Responsável Legal';
+      const phone = s.contact_phone || s.contactPhone || s.Telefone || '';
+      const address = s.address || s.Endereco || '';
 
         return {
           ...s,
@@ -200,6 +213,12 @@ const BuscaAtivaStudentManager: React.FC = () => {
           name: s.name,
           class: s.class,
           id: s.id,
+          guardian_name: guardian,
+          guardianName: guardian,
+          contact_phone: phone,
+          contactPhone: phone,
+          address: address,
+          parsedPhones: extractPhoneNumbers(phone),
           totalInterventions: allActions.length,
           lastInterventionDate: lastInt?.date,
           lastInterventionType: lastInt?.type
@@ -212,10 +231,6 @@ const BuscaAtivaStudentManager: React.FC = () => {
       return a.name.localeCompare(b.name);
     });
   }, [students, attendanceStats]);
-
-  const filtered = useMemo(() => {
-    return studentData.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [studentData, searchTerm]);
 
   const handleSaveReferral = async (newReferral: Omit<Referral, 'id'>) => {
     // Find student info
@@ -373,68 +388,208 @@ ${historySummary || 'Nenhum registro anterior no sistema.'}`;
     }
   };
 
+  const [selectedYear, setSelectedYear] = useState<string>('TODOS');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('TODOS');
+
+  // Filtered List
+  const filtered = useMemo(() => {
+    return studentData.filter(s => {
+      const matchesSearch =
+        (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.class || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.id || '').includes(searchTerm);
+
+      const turmaUpper = (s.class || '').toUpperCase();
+      let matchesYear = true;
+      if (selectedYear === '6') matchesYear = turmaUpper.includes('6º') || turmaUpper.includes('6');
+      else if (selectedYear === '7') matchesYear = turmaUpper.includes('7º') || turmaUpper.includes('7');
+      else if (selectedYear === '8') matchesYear = turmaUpper.includes('8º') || turmaUpper.includes('8');
+      else if (selectedYear === '9') matchesYear = turmaUpper.includes('9º') || turmaUpper.includes('9');
+
+      const matchesStatus = selectedStatusFilter === 'TODOS' || s.status === selectedStatusFilter;
+
+      return matchesSearch && matchesYear && matchesStatus;
+    });
+  }, [studentData, searchTerm, selectedYear, selectedStatusFilter]);
+
+  const handleWhatsApp = (s: any) => {
+    const phones = s.parsedPhones && s.parsedPhones.length > 0
+      ? s.parsedPhones
+      : extractPhoneNumbers(s.contact_phone || s.contactPhone || s.Telefone);
+
+    if (phones.length === 0) {
+      const manualPhone = prompt(
+        `Nenhum telefone cadastrado na Secretaria para ${s.guardian_name || 'o responsável'} de ${s.name}.\n\nDigite o número com DDD para abrir o WhatsApp:`
+      );
+      if (manualPhone) {
+        const parsed = extractPhoneNumbers(manualPhone);
+        if (parsed.length > 0) {
+          const msg = generateBuscaAtivaMessage('GENERAL_CHECK', {
+            studentName: s.name,
+            className: s.class,
+            guardianName: s.guardian_name || s.guardianName,
+            absencesCount: s.absences,
+            attendanceRate: s.attendance
+          });
+          window.open(buildWhatsAppUrl(parsed[0].cleaned, msg), '_blank');
+        }
+      }
+      return;
+    }
+
+    const message = generateBuscaAtivaMessage('GENERAL_CHECK', {
+      studentName: s.name,
+      className: s.class,
+      guardianName: s.guardian_name || s.guardianName,
+      absencesCount: s.absences,
+      attendanceRate: s.attendance
+    });
+
+    window.open(buildWhatsAppUrl(phones[0].cleaned, message), '_blank');
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-          <input type="text" placeholder="Filtrar por nome do aluno..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all" />
+      
+      {/* BARRA DE CONTROLE & FILTROS 6º AO 9º */}
+      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Filtrar por nome do aluno, código ou turma..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-6 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 transition-all"
+            />
+          </div>
+
+          <select
+            value={selectedStatusFilter}
+            onChange={e => setSelectedStatusFilter(e.target.value)}
+            className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black uppercase outline-none cursor-pointer focus:bg-white"
+          >
+            <option value="TODOS">Todos os Níveis de Risco</option>
+            <option value="CRÍTICO">🚨 Risco Crítico (≤ 85%)</option>
+            <option value="ALERTA">⚠️ Alerta Amarelo (86% a 90%)</option>
+            <option value="NORMAL">🟢 Frequência Normal (&gt; 90%)</option>
+          </select>
         </div>
-        <button className="p-3 bg-gray-50 text-gray-400 hover:text-emerald-600 rounded-xl transition-all border border-gray-100"><Filter size={20} /></button>
+
+        {/* ABAS RÁPIDAS POR ANO (6º AO 9º) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+          {[
+            { id: 'TODOS', label: 'Todos os Anos' },
+            { id: '6', label: '6º Ano Fundamental' },
+            { id: '7', label: '7º Ano Fundamental' },
+            { id: '8', label: '8º Ano Fundamental' },
+            { id: '9', label: '9º Ano Fundamental' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedYear(tab.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all ${
+                selectedYear === tab.id
+                  ? 'bg-slate-900 text-white shadow-md'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-auto shrink-0">
+            {filtered.length} discentes
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
         {loading ? (
           <div className="py-24 text-center"><Loader2 className="animate-spin text-emerald-600 mx-auto" /></div>
         ) : filtered.length > 0 ? filtered.map(s => {
-          const studentReferrals = referrals.filter(r => r.studentId === s.id);
           return (
-            <div key={s.id} className="bg-white p-5 sm:p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-emerald-200 hover:shadow-xl transition-all flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 sm:gap-6 group w-full overflow-hidden">
+            <div key={s.id} className="bg-white p-5 sm:p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm hover:border-emerald-300 hover:shadow-xl transition-all flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 sm:gap-6 group w-full overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 flex-1 min-w-0 w-full">
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.5rem] flex flex-col items-center justify-center font-black shrink-0 ${s.attendance < 85 ? 'bg-red-50 text-red-600' : s.attendance < 90 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.5rem] flex flex-col items-center justify-center font-black shrink-0 ${s.attendance < 85 ? 'bg-red-50 text-red-600 border border-red-200' : s.attendance < 90 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
                   <span className="text-lg sm:text-xl leading-none">{s.attendance}%</span>
-                  <span className="text-[7px] uppercase tracking-tighter mt-1">Presença</span>
+                  <span className="text-[7px] uppercase tracking-tighter mt-1 font-bold">Presença</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <h4 className="text-base sm:text-lg font-black text-gray-900 uppercase leading-tight break-words">{s.name}</h4>
-                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border shrink-0 ${getStatusColor(s.status)}`}>{s.status}</span>
-                    <span className="text-[8px] sm:text-[9px] text-gray-300 font-bold uppercase tracking-widest border border-gray-100 px-1.5 py-0.5 rounded shrink-0">v1.2.1-DEBUG</span>
+                    <h4 className="text-base sm:text-lg font-black text-slate-900 uppercase leading-tight break-words">{s.name}</h4>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase border shrink-0 ${getStatusColor(s.status)}`}>{s.status}</span>
                     <div className={`flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded-full border italic tracking-widest shrink-0 ${
                       s.totalInterventions > 0 
                         ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' 
-                        : 'bg-gray-50 text-gray-400 border-gray-100'
+                        : 'bg-slate-50 text-slate-400 border-slate-100'
                     }`}>
-                      <MessageSquareIcon size={10} /> {s.totalInterventions > 0 ? `${s.totalInterventions} REGISTROS NO HISTÓRICO` : 'NENHUM REGISTRO NO HISTÓRICO'}
+                      <MessageSquareIcon size={10} /> {s.totalInterventions > 0 ? `${s.totalInterventions} INTERVENÇÕES` : 'SEM REGISTROS'}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12} /> {s.class} ({s.shift || 'MATUTINO'})</span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><User size={12} /> Código: {s.id}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><User size={12} /> Turma: <strong className="text-slate-800">{s.class}</strong> ({s.shift || 'MATUTINO'})</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">• Faltas: <strong className="text-rose-600">{s.absences || 0} aulas</strong></span>
                     {s.lastInterventionDate ? (
                       <span className="text-[10px] font-black text-emerald-600 uppercase flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
-                        <Clock size={10} /> Último: {new Date(s.lastInterventionDate + 'T12:00:00').toLocaleDateString('pt-BR')} ({s.lastInterventionType})
+                        <Clock size={10} /> Último Contato: {new Date(s.lastInterventionDate + 'T12:00:00').toLocaleDateString('pt-BR')} ({s.lastInterventionType})
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold text-gray-300 uppercase flex items-center gap-1 italic">
+                      <span className="text-[10px] font-bold text-slate-300 uppercase flex items-center gap-1 italic">
                         <Clock size={10} /> Sem interações recentes
                       </span>
+                    )}
+                  </div>
+                  {/* DADOS DA SECRETARIA */}
+                  <div className="flex flex-wrap items-center gap-3 mt-1.5 pt-1.5 border-t border-slate-100 text-[10px] text-slate-500">
+                    <span className="font-medium">
+                      Resp: <strong className="text-slate-700 uppercase">{s.guardian_name || 'Não informado'}</strong>
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    <span className="font-medium flex items-center gap-1">
+                      <Phone size={11} className="text-emerald-600" />
+                      {s.contact_phone || 'Telefone não cadastrado'}
+                    </span>
+                    {s.address && (
+                      <>
+                        <span className="text-slate-300">•</span>
+                        <span className="font-medium text-slate-400 truncate max-w-md" title={s.address}>
+                          <MapPin size={11} className="inline mr-0.5 text-slate-400" /> {s.address}
+                        </span>
+                      </>
                     )}
                   </div>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 w-full xl:w-auto justify-end mt-2 xl:mt-0">
+                <button
+                  onClick={() => handleWhatsApp(s)}
+                  className="px-4 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-2xl text-[10px] font-black uppercase transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                  title="WhatsApp para o Responsável"
+                >
+                  <Phone size={14} /> WhatsApp
+                </button>
                 <button 
                   onClick={() => setViewingProfile(s)} 
-                  className="px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-900 text-white rounded-2xl text-[11px] font-black uppercase border border-gray-800 hover:bg-black transition-all shadow-lg flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+                  className="px-5 py-2.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-slate-800 transition-all shadow-md flex items-center gap-1.5"
                 >
-                  <History size={16} /> Acompanhamento
+                  <History size={14} /> Prontuário 360°
                 </button>
-                <button onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} className="px-5 sm:px-6 py-2.5 sm:py-3 bg-emerald-50 text-emerald-700 rounded-2xl text-[11px] font-black uppercase flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex-1 sm:flex-initial justify-center"><Scale size={16} /> Encaminhar</button>
+                <button 
+                  onClick={() => setSelectedStudent({ id: s.id, name: s.name, class: s.class })} 
+                  className="px-4 py-2.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-2xl text-[10px] font-black uppercase flex items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Scale size={14} /> Encaminhar
+                </button>
               </div>
             </div>
           );
-        }) : <div className="py-24 text-center"><AlertCircle size={48} className="mx-auto mb-4 text-gray-100" /><p className="text-gray-300 font-black uppercase text-xs">Nenhum aluno encontrado.</p></div>}
+        }) : (
+          <div className="py-24 text-center bg-white rounded-[2.5rem] border border-dashed border-slate-200">
+            <AlertCircle size={48} className="mx-auto mb-3 text-slate-300" />
+            <p className="text-slate-400 font-black uppercase text-xs">Nenhum estudante localizado nos filtros selecionados.</p>
+          </div>
+        )}
       </div>
 
       {selectedStudent && (

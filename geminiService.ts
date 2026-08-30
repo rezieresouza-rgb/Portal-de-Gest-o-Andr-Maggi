@@ -531,6 +531,178 @@ export const analyzePedagogicalPerformance = async (data: any) => {
     return "Erro na análise.";
   }
 };
+
+/**
+ * Analisa o desempenho 360° de uma turma específica (Notas, Frequência, Ocorrências e Alunos em Risco).
+ */
+export const analyzeClassroomPerformanceWithAI = async (classData: {
+  className: string;
+  bimestre: string;
+  subject: string;
+  averageGrade: number;
+  approvalRate: number;
+  presenceRate: number;
+  totalOccurrences: number;
+  atRiskStudentsCount: number;
+  topStudents: string[];
+  strugglingStudents: { name: string; grade: number; presenceRate: number }[];
+  occurrenceTypes: Record<string, number>;
+}) => {
+  const ai = getAIClient();
+  if (!ai) return "Chave de IA não configurada.";
+
+  try {
+    const prompt = `Você é um coordenador pedagógico e especialista em psicopedagogia da rede estadual SEDUC-MT.
+    Analise os dados reais de desempenho 360° da turma abaixo e gere um Diagnóstico Pedagógico Executivo e Plano de Ação:
+
+    DADOS DA TURMA:
+    - Turma: ${classData.className}
+    - Bimestre: ${classData.bimestre}
+    - Componente Curricular: ${classData.subject}
+    - Média Geral da Turma: ${classData.averageGrade.toFixed(1)} / 10.0
+    - Taxa de Aprovação (>= 6,0): ${classData.approvalRate.toFixed(1)}%
+    - Taxa Média de Frequência: ${classData.presenceRate.toFixed(1)}% (Meta SEDUC: >= 85%)
+    - Total de Ocorrências Registradas: ${classData.totalOccurrences}
+    - Tipos de Ocorrências: ${JSON.stringify(classData.occurrenceTypes)}
+    - Alunos com Dificuldade / Risco: ${JSON.stringify(classData.strugglingStudents)}
+    - Alunos Destaque: ${classData.topStudents.join(', ') || 'Vários alunos com bom desempenho'}
+
+    ESTRUTURE SUA RESPOSTA EM FORMATO MARKDOWN COM OS SEGUINTES TÓPICOS:
+    ### 1. 📋 Diagnóstico Geral da Turma
+    (Resumo do clima de sala, engajamento e correlação entre as faltas e as notas)
+
+    ### 2. 🔍 Principais Fatores de Defasagem
+    (Identificação das causas para as notas baixas e infrequência)
+
+    ### 3. 💡 Plano de Ação e Intervenções para o Professor
+    (3 estratégias práticas de recuperação paralela, metodologias ativas e estímulo ao protagonismo discente)
+
+    ### 4. 🤝 Encaminhamentos para Coordenação & Psicossocial
+    (Orientações para busca ativa ou acolhimento dos estudantes mais vulneráveis)
+
+    Seja direto, empático, profissional e fundamentado nas diretrizes pedagógicas de Mato Grosso.`;
+
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt
+    }));
+
+    return response.text;
+  } catch (e: any) {
+    console.error("Error analyzing classroom performance with AI:", e);
+    return "Não foi possível gerar a análise por IA no momento. Tente novamente em instantes.";
+  }
+};
+
+/**
+ * Analisa o perfil e desempenho 360° de um estudante individual (Notas, Frequência, Ocorrências e Laudos).
+ */
+export const analyzeIndividualStudentWithAI = async (studentData: {
+  studentName: string;
+  className: string;
+  bimestre: string;
+  averageGrade: number;
+  presenceRate: number;
+  absencesCount: number;
+  isPaed: boolean;
+  gradesHistory: { subject: string; score: number; recoveryScore: number | null }[];
+  occurrences: { date: string; category: string; description: string }[];
+}) => {
+  const ai = getAIClient();
+  if (!ai) return "Chave de IA não configurada.";
+
+  try {
+    const prompt = `Você é um psicopedagogo e orientador educacional especialista em desenvolvimento infanto-juvenil da rede SEDUC-MT.
+    Analise a ficha individual do estudante abaixo e gere um Parecer Descritivo e Plano de Acompanhamento Individualizado:
+
+    DADOS DO ESTUDANTE:
+    - Nome: ${studentData.studentName}
+    - Turma: ${studentData.className}
+    - Bimestre: ${studentData.bimestre}
+    - Média Geral: ${studentData.averageGrade.toFixed(1)} / 10.0
+    - Assiduidade: ${studentData.presenceRate.toFixed(1)}% (${studentData.absencesCount} faltas no período)
+    - Aluno PAEDE / Educação Especial: ${studentData.isPaed ? 'SIM (Possui laudo / AEE)' : 'NÃO'}
+    - Histórico de Avaliações: ${JSON.stringify(studentData.gradesHistory)}
+    - Ocorrências / Registros de Convivência: ${JSON.stringify(studentData.occurrences)}
+
+    ESTRUTURE SUA RESPOSTA EM MARKDOWN COM OS SEGUINTES TÓPICOS:
+    ### 1. 👤 Parecer Pedagógico do Estudante
+    (Análise da evolução acadêmica, assiduidade e comportamento)
+
+    ### 2. 🎯 Pontos Fortes e Habilidades em Destaque
+    (Onde o estudante demonstra maior interesse e rendimento)
+
+    ### 3. 🔍 Dificuldades e Fatores de Atenção
+    (Impacto das faltas ou defasagens em conteúdos específicos)
+
+    ### 4. 💡 Orientações de Apoio (Para o Professor e Família)
+    (Recomendações para intervenção em sala e engajamento dos responsáveis)`;
+
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt
+    }));
+
+    return response.text;
+  } catch (e: any) {
+    console.error("Error analyzing individual student with AI:", e);
+    return "Não foi possível gerar o parecer individual no momento.";
+  }
+};
+
+/**
+ * Gera síntese estratégica para o Conselho de Classe da Coordenação Pedagógica.
+ */
+export const generateCoordinationClassCouncilWithAI = async (councilData: {
+  className: string;
+  bimestre: string;
+  averageGrade: number;
+  presenceRate: number;
+  totalStudents: number;
+  riskCount: number;
+  paedCount: number;
+  disciplinesSummary: { subject: string; average: number }[];
+  criticalStudents: { name: string; avg: number; pres: number; occurrences: number; isPaed: boolean }[];
+}): Promise<string> => {
+  try {
+    const ai = getAIClient();
+    const prompt = `Você é o Assistente Pedagógico da Coordenação da Escola Estadual André Antônio Maggi (SEDUC-MT).
+    Elabore uma Síntese Executiva Estruturada para o CONSELHO DE CLASSE BIMESTRAL da turma: ${councilData.className} (${councilData.bimestre}).
+
+    DADOS DA TURMA:
+    - Total de Estudantes: ${councilData.totalStudents}
+    - Estudantes com Laudo PAEDE / Inclusão: ${councilData.paedCount}
+    - Média Geral da Turma: ${councilData.averageGrade.toFixed(1)} / 10.0
+    - Taxa Média de Assiduidade: ${councilData.presenceRate.toFixed(1)}% (Meta SEDUC: 85%)
+    - Total de Estudantes em Risco Pedagógico: ${councilData.riskCount}
+    - Médias por Componente Curricular: ${JSON.stringify(councilData.disciplinesSummary)}
+    - Lista de Alunos em Risco Crítico (Notas/Frequência/Ocorrências): ${JSON.stringify(councilData.criticalStudents)}
+
+    ESTRUTURE SEU RELATÓRIO EM MARKDOWN OFICIAL:
+    ### 1. 📊 Panorama Geral da Turma no Bimestre
+    (Síntese do rendimento global, assiduidade e clima escolar da turma)
+
+    ### 2. ⚠️ Disciplinas com Maior Índice de Defasagem
+    (Componentes curriculares que necessitam de intervenção ou reforço)
+
+    ### 3. 🎯 Estudantes Prioritários para Intervenção Pedagógica & Recomposição
+    (Recomendações específicas para os alunos com notas baixas ou faltas excessivas, incluindo atenção aos estudantes PAEDE)
+
+    ### 4. 🚀 Plano de Ação Conjunto (Coordenação + Professores + Família)
+    (Ações práticas para o próximo período letivo, recuperação paralela e convocação de responsáveis)`;
+
+    const response = await runWithRetry(() => ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt
+    }));
+
+    return response.text;
+  } catch (e: any) {
+    console.error("Error generating coordination council report with AI:", e);
+    return "Não foi possível gerar a síntese do conselho de classe no momento.";
+  }
+};
+
 /**
  * Gera uma sugestão de horário escolar usando IA.
  */

@@ -3,8 +3,13 @@ import { supabase } from '../supabaseClient';
 import { generateOficioBodyWithAI } from '../geminiService';
 import { 
   FileText, Plus, Search, Printer, Trash2, Building2, Calendar, User, Check, 
-  Sparkles, Layers, Eye, X, Shield, BookOpen, Landmark, Filter, ArrowRight, Clock, Wand2
+  Sparkles, Layers, Eye, X, Shield, BookOpen, Landmark, Filter, ArrowRight, Clock, Wand2,
+  ShieldCheck, Award, KeyRound
 } from 'lucide-react';
+import { ElectronicSignatureProof } from '../types';
+import ElectronicSignatureStamp from './ElectronicSignatureStamp';
+import ElectronicSignatureModal from './ElectronicSignatureModal';
+import { registerSignatureProof } from '../utils/signatureService';
 
 export interface SchoolOficio {
   id: string;
@@ -23,6 +28,8 @@ export interface SchoolOficio {
   signatory_name: string;
   signatory_role: string;
   created_at: string;
+  signatures?: ElectronicSignatureProof[];
+  is_signed?: boolean;
 }
 
 interface OfficialOficiosManagerProps {
@@ -85,6 +92,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   const [printingOficio, setPrintingOficio] = useState<SchoolOficio | null>(null);
   const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
   const [staffRoleMap, setStaffRoleMap] = useState<Record<string, string>>({});
+
+  // Electronic Signature Modal states
+  const [signingOficio, setSigningOficio] = useState<SchoolOficio | null>(null);
+  const [isSigningModalOpen, setIsSigningModalOpen] = useState<boolean>(false);
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -151,169 +162,141 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     return { number: nextNum, formatted };
   }, [oficios, currentYear]);
 
-  // Sync customSequenceNumber & signatory role from RH registration when modal opens
+  // Carregar quadro de servidores para sincronização de cargo
   useEffect(() => {
-    if (isModalOpen) {
-      setCustomSequenceNumber(String(nextSequenceInfo.number));
-      const cleanSignatoryName = formData.signatory_name.trim().toUpperCase();
-      if (staffRoleMap[cleanSignatoryName]) {
-        setFormData(prev => ({
-          ...prev,
-          signatory_role: staffRoleMap[cleanSignatoryName]
-        }));
+    const fetchStaffRoles = async () => {
+      try {
+        const { data } = await supabase.from('staff').select('name, role, job_title');
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach((s: any) => {
+            if (s.name) {
+              const cleanName = s.name.trim().toUpperCase();
+              map[cleanName] = s.job_title || s.role || 'Servidor(a) Público(a)';
+            }
+          });
+          setStaffRoleMap(map);
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar cargos do staff:', err);
       }
-    }
-  }, [isModalOpen, nextSequenceInfo.number, staffRoleMap]);
+    };
+    fetchStaffRoles();
+  }, []);
 
-  // Load oficios from Supabase with resilient localStorage & dual-table cloud sync
-  const loadOficios = async () => {
+  // Fetch ofícios from Supabase (with fallback to localStorage)
+  const fetchOficios = async () => {
     setLoading(true);
     let localOficios: SchoolOficio[] = [];
     let dbOficios: SchoolOficio[] = [];
 
-    // 1. Read from localStorage first so no local ofício is EVER lost
+    // 1. Ler do localStorage primeiro
     try {
-      const local = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (local) {
-        localOficios = JSON.parse(local);
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        localOficios = JSON.parse(saved);
       }
     } catch (e) {
-      console.warn('Erro ao carregar ofícios locais:', e);
+      console.warn('Erro ao ler localStorage de ofícios:', e);
     }
 
-    // 2. Fetch from Supabase (primary table school_oficios, with automatic fallback to civic_documents)
+    // 2. Buscar da tabela school_oficios no Supabase
     try {
-      const { data: primaryData, error: primaryErr } = await supabase
+      const { data: primaryData, error: primaryError } = await supabase
         .from('school_oficios')
         .select('*')
         .order('year', { ascending: false })
         .order('number', { ascending: false });
 
-      if (!primaryErr && primaryData && primaryData.length > 0) {
+      if (!primaryError && primaryData) {
         dbOficios = primaryData as SchoolOficio[];
-      } else {
-        // Fallback: Query civic_documents table (active on Supabase for cross-device/login sync!)
-        const { data: fallbackData, error: fallbackErr } = await supabase
-          .from('civic_documents')
-          .select('*')
-          .eq('template', 'official_oficio');
-
-        if (!fallbackErr && fallbackData && fallbackData.length > 0) {
-          dbOficios = fallbackData.map((d: any) => ({
-            id: d.id,
-            number: d.content?.number || 0,
-            year: d.content?.year || new Date().getFullYear(),
-            formatted_number: d.content?.formatted_number || d.student_name,
-            module_source: d.content?.module_source || d.student_class || 'SECRETARIA',
-            title_subject: d.content?.title_subject || '',
-            recipient_name: d.content?.recipient_name || '',
-            recipient_role: d.content?.recipient_role || '',
-            recipient_org: d.content?.recipient_org || '',
-            city_date: d.content?.city_date || '',
-            salutation: d.content?.salutation || '',
-            body_text: d.content?.body_text || '',
-            closure_text: d.content?.closure_text || '',
-            signatory_name: d.content?.signatory_name || '',
-            signatory_role: d.content?.signatory_role || '',
-            created_at: d.date || new Date().toISOString()
-          }));
-        }
+      } else if (primaryError) {
+        console.warn('Tabela school_oficios não disponível ou vazia:', primaryError.message);
       }
-    } catch (e) {
-      console.warn('Erro ao conectar com Supabase para ofícios:', e);
+    } catch (err) {
+      console.warn('Erro na conexão com Supabase para ofícios:', err);
     }
 
-    // 3. Merge Local + DB by ID so no ofício is ever lost
+    // 3. Mesclar dados garantindo unicidade por formatted_number ou id
     const map = new Map<string, SchoolOficio>();
-    localOficios.forEach(o => map.set(o.id, o));
-    dbOficios.forEach(o => map.set(o.id, o));
+    [...localOficios, ...dbOficios].forEach(o => {
+      const key = o.id || o.formatted_number;
+      if (!map.has(key) || (o.signatures && o.signatures.length > 0)) {
+        map.set(key, o);
+      }
+    });
 
-    const mergedList = Array.from(map.values()).sort((a, b) => {
-      if (b.year !== a.year) return b.year - a.year;
+    const merged = Array.from(map.values()).sort((a, b) => {
+      if (b.year !== a.year) return (b.year || 0) - (a.year || 0);
       return (b.number || 0) - (a.number || 0);
     });
 
-    setOficios(mergedList);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(mergedList));
-
-    // 4. Background sync: Push local-only oficios to Supabase (both tables)
-    if (mergedList.length > 0) {
-      const dbIds = new Set(dbOficios.map(d => d.id));
-      const missingInDb = mergedList.filter(l => !dbIds.has(l.id));
-
-      if (missingInDb.length > 0) {
-        for (const oficio of missingInDb) {
-          try {
-            // Try primary insert
-            const { error } = await supabase.from('school_oficios').insert([oficio]);
-            if (error) {
-              // Sync to active fallback table so other logins/devices see it instantly!
-              await supabase.from('civic_documents').upsert([{
-                id: oficio.id,
-                template: 'official_oficio',
-                date: oficio.created_at,
-                timestamp: Date.now(),
-                student_name: oficio.formatted_number,
-                student_class: oficio.module_source,
-                content: oficio
-              }], { onConflict: 'id' });
-            }
-          } catch (err) {}
+    // Se a lista estiver vazia, criar o histórico inicial padrão a partir do número 023
+    if (merged.length === 0) {
+      const initialSeed: SchoolOficio[] = [
+        {
+          id: 'seed-ofi-23',
+          number: 23,
+          year: currentYear,
+          formatted_number: `023/${currentYear}/EECAAMCOL/SEDUC/MT`,
+          module_source: 'CIVICO_MILITAR',
+          title_subject: 'Encaminhamento de Diretrizes Disciplinares e Frequência Escolar',
+          recipient_name: 'Superintendência de Gestão Regional - SEDUC/MT',
+          recipient_role: 'Diretoria Regional de Educação',
+          recipient_org: 'DRE Sinop',
+          city_date: `Colíder - MT, 15 de Fevereiro de ${currentYear}`,
+          salutation: 'Excelentíssimo(a) Senhor(a) Diretor(a) Regional,',
+          body_text: 'Cumprimentando-o(a) cordialmente, vimos apresentar a Vossa Excelência o relatório de conformidade do modelo Cívico-Militar e as ações integradas de Busca Ativa Discente desenvolvidas nesta unidade de ensino.\n\nReiteramos nosso compromisso com a excelência pedagógica e a proteção integral aos estudantes.',
+          closure_text: 'Respeitosamente,',
+          signatory_name: 'Direção Escolar',
+          signatory_role: 'Diretor Escolar',
+          created_at: new Date().toISOString()
         }
-      }
-    }
-
-    // 5. Fetch staff members from Supabase to dynamically resolve signatory roles
-    try {
-      const { data: staffData } = await supabase.from('staff').select('name, function_role, role');
-      if (staffData && staffData.length > 0) {
-        const roleMap: Record<string, string> = {};
-        staffData.forEach((s: any) => {
-          if (s.name) {
-            const cleanName = s.name.trim().toUpperCase();
-            const r = s.function_role || s.role;
-            if (r) roleMap[cleanName] = r;
-          }
-        });
-        setStaffRoleMap(roleMap);
-      }
-    } catch (e) {
-      console.warn('Erro ao buscar cargos de servidores RH:', e);
+      ];
+      setOficios(initialSeed);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialSeed));
+    } else {
+      setOficios(merged);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
     }
 
     setLoading(false);
   };
 
   useEffect(() => {
-    loadOficios();
+    fetchOficios();
   }, []);
 
-  const handleApplyTemplate = (templateId: string) => {
-    const tmpl = TEMPLATES.find(t => t.id === templateId);
-    if (tmpl) {
-      setFormData(prev => ({
-        ...prev,
-        title_subject: tmpl.subject,
-        salutation: tmpl.salutation,
-        body_text: tmpl.body,
-        closure_text: tmpl.closure
-      }));
-    }
+  const handleApplyTemplate = (template: typeof TEMPLATES[0]) => {
+    setFormData(prev => ({
+      ...prev,
+      title_subject: template.subject,
+      salutation: template.salutation,
+      body_text: template.body,
+      closure_text: template.closure
+    }));
   };
 
   const handleSaveOficio = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title_subject.trim() || !formData.recipient_name.trim() || !formData.body_text.trim()) {
-      alert('Por favor, preencha o assunto, o destinatário e o texto do ofício!');
+      alert('Por favor, preencha todos os campos obrigatórios (Assunto, Destinatário e Corpo do Texto)!');
       return;
     }
 
-    const seqNum = customSequenceNumber ? parseInt(customSequenceNumber) || nextSequenceInfo.number : nextSequenceInfo.number;
-    const formattedNum = `${String(seqNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
+    let nextNum = nextSequenceInfo.number;
+    if (customSequenceNumber && !isNaN(parseInt(customSequenceNumber, 10))) {
+      nextNum = parseInt(customSequenceNumber, 10);
+    }
+    const formattedNum = `${String(nextNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
+
+    // Atualizar o cargo dinâmico com base no staff
+    const cleanSignatory = (formData.signatory_name || '').trim().toUpperCase();
+    const resolvedRole = staffRoleMap[cleanSignatory] || formData.signatory_role;
 
     const newOficio: SchoolOficio = {
-      id: crypto.randomUUID(),
-      number: seqNum,
+      id: crypto.randomUUID ? crypto.randomUUID() : `ofi-${Date.now()}`,
+      number: nextNum,
       year: currentYear,
       formatted_number: formattedNum,
       module_source: moduleSource,
@@ -322,22 +305,26 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       recipient_role: formData.recipient_role.trim(),
       recipient_org: formData.recipient_org.trim(),
       city_date: formData.city_date.trim(),
-      salutation: formData.salutation.trim() || 'Prezado(a) Senhor(a),',
+      salutation: formData.salutation.trim(),
       body_text: formData.body_text.trim(),
-      closure_text: formData.closure_text.trim() || 'Atenciosamente,',
-      signatory_name: formData.signatory_name.trim() || 'Gestão Escolar',
-      signatory_role: formData.signatory_role.trim() || 'Responsável',
-      created_at: new Date().toISOString()
+      closure_text: formData.closure_text.trim(),
+      signatory_name: formData.signatory_name.trim(),
+      signatory_role: resolvedRole,
+      created_at: new Date().toISOString(),
+      signatures: [],
+      is_signed: false
     };
 
-    // Update local state and localStorage immediately
+    // 1. Salvar no estado
     const updatedList = [newOficio, ...oficios];
     setOficios(updatedList);
+
+    // 2. Salvar no localStorage
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
 
-    // Persist to Supabase in background (dual sync to ensure ALL logins/devices see it instantly!)
+    // 3. Salvar no Supabase
     try {
-      const { error: primaryErr } = await supabase.from('school_oficios').insert([{
+      await supabase.from('school_oficios').insert([{
         id: newOficio.id,
         number: newOficio.number,
         year: newOficio.year,
@@ -353,105 +340,160 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         closure_text: newOficio.closure_text,
         signatory_name: newOficio.signatory_name,
         signatory_role: newOficio.signatory_role,
-        created_at: newOficio.created_at
+        signatures: [],
+        is_signed: false
       }]);
-
-      // Always also save to active civic_documents table as secondary cloud sync
-      await supabase.from('civic_documents').upsert([{
-        id: newOficio.id,
-        template: 'official_oficio',
-        date: newOficio.created_at,
-        timestamp: Date.now(),
-        student_name: newOficio.formatted_number,
-        student_class: newOficio.module_source,
-        content: newOficio
-      }], { onConflict: 'id' });
-
-    } catch (e) {
-      console.warn('Persistindo em localStorage e nuvem:', e);
+    } catch (err) {
+      console.warn('Erro ao salvar ofício no banco do Supabase:', err);
     }
 
+    // Limpar formulário e fechar modal
+    setFormData({
+      title_subject: '',
+      recipient_name: '',
+      recipient_role: '',
+      recipient_org: '',
+      city_date: `Colíder - MT, ${new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+      salutation: 'Prezado(a) Senhor(a),',
+      body_text: '',
+      closure_text: 'Atenciosamente,',
+      signatory_name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
+      signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
+    });
+    setCustomSequenceNumber('');
+    setAiPromptInput('');
     setIsModalOpen(false);
-    alert(`OFÍCIO Nº ${newOficio.formatted_number} gerado com sucesso!`);
+
+    // Abrir imediatamente para visualização e opção de assinatura
+    setPrintingOficio(newOficio);
   };
 
   const handleDeleteOficio = async (oficio: SchoolOficio) => {
-    const confirmDel = window.confirm(`Tem certeza que deseja excluir permanentemente o OFÍCIO Nº ${oficio.formatted_number}?`);
-    if (!confirmDel) return;
+    if (!window.confirm(`Deseja realmente excluir o Ofício Nº ${oficio.formatted_number}?`)) return;
 
-    const updatedList = oficios.filter(o => o.id !== oficio.id);
-    setOficios(updatedList);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
+    const filtered = oficios.filter(o => o.id !== oficio.id);
+    setOficios(filtered);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtered));
 
     try {
       await supabase.from('school_oficios').delete().eq('id', oficio.id);
-      await supabase.from('civic_documents').delete().eq('id', oficio.id);
-    } catch (e) {
-      console.error('Erro ao excluir no Supabase:', e);
+    } catch (err) {
+      console.warn('Erro ao deletar no Supabase:', err);
     }
   };
 
   const handlePrintOficio = (oficio: SchoolOficio) => {
     setPrintingOficio(oficio);
-    setTimeout(() => {
-      window.print();
-    }, 400);
   };
 
-  // Filtered list
+  const handleOpenSignModal = (oficio: SchoolOficio) => {
+    setSigningOficio(oficio);
+    setIsSigningModalOpen(true);
+  };
+
+  const handleSignatureComplete = async (proof: ElectronicSignatureProof) => {
+    if (!signingOficio) return;
+
+    const existingSignatures = signingOficio.signatures || [];
+    const updatedSignatures = [...existingSignatures, proof];
+
+    const updatedOficio: SchoolOficio = {
+      ...signingOficio,
+      signatures: updatedSignatures,
+      is_signed: true
+    };
+
+    // 1. Atualizar no estado
+    setOficios(prev => prev.map(o => o.id === updatedOficio.id ? updatedOficio : o));
+    if (printingOficio && printingOficio.id === updatedOficio.id) {
+      setPrintingOficio(updatedOficio);
+    }
+
+    // 2. Atualizar no localStorage
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed: SchoolOficio[] = JSON.parse(saved);
+        const updatedList = parsed.map(o => o.id === updatedOficio.id ? updatedOficio : o);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn('Erro ao atualizar localStorage:', e);
+      }
+    }
+
+    // 3. Atualizar no Supabase
+    try {
+      await supabase
+        .from('school_oficios')
+        .update({
+          signatures: updatedSignatures,
+          is_signed: true
+        })
+        .eq('id', updatedOficio.id);
+    } catch (err) {
+      console.warn('Erro ao salvar assinatura no Supabase:', err);
+    }
+
+    // 4. Registrar prova na base de auditoria pública
+    await registerSignatureProof(proof);
+
+    setIsSigningModalOpen(false);
+    setSigningOficio(null);
+  };
+
+  // Filtragem de busca e módulo
   const filteredOficios = useMemo(() => {
     return oficios.filter(o => {
+      const matchSearch = (
+        o.formatted_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.title_subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.recipient_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.body_text?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
       const matchModule = moduleFilter === 'ALL' || o.module_source === moduleFilter;
-      const term = searchTerm.toLowerCase().trim();
-      const matchSearch = !term ||
-        o.formatted_number.toLowerCase().includes(term) ||
-        o.title_subject.toLowerCase().includes(term) ||
-        o.recipient_name.toLowerCase().includes(term) ||
-        (o.recipient_org && o.recipient_org.toLowerCase().includes(term));
-      return matchModule && matchSearch;
+      return matchSearch && matchModule;
     });
-  }, [oficios, moduleFilter, searchTerm]);
-
-  const CurrentModuleInfo = MODULE_LABELS[moduleSource];
+  }, [oficios, searchTerm, moduleFilter]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-16">
       
-      {/* Header & Quick Action */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6 print:hidden">
+      {/* HEADER PRINCIPAL */}
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 print:hidden">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
-            <FileText size={26} />
+          <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
+            <FileText size={28} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Emissão de Ofícios Escolares</h2>
-              <span className={`px-3 py-1 text-[9px] font-black rounded-full border uppercase ${CurrentModuleInfo.badgeColor}`}>
-                {CurrentModuleInfo.label}
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                Numeração Oficial Contínua (Início Nº 023)
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <ShieldCheck size={11} /> Lei nº 14.063/2020
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              Contagem e registro sequencial unificado entre Secretaria, Coordenação e Cívico-Militar.
+            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Emissão de Ofícios Escolares</h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Expedição oficial unificada para Secretaria, Coordenação Pedagógica e Gestão Cívico-Militar com Assinatura Eletrônica.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="bg-slate-100 px-4 py-2.5 rounded-2xl border border-slate-200 text-center flex-1 md:flex-initial">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Próximo Sequencial</span>
-            <span className="text-xs font-black text-indigo-700 font-mono">OFÍCIO Nº {nextSequenceInfo.formatted}</span>
-          </div>
-
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2 flex-1 md:flex-initial"
+            onClick={() => {
+              setCustomSequenceNumber('');
+              setIsModalOpen(true);
+            }}
+            className="px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95"
           >
             <Plus size={18} /> Novo Ofício
           </button>
         </div>
       </div>
 
-      {/* Filters Bar */}
+      {/* FILTROS E BUSCA */}
       <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center print:hidden">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -459,105 +501,155 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             type="text"
             placeholder="Buscar por número, assunto ou destinatário..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all"
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap hidden md:inline">Filtrar Origem:</span>
-          <select
-            value={moduleFilter}
-            onChange={e => setModuleFilter(e.target.value)}
-            className="w-full md:w-auto bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black uppercase text-slate-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+          <button
+            onClick={() => setModuleFilter('ALL')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+              moduleFilter === 'ALL' ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+            }`}
           >
-            <option value="ALL">Todos os Módulos ({oficios.length})</option>
-            <option value="SECRETARIA">Secretaria Escolar</option>
-            <option value="COORDENACAO">Coordenação Pedagógica</option>
-            <option value="CIVICO_MILITAR">Cívico-Militar</option>
-          </select>
+            Todos ({oficios.length})
+          </button>
+          <button
+            onClick={() => setModuleFilter('SECRETARIA')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+              moduleFilter === 'SECRETARIA' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+            }`}
+          >
+            Secretaria
+          </button>
+          <button
+            onClick={() => setModuleFilter('COORDENACAO')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+              moduleFilter === 'COORDENACAO' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+            }`}
+          >
+            Coordenação
+          </button>
+          <button
+            onClick={() => setModuleFilter('CIVICO_MILITAR')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+              moduleFilter === 'CIVICO_MILITAR' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            }`}
+          >
+            Cívico-Militar
+          </button>
         </div>
       </div>
 
-      {/* List / Table */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[400px] print:hidden">
+      {/* TABELA DE OFÍCIOS EXPEDIDOS (AJUSTADA PARA CABER 100% NA TELA SEM BARRA DE ROLAGEM) */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden print:hidden">
         {loading ? (
-          <div className="flex justify-center items-center h-64 text-indigo-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="p-12 text-center text-slate-400 font-bold uppercase text-xs">
+            Carregando livros de ofícios...
           </div>
         ) : filteredOficios.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-16 text-slate-400 text-center">
-            <FileText size={48} className="mb-4 text-slate-200" />
+          <div className="p-16 text-center space-y-3">
+            <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-3xl flex items-center justify-center mx-auto">
+              <FileText size={32} />
+            </div>
             <h3 className="text-sm font-black uppercase text-slate-700 tracking-wider">Nenhum Ofício Registrado</h3>
-            <p className="text-xs text-slate-400 max-w-sm mt-1">
-              Utilize o botão "Novo Ofício" acima para gerar e emitir o primeiro documento oficial a partir de <strong className="text-indigo-600 font-mono">OFÍCIO Nº 023/{currentYear}/EECAAMCOL/SEDUC/MT</strong>.
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              Utilize o botão "Novo Ofício" acima para gerar e emitir o documento oficial a partir de <strong className="text-indigo-600 font-mono">OFÍCIO Nº 023/{currentYear}/EECAAMCOL/SEDUC/MT</strong>.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="w-full">
+            <table className="w-full text-left border-collapse table-auto">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="p-4 pl-6">Nº do Ofício</th>
-                  <th className="p-4">Módulo Emissor</th>
-                  <th className="p-4">Assunto / Título</th>
-                  <th className="p-4">Destinatário</th>
-                  <th className="p-4">Data de Emissão</th>
-                  <th className="p-4 pr-6 text-right">Ação</th>
+                  <th className="py-4 pl-6 pr-3">Nº & Origem</th>
+                  <th className="py-4 px-3">Assunto & Destinatário</th>
+                  <th className="py-4 px-3 text-center">Autenticidade & Data</th>
+                  <th className="py-4 pl-3 pr-6 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredOficios.map((oficio) => {
                   const moduleMeta = MODULE_LABELS[oficio.module_source] || MODULE_LABELS.SECRETARIA;
                   const ModuleIcon = moduleMeta.icon;
+                  const hasSignature = oficio.is_signed || (oficio.signatures && oficio.signatures.length > 0);
+
+                  // Formatação compacta e elegante do número
+                  const cleanNum = oficio.number ? String(oficio.number).padStart(3, '0') : (oficio.formatted_number?.split('/')[0] || '023');
+                  const compactDisplay = `OF. Nº ${cleanNum}/${oficio.year || currentYear}`;
 
                   return (
-                    <tr key={oficio.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="p-4 pl-6 whitespace-nowrap">
-                        <span className="font-mono text-[11px] font-black text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 block max-w-max">
-                          OFÍCIO Nº {oficio.formatted_number}
-                        </span>
+                    <tr key={oficio.id} className="hover:bg-slate-50/70 transition-colors group">
+                      {/* COLUNA 1: Nº E MÓDULO */}
+                      <td className="py-4 pl-6 pr-3 align-middle">
+                        <div className="space-y-1">
+                          <span 
+                            className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-100 inline-block"
+                            title={oficio.formatted_number}
+                          >
+                            {compactDisplay}
+                          </span>
+                          <div>
+                            <span className={`px-2 py-0.5 text-[8px] font-black rounded-md border uppercase inline-flex items-center gap-1 ${moduleMeta.badgeColor}`}>
+                              <ModuleIcon size={10} /> {moduleMeta.label}
+                            </span>
+                          </div>
+                        </div>
                       </td>
 
-                      <td className="p-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 text-[9px] font-black rounded-lg border uppercase inline-flex items-center gap-1.5 ${moduleMeta.badgeColor}`}>
-                          <ModuleIcon size={12} /> {moduleMeta.label}
-                        </span>
-                      </td>
-
-                      <td className="p-4">
-                        <p className="text-xs font-black text-slate-900 uppercase leading-snug line-clamp-1">{oficio.title_subject}</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 truncate max-w-xs">{oficio.salutation}</p>
-                      </td>
-
-                      <td className="p-4">
-                        <p className="text-xs font-bold text-slate-800 uppercase">{oficio.recipient_name}</p>
-                        {(oficio.recipient_role || oficio.recipient_org) && (
-                          <p className="text-[9px] font-semibold text-slate-400 uppercase truncate max-w-xs">
-                            {oficio.recipient_role} {oficio.recipient_org ? `• ${oficio.recipient_org}` : ''}
+                      {/* COLUNA 2: ASSUNTO E DESTINATÁRIO */}
+                      <td className="py-4 px-3 align-middle max-w-xs sm:max-w-md md:max-w-lg">
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-black text-slate-900 uppercase leading-snug truncate" title={oficio.title_subject}>
+                            {oficio.title_subject}
                           </p>
-                        )}
+                          <p className="text-[11px] text-slate-600 font-medium truncate" title={`${oficio.recipient_name} ${oficio.recipient_org ? `(${oficio.recipient_org})` : ''}`}>
+                            <strong className="text-slate-800 uppercase">{oficio.recipient_name}</strong>
+                            {oficio.recipient_role ? ` • ${oficio.recipient_role}` : ''}
+                            {oficio.recipient_org ? ` • ${oficio.recipient_org}` : ''}
+                          </p>
+                        </div>
                       </td>
 
-                      <td className="p-4 whitespace-nowrap text-xs font-bold text-slate-500">
-                        {new Date(oficio.created_at).toLocaleDateString('pt-BR')}
+                      {/* COLUNA 3: AUTENTICIDADE E DATA */}
+                      <td className="py-4 px-3 align-middle text-center">
+                        <div className="inline-flex flex-col items-center space-y-1">
+                          {hasSignature ? (
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[8px] font-black uppercase inline-flex items-center gap-1 shadow-xs">
+                              <ShieldCheck size={10} /> Assinado Digitalmente
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenSignModal(oficio)}
+                              className="px-2 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 rounded-lg text-[8px] font-black uppercase inline-flex items-center gap-1 transition-all active:scale-95 shadow-xs"
+                              title="Assinar com Senha/PIN Institucional"
+                            >
+                              <KeyRound size={10} /> Assinar com Senha
+                            </button>
+                          )}
+                          <span className="text-[10px] font-bold text-slate-400">
+                            {new Date(oficio.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
                       </td>
 
-                      <td className="p-4 pr-6 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
+                      {/* COLUNA 4: AÇÕES */}
+                      <td className="py-4 pl-3 pr-6 text-right align-middle">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handlePrintOficio(oficio)}
-                            className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center gap-1.5"
-                            title="Imprimir Ofício A4"
+                            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-xs active:scale-95"
+                            title="Visualizar e Imprimir Ofício A4"
                           >
-                            <Printer size={14} /> Imprimir (PDF)
+                            <Printer size={13} /> Visualizar
                           </button>
                           <button
                             onClick={() => handleDeleteOficio(oficio)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                             title="Excluir Registro"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </td>
@@ -599,430 +691,425 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             {/* Form */}
             <form onSubmit={handleSaveOficio} className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
               
-              {/* Manual Sequence Number Override Bar */}
-              <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              {/* Opção de Ajuste Manual de Sequencial */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div>
-                  <span className="text-[9px] font-black text-indigo-900 uppercase tracking-widest block">Número Sequencial de Emissão</span>
-                  <p className="text-xs font-semibold text-slate-600">Altere o número se precisar ajustar a sequência manual.</p>
+                  <p className="text-xs font-black text-slate-800 uppercase">Sequencial Automático do Ofício</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Controle contínuo iniciando a partir de 023 para o ano letivo.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-indigo-900 font-mono">Nº</span>
+                  <span className="text-xs font-bold text-slate-500">Nº:</span>
                   <input
                     type="number"
                     min="1"
+                    placeholder={String(nextSequenceInfo.number)}
                     value={customSequenceNumber}
-                    onChange={e => setCustomSequenceNumber(e.target.value)}
-                    className="w-24 p-2 bg-white border border-indigo-200 rounded-xl text-center font-mono font-black text-sm text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-300"
+                    onChange={(e) => setCustomSequenceNumber(e.target.value)}
+                    className="w-20 p-2 bg-white border border-slate-300 rounded-xl text-center text-xs font-mono font-black text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                  <span className="text-xs font-mono font-bold text-slate-500">/{currentYear}</span>
                 </div>
               </div>
 
-              {/* Templates Quick Select */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-amber-500" /> Modelos Rápidos de Texto (Opcional)
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {TEMPLATES.map(t => (
+              {/* Modelos Prontos */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Modelos Prontos Sugeridos</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {TEMPLATES.map(tmpl => (
                     <button
-                      key={t.id}
+                      key={tmpl.id}
                       type="button"
-                      onClick={() => handleApplyTemplate(t.id)}
-                      className="p-3 text-left bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 rounded-xl transition-all group"
+                      onClick={() => handleApplyTemplate(tmpl)}
+                      className="p-3 text-left bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 border border-slate-200 rounded-xl transition-all group"
                     >
-                      <p className="text-xs font-black text-slate-800 uppercase group-hover:text-indigo-600">{t.title}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase truncate mt-0.5">{t.subject}</p>
+                      <p className="text-xs font-black uppercase text-slate-800 group-hover:text-indigo-600">{tmpl.title}</p>
+                      <p className="text-[10px] text-slate-400 font-medium line-clamp-1">{tmpl.subject}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                    Assunto do Ofício *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: Solicitação de Manutenção na Quadra de Esportes"
-                    value={formData.title_subject}
-                    onChange={e => setFormData({ ...formData, title_subject: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                  />
-                </div>
+              {/* Assunto */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                  Assunto do Ofício *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Solicitação de Reparos na Sala de Informática"
+                  value={formData.title_subject}
+                  onChange={(e) => setFormData({ ...formData, title_subject: e.target.value })}
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                />
+              </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+              {/* Destinatário */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="md:col-span-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
                     Nome do Destinatário *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: João da Silva / Conselho Tutelar"
+                    placeholder="Ex: João da Silva"
                     value={formData.recipient_name}
-                    onChange={e => setFormData({ ...formData, recipient_name: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
-
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                    Cargo / Função do Destinatário
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                    Cargo / Função
                   </label>
                   <input
                     type="text"
-                    placeholder="Ex: Secretário Municipal de Obras"
+                    placeholder="Ex: Secretário Municipal"
                     value={formData.recipient_role}
-                    onChange={e => setFormData({ ...formData, recipient_role: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    onChange={(e) => setFormData({ ...formData, recipient_role: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
-
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                    Órgão / Empresa / Instituição
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                    Órgão / Instituição
                   </label>
                   <input
                     type="text"
                     placeholder="Ex: Prefeitura Municipal de Colíder"
                     value={formData.recipient_org}
-                    onChange={e => setFormData({ ...formData, recipient_org: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    onChange={(e) => setFormData({ ...formData, recipient_org: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
+              </div>
 
+              {/* Data e Vocativo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                    Cidade e Data
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                    Local e Data *
                   </label>
                   <input
                     type="text"
+                    required
                     value={formData.city_date}
-                    onChange={e => setFormData({ ...formData, city_date: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    onChange={(e) => setFormData({ ...formData, city_date: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
-
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
                     Vocativo Inicial
                   </label>
                   <input
                     type="text"
                     value={formData.salutation}
-                    onChange={e => setFormData({ ...formData, salutation: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                    Fecho de Cortesia
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.closure_text}
-                    onChange={e => setFormData({ ...formData, closure_text: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    onChange={(e) => setFormData({ ...formData, salutation: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
 
-              {/* ASSISTENTE DE REDAÇÃO DE OFÍCIOS POR IA */}
-              <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 p-5 rounded-3xl border border-indigo-500/20 text-white space-y-3 shadow-xl">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center border border-indigo-400/30 shrink-0">
-                      <Sparkles size={18} className="text-amber-400 animate-pulse" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-indigo-200 flex items-center gap-2">
-                        Redação Inteligente por IA <span className="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full">SEDUC-MT IA</span>
-                      </h4>
-                      <p className="text-[10px] text-slate-300 font-medium">Digite o resumo da solicitação e a IA redige o texto formal completo no padrão oficial.</p>
-                    </div>
+              {/* Assistente IA de Redação Oficial */}
+              <div className="p-4 bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-50 rounded-2xl border border-indigo-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="text-indigo-600 animate-pulse" size={16} />
+                    <span className="text-xs font-black uppercase text-indigo-900 tracking-wider">
+                      Redação Inteligente por IA (Padrão SEDUC-MT)
+                    </span>
                   </div>
-
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <select
-                      value={aiTone}
-                      onChange={e => setAiTone(e.target.value as any)}
-                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase text-indigo-200 outline-none focus:bg-slate-900"
-                    >
-                      <option value="SOLICITACAO" className="bg-slate-900 text-white">Tom: Solicitação</option>
-                      <option value="CONVOCACAO" className="bg-slate-900 text-white">Tom: Convocação</option>
-                      <option value="NOTIFICACAO" className="bg-slate-900 text-white">Tom: Notificação</option>
-                      <option value="ENCAMINHAMENTO" className="bg-slate-900 text-white">Tom: Encaminhamento</option>
-                    </select>
-                  </div>
+                  <select
+                    value={aiTone}
+                    onChange={(e) => setAiTone(e.target.value as any)}
+                    className="p-1.5 bg-white border border-indigo-200 rounded-lg text-[10px] font-black uppercase text-indigo-700 outline-none cursor-pointer"
+                  >
+                    <option value="SOLICITACAO">Tom: Solicitação</option>
+                    <option value="CONVOCACAO">Tom: Convocação</option>
+                    <option value="NOTIFICACAO">Tom: Notificação</option>
+                    <option value="INFORMATIVO">Tom: Informativo</option>
+                    <option value="ENCAMINHAMENTO">Tom: Encaminhamento</option>
+                  </select>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Ex: solicitar reparo no telhado da quadra devido às fortes chuvas da semana"
+                    placeholder="Digite resumidamente o que você deseja redigir no ofício..."
                     value={aiPromptInput}
-                    onChange={e => setAiPromptInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleGenerateAI(); } }}
-                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-indigo-400 transition-all font-medium"
+                    onChange={(e) => setAiPromptInput(e.target.value)}
+                    className="flex-1 p-2.5 bg-white border border-indigo-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-
                   <button
                     type="button"
+                    disabled={isGeneratingAI}
                     onClick={handleGenerateAI}
-                    disabled={isGeneratingAI || (!aiPromptInput.trim() && !formData.body_text.trim())}
-                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 whitespace-nowrap shrink-0 active:scale-95"
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0"
                   >
                     {isGeneratingAI ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Redigindo...</span>
-                      </>
+                      <>Gerando...</>
                     ) : (
-                      <>
-                        <Sparkles size={16} /> Redigir com IA
-                      </>
+                      <><Wand2 size={14} /> Redigir com IA</>
                     )}
                   </button>
                 </div>
               </div>
 
+              {/* Corpo do Texto */}
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
-                    Corpo do Texto do Ofício *
-                  </label>
-                  {formData.body_text.trim() && (
-                    <button
-                      type="button"
-                      onClick={handleGenerateAI}
-                      disabled={isGeneratingAI}
-                      className="text-[9px] font-black text-indigo-600 hover:underline uppercase flex items-center gap-1"
-                    >
-                      <Wand2 size={12} /> Refinar Texto Atual com IA
-                    </button>
-                  )}
-                </div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                  Corpo do Texto do Ofício *
+                </label>
                 <textarea
                   required
                   rows={6}
                   value={formData.body_text}
-                  onChange={e => setFormData({ ...formData, body_text: e.target.value })}
-                  placeholder="Escreva a mensagem oficial aqui ou utilize o assistente de IA acima..."
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100 leading-relaxed"
-                ></textarea>
+                  onChange={(e) => setFormData({ ...formData, body_text: e.target.value })}
+                  placeholder="Redija aqui os parágrafos do documento oficial..."
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-normal leading-relaxed outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all custom-scrollbar"
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+              {/* Fecho e Signatário */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                    Nome do Emissor / Assinante *
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                    Fecho de Cortesia
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.closure_text}
+                    onChange={(e) => setFormData({ ...formData, closure_text: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                    Nome do Signatário *
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.signatory_name}
-                    onChange={e => setFormData({ ...formData, signatory_name: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      const cleanName = name.trim().toUpperCase();
+                      const matchedRole = staffRoleMap[cleanName] || formData.signatory_role;
+                      setFormData({ ...formData, signatory_name: name, signatory_role: matchedRole });
+                    }}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
-
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                    Cargo / Função do Assinante *
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                    Cargo / Função Oficial
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.signatory_role}
-                    onChange={e => setFormData({ ...formData, signatory_role: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    onChange={(e) => setFormData({ ...formData, signatory_role: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
 
-              {/* Actions */}
+              {/* Botões do Modal */}
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest rounded-2xl transition-colors"
+                  className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-black uppercase tracking-wider transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-indigo-600/20"
+                  className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
                 >
                   Gerar e Salvar Ofício
                 </button>
               </div>
-
             </form>
           </div>
         </div>
       )}
 
-      {/* ÁREA DE IMPRESSÃO DO OFÍCIO (PDF / A4 - AJUSTADO PARA 1 PÁGINA) */}
+      {/* MODAL DE IMPRESSÃO / VISUALIZAÇÃO DO OFÍCIO FORMAL (TIMBRADO SEDUC/MT) */}
       {printingOficio && (
-        <div className="print-oficio-area">
-          <div className="pdf-page p-6 sm:p-8 flex flex-col justify-between min-h-[275mm]" style={{ fontFamily: 'Times New Roman, Georgia, serif', color: '#000000' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 print:border-none print:shadow-none print:m-0 print:w-full print:max-w-none print:rounded-none">
             
-            <div className="flex-1 flex flex-col justify-start">
-              {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita de Tamanhos Visuais Iguais */}
-              <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
-                <img 
-                  src="/brasao_mt.png" 
-                  alt="Brasão do Estado de Mato Grosso" 
-                  className="h-24 w-auto object-contain shrink-0 max-h-[95px]" 
-                  onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
-                />
-                <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
-                  <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
-                  <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
-                  <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
-                  <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
-                  <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
-                  <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
-                </div>
-                <img 
-                  src="/logo-escola-oficial.png" 
-                  alt="Escola Cívico-Militar" 
-                  className="h-28 w-auto object-contain shrink-0 max-h-[115px]" 
-                  onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
-                />
-              </div>
-
-              {/* Número do Ofício Formatado (Alinhado à ESQUERDA) */}
-              <div className="text-left mb-3">
-                <p className="text-sm font-bold uppercase font-mono text-black">
+            {/* Header de Controle (Não sai na impressão) */}
+            <div className="p-6 bg-slate-900 text-white flex justify-between items-center print:hidden">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xs font-black bg-indigo-600 px-3 py-1 rounded-lg">
                   OFÍCIO Nº {printingOficio.formatted_number}
-                </p>
+                </span>
+                <span className="text-xs font-bold uppercase text-slate-300">Visualização de Impressão Oficial A4</span>
               </div>
 
-              {/* Cidade e Data (Alinhado à Direita) */}
-              <div className="text-right mb-4 text-sm text-black">
-                <p>{printingOficio.city_date}</p>
-              </div>
+              <div className="flex items-center gap-3">
+                {(!printingOficio.signatures || printingOficio.signatures.length === 0) && (
+                  <button
+                    onClick={() => handleOpenSignModal(printingOficio)}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95"
+                  >
+                    <KeyRound size={14} /> Assinar com Senha / Selo Digital
+                  </button>
+                )}
 
-              {/* Dados do Destinatário */}
-              <div className="mb-4 text-sm space-y-0.5 text-black font-normal">
-                <p className="font-bold">Ao(À) Senhor(a):</p>
-                <p className="uppercase text-base font-bold">{printingOficio.recipient_name}</p>
-                {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
-                {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
+                <button
+                  onClick={() => window.print()}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95"
+                >
+                  <Printer size={16} /> Imprimir (PDF)
+                </button>
+                
+                <button
+                  onClick={() => setPrintingOficio(null)}
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
               </div>
+            </div>
 
-              {/* Assunto */}
-              <div className="mb-4 text-sm text-black">
-                <p className="font-bold">
-                  Assunto: <span className="underline">{printingOficio.title_subject}</span>
-                </p>
-              </div>
-
-              {/* Vocativo Inicial */}
-              <div className="mb-3 text-sm font-normal text-black">
-                <p>{printingOficio.salutation}</p>
-              </div>
-
-              {/* Corpo do Texto Principal (Aumentado para leitura perfeita 12pt/14px) */}
-              <div className="mb-6 text-[14px] leading-relaxed text-justify space-y-3 text-black font-normal">
-                {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
-                  <p key={idx} style={{ textIndent: '1.5rem' }}>
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-
-              {/* Fecho de Cortesia */}
-              <div className="mb-6 text-sm text-black font-normal">
-                <p>{printingOficio.closure_text}</p>
-              </div>
-
-              {/* Assinatura (Busca Dinâmica do Cargo Atual no RH do Servidor) */}
-              {(() => {
-                const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
-                const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
-                return (
-                  <div className="text-center w-2/3 mx-auto pt-3 text-black" style={{ color: '#000000' }}>
-                    <div className="border-t border-black pt-1.5">
-                      <p className="font-bold uppercase text-sm text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
-                      <p className="text-xs uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
-                      <p className="text-[10px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
-                    </div>
+            {/* FOLHA A4 TIMBRADA OFICIAL */}
+            <div className="p-8 sm:p-14 bg-white text-black min-h-[297mm] flex flex-col justify-between" style={{ fontFamily: 'Times New Roman, Georgia, serif' }}>
+              
+              <div className="flex-1 flex flex-col justify-start">
+                
+                {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita */}
+                <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
+                  <img 
+                    src="/brasao_mt.png" 
+                    alt="Brasão do Estado de Mato Grosso" 
+                    className="h-20 sm:h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                    onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                  />
+                  <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                    <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                    <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                    <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                    <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                    <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
                   </div>
-                );
-              })()}
-            </div>
+                  <img 
+                    src="/logo-escola-oficial.png" 
+                    alt="Escola Cívico-Militar" 
+                    className="h-20 sm:h-24 w-auto object-contain shrink-0 max-h-[105px]" 
+                    onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                  />
+                </div>
 
-            {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar Fixado na Parte Inferior */}
-            <div className="mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
-              <div className="text-left space-y-0.5">
-                <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
-                <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
-                <p>Site: www.seduc.mt.gov.br</p>
-              </div>
-              <div className="text-left space-y-0.5 pl-6">
-                <p>Rua Borba Gato, nº 80, Bairro Torre</p>
-                <p>CEP: 78500-000 – Colíder-MT Fones +55 (66) 99682-7608</p>
-                <p>Email: escola.158330@edu.mt.gov.br</p>
-              </div>
-            </div>
+                {/* Número do Ofício Formatado (Alinhado à ESQUERDA) */}
+                <div className="text-left mb-3">
+                  <p className="text-sm font-bold uppercase font-mono text-black">
+                    OFÍCIO Nº {printingOficio.formatted_number}
+                  </p>
+                </div>
 
+                {/* Cidade e Data (Alinhado à Direita) */}
+                <div className="text-right mb-4 text-sm text-black">
+                  <p>{printingOficio.city_date}</p>
+                </div>
+
+                {/* Dados do Destinatário */}
+                <div className="mb-4 text-sm space-y-0.5 text-black font-normal">
+                  <p className="font-bold">Ao(À) Senhor(a):</p>
+                  <p className="uppercase text-base font-bold">{printingOficio.recipient_name}</p>
+                  {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
+                  {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
+                </div>
+
+                {/* Assunto */}
+                <div className="mb-4 text-sm text-black">
+                  <p className="font-bold">
+                    Assunto: <span className="underline">{printingOficio.title_subject}</span>
+                  </p>
+                </div>
+
+                {/* Vocativo Inicial */}
+                <div className="mb-3 text-sm font-normal text-black">
+                  <p>{printingOficio.salutation}</p>
+                </div>
+
+                {/* Corpo do Texto Principal */}
+                <div className="mb-6 text-[14px] leading-relaxed text-justify space-y-3 text-black font-normal">
+                  {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
+                    <p key={idx} style={{ textIndent: '1.5rem' }}>
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+
+                {/* Fecho de Cortesia */}
+                <div className="mb-6 text-sm text-black font-normal">
+                  <p>{printingOficio.closure_text}</p>
+                </div>
+
+                {/* ASSINATURA ELETRÔNICA OFICIAL / CARIMBO OU LINHA FÍSICA */}
+                {printingOficio.signatures && printingOficio.signatures.length > 0 ? (
+                  <div className="my-6 space-y-4">
+                    {printingOficio.signatures.map((sig, idx) => (
+                      <ElectronicSignatureStamp key={idx} signature={sig} />
+                    ))}
+                  </div>
+                ) : (
+                  (() => {
+                    const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
+                    const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
+                    return (
+                      <div className="text-center w-2/3 mx-auto pt-6 text-black" style={{ color: '#000000' }}>
+                        <div className="border-t border-black pt-1.5">
+                          <p className="font-bold uppercase text-sm text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
+                          <p className="text-xs uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
+                          <p className="text-[10px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+
+              {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar Fixado na Parte Inferior */}
+              <div className="mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+                <div className="text-left space-y-0.5">
+                  <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
+                  <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
+                  <p>Site: www.seduc.mt.gov.br</p>
+                </div>
+                <div className="text-left space-y-0.5 pl-6">
+                  <p>Rua Borba Gato, nº 80, Bairro Torre</p>
+                  <p>CEP: 78500-000 – Colíder-MT Fones +55 (66) 99682-7608</p>
+                  <p>Email: escola.158330@edu.mt.gov.br</p>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       )}
 
-      {/* Estilos CSS Otimizados para Impressão em 1 Única Página A4 */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @media screen {
-          .print-oficio-area { display: none !important; }
-        }
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0 !important;
-          }
-          html, body {
-            height: 100% !important;
-            width: 100% !important;
-            overflow: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          body * { visibility: hidden !important; }
-          .print-oficio-area, .print-oficio-area * { visibility: visible !important; }
-          .print-oficio-area { 
-            position: fixed !important; 
-            left: 0 !important; 
-            top: 0 !important; 
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100vw !important; 
-            height: 100vh !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            background: white !important;
-            color: black !important;
-            box-sizing: border-box !important;
-            padding: 8mm 12mm 4mm 12mm !important;
-          }
-          .pdf-page { 
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            height: 100% !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-        }
-      `}} />
+      {/* MODAL DE ASSINATURA ELETRÔNICA POR SENHA / PIN */}
+      {isSigningModalOpen && signingOficio && (
+        <ElectronicSignatureModal
+          isOpen={isSigningModalOpen}
+          onClose={() => {
+            setIsSigningModalOpen(false);
+            setSigningOficio(null);
+          }}
+          documentTitle={`OFÍCIO Nº ${signingOficio.formatted_number}`}
+          documentType="OFÍCIO ESCOLAR"
+          documentContentText={`OFÍCIO Nº ${signingOficio.formatted_number}\nASSUNTO: ${signingOficio.title_subject}\nDESTINATÁRIO: ${signingOficio.recipient_name}\n${signingOficio.body_text}`}
+          allowedRoles={['DIRETOR', 'SECRETARIO', 'COORDENADOR', 'GESTOR_MILITAR', 'ADMIN']}
+          defaultSignerRole={moduleSource === 'SECRETARIA' ? 'SECRETÁRIO(A) ESCOLAR' : moduleSource === 'COORDENACAO' ? 'COORDENADOR(A) PEDAGÓGICO(A)' : 'DIRETOR ESCOLAR'}
+          onSignatureComplete={handleSignatureComplete}
+        />
+      )}
 
     </div>
   );

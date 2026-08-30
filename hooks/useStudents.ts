@@ -4,15 +4,28 @@ import { supabase } from '../supabaseClient';
 export interface Student {
     id: string;
     name: string;
+    Nome?: string;
     class: string;
+    Turma?: string;
     shift?: string;
     birth_date?: string;
     registration_number?: string;
+    CodigoAluno?: string;
     enrollment_date?: string;
     adjustment_date?: string;
     guardian_name?: string;
+    guardianName?: string;
+    NomeMae?: string;
+    NomePai?: string;
     contact_phone?: string;
+    contactPhone?: string;
+    Telefone?: string;
+    address?: string;
+    Endereco?: string;
     status?: string;
+    paed?: boolean;
+    school_transport?: boolean;
+    gender?: string;
 }
 
 export const useStudents = () => {
@@ -57,18 +70,53 @@ export const useStudents = () => {
                     const enrollment = sortedEnrollments[0];
                     const classroom = enrollment?.classrooms;
                     
+                    const guardian = (s.guardian_name || '').trim();
+                    const phone = (s.contact_phone || '').trim();
+                    const address = (s.address || '').trim();
+
+                    // Resolução precisa do status (prioriza TRANSFERIDO, DESISTENTE, EVADIDO, FALECIDO)
+                    const rawStudentStatus = (s.status || '').trim().toUpperCase();
+                    const rawEnrollmentStatus = (enrollment?.status || '').trim().toUpperCase();
+                    const classroomName = (classroom?.name || '').toUpperCase();
+
+                    let resolvedStatus = 'ATIVO';
+                    if (rawStudentStatus.startsWith('TRANSFERIDO') || rawStudentStatus === 'DESISTENTE' || rawStudentStatus === 'EVADIDO' || rawStudentStatus === 'FALECIDO' || rawStudentStatus === 'INATIVO') {
+                        resolvedStatus = rawStudentStatus;
+                    } else if (rawEnrollmentStatus.startsWith('TRANSFERIDO') || rawEnrollmentStatus === 'DESISTENTE' || rawEnrollmentStatus === 'EVADIDO' || rawEnrollmentStatus === 'FALECIDO' || rawEnrollmentStatus === 'INATIVO') {
+                        resolvedStatus = rawEnrollmentStatus;
+                    } else if (classroomName.includes('TRANSFERIDO')) {
+                        resolvedStatus = 'TRANSFERIDO DE ESCOLA';
+                    } else if (rawEnrollmentStatus) {
+                        resolvedStatus = rawEnrollmentStatus;
+                    } else if (rawStudentStatus) {
+                        resolvedStatus = rawStudentStatus;
+                    }
+
                     return {
                         id: s.id,
                         name: s.name,
+                        Nome: s.name,
                         class: classroom?.name || 'SEM TURMA',
+                        Turma: classroom?.name || 'SEM TURMA',
                         shift: classroom?.shift || '---',
                         birth_date: s.birth_date,
                         registration_number: s.registration_number,
+                        CodigoAluno: s.registration_number || s.id,
                         enrollment_date: enrollment?.enrollment_date,
                         adjustment_date: enrollment?.adjustment_date,
-                        status: enrollment?.status || 'INATIVO',
-                        guardian_name: s.guardian_name,
-                        contact_phone: s.contact_phone
+                        status: resolvedStatus,
+                        guardian_name: guardian,
+                        guardianName: guardian,
+                        NomeMae: guardian,
+                        NomePai: guardian,
+                        contact_phone: phone,
+                        contactPhone: phone,
+                        Telefone: phone,
+                        address: address,
+                        Endereco: address,
+                        paed: s.paed,
+                        school_transport: s.school_transport,
+                        gender: s.gender
                     };
                 });
 

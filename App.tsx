@@ -17,16 +17,18 @@ import SecretariatModule from './modules/SecretariatModule';
 import SpecialEducationModule from './modules/SpecialEducationModule';
 import CivicoMilitarModule from './modules/CivicoMilitarModule';
 import TrainingModule from './modules/TrainingModule';
+import EducarteModule from './modules/EducarteModule';
 import Settings from './components/Settings';
 import Hub from './components/Hub';
 import Login from './components/Login';
 import PublicEnvironmentView from './components/PublicEnvironmentView';
+import PublicDocumentVerifier from './components/PublicDocumentVerifier';
 import { User } from './types';
 import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { INITIAL_STUDENTS } from './constants/initialData';
 
-export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'mediacao' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'settings';
+export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'mediacao' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'educarte' | 'settings';
 
 const App: React.FC = () => {
   const [isPending, startTransition] = useTransition();
@@ -60,7 +62,7 @@ const App: React.FC = () => {
       const validModules: ModuleTypeExtended[] = [
         'hub', 'merenda', 'finance', 'library', 'scheduling', 'teacher',
         'pedagogical', 'almoxarifado', 'patrimonio', 'limpeza', 'infraestrutura',
-        'busca_ativa', 'psychosocial', 'mediacao', 'secretariat', 'special_education', 'civico_militar', 'training', 'settings'
+        'busca_ativa', 'psychosocial', 'mediacao', 'secretariat', 'special_education', 'civico_militar', 'training', 'educarte', 'settings'
       ];
       if (validModules.includes(saved as ModuleTypeExtended)) {
         return saved as ModuleTypeExtended;
@@ -108,13 +110,35 @@ const App: React.FC = () => {
     }
   });
 
+  const [verifierCode, setVerifierCode] = useState<string | null>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('verificar') || params.get('codigo') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [isVerifierOpen, setIsVerifierOpen] = useState<boolean>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return Boolean(params.get('verificar') || params.get('codigo'));
+    } catch (e) {
+      return false;
+    }
+  });
+
   // Escuta query parameters para ler redirecionamentos de QR Code
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const queryLocation = params.get('location') || params.get('public_ambiente');
       const queryPatrimonio = params.get('patrimonio');
-      if (queryLocation) {
+      const queryVerificar = params.get('verificar') || params.get('codigo');
+
+      if (queryVerificar) {
+        setVerifierCode(queryVerificar);
+        setIsVerifierOpen(true);
+      } else if (queryLocation) {
         setPublicLocation(queryLocation);
       } else if (queryPatrimonio) {
         localStorage.setItem('qr_patrimonio_filter', queryPatrimonio);
@@ -249,6 +273,7 @@ const App: React.FC = () => {
       case 'special_education': return <SpecialEducationModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'civico_militar': return <CivicoMilitarModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'training': return <TrainingModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'educarte': return <EducarteModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'settings': return (
         <div className="min-h-screen bg-gray-50 p-8 lg:p-12">
           <div className="max-w-7xl mx-auto space-y-8">
@@ -284,6 +309,16 @@ const App: React.FC = () => {
           <div className={`bg-gray-50 w-full min-w-0 ${(!user || activeModule === 'hub' || activeModule === 'settings') ? 'min-h-screen overflow-x-hidden' : 'h-screen overflow-hidden print:h-auto print:overflow-visible'}`}>
             {renderActiveModule()}
           </div>
+
+          {/* MODAL PÚBLICO DE VERIFICAÇÃO DE AUTENTICIDADE (LEI Nº 14.063/2020) */}
+          <PublicDocumentVerifier
+            isOpen={isVerifierOpen}
+            initialCode={verifierCode || ''}
+            onClose={() => {
+              setIsVerifierOpen(false);
+              setVerifierCode(null);
+            }}
+          />
         </ToastProvider>
       </Suspense>
     </ErrorBoundary>

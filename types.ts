@@ -166,7 +166,168 @@ export interface ClassCouncil {
   timestamp: number;
 }
 
-export interface PsychosocialReferral { id: string; schoolUnit: string; studentName: string; studentAge: string; className: string; teacherName: string; previousStrategies: string; observedAspects: { learning: string[]; behavioral: string[]; emotional: string[]; }; report: string; status: 'PENDENTE' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO'; date: string; timestamp: number; priority: 'BAIXA' | 'MEDIA' | 'ALTA'; reason: string; feedback?: string; attachments?: string[]; attendanceFrequency?: string; adopted_procedures?: string[]; referralDestination?: 'BUSCA_ATIVA' | 'MEDIACAO' | 'CONSELHO_TUTELAR' | 'ASSISTENCIA_SOCIAL'; mediationProcedures?: string[]; }
+export type ExternalNetworkDestination = 
+  | 'CONSELHO_TUTELAR'
+  | 'CAPSI_SAUDE_MENTAL'
+  | 'CRAS'
+  | 'CREAS'
+  | 'PROMOTORIA_INFANCIA'
+  | 'UBS_SAUDE_BASICA'
+  | 'OUTRO';
+
+export interface PsychosocialExternalReferral {
+  id: string;
+  protocolNumber: string;
+  studentId?: string;
+  studentName: string;
+  className: string;
+  studentAge?: string;
+  birthDate?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianAddress?: string;
+  destination: ExternalNetworkDestination;
+  destinationName?: string;
+  urgency: 'NORMAL' | 'URGENTE' | 'URGENTÍSSIMA';
+  reason: string;
+  schoolActionsTaken: string;
+  psychosocialOpinion: string;
+  requestedActions: string;
+  professionalName: string;
+  professionalRole: string;
+  professionalRegister?: string;
+  directorName: string;
+  referralDate: string;
+  status: 'EMITIDO' | 'NOTIFICADO' | 'EM_ACOMPANHAMENTO' | 'RESPOSTA_RECEBIDA' | 'CONCLUÍDO';
+  responseNotes?: string;
+  createdAt?: string;
+  signatures?: ElectronicSignatureProof[];
+  isSigned?: boolean;
+}
+
+export type PsychosocialSessionType = 
+  | 'ESCUTA_INDIVIDUAL_ALUNO'
+  | 'ENTREVISTA_FAMILIAR'
+  | 'ALINHAMENTO_PEDAGOGICO'
+  | 'VISITA_DOMICILIAR'
+  | 'ESTUDO_CASO_INTERSETORIAL'
+  | 'MANEJO_CRISE_EMOCIONAL';
+
+export interface PsychosocialSessionLog {
+  id: string;
+  date: string;
+  time?: string;
+  type: PsychosocialSessionType;
+  participants: string;
+  professionalName: string;
+  professionalRole: string;
+  summary: string;
+  confidentialNotes?: string;
+  immediateActions?: string;
+}
+
+export interface PsychosocialProcessStep {
+  id: string;
+  label: string;
+  completed: boolean;
+  date?: string;
+}
+
+export interface PsychosocialCase {
+  id: string;
+  caseNumber?: string;
+  studentId?: string;
+  studentName: string;
+  className: string;
+  studentAge?: string;
+  birthDate?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianAddress?: string;
+  status: 'ACOLHIMENTO' | 'EM_ACOMPANHAMENTO' | 'AGUARDANDO_REDE' | 'CONCLUÍDO';
+  priority: 'BAIXA' | 'MÉDIA' | 'ALTA' | 'CRÍTICA';
+  demandType: 'SAUDE_MENTAL' | 'VULNERABILIDADE_SOCIAL' | 'VIOLENCIA_DOMESTICA' | 'LUTO_CRISE' | 'COMPORTAMENTAL_GRAVE' | 'INFREQUENCIA_EVASAO' | 'OUTRO';
+  origin: 'TRIAGEM_MEDIACAO' | 'GESTAO_ESCOLAR' | 'BUSCA_ATIVA' | 'DEMANDA_ESPONTANEA';
+  originReferralId?: string;
+  openedAt: string;
+  closedAt?: string;
+  initialDemand: string;
+  logs: PsychosocialSessionLog[];
+  steps: PsychosocialProcessStep[];
+  technicalOpinion?: string;
+  schoolRecommendations?: string;
+  externalNetworkAction?: string;
+  professionalInCharge?: string;
+}
+
+export interface PsychosocialReferral { 
+  id: string; 
+  schoolUnit: string; 
+  studentName: string; 
+  studentAge: string; 
+  className: string; 
+  teacherName: string; 
+  previousStrategies: string; 
+  observedAspects: { learning: string[]; behavioral: string[]; emotional: string[]; }; 
+  report: string; 
+  status: 'PENDENTE' | 'EM_ACOMPANHAMENTO' | 'CONCLUÍDO'; 
+  date: string; 
+  timestamp: number; 
+  priority: 'BAIXA' | 'MEDIA' | 'ALTA'; 
+  reason: string; 
+  feedback?: string; 
+  attachments?: string[]; 
+  attendanceFrequency?: string; 
+  adopted_procedures?: string[]; 
+  referralDestination?: 'BUSCA_ATIVA' | 'MEDIACAO' | 'CONSELHO_TUTELAR' | 'ASSISTENCIA_SOCIAL' | 'PSICOSSOCIAL'; 
+  mediationProcedures?: string[];
+  origin_case_id?: string;
+  psychosocialOpinion?: string;
+}
+
+export interface ElectronicSignatureProof {
+  id: string;
+  documentId: string;
+  documentType: 'TERMO_COMPROMISSO' | 'FICAI' | 'RELATORIO_CIRCUNSTANCIADO' | 'ATA_REUNIAO' | 'ENCAMINHAMENTO_MEDIACAO' | 'OUTRO';
+  documentTitle: string;
+  documentHash: string; // SHA-256 da íntegra do documento
+  signerId: string;
+  signerName: string;
+  signerRole: string;
+  signerCpfOrMatricula: string;
+  signatureType: 'SENHA_INSTITUCIONAL' | 'PIN_SEGURANCA' | 'TELA_TOUCH' | 'CODIGO_WHATSAPP';
+  verificationCode: string; // Ex: AUTH-MAGGI-9F3A-88B1-2026
+  signedAt: string; // ISO 8601
+  ipAddress?: string;
+  legalBasis: string; // "Lei Federal nº 14.063/2020 e MP nº 2.200-2/2001"
+  touchSignatureDataUrl?: string; // Desenho da assinatura se feito na tela
+  notes?: string;
+}
+
+export interface PsychosocialCircumstantiatedReport {
+  id: string;
+  reportNumber: string; // Ex: RELATÓRIO CIRCUNSTANCIADO Nº 001/2026
+  schoolUnit: string;
+  incidentDate: string;
+  incidentLocation: string;
+  involvedStudents: string; // Nomes dos alunos envolvidos
+  className?: string;
+  recordedFact: string; // 1. Fato Registrado
+  schoolMeasuresTaken: string; // 2. Providências Adotadas pela Escola (Comunicação pais, BO, LGPD imagens)
+  psychosocialActions: string; // 3. Ações da Equipe Psicossocial, Mediador, Coordenação (Acolhimento, FICAI, Cultura de Paz)
+  socioEducationalProfile: string; // 4. Perfil Socioeducacional (Família, Reincidência, Busca Ativa, Rendimento, Pé-de-Meia, Bolsa Família)
+  futureForwarding: string; // 5. Encaminhamentos Futuros / Pós-Fato (Promotoria, CAPSi, Conselho)
+  attachedDocumentsChecklist: string[]; // 6. Documentos para juntada
+  participants: string; // Presentes
+  psychosocialProfessional: string;
+  mediatorName?: string;
+  coordinatorName?: string;
+  directorName: string;
+  status: 'EM_ANALISE' | 'FINALIZADO' | 'ENCAMINHADO_PROMOTORIA' | 'ENCAMINHADO_CONSELHO';
+  createdAt: string;
+  signatures?: ElectronicSignatureProof[];
+  isSigned?: boolean;
+}
 
 export interface PsychosocialMeetingAta {
   id: string;
@@ -198,6 +359,29 @@ export interface PsychosocialMeetingAta {
   encerramentoEncaminhamentos?: string;
 
   timestamp: number;
+  signatures?: ElectronicSignatureProof[];
+  isSigned?: boolean;
+}
+
+export interface ParentCommitmentTerm {
+  id: string;
+  termNumber: string; // Ex: TERMO DE COMPROMISSO Nº 001/2026
+  studentId?: string;
+  studentName: string;
+  className: string;
+  guardianName: string;
+  guardianCpf?: string;
+  guardianPhone: string;
+  meetingDate: string;
+  absencesCount: number;
+  absenceReasons: string;
+  agreedCommitments: string[]; // Compromissos assumidos pelos pais
+  schoolGuidance: string; // Orientações da gestão/coordenação
+  responsibleStaff: string; // Coordenador/Gestor que atendeu
+  status: 'ASSINADO' | 'PENDENTE_COMPARECIMENTO' | 'DESCUMPRIDO' | 'CUMPRIDO';
+  createdAt: string;
+  signatures?: ElectronicSignatureProof[];
+  isSigned?: boolean;
 }
 
 export interface AtaParticipant {
@@ -423,8 +607,27 @@ export type MediationStatus = 'ABERTURA' | 'PLANEJAMENTO' | 'EXECUÇÃO' | 'CONC
 export type CaseSeverity = 'BAIXA' | 'MÉDIA' | 'ALTA' | 'CRÍTICA';
 export interface MediationStep { id: string; label: string; completed: boolean; date?: string; }
 export interface MediationLog { id: string; date: string; professional: string; content: string; category?: string; photo?: string; photos?: string[]; }
-export type MediationCaseType = 'CONFLITO' | 'BULLYING' | 'FAMILIAR' | 'INFREQUÊNCIA' | 'EMOCIONAL' | 'DISCIPLINAR' | 'CELULAR' | 'DISCRIMINAÇÃO' | 'OUTRO' | string;
-export interface MediationCase { id: string; studentId: string; studentName: string; className: string; type: MediationCaseType; severity: CaseSeverity; status: MediationStatus; openedAt: string; closedAt?: string; description: string; involvedParties: string[]; steps: MediationStep[]; logs: MediationLog[]; feedback?: string; originReferralId?: string; teacherName?: string; }
+export type MediationCaseType = 'CONFLITO' | 'BULLYING' | 'FAMILIAR' | 'INFREQUÊNCIA' | 'EMOCIONAL' | 'DISCIPLINAR' | 'CELULAR' | 'DISCRIMINAÇÃO' | 'CÍRCULO DE PAZ' | 'OUTRO' | string;
+export interface MediationCase { 
+  id: string; 
+  studentId: string; 
+  studentName: string; 
+  className: string; 
+  type: MediationCaseType; 
+  severity: CaseSeverity; 
+  status: MediationStatus; 
+  openedAt: string; 
+  closedAt?: string; 
+  description: string; 
+  involvedParties: string[]; 
+  steps: MediationStep[]; 
+  logs: MediationLog[]; 
+  feedback?: string; 
+  originReferralId?: string; 
+  teacherName?: string;
+  targetScope?: 'INDIVIDUAL' | 'GRUPO' | 'TURMA';
+  participantsCount?: number;
+}
 export type MediationCalendarMonth = 
   | 'FEVEREIRO' 
   | 'MARÇO' 

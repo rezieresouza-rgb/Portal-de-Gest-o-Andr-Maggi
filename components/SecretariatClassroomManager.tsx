@@ -68,6 +68,11 @@ interface DetailedStudent {
   NomeResponsavel: string;
   TelefoneContato: string;
   gender?: string;
+  paed_pathology?: string;
+  paed_cid?: string;
+  paed_has_caregiver?: string;
+  paed_attends_aee?: string;
+  paed_pedagogical_guidelines?: string;
 }
 
 const SecretariatClassroomManager: React.FC = () => {
@@ -104,7 +109,12 @@ const SecretariatClassroomManager: React.FC = () => {
       NomeResponsavel: '',
       TelefoneContato: '',
       status: 'ATIVO',
-      gender: 'MASCULINO'
+      gender: 'MASCULINO',
+      paed_pathology: '',
+      paed_cid: '',
+      paed_has_caregiver: 'Não',
+      paed_attends_aee: 'Não',
+      paed_pedagogical_guidelines: ''
    });
 
    // Movement States
@@ -285,7 +295,7 @@ const SecretariatClassroomManager: React.FC = () => {
 
    // --- STUDENT ACTIONS ---
 
-   const openStudentProfile = (student: any) => {
+   const openStudentProfile = async (student: any) => {
       const sid = student.id || student.id_aluno;
       console.log("Abrindo perfil do aluno ID:", sid);
       
@@ -313,8 +323,34 @@ const SecretariatClassroomManager: React.FC = () => {
          status: student.status || 'ATIVO',
          enrollment_date: student.enrollment_date || '',
          adjustment_date: student.adjustment_date || '',
-         gender: student.gender || 'MASCULINO'
+         gender: student.gender || 'MASCULINO',
+         paed_pathology: '',
+         paed_cid: '',
+         paed_has_caregiver: 'Não',
+         paed_attends_aee: 'Não',
+         paed_pedagogical_guidelines: ''
       };
+
+      try {
+         const { data: paedeMov } = await supabase
+            .from('student_movements')
+            .select('*')
+            .eq('student_id', sid)
+            .eq('movement_type', 'PAEDE_LAUDO')
+            .order('movement_date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+         if (paedeMov) {
+            normalized.paed_pathology = paedeMov.description || '';
+            normalized.paed_cid = paedeMov.cid_code || '';
+            normalized.paed_has_caregiver = paedeMov.doctor_name === 'COM CUIDADOR' ? 'Sim' : 'Não';
+            normalized.paed_attends_aee = paedeMov.responsible_name === 'FREQUENTA AEE' ? 'Sim' : 'Não';
+            normalized.paed_pedagogical_guidelines = paedeMov.destination_school || '';
+         }
+      } catch (e) {
+         console.error(e);
+      }
 
       setEditingStudentId(sid);
       setStudentForm(normalized);
@@ -339,6 +375,8 @@ const SecretariatClassroomManager: React.FC = () => {
             status: studentForm.status || 'ATIVO',
             gender: studentForm.gender || 'MASCULINO'
          };
+
+         let targetStudentId = editingStudentId;
 
          if (isEditingStudent) {
             if (!editingStudentId) {
@@ -445,6 +483,7 @@ const SecretariatClassroomManager: React.FC = () => {
                .single();
             
             if (error) throw error;
+            targetStudentId = newStudent.id;
             
             // Link to classroom if selected
             if (studentForm.Turma && studentForm.Turma !== 'SEM TURMA') {
@@ -458,6 +497,37 @@ const SecretariatClassroomManager: React.FC = () => {
                }
             }
             alert("Aluno cadastrado com sucesso!");
+         }
+
+         // Sincronizar Ficha de Laudo / PAEDE na tabela student_movements
+         if (targetStudentId) {
+            if (studentForm.PAED === 'Sim') {
+               const { data: existingPaede } = await supabase
+                  .from('student_movements')
+                  .select('id')
+                  .eq('student_id', targetStudentId)
+                  .eq('movement_type', 'PAEDE_LAUDO')
+                  .maybeSingle();
+
+               const paedePayload = {
+                  student_id: targetStudentId,
+                  movement_type: 'PAEDE_LAUDO',
+                  description: (studentForm.paed_pathology || 'PAEDE / EDUCAÇÃO ESPECIAL').toUpperCase(),
+                  cid_code: (studentForm.paed_cid || '').toUpperCase(),
+                  doctor_name: studentForm.paed_has_caregiver === 'Sim' ? 'COM CUIDADOR' : 'SEM CUIDADOR',
+                  responsible_name: studentForm.paed_attends_aee === 'Sim' ? 'FREQUENTA AEE' : 'NÃO FREQUENTA AEE',
+                  destination_school: studentForm.paed_pedagogical_guidelines || '',
+                  movement_date: new Date().toISOString().split('T')[0]
+               };
+
+               if (existingPaede) {
+                  await supabase.from('student_movements').update(paedePayload).eq('id', existingPaede.id);
+               } else {
+                  await supabase.from('student_movements').insert([paedePayload]);
+               }
+            } else {
+               await supabase.from('student_movements').delete().eq('student_id', targetStudentId).eq('movement_type', 'PAEDE_LAUDO');
+            }
          }
 
          setIsStudentModalOpen(false);
@@ -1144,8 +1214,92 @@ const SecretariatClassroomManager: React.FC = () => {
                                     </select>
                                  </div>
                               </div>
+
+                              {/* PAINEL DE EDUCAÇÃO ESPECIAL / PAEDE */}
+                              {studentForm.PAED === 'Sim' && (
+                                 <div className="p-6 bg-amber-50/90 border-2 border-amber-300 rounded-[2.5rem] space-y-4 animate-in slide-in-from-top-2 duration-300 shadow-sm mt-3">
+                                    <div className="flex items-center gap-3">
+                                       <div className="w-10 h-10 bg-amber-500 text-white rounded-2xl shadow-md flex items-center justify-center font-black text-lg">
+                                          ♿
+                                       </div>
+                                       <div>
+                                          <h4 className="text-xs font-black text-amber-950 uppercase tracking-tight">Ficha de Inclusão & Acessibilidade (PAEDE / AEE)</h4>
+                                          <p className="text-[9px] text-amber-700 font-bold uppercase tracking-widest">Aparece diretamente no diário e notas dos professores</p>
+                                       </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                       <div className="space-y-1">
+                                          <label className="text-[9px] font-black text-amber-800 uppercase tracking-widest ml-1">Patologia / Diagnóstico *</label>
+                                          <select
+                                             value={studentForm.paed_pathology || ''}
+                                             onChange={e => setStudentForm({ ...studentForm, paed_pathology: e.target.value })}
+                                             className="w-full p-3.5 bg-white border border-amber-200 rounded-xl font-black text-xs outline-none focus:ring-4 focus:ring-amber-500/10 text-amber-950 uppercase"
+                                          >
+                                             <option value="">Selecione o Diagnóstico...</option>
+                                             <option value="AUTISMO (TEA)">AUTISMO (TEA - Transtorno do Espectro Autista)</option>
+                                             <option value="TDAH">TDAH (Déficit de Atenção e Hiperatividade)</option>
+                                             <option value="DEFICIÊNCIA INTELECTUAL (DI)">DEFICIÊNCIA INTELECTUAL (DI)</option>
+                                             <option value="DEFICIÊNCIA AUDITIVA / SURDEZ (LIBRAS)">DEFICIÊNCIA AUDITIVA / SURDEZ (LIBRAS)</option>
+                                             <option value="DEFICIÊNCIA VISUAL (BAIXA VISÃO / CEGUEIRA)">DEFICIÊNCIA VISUAL (BAIXA VISÃO / CEGUEIRA)</option>
+                                             <option value="PARALISIA CEREBRAL (PC)">PARALISIA CEREBRAL (PC)</option>
+                                             <option value="SÍNDROME DE DOWN">SÍNDROME DE DOWN (T21)</option>
+                                             <option value="ALTAS HABILIDADES / SUPERDOTAÇÃO">ALTAS HABILIDADES / SUPERDOTAÇÃO</option>
+                                             <option value="MÚLTIPLAS DEFICIÊNCIAS">MÚLTIPLAS DEFICIÊNCIAS</option>
+                                             <option value="OUTRO DIAGNÓSTICO / EM INVESTIGAÇÃO">OUTRO DIAGNÓSTICO / EM INVESTIGAÇÃO</option>
+                                          </select>
+                                       </div>
+
+                                       <div className="space-y-1">
+                                          <label className="text-[9px] font-black text-amber-800 uppercase tracking-widest ml-1">Código CID (Opcional)</label>
+                                          <input
+                                             placeholder="Ex: F84.0, F90.0..."
+                                             value={studentForm.paed_cid || ''}
+                                             onChange={e => setStudentForm({ ...studentForm, paed_cid: e.target.value.toUpperCase() })}
+                                             className="w-full p-3.5 bg-white border border-amber-200 rounded-xl font-bold text-xs outline-none focus:ring-4 focus:ring-amber-500/10 text-amber-950 uppercase"
+                                          />
+                                       </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                       <div className="space-y-1">
+                                          <label className="text-[9px] font-black text-amber-800 uppercase tracking-widest ml-1">Possui Cuidador?</label>
+                                          <select
+                                             value={studentForm.paed_has_caregiver || 'Não'}
+                                             onChange={e => setStudentForm({ ...studentForm, paed_has_caregiver: e.target.value })}
+                                             className="w-full p-3 bg-white border border-amber-200 rounded-xl font-bold text-xs outline-none text-amber-950 uppercase"
+                                          >
+                                             <option value="Não">Não</option>
+                                             <option value="Sim">Sim, Possui Cuidador</option>
+                                          </select>
+                                       </div>
+
+                                       <div className="space-y-1">
+                                          <label className="text-[9px] font-black text-amber-800 uppercase tracking-widest ml-1">Frequenta AEE?</label>
+                                          <select
+                                             value={studentForm.paed_attends_aee || 'Não'}
+                                             onChange={e => setStudentForm({ ...studentForm, paed_attends_aee: e.target.value })}
+                                             className="w-full p-3 bg-white border border-amber-200 rounded-xl font-bold text-xs outline-none text-amber-950 uppercase"
+                                          >
+                                             <option value="Não">Não</option>
+                                             <option value="Sim">Sim, Frequenta Sala Recursos</option>
+                                          </select>
+                                       </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                       <label className="text-[9px] font-black text-amber-800 uppercase tracking-widest ml-1">Orientações Pedagógicas para os Professores</label>
+                                       <textarea
+                                          placeholder="Ex: Aluno necessita de tempo ampliado para provas, comandos visuais, adaptação de material..."
+                                          value={studentForm.paed_pedagogical_guidelines || ''}
+                                          onChange={e => setStudentForm({ ...studentForm, paed_pedagogical_guidelines: e.target.value })}
+                                          className="w-full p-3 bg-white border border-amber-200 rounded-xl font-medium text-xs outline-none focus:ring-4 focus:ring-amber-500/10 text-amber-950 h-20 resize-none"
+                                       />
+                                    </div>
+                                 </div>
+                              )}
                            </div>
-   
+
                            <div className="space-y-3">
                               <div className="p-8 bg-indigo-900 rounded-[3rem] text-white space-y-3 shadow-2xl relative overflow-hidden">
                                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />

@@ -222,14 +222,14 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
           <div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[9px] font-black uppercase tracking-widest">
-                Modelo Oficial SEDUC/MT
+                Modelo Oficial SEDUC/MT • Equipe Psicossocial
               </span>
             </div>
             <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mt-1">
-              Encaminhamento para Mediação
+              Avaliação & Parecer Técnico Psicossocial
             </h3>
             <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">
-              Instrumento Oficial Docente — Núcleo de Mediação e Práticas Restaurativas
+              Escuta Especializada e Acompanhamento — Equipe Multidisciplinar
             </p>
           </div>
         </div>
@@ -249,7 +249,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
             onClick={handleSubmit}
             className="px-8 py-3.5 bg-rose-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-rose-600/20 hover:bg-rose-700 transition-all flex items-center gap-2"
           >
-            <Save size={16} /> Salvar & Encaminhar
+            <Save size={16} /> Salvar Parecer Técnico
           </button>
         </div>
       </div>
@@ -260,22 +260,22 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
         {/* CABEÇALHO DO DOCUMENTO NO FORMULÁRIO */}
         <div className="text-center pb-6 border-b border-gray-100 space-y-1">
           <div className="inline-flex items-center justify-center p-3 bg-rose-50 text-rose-600 rounded-2xl mb-2">
-            <Scale size={28} />
+            <Brain size={28} />
           </div>
           <h2 className="text-xl md:text-2xl font-black text-gray-900 uppercase tracking-tight">
-            ENCAMINHAMENTO PARA MEDIAÇÃO
+            AVALIAÇÃO & PARECER TÉCNICO PSICOSSOCIAL
           </h2>
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
             {formData.schoolUnit}
           </p>
         </div>
 
-        {/* 1. IDENTIFICAÇÃO DO ESTUDANTE E PROFESSOR */}
+        {/* 1. IDENTIFICAÇÃO DO ESTUDANTE E PROFISSIONAL */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 text-gray-900 border-b border-gray-100 pb-3">
             <User size={18} className="text-rose-600" />
             <h4 className="text-xs font-black uppercase tracking-[0.15em]">
-              1. Identificação
+              1. Identificação do Discente e Técnico Responsável
             </h4>
           </div>
 
@@ -567,7 +567,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
             {/* TÍTULO */}
             <div className="text-center my-3">
               <h2 className="text-base font-bold uppercase text-black tracking-wider" style={{ fontFamily: 'Arial, sans-serif' }}>
-                ENCAMINHAMENTO PARA MEDIAÇÃO
+                FICHA DE AVALIAÇÃO & PARECER TÉCNICO PSICOSSOCIAL
               </h2>
             </div>
 
@@ -580,14 +580,14 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
                 <p><strong>Ano/Turma:</strong> {formData.className || '____________'}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <p><strong>Professor:</strong> {formData.teacherName || '________________________'}</p>
+                <p><strong>Técnico / Responsável:</strong> {formData.teacherName || '________________________'}</p>
                 <p><strong>Data:</strong> {new Date(formData.date).toLocaleDateString('pt-BR')}</p>
               </div>
             </div>
 
             {/* ESTRATÉGIAS */}
             <div className="text-xs space-y-1 mb-3">
-              <p className="font-bold uppercase">Estratégias já realizadas pela PROFESSOR :</p>
+              <p className="font-bold uppercase">Intervenções e Acolhimentos Realizados:</p>
               <div className="border border-black p-2.5 min-h-[60px] text-justify leading-relaxed whitespace-pre-line">
                 {formData.previousStrategies || "________________________________________________________________________________________________________________________________________________________________________________________________________________________________"}
               </div>
