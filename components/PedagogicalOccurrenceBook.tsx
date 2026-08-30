@@ -31,10 +31,12 @@ import {
   Calendar,
   Layers,
   ChevronDown,
-  PhoneCall
+  PhoneCall,
+  Scale
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { supabase } from '../supabaseClient';
+import PsychosocialCircumstantiatedReportManager from './PsychosocialCircumstantiatedReportManager';
 
 interface PedagogicalOccurrenceBookProps {
   user?: any;
@@ -66,7 +68,7 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
   const { addToast } = useToast();
   
   // Abas Principais
-  const [activeTab, setActiveTab] = useState<'RESOLUTION' | 'OTHER_SECTORS' | 'RADAR' | 'METRICS'>('RESOLUTION');
+  const [activeTab, setActiveTab] = useState<'RESOLUTION' | 'OTHER_SECTORS' | 'RADAR' | 'METRICS' | 'CIRCUMSTANTIATED_REPORTS'>('RESOLUTION');
   
   // Dados
   const [occurrences, setOccurrences] = useState<OccurrenceItem[]>([]);
@@ -561,6 +563,18 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
           <Sparkles size={16} className={activeTab === 'METRICS' ? 'text-purple-400' : 'text-slate-400'} />
           📈 Indicadores & Análise
         </button>
+
+        <button
+          onClick={() => setActiveTab('CIRCUMSTANTIATED_REPORTS')}
+          className={`px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2.5 ${
+            activeTab === 'CIRCUMSTANTIATED_REPORTS'
+              ? 'bg-gradient-to-r from-rose-600 to-indigo-600 text-white shadow-lg shadow-rose-600/20'
+              : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+          }`}
+        >
+          <Scale size={16} className={activeTab === 'CIRCUMSTANTIATED_REPORTS' ? 'text-white' : 'text-rose-600'} />
+          ⚖️ Relatórios Circunstanciados (Conselho/MP)
+        </button>
       </div>
 
       {/* BARRA DE FILTROS RÁPIDOS */}
@@ -971,6 +985,13 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
               <p className="text-3xl font-black text-rose-600">{reincidenteStudents.length}</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ABA 5: RELATÓRIOS CIRCUNSTANCIADOS (CONSELHO TUTELAR & MINISTÉRIO PÚBLICO) */}
+      {activeTab === 'CIRCUMSTANTIATED_REPORTS' && (
+        <div className="space-y-6 animate-in fade-in">
+          <PsychosocialCircumstantiatedReportManager user={user} role="COORDENADOR" />
         </div>
       )}
 

@@ -60,6 +60,8 @@ import OfficialAtasManager from '../components/OfficialAtasManager';
 import SpecialEducationAEEHub from '../components/SpecialEducationAEEHub';
 import CoordinationRiskRadar from '../components/CoordinationRiskRadar';
 import EducarteReports from '../components/EducarteReports';
+import PsychosocialCircumstantiatedReportManager from '../components/PsychosocialCircumstantiatedReportManager';
+import { Scale } from 'lucide-react';
 
 import { User as UserType } from '../types';
 
@@ -68,7 +70,7 @@ interface PedagogicalModuleProps {
   user: UserType;
 }
 
-type TabType = 'dashboard' | 'performance' | 'aee_special_education' | 'educarte' | 'plans' | 'occurrences' | 'observations' | 'class_council' | 'external_grades' | 'referrals' | 'oficios' | 'atas' | 'calendar' | 'schedules' | 'projects' | 'ia_insights';
+type TabType = 'dashboard' | 'performance' | 'aee_special_education' | 'educarte' | 'plans' | 'occurrences' | 'observations' | 'class_council' | 'external_grades' | 'referrals' | 'oficios' | 'atas' | 'circumstantiated_reports' | 'calendar' | 'schedules' | 'projects' | 'ia_insights';
 
 const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) => {
   const { addToast } = useToast();
@@ -363,6 +365,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     {
       category: 'DOCUMENTAÇÃO & PROJETOS',
       items: [
+        { id: 'circumstantiated_reports', label: 'Relatórios Circunstanciados (Conselho/MP)', icon: Scale, highlight: true },
         { id: 'atas', label: 'Registro e Lavratura de Atas', icon: FileSpreadsheet },
         { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
         { id: 'referrals', label: 'Encaminhamentos à Rede', icon: Send },
@@ -652,6 +655,9 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
 
       case 'atas':
         return <OfficialAtasManager moduleSource="COORDENACAO" user={user} />;
+
+      case 'circumstantiated_reports':
+        return <PsychosocialCircumstantiatedReportManager user={user} role="COORDENADOR" />;
 
       case 'calendar':
         return <UnifiedSchoolCalendar user={user} />;
