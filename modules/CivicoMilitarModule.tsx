@@ -3535,7 +3535,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                 student.score >= 2.0 ? 'bg-rose-100 text-rose-800' :
                                 'bg-red-600 text-white animate-pulse'
                               }`}>
-                                {student.score.toFixed(2)} • {status}
+                                {student.score.toFixed(2)} • {status.label}
                               </span>
                             </td>
 
