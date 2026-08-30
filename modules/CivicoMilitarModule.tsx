@@ -57,6 +57,25 @@ const generateUUID = (): string => {
   });
 };
 
+export const CIRCUNSTANCIAS_AGRAVANTES_ART35 = [
+  'I - Ser chefe de turma',
+  'II - Estar no comportamento insuficiente ou no incompatível',
+  'III - Ser reincidente em falta disciplinar de mesma classificação',
+  'IV - Prática simultânea ou conexão de 02 (duas) ou mais faltas disciplinares',
+  'V - A participação na prática de falta disciplinar de 02 (dois) ou mais alunos',
+  'VI - Abusar de função enquanto chefe de turma ou em posição de liderança sobre outros alunos',
+  'VII - Ter cometido a falta em público, na presença de aluno em forma ou na sala de aula',
+  'VIII - Ter agido com premeditação, no cometimento da falta',
+  'IX - Ter sido cometida contra chefe de turma'
+];
+
+export const CIRCUNSTANCIAS_ATENUANTES_ART34 = [
+  'I - Estar no comportamento excepcional ou ótimo',
+  'II - Ter sido cometida a falta para evitar mal maior ou em defesa própria/de outrem',
+  'III - Ter confessado espontaneamente a autoria da falta',
+  'IV - Falta de prática das normas e rotina militar (aluno novato)',
+  'V - Ter agido sob provocação injusta ou coação'
+];
 
 export const CivicoMilitarLogoBadge: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl', showLabel?: boolean }> = ({ size = 'md', showLabel = false }) => {
   const badgeClasses = 
@@ -3142,23 +3161,94 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* ATENUANTES (ART. 34) */}
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase">Atenuantes</label>
+                          <div className="flex justify-between items-center">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase">Circunstâncias Atenuantes (Art. 34)</label>
+                            {docFields.atenuantes && (
+                              <button
+                                type="button"
+                                onClick={() => setDocFields(prev => ({ ...prev, atenuantes: '' }))}
+                                className="text-[8px] font-bold text-rose-600 uppercase hover:underline"
+                              >
+                                Limpar
+                              </button>
+                            )}
+                          </div>
+                          
+                          <select
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (!val) return;
+                              setDocFields(prev => {
+                                const current = prev.atenuantes ? prev.atenuantes.trim() : '';
+                                if (!current) return { ...prev, atenuantes: val };
+                                if (current.includes(val)) return prev;
+                                return { ...prev, atenuantes: `${current}; ${val}` };
+                              });
+                              e.target.value = '';
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:bg-white focus:ring-2 focus:ring-blue-100"
+                          >
+                            <option value="">+ Selecionar Atenuante do Art. 34...</option>
+                            {CIRCUNSTANCIAS_ATENUANTES_ART34.map((item, idx) => (
+                              <option key={idx} value={item}>{item}</option>
+                            ))}
+                            <option value="Nenhuma circunstância atenuante observada">Nenhuma circunstância atenuante</option>
+                          </select>
+
                           <textarea
                             value={docFields.atenuantes}
                             onChange={e => setDocFields(prev => ({ ...prev, atenuantes: e.target.value }))}
-                            placeholder="Circunstâncias atenuantes..."
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                            placeholder="Atenuantes selecionadas ou digite observações..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[55px]"
                           />
                         </div>
+
+                        {/* AGRAVANTES (ART. 35) */}
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase">Agravantes</label>
+                          <div className="flex justify-between items-center">
+                            <label className="text-[9px] font-bold text-rose-600 uppercase flex items-center gap-1">
+                              <span>Circunstâncias Agravantes (Art. 35)</span>
+                            </label>
+                            {docFields.agravantes && (
+                              <button
+                                type="button"
+                                onClick={() => setDocFields(prev => ({ ...prev, agravantes: '' }))}
+                                className="text-[8px] font-bold text-rose-600 uppercase hover:underline"
+                              >
+                                Limpar
+                              </button>
+                            )}
+                          </div>
+
+                          <select
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (!val) return;
+                              setDocFields(prev => {
+                                const current = prev.agravantes ? prev.agravantes.trim() : '';
+                                if (!current) return { ...prev, agravantes: val };
+                                if (current.includes(val)) return prev;
+                                return { ...prev, agravantes: `${current}; ${val}` };
+                              });
+                              e.target.value = '';
+                            }}
+                            className="w-full bg-rose-50/70 border border-rose-200 rounded-xl px-3 py-2 text-xs font-semibold text-rose-900 outline-none cursor-pointer focus:bg-white focus:ring-2 focus:ring-rose-200"
+                          >
+                            <option value="">+ Selecionar Agravante do Art. 35...</option>
+                            {CIRCUNSTANCIAS_AGRAVANTES_ART35.map((item, idx) => (
+                              <option key={idx} value={item}>{item}</option>
+                            ))}
+                            <option value="Nenhuma circunstância agravante observada">Nenhuma circunstância agravante</option>
+                          </select>
+
                           <textarea
                             value={docFields.agravantes}
                             onChange={e => setDocFields(prev => ({ ...prev, agravantes: e.target.value }))}
-                            placeholder="Circunstâncias agravantes..."
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[60px]"
+                            placeholder="Agravantes selecionadas ou digite observações..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400 min-h-[55px]"
                           />
                         </div>
                       </div>
@@ -3762,13 +3852,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <div className="space-y-4 mb-10 text-xs text-gray-900">
                           <div className="space-y-1">
                             <p className="font-bold">Circunstâncias atenuantes:</p>
-                            <p className="border-b border-gray-400 h-5 px-1 uppercase">{docFields.atenuantes}</p>
-                            <p className="border-b border-gray-400 h-5"></p>
+                            <p className="border-b border-gray-400 min-h-[22px] px-1 uppercase leading-snug break-words">
+                              {docFields.atenuantes || '___________________________________________________________________________________'}
+                            </p>
                           </div>
                           <div className="space-y-1">
                             <p className="font-bold">Circunstâncias agravantes:</p>
-                            <p className="border-b border-gray-400 h-5 px-1 uppercase">{docFields.agravantes}</p>
-                            <p className="border-b border-gray-400 h-5"></p>
+                            <p className="border-b border-gray-400 min-h-[22px] px-1 uppercase leading-snug break-words">
+                              {docFields.agravantes || '___________________________________________________________________________________'}
+                            </p>
                           </div>
                         </div>
 
