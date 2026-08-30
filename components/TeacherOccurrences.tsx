@@ -378,27 +378,12 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(docsList));
             }
 
-            // ENCAMINHAMENTO 2: PSICOSSOCIAL E MEDIAÇÃO
+            // ENCAMINHAMENTO 2: MEDIAÇÃO ESCOLAR (Porta de Entrada / Triagem)
             if (form.destination === 'PSYCHOSOCIAL' || form.forwardToPsychosocial) {
                const activeTeacher = form.teacherName || 'PROFESSOR';
                const fullReport = `[ENCAMINHAMENTO DOCENTE] [Professor: ${activeTeacher}]\nMotivo: ${form.title || 'Encaminhamento Direto'}\n\nRelato:\n${form.description}`;
 
-               const { error: referralError } = await supabase.from('psychosocial_referrals').insert([{
-                  student_name: student.name,
-                  class_name: student.class,
-                  teacher_name: activeTeacher,
-                  school_unit: 'ESCOLA ANDRÉ MAGGI',
-                  date: form.date,
-                  report: fullReport,
-                  status: 'AGUARDANDO_TRIAGEM',
-                  student_age: 'Não informado',
-                  attendance_frequency: '0',
-                  previous_strategies: form.destination === 'PEDAGOGICAL' ? 'Intervenção Pedagógica em Sala' : 'Intervenção Docente',
-                  adopted_procedures: ['ENCAMINHAMENTO_DIRETO_PROFESSOR'],
-                  observations: { learning: [], behavioral: [], emotional: [] }
-               }]);
-
-               // Criar caso de Mediação Escolar
+               // Criar caso EXCLUSIVAMENTE na Mediação Escolar para escuta e acolhimento
                await supabase.from('mediation_cases').insert([{
                   student_id: student.id || 'N/A',
                   student_name: student.name,
@@ -411,19 +396,17 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                   involved_parties: [activeTeacher],
                   steps: [
                      { id: '1', label: 'Encaminhamento pelo Professor', completed: true, date: form.date },
-                     { id: '2', label: 'Escuta das Partes', completed: false },
+                     { id: '2', label: 'Escuta das Partes / Aluno', completed: false },
                      { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
                      { id: '4', label: 'Acordo / Finalização', completed: false }
                   ]
                }]);
 
-               if (!referralError) {
-                  await supabase.from('psychosocial_notifications').insert([{
-                     title: 'Novo Encaminhamento Docente',
-                     message: `O professor(a) ${activeTeacher} encaminhou o aluno ${student.name} (${student.class}) para acompanhamento.`,
-                     is_read: false
-                  }]);
-               }
+               await supabase.from('psychosocial_notifications').insert([{
+                  title: 'Novo Encaminhamento Docente • Mediação Escolar',
+                  message: `O professor(a) ${activeTeacher} encaminhou o aluno ${student.name} (${student.class}) para acolhimento e mediação.`,
+                  is_read: false
+               }]);
             }
          }
 

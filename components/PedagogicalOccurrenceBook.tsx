@@ -332,24 +332,9 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
 
       if (error) throw error;
 
-      // Integração Direta com Módulo Psicossocial & Mediação
+      // Integração Direta EXCLUSIVA com Módulo de Mediação Escolar (Triagem e Escuta)
       if (tramitateTarget === 'PSICOSSOCIAL_MEDIACAO') {
         try {
-          await supabase.from('psychosocial_referrals').insert([{
-            student_name: tramitateModalOcc.studentName,
-            class_name: tramitateModalOcc.className,
-            teacher_name: `COORDENAÇÃO (${coordName})`,
-            school_unit: 'ESCOLA ANDRÉ MAGGI',
-            date: new Date().toISOString().split('T')[0],
-            report: newDescription,
-            status: 'AGUARDANDO_TRIAGEM',
-            student_age: 'Não informado',
-            attendance_frequency: '0',
-            previous_strategies: 'Triado e Encaminhado pela Coordenação Pedagógica',
-            adopted_procedures: ['TRAMITACAO_COORDENACAO_PEDAGOGICA'],
-            observations: { learning: [], behavioral: ['Tramitado pela Coordenação'], emotional: [] }
-          }]);
-
           await supabase.from('mediation_cases').insert([{
             student_id: 'N/A',
             student_name: tramitateModalOcc.studentName,
@@ -361,14 +346,14 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             description: newDescription,
             involved_parties: [coordName, tramitateModalOcc.responsibleName],
             steps: [
-              { id: '1', label: 'Encaminhado pela Coordenação', completed: true, date: new Date().toISOString().split('T')[0] },
-              { id: '2', label: 'Escuta das Partes', completed: false },
+              { id: '1', label: 'Encaminhado pela Coordenação Pedagógica', completed: true, date: new Date().toISOString().split('T')[0] },
+              { id: '2', label: 'Escuta das Partes / Aluno', completed: false },
               { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
               { id: '4', label: 'Acordo / Finalização', completed: false }
             ]
           }]);
         } catch (e) {
-          console.warn('Erro ao sincronizar tabelas psicossociais:', e);
+          console.warn('Erro ao sincronizar caso de mediação:', e);
         }
       }
 

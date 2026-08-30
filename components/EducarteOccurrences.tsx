@@ -296,27 +296,11 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
         targetTag = '[SETOR: PSICOSSOCIAL]\n[ORIGEM: PROJETO EDUCARTE - REGENTE]';
         categoryName = 'MEDIAÇÃO / PSICOSSOCIAL';
 
-        // Sincronizar com AMBOS: 1. Módulo Psicossocial e 2. Módulo de Mediação Escolar
+        // Sincronizar EXCLUSIVAMENTE com o Módulo de Mediação Escolar (Porta de Entrada / Triagem)
         try {
           const fullReport = `[ENCAMINHAMENTO PROJETO EDUCARTE / BANDA]\nEstudante: ${newOcc.studentName} (${newOcc.className})\nNaipe: ${formNaipe} | Instrumento: ${formInstrument || 'N/A'}\nRegente/Instrutor: ${user.name || 'Educarte'}\n\nRelato:\n${formDescription.trim()}`;
 
-          // 1. Módulo Psicossocial (psychosocial_referrals)
-          await supabase.from('psychosocial_referrals').insert([{
-            student_name: newOcc.studentName,
-            class_name: newOcc.className,
-            teacher_name: `${user.name || 'Regente'} (Educarte)`,
-            school_unit: 'ESCOLA ANDRÉ MAGGI',
-            date: formDate,
-            report: fullReport,
-            status: 'AGUARDANDO_TRIAGEM',
-            student_age: 'Não informado',
-            attendance_frequency: '0',
-            previous_strategies: 'Acolhimento no Projeto Educarte / Banda',
-            adopted_procedures: ['ENCAMINHAMENTO_EDUCARTE'],
-            observations: { learning: [], behavioral: [`Encaminhado pelo Projeto Educarte - Naipe ${formNaipe}`], emotional: [] }
-          }]);
-
-          // 2. Módulo de Mediação Escolar (mediation_cases)
+          // Módulo de Mediação Escolar (mediation_cases)
           await supabase.from('mediation_cases').insert([{
             student_id: 'N/A',
             student_name: newOcc.studentName,
@@ -335,14 +319,14 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
             ]
           }]);
 
-          // 3. Notificação para a Equipe
+          // Notificação para o Mediador
           await supabase.from('psychosocial_notifications').insert([{
-            title: 'Novo Encaminhamento • Projeto Educarte',
-            message: `O regente(a) ${user.name || 'Educarte'} encaminhou o aluno ${newOcc.studentName} (${newOcc.className} - Banda) para acompanhamento.`,
+            title: 'Novo Encaminhamento • Mediação Escolar',
+            message: `O regente(a) ${user.name || 'Educarte'} encaminhou o aluno ${newOcc.studentName} (${newOcc.className} - Banda) para acolhimento e mediação.`,
             is_read: false
           }]);
         } catch (e) {
-          console.warn('Erro ao sincronizar módulos psicossocial e mediação:', e);
+          console.warn('Erro ao sincronizar módulo de mediação:', e);
         }
       }
 
@@ -367,7 +351,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
     setOccurrences(prev => [newOcc, ...prev]);
     addToast({
       title: isForwarded ? 'Encaminhado com Sucesso!' : 'Registro Realizado!',
-      message: isForwarded ? 'A ocorrência foi sincronizada em todos os módulos de destino!' : 'Ocorrência registrada no Projeto Educarte.',
+      message: isForwarded ? 'A ocorrência foi tramitada para a Mediação Escolar para triagem!' : 'Ocorrência registrada no Projeto Educarte.',
       type: 'success'
     });
 
@@ -396,7 +380,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
       ? 'COORDENAÇÃO PEDAGÓGICA' 
       : tramitateTarget === 'CIVICO_MILITAR' 
         ? 'CORPO DE ALUNOS (MILITAR)' 
-        : 'MEDIAÇÃO PSICOSSOCIAL';
+        : 'MEDIAÇÃO ESCOLAR (TRIAGEM)';
 
     try {
       const targetTag = tramitateTarget === 'COORDENACAO_PEDAGOGICA' 
@@ -435,28 +419,12 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
         }]);
       }
 
-      // Sincronizar com Psicossocial e Mediação Escolar se o destino for PSICOSSOCIAL_MEDIACAO
+      // Sincronizar EXCLUSIVAMENTE com Mediação Escolar (Triagem Inicial)
       if (tramitateTarget === 'PSICOSSOCIAL_MEDIACAO') {
         try {
           const fullReport = `[TRAMITAÇÃO DO PROJETO EDUCARTE]\nEstudante: ${tramitateModalOcc.studentName} (${tramitateModalOcc.className})\nNaipe: ${tramitateModalOcc.naipe} | Instrumento: ${tramitateModalOcc.instrument || 'N/A'}\nJustificativa do Regente: ${tramitateReason.trim()}\n\nRelato Original:\n${tramitateModalOcc.description}`;
 
-          // 1. Módulo Psicossocial
-          await supabase.from('psychosocial_referrals').insert([{
-            student_name: tramitateModalOcc.studentName,
-            class_name: tramitateModalOcc.className,
-            teacher_name: `${user.name || 'Regente'} (Educarte)`,
-            school_unit: 'ESCOLA ANDRÉ MAGGI',
-            date: new Date().toISOString().split('T')[0],
-            report: fullReport,
-            status: 'AGUARDANDO_TRIAGEM',
-            student_age: 'Não informado',
-            attendance_frequency: '0',
-            previous_strategies: 'Acolhimento no Projeto Educarte / Banda',
-            adopted_procedures: ['TRAMITACAO_PROJETO_EDUCARTE'],
-            observations: { learning: [], behavioral: [`Tramitado pelo Projeto Educarte - Naipe ${tramitateModalOcc.naipe}`], emotional: [] }
-          }]);
-
-          // 2. Módulo de Mediação Escolar
+          // Módulo de Mediação Escolar
           await supabase.from('mediation_cases').insert([{
             student_id: 'N/A',
             student_name: tramitateModalOcc.studentName,
@@ -1033,12 +1001,12 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                   <option value="INTERNO_EDUCARTE">🎺 APENAS INTERNO NO EDUCARTE (Acompanhamento da Banda)</option>
                   <option value="COORDENACAO_PEDAGOGICA">🎓 TRAMITAR P/ COORDENAÇÃO PEDAGÓGICA (Rendimento/BNCC)</option>
                   <option value="CIVICO_MILITAR">🛡️ TRAMITAR P/ CORPO DE ALUNOS (Cívico-Militar / Disciplina)</option>
-                  <option value="PSICOSSOCIAL_MEDIACAO">🤝 TRAMITAR P/ MEDIAÇÃO ESCOLAR / PSICOSSOCIAL</option>
+                  <option value="PSICOSSOCIAL_MEDIACAO">🤝 TRAMITAR P/ MEDIAÇÃO ESCOLAR (Escuta / Triagem / Círculo)</option>
                 </select>
                 <p className="text-[10px] text-purple-700 font-medium">
                   {formDestination === 'COORDENACAO_PEDAGOGICA' && '✓ O caso entrará imediatamente na fila de resolução da Coordenação Pedagógica.'}
                   {formDestination === 'CIVICO_MILITAR' && '✓ O caso será encaminhado aos monitores cívico-militares para providência disciplinar.'}
-                  {formDestination === 'PSICOSSOCIAL_MEDIACAO' && '✓ O caso será aberto na mediação para escuta e acolhimento.'}
+                  {formDestination === 'PSICOSSOCIAL_MEDIACAO' && '✓ O caso será acolhido pela Mediação Escolar para escuta. Caso haja necessidade, a própria mediação tramitará para a Equipe Psicossocial.'}
                   {formDestination === 'INTERNO_EDUCARTE' && '✓ O caso fica sob gestão exclusiva do Regente e Instrutores do Educarte.'}
                 </p>
               </div>
@@ -1149,7 +1117,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                 >
                   <option value="COORDENACAO_PEDAGOGICA">🎓 COORDENAÇÃO PEDAGÓGICA (Rendimento / Dificuldades / BNCC)</option>
                   <option value="CIVICO_MILITAR">🛡️ CORPO DE ALUNOS (Gestão Cívico-Militar / Disciplina Grave)</option>
-                  <option value="PSICOSSOCIAL_MEDIACAO">🤝 EQUIPE PSICOSSOCIAL / MEDIAÇÃO ESCOLAR</option>
+                  <option value="PSICOSSOCIAL_MEDIACAO">🤝 MEDIAÇÃO ESCOLAR (Escuta / Triagem / Círculos de Convivência)</option>
                 </select>
               </div>
 
