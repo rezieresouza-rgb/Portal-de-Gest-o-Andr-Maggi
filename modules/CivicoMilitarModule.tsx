@@ -268,6 +268,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     pecaFaltante: ''
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
+  const [docFaltaSeverityFilter, setDocFaltaSeverityFilter] = useState<'TODAS' | 'LEVE' | 'MÉDIA' | 'GRAVE'>('TODAS');
 
   // Batch print states
   const [batchClassSelect, setBatchClassSelect] = useState<string>('ALL');
@@ -3130,6 +3131,128 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           <option value="Ações Educativas">Ações Educativas</option>
                           <option value="Transferência Educativa">Transferência Educativa</option>
                         </select>
+                      </div>
+
+                      {/* SELETOR DE FALTA DISCIPLINAR DIVIDIDO EM LEVE, MÉDIA E GRAVE */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <label className="text-[10px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <Shield size={14} className="text-blue-600" />
+                            Classificação da Falta Disciplinar (Regulamento EECM)
+                          </label>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => setDocFaltaSeverityFilter('TODAS')}
+                              className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${
+                                docFaltaSeverityFilter === 'TODAS'
+                                  ? 'bg-slate-900 text-white shadow-sm'
+                                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              Todas (91)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDocFaltaSeverityFilter('LEVE')}
+                              className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${
+                                docFaltaSeverityFilter === 'LEVE'
+                                  ? 'bg-emerald-600 text-white shadow-sm'
+                                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                              }`}
+                            >
+                              🟢 Leves (1 a 26)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDocFaltaSeverityFilter('MÉDIA')}
+                              className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${
+                                docFaltaSeverityFilter === 'MÉDIA'
+                                  ? 'bg-amber-600 text-white shadow-sm'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                              }`}
+                            >
+                              🟡 Médias (27 a 62)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDocFaltaSeverityFilter('GRAVE')}
+                              className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${
+                                docFaltaSeverityFilter === 'GRAVE'
+                                  ? 'bg-rose-600 text-white shadow-sm'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                              }`}
+                            >
+                              🔴 Graves (63 a 91)
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* SELECT COM OPTGROUP DE FALTAS */}
+                        <div>
+                          <select
+                            onChange={e => {
+                              const selectedCategory = e.target.value;
+                              if (!selectedCategory) return;
+                              
+                              const found = demeritOptions.find(d => d.category === selectedCategory);
+                              const matchNum = selectedCategory.match(/^(\d+)\./);
+                              const numStr = matchNum ? matchNum[1] : '';
+                              const suggestion = numStr && demeritSuggestionMap[numStr] ? demeritSuggestionMap[numStr] : selectedCategory;
+
+                              setDocFields(prev => ({
+                                ...prev,
+                                itensEnquadramento: selectedCategory,
+                                falta: prev.falta ? prev.falta : suggestion,
+                                faltaDate: prev.faltaDate || prev.date || new Date().toISOString().split('T')[0],
+                                medidaAplicada: prev.medidaAplicada || (
+                                  found?.severity === 'LEVE' ? 'Advertência Oral' :
+                                  found?.severity === 'MÉDIA' ? 'Advertência Escrita' :
+                                  'Suspensão de Sala de Aula'
+                                )
+                              }));
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs font-bold text-slate-900 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500 shadow-sm"
+                          >
+                            <option value="">+ Clique aqui para selecionar a falta disciplinar do regulamento...</option>
+                            
+                            {(docFaltaSeverityFilter === 'TODAS' || docFaltaSeverityFilter === 'LEVE') && (
+                              <optgroup label="🟢 FALTAS LEVES (Itens 1 a 26 — Perda de 0.2 pts)">
+                                {demeritOptions.filter(d => d.severity === 'LEVE').map((opt, idx) => (
+                                  <option key={`leve-${idx}`} value={opt.category}>
+                                    {opt.category}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+
+                            {(docFaltaSeverityFilter === 'TODAS' || docFaltaSeverityFilter === 'MÉDIA') && (
+                              <optgroup label="🟡 FALTAS MÉDIAS (Itens 27 a 62 — Perda de 0.5 pts)">
+                                {demeritOptions.filter(d => d.severity === 'MÉDIA').map((opt, idx) => (
+                                  <option key={`media-${idx}`} value={opt.category}>
+                                    {opt.category}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+
+                            {(docFaltaSeverityFilter === 'TODAS' || docFaltaSeverityFilter === 'GRAVE') && (
+                              <optgroup label="🔴 FALTAS GRAVES (Itens 63 a 91 — Perda de 1.0 pts)">
+                                {demeritOptions.filter(d => d.severity === 'GRAVE').map((opt, idx) => (
+                                  <option key={`grave-${idx}`} value={opt.category}>
+                                    {opt.category}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+
+                            <optgroup label="📝 OUTROS ENQUADRAMENTOS">
+                              <option value="[OUTROS] Falta Leve (Descrever na observação)">[OUTROS] Falta Leve personalizada</option>
+                              <option value="[OUTROS] Falta Média (Descrever na observação)">[OUTROS] Falta Média personalizada</option>
+                              <option value="[OUTROS] Falta Grave (Descrever na observação)">[OUTROS] Falta Grave personalizada</option>
+                            </optgroup>
+                          </select>
+                        </div>
                       </div>
 
                       <div className="space-y-2">
