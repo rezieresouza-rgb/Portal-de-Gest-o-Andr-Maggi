@@ -655,7 +655,7 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
                   </div>
                 </div>
 
-                {/* Passo 7: Verificação de Infrequência Escolar & Emissão da FICAI (Art. 56, II do ECA) */}
+                {/* Passo 7: Expedição de FICAI por Indisciplina Reiterada ou Infrequência (Art. 56, II e III do ECA) */}
                 <div className={`p-4 rounded-2xl border transition-all ${reincidenciaChecks.step7_ficai_infrequencia ? 'bg-emerald-50/40 border-emerald-200' : 'bg-rose-50/60 border-rose-200'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
@@ -666,11 +666,11 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
                         <div className="flex items-center gap-1.5">
                           <FileText size={14} className="text-rose-600" />
                           <span className="text-xs font-black text-rose-950 uppercase">
-                            Passo 7: Infrequência Escolar & Expedição de FICAI (Art. 56, II do ECA)
+                            Passo 7: Expedição de FICAI por Indisciplina Reiterada ou Infrequência (Art. 56, II e III do ECA)
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-600 mt-1">
-                          Se a reincidência for acompanhada de faltas escolares não justificadas ou evasão (acima de 10% a 30% do total de aulas), emitir a Ficha de Comunicação de Aluno Infrequente (FICAI Online) para notificação do Conselho Tutelar e Promotoria.
+                          A FICAI é o instrumento legal oficial de comunicação ao Conselho Tutelar <strong>tanto para casos de reiteração de indisciplina escolar e descumprimento de TACE (esgotados os recursos internos - Art. 56, III do ECA) quanto para infrequência/evasão (Art. 56, II do ECA)</strong>.
                         </p>
                       </div>
                     </div>

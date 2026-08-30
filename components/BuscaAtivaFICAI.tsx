@@ -51,19 +51,26 @@ export interface FicaiRecord {
 }
 
 const MOTIVOS_ECA = [
-  '5 Faltas Consecutivas sem Justificativa',
-  'Infrequência Injustificada Superior a 10%',
+  'Reiteração de Graves Atos de Indisciplina e Descumprimento de TACE (Art. 56, III ECA)',
+  'Infrequência Injustificada Superior a 10% / Faltas Reiteradas (Art. 56, II ECA)',
+  '5 ou Mais Faltas Consecutivas sem Justificativa',
   'Suspeita de Evasão / Abandono Escolar',
-  'Impossibilidade de Contato Telefônico ou Domiciliar'
+  'Conflitos Graves, Agressão ou Ameaça no Ambiente Escolar',
+  'Suspeita de Violação de Direitos / Maus-Tratos / Vulnerabilidade Familiar (Art. 56, I ECA)',
+  'Impossibilidade de Contato Telefônico ou Recusa dos Pais em Comparecer'
 ];
 
 const PROVIDENCIAS_ESCOLA = [
+  'Aplicação de Medidas Disciplinares e Ficha de Enquadramento EECM',
+  'Celebração de Termo de Ajustamento de Conduta Escolar (TACE - Art. 22)',
+  'Atendimento e Acolhimento pela Equipe Psicossocial (Lei 13.935/19)',
+  'Sessão de Mediação Escolar e Círculo Restaurativo de Paz',
   'Contato Telefônico / WhatsApp com os Pais realizado',
-  'Notificação por Escrito com Aviso de Recebimento',
+  'Notificação por Escrito e Convocação Presencial dos Pais',
   'Anotação e Alerta Registrado em Diário de Classe',
   'Visita Domiciliar realizada pela Equipe Escolar',
-  'Reunião com a Coordenação Pedagógica / Direção',
-  'Encaminhamento para Mediação de Conflitos / Psicossocial'
+  'Reunião com a Coordenação Pedagógica e Direção Escolar',
+  'Esgotamento de todas as medidas pedagógicas e disciplinares internas'
 ];
 
 const BuscaAtivaFICAI: React.FC = () => {
