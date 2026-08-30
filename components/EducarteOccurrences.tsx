@@ -263,9 +263,87 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
       } else if (formDestination === 'CIVICO_MILITAR') {
         targetTag = '[SETOR: CIVICO_MILITAR]\n[ORIGEM: PROJETO EDUCARTE - REGENTE]';
         categoryName = 'FATO OBSERVADO';
+
+        // Sincronizar com Gestão Cívico-Militar
+        try {
+          const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
+          let docsList = [];
+          if (savedDocs) {
+            try { docsList = JSON.parse(savedDocs); } catch (e) {}
+          }
+          docsList.unshift({
+            id: `doc-edu-${Date.now()}`,
+            studentId: 'AUTO_EDUCARTE',
+            studentName: newOcc.studentName,
+            className: newOcc.className,
+            shiftName: 'VESPERTINO (CONTRATURNO)',
+            template: 'fato_observado',
+            templateLabel: 'Fato Observado (Via Projeto Educarte)',
+            date: formDate,
+            fields: {
+              date: formDate,
+              teacher: `${user.name || 'Regente'} (Educarte)`,
+              series: newOcc.className,
+              discipline: `Banda / Naipe ${formNaipe}`,
+              achado: formDescription.trim(),
+              city: 'Colíder - MT'
+            },
+            timestamp: Date.now()
+          });
+          localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(docsList));
+        } catch (e) {}
       } else if (formDestination === 'PSICOSSOCIAL_MEDIACAO') {
         targetTag = '[SETOR: PSICOSSOCIAL]\n[ORIGEM: PROJETO EDUCARTE - REGENTE]';
         categoryName = 'MEDIAÇÃO / PSICOSSOCIAL';
+
+        // Sincronizar com AMBOS: 1. Módulo Psicossocial e 2. Módulo de Mediação Escolar
+        try {
+          const fullReport = `[ENCAMINHAMENTO PROJETO EDUCARTE / BANDA]\nEstudante: ${newOcc.studentName} (${newOcc.className})\nNaipe: ${formNaipe} | Instrumento: ${formInstrument || 'N/A'}\nRegente/Instrutor: ${user.name || 'Educarte'}\n\nRelato:\n${formDescription.trim()}`;
+
+          // 1. Módulo Psicossocial (psychosocial_referrals)
+          await supabase.from('psychosocial_referrals').insert([{
+            student_name: newOcc.studentName,
+            class_name: newOcc.className,
+            teacher_name: `${user.name || 'Regente'} (Educarte)`,
+            school_unit: 'ESCOLA ANDRÉ MAGGI',
+            date: formDate,
+            report: fullReport,
+            status: 'AGUARDANDO_TRIAGEM',
+            student_age: 'Não informado',
+            attendance_frequency: '0',
+            previous_strategies: 'Acolhimento no Projeto Educarte / Banda',
+            adopted_procedures: ['ENCAMINHAMENTO_EDUCARTE'],
+            observations: { learning: [], behavioral: [`Encaminhado pelo Projeto Educarte - Naipe ${formNaipe}`], emotional: [] }
+          }]);
+
+          // 2. Módulo de Mediação Escolar (mediation_cases)
+          await supabase.from('mediation_cases').insert([{
+            student_id: 'N/A',
+            student_name: newOcc.studentName,
+            class_name: newOcc.className,
+            type: formCategory === 'DISCIPLINA_POSTURA' ? 'DISCIPLINAR' : 'CONFLITO',
+            severity: formSeverity === 'CRÍTICA' ? 'CRÍTICA' : (formSeverity === 'ALTA' ? 'ALTA' : 'MÉDIA'),
+            status: 'ABERTURA',
+            opened_at: formDate,
+            description: fullReport,
+            involved_parties: [`Regente ${user.name || 'Educarte'}`],
+            steps: [
+              { id: '1', label: 'Encaminhamento pelo Projeto Educarte', completed: true, date: formDate },
+              { id: '2', label: 'Escuta das Partes / Aluno', completed: false },
+              { id: '3', label: 'Círculo de Mediação / Acordo', completed: false },
+              { id: '4', label: 'Conclusão e Devolutiva ao Educarte', completed: false }
+            ]
+          }]);
+
+          // 3. Notificação para a Equipe
+          await supabase.from('psychosocial_notifications').insert([{
+            title: 'Novo Encaminhamento • Projeto Educarte',
+            message: `O regente(a) ${user.name || 'Educarte'} encaminhou o aluno ${newOcc.studentName} (${newOcc.className} - Banda) para acompanhamento.`,
+            is_read: false
+          }]);
+        } catch (e) {
+          console.warn('Erro ao sincronizar módulos psicossocial e mediação:', e);
+        }
       }
 
       const dbDescription = `[PROJETO EDUCARTE - NAIPE: ${formNaipe} | INSTRUMENTO: ${formInstrument || 'N/A'}]\n${formDescription.trim()}\n${targetTag}`;
@@ -289,7 +367,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
     setOccurrences(prev => [newOcc, ...prev]);
     addToast({
       title: isForwarded ? 'Encaminhado com Sucesso!' : 'Registro Realizado!',
-      message: isForwarded ? 'A ocorrência foi tramitada diretamente para a Coordenação/Gestão!' : 'Ocorrência registrada no Projeto Educarte.',
+      message: isForwarded ? 'A ocorrência foi sincronizada em todos os módulos de destino!' : 'Ocorrência registrada no Projeto Educarte.',
       type: 'success'
     });
 
@@ -355,6 +433,81 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
           responsible_name: `${user.name || 'Regente'} (Educarte)`,
           location: 'PROJETO EDUCARTE'
         }]);
+      }
+
+      // Sincronizar com Psicossocial e Mediação Escolar se o destino for PSICOSSOCIAL_MEDIACAO
+      if (tramitateTarget === 'PSICOSSOCIAL_MEDIACAO') {
+        try {
+          const fullReport = `[TRAMITAÇÃO DO PROJETO EDUCARTE]\nEstudante: ${tramitateModalOcc.studentName} (${tramitateModalOcc.className})\nNaipe: ${tramitateModalOcc.naipe} | Instrumento: ${tramitateModalOcc.instrument || 'N/A'}\nJustificativa do Regente: ${tramitateReason.trim()}\n\nRelato Original:\n${tramitateModalOcc.description}`;
+
+          // 1. Módulo Psicossocial
+          await supabase.from('psychosocial_referrals').insert([{
+            student_name: tramitateModalOcc.studentName,
+            class_name: tramitateModalOcc.className,
+            teacher_name: `${user.name || 'Regente'} (Educarte)`,
+            school_unit: 'ESCOLA ANDRÉ MAGGI',
+            date: new Date().toISOString().split('T')[0],
+            report: fullReport,
+            status: 'AGUARDANDO_TRIAGEM',
+            student_age: 'Não informado',
+            attendance_frequency: '0',
+            previous_strategies: 'Acolhimento no Projeto Educarte / Banda',
+            adopted_procedures: ['TRAMITACAO_PROJETO_EDUCARTE'],
+            observations: { learning: [], behavioral: [`Tramitado pelo Projeto Educarte - Naipe ${tramitateModalOcc.naipe}`], emotional: [] }
+          }]);
+
+          // 2. Módulo de Mediação Escolar
+          await supabase.from('mediation_cases').insert([{
+            student_id: 'N/A',
+            student_name: tramitateModalOcc.studentName,
+            class_name: tramitateModalOcc.className,
+            type: 'CONFLITO',
+            severity: tramitateModalOcc.severity === 'CRÍTICA' ? 'CRÍTICA' : (tramitateModalOcc.severity === 'ALTA' ? 'ALTA' : 'MÉDIA'),
+            status: 'ABERTURA',
+            opened_at: new Date().toISOString().split('T')[0],
+            description: fullReport,
+            involved_parties: [`Regente ${user.name || 'Educarte'}`],
+            steps: [
+              { id: '1', label: 'Encaminhamento pelo Projeto Educarte', completed: true, date: new Date().toISOString().split('T')[0] },
+              { id: '2', label: 'Escuta das Partes / Aluno', completed: false },
+              { id: '3', label: 'Círculo de Mediação / Acordo', completed: false },
+              { id: '4', label: 'Conclusão e Devolutiva ao Educarte', completed: false }
+            ]
+          }]);
+        } catch (e) {
+          console.warn('Erro ao sincronizar tabelas de mediação/psicossocial:', e);
+        }
+      }
+
+      // Sincronizar com Gestão Cívico-Militar se for CIVICO_MILITAR
+      if (tramitateTarget === 'CIVICO_MILITAR') {
+        try {
+          const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
+          let docsList = [];
+          if (savedDocs) {
+            try { docsList = JSON.parse(savedDocs); } catch (e) {}
+          }
+          docsList.unshift({
+            id: `doc-edu-tram-${Date.now()}`,
+            studentId: 'AUTO_EDUCARTE',
+            studentName: tramitateModalOcc.studentName,
+            className: tramitateModalOcc.className,
+            shiftName: 'VESPERTINO (CONTRATURNO)',
+            template: 'fato_observado',
+            templateLabel: 'Fato Observado (Via Projeto Educarte)',
+            date: new Date().toISOString().split('T')[0],
+            fields: {
+              date: new Date().toISOString().split('T')[0],
+              teacher: `${user.name || 'Regente'} (Educarte)`,
+              series: tramitateModalOcc.className,
+              discipline: `Banda / Naipe ${tramitateModalOcc.naipe}`,
+              achado: newDescription,
+              city: 'Colíder - MT'
+            },
+            timestamp: Date.now()
+          });
+          localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(docsList));
+        } catch (e) {}
       }
 
       // Atualiza estado local
