@@ -69,8 +69,9 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
   onOpenFICAI
 }) => {
   const [activeTab, setActiveTab] = useState<'FLAGRANTE' | 'REINCIDENCIA' | 'GUIA'>(initialMode);
+  const [copiedEducaSeg, setCopiedEducaSeg] = useState(false);
 
-  // States para checkboxes do Flagrante (9 etapas)
+  // States para checkboxes do Flagrante (10 etapas)
   const [flagranteChecks, setFlagranteChecks] = useState<{ [key: string]: boolean }>({
     step1_contencao: true,
     step2_guarda_material: false,
@@ -79,11 +80,12 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
     step5_convocacao_pais: true,
     step6_psicossocial: false,
     step7_fato_observado: true,
-    step8_oitiva_contraditorio: false,
-    step9_ficha_disciplinar: false
+    step8_educaseg: false,
+    step9_oitiva_contraditorio: false,
+    step10_ficha_disciplinar: false
   });
 
-  // States para checkboxes da Reincidência (9 etapas)
+  // States para checkboxes da Reincidência (10 etapas)
   const [reincidenciaChecks, setReincidenciaChecks] = useState<{ [key: string]: boolean }>({
     step1_dossie: true,
     step2_escalacao: true,
@@ -92,8 +94,9 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
     step5_celebracao_tace: false,
     step6_copia_conselho_mp: false,
     step7_ficai_infrequencia: false,
-    step8_certidao_recusa: false,
-    step9_conselho_disciplinar: false
+    step8_educaseg: false,
+    step9_certidao_recusa: false,
+    step10_conselho_disciplinar: false
   });
 
   const toggleFlagranteCheck = (key: string) => {
@@ -113,10 +116,38 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
   const studentPhone = student?.TelefoneContato || student?.contact_phone || '---';
 
   const flagranteCompletedCount = Object.values(flagranteChecks).filter(Boolean).length;
-  const flagranteProgress = Math.round((flagranteCompletedCount / 9) * 100);
+  const flagranteProgress = Math.round((flagranteCompletedCount / 10) * 100);
 
   const reincidenciaCompletedCount = Object.values(reincidenciaChecks).filter(Boolean).length;
-  const reincidenciaProgress = Math.round((reincidenciaCompletedCount / 9) * 100);
+  const reincidenciaProgress = Math.round((reincidenciaCompletedCount / 10) * 100);
+
+  const handleCopyEducaSegReport = (type: 'FLAGRANTE' | 'REINCIDENCIA') => {
+    const text = `=== REGISTRO OFICIAL EDUCASEG (SEDUC/SESP-MT) ===
+ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI - COLÍDER/MT
+TIPO DE REGISTRO: ${type === 'FLAGRANTE' ? 'OCORRÊNCIA GRAVE / FLAGRANTE DISCIPLINAR' : 'REINCIDÊNCIA CONTINUADA / TACE'}
+DATA DO REGISTRO: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}
+
+DADOS DO DISCENTE:
+- Nome: ${studentName}
+- Matrícula/Código: ${studentId}
+- Turma: ${studentClass}
+- Responsável Legal: ${studentGuardian} (Contato: ${studentPhone})
+
+ENQUADRAMENTO REGULAMENTAR (EECM-MT):
+- Categoria/Fato: ${occurrenceCategory || 'Falta Disciplinar Grave / Reincidência'}
+- Relato dos Fatos: ${occurrenceObservations || 'Sem observações adicionais informadas.'}
+
+PROVIDÊNCIAS DA GESTÃO EDUCACIONAL MILITAR:
+${type === 'FLAGRANTE' 
+  ? '- Contenção segura e isolamento dos envolvidos;\n- Guarda de material ilícito (se houver);\n- Acionamento da PM/Polícia Civil e Conselho Tutelar;\n- Convocação imediata dos pais;\n- Acolhimento psicossocial de emergência (Lei 13.935/19);' 
+  : '- Dossiê cronológico levantado no Radar de Reincidência;\n- Escalação progressiva de penalidade (Arts. 15 e 16 EECM);\n- Acompanhamento multidisciplinar psicossocial;\n- Sessão de Mediação Escolar / Círculo Restaurativo;\n- Celebração formal de TACE (Art. 22) com cópia ao Conselho Tutelar / FICAI;'}
+
+GESTOR EDUCACIONAL MILITAR RESPONSÁVEL: Gestão Militar / Monitoria EECM André Maggi`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedEducaSeg(true);
+    setTimeout(() => setCopiedEducaSeg(false), 3000);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -406,6 +437,7 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
                 </div>
 
                 {/* Passo 7: Auto de Constatação e Fato Observado */}
+                {/* Passo 7: Fato Observado */}
                 <div className={`p-4 rounded-2xl border transition-all ${flagranteChecks.step7_fato_observado ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
@@ -424,16 +456,46 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
                   </div>
                 </div>
 
-                {/* Passo 8: Oitiva e Contraditório */}
-                <div className={`p-4 rounded-2xl border transition-all ${flagranteChecks.step8_oitiva_contraditorio ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                {/* Passo 8: Inserção Obrigatória no Sistema EducaSeg (SEDUC/SESP-MT) */}
+                <div className={`p-4 rounded-2xl border transition-all ${flagranteChecks.step8_educaseg ? 'bg-emerald-50/40 border-emerald-200' : 'bg-amber-50/60 border-amber-200'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <button type="button" onClick={() => toggleFlagranteCheck('step8_oitiva_contraditorio')} className="mt-0.5 text-blue-600">
-                        {flagranteChecks.step8_oitiva_contraditorio ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
+                      <button type="button" onClick={() => toggleFlagranteCheck('step8_educaseg')} className="mt-0.5 text-blue-600">
+                        {flagranteChecks.step8_educaseg ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <ShieldAlert size={14} className="text-amber-700" />
+                          <span className="text-xs font-black text-amber-950 uppercase">
+                            Passo 8: Registro no Sistema EducaSeg pelo Gestor Educacional Militar (GEM)
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-1">
+                          Inserir a ocorrência grave/flagrante no <strong>Sistema EducaSeg (SEDUC/SESP-MT)</strong> para controle estatístico da Segurança Escolar Estadual e Coordenadoria Cívico-Militar.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyEducaSegReport('FLAGRANTE')}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 transition-all shadow-xs"
+                      title="Copiar relatório formatado para inserir no Sistema EducaSeg"
+                    >
+                      <FileText size={12} /> {copiedEducaSeg ? '✓ Copiado!' : 'Copiar p/ EducaSeg'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Passo 9: Oitiva e Contraditório */}
+                <div className={`p-4 rounded-2xl border transition-all ${flagranteChecks.step9_oitiva_contraditorio ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <button type="button" onClick={() => toggleFlagranteCheck('step9_oitiva_contraditorio')} className="mt-0.5 text-blue-600">
+                        {flagranteChecks.step9_oitiva_contraditorio ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
                       </button>
                       <div>
                         <span className="text-xs font-black text-slate-900 uppercase">
-                          Passo 8: Oitiva do Discente Acompanhado dos Responsáveis (Ampla Defesa)
+                          Passo 9: Oitiva do Discente Acompanhado dos Responsáveis (Ampla Defesa)
                         </span>
                         <p className="text-[11px] text-slate-600 mt-1">
                           Garantia do contraditório (Art. 5º, LV da CF/88). Ouvir as razões do aluno, verificar eventuais causas de justificação (Art. 33), atenuantes (Art. 34) e agravantes (Art. 35).
@@ -443,16 +505,16 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
                   </div>
                 </div>
 
-                {/* Passo 9: Aplicação da Medida Disciplinar */}
-                <div className={`p-4 rounded-2xl border transition-all ${flagranteChecks.step9_ficha_disciplinar ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                {/* Passo 10: Aplicação da Medida Disciplinar */}
+                <div className={`p-4 rounded-2xl border transition-all ${flagranteChecks.step10_ficha_disciplinar ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <button type="button" onClick={() => toggleFlagranteCheck('step9_ficha_disciplinar')} className="mt-0.5 text-blue-600">
-                        {flagranteChecks.step9_ficha_disciplinar ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
+                      <button type="button" onClick={() => toggleFlagranteCheck('step10_ficha_disciplinar')} className="mt-0.5 text-blue-600">
+                        {flagranteChecks.step10_ficha_disciplinar ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
                       </button>
                       <div>
                         <span className="text-xs font-black text-slate-900 uppercase">
-                          Passo 9: Lavratura da Ficha de Medida Disciplinar (Art. 16 / Anexo II)
+                          Passo 10: Lavratura da Ficha de Medida Disciplinar (Art. 16 / Anexo II)
                         </span>
                         <p className="text-[11px] text-slate-600 mt-1">
                           Aplicação da Suspensão de Sala de Aula (de 1 a 3 dias) acompanhada do cronograma de atividades pedagógicas e Estudo Orientado na unidade escolar. Cientificar sobre prazo de 2 dias úteis para pedido de reconsideração (Art. 44).
@@ -686,16 +748,46 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
                   </div>
                 </div>
 
-                {/* Passo 8: Em Caso de Recusa ou Ruptura */}
-                <div className={`p-4 rounded-2xl border transition-all ${reincidenciaChecks.step8_certidao_recusa ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                {/* Passo 8: Atualização do Histórico e TACE no Sistema EducaSeg (SEDUC/SESP-MT) */}
+                <div className={`p-4 rounded-2xl border transition-all ${reincidenciaChecks.step8_educaseg ? 'bg-emerald-50/40 border-emerald-200' : 'bg-amber-50/60 border-amber-200'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <button type="button" onClick={() => toggleReincidenciaCheck('step8_certidao_recusa')} className="mt-0.5 text-blue-600">
-                        {reincidenciaChecks.step8_certidao_recusa ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
+                      <button type="button" onClick={() => toggleReincidenciaCheck('step8_educaseg')} className="mt-0.5 text-blue-600">
+                        {reincidenciaChecks.step8_educaseg ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <ShieldAlert size={14} className="text-amber-700" />
+                          <span className="text-xs font-black text-amber-950 uppercase">
+                            Passo 8: Atualização no EducaSeg pelo Gestor Educacional Militar (GEM)
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-1">
+                          Alimentar a plataforma <strong>EducaSeg</strong> com a pactuação do TACE, reincidências continuadas do discente e os encaminhamentos realizados à Busca Ativa (FICAI) e Conselho Tutelar.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyEducaSegReport('REINCIDENCIA')}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 transition-all shadow-xs"
+                      title="Copiar relatório formatado para inserir no Sistema EducaSeg"
+                    >
+                      <FileText size={12} /> {copiedEducaSeg ? '✓ Copiado!' : 'Copiar p/ EducaSeg'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Passo 9: Em Caso de Recusa ou Ruptura */}
+                <div className={`p-4 rounded-2xl border transition-all ${reincidenciaChecks.step9_certidao_recusa ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <button type="button" onClick={() => toggleReincidenciaCheck('step9_certidao_recusa')} className="mt-0.5 text-blue-600">
+                        {reincidenciaChecks.step9_certidao_recusa ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
                       </button>
                       <div>
                         <span className="text-xs font-black text-slate-900 uppercase">
-                          Passo 8: Expediente à Promotoria da Infância / MP (Art. 26 e Art. 22 § 6º)
+                          Passo 9: Expediente à Promotoria da Infância / MP (Art. 26 e Art. 22 § 6º)
                         </span>
                         <p className="text-[11px] text-slate-600 mt-1">
                           Se houver recusa dos pais em assinar o TACE ou descumprimento injustificado das ações acordadas: lavrar certidão de recusa e remeter expediente à Promotoria de Justiça.
@@ -714,16 +806,16 @@ export const DisciplinaryChecklistModal: React.FC<DisciplinaryChecklistModalProp
                   </div>
                 </div>
 
-                {/* Passo 9: Instauração do Conselho Disciplinar */}
-                <div className={`p-4 rounded-2xl border transition-all ${reincidenciaChecks.step9_conselho_disciplinar ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                {/* Passo 10: Instauração do Conselho Disciplinar */}
+                <div className={`p-4 rounded-2xl border transition-all ${reincidenciaChecks.step10_conselho_disciplinar ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <button type="button" onClick={() => toggleReincidenciaCheck('step9_conselho_disciplinar')} className="mt-0.5 text-blue-600">
-                        {reincidenciaChecks.step9_conselho_disciplinar ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
+                      <button type="button" onClick={() => toggleReincidenciaCheck('step10_conselho_disciplinar')} className="mt-0.5 text-blue-600">
+                        {reincidenciaChecks.step10_conselho_disciplinar ? <CheckSquare size={18} className="text-emerald-600" /> : <Square size={18} className="text-slate-400" />}
                       </button>
                       <div>
                         <span className="text-xs font-black text-slate-900 uppercase">
-                          Passo 9: Instauração do Conselho de Ensino Disciplinar (Arts. 30 e 54 a 61)
+                          Passo 10: Instauração do Conselho de Ensino Disciplinar (Arts. 30 e 54 a 61)
                         </span>
                         <p className="text-[11px] text-slate-600 mt-1">
                           Se o aluno atingir o Comportamento Incompatível (&lt; 2,0): instaurar colegiado disciplinar para deliberação de Transferência Educativa, lavrando a respectiva Ata Oficial do Conselho.
