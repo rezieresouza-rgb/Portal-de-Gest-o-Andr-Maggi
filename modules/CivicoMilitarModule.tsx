@@ -39,7 +39,8 @@ import {
   ShieldAlert,
   RotateCcw,
   History,
-  Layers
+  Layers,
+  Save
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
