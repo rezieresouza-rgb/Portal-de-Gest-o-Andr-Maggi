@@ -23,7 +23,18 @@ import {
   Lock,
   Loader2,
   ShieldCheck,
-  Send
+  Send,
+  Paperclip,
+  Image as ImageIcon,
+  Clock,
+  CheckSquare,
+  Square,
+  FileCheck,
+  Eye,
+  RotateCcw,
+  ExternalLink,
+  Bell,
+  AlertCircle
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
@@ -33,7 +44,22 @@ import ElectronicSignatureModal from './ElectronicSignatureModal';
 
 interface PsychosocialCircumstantiatedReportManagerProps {
   user?: any;
-  role: PsychosocialRole;
+  role: PsychosocialRole | 'COORDENADOR' | 'GESTAO';
+  initialStudentName?: string;
+  onClose?: () => void;
+}
+
+interface RawEvidenceItem {
+  id: string;
+  type: 'OCORRENCIA' | 'MEDIACAO' | 'PSICOSSOCIAL' | 'FICAI' | 'MILITAR';
+  date: string;
+  time?: string;
+  title: string;
+  desc: string;
+  category?: string;
+  severity?: string;
+  author?: string;
+  checked: boolean;
 }
 
 const DEFAULT_DOCUMENTS_CHECKLIST = [
@@ -48,7 +74,9 @@ const DEFAULT_DOCUMENTS_CHECKLIST = [
 
 const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstantiatedReportManagerProps> = ({
   user,
-  role
+  role,
+  initialStudentName,
+  onClose
 }) => {
   const { students: dbStudents } = useStudents();
   const [reports, setReports] = useState<PsychosocialCircumstantiatedReport[]>([]);
@@ -62,6 +90,21 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
   const [studentSearch, setStudentSearch] = useState('');
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [isCompilingDossier, setIsCompilingDossier] = useState(false);
+
+  // Checklist Interativo de Provas
+  const [evidenceItems, setEvidenceItems] = useState<RawEvidenceItem[]>([]);
+  const [showEvidenceChecklist, setShowEvidenceChecklist] = useState(false);
+
+  // Modal de Protocolo Externo
+  const [protocolModalReport, setProtocolModalReport] = useState<PsychosocialCircumstantiatedReport | null>(null);
+  const [protocolForm, setProtocolForm] = useState({
+    protocolNumber: '',
+    receiptDate: new Date().toLocaleDateString('sv-SE'),
+    recipientEntity: 'CONSELHO_TUTELAR' as 'CONSELHO_TUTELAR' | 'PROMOTORIA_JUSTICA' | 'DRE_SINOP' | 'OUTRO',
+    recipientName: '',
+    notes: '',
+    receiptFileUrl: ''
+  });
 
   const currentYear = new Date().getFullYear();
 
@@ -84,7 +127,8 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     mediatorName: 'DANÚBIA DE CASTRO ALMEIDA',
     coordinatorName: 'COORDENAÇÃO PEDAGÓGICA',
     directorName: 'REZIERE DE SOUZA',
-    status: 'FINALIZADO'
+    status: 'FINALIZADO',
+    evidenceAttachments: []
   });
 
   const fetchReports = async () => {
@@ -116,7 +160,10 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
           coordinatorName: r.coordinator_name,
           directorName: r.director_name,
           status: r.status || 'FINALIZADO',
-          createdAt: r.created_at
+          createdAt: r.created_at,
+          evidenceAttachments: r.evidence_attachments || [],
+          externalProtocol: r.external_protocol || undefined,
+          followUpStatus: r.follow_up_status || undefined
         }));
         setReports(formatted);
       } else {
@@ -124,7 +171,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         if (saved) {
           setReports(JSON.parse(saved));
         } else {
-          // Inserir modelo padrão baseado no arquivo oficial do usuário
+          // Modelo padrão
           const defaultItem: PsychosocialCircumstantiatedReport = {
             id: 'rep-default-001',
             reportNumber: `RELATÓRIO CIRCUNSTANCIADO Nº 001/${currentYear}`,
@@ -145,7 +192,8 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
             coordinatorName: 'COORDENAÇÃO PEDAGÓGICA',
             directorName: 'REZIERE DE SOUZA',
             status: 'ENCAMINHADO_PROMOTORIA',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            evidenceAttachments: []
           };
           setReports([defaultItem]);
           localStorage.setItem('psychosocial_circumstantiated_reports_v1', JSON.stringify([defaultItem]));
@@ -163,6 +211,23 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
   useEffect(() => {
     fetchReports();
   }, []);
+
+  // Pre-carregar aluno inicial se fornecido
+  useEffect(() => {
+    if (initialStudentName && initialStudentName.trim()) {
+      setIsModalOpen(true);
+      const foundStudent = dbStudents.find(s => 
+        (s.Nome || s.name || '').toLowerCase().includes(initialStudentName.toLowerCase())
+      );
+      const targetClass = foundStudent ? (foundStudent.Turma || foundStudent.className || '') : '';
+      setForm(prev => ({
+        ...prev,
+        involvedStudents: initialStudentName,
+        className: targetClass
+      }));
+      handleAutoCompileDossier(initialStudentName, targetClass);
+    }
+  }, [initialStudentName, dbStudents]);
 
   const filteredStudents = useMemo(() => {
     if (!studentSearch.trim() || studentSearch.length < 2) return [];
@@ -184,6 +249,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     handleAutoCompileDossier(studentName, targetClass);
   };
 
+  // Compilação inteligente com checklist de evidências
   const handleAutoCompileDossier = async (studentName: string, className: string) => {
     if (!studentName.trim()) {
       alert('Por favor, selecione ou informe o nome do estudante para compilar o dossiê.');
@@ -194,28 +260,28 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     try {
       const cleanName = studentName.trim();
 
-      // 1. Buscar Ocorrências no Supabase
+      // 1. Ocorrências
       const { data: occData } = await supabase
         .from('occurrences')
         .select('*')
         .ilike('student_name', `%${cleanName}%`)
         .order('date', { ascending: true });
 
-      // 2. Buscar Casos de Mediação
+      // 2. Mediações
       const { data: medData } = await supabase
         .from('mediation_cases')
         .select('*')
         .ilike('student_name', `%${cleanName}%`)
         .order('opened_at', { ascending: true });
 
-      // 3. Buscar Encaminhamentos Psicossociais
+      // 3. Psicossocial
       const { data: psychoData } = await supabase
         .from('psychosocial_referrals')
         .select('*')
         .ilike('student_name', `%${cleanName}%`)
         .order('date', { ascending: true });
 
-      // 4. Buscar FICAI / Busca Ativa
+      // 4. FICAI
       let ficaiRecords: any[] = [];
       try {
         const savedFicai = localStorage.getItem('busca_ativa_ficai_records_v2');
@@ -225,7 +291,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         }
       } catch (e) {}
 
-      // 5. Buscar Documentos Militares
+      // 5. Militares
       let militaryDocs: any[] = [];
       try {
         const savedMil = localStorage.getItem('civico_militar_documentos_v2');
@@ -235,77 +301,75 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         }
       } catch (e) {}
 
-      // COMPILAÇÃO DOS FATOS REGISTRADOS
-      let compiledFacts = '';
-      if (occData && occData.length > 0) {
-        compiledFacts += `HISTÓRICO DE OCORRÊNCIAS ESCOLARES (${occData.length} registros):\n`;
-        occData.forEach((o: any, idx: number) => {
-          const cleanDesc = (o.description || '').replace(/\[(?:SETOR|ORIGEM|TRAMITADO)[^\]]*\]/gi, '').trim();
-          compiledFacts += `\n• Ocorrência #${idx + 1} (${o.date || 'S/D'} às ${o.time || '10:00'}): Categoria: ${o.category || 'Geral'} [Gravidade: ${o.severity || 'Média'}]\nRelato: ${cleanDesc}\nRegistrado por: ${o.responsible_name || 'Equipe Escolar'}\n`;
+      // Montar lista de evidências brutas com toggle
+      const compiledEvidenceList: RawEvidenceItem[] = [];
+
+      (occData || []).forEach((o: any, idx: number) => {
+        const cleanDesc = (o.description || '').replace(/\[(?:SETOR|ORIGEM|TRAMITADO)[^\]]*\]/gi, '').trim();
+        compiledEvidenceList.push({
+          id: `occ-${o.id || idx}`,
+          type: 'OCORRENCIA',
+          date: o.date || 'S/D',
+          time: o.time,
+          title: `Ocorrência #${idx + 1} (${o.category || 'Geral'})`,
+          desc: cleanDesc,
+          category: o.category,
+          severity: o.severity,
+          author: o.responsible_name,
+          checked: true
         });
-      }
+      });
 
-      if (militaryDocs.length > 0) {
-        compiledFacts += `\nFATOS OBSERVADOS PELA MONITORIA CÍVICO-MILITAR (${militaryDocs.length} registros):\n`;
-        militaryDocs.forEach((m: any, idx: number) => {
-          compiledFacts += `• Registro #${idx + 1} (${m.date}): ${m.fields?.achado || m.templateLabel || 'Fato observado'}\n`;
+      (medData || []).forEach((m: any, idx: number) => {
+        compiledEvidenceList.push({
+          id: `med-${m.id || idx}`,
+          type: 'MEDIACAO',
+          date: m.opened_at ? m.opened_at.split('T')[0] : '2026',
+          title: `Procedimento de Mediação #${idx + 1} (${m.type || 'Conflito'})`,
+          desc: (m.description || '').trim(),
+          category: m.type,
+          checked: true
         });
-      }
+      });
 
-      if (!compiledFacts) {
-        compiledFacts = `Estudante ${cleanName} apresenta histórico de condutas disciplinares recorrentes, conflitos interpessoais e necessidade de intervenção intersetorial da rede de proteção.`;
-      }
-
-      // COMPILAÇÃO DAS PROVIDÊNCIAS ESCOLARES ADOTADAS
-      let compiledMeasures = `1. Atendimento e Notificação aos Responsáveis: A gestão escolar convocou os pais/responsáveis legais para ciência formal das ocorrências, sendo firmados termos de compromisso e orientações sobre os deveres previstos no regimento escolar;\n`;
-      compiledMeasures += `2. Intervenções Pedagógicas e Restaurativas: A equipe de coordenação realizou acompanhamento em sala de aula, orientações individuais e advertências pedagógicas cabíveis;\n`;
-      compiledMeasures += `3. Informação sobre a LGPD (Lei Federal nº 13.709/2018): Esclareceu-se à família sobre o sigilo das gravações do circuito interno de monitoramento da escola, resguardando a imagem de outros menores envolvidos;\n`;
-      compiledMeasures += `4. Esgotamento das Medidas Administrativas: A unidade escolar empregou todos os recursos pedagógicos, preventivos e restaurativos disponíveis em âmbito institucional, justificando o presente acionamento da rede de proteção.`;
-
-      // COMPILAÇÃO DAS AÇÕES DA EQUIPE PSICOSSOCIAL E MEDIAÇÃO
-      let compiledPsychosocial = '';
-      if (medData && medData.length > 0) {
-        compiledPsychosocial += `AÇÕES DO PROFESSOR MEDIADOR / CULTURA DE PAZ (${medData.length} procedimentos):\n`;
-        medData.forEach((m: any, idx: number) => {
-          compiledPsychosocial += `• Procedimento #${idx + 1} (${m.opened_at || '2026'}): Tipo: ${m.type || 'Conflito'} [Status: ${m.status || 'Atendimento'}]\nEscuta/Relato: ${(m.description || '').substring(0, 180)}...\n`;
+      (psychoData || []).forEach((p: any, idx: number) => {
+        compiledEvidenceList.push({
+          id: `psy-${p.id || idx}`,
+          type: 'PSICOSSOCIAL',
+          date: p.date || '2026',
+          title: `Atendimento Psicossocial #${idx + 1} (${p.status || 'Atendido'})`,
+          desc: (p.report || p.reason || '').trim(),
+          checked: true
         });
-      }
+      });
 
-      if (psychoData && psychoData.length > 0) {
-        compiledPsychosocial += `\nACOMPANHAMENTO MULTIPROFISSIONAL PSICOSSOCIAL (${psychoData.length} registros):\n`;
-        psychoData.forEach((p: any, idx: number) => {
-          compiledPsychosocial += `• Atendimento #${idx + 1} (${p.date || '2026'}): Status: ${p.status || 'Triado'}\nSíntese: ${(p.report || '').substring(0, 180)}...\n`;
+      ficaiRecords.forEach((f: any, idx: number) => {
+        compiledEvidenceList.push({
+          id: `ficai-${idx}`,
+          type: 'FICAI',
+          date: f.date || '2026',
+          title: `Ficha FICAI / Infrequência Escolar #${idx + 1}`,
+          desc: `Notificação de infrequência registrada na Busca Ativa com ${f.faltasConsecutivas || '5+'} faltas consecutivas.`,
+          checked: true
         });
-      }
+      });
 
-      if (!compiledPsychosocial) {
-        compiledPsychosocial = `Acolhimento da família e do estudante pelo Professor Mediador e pela Equipe Psicossocial Escolar, realização de escuta qualificada individualizada e aplicação de práticas de resolução pacífica de conflitos.`;
-      }
+      militaryDocs.forEach((m: any, idx: number) => {
+        compiledEvidenceList.push({
+          id: `mil-${idx}`,
+          type: 'MILITAR',
+          date: m.date || '2026',
+          title: `Fato Observado Militar #${idx + 1}`,
+          desc: m.fields?.achado || m.templateLabel || 'Registro de postura / conduta disciplinar militar.',
+          checked: true
+        });
+      });
 
-      // PERFIL SOCIOEDUCACIONAL
-      let compiledProfile = `Estudante: ${cleanName} | Turma: ${className || 'Regular'}\n`;
-      if (ficaiRecords.length > 0) {
-        compiledProfile += `• Notificação de Infrequência Escolar (FICAI) ativa na Busca Ativa;\n`;
-      }
-      compiledProfile += `• Apresenta reincidência comportamental e fragilidade no vínculo protetivo familiar;\n`;
-      compiledProfile += `• Necessidade de acompanhamento técnico continuado pelos órgãos do Sistema de Garantia de Direitos.`;
+      setEvidenceItems(compiledEvidenceList);
+      setShowEvidenceChecklist(compiledEvidenceList.length > 0);
 
-      // ENCAMINHAMENTO CONSELHO TUTELAR / MINISTÉRIO PÚBLICO
-      let compiledForwarding = `Diante do esgotamento dos recursos pedagógicos e administrativos no âmbito escolar, com fulcro no Artigo 56, incisos I, II e III da Lei Federal nº 8.069/1990 (Estatuto da Criança e do Adolescente - ECA), a E.E. Cívico-Militar André Antônio Maggi encaminha o presente RELATÓRIO CIRCUNSTANCIADO:\n\n`;
-      compiledForwarding += `1. Ao CONSELHO TUTELAR DO MUNICÍPIO DE COLÍDER - MT: Para aplicação das medidas de proteção à criança/adolescente (Art. 136, I e II, ECA) e aplicação de deveres aos pais/responsáveis (Art. 129, ECA);\n\n`;
-      compiledForwarding += `2. À PROMOTORIA DE JUSTIÇA DA INFÂNCIA E JUVENTUDE DA COMARCA DE COLÍDER - MT (MINISTÉRIO PÚBLICO ESTADUAL): Para conhecimento, registro no sistema de proteção e eventuais providências cíveis/infracionais cabíveis.`;
-
-      setForm(prev => ({
-        ...prev,
-        involvedStudents: cleanName,
-        className: className || prev.className,
-        recordedFact: compiledFacts,
-        schoolMeasuresTaken: compiledMeasures,
-        psychosocialActions: compiledPsychosocial,
-        socioEducationalProfile: compiledProfile,
-        futureForwarding: compiledForwarding,
-        status: 'ENCAMINHADO_CONSELHO'
-      }));
+      // Gerar redação baseada nas evidências selecionadas
+      generateFormalTextsFromEvidence(compiledEvidenceList, cleanName, className);
 
     } catch (e: any) {
       console.error('Erro na compilação:', e);
@@ -313,6 +377,132 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     } finally {
       setIsCompilingDossier(false);
     }
+  };
+
+  // Atualizar textos formais a partir dos itens marcados
+  const generateFormalTextsFromEvidence = (items: RawEvidenceItem[], studentName: string, className: string) => {
+    const activeOccurrences = items.filter(i => i.checked && i.type === 'OCORRENCIA');
+    const activeMediation = items.filter(i => i.checked && i.type === 'MEDIACAO');
+    const activePsycho = items.filter(i => i.checked && i.type === 'PSICOSSOCIAL');
+    const activeFicai = items.filter(i => i.checked && i.type === 'FICAI');
+    const activeMilitar = items.filter(i => i.checked && i.type === 'MILITAR');
+
+    // 1. FATOS REGISTRADOS
+    let compiledFacts = '';
+    if (activeOccurrences.length > 0) {
+      compiledFacts += `HISTÓRICO DE OCORRÊNCIAS ESCOLARES (${activeOccurrences.length} registros selecionados):\n`;
+      activeOccurrences.forEach((o, idx) => {
+        compiledFacts += `\n• Ocorrência #${idx + 1} (${o.date}${o.time ? ` às ${o.time}` : ''}): Categoria: ${o.category || 'Geral'} [Gravidade: ${o.severity || 'Média'}]\nRelato: ${o.desc}\nRegistrado por: ${o.author || 'Equipe Escolar'}\n`;
+      });
+    }
+
+    if (activeMilitar.length > 0) {
+      compiledFacts += `\nFATOS OBSERVADOS PELA MONITORIA CÍVICO-MILITAR (${activeMilitar.length} registros):\n`;
+      activeMilitar.forEach((m, idx) => {
+        compiledFacts += `• Registro #${idx + 1} (${m.date}): ${m.desc}\n`;
+      });
+    }
+
+    if (!compiledFacts) {
+      compiledFacts = `Estudante ${studentName} apresenta histórico de condutas disciplinares recorrentes, conflitos interpessoais e necessidade de intervenção intersetorial da rede de proteção.`;
+    }
+
+    // 2. PROVIDÊNCIAS ESCOLARES ADOTADAS
+    let compiledMeasures = `1. Atendimento e Notificação aos Responsáveis: A gestão escolar convocou os pais/responsáveis legais para ciência formal das ocorrências, sendo firmados termos de compromisso e orientações sobre os deveres previstos no regimento escolar;\n`;
+    compiledMeasures += `2. Intervenções Pedagógicas e Restaurativas: A equipe de coordenação realizou acompanhamento em sala de aula, orientações individuais e advertências pedagógicas cabíveis;\n`;
+    compiledMeasures += `3. Informação sobre a LGPD (Lei Federal nº 13.709/2018): Esclareceu-se à família sobre o sigilo das gravações do circuito interno de monitoramento da escola, resguardando a imagem de outros menores envolvidos;\n`;
+    compiledMeasures += `4. Esgotamento das Medidas Administrativas: A unidade escolar empregou todos os recursos pedagógicos, preventivos e restaurativos disponíveis em âmbito institucional, justificando o presente acionamento da rede de proteção.`;
+
+    // 3. AÇÕES DA EQUIPE PSICOSSOCIAL E MEDIAÇÃO
+    let compiledPsychosocial = '';
+    if (activeMediation.length > 0) {
+      compiledPsychosocial += `AÇÕES DO PROFESSOR MEDIADOR / CULTURA DE PAZ (${activeMediation.length} procedimentos):\n`;
+      activeMediation.forEach((m, idx) => {
+        compiledPsychosocial += `• Procedimento #${idx + 1} (${m.date}): Tipo: ${m.category || 'Conflito'}\nEscuta/Relato: ${m.desc.substring(0, 180)}...\n`;
+      });
+    }
+
+    if (activePsycho.length > 0) {
+      compiledPsychosocial += `\nACOMPANHAMENTO MULTIPROFISSIONAL PSICOSSOCIAL (${activePsycho.length} registros):\n`;
+      activePsycho.forEach((p, idx) => {
+        compiledPsychosocial += `• Atendimento #${idx + 1} (${p.date}): ${p.desc.substring(0, 180)}...\n`;
+      });
+    }
+
+    if (!compiledPsychosocial) {
+      compiledPsychosocial = `Acolhimento da família e do estudante pelo Professor Mediador e pela Equipe Psicossocial Escolar, realização de escuta qualificada individualizada e aplicação de práticas de resolução pacífica de conflitos.`;
+    }
+
+    // 4. PERFIL SOCIOEDUCACIONAL
+    let compiledProfile = `Estudante: ${studentName} | Turma: ${className || 'Regular'}\n`;
+    if (activeFicai.length > 0) {
+      compiledProfile += `• Notificação de Infrequência Escolar (FICAI) ativa na Busca Ativa;\n`;
+    }
+    compiledProfile += `• Apresenta reincidência comportamental e fragilidade no vínculo protetivo familiar;\n`;
+    compiledProfile += `• Necessidade de acompanhamento técnico continuado pelos órgãos do Sistema de Garantia de Direitos.`;
+
+    // 5. ENCAMINHAMENTO CONSELHO TUTELAR / MINISTÉRIO PÚBLICO
+    let compiledForwarding = `Diante do esgotamento dos recursos pedagógicos e administrativos no âmbito escolar, com fulcro no Artigo 56, incisos I, II e III da Lei Federal nº 8.069/1990 (Estatuto da Criança e do Adolescente - ECA), a E.E. Cívico-Militar André Antônio Maggi encaminha o presente RELATÓRIO CIRCUNSTANCIADO:\n\n`;
+    compiledForwarding += `1. Ao CONSELHO TUTELAR DO MUNICÍPIO DE COLÍDER - MT: Para aplicação das medidas de proteção à criança/adolescente (Art. 136, I e II, ECA) e aplicação de deveres aos pais/responsáveis (Art. 129, ECA);\n\n`;
+    compiledForwarding += `2. À PROMOTORIA DE JUSTIÇA DA INFÂNCIA E JUVENTUDE DA COMARCA DE COLÍDER - MT (MINISTÉRIO PÚBLICO ESTADUAL): Para conhecimento, registro no sistema de proteção e eventuais providências cíveis/infracionais cabíveis.`;
+
+    setForm(prev => ({
+      ...prev,
+      involvedStudents: studentName,
+      className: className || prev.className,
+      recordedFact: compiledFacts,
+      schoolMeasuresTaken: compiledMeasures,
+      psychosocialActions: compiledPsychosocial,
+      socioEducationalProfile: compiledProfile,
+      futureForwarding: compiledForwarding,
+      status: 'ENCAMINHADO_CONSELHO'
+    }));
+  };
+
+  const handleToggleEvidenceItem = (id: string) => {
+    const updated = evidenceItems.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
+    setEvidenceItems(updated);
+    generateFormalTextsFromEvidence(updated, form.involvedStudents || '', form.className || '');
+  };
+
+  const handleSelectAllEvidence = (selectAll: boolean) => {
+    const updated = evidenceItems.map(item => ({ ...item, checked: selectAll }));
+    setEvidenceItems(updated);
+    generateFormalTextsFromEvidence(updated, form.involvedStudents || '', form.className || '');
+  };
+
+  // Upload de Evidências Digitais (B.O., Prints, Fotos)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: any) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Url = event.target?.result as string;
+        const newAttachment = {
+          id: 'att-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
+          name: file.name,
+          url: base64Url,
+          type: type || 'OUTRO',
+          date: new Date().toLocaleDateString('sv-SE'),
+          description: `Anexo Documental: ${file.name}`
+        };
+
+        setForm(prev => ({
+          ...prev,
+          evidenceAttachments: [...(prev.evidenceAttachments || []), newAttachment]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveAttachment = (attId: string) => {
+    setForm(prev => ({
+      ...prev,
+      evidenceAttachments: (prev.evidenceAttachments || []).filter(a => a.id !== attId)
+    }));
   };
 
   const handleToggleChecklistItem = (item: string) => {
@@ -353,7 +543,10 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       coordinatorName: form.coordinatorName || 'COORDENAÇÃO PEDAGÓGICA',
       directorName: form.directorName || 'REZIERE DE SOUZA',
       status: form.status || 'FINALIZADO',
-      createdAt: form.createdAt || new Date().toISOString()
+      createdAt: form.createdAt || new Date().toISOString(),
+      evidenceAttachments: form.evidenceAttachments || [],
+      externalProtocol: form.externalProtocol,
+      followUpStatus: form.followUpStatus
     };
 
     try {
@@ -413,6 +606,62 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     }
   };
 
+  // Salvar Protocolo Externo
+  const handleSaveProtocol = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!protocolModalReport) return;
+
+    const updatedProtocol = {
+      protocolNumber: protocolForm.protocolNumber || `PROT-${Date.now().toString().substring(6)}`,
+      receiptDate: protocolForm.receiptDate,
+      recipientEntity: protocolForm.recipientEntity,
+      recipientName: protocolForm.recipientName || 'Servidor Plantonista',
+      notes: protocolForm.notes,
+      receiptFileUrl: protocolForm.receiptFileUrl
+    };
+
+    const updatedReport: PsychosocialCircumstantiatedReport = {
+      ...protocolModalReport,
+      externalProtocol: updatedProtocol,
+      followUpStatus: 'AGUARDANDO_DEVOLUTIVA',
+      status: protocolForm.recipientEntity === 'PROMOTORIA_JUSTICA' ? 'ENCAMINHADO_PROMOTORIA' : 'ENCAMINHADO_CONSELHO'
+    };
+
+    const updatedList = reports.map(r => r.id === updatedReport.id ? updatedReport : r);
+    setReports(updatedList);
+    localStorage.setItem('psychosocial_circumstantiated_reports_v1', JSON.stringify(updatedList));
+    setProtocolModalReport(null);
+    alert("✅ Protocolo de entrega registrado com sucesso!");
+  };
+
+  // Cálculo de SLA / Dias Decorridos desde o Protocolo
+  const getProtocolSlaBadge = (report: PsychosocialCircumstantiatedReport) => {
+    if (!report.externalProtocol?.receiptDate) return null;
+    const protocolDate = new Date(report.externalProtocol.receiptDate);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - protocolDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 15) {
+      return (
+        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[9px] font-black uppercase flex items-center gap-1">
+          <Clock size={11} /> {diffDays}d decorridos (Em Prazo)
+        </span>
+      );
+    } else if (diffDays <= 30) {
+      return (
+        <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-300 rounded-lg text-[9px] font-black uppercase flex items-center gap-1">
+          <Clock size={11} /> {diffDays}d (Aguardando Resposta)
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-300 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 animate-pulse">
+          <AlertCircle size={11} /> {diffDays}d (Reiteração Necessária!)
+        </span>
+      );
+    }
+  };
+
   const filteredReports = reports.filter(r => {
     const matchesSearch =
       (r.reportNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -431,7 +680,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 no-print">
         <div className="flex items-center gap-5">
           <div className="p-4 bg-gradient-to-br from-indigo-600 to-rose-600 text-white rounded-3xl shadow-lg shadow-indigo-600/20">
-            <FileText size={32} />
+            <Scale size={32} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -439,38 +688,16 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 Relatórios Circunstanciados (Juntada de Fatos)
               </h2>
               <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-[8px] font-black uppercase tracking-wider">
-                Modelo Oficial SEDUC/MT • NME
+                Conselho Tutelar & Ministério Público
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Instrumento formal de registro minucioso de incidentes, perfil socioeducacional e juntada para a Promotoria e Rede de Proteção.
+              Instrumento formal de juntada probatória com fundamentação jurídica no ECA (Art. 56), anexos digitais e controle de protocolo.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Buscar por número, aluno ou fato..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none w-64 focus:bg-white focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black uppercase outline-none cursor-pointer focus:bg-white"
-          >
-            <option value="TODOS">Todos os Status</option>
-            <option value="FINALIZADO">Finalizados (Interno)</option>
-            <option value="ENCAMINHADO_PROMOTORIA">Encaminhado à Promotoria</option>
-            <option value="ENCAMINHADO_CONSELHO">Encaminhado ao Conselho Tutelar</option>
-          </select>
-
+        <div className="flex items-center gap-3">
           <button
             onClick={() => {
               setForm({
@@ -491,146 +718,153 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 mediatorName: 'DANÚBIA DE CASTRO ALMEIDA',
                 coordinatorName: 'COORDENAÇÃO PEDAGÓGICA',
                 directorName: 'REZIERE DE SOUZA',
-                status: 'FINALIZADO'
+                status: 'FINALIZADO',
+                evidenceAttachments: []
               });
+              setEvidenceItems([]);
+              setShowEvidenceChecklist(false);
               setIsModalOpen(true);
             }}
-            className="px-5 py-3 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 active:scale-95"
+            className="px-6 py-3.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-rose-600/20 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus size={16} /> Novo Relatório Circunstanciado
           </button>
         </div>
       </div>
 
-      {/* CARDS DE ATALHOS / ESTATÍSTICAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Total de Relatórios</span>
-            <span className="text-2xl font-black text-slate-900 mt-1 block">{reports.length}</span>
-          </div>
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
-            <FileText size={22} />
-          </div>
+      {/* BARRA DE FILTROS E BUSCA */}
+      <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 no-print">
+        <div className="relative flex-1 min-w-[280px]">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por número de relatório, estudante, turma ou fato..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+          />
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest block">Juntadas p/ Promotoria</span>
-            <span className="text-2xl font-black text-rose-700 mt-1 block">
-              {reports.filter(r => r.status === 'ENCAMINHADO_PROMOTORIA').length}
-            </span>
-          </div>
-          <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
-            <Scale size={22} />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest block">Conselho Tutelar</span>
-            <span className="text-2xl font-black text-amber-700 mt-1 block">
-              {reports.filter(r => r.status === 'ENCAMINHADO_CONSELHO').length}
-            </span>
-          </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
-            <Building2 size={22} />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest block">Tratativas Internas</span>
-            <span className="text-2xl font-black text-emerald-700 mt-1 block">
-              {reports.filter(r => r.status === 'FINALIZADO').length}
-            </span>
-          </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-            <CheckCircle2 size={22} />
-          </div>
-        </div>
-      </div>
-
-      {/* LISTAGEM DOS RELATÓRIOS */}
-      <div className="grid grid-cols-1 gap-4 no-print">
-        {filteredReports.map(rep => (
-          <div
-            key={rep.id}
-            onClick={() => setSelectedReport(rep)}
-            className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm hover:border-indigo-300 hover:shadow-xl transition-all cursor-pointer group flex flex-col md:flex-row items-center justify-between gap-6"
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Destino:</span>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white cursor-pointer"
           >
-            <div className="flex items-center gap-5 flex-1">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 shrink-0 bg-indigo-50 border-indigo-200 text-indigo-700">
-                <FileText size={26} />
-              </div>
-
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="font-mono text-[10px] font-black text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
-                    {rep.reportNumber}
-                  </span>
-                  <h4 className="text-base font-black text-slate-900 uppercase">{rep.involvedStudents}</h4>
-                  
-                  <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase border ${
-                    rep.status === 'ENCAMINHADO_PROMOTORIA' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                    rep.status === 'ENCAMINHADO_CONSELHO' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                    'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  }`}>
-                    {rep.status === 'ENCAMINHADO_PROMOTORIA' ? '🏛️ Promotoria da Infância' :
-                     rep.status === 'ENCAMINHADO_CONSELHO' ? '🏢 Conselho Tutelar' : '✓ Registrado / Finalizado'}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed">
-                  <strong>Fato:</strong> {rep.recordedFact}
-                </p>
-
-                <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase flex-wrap">
-                  <span>Turma: <strong className="text-slate-700">{rep.className || 'Geral'}</strong></span>
-                  <span>•</span>
-                  <span>Data do Fato: <strong className="text-slate-700">{new Date(rep.incidentDate).toLocaleDateString('pt-BR')}</strong></span>
-                  <span>•</span>
-                  <span>Local: <strong className="text-slate-700">{rep.incidentLocation}</strong></span>
-                  <span>•</span>
-                  <span>Anexos: <strong className="text-indigo-700">{rep.attachedDocumentsChecklist?.length || 0} itens</strong></span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 shrink-0">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedReport(rep);
-                  setTimeout(() => window.print(), 300);
-                }}
-                className="px-4 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md"
-                title="Imprimir Relatório Oficial com Timbre SEDUC/MT"
-              >
-                <Printer size={14} />
-                <span>Imprimir Relatório</span>
-              </button>
-
-              <button
-                onClick={(e) => handleDelete(rep.id, e)}
-                className="p-2.5 bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
-                title="Excluir Registro"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {filteredReports.length === 0 && (
-          <div className="py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
-            <FileText size={48} className="mx-auto mb-3 text-slate-200" />
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
-              Nenhum relatório circunstanciado registrado
-            </p>
-          </div>
-        )}
+            <option value="TODOS">Todos os Relatórios</option>
+            <option value="FINALIZADO">✓ Finalizados (Tratativas Escolares)</option>
+            <option value="ENCAMINHADO_CONSELHO">🏢 Encaminhado ao Conselho Tutelar</option>
+            <option value="ENCAMINHADO_PROMOTORIA">🏛️ Encaminhado ao Ministério Público</option>
+          </select>
+        </div>
       </div>
+
+      {/* GRID DE RELATÓRIOS CIRCUNSTANCIADOS */}
+      {loading ? (
+        <div className="py-20 text-center text-slate-400">
+          <Loader2 className="animate-spin mx-auto mb-2 text-indigo-600" size={32} />
+          <p className="text-xs font-bold uppercase tracking-widest">Carregando Relatórios...</p>
+        </div>
+      ) : filteredReports.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 no-print">
+          {filteredReports.map(rep => {
+            const hasProtocol = Boolean(rep.externalProtocol?.protocolNumber);
+            const totalAttachments = (rep.evidenceAttachments || []).length;
+
+            return (
+              <div
+                key={rep.id}
+                className="bg-white border border-slate-200/90 rounded-[2rem] p-6 hover:shadow-xl hover:border-indigo-300 transition-all flex flex-col justify-between gap-4 group relative overflow-hidden"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="font-mono text-[10px] font-black px-3 py-1 bg-slate-100 text-slate-800 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                      {rep.reportNumber}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={(e) => handleDelete(rep.id, e)}
+                        className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Excluir Relatório"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <h4 className="text-sm font-black text-slate-900 uppercase leading-tight line-clamp-1">
+                    {rep.involvedStudents}
+                  </h4>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
+                    {rep.className || 'Turma não especificada'} • {new Date(rep.incidentDate).toLocaleDateString('pt-BR')}
+                  </p>
+
+                  <p className="text-xs text-slate-600 line-clamp-3 mt-3 font-medium text-justify">
+                    {rep.recordedFact}
+                  </p>
+
+                  {/* BADGES DE PROTOCOLO E ANEXOS */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                    {hasProtocol ? (
+                      <span className="px-2.5 py-1 bg-purple-50 text-purple-800 border border-purple-200 rounded-lg text-[9px] font-black uppercase flex items-center gap-1">
+                        <FileCheck size={11} /> Prot: {rep.externalProtocol?.protocolNumber}
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-[9px] font-black uppercase">
+                        Sem Protocolo Externo
+                      </span>
+                    )}
+
+                    {getProtocolSlaBadge(rep)}
+
+                    {totalAttachments > 0 && (
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[9px] font-black uppercase flex items-center gap-1">
+                        <Paperclip size={10} /> {totalAttachments} anexo(s)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setProtocolModalReport(rep);
+                      setProtocolForm({
+                        protocolNumber: rep.externalProtocol?.protocolNumber || '',
+                        receiptDate: rep.externalProtocol?.receiptDate || new Date().toLocaleDateString('sv-SE'),
+                        recipientEntity: rep.externalProtocol?.recipientEntity || 'CONSELHO_TUTELAR',
+                        recipientName: rep.externalProtocol?.recipientName || '',
+                        notes: rep.externalProtocol?.notes || '',
+                        receiptFileUrl: rep.externalProtocol?.receiptFileUrl || ''
+                      });
+                    }}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-800 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                    title="Registrar número de protocolo do Conselho Tutelar ou Ministério Público"
+                  >
+                    <Send size={13} /> {hasProtocol ? 'Ver Protocolo' : 'Registrar Protocolo'}
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedReport(rep)}
+                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20"
+                  >
+                    <Eye size={13} /> Ver Documento A4
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="py-20 text-center text-slate-400 bg-white rounded-[3rem] border border-slate-200 space-y-3">
+          <Scale size={48} className="mx-auto text-slate-300" />
+          <h4 className="text-base font-black uppercase text-slate-700">Nenhum relatório circunstanciado encontrado</h4>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            Clique em "Novo Relatório Circunstanciado" acima para compilar o dossiê do estudante.
+          </p>
+        </div>
+      )}
 
       {/* MODAL DE CRIAÇÃO / EDIÇÃO DO RELATÓRIO CIRCUNSTANCIADO */}
       {isModalOpen && (
@@ -640,11 +874,13 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
             <div className="p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-lg">
-                  <FileText size={24} />
+                  <Scale size={24} />
                 </div>
                 <div>
                   <h3 className="text-lg font-black uppercase tracking-tight">Relatório Circunstanciado Oficial</h3>
-                  <p className="text-[10px] text-rose-300 font-bold uppercase tracking-widest">Modelo de Registro & Juntada de Documentos • SEDUC/MT</p>
+                  <p className="text-[10px] text-rose-300 font-bold uppercase tracking-widest">
+                    Compilador de Provas & Juntada • Conselho Tutelar & Ministério Público
+                  </p>
                 </div>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-white rounded-xl">
@@ -697,7 +933,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
                       type="text"
-                      placeholder="Buscar aluno no banco escolar para adicionar aos envolvidos..."
+                      placeholder="Buscar aluno no banco escolar para carregar dados automaticamente..."
                       value={studentSearch}
                       onChange={e => setStudentSearch(e.target.value)}
                       className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
@@ -715,7 +951,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                               <p className="text-xs font-black uppercase text-slate-900">{s.Nome || s.name}</p>
                               <p className="text-[9px] text-slate-400 font-bold uppercase">{s.Turma || s.className}</p>
                             </div>
-                            <span className="text-[10px] font-black text-indigo-600 uppercase">+ Adicionar</span>
+                            <span className="text-[10px] font-black text-indigo-600 uppercase">+ Selecionar & Compilar</span>
                           </button>
                         ))}
                       </div>
@@ -767,14 +1003,81 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                   )}
                 </div>
 
+                {/* PAINEL INTERATIVO DE SELEÇÃO DE EVIDÊNCIAS / PROVAS */}
+                {showEvidenceChecklist && evidenceItems.length > 0 && (
+                  <div className="p-5 bg-indigo-50/70 border border-indigo-200 rounded-3xl space-y-3 animate-in fade-in">
+                    <div className="flex justify-between items-center pb-2 border-b border-indigo-200">
+                      <div>
+                        <h4 className="text-xs font-black text-indigo-950 uppercase tracking-tight flex items-center gap-2">
+                          <CheckSquare size={16} className="text-indigo-600" />
+                          Checklist Interativo de Provas ({evidenceItems.filter(i => i.checked).length}/{evidenceItems.length} selecionadas)
+                        </h4>
+                        <p className="text-[10px] text-indigo-700 font-medium">
+                          Marque ou desmarque quais registros devem ser incorporados ao texto oficial.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectAllEvidence(true)}
+                          className="px-2.5 py-1 bg-white text-indigo-700 rounded-lg text-[9px] font-black uppercase border border-indigo-200 hover:bg-indigo-100"
+                        >
+                          Marcar Todas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectAllEvidence(false)}
+                          className="px-2.5 py-1 bg-white text-slate-600 rounded-lg text-[9px] font-black uppercase border border-slate-200 hover:bg-slate-100"
+                        >
+                          Desmarcar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                      {evidenceItems.map(item => (
+                        <div
+                          key={item.id}
+                          onClick={() => handleToggleEvidenceItem(item.id)}
+                          className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-2.5 ${
+                            item.checked
+                              ? 'bg-white border-indigo-400 shadow-sm text-indigo-950'
+                              : 'bg-slate-100/70 border-slate-200 text-slate-400 opacity-60'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={() => {}}
+                            className="mt-0.5 rounded text-indigo-600 cursor-pointer shrink-0"
+                          />
+                          <div className="min-w-0 text-left">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">
+                                {item.date}
+                              </span>
+                              <span className="text-[10px] font-black uppercase truncate text-indigo-900">
+                                {item.title}
+                              </span>
+                            </div>
+                            <p className="text-[10px] line-clamp-2 mt-1 font-medium leading-tight">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. FATO REGISTRADO */}
                 <div>
                   <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-1">
-                    1. Fato Registrado (Descrição do Incidente)
+                    1. Fato Registrado (Descrição do Incidente & Histórico)
                   </label>
                   <textarea
                     required
-                    rows={3}
+                    rows={4}
                     value={form.recordedFact || ''}
                     onChange={e => setForm(prev => ({ ...prev, recordedFact: e.target.value }))}
                     placeholder="Descreva a ocorrência dos fatos, atitudes observadas, palavras proferidas ou agressões..."
@@ -792,7 +1095,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                     rows={4}
                     value={form.schoolMeasuresTaken || ''}
                     onChange={e => setForm(prev => ({ ...prev, schoolMeasuresTaken: e.target.value }))}
-                    placeholder="Comunicação aos responsáveis, socorro/assistência médica, Boletim de Ocorrência, escuta individual, orientações regimentais e informação sobre a LGPD (não fornecimento de imagens de câmeras de menores)..."
+                    placeholder="Comunicação aos responsáveis, socorro/assistência médica, Boletim de Ocorrência, escuta individual, orientações regimentais e informação sobre a LGPD..."
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -806,7 +1109,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                     rows={3}
                     value={form.psychosocialActions || ''}
                     onChange={e => setForm(prev => ({ ...prev, psychosocialActions: e.target.value }))}
-                    placeholder="Acolhimento da família e estudante, referenciamento para rede de apoio, abertura de FICAI, ações de cultura de paz (Círculos Restaurativos, rodas de conversa)..."
+                    placeholder="Acolhimento da família e estudante, referenciamento para rede de apoio, abertura de FICAI, ações de cultura de paz..."
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -820,7 +1123,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                     rows={4}
                     value={form.socioEducationalProfile || ''}
                     onChange={e => setForm(prev => ({ ...prev, socioEducationalProfile: e.target.value }))}
-                    placeholder="Comportamento no domicílio, reincidência, monitoramento de frequência na Busca Ativa, rendimento pedagógico (Letramento/Matemática) e programas sociais (Pé-de-Meia, Bolsa Família)..."
+                    placeholder="Comportamento no domicílio, reincidência, monitoramento de frequência na Busca Ativa, rendimento pedagógico e programas sociais..."
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -828,7 +1131,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {/* 5. ENCAMINHAMENTOS FUTUROS (PÓS-FATO) */}
                 <div>
                   <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-1">
-                    5. Encaminhamentos Futuros & Juntada de Documentos
+                    5. Encaminhamentos Futuros & Juntada de Documentos (Conselho Tutelar & MP)
                   </label>
                   <textarea
                     rows={3}
@@ -868,6 +1171,66 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                   </div>
                 </div>
 
+                {/* 7. EVIDÊNCIAS DIGITAIS E ANEXOS (UPLOAD DE ARQUIVOS / BOLETINS / PRINTS) */}
+                <div className="p-5 bg-slate-50 rounded-3xl border border-slate-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-200">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                        <Paperclip size={16} className="text-indigo-600" />
+                        Galeria de Anexos & Evidências Digitais ({(form.evidenceAttachments || []).length})
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-medium">
+                        Anexe cópias digitalizadas do B.O., prints de ameaças, fotos de termos físicos ou laudos médicos.
+                      </p>
+                    </div>
+
+                    <label className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer shadow-md transition-all flex items-center gap-1.5 shrink-0">
+                      <Plus size={14} /> + Anexar Arquivo / Imagem
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'OUTRO')}
+                      />
+                    </label>
+                  </div>
+
+                  {(form.evidenceAttachments || []).length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {(form.evidenceAttachments || []).map((att, attIdx) => (
+                        <div key={att.id || attIdx} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-3 relative group">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {att.url.startsWith('data:image') ? (
+                              <img src={att.url} alt={att.name} className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black shrink-0">
+                                <FileText size={18} />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-xs font-black text-slate-800 uppercase truncate">{att.name}</p>
+                              <p className="text-[9px] text-slate-400 font-bold uppercase">{att.date}</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAttachment(att.id)}
+                            className="p-1.5 text-slate-300 hover:text-rose-600 rounded-lg transition-all"
+                            title="Remover Anexo"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 text-center py-4 font-medium italic">
+                      Nenhum arquivo ou evidência anexada ainda. Clique no botão acima para adicionar.
+                    </p>
+                  )}
+                </div>
+
                 {/* DESTINO / STATUS E ASSINATURAS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
                   <div>
@@ -878,8 +1241,8 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                       className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase outline-none cursor-pointer"
                     >
                       <option value="FINALIZADO">✓ Finalizado (Tratativas Escolares)</option>
-                      <option value="ENCAMINHADO_PROMOTORIA">🏛️ Encaminhado à Promotoria da Infância e Juventude</option>
                       <option value="ENCAMINHADO_CONSELHO">🏢 Encaminhado ao Conselho Tutelar</option>
+                      <option value="ENCAMINHADO_PROMOTORIA">🏛️ Encaminhado à Promotoria da Infância e Juventude</option>
                     </select>
                   </div>
                   <div>
@@ -902,6 +1265,119 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 </button>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE PROTOCOLO EXTERNO (CONSELHO TUTELAR / MINISTÉRIO PÚBLICO) */}
+      {protocolModalReport && (
+        <div className="fixed inset-0 z-[170] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200">
+            <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-600 rounded-xl text-white">
+                  <Send size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-tight">Registrar Protocolo Externo</h3>
+                  <p className="text-[10px] text-purple-300 font-bold uppercase">
+                    {protocolModalReport.reportNumber}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setProtocolModalReport(null)} className="p-2 text-slate-400 hover:text-white rounded-xl">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProtocol} className="p-6 space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  Órgão Destinatário:
+                </label>
+                <select
+                  value={protocolForm.recipientEntity}
+                  onChange={e => setProtocolForm(prev => ({ ...prev, recipientEntity: e.target.value as any }))}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:bg-white"
+                >
+                  <option value="CONSELHO_TUTELAR">🏢 Conselho Tutelar do Município de Colíder - MT</option>
+                  <option value="PROMOTORIA_JUSTICA">🏛️ Promotoria da Infância e Juventude (Ministério Público)</option>
+                  <option value="DRE_SINOP">🎓 DRE-Sinop / SEDUC-MT</option>
+                  <option value="OUTRO">Outro Órgão da Rede de Garantia de Direitos</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Número do Protocolo:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={protocolForm.protocolNumber}
+                    onChange={e => setProtocolForm(prev => ({ ...prev, protocolNumber: e.target.value }))}
+                    placeholder="Ex: PROT-CT-2026-084"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold uppercase outline-none focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                    Data do Recebimento:
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={protocolForm.receiptDate}
+                    onChange={e => setProtocolForm(prev => ({ ...prev, receiptDate: e.target.value }))}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  Nome do Conselheiro / Servidor que Recebeu:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={protocolForm.recipientName}
+                  onChange={e => setProtocolForm(prev => ({ ...prev, recipientName: e.target.value }))}
+                  placeholder="Nome completo do conselheiro ou oficial"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                  Observações / Prazos Acordados:
+                </label>
+                <textarea
+                  rows={2}
+                  value={protocolForm.notes}
+                  onChange={e => setProtocolForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Prazo estipulado para devolutiva, audiência designada, etc..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:bg-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setProtocolModalReport(null)}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-purple-600/20"
+                >
+                  Salvar Protocolo
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -963,12 +1439,17 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 <h2 className="text-base font-black uppercase text-slate-900 tracking-wider">
                   {selectedReport.reportNumber}
                 </h2>
+                {selectedReport.externalProtocol?.protocolNumber && (
+                  <p className="text-[11px] font-mono font-bold text-slate-600 mt-1 uppercase">
+                    Protocolo de Entrega: {selectedReport.externalProtocol.protocolNumber} ({selectedReport.externalProtocol.recipientEntity}) em {selectedReport.externalProtocol.receiptDate}
+                  </p>
+                )}
               </div>
 
               {/* DATA E LOCAL */}
               <div className="text-xs space-y-1 border border-slate-300 p-3 rounded-lg bg-slate-50">
                 <p><strong>Data e Local:</strong> {new Date(selectedReport.incidentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}, {selectedReport.incidentLocation}.</p>
-                <p><strong>Estudantes Envolvidos:</strong> <span className="uppercase">{selectedReport.involvedStudents}</span> ({selectedReport.className || 'Turma não informada'})</p>
+                <p><strong>Estudantes Envolvidos:</strong> <span className="uppercase font-bold">{selectedReport.involvedStudents}</span> ({selectedReport.className || 'Turma não informada'})</p>
               </div>
 
               {/* CORPO DO RELATÓRIO */}
@@ -976,16 +1457,16 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 
                 {/* 1. FATO */}
                 <div className="space-y-1">
-                  <h5 className="font-black uppercase text-slate-900">1. Fato Registrado:</h5>
-                  <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed">
+                  <h5 className="font-black uppercase text-slate-900">1. Fato Registrado & Histórico de Ocorrências:</h5>
+                  <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                     {selectedReport.recordedFact}
                   </p>
                 </div>
 
                 {/* 2. PROVIDÊNCIAS */}
                 <div className="space-y-1">
-                  <h5 className="font-black uppercase text-slate-900">2. Providências Adotadas pela Escola:</h5>
-                  <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed">
+                  <h5 className="font-black uppercase text-slate-900">2. Providências Adotadas pela Unidade Escolar:</h5>
+                  <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                     {selectedReport.schoolMeasuresTaken}
                   </p>
                 </div>
@@ -993,8 +1474,8 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {/* 3. AÇÕES DA EQUIPE PSICOSSOCIAL E MEDIADOR */}
                 {selectedReport.psychosocialActions && (
                   <div className="space-y-1">
-                    <h5 className="font-black uppercase text-slate-900">3. Ações Específicas da Equipe Psicossocial, Professor Mediador e Coordenação:</h5>
-                    <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed">
+                    <h5 className="font-black uppercase text-slate-900">3. Ações da Equipe Psicossocial, Professor Mediador e Coordenação:</h5>
+                    <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                       {selectedReport.psychosocialActions}
                     </p>
                   </div>
@@ -1004,7 +1485,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {selectedReport.socioEducationalProfile && (
                   <div className="space-y-1">
                     <h5 className="font-black uppercase text-slate-900">4. Perfil Socioeducacional do Estudante:</h5>
-                    <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed">
+                    <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                       {selectedReport.socioEducationalProfile}
                     </p>
                   </div>
@@ -1013,71 +1494,85 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {/* 5. ENCAMINHAMENTOS FUTUROS */}
                 {selectedReport.futureForwarding && (
                   <div className="space-y-1">
-                    <h5 className="font-black uppercase text-slate-900">5. Encaminhamentos Futuros (Pós-Fato):</h5>
-                    <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed">
+                    <h5 className="font-black uppercase text-slate-900">5. Encaminhamentos & Fundamentação Jurídica (Art. 56 e 136, ECA):</h5>
+                    <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                       {selectedReport.futureForwarding}
                     </p>
                   </div>
                 )}
 
-                {/* 6. DOCUMENTOS PARA JUNTADA */}
+                {/* 6. DOCUMENTOS ANEXOS */}
                 {selectedReport.attachedDocumentsChecklist && selectedReport.attachedDocumentsChecklist.length > 0 && (
                   <div className="space-y-1">
-                    <h5 className="font-black uppercase text-slate-900">6. Documentos para Juntada (Anexos):</h5>
-                    <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg space-y-1">
-                      {selectedReport.attachedDocumentsChecklist.map((item, idx) => (
-                        <p key={idx} className="text-[10px] text-slate-700 flex items-center gap-1.5">
-                          <span className="font-bold text-indigo-700">✓</span> {item}
-                        </p>
+                    <h5 className="font-black uppercase text-slate-900">6. Checklist de Documentos Anexados para Juntada:</h5>
+                    <div className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] space-y-1">
+                      {selectedReport.attachedDocumentsChecklist.map((doc, idx) => (
+                        <p key={idx}>☑ {doc}</p>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* 7. EVIDÊNCIAS DIGITAIS ANEXADAS */}
+                {(selectedReport.evidenceAttachments || []).length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <h5 className="font-black uppercase text-slate-900">7. Evidências Documentais Anexadas:</h5>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(selectedReport.evidenceAttachments || []).map((att, idx) => (
+                        <div key={idx} className="border border-slate-300 rounded-lg p-2 bg-slate-50 space-y-1 text-center">
+                          <p className="text-[10px] font-black uppercase text-slate-800">Anexo {idx + 1}: {att.name}</p>
+                          {att.url.startsWith('data:image') && (
+                            <img src={att.url} alt={att.name} className="max-h-48 mx-auto rounded border border-slate-200 object-contain" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
               </div>
 
-              {/* ASSINATURAS OFICIAIS */}
-              <div className="pt-8 space-y-8 text-xs">
-                <div className="grid grid-cols-2 gap-8 text-center">
-                  <div className="border-t border-slate-900 pt-2 space-y-0.5">
-                    <p className="font-black uppercase text-slate-900">{selectedReport.psychosocialProfessional}</p>
-                    <p className="text-[10px] text-slate-600 uppercase font-bold">Equipe Psicossocial Escolar</p>
-                  </div>
-                  <div className="border-t border-slate-900 pt-2 space-y-0.5">
-                    <p className="font-black uppercase text-slate-900">{selectedReport.mediatorName}</p>
-                    <p className="text-[10px] text-slate-600 uppercase font-bold">Professor(a) Mediador(a)</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8 text-center">
-                  <div className="border-t border-slate-900 pt-2 space-y-0.5">
-                    <p className="font-black uppercase text-slate-900">{selectedReport.coordinatorName}</p>
-                    <p className="text-[10px] text-slate-600 uppercase font-bold">Coordenação Pedagógica</p>
-                  </div>
-                  <div className="border-t border-slate-900 pt-2 space-y-0.5">
-                    <p className="font-black uppercase text-slate-900">{selectedReport.directorName}</p>
-                    <p className="text-[10px] text-slate-600 uppercase font-bold">Diretor Escolar</p>
-                    <p className="text-[9px] text-slate-500 uppercase">E.E. Cívico-Militar André Antônio Maggi</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* SELO DE ASSINATURA ELETRÔNICA OFICIAL */}
+              {/* SELOS DE ASSINATURA ELETRÔNICA INSTITUCIONAL */}
               {selectedReport.signatures && selectedReport.signatures.length > 0 && (
-                <div className="pt-4 space-y-3">
-                  {selectedReport.signatures.map((sig, idx) => (
-                    <ElectronicSignatureStamp key={idx} signature={sig} />
-                  ))}
+                <div className="mt-6 pt-4 border-t border-slate-300 space-y-3">
+                  <h6 className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">
+                    Assinaturas Eletrônicas Válidas (Lei Federal nº 14.063/2020):
+                  </h6>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {selectedReport.signatures.map((sig, sIdx) => (
+                      <ElectronicSignatureStamp key={sIdx} proof={sig} />
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* PROTOCOLO DE RECEBIMENTO DO ÓRGÃO EXTERNO */}
-              {selectedReport.status !== 'FINALIZADO' && (
-                <div className="mt-6 p-3 border border-dashed border-slate-400 rounded-xl text-[10px] text-slate-600 flex justify-between items-center">
-                  <span>Recebido pelo Órgão (Promotoria/CT): __________________________</span>
-                  <span>Data: ___/___/______</span>
-                  <span>Carimbo/Assinatura: _________________________</span>
+              {/* ASSINATURAS FÍSICAS TIMBRADAS */}
+              <div className="mt-12 pt-8 border-t border-slate-300 grid grid-cols-2 gap-8 text-center text-xs">
+                <div className="space-y-1">
+                  <div className="border-b border-slate-900 w-48 mx-auto mb-1"></div>
+                  <p className="font-black uppercase">{selectedReport.directorName || 'REZIERE DE SOUZA'}</p>
+                  <p className="text-[10px] text-slate-600 uppercase">Diretor Escolar</p>
                 </div>
-              )}
+
+                <div className="space-y-1">
+                  <div className="border-b border-slate-900 w-48 mx-auto mb-1"></div>
+                  <p className="font-black uppercase">{selectedReport.coordinatorName || 'COORDENAÇÃO PEDAGÓGICA'}</p>
+                  <p className="text-[10px] text-slate-600 uppercase">Coordenação Pedagógica</p>
+                </div>
+
+                <div className="space-y-1 mt-4">
+                  <div className="border-b border-slate-900 w-48 mx-auto mb-1"></div>
+                  <p className="font-black uppercase">{selectedReport.mediatorName || 'DANÚBIA DE CASTRO ALMEIDA'}</p>
+                  <p className="text-[10px] text-slate-600 uppercase">Professora Mediadora Escolar</p>
+                </div>
+
+                <div className="space-y-1 mt-4">
+                  <div className="border-b border-slate-900 w-48 mx-auto mb-1"></div>
+                  <p className="font-black uppercase">{selectedReport.psychosocialProfessional || 'TÉCNICO PSICOSSOCIAL'}</p>
+                  <p className="text-[10px] text-slate-600 uppercase">Técnico Psicossocial</p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -1091,12 +1586,23 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
           documentId={selectedReport.id}
           documentType="RELATORIO_CIRCUNSTANCIADO"
           documentTitle={selectedReport.reportNumber}
-          documentContent={selectedReport}
-          defaultSignerName={user?.name || selectedReport.directorName || 'DIRETOR ESCOLAR'}
-          defaultSignerRole={role === 'PSICOLOGO' ? 'PSICÓLOGO(A) ESCOLAR' : role === 'ASSISTENTE_SOCIAL' ? 'ASSISTENTE SOCIAL' : 'DIRETOR ESCOLAR'}
-          onSignatureComplete={handleSignatureComplete}
+          user={user}
+          onSignatureSuccess={(proof) => {
+            const currentSignatures = selectedReport.signatures || [];
+            const updated = {
+              ...selectedReport,
+              signatures: [...currentSignatures, proof],
+              isSigned: true
+            };
+            setSelectedReport(updated);
+            const list = reports.map(r => r.id === updated.id ? updated : r);
+            setReports(list);
+            localStorage.setItem('psychosocial_circumstantiated_reports_v1', JSON.stringify(list));
+            setIsSignatureModalOpen(false);
+          }}
         />
       )}
+
     </div>
   );
 };

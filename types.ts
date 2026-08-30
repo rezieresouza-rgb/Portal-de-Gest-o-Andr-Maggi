@@ -327,6 +327,31 @@ export interface PsychosocialCircumstantiatedReport {
   createdAt: string;
   signatures?: ElectronicSignatureProof[];
   isSigned?: boolean;
+  
+  // Evidências Digitais Anexas
+  evidenceAttachments?: {
+    id: string;
+    name: string;
+    url: string; // Base64 data URL ou link
+    type: 'BO_POLICIAL' | 'PRINT_MENSAGENS' | 'TERMO_FISICO' | 'LAUDO_MEDICO' | 'FOTO_EVIDENCIA' | 'OUTRO';
+    date: string;
+    description?: string;
+  }[];
+
+  // Controle de Protocolo Externo
+  externalProtocol?: {
+    protocolNumber: string;
+    receiptDate: string;
+    recipientEntity: 'CONSELHO_TUTELAR' | 'PROMOTORIA_JUSTICA' | 'DRE_SINOP' | 'OUTRO';
+    recipientName: string;
+    receiptFileUrl?: string; // Recibo carimbado
+    notes?: string;
+  };
+
+  // Monitoramento de Prazos e Devolutivas
+  followUpStatus?: 'AGUARDANDO_DEVOLUTIVA' | 'DEVOLUTIVA_RECEBIDA' | 'REITERACAO_ENVIADA' | 'ARQUIVADO';
+  lastFollowUpDate?: string;
+  followUpNotes?: string;
 }
 
 export interface PsychosocialMeetingAta {

@@ -100,6 +100,9 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
     occ: OccurrenceItem;
   } | null>(null);
 
+  // Aluno inicial para Dossiê Circunstanciado
+  const [circumstantiatedInitialStudent, setCircumstantiatedInitialStudent] = useState<string | null>(null);
+
   // Carregar Ocorrências do Supabase
   const fetchOccurrences = async () => {
     try {
@@ -942,15 +945,25 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={() => {
                       setSearchTerm(item.studentName);
                       setActiveTab('RESOLUTION');
                     }}
-                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2"
                   >
-                    <Eye size={15} /> Ver Dossiê Completo do Aluno
+                    <Eye size={15} /> Ver Ocorrências
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setCircumstantiatedInitialStudent(item.studentName);
+                      setActiveTab('CIRCUMSTANTIATED_REPORTS');
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-rose-600/20"
+                  >
+                    <Scale size={15} /> ⚡ Dossiê (Conselho/MP)
                   </button>
                 </div>
               </div>
@@ -991,7 +1004,11 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
       {/* ABA 5: RELATÓRIOS CIRCUNSTANCIADOS (CONSELHO TUTELAR & MINISTÉRIO PÚBLICO) */}
       {activeTab === 'CIRCUMSTANTIATED_REPORTS' && (
         <div className="space-y-6 animate-in fade-in">
-          <PsychosocialCircumstantiatedReportManager user={user} role="COORDENADOR" />
+          <PsychosocialCircumstantiatedReportManager
+            user={user}
+            role="COORDENADOR"
+            initialStudentName={circumstantiatedInitialStudent || undefined}
+          />
         </div>
       )}
 
