@@ -49,6 +49,7 @@ import CivicoMilitarReports from '../components/CivicoMilitarReports';
 import { CivicMediationReferralModal } from '../components/CivicMediationReferralModal';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
+import { DisciplinaryChecklistModal } from '../components/DisciplinaryChecklistModal';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -570,6 +571,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   // Radar de Reincidência States
   const [recidivismFilter, setRecidivismFilter] = useState<'ALL' | '1' | '2' | '3' | '4'>('ALL');
   const [recidivismSearchTerm, setRecidivismSearchTerm] = useState('');
+
+  // Assistente e Checklist Disciplinar do Gestor States
+  const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
+  const [checklistModalMode, setChecklistModalMode] = useState<'FLAGRANTE' | 'REINCIDENCIA' | 'GUIA'>('FLAGRANTE');
+  const [checklistTargetStudent, setChecklistTargetStudent] = useState<any | null>(null);
+  const [checklistOccurrenceCategory, setChecklistOccurrenceCategory] = useState<string>('');
+  const [checklistOccurrenceObservations, setChecklistOccurrenceObservations] = useState<string>('');
 
   // Mediação Escolar States
   const [isMediationModalOpen, setIsMediationModalOpen] = useState(false);
@@ -1921,6 +1929,27 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setIsBehaviorModalOpen(false);
   };
 
+  const handleOpenChecklistModal = (
+    studentObj?: any,
+    mode: 'FLAGRANTE' | 'REINCIDENCIA' | 'GUIA' = 'FLAGRANTE',
+    category?: string,
+    observations?: string
+  ) => {
+    let student = studentObj;
+    if (!student && selectedStudentState) {
+      student = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                selectedStudentState;
+    } else if (!student && selectedStudentForDoc) {
+      student = selectedStudentForDoc;
+    }
+    setChecklistTargetStudent(student || null);
+    setChecklistModalMode(mode);
+    setChecklistOccurrenceCategory(category || '');
+    setChecklistOccurrenceObservations(observations || '');
+    setIsChecklistModalOpen(true);
+  };
+
   const handleGenerateExternalReferralDoc = (
     template: 'oficio_policia' | 'oficio_conselho_tutelar' | 'oficio_ministerio_publico',
     studentObj?: any,
@@ -2468,6 +2497,22 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               }`}
           >
             <FileText size={18} /> Documentações
+          </button>
+
+          {/* BOTÃO ASSISTENTE & CHECKLIST DO GESTOR */}
+          <button
+            type="button"
+            onClick={() => handleOpenChecklistModal(null, 'FLAGRANTE')}
+            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 text-amber-400 border border-amber-400/30 shadow-lg transition-all"
+            title="Abrir Guia & Checklist do Gestor (Flagrante & Reincidência)"
+          >
+            <div className="flex items-center gap-3">
+              <Scale size={18} className="text-amber-400" />
+              <span>Checklist do Gestor</span>
+            </div>
+            <span className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-bold text-[9px]">
+              Guia
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('fatos_observados')}
@@ -3496,6 +3541,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenChecklistModal(null, 'REINCIDENCIA')}
+                    className="px-5 py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-md shadow-rose-600/20"
+                  >
+                    <Scale size={15} /> Guia & Checklist do Gestor
+                  </button>
                 </div>
               </div>
 
@@ -3585,13 +3638,31 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                             </td>
 
                             <td className="py-4 text-right pr-2">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <button
+                                  type="button"
+                                  onClick={() => {
+                                    const studentFull = student.fullStudent || {
+                                      CodigoAluno: student.studentId,
+                                      Nome: student.studentName,
+                                      Turma: student.className,
+                                      Turno: student.shiftName || ''
+                                    };
+                                    handleOpenChecklistModal(studentFull, 'REINCIDENCIA');
+                                  }}
+                                  className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-900 text-slate-700 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1"
+                                  title="Abrir Checklist do Gestor (Protocolo Legal)"
+                                >
+                                  <Scale size={11} /> Checklist
+                                </button>
+
+                                <button
+                                  type="button"
                                   onClick={() => {
                                     setSelectedStudentState(student);
                                     setIsBehaviorModalOpen(true);
                                   }}
-                                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
                                   title="Ver Dossiê e Linha do Tempo de Conduta"
                                 >
                                   Dossiê
@@ -3599,6 +3670,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                                 {analysis.requiresTACE && (
                                   <button
+                                    type="button"
                                     onClick={() => {
                                       setSelectedStudentForDoc(student.fullStudent || {
                                         CodigoAluno: student.studentId,
@@ -3615,7 +3687,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                       }));
                                       setActiveTab('documentos');
                                     }}
-                                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                    className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
                                     title="Gerar Termo de Ajustamento de Conduta Escolar (Art. 22)"
                                   >
                                     TACE
@@ -3624,10 +3696,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                                 {analysis.requiresCouncil && (
                                   <button
+                                    type="button"
                                     onClick={() => {
-                                      handleGenerateExternalReferralDoc(student, 'MP');
+                                      handleGenerateExternalReferralDoc('oficio_ministerio_publico', student.fullStudent || student);
                                     }}
-                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm"
+                                    className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm"
                                     title="Instaurar Conselho Disciplinar e Expediente ao MP"
                                   >
                                     Conselho
@@ -4413,6 +4486,14 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenChecklistModal(selectedStudentForDoc, 'FLAGRANTE', docFields.itensEnquadramento, docFields.falta || docFields.achado)}
+                                className="px-2.5 py-1 bg-slate-900 hover:bg-black text-white rounded-lg text-[8px] font-black uppercase tracking-wider flex items-center gap-1 transition-all shadow-xs"
+                                title="Abrir Assistente e Checklist Procedimental"
+                              >
+                                <Scale size={10} /> Checklist do Gestor
+                              </button>
                               <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase bg-white/90 border border-slate-200 text-slate-700 shadow-xs">
                                 Gravidade: {suggestedMeasureReport.severityLevel}
                               </span>
@@ -6219,9 +6300,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             
             {/* Esquerda: Informações Gerais e Formulário de Lançamento */}
             <div className="space-y-6">
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start gap-2">
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight truncate max-w-[280px]">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight truncate max-w-[240px]">
                     {selectedStudentState.studentName}
                   </h3>
                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
@@ -6242,6 +6323,22 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     return null;
                   })()}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                        selectedStudentState;
+                    const isSevere = newOccurrence.type === 'DEMERIT' && getOccurrenceSeverity(newOccurrence) === 'GRAVE';
+                    const mode = isSevere ? 'FLAGRANTE' : (modalRecidivismAnalysis?.hasSpecificRecurrence ? 'REINCIDENCIA' : 'FLAGRANTE');
+                    handleOpenChecklistModal(studentFull, mode, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
+                  }}
+                  className="px-3 py-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md shadow-red-600/20 shrink-0"
+                  title="Abrir Guia & Checklist do Gestor (Flagrante / Reincidência)"
+                >
+                  <Scale size={13} /> Checklist do Gestor
+                </button>
               </div>
 
               {/* Placa de Nota de Atitude */}
@@ -6896,6 +6993,77 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         initialStudent={mediationTargetStudent}
         initialReport={mediationInitialReport}
         user={user}
+      />
+
+      {/* MODAL: ASSISTENTE & CHECKLIST PROCEDIMENTAL DO GESTOR (FLAGRANTE E REINCIDÊNCIA) */}
+      <DisciplinaryChecklistModal
+        isOpen={isChecklistModalOpen}
+        onClose={() => setIsChecklistModalOpen(false)}
+        initialMode={checklistModalMode}
+        student={checklistTargetStudent}
+        occurrenceCategory={checklistOccurrenceCategory}
+        occurrenceObservations={checklistOccurrenceObservations}
+        onGeneratePoliceDoc={(std, cat, obs) => {
+          setIsChecklistModalOpen(false);
+          handleGenerateExternalReferralDoc('oficio_policia', std, cat, obs);
+        }}
+        onGenerateConselhoDoc={(std, cat, obs) => {
+          setIsChecklistModalOpen(false);
+          handleGenerateExternalReferralDoc('oficio_conselho_tutelar', std, cat, obs);
+        }}
+        onGenerateMPDoc={(std, cat, obs) => {
+          setIsChecklistModalOpen(false);
+          handleGenerateExternalReferralDoc('oficio_ministerio_publico', std, cat, obs);
+        }}
+        onOpenPsychosocial={(std, initialReport) => {
+          setIsChecklistModalOpen(false);
+          setSelectedDocTemplate('relatorio_circunstanciado_psicossocial');
+          if (std) setSelectedStudentForDoc(std);
+          if (initialReport) {
+            setDocFields(prev => ({ ...prev, achado: initialReport, relatoFatos: initialReport }));
+          }
+          setActiveTab('documentos');
+        }}
+        onOpenMediation={(std, initialReport) => {
+          setIsChecklistModalOpen(false);
+          const studentMediation = std ? {
+            id: std.CodigoAluno || std.studentId,
+            name: std.Nome || std.studentName,
+            class: std.Turma || std.className || ''
+          } : undefined;
+          setMediationTargetStudent(studentMediation);
+          setMediationInitialReport(initialReport || '');
+          setIsMediationModalOpen(true);
+        }}
+        onGenerateTACE={(std, obligationDetails) => {
+          setIsChecklistModalOpen(false);
+          setSelectedDocTemplate('termo_adequacao_conduta');
+          if (std) setSelectedStudentForDoc(std);
+          if (obligationDetails) {
+            setDocFields(prev => ({ ...prev, itensEnquadramento: obligationDetails }));
+          }
+          setActiveTab('documentos');
+        }}
+        onGenerateFicha={(std, cat, measure) => {
+          setIsChecklistModalOpen(false);
+          setSelectedDocTemplate('ficha_medida_disciplinar');
+          if (std) setSelectedStudentForDoc(std);
+          if (cat) {
+            setDocFields(prev => ({ ...prev, itensEnquadramento: cat, medidaAplicada: measure }));
+          }
+          setActiveTab('documentos');
+        }}
+        onGenerateConselhoAta={(std) => {
+          setIsChecklistModalOpen(false);
+          setSelectedDocTemplate('ata_conselho_disciplinar');
+          if (std) setSelectedStudentForDoc(std);
+          setActiveTab('documentos');
+        }}
+        onOpenFICAI={(std) => {
+          setIsChecklistModalOpen(false);
+          if (std) setSelectedStudentForDoc(std);
+          handleGenerateExternalReferralDoc('oficio_conselho_tutelar', std, 'Infrequência Escolar e Evasão Reiterada (Art. 56, II do ECA)', 'Comunicação formal de infrequência escolar grave associada a reincidência disciplinar para providências tutelares do Art. 56 do ECA e FICAI.');
+        }}
       />
 
     </div>
