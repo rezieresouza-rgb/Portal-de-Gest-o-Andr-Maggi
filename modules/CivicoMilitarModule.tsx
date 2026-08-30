@@ -526,6 +526,32 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [modalCategorySeverityFilter, setModalCategorySeverityFilter] = useState<'TODAS' | 'LEVE' | 'MÉDIA' | 'GRAVE'>('TODAS');
+
+  const modalSuggestedMeasure = useMemo(() => {
+    if (!selectedStudentState || newOccurrence.type !== 'DEMERIT') return null;
+    const cats = newOccurrence.selectedCategories || [];
+    if (cats.length === 0) return null;
+    
+    const prevCount = selectedStudentState.occurrences ? selectedStudentState.occurrences.filter(o => o.type === 'demerit').length : 0;
+    
+    // Check if any is GRAVE or MEDIA
+    let primaryCat = cats[0];
+    for (const c of cats) {
+      if (getOccurrenceSeverity({ type: 'DEMERIT', category: c }) === 'GRAVE') {
+        primaryCat = c;
+        break;
+      } else if (getOccurrenceSeverity({ type: 'DEMERIT', category: c }) === 'MÉDIA' && getOccurrenceSeverity({ type: 'DEMERIT', category: primaryCat }) !== 'GRAVE') {
+        primaryCat = c;
+      }
+    }
+
+    return getEECMSuggestedMeasure({
+      itemCategory: primaryCat,
+      studentScore: selectedStudentState.score,
+      previousInfractionsCount: prevCount
+    });
+  }, [selectedStudentState, newOccurrence.type, newOccurrence.selectedCategories]);
 
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
@@ -4837,6 +4863,54 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Enquadramento / Categoria</label>
                   {newOccurrence.type === 'DEMERIT' ? (
                     <div className="space-y-3 relative">
+                      {/* FILTROS RÁPIDOS POR GRAVIDADE */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setModalCategorySeverityFilter('TODAS')}
+                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
+                            modalCategorySeverityFilter === 'TODAS'
+                              ? 'bg-slate-900 text-white shadow-xs'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          Todas (91)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModalCategorySeverityFilter('LEVE')}
+                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
+                            modalCategorySeverityFilter === 'LEVE'
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                          }`}
+                        >
+                          🟢 Leves (1-26)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModalCategorySeverityFilter('MÉDIA')}
+                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
+                            modalCategorySeverityFilter === 'MÉDIA'
+                              ? 'bg-amber-600 text-white shadow-xs'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                          }`}
+                        >
+                          🟡 Médias (27-62)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModalCategorySeverityFilter('GRAVE')}
+                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
+                            modalCategorySeverityFilter === 'GRAVE'
+                              ? 'bg-rose-600 text-white shadow-xs'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                          }`}
+                        >
+                          🔴 Graves (63-91)
+                        </button>
+                      </div>
+
                       <div className="relative">
                         <input
                           type="text"
@@ -4850,7 +4924,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         {isCategoryDropdownOpen && (
                           <div className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-2xl divide-y divide-slate-100 text-slate-800">
                             {demeritOptions
-                              .filter(d => !categorySearchTerm || d.category.toLowerCase().includes(categorySearchTerm.toLowerCase()))
+                              .filter(d => {
+                                const matchesFilter = modalCategorySeverityFilter === 'TODAS' || d.severity === modalCategorySeverityFilter;
+                                const matchesSearch = !categorySearchTerm || d.category.toLowerCase().includes(categorySearchTerm.toLowerCase());
+                                return matchesFilter && matchesSearch;
+                              })
                               .map(d => {
                                 const isSelected = (newOccurrence.selectedCategories || []).includes(d.category);
                                 return (
@@ -4943,6 +5021,74 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                 {newOccurrence.type === 'DEMERIT' && (
                   <>
+                    {/* CARD VISUAL DE SUGESTÃO REGULAMENTAR INTELIGENTE (NO MODAL DE ATITUDE) */}
+                    {modalSuggestedMeasure && (
+                      <div className={`p-3 rounded-xl border transition-all animate-fadeIn ${
+                        modalSuggestedMeasure.suggestedMeasure === 'Advertência Oral' 
+                          ? 'bg-emerald-50/80 border-emerald-300 ring-1 ring-emerald-200'
+                          : modalSuggestedMeasure.suggestedMeasure === 'Advertência Escrita'
+                          ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-200'
+                          : modalSuggestedMeasure.suggestedMeasure === 'Suspensão de Sala de Aula'
+                          ? 'bg-rose-50/80 border-rose-300 ring-1 ring-rose-200'
+                          : modalSuggestedMeasure.suggestedMeasure === 'Ações Educativas'
+                          ? 'bg-purple-50/80 border-purple-300 ring-1 ring-purple-200'
+                          : 'bg-red-100/90 border-red-300 ring-1 ring-red-200'
+                      }`}>
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Scale size={13} className={
+                              modalSuggestedMeasure.suggestedMeasure === 'Advertência Oral' ? 'text-emerald-700' :
+                              modalSuggestedMeasure.suggestedMeasure === 'Advertência Escrita' ? 'text-amber-700' :
+                              modalSuggestedMeasure.suggestedMeasure === 'Suspensão de Sala de Aula' ? 'text-rose-700' : 'text-purple-700'
+                            } />
+                            <span className="text-[9px] font-black uppercase text-slate-800 flex items-center gap-1">
+                              <Sparkles size={11} className="text-amber-500 fill-amber-500" />
+                              Sugestão Regulamentar EECM
+                            </span>
+                          </div>
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700">
+                            {modalSuggestedMeasure.severityLevel}
+                          </span>
+                        </div>
+
+                        <div className="bg-white/90 p-2.5 rounded-lg border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-black text-slate-900 uppercase">
+                                {modalSuggestedMeasure.suggestedMeasure}
+                              </span>
+                              {modalSuggestedMeasure.recommendedDays && (
+                                <span className="text-[9px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+                                  {modalSuggestedMeasure.recommendedDays} dias
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[9px] font-bold text-blue-700">
+                              {modalSuggestedMeasure.legalBasis}
+                            </p>
+                            <p className="text-[9px] text-slate-500 leading-tight">
+                              {modalSuggestedMeasure.rationale}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewOccurrence(prev => ({
+                                ...prev,
+                                disciplinaryMeasure: modalSuggestedMeasure.suggestedMeasure,
+                                suspensionDays: modalSuggestedMeasure.recommendedDays || prev.suspensionDays || 1
+                              }));
+                            }}
+                            className="shrink-0 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-1 shadow-xs transition-all"
+                          >
+                            <Sparkles size={11} />
+                            {newOccurrence.disciplinaryMeasure === modalSuggestedMeasure.suggestedMeasure ? 'Aplicada ✓' : 'Aplicar'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Medida Disciplinar Aplicada</label>
                       <select
