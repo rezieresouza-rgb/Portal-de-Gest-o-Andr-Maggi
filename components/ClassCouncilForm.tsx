@@ -79,7 +79,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
           const initialObs: ClassCouncilStudentObservation[] = studentList.map(s => ({
             studentId: s.id,
             studentName: s.name,
-            pedagogicalProgress: 'SATISFATORIO',
+            pedagogicalProgress: 'ADEQUADO',
             behavioralStatus: 'BOM',
             notes: '',
             recommendations: ''
@@ -90,61 +90,66 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
     };
 
     fetchStudents();
-  }, [selectedClassId, initialData]);
+  }, [selectedClassId]);
 
-  const handleUpdateStudentObs = (studentId: string, field: keyof ClassCouncilStudentObservation, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      studentObservations: prev.studentObservations?.map(obs => 
-        obs.studentId === studentId ? { ...obs, [field]: value } : obs
-      )
-    }));
+  const handleStudentObservationChange = (index: number, field: keyof ClassCouncilStudentObservation, value: any) => {
+    const updated = [...(formData.studentObservations || [])];
+    updated[index] = {
+      ...updated[index],
+      [field]: value
+    };
+    setFormData({ ...formData, studentObservations: updated });
   };
 
-  const handleSave = async (isFinal: boolean) => {
+  const handleSave = async (finalize = false) => {
     if (!selectedClassId) {
-      addToast("Selecione uma turma.", "error");
+      addToast("Selecione uma turma para o conselho.", "warning");
       return;
     }
 
     setLoading(true);
     try {
-      const finalData = {
-        ...formData,
+      const payload: ClassCouncil = {
+        id: initialData?.id || '',
         classroomId: selectedClassId,
-        status: isFinal ? 'FINALIZADO' : 'RASCUNHO' as 'RASCUNHO' | 'FINALIZADO',
-        timestamp: Date.now()
-      } as ClassCouncil;
+        className: classrooms.find(c => c.id === selectedClassId)?.name || 'Turma',
+        bimestre: formData.bimestre || '1º BIMESTRE',
+        date: formData.date || new Date().toISOString().split('T')[0],
+        generalDiagnosis: formData.generalDiagnosis || '',
+        studentObservations: formData.studentObservations || [],
+        decisions: formData.decisions || '',
+        attendanceTeachers: formData.attendanceTeachers || [],
+        status: finalize ? 'FINALIZADO' : 'RASCUNHO',
+        timestamp: new Date().getTime()
+      };
 
-      await onSave(finalData);
-      addToast(isFinal ? "Conselho finalizado com sucesso!" : "Rascunho salvo!", "success");
+      await onSave(payload);
     } catch (error) {
-      console.error("Erro ao salvar conselho:", error);
-      addToast("Erro ao salvar registro.", "error");
+      console.error("Erro ao salvar:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handlePrint = async () => {
-    const element = document.getElementById('ata-conselho');
+    const element = document.getElementById('ata-conselho-externo');
     if (!element) {
-      addToast("Erro ao localizar área de impressão.", "error");
+      addToast("Erro ao localizar elemento de impressão.", "error");
       return;
     }
 
-    // Small delay to ensure any dynamic content is rendered
-    setLoading(true);
-    addToast("Gerando PDF, aguarde...", "info");
-
-    const className = classrooms.find(c => c.id === selectedClassId)?.name || 'Turma';
-    const filename = `Ata_Conselho_${className.replace(/\s+/g, '_')}_${formData.bimestre?.replace(/\s+/g, '_')}.pdf`;
-
     try {
+      setLoading(true);
+      addToast("Preparando PDF oficial...", "info");
+      
+      const className = classrooms.find(c => c.id === selectedClassId)?.name || 'Turma';
+      const filename = `Ata_Conselho_${className.replace(/\s+/g, '_')}_${formData.bimestre?.replace(/\s+/g, '_')}.pdf`;
+      
       // @ts-ignore
       const h2pdf = window.html2pdf;
       if (!h2pdf) {
-        throw new Error("Biblioteca de PDF não carregada.");
+        window.print();
+        return;
       }
 
       const opt = {
@@ -164,7 +169,6 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
       addToast("PDF gerado com sucesso!", "success");
     } catch (error) {
       console.error("Erro no PDF:", error);
-      addToast("Falha ao gerar PDF. Tentando modo de impressão alternativo...", "warning");
       window.print();
     } finally {
       setLoading(false);
@@ -172,289 +176,187 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20 no-print">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20 no-print">
       
       {/* HEADER FIXO */}
-      <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-blue-500/10 text-blue-400 rounded-3xl border border-blue-500/20 shadow-inner">
-            <ClipboardList size={32} />
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-blue-100 text-blue-700 rounded-2xl">
+            <ClipboardList size={28} />
           </div>
           <div>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">Registro de Conselho de Classe</h3>
-            <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mt-1">Sistematização de Resultados e Encaminhamentos</p>
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Registro de Conselho de Classe</h3>
+            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">Sistematização de Resultados e Encaminhamentos</p>
           </div>
         </div>
-        <div className="flex gap-4">
-          <button onClick={handlePrint} className="px-6 py-3 bg-white/5 text-white/60 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all flex items-center gap-2">
-            <Printer size={16} /> Imprimir Ata
+        <div className="flex gap-2">
+          <button onClick={handlePrint} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5">
+            <Printer size={15} /> Imprimir Ata
           </button>
-          <button onClick={onCancel} className="px-6 py-3 bg-red-500/10 text-red-500 rounded-xl text-[10px] font-black uppercase border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center gap-2">
-            <X size={16} /> Cancelar
+          <button onClick={onCancel} className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5">
+            <X size={15} /> Cancelar
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* COLUNA ESQUERDA: DADOS DA REUNIÃO */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md space-y-6">
-            <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center gap-2">
-              <Calendar size={14} className="text-blue-400" /> Detalhes do Conselho
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <Calendar size={14} className="text-indigo-600" /> Detalhes do Conselho
             </h4>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="text-[9px] font-black text-white/30 uppercase ml-2 mb-1 block">Turma</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase ml-1 mb-1 block">Turma</label>
                 <select 
                   value={selectedClassId}
                   onChange={e => setSelectedClassId(e.target.value)}
                   disabled={!!initialData}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-900 outline-none focus:bg-white cursor-pointer"
                 >
-                  <option value="" className="bg-slate-900 text-white">Selecione...</option>
+                  <option value="">Selecione...</option>
                   {classrooms.map(c => (
-                    <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name} ({c.shift})</option>
+                    <option key={c.id} value={c.id}>{c.name} ({c.shift})</option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[9px] font-black text-white/30 uppercase ml-2 mb-1 block">Bimestre</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase ml-1 mb-1 block">Bimestre</label>
                   <select 
                     value={formData.bimestre}
                     onChange={e => setFormData({...formData, bimestre: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3 py-3 text-xs font-bold text-slate-900 outline-none focus:bg-white cursor-pointer"
                   >
-                    <option className="bg-slate-900 text-white">1º BIMESTRE</option>
-                    <option className="bg-slate-900 text-white">2º BIMESTRE</option>
-                    <option className="bg-slate-900 text-white">3º BIMESTRE</option>
-                    <option className="bg-slate-900 text-white">4º BIMESTRE</option>
-                    <option className="bg-slate-900 text-white">EXAME FINAL</option>
+                    <option>1º BIMESTRE</option>
+                    <option>2º BIMESTRE</option>
+                    <option>3º BIMESTRE</option>
+                    <option>4º BIMESTRE</option>
+                    <option>EXAME FINAL</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-[9px] font-black text-white/30 uppercase ml-2 mb-1 block">Data</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase ml-1 mb-1 block">Data</label>
                   <input 
                     type="date"
                     value={formData.date}
                     onChange={e => setFormData({...formData, date: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-500/50 [color-scheme:dark]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3 py-3 text-xs font-bold text-slate-900 outline-none focus:bg-white"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 p-8 rounded-[2.5rem] border border-blue-500/20 shadow-xl backdrop-blur-md space-y-6">
-            <h4 className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] flex items-center gap-2">
-              <TrendingUp size={14} /> Diagnóstico Geral
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-3">
+            <h4 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center gap-2">
+              <TrendingUp size={14} /> Diagnóstico Geral da Turma
             </h4>
             <textarea 
               value={formData.generalDiagnosis}
               onChange={e => setFormData({...formData, generalDiagnosis: e.target.value})}
-              placeholder="Descreva o perfil da turma neste bimestre, avanços coletivos e desafios principais..."
-              className="w-full h-48 bg-white/5 border border-white/5 rounded-3xl p-6 text-xs font-medium text-white/90 outline-none focus:ring-2 focus:ring-blue-500/30 resize-none transition-all"
+              placeholder="Descreva o perfil da turma neste bimestre, avanços coletivos e desafios..."
+              className="w-full h-36 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-900 outline-none focus:bg-white resize-none"
             />
           </div>
 
-          <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md space-y-6">
-            <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
+            <h4 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
               <UserCheck size={14} /> Encaminhamentos / Decisões
             </h4>
             <textarea 
               value={formData.decisions}
               onChange={e => setFormData({...formData, decisions: e.target.value})}
               placeholder="Ações pedagógicas decididas para o próximo período..."
-              className="w-full h-40 bg-white/5 border border-white/5 rounded-3xl p-6 text-xs font-medium text-white/90 outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none transition-all"
+              className="w-full h-32 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-900 outline-none focus:bg-white resize-none"
             />
-            <div className="flex gap-3">
+            <div className="flex gap-2 pt-2">
               <button 
                 onClick={() => handleSave(false)}
                 disabled={loading}
-                className="flex-1 py-4 bg-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/5"
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all"
               >
                 {loading ? 'Salvando...' : 'Salvar Rascunho'}
               </button>
               <button 
                 onClick={() => handleSave(true)}
                 disabled={loading}
-                className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5"
               >
-                <Save size={16} /> Finalizar
+                <Save size={14} /> Finalizar
               </button>
             </div>
           </div>
         </div>
 
         {/* COLUNA DIREITA: OBSERVADOR POR ALUNO */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white/5 p-8 rounded-[3rem] border border-white/10 shadow-xl backdrop-blur-md">
-            <div className="flex justify-between items-center mb-8">
-              <h4 className="text-sm font-black text-white uppercase tracking-tight flex items-center gap-3">
-                <Users size={20} className="text-blue-400" /> Acompanhamento Individual dos Alunos
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                <Users size={18} className="text-indigo-600" /> Acompanhamento Individual dos Alunos
               </h4>
-              <span className="px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-black text-white/40 uppercase tracking-widest">
+              <span className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-black text-slate-600 uppercase">
                 {students.length} Alunos na Turma
               </span>
             </div>
 
-            <div className="space-y-4 max-h-[1200px] overflow-y-auto pr-4 custom-scrollbar">
+            <div className="space-y-4 max-h-[38rem] overflow-y-auto custom-scrollbar pr-1">
               {formData.studentObservations?.map((obs, idx) => (
-                <div key={obs.studentId} className="bg-white/5 p-6 rounded-[2rem] border border-white/5 hover:border-blue-500/30 transition-all group">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/30 font-black text-xs border border-white/10 group-hover:bg-blue-500/10 group-hover:text-blue-400 transition-all">
-                          {idx + 1}
-                        </div>
-                        <h5 className="text-sm font-black text-white uppercase tracking-tight">{obs.studentName}</h5>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <label className="text-[8px] font-black text-white/20 uppercase ml-1 mb-1 block tracking-widest">Desempenho Pedagógico</label>
-                          <div className="flex gap-1">
-                            {['SATISFATORIO', 'PARCIAL', 'INSATISFATORIO'].map(level => (
-                              <button 
-                                key={level}
-                                onClick={() => handleUpdateStudentObs(obs.studentId, 'pedagogicalProgress', level as any)}
-                                className={`flex-1 py-2 rounded-lg text-[8px] font-black uppercase transition-all border ${
-                                  obs.pedagogicalProgress === level 
-                                    ? level === 'SATISFATORIO' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : level === 'PARCIAL' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'
-                                    : 'bg-white/5 text-white/20 border-white/5 hover:bg-white/10'
-                                }`}
-                              >
-                                {level === 'SATISFATORIO' ? 'Satis.' : level === 'PARCIAL' ? 'Parcial' : 'Insat.'}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[8px] font-black text-white/20 uppercase ml-1 mb-1 block tracking-widest">Comportamento</label>
-                          <div className="flex gap-1">
-                            {['BOM', 'REGULAR', 'CRITICO'].map(status => (
-                              <button 
-                                key={status}
-                                onClick={() => handleUpdateStudentObs(obs.studentId, 'behavioralStatus', status as any)}
-                                className={`flex-1 py-2 rounded-lg text-[8px] font-black uppercase transition-all border ${
-                                  obs.behavioralStatus === status 
-                                    ? status === 'BOM' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : status === 'REGULAR' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'
-                                    : 'bg-white/5 text-white/20 border-white/5 hover:bg-white/10'
-                                }`}
-                              >
-                                {status === 'BOM' ? 'Bom' : status === 'REGULAR' ? 'Reg.' : 'Crítico'}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <span className="font-black text-xs uppercase text-slate-900">{obs.studentName}</span>
+                    <div className="flex gap-2">
+                      <select 
+                        value={obs.pedagogicalProgress}
+                        onChange={e => handleStudentObservationChange(idx, 'pedagogicalProgress', e.target.value)}
+                        className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[10px] font-black uppercase outline-none text-indigo-700 cursor-pointer"
+                      >
+                        <option value="AVANÇADO">AVANÇADO</option>
+                        <option value="ADEQUADO">ADEQUADO</option>
+                        <option value="BÁSICO">BÁSICO</option>
+                        <option value="ABAIXO DO BÁSICO">ABAIXO DO BÁSICO</option>
+                      </select>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="relative">
-                          <MessageSquareIcon className="absolute left-3 top-3 text-white/20" size={14} />
-                          <input 
-                            type="text"
-                            value={obs.notes}
-                            onChange={e => handleUpdateStudentObs(obs.studentId, 'notes', e.target.value)}
-                            placeholder="Observações pedagógicas..."
-                            className="w-full bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-[10px] font-medium text-white/80 outline-none focus:ring-1 focus:ring-blue-500/30"
-                          />
-                        </div>
-                        <div className="relative">
-                          <ArrowRight className="absolute left-3 top-3 text-white/20" size={14} />
-                          <input 
-                            type="text"
-                            value={obs.recommendations}
-                            onChange={e => handleUpdateStudentObs(obs.studentId, 'recommendations', e.target.value)}
-                            placeholder="Intervenções / Assistências..."
-                            className="w-full bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-[10px] font-medium text-white/80 outline-none focus:ring-1 focus:ring-emerald-500/30"
-                          />
-                        </div>
-                      </div>
+                      <select 
+                        value={obs.behavioralStatus}
+                        onChange={e => handleStudentObservationChange(idx, 'behavioralStatus', e.target.value)}
+                        className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[10px] font-black uppercase outline-none text-amber-700 cursor-pointer"
+                      >
+                        <option value="EXCELENTE">EXCELENTE</option>
+                        <option value="BOM">BOM</option>
+                        <option value="REGULAR">REGULAR</option>
+                        <option value="CRÍTICO">CRÍTICO</option>
+                      </select>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input 
+                      type="text"
+                      placeholder="Observações pedagógicas / comportamentais..."
+                      value={obs.notes || ''}
+                      onChange={e => handleStudentObservationChange(idx, 'notes', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                    />
+                    <input 
+                      type="text"
+                      placeholder="Intervenções / Encaminhamentos recomendados..."
+                      value={obs.recommendations || ''}
+                      onChange={e => handleStudentObservationChange(idx, 'recommendations', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                    />
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* COMPONENTE DE IMPRESSÃO (Oculto na tela, mas visível para o gerador de PDF) */}
-      <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
-        <div id="ata-conselho" className="bg-white text-black p-12 min-h-screen font-sans">
-         <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
-            <div className="flex items-center justify-start flex-1">
-               <img src="/logo-escola.png" alt="Escola Logo" className="h-44 w-auto object-contain" />
-            </div>
-            <div className="flex-[2] flex justify-center px-4">
-               <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-44 w-full object-contain" />
-            </div>
-            <div className="flex items-center justify-end flex-1">
-               <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-28 w-auto object-contain" />
-            </div>
-         </div>
-
-         <div className="text-center mb-10">
-            <h1 className="text-2xl font-bold uppercase tracking-tighter">Ata de Conselho de Classe</h1>
-            <div className="flex justify-center gap-10 mt-4 text-xs font-bold uppercase">
-               <span>Turma: {classrooms.find(c => c.id === selectedClassId)?.name}</span>
-               <span>Bimestre: {formData.bimestre}</span>
-               <span>Data: {formData.date?.split('-').reverse().join('/')}</span>
-            </div>
-         </div>
-
-         <div className="space-y-10">
-            <section>
-               <h2 className="text-lg font-bold border-b border-black mb-3 uppercase tracking-tight">1. Diagnóstico Geral da Turma</h2>
-               <p className="text-sm leading-relaxed text-justify">{formData.generalDiagnosis || 'Nenhuma observação registrada.'}</p>
-            </section>
-
-            <section>
-               <h2 className="text-lg font-bold border-b border-black mb-3 uppercase tracking-tight">2. Deliberações e Ações Pedagógicas</h2>
-               <p className="text-sm leading-relaxed text-justify">{formData.decisions || 'Nenhuma decisão registrada.'}</p>
-            </section>
-
-            <section>
-               <h2 className="text-lg font-bold border-b border-black mb-6 uppercase tracking-tight">3. Análise Individual dos Estudantes</h2>
-               <table className="w-full border-collapse border border-black text-[10px]">
-                  <thead>
-                     <tr className="bg-gray-100">
-                        <th className="border border-black px-3 py-2 text-left w-1/4">ESTUDANTE</th>
-                        <th className="border border-black px-2 py-2 text-center">DESEMPENHO</th>
-                        <th className="border border-black px-2 py-2 text-center">COMPORT.</th>
-                        <th className="border border-black px-3 py-2 text-left">OBSERVAÇÕES / RECOMENDAÇÕES</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     {formData.studentObservations?.map(obs => (
-                        <tr key={obs.studentId}>
-                           <td className="border border-black px-3 py-2 font-bold uppercase">{obs.studentName}</td>
-                           <td className="border border-black px-2 py-2 text-center">{obs.pedagogicalProgress}</td>
-                           <td className="border border-black px-2 py-2 text-center">{obs.behavioralStatus}</td>
-                           <td className="border border-black px-3 py-2">
-                              {obs.notes && <p><strong>Obs:</strong> {obs.notes}</p>}
-                              {obs.recommendations && <p><strong>Intervenção:</strong> {obs.recommendations}</p>}
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            </section>
-
-            <div className="mt-20 pt-10 grid grid-cols-2 gap-20 px-10">
-               <div className="text-center border-t border-black pt-4">
-                  <p className="text-[10px] uppercase font-bold">Coordenação Pedagógica</p>
-               </div>
-               <div className="text-center border-t border-black pt-4">
-                  <p className="text-[10px] uppercase font-bold">Direção Escolar</p>
-               </div>
-            </div>
-         </div>
-         </div>
       </div>
 
     </div>

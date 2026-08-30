@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import {
    BookOpen,
@@ -63,6 +62,7 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             category: o.category as any,
             attachments: o.attachments || [],
             status: o.status as any,
+            severity: o.severity || 'LEVE',
             timestamp: new Date(o.date + 'T' + o.time).getTime()
          })));
       }
@@ -80,11 +80,11 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
 
    const filtered = useMemo(() => {
       return occurrences.filter(o => {
-         const matchSearch = o.involvedStudents.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            o.className.toLowerCase().includes(searchTerm.toLowerCase());
+         const matchSearch = (o.involvedStudents || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (o.className || '').toLowerCase().includes(searchTerm.toLowerCase());
          const matchCat = filterCat === 'TODOS' || o.category === filterCat;
-         const matchSev = filterSeverity === 'TODOS' || o.severity === filterSeverity;
-         const matchProf = !filterProf || o.responsible.toLowerCase().includes(filterProf.toLowerCase());
+         const matchSev = filterSeverity === 'TODOS' || (o.severity || 'LEVE') === filterSeverity;
+         const matchProf = !filterProf || (o.responsible || '').toLowerCase().includes(filterProf.toLowerCase());
          return matchSearch && matchCat && matchSev && matchProf;
       }).sort((a, b) => b.timestamp - a.timestamp);
    }, [occurrences, searchTerm, filterCat, filterSeverity, filterProf]);
@@ -121,12 +121,10 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
          let newOccId = occ.id;
 
          if (occ.id.startsWith('occ-')) {
-            // Insert
             const { data, error } = await supabase.from('occurrences').insert([occurrenceData]).select().single();
             if (error) throw error;
             if (data) newOccId = data.id;
          } else {
-            // Update
             const { error } = await supabase
                .from('occurrences')
                .update(occurrenceData)
@@ -135,8 +133,6 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
          }
 
          await fetchOccurrences();
-
-         // AUTO-REDIRECT TO ATA GENERATION
          setSelectedOccId(newOccId);
          setView('ata');
 
@@ -179,79 +175,57 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
       );
    }
 
-   const handleExportPDF = async () => {
-      setIsExportingPDF(true);
-      const element = document.getElementById('print-report-area');
-      if (!element) return setIsExportingPDF(false);
-
-      try {
-         // @ts-ignore
-         await window.html2pdf().set({
-            margin: [10, 10, 10, 10],
-            filename: `Relatorio_Ocorrencias_${new Date().getTime()}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-         }).from(element).save();
-      } catch (err) {
-         console.error(err);
-      } finally {
-         setIsExportingPDF(false);
-      }
-   };
-
    if (view === 'report') {
       return (
-         <div className="bg-white text-black p-8 rounded-2xl min-h-screen">
-            <div className="flex justify-between items-center mb-8 no-print">
-               <button onClick={() => setView('list')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 transition-colors rounded-xl text-xs font-black uppercase text-gray-700">
+         <div className="bg-white text-slate-900 p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex justify-between items-center no-print">
+               <button onClick={() => setView('list')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 transition-all rounded-xl text-xs font-black uppercase text-slate-700">
                   <ArrowLeft size={16} /> Voltar
                </button>
-               <button onClick={handleExportPDF} disabled={isExportingPDF} className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl text-xs font-black uppercase shadow-lg">
-                  {isExportingPDF ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />} 
-                  {isExportingPDF ? 'Gerando PDF...' : 'Baixar PDF'}
+               <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 transition-all text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-violet-600/20">
+                  <Printer size={16} /> Imprimir Relatório
                </button>
             </div>
             
-            <div id="print-report-area" className="print-area bg-white p-8">
-               <div className="text-center mb-8 border-b-2 border-black pb-4">
-                  <h2 className="text-2xl font-black uppercase tracking-tight">Relatório de Ocorrências Pedagógicas</h2>
-                  <p className="text-sm font-bold text-gray-600 mt-1">Total de registros no filtro atual: {filtered.length}</p>
-                  <p className="text-xs text-gray-500 uppercase mt-2">
+            <div id="print-report-area" className="print-area bg-white p-4">
+               <div className="text-center mb-8 border-b-2 border-slate-900 pb-4">
+                  <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">Relatório de Ocorrências Pedagógicas</h2>
+                  <p className="text-sm font-bold text-slate-600 mt-1">Total de registros no filtro atual: {filtered.length}</p>
+                  <p className="text-xs text-slate-500 uppercase mt-1">
                      Filtro Ativo: {searchTerm ? `[Busca: ${searchTerm}]` : '[Sem busca]'} | Categoria: {filterCat} | Gravidade: {filterSeverity} | Professor: {filterProf || 'Todos'}
                   </p>
                </div>
 
                <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                     <tr className="border-b-2 border-black bg-gray-50">
-                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300">Data/Hora</th>
-                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300">Aluno(s) / Turma</th>
-                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300">Categoria / Local</th>
-                        <th className="py-2 px-2 font-black uppercase border-r border-gray-300 w-1/3">Descrição do Registro</th>
-                        <th className="py-2 px-2 font-black uppercase">Registrado Por</th>
+                     <tr className="border-b-2 border-slate-900 bg-slate-50">
+                        <th className="py-2.5 px-3 font-black uppercase border-r border-slate-200">Data/Hora</th>
+                        <th className="py-2.5 px-3 font-black uppercase border-r border-slate-200">Aluno(s) / Turma</th>
+                        <th className="py-2.5 px-3 font-black uppercase border-r border-slate-200">Categoria / Local</th>
+                        <th className="py-2.5 px-3 font-black uppercase border-r border-slate-200 w-1/3">Descrição</th>
+                        <th className="py-2.5 px-3 font-black uppercase">Registrado Por</th>
                      </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-200">
                      {filtered.map(occ => (
-                        <tr key={occ.id} className="border-b border-gray-300 break-inside-avoid">
-                           <td className="py-3 px-2 whitespace-nowrap align-top border-r border-gray-300">
-                              <strong>{new Date(occ.date).toLocaleDateString('pt-BR')}</strong> <br/>
-                              <span className="text-gray-500">{occ.time}</span>
+                        <tr key={occ.id} className="hover:bg-slate-50">
+                           <td className="py-3 px-3 whitespace-nowrap align-top border-r border-slate-200">
+                              <strong className="text-slate-900">{new Date(occ.date + 'T12:00:00').toLocaleDateString('pt-BR')}</strong> <br/>
+                              <span className="text-slate-500">{occ.time}</span>
                            </td>
-                           <td className="py-3 px-2 align-top border-r border-gray-300">
-                              <strong className="uppercase">{occ.involvedStudents}</strong><br/>
-                              <span className="text-gray-600">{occ.className}</span>
+                           <td className="py-3 px-3 align-top border-r border-slate-200">
+                              <strong className="uppercase text-slate-900">{occ.involvedStudents}</strong><br/>
+                              <span className="text-slate-600 font-bold">{occ.className}</span>
                            </td>
-                           <td className="py-3 px-2 align-top border-r border-gray-300">
-                              <span className="font-bold">{occ.category.replace('_', ' ')}</span><br/>
-                              <span className="text-[9px] bg-gray-200 px-1 py-0.5 rounded text-gray-800 uppercase font-black">{occ.severity}</span><br/>
-                              <span className="text-gray-600 mt-1 block">{occ.location}</span>
+                           <td className="py-3 px-3 align-top border-r border-slate-200">
+                              <span className="font-black text-indigo-700">{occ.category.replace('_', ' ')}</span><br/>
+                              <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 uppercase font-black">{occ.severity}</span><br/>
+                              <span className="text-slate-500 mt-1 block">{occ.location}</span>
                            </td>
-                           <td className="py-3 px-2 align-top border-r border-gray-300 text-[10px] text-gray-800">
+                           <td className="py-3 px-3 align-top border-r border-slate-200 text-xs text-slate-700">
                               {occ.report}
                            </td>
-                           <td className="py-3 px-2 align-top font-medium uppercase text-[10px]">
+                           <td className="py-3 px-3 align-top font-bold uppercase text-xs text-slate-800">
                               {occ.responsible}
                            </td>
                         </tr>
@@ -259,23 +233,6 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                   </tbody>
                </table>
             </div>
-
-            <style>{`
-               @media print {
-                  body * { visibility: hidden; }
-                  .print-area, .print-area * { visibility: visible; }
-                  .print-area {
-                     position: absolute;
-                     left: 0;
-                     top: 0;
-                     width: 100%;
-                     margin: 0;
-                     padding: 0;
-                  }
-                  body { background: white !important; -webkit-print-color-adjust: exact; margin: 0; }
-                  @page { size: landscape; margin: 10mm; }
-               }
-            `}</style>
          </div>
       );
    }
@@ -284,79 +241,90 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
       <div className="space-y-6 animate-in fade-in duration-500 pb-20">
 
          {/* HEADER GERAL */}
-         <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-6">
-               <div className="p-4 bg-violet-500/10 text-violet-400 rounded-3xl border border-violet-500/20">
-                  <BookOpen size={32} />
+         <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex items-center gap-4">
+               <div className="p-3.5 bg-violet-100 text-violet-700 rounded-2xl">
+                  <BookOpen size={28} />
                </div>
                <div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight">Livro de Ocorrência Digital</h3>
-                  <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mt-1">Escrituração Escolar e Mediação de Conflitos</p>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Livro de Ocorrências Digital</h3>
+                  <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">Escrituração Escolar e Mediação de Conflitos</p>
                </div>
             </div>
-            <div className="flex gap-4 w-full md:w-auto">
-               <div className="relative flex-1 md:w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+               <div className="relative flex-1 sm:w-56">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                   <input
                      type="text"
                      placeholder="Aluno ou Turma..."
                      value={searchTerm}
                      onChange={e => setSearchTerm(e.target.value)}
-                     className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-violet-500/50"
+                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20"
                   />
                </div>
-               <div className="relative flex-1 md:w-48">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+
+               <div className="relative flex-1 sm:w-44">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                   <input
                      type="text"
                      placeholder="Professor..."
                      value={filterProf}
                      onChange={e => setFilterProf(e.target.value)}
-                     className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-violet-500/50"
+                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20"
                   />
                </div>
+
                <button
                   onClick={() => setView('report')}
-                  className="px-6 py-3 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-white/10 active:scale-95 transition-all flex items-center gap-2 shrink-0 border border-white/10"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0"
                >
-                  <Printer size={16} /> Relatório
+                  <Printer size={15} /> Relatório
                </button>
+
                <button
                   onClick={() => { setSelectedOccId(null); setView('form'); }}
-                  className="px-6 py-3 bg-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-violet-700 active:scale-95 transition-all flex items-center gap-2 shrink-0 border border-white/10"
+                  className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-violet-600/20 active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
                >
-                  <Plus size={16} /> Novo Registro
+                  <Plus size={15} /> Novo Registro
                </button>
             </div>
          </div>
 
          {/* FILTROS DE CATEGORIA E GRAVIDADE */}
-         <div className="flex flex-col gap-3 pb-2 no-print custom-scrollbar">
-            <div className="flex gap-2 overflow-x-auto">
-               <span className="text-[10px] text-white/50 font-black uppercase my-auto mr-2 min-w-max">Categoria:</span>
+         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
+               <span className="text-[10px] text-slate-400 font-black uppercase shrink-0 mr-1">Categoria:</span>
                <button
                   onClick={() => setFilterCat('TODOS')}
-                  className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterCat === 'TODOS' ? 'bg-violet-600 text-white border-violet-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
+                  className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${
+                     filterCat === 'TODOS' ? 'bg-violet-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
                >
-                  Tudo
+                  TUDO
                </button>
                {categories.map(cat => (
                   <button
                      key={cat}
                      onClick={() => setFilterCat(cat)}
-                     className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterCat === cat ? 'bg-violet-600 text-white border-violet-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
+                     className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${
+                        filterCat === cat ? 'bg-violet-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                     }`}
                   >
                      {cat.replace('_', ' ')}
                   </button>
                ))}
             </div>
-            <div className="flex gap-2 overflow-x-auto">
-               <span className="text-[10px] text-white/50 font-black uppercase my-auto mr-2 min-w-max">Classificação (Fato):</span>
+
+            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pt-2 border-t border-slate-100">
+               <span className="text-[10px] text-slate-400 font-black uppercase shrink-0 mr-1">Gravidade:</span>
                {['TODOS', 'LEVE', 'MÉDIA', 'GRAVE', 'GRAVÍSSIMA'].map(sev => (
                   <button
                      key={sev}
                      onClick={() => setFilterSeverity(sev)}
-                     className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap border ${filterSeverity === sev ? 'bg-amber-600 text-white border-amber-500 shadow-lg' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'}`}
+                     className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${
+                        filterSeverity === sev ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                     }`}
                   >
                      {sev}
                   </button>
@@ -364,65 +332,73 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             </div>
          </div>
 
-         {/* LISTAGEM */}
-         <div className="grid grid-cols-1 gap-4">
+         {/* LISTAGEM DE OCORRÊNCIAS COM CONTRASTE PROFISSIONAL */}
+         <div className="grid grid-cols-1 gap-3">
             {filtered.length > 0 ? filtered.map(occ => (
                <div
                   key={occ.id}
                   onClick={() => { setSelectedOccId(occ.id); setView('ata'); }}
-                  className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-lg hover:border-violet-500/30 hover:bg-white/10 transition-all cursor-pointer group flex flex-col md:flex-row items-center justify-between gap-8 backdrop-blur-sm"
+                  className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm hover:border-violet-400 hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
                >
-                  <div className="flex items-center gap-6 flex-1">
-                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${occ.status === 'ATA_GERADA' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                        }`}>
-                        {occ.status === 'ATA_GERADA' ? <CheckCircle2 size={24} /> : <FileText size={24} />}
+                  <div className="flex items-center gap-4 flex-1">
+                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black ${
+                        occ.status === 'ATA_GERADA' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-900'
+                     }`}>
+                        {occ.status === 'ATA_GERADA' ? <CheckCircle2 size={22} /> : <FileText size={22} />}
                      </div>
                      <div>
-                        <div className="flex items-center gap-3">
-                           <h4 className="text-lg font-black text-white uppercase leading-none">{occ.involvedStudents}</h4>
-                           <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${occ.category === 'VIOLÊNCIA' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-white/40 border-white/10'
-                              }`}>{occ.category.replace('_', ' ')}</span>
-                           <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border bg-amber-500/10 text-amber-400 border-amber-500/20`}>{occ.severity}</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                           <h4 className="text-base font-black text-slate-900 uppercase leading-none">{occ.involvedStudents}</h4>
+                           <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                              occ.category === 'VIOLÊNCIA' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
+                           }`}>
+                              {occ.category.replace('_', ' ')}
+                           </span>
+                           <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-100 text-amber-900">
+                              {occ.severity || 'LEVE'}
+                           </span>
                         </div>
-                        <div className="flex items-center gap-4 mt-2">
-                           <span className="text-[10px] font-bold text-white/40 uppercase flex items-center gap-1"><Clock size={12} /> {new Date(occ.date).toLocaleDateString('pt-BR')} às {occ.time}</span>
-                           <span className="text-[10px] font-bold text-white/40 uppercase flex items-center gap-1"><Users size={12} /> {occ.className}</span>
-                           <span className="text-[10px] font-bold text-white/40 uppercase flex items-center gap-1"><MapPin size={12} /> {occ.location}</span>
-                           <span className="text-[10px] font-bold text-violet-400 uppercase flex items-center gap-1" title="Registrado por"><User size={12} /> {occ.responsible}</span>
+                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs font-bold text-slate-500">
+                           <span className="flex items-center gap-1"><Clock size={12} className="text-slate-400" /> {new Date(occ.date + 'T12:00:00').toLocaleDateString('pt-BR')} às {occ.time}</span>
+                           <span className="flex items-center gap-1"><Users size={12} className="text-slate-400" /> {occ.className}</span>
+                           <span className="flex items-center gap-1"><MapPin size={12} className="text-slate-400" /> {occ.location}</span>
+                           <span className="flex items-center gap-1 text-indigo-600"><User size={12} /> {occ.responsible}</span>
                         </div>
                      </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0 ml-auto">
                      <button
                         type="button"
                         onClick={(e) => {
                            e.stopPropagation();
                            setTramitatingOcc(occ);
                         }}
-                        className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all border border-blue-500/30 shadow-md"
-                        title="Tramitar ocorrência entre setores (Cívico-Militar, Mediação, Busca Ativa, Psicossocial)"
+                        className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all border border-indigo-200"
+                        title="Tramitar ocorrência entre setores"
                      >
-                        <ArrowRightLeft size={14} /> Tramitar
+                        <ArrowRightLeft size={13} /> Tramitar
                      </button>
-                     <div className="text-right mr-2">
-                        <p className="text-[9px] font-black text-white/30 uppercase">Status</p>
-                        <p className={`text-[10px] font-black uppercase ${occ.status === 'ATA_GERADA' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                           {occ.status.replace('_', ' ')}
-                        </p>
-                     </div>
-                     <button onClick={(e) => handleDelete(occ.id, e)} className="p-3 text-white/30 hover:text-red-400 transition-colors">
-                        <Trash2 size={20} />
+
+                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        occ.status === 'ATA_GERADA' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
+                     }`}>
+                        {occ.status.replace('_', ' ')}
+                     </span>
+
+                     <button onClick={(e) => handleDelete(occ.id, e)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                        <Trash2 size={16} />
                      </button>
-                     <div className="p-3 bg-white/5 text-white/40 group-hover:bg-violet-600 group-hover:text-white rounded-xl transition-all shadow-sm border border-white/5">
-                        <ChevronRight size={24} />
+                     
+                     <div className="p-2 bg-slate-100 text-slate-600 rounded-xl">
+                        <ChevronRight size={18} />
                      </div>
                   </div>
                </div>
             )) : (
-               <div className="py-32 text-center bg-white/5 rounded-[3rem] border-2 border-dashed border-white/10">
-                  <History size={48} className="mx-auto mb-4 text-white/20" />
-                  <p className="text-white/30 font-black uppercase text-xs tracking-widest">Nenhuma ocorrência encontrada</p>
+               <div className="py-20 text-center bg-white rounded-[2.5rem] border border-slate-200 space-y-2">
+                  <History size={36} className="mx-auto text-slate-300" />
+                  <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Nenhuma ocorrência encontrada nesta busca</p>
                </div>
             )}
          </div>
@@ -432,26 +408,12 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             <TramitationModal
                occurrence={tramitatingOcc}
                currentSector="PROFESSOR"
-               user={user || { id: 'prof', name: 'Professor' }}
+               user={user || { id: 'coord', name: 'Coordenação' }}
                onClose={() => setTramitatingOcc(null)}
                onSuccess={() => fetchOccurrences()}
             />
          )}
 
-         {/* FOOTER STATS */}
-         <div className="bg-gradient-to-br from-indigo-900/80 to-violet-900/80 p-10 rounded-[3.5rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden border border-white/10 backdrop-blur-md">
-            <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><ShieldCheck size={180} /></div>
-            <div className="flex items-center gap-6 relative z-10">
-               <div className="p-4 bg-white/10 rounded-3xl backdrop-blur-md border border-white/20">
-                  <ShieldCheck size={32} className="text-emerald-400" />
-               </div>
-               <div>
-                  <p className="text-emerald-300 text-[10px] font-black uppercase tracking-widest mb-1">Base Legal SEDUC-MT</p>
-                  <h4 className="text-xl font-black uppercase">Documentação Blindada</h4>
-                  <p className="text-indigo-200/60 text-xs font-medium uppercase tracking-tight">Ocorrências registradas com integridade temporal e backup IA.</p>
-               </div>
-            </div>
-         </div>
       </div>
    );
 };

@@ -68,180 +68,106 @@ const INITIAL_STATE: Omit<ObservationData, 'id' | 'timestamp'> = {
   teacher: '',
   subject: 'MATEMÁTICA',
   className: '',
-  date: new Date().toLocaleDateString('sv-SE'),
-  observador: 'COORDENADOR ANDRÉ',
-  cargo: 'Coordenador Pedagógico',
-  organizacional: {
-    inicioPontual: 1,
-    ritmoAdequado: 1,
-    usoEficienteTempo: 1,
-    minimizacaoInterrupcoes: 1,
-    clarezaTomVoz: 1,
+  date: new Date().toISOString().split('T')[0],
+  organizational: {
+    inicioPontual: 3,
+    ritmoAdequado: 3,
+    usoEficienteTempo: 3,
+    minimizacaoInterrupcoes: 3,
+    clarezaTomVoz: 3
   },
   pedagogico: {
-    clarezaObjetivos: 1,
-    usoRecursos: 1,
-    interacaoAlunos: 1,
-    avaliacaoFormativa: 1,
+    clarezaObjetivos: 3,
+    usoRecursos: 3,
+    interacaoAlunos: 3,
+    avaliacaoFormativa: 3
   },
   evidencias: '',
-  avaliacaoGeral: 'Adequado',
+  pontosFortes: '',
+  pontosDesenvolver: '',
+  status: 'RASCUNHO',
   feedback: {
-    pontosFortes: '',
-    pontosMelhorar: '',
+    orientacaoGeral: '',
     sugestoesPraticas: [],
-    planoAcao: '',
-    escalaFeedback: 'Bom'
+    proximosPassos: ''
   }
 };
 
-import { User as UserType } from '../types';
-
-interface ClassroomObservationFormProps {
-  user?: UserType;
-}
-
-const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ user }) => {
-  const [viewMode, setViewMode] = useState<'list' | 'form' | 'teacher_history'>('list');
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
-  const [observations, setObservations] = useState<ObservationData[]>([]);
+const ClassroomObservationForm: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
+  const [observations, setObservations] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
 
   const dynamicInitialState = useMemo(() => ({
     ...INITIAL_STATE,
-    observador: user?.name ? user.name.toUpperCase() : 'COORDENAÇÃO',
-    cargo: user?.jobFunction || user?.role || 'Coordenador Pedagógico'
-  }), [user]);
+    date: new Date().toISOString().split('T')[0]
+  }), []);
 
-  // Alias viewMode to view for backwards compatibility if needed, but going forward use viewMode
-  const view = viewMode;
-  const setView = setViewMode;
-
-  const fetchObservations = async () => {
-    let query = supabase.from('classroom_observations').select('*');
-    if (user?.role === 'PROFESSOR') {
-      query = query.eq('teacher_id', user.id);
-    }
-    const { data } = await query;
-    if (data) {
-      setObservations(data.map(o => ({
-        ...o,
-        teacher: o.teacher_name,
-        criteria_scores: JSON.stringify({ ...o.organizational_criteria, ...o.pedagogical_criteria }), // Mock for list view
-        organizational: o.organizational_criteria,
-        pedagogico: o.pedagogical_criteria,
-        avaliacaoGeral: o.general_rating,
-        timestamp: new Date(o.created_at).getTime(),
-        // Add flat structure for list mapping if needed
-        teacher_name: o.teacher_name,
-        class_name: o.classroom_name,
-        subject: o.subject,
-        date: o.date
-      })));
-    }
-  };
-
-  const fetchStaff = async () => {
-    const { data } = await supabase
-      .from('users')
-      .select('*')
-      .eq('role', 'PROFESSOR')
-      .order('name');
-
-    if (data) {
-      setStaffList(data.map(u => ({
-        id: u.id,
-        name: u.name,
-        role: u.role,
-        code: '', registration: '', cpf: '', birthDate: '', entryProfile: '', serverType: 'Professor',
-        jobFunction: '', shift: 'MATUTINO', qualification: '', email: u.email || '', status: 'EM_ATIVIDADE',
-        leaveHistory: [], movementHistory: [], notifyAlerts: false, photos: []
-      })));
-    }
-  };
+  const [form, setForm] = useState<any>(dynamicInitialState);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchObservations();
     fetchStaff();
   }, []);
 
-  const [form, setForm] = useState<Omit<ObservationData, 'id' | 'timestamp'> & { criteria_scores?: any }>(dynamicInitialState);
-  const pdfRef = useRef<HTMLDivElement>(null);
+  const fetchObservations = async () => {
+    const { data, error } = await supabase
+      .from('classroom_observations')
+      .select('*')
+      .order('date', { ascending: false });
 
-  const handleSave = async (e: React.FormEvent | boolean) => {
-    const enviar = typeof e === 'boolean' ? e : false;
-    if (typeof e !== 'boolean') e.preventDefault();
+    if (data) setObservations(data);
+  };
 
-    setIsSaving(true);
+  const fetchStaff = async () => {
+    const { data } = await supabase
+      .from('staff')
+      .select('*')
+      .order('name');
+    if (data) setStaffList(data);
+  };
+
+  const handleSave = async (publish: boolean = false) => {
     try {
-      if ((form as any).id) {
-        // Update
-        const { error } = await supabase
-          .from('classroom_observations')
-          .update({
-            teacher_name: form.teacher,
-            subject: form.subject,
-            classroom_name: form.className,
-            date: form.date,
-            observer_name: form.observador,
-            role: form.cargo,
-            organizational_criteria: form.organizational,
-            pedagogical_criteria: form.pedagogico,
-            evidences: form.evidencias,
-            general_rating: form.avaliacaoGeral,
-            teacher_id: selectedTeacherId,
-            feedback: {
-              ...form.feedback,
-              enviadoEm: enviar ? Date.now() : form.feedback?.enviadoEm
-            }
-          })
-          .eq('id', (form as any).id);
+      const payload = {
+        teacher: form.teacher,
+        subject: form.subject,
+        class_name: form.className || form.class_name,
+        date: form.date,
+        organizational_scores: form.organizational,
+        pedagogical_scores: form.pedagogico,
+        evidences: form.evidencias,
+        strengths: form.pontosFortes,
+        improvements: form.pontosDesenvolver,
+        feedback: form.feedback,
+        status: publish ? 'FINALIZADO' : 'RASCUNHO',
+        timestamp: new Date().getTime()
+      };
 
-        if (error) throw error;
+      if (form.id) {
+        await supabase
+          .from('classroom_observations')
+          .update(payload)
+          .eq('id', form.id);
       } else {
-        // Insert
-        const { error } = await supabase
+        await supabase
           .from('classroom_observations')
-          .insert([{
-            teacher_name: form.teacher,
-            subject: form.subject,
-            classroom_name: form.className,
-            date: form.date,
-            observer_name: form.observador,
-            role: form.cargo,
-            organizational_criteria: form.organizational,
-            pedagogical_criteria: form.pedagogico,
-            evidences: form.evidencias,
-            general_rating: form.avaliacaoGeral,
-            teacher_id: selectedTeacherId,
-            feedback: {
-              ...form.feedback,
-              enviadoEm: enviar ? Date.now() : undefined
-            }
-          }]);
-
-        if (error) throw error;
+          .insert([payload]);
       }
 
       await fetchObservations();
-      alert(enviar ? "Feedback enviado ao professor com sucesso!" : "Registro salvo no banco de dados!");
-      setView('list');
-    } catch (error) {
-      console.error("Erro ao salvar observação:", error);
-      alert("Erro ao salvar observação.");
-    } finally {
-      setIsSaving(false);
+      setViewMode('list');
+      setForm(dynamicInitialState);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao salvar observação');
     }
   };
 
   const downloadPDF = async (obs: any) => {
-    // Placeholder for PDF download logic
-    alert(`Baixando PDF da observação de ${obs.teacher_name}...`);
-  };
-
-  const handleExportPDF = async () => {
-    const element = pdfRef.current;
+    const element = printRef.current;
     if (!element) return;
 
     // @ts-ignore
@@ -265,40 +191,21 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
       }
     }
   };
-  // Alias for compatibility
-  const deleteObs = deleteObservation;
-
-  const toggleSuggestion = (sug: string) => {
-    const current = form.feedback?.sugestoesPraticas || [];
-    const updated = current.includes(sug)
-      ? current.filter(s => s !== sug)
-      : [...current, sug];
-    setForm({ ...form, feedback: { ...form.feedback!, sugestoesPraticas: updated } });
-  };
-
-  const handleScoreChange = (criterion: string, score: number) => {
-    // Helper to update score in nested objects
-    if (form.organizational && criterion in form.organizational) {
-      setForm({ ...form, organizational: { ...form.organizational, [criterion]: score } });
-    } else if (form.pedagogico && criterion in form.pedagogico) {
-      setForm({ ...form, pedagogico: { ...form.pedagogico, [criterion]: score } });
-    } else {
-      // Fallback for flat structure if used
-      setForm({ ...form, criteria_scores: { ...form.criteria_scores, [criterion]: score } });
-    }
-  };
 
   const LikertSelector: React.FC<{ value: number, onChange: (v: number) => void, label: string }> = ({ value, onChange, label }) => (
-    <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:border-violet-500/30 transition-all">
-      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none">{label}</span>
+    <div className="flex flex-col gap-2.5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">{label}</span>
       <div className="flex justify-between gap-1">
         {[1, 2, 3, 4, 5].map(v => (
           <button
             key={v}
             type="button"
             onClick={() => onChange(v)}
-            className={`w-10 h-10 rounded-xl font-black text-sm transition-all ${value === v ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'bg-black/20 text-white/30 border border-transparent hover:bg-white/10'
-              }`}
+            className={`w-9 h-9 rounded-xl font-black text-xs transition-all ${
+              value === v
+                ? 'bg-violet-600 text-white shadow-md'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+            }`}
           >
             {v}
           </button>
@@ -308,86 +215,85 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       {viewMode === 'list' ? (
         <div className="space-y-6">
-          <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Observações de Aula</h3>
-              <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mt-1">Acompanhamento e Mentoria Docente</p>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                <Eye className="text-violet-600" size={24} /> Observações de Aula
+              </h3>
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">
+                Acompanhamento e Mentoria Docente Conforme SEDUC-MT
+              </p>
             </div>
-            <button onClick={() => { setForm(dynamicInitialState); setViewMode('form'); }} className="px-8 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20">
-              <Plus size={18} /> Nova Observação
+            <button
+              onClick={() => { setForm(dynamicInitialState); setViewMode('form'); }}
+              className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-violet-600/20 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Plus size={16} /> Nova Observação
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {observations.map(obs => (
-              <div key={obs.id} onClick={() => { setForm(obs); setViewMode('form'); }} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-sm hover:border-violet-500/30 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between group backdrop-blur-md">
+              <div
+                key={obs.id}
+                onClick={() => { setForm(obs); setViewMode('form'); }}
+                className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm hover:border-violet-400 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+              >
                 <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl border border-violet-500/20"><Eye size={24} /></div>
-                    <span className="text-[10px] font-black text-white/40 uppercase px-2 py-1 rounded-lg border border-white/10 bg-white/5">{obs.date}</span>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="p-3 bg-violet-100 text-violet-700 rounded-2xl">
+                      <Eye size={20} />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-500 uppercase px-2.5 py-1 rounded-lg bg-slate-100">
+                      {obs.date}
+                    </span>
                   </div>
-                  <h4 className="text-lg font-black text-white uppercase leading-tight">{obs.teacher}</h4>
-                  <p className="text-[10px] text-white/40 font-bold uppercase mt-1">{obs.class_name} • {obs.subject}</p>
-
-                  <div className="mt-6 space-y-2">
-                    {obs.criteria_scores && (() => {
-                      try {
-                        const scores = JSON.parse(obs.criteria_scores as string);
-                        return Object.entries(scores).slice(0, 3).map(([key, value]: any) => (
-                          <div key={key} className="flex justify-between items-center text-[10px] font-bold uppercase">
-                            <span className="text-white/40 truncate w-2/3">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                            <div className="flex gap-0.5">
-                              {[1, 2, 3, 4, 5].map(star => (
-                                <div key={star} className={`w-1.5 h-1.5 rounded-full ${star <= value ? 'bg-violet-500' : 'bg-white/10'}`} />
-                              ))}
-                            </div>
-                          </div>
-                        ));
-                      } catch (e) { return null; }
-                    })()}
-                  </div>
+                  <h4 className="text-base font-black text-slate-900 uppercase leading-tight">{obs.teacher}</h4>
+                  <p className="text-xs text-slate-500 font-bold uppercase mt-1">{obs.class_name} • {obs.subject}</p>
                 </div>
-                <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button onClick={(e) => deleteObservation(obs.id, e)} className="text-white/20 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); downloadPDF(obs); }} className="text-white/20 hover:text-violet-400 transition-colors"><Download size={16} /></button>
-                  </div>
-                  <button className="px-3 py-2 bg-white/5 text-white/60 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-violet-500/20 hover:text-violet-300 transition-all flex items-center gap-2 border border-white/10">
+
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <button onClick={(e) => deleteObservation(obs.id, e)} className="text-slate-400 hover:text-rose-600 transition-colors p-2">
+                    <Trash2 size={16} />
+                  </button>
+                  <button className="px-3 py-1.5 bg-slate-100 hover:bg-violet-600 hover:text-white text-slate-700 rounded-xl font-black uppercase text-[10px] tracking-wider transition-all flex items-center gap-1">
                     Ver Detalhes <ArrowRight size={12} />
                   </button>
                 </div>
               </div>
             ))}
             {observations.length === 0 && (
-              <div className="col-span-full py-24 text-center bg-white/5 rounded-[3rem] border-2 border-dashed border-white/10 backdrop-blur-md">
-                <Eye size={48} className="mx-auto mb-4 text-white/10" />
-                <p className="text-white/30 font-black uppercase text-xs tracking-widest">Nenhuma observação registrada</p>
+              <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border border-slate-200">
+                <Eye size={40} className="mx-auto mb-3 text-slate-300" />
+                <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Nenhuma observação de aula registrada</p>
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-white/5 p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-10 backdrop-blur-md">
-            <div className="flex justify-between items-center border-b border-white/10 pb-8">
-              <div className="flex items-center gap-6">
-                <button onClick={() => setViewMode('list')} className="p-3 bg-white/5 text-white/40 hover:text-violet-400 rounded-2xl transition-all border border-white/10">
-                  <ArrowLeft size={24} />
+        <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm space-y-8">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-6">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setViewMode('list')} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition-all">
+                  <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-2xl font-black uppercase text-emerald-950">Registro de Observação em Sala de Aula</h1>
-                <p className="text-[10px] font-bold uppercase text-emerald-900/60 tracking-widest">Acompanhamento e Suporte à Prática Pedagógica Conforme orientações da SEDUC/MT</p>
+                <div>
+                  <h1 className="text-xl font-black uppercase text-slate-900">Registro de Observação de Aula</h1>
+                  <p className="text-xs font-bold uppercase text-slate-400 tracking-widest mt-0.5">Orientações e Acompanhamento SEDUC-MT</p>
+                </div>
               </div>
-              <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl shadow-sm border border-violet-500/20">
-                <Eye size={24} />
+              <div className="p-3 bg-violet-100 text-violet-700 rounded-2xl">
+                <Eye size={22} />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Professor</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professor</label>
                 <select
                   value={form.teacher}
                   onChange={e => {
@@ -395,38 +301,41 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
                     setForm({ ...form, teacher: e.target.value });
                     setSelectedTeacherId(teacher?.id || null);
                   }}
-                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm outline-none focus:bg-white/10 uppercase text-white [&>option]:bg-gray-900"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none focus:bg-white uppercase text-slate-900"
                 >
                   <option value="">Selecione o professor...</option>
                   {staffList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Componente Curricular</label>
-                <select value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900">
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Componente Curricular</label>
+                <select value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white text-slate-900">
                   {SCHOOL_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Turma</label>
-                <select value={form.className} onChange={e => setForm({ ...form, className: e.target.value })} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900">
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Turma</label>
+                <select value={form.className || form.class_name} onChange={e => setForm({ ...form, className: e.target.value, class_name: e.target.value })} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white text-slate-900">
                   <option value="">Selecione a turma...</option>
                   {SCHOOL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Data da Observação</label>
-                <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm outline-none text-white focus:bg-white/10" />
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data da Observação</label>
+                <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs outline-none text-slate-900 focus:bg-white" />
               </div>
             </div>
 
-            <div className="space-y-12">
-              <div className="space-y-6">
-                <h4 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center text-white text-sm">1</span>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-violet-600 flex items-center justify-center text-white text-xs">1</span>
                   Aspectos Organizacionais
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {Object.entries(form.organizational || {}).map(([key, value]) => (
                     <LikertSelector
                       key={key}
@@ -441,11 +350,12 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <BookOpen size={14} className="text-violet-500" /> Critérios Pedagógicos
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs">2</span>
+                  Critérios Pedagógicos
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {Object.entries(form.pedagogico || {}).map(([key, value]) => (
                     <LikertSelector
                       key={key}
@@ -460,20 +370,24 @@ const ClassroomObservationForm: React.FC<ClassroomObservationFormProps> = ({ use
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-xs font-black text-white uppercase tracking-widest ml-1">Evidências / Pontos Observados</label>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-900 uppercase tracking-widest ml-1">Evidências / Pontos Observados</label>
                 <textarea
-                  value={form.evidencias}
-                  onChange={e => setForm({ ...form, evidencias: e.target.value })}
+                  value={form.evidencias || form.evidences || ''}
+                  onChange={e => setForm({ ...form, evidencias: e.target.value, evidences: e.target.value })}
                   placeholder="Relate o que foi observado durante a aula..."
-                  className="w-full p-6 bg-white/5 border border-white/10 rounded-3xl font-medium text-sm text-white outline-none focus:bg-white/10 transition-all h-40 resize-none placeholder:text-white/20"
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-xs text-slate-900 outline-none focus:bg-white transition-all h-32 resize-none placeholder:text-slate-400"
                 />
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <button type="button" onClick={() => handleSave(false)} className="flex-1 py-5 bg-white/5 text-white/60 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-white/10 transition-all border border-white/5">Salvar Rascunho</button>
-              <button type="button" onClick={() => handleSave(true)} className="flex-1 py-5 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all border border-violet-500/20">Finalizar e Enviar Feedback</button>
+            <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <button type="button" onClick={() => handleSave(false)} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black uppercase text-xs tracking-wider transition-all">
+                Salvar Rascunho
+              </button>
+              <button type="button" onClick={() => handleSave(true)} className="flex-1 py-3.5 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-violet-600/20 transition-all">
+                Finalizar e Enviar Feedback
+              </button>
             </div>
           </div>
         </div>
