@@ -318,9 +318,15 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                targetDept = 'PSICOSSOCIAL_MEDIACAO';
             }
 
+            const targetTag = form.destination === 'CIVICO_MILITAR' 
+               ? '\n[SETOR: CIVICO_MILITAR]' 
+               : form.destination === 'PSYCHOSOCIAL' 
+                 ? '\n[SETOR: PSICOSSOCIAL]' 
+                 : '\n[SETOR: COORDENACAO_PEDAGOGICA]';
+
             const formattedDesc = form.title 
-               ? `[${form.title.toUpperCase()}]\n${form.description}`
-               : form.description;
+               ? `[${form.title.toUpperCase()}]\n${form.description}${targetTag}`
+               : `${form.description}${targetTag}`;
 
             const payload = {
                date: form.date,
@@ -332,7 +338,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                severity: form.severity,
                description: formattedDesc,
                status: 'PENDENTE',
-               target_dept: targetDept,
                location: 'SALA DE AULA'
             };
 
@@ -696,14 +701,30 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            const className = occ.classroom_name || occ.className || 'Turma N/A';
                            const date = occ.date ? new Date(occ.date).toLocaleDateString('pt-BR') : 'Data N/A';
                            const category = (occ.category || '').toUpperCase();
-                           const description = occ.description || '';
+                           const rawDesc = occ.description || '';
                            const teacherAuthor = occ.responsible_name || occ.teacherName || 'Docente';
                            const isMyRecord = teacherAuthor.toLowerCase() === (user.name || '').toLowerCase();
 
-                           const isPedagogical = category.includes('PEDAGÓGICO') || category.includes('PEDAGOGICO') || category.includes('ACOMPANHAMENTO');
-                           const isCivicoMilitar = category.includes('FATO') || category.includes('DISCIPLINAR') || category.includes('MILITAR');
+                           let cleanDesc = rawDesc;
+                           let parsedFeedback = occ.feedback || '';
+                           let parsedResolvedBy = occ.resolved_by || 'Coordenação Pedagógica';
+                           let parsedResolvedAt = occ.resolved_at || '';
+
+                           if (rawDesc.includes('[DEVOLUTIVA')) {
+                              const match = rawDesc.match(/\[DEVOLUTIVA (?:DA COORDENAÇÃO|DA GESTÃO)?\s*(?:-\s*([^\]]+))?\]:?([\s\S]*)/i);
+                              if (match) {
+                                 cleanDesc = (rawDesc.split(/\[DEVOLUTIVA/i)[0] || '').trim();
+                                 parsedResolvedAt = match[1] ? match[1].trim() : parsedResolvedAt;
+                                 parsedFeedback = (match[2] || '').trim();
+                              }
+                           }
+                           
+                           cleanDesc = cleanDesc.replace(/\[SETOR:\s*[^\]]+\]/gi, '').trim();
+
+                           const isPedagogical = category.includes('PEDAGÓGICO') || category.includes('PEDAGOGICO') || category.includes('ACOMPANHAMENTO') || rawDesc.includes('[SETOR: COORDENACAO_PEDAGOGICA]');
+                           const isCivicoMilitar = category.includes('FATO') || category.includes('DISCIPLINAR') || category.includes('MILITAR') || rawDesc.includes('[SETOR: CIVICO_MILITAR]');
                            const statusRaw = (occ.status || 'PENDENTE').toUpperCase();
-                           const isResolved = statusRaw === 'RESOLVIDO' || statusRaw === 'CONCLUÍDO';
+                           const isResolved = statusRaw === 'RESOLVIDO' || statusRaw === 'CONCLUÍDO' || !!parsedFeedback;
                            const isAttending = statusRaw === 'EM_ATENDIMENTO';
                            const isTramitated = statusRaw === 'TRAMITADO';
 
@@ -755,7 +776,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                           </div>
 
                                           <p className="text-xs text-gray-700 font-medium whitespace-pre-line">
-                                             {description}
+                                             {cleanDesc}
                                           </p>
 
                                           <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-1">
@@ -766,7 +787,6 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                        </div>
                                     </div>
 
-                                    {/* Badges de Status do Atendimento na Coordenação */}
                                     <div className="flex items-center gap-2 self-start shrink-0">
                                        {isResolved ? (
                                           <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
@@ -796,22 +816,21 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                     </div>
                                  </div>
 
-                                 {/* BLOCO DE DEVOLUTIVA / PARECER DA COORDENAÇÃO OU GESTÃO */}
-                                 {occ.feedback && (
+                                 {parsedFeedback && (
                                     <div className="mt-2 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl space-y-1.5 animate-in fade-in">
                                        <div className="flex items-center justify-between text-[10px] font-black text-emerald-800 uppercase tracking-wider">
                                           <span className="flex items-center gap-1.5">
                                              <CheckCircle2 size={14} className="text-emerald-600" />
                                              Devolutiva da Coordenação Pedagógica / Gestão Escolar:
                                           </span>
-                                          {occ.resolved_at && (
+                                          {parsedResolvedAt && (
                                              <span className="text-emerald-700 font-bold">
-                                                {occ.resolved_at} {occ.resolved_by ? `• Por: ${occ.resolved_by}` : ''}
+                                                {parsedResolvedAt} {parsedResolvedBy ? `• Por: ${parsedResolvedBy}` : ''}
                                              </span>
                                           )}
                                        </div>
                                        <p className="text-xs text-emerald-950 font-medium leading-relaxed whitespace-pre-line">
-                                          {occ.feedback}
+                                          {parsedFeedback}
                                        </p>
                                     </div>
                                  )}

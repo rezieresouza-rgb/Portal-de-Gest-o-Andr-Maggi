@@ -113,16 +113,15 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
         const mapped: OccurrenceItem[] = data.map(o => {
           let dept: SectorType = 'COORDENACAO_PEDAGOGICA';
           const catUpper = (o.category || '').toUpperCase();
+          const descUpper = (o.description || '').toUpperCase();
           
-          if (o.target_dept) {
-            dept = o.target_dept as SectorType;
-          } else if (catUpper.includes('MILITAR') || catUpper.includes('FATO OBSERVADO') || ['INDISCIPLINA', 'DESCUMPRIMENTO_REGRAS'].includes(catUpper)) {
+          if (descUpper.includes('[SETOR: CIVICO_MILITAR]') || catUpper.includes('MILITAR') || catUpper.includes('FATO OBSERVADO') || ['INDISCIPLINA', 'DESCUMPRIMENTO_REGRAS'].includes(catUpper)) {
             dept = 'CIVICO_MILITAR';
-          } else if (catUpper.includes('PSICOSSOCIAL') || catUpper.includes('MEDIAÇÃO') || catUpper.includes('VULNERABILIDADE') || catUpper.includes('CONFLITO')) {
+          } else if (descUpper.includes('[SETOR: PSICOSSOCIAL]') || catUpper.includes('PSICOSSOCIAL') || catUpper.includes('MEDIAÇÃO') || catUpper.includes('VULNERABILIDADE') || catUpper.includes('CONFLITO')) {
             dept = 'PSICOSSOCIAL_MEDIACAO';
-          } else if (catUpper.includes('BUSCA') || catUpper.includes('FALTA')) {
+          } else if (descUpper.includes('[SETOR: BUSCA_ATIVA]') || catUpper.includes('BUSCA') || catUpper.includes('FALTA')) {
             dept = 'BUSCA_ATIVA';
-          } else if (catUpper.includes('AEE') || catUpper.includes('ESPECIAL')) {
+          } else if (descUpper.includes('[SETOR: AEE]') || catUpper.includes('AEE') || catUpper.includes('ESPECIAL')) {
             dept = 'AEE_SPECIAL_ED';
           }
 
@@ -136,6 +135,21 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             itemStatus = 'TRAMITADO';
           }
 
+          // Extrair Devolutiva e Metadados do Description
+          let parsedFeedback: string | undefined = undefined;
+          let parsedResolvedBy = 'Coordenação Pedagógica';
+          let parsedResolvedAt = '';
+          let cleanDescription = o.description || '';
+
+          if (o.description && o.description.includes('[DEVOLUTIVA')) {
+            const match = o.description.match(/\[DEVOLUTIVA (?:DA COORDENAÇÃO|DA GESTÃO)?\s*(?:-\s*([^\]]+))?\]:?([\s\S]*)/i);
+            if (match) {
+              cleanDescription = (o.description.split(/\[DEVOLUTIVA/i)[0] || '').trim();
+              parsedResolvedAt = match[1] ? match[1].trim() : '';
+              parsedFeedback = (match[2] || '').trim();
+            }
+          }
+
           return {
             id: o.id,
             date: o.date,
@@ -143,16 +157,16 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             studentName: o.student_name || 'Estudante',
             className: o.classroom_name || 'N/A',
             location: o.location || 'SALA DE AULA',
-            description: o.description || '',
+            description: cleanDescription,
             responsibleName: o.responsible_name || 'Professor(a)',
             category: o.category || 'ACOMPANHAMENTO PEDAGÓGICO',
             severity: (o.severity || 'LEVE') as any,
             status: itemStatus,
             targetDept: dept,
-            feedback: o.feedback,
-            actionTaken: o.action_taken,
-            resolvedBy: o.resolved_by,
-            resolvedAt: o.resolved_at,
+            feedback: parsedFeedback,
+            actionTaken: undefined,
+            resolvedBy: parsedResolvedBy,
+            resolvedAt: parsedResolvedAt || 'Concluído',
             timestamp: new Date((o.date || '2026-08-29') + 'T' + (o.time || '10:00')).getTime()
           };
         });
@@ -252,16 +266,15 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
     const coordName = user?.name || 'Coordenação Pedagógica';
 
     try {
-      const fullFeedback = `[${actionType.toUpperCase()}]\n${actionFeedback.trim()}`;
+      const feedbackBlock = `\n\n[DEVOLUTIVA DA COORDENAÇÃO - ${nowStr} por ${coordName.toUpperCase()}]:\n[${actionType.toUpperCase()}]\n${actionFeedback.trim()}`;
+      const baseDesc = (actionModalOcc.description || '').split('\n\n[DEVOLUTIVA')[0];
+      const newFullDescription = `${baseDesc}${feedbackBlock}`;
 
       const { error } = await supabase
         .from('occurrences')
         .update({
           status: actionStatus,
-          action_taken: actionType,
-          feedback: fullFeedback,
-          resolved_by: coordName,
-          resolved_at: nowStr
+          description: newFullDescription
         })
         .eq('id', actionModalOcc.id);
 
@@ -298,8 +311,9 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
     const nowStr = new Date().toLocaleString('pt-BR');
 
     try {
-      const tramitationLog = `\n\n[TRAMITADO PELA COORDENAÇÃO EM ${nowStr} POR ${coordName.toUpperCase()}]: ${tramitateReason.trim()}`;
-      const newDescription = tramitateModalOcc.description + tramitationLog;
+      const tramitationLog = `\n\n[TRAMITADO PELA COORDENAÇÃO - ${nowStr} por ${coordName.toUpperCase()} para ${getSectorLabel(tramitateTarget).toUpperCase()}]: ${tramitateReason.trim()}`;
+      const baseDesc = (tramitateModalOcc.description || '').split('\n\n[TRAMITADO')[0];
+      const newDescription = `${baseDesc}\n[SETOR: ${tramitateTarget}]${tramitationLog}`;
 
       let newCategory = tramitateModalOcc.category;
       if (tramitateTarget === 'CIVICO_MILITAR') newCategory = 'FATO OBSERVADO';
@@ -310,7 +324,6 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
       const { error } = await supabase
         .from('occurrences')
         .update({
-          target_dept: tramitateTarget,
           category: newCategory,
           status: 'TRAMITADO',
           description: newDescription
