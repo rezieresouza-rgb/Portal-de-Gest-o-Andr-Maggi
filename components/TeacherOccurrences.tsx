@@ -601,12 +601,12 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                            <HeartHandshake size={24} />
                         </div>
                         <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${filterDestination === 'PSYCHOSOCIAL' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700'}`}>
-                           Psicossocial
+                           Mediação
                         </span>
                      </div>
-                     <h3 className="text-lg font-black uppercase tracking-tight">Mediação & Apoio</h3>
+                     <h3 className="text-lg font-black uppercase tracking-tight">Mediação Escolar</h3>
                      <p className={`text-xs mt-1 font-medium ${filterDestination === 'PSYCHOSOCIAL' ? 'text-emerald-100' : 'text-gray-500'}`}>
-                        Conflitos graves entre alunos, crises emocionais, Círculos de Paz.
+                        Conflitos entre colegas, acolhimento, escuta e Círculos de Paz.
                      </p>
                   </div>
                </div>
@@ -922,7 +922,7 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                  </div>
                               </div>
 
-                              {/* OPÇÃO PSICOSSOCIAL / MEDIAÇÃO */}
+                              {/* OPÇÃO MEDIAÇÃO ESCOLAR */}
                               <div
                                  onClick={() => setForm({ ...form, destination: 'PSYCHOSOCIAL' })}
                                  className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
@@ -938,9 +938,9 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                                     {form.destination === 'PSYCHOSOCIAL' && <CheckCircle2 size={18} className="text-emerald-600" />}
                                  </div>
                                  <div>
-                                    <h4 className="font-black text-sm uppercase text-gray-900">Mediação & Psicossocial</h4>
+                                    <h4 className="font-black text-sm uppercase text-gray-900">Mediação Escolar</h4>
                                     <p className="text-[10px] text-gray-500 font-bold mt-1 leading-tight">
-                                       Conflitos graves entre colegas, crise de ansiedade, Círculos de Paz.
+                                       Conflitos entre colegas, acolhimento, escuta e Círculos de Paz (Triagem).
                                     </p>
                                  </div>
                               </div>
