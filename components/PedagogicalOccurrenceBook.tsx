@@ -319,6 +319,77 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
 
       if (error) throw error;
 
+      // Integração Direta com Módulo Psicossocial & Mediação
+      if (tramitateTarget === 'PSICOSSOCIAL_MEDIACAO') {
+        try {
+          await supabase.from('psychosocial_referrals').insert([{
+            student_name: tramitateModalOcc.studentName,
+            class_name: tramitateModalOcc.className,
+            teacher_name: `COORDENAÇÃO (${coordName})`,
+            school_unit: 'ESCOLA ANDRÉ MAGGI',
+            date: new Date().toISOString().split('T')[0],
+            report: newDescription,
+            status: 'AGUARDANDO_TRIAGEM',
+            student_age: 'Não informado',
+            attendance_frequency: '0',
+            previous_strategies: 'Triado e Encaminhado pela Coordenação Pedagógica',
+            adopted_procedures: ['TRAMITACAO_COORDENACAO_PEDAGOGICA'],
+            observations: { learning: [], behavioral: ['Tramitado pela Coordenação'], emotional: [] }
+          }]);
+
+          await supabase.from('mediation_cases').insert([{
+            student_id: 'N/A',
+            student_name: tramitateModalOcc.studentName,
+            class_name: tramitateModalOcc.className,
+            type: 'CONFLITO',
+            severity: tramitateModalOcc.severity === 'CRÍTICA' ? 'CRÍTICA' : (tramitateModalOcc.severity === 'ALTA' ? 'ALTA' : 'MÉDIA'),
+            status: 'ABERTURA',
+            opened_at: new Date().toISOString().split('T')[0],
+            description: newDescription,
+            involved_parties: [coordName, tramitateModalOcc.responsibleName],
+            steps: [
+              { id: '1', label: 'Encaminhado pela Coordenação', completed: true, date: new Date().toISOString().split('T')[0] },
+              { id: '2', label: 'Escuta das Partes', completed: false },
+              { id: '3', label: 'Círculo de Mediação / Paz', completed: false },
+              { id: '4', label: 'Acordo / Finalização', completed: false }
+            ]
+          }]);
+        } catch (e) {
+          console.warn('Erro ao sincronizar tabelas psicossociais:', e);
+        }
+      }
+
+      // Integração Direta com Gestão Cívico-Militar
+      if (tramitateTarget === 'CIVICO_MILITAR') {
+        try {
+          const savedDocs = localStorage.getItem('civico_militar_documentos_v2');
+          let docsList = [];
+          if (savedDocs) {
+            try { docsList = JSON.parse(savedDocs); } catch (e) {}
+          }
+          docsList.unshift({
+            id: `doc-tram-${Date.now()}`,
+            studentId: 'AUTO',
+            studentName: tramitateModalOcc.studentName,
+            className: tramitateModalOcc.className,
+            shiftName: 'MATUTINO/VESPERTINO',
+            template: 'fato_observado',
+            templateLabel: 'Fato Observado (Via Coordenação)',
+            date: new Date().toISOString().split('T')[0],
+            fields: {
+              date: new Date().toISOString().split('T')[0],
+              teacher: coordName,
+              series: tramitateModalOcc.className,
+              discipline: tramitateModalOcc.category,
+              achado: newDescription,
+              city: 'Colíder - MT'
+            },
+            timestamp: Date.now()
+          });
+          localStorage.setItem('civico_militar_documentos_v2', JSON.stringify(docsList));
+        } catch (e) {}
+      }
+
       addToast({
         title: 'Tramitado com Sucesso!',
         message: `Ocorrência transferida para ${getSectorLabel(tramitateTarget)}.`,
