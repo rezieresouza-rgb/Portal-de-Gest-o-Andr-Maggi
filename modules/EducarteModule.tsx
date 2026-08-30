@@ -26,14 +26,15 @@ import EducarteInstruments from '../components/EducarteInstruments';
 import EducarteRepertoire from '../components/EducarteRepertoire';
 import EducarteSchedule from '../components/EducarteSchedule';
 import EducarteReports from '../components/EducarteReports';
-import { BookOpen } from 'lucide-react';
+import EducarteOccurrences from '../components/EducarteOccurrences';
+import { BookOpen, AlertTriangle } from 'lucide-react';
 
 interface EducarteModuleProps {
   user: UserType;
   onExit: () => void;
 }
 
-type SubTab = 'dashboard' | 'attendance' | 'class_log' | 'members' | 'instruments' | 'repertoire' | 'schedule' | 'reports';
+type SubTab = 'dashboard' | 'attendance' | 'class_log' | 'occurrences' | 'members' | 'instruments' | 'repertoire' | 'schedule' | 'reports';
 
 // Dados Iniciais Demonstrativos de Alta Qualidade
 const INITIAL_MEMBERS = [
@@ -175,6 +176,7 @@ const EducarteModule: React.FC<EducarteModuleProps> = ({ user, onExit }) => {
     { id: 'dashboard', label: 'Meu Painel Educarte', icon: Home, highlight: true },
     { id: 'attendance', label: 'Diário de Presença (Ensaios)', icon: CheckCircle2 },
     { id: 'class_log', label: 'Diário de Ensaios & Conteúdos', icon: BookOpen },
+    { id: 'occurrences', label: 'Livro de Ocorrências & Méritos', icon: AlertTriangle },
     { id: 'members', label: 'Integrantes & Naipes', icon: Users },
     { id: 'instruments', label: 'Acervo & Cautela de Instrumentos', icon: Volume2 },
     { id: 'repertoire', label: 'Repertório & Partituras', icon: Music },
@@ -210,6 +212,13 @@ const EducarteModule: React.FC<EducarteModuleProps> = ({ user, onExit }) => {
           <EducarteClassLog
             user={user}
             repertoire={repertoire}
+          />
+        );
+      case 'occurrences':
+        return (
+          <EducarteOccurrences
+            user={user}
+            members={members}
           />
         );
       case 'members':
