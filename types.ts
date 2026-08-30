@@ -811,3 +811,37 @@ export interface ChromebookCheckout {
   returnNotes?: string;
   checkedBy?: string;
 }
+
+export type HealthIncidentType = 'MAL_ESTAR_SUBITO' | 'ACIDENTE_ESCOLAR' | 'CRISE_ANSIEDADE_PANICO' | 'CRISE_CONVULSIVA' | 'HIPOGLICEMIA_DIABETES' | 'REACAO_ALERGICA' | 'TRAUMA_QUEDA' | 'OUTRO';
+
+export type HealthSeverityLevel = 'EMERGENCIA_VERMELHA' | 'URGENCIA_AMARELA' | 'LEVE_VERDE';
+
+export type HealthIncidentOutcome = 'RETORNOU_AULA' | 'LIBERADO_RESPONSAVEL' | 'REMOVIDO_SAMU_UPA' | 'REMOVIDO_BOMBEIROS' | 'ENCAMINHADO_PSICOSSOCIAL';
+
+export interface SchoolHealthIncident {
+  id: string;
+  student_id: string;
+  student_name: string;
+  class_name: string;
+  incident_type: HealthIncidentType;
+  incident_date: string;
+  incident_time: string;
+  location: string;
+  severity_level: HealthSeverityLevel;
+  symptoms_description: string;
+  first_aid_actions: string;
+  emergency_service_called: 'SAMU_192' | 'BOMBEIROS_193' | 'NENHUM';
+  emergency_protocol_number?: string;
+  emergency_call_time?: string;
+  parent_contacted_name: string;
+  parent_contacted_phone: string;
+  parent_contact_time: string;
+  parent_decision: string;
+  outcome: HealthIncidentOutcome;
+  escort_staff_name?: string;
+  attendant_name: string;
+  module_origin: 'COORDENACAO' | 'CIVICO_MILITAR';
+  observations?: string;
+  created_at?: string;
+  timestamp?: number;
+}

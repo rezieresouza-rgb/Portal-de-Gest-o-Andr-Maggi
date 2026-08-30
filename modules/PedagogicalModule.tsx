@@ -61,7 +61,8 @@ import SpecialEducationAEEHub from '../components/SpecialEducationAEEHub';
 import CoordinationRiskRadar from '../components/CoordinationRiskRadar';
 import EducarteReports from '../components/EducarteReports';
 import PsychosocialCircumstantiatedReportManager from '../components/PsychosocialCircumstantiatedReportManager';
-import { Scale } from 'lucide-react';
+import { SchoolHealthEmergencyModal } from '../components/SchoolHealthEmergencyModal';
+import { Scale, HeartPulse } from 'lucide-react';
 
 import { User as UserType } from '../types';
 
@@ -76,6 +77,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isHealthEmergencyModalOpen, setIsHealthEmergencyModalOpen] = useState(false);
 
   const [filterTurma, setFilterTurma] = useState<string>('');
   const [filterStudent, setFilterStudent] = useState<string>('');
@@ -354,6 +356,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     {
       category: 'ROTINA DA SALA DE AULA',
       items: [
+        { id: 'health_emergency', label: 'Saúde & Acidentes (Lei Lucas)', icon: HeartPulse, highlight: true },
         { id: 'plans', label: 'Roteiros de Aula (BNCC)', icon: FileCheck },
         { id: 'occurrences', label: 'Livro de Ocorrências', icon: BookOpen },
         { id: 'observations', label: 'Observação de Aula', icon: Eye },
@@ -769,7 +772,11 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                     <button
                       key={item.id}
                       onClick={() => {
-                        setActiveTab(item.id as TabType);
+                        if (item.id === 'health_emergency') {
+                          setIsHealthEmergencyModalOpen(true);
+                        } else {
+                          setActiveTab(item.id as TabType);
+                        }
                         setIsSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all text-left group ${
@@ -783,7 +790,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                         <span className="leading-snug">{item.label}</span>
                       </div>
                       {item.highlight && !isActive && (
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0 ml-1" />
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0 ml-1" />
                       )}
                     </button>
                   );
@@ -826,7 +833,18 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* BOTÃO RÁPIDO SAÚDE & EMERGÊNCIA (LEI LUCAS) */}
+            <button
+              onClick={() => setIsHealthEmergencyModalOpen(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-red-600/20 transition-all active:scale-95"
+              title="Atendimento de Saúde, Alunos Passando Mal e Acidentes Escolares (Lei Lucas)"
+            >
+              <HeartPulse size={16} className="animate-pulse text-white" />
+              <span className="hidden md:inline">Saúde & Emergência (Lei Lucas)</span>
+              <span className="md:hidden">Saúde</span>
+            </button>
+
             <button
               onClick={toggleFullScreen}
               className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all hidden sm:flex items-center gap-1.5 text-xs font-black uppercase"
@@ -900,6 +918,15 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           </div>
         </main>
       </div>
+
+      {/* MODAL: PROTOCOLO DE SAÚDE ESCOLAR & EMERGÊNCIA / ACIDENTES (LEI LUCAS) */}
+      <SchoolHealthEmergencyModal
+        isOpen={isHealthEmergencyModalOpen}
+        onClose={() => setIsHealthEmergencyModalOpen(false)}
+        originModule="COORDENACAO"
+        userName={user.name}
+        userRole={user.role}
+      />
 
     </div>
   );

@@ -40,7 +40,8 @@ import {
   RotateCcw,
   History,
   Layers,
-  Save
+  Save,
+  HeartPulse
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
@@ -52,6 +53,7 @@ import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
 import { DisciplinaryChecklistModal } from '../components/DisciplinaryChecklistModal';
 import { CivicFicaiReferralModal } from '../components/CivicFicaiReferralModal';
+import { SchoolHealthEmergencyModal } from '../components/SchoolHealthEmergencyModal';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -593,6 +595,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [isCivicFicaiModalOpen, setIsCivicFicaiModalOpen] = useState(false);
   const [civicFicaiTargetStudent, setCivicFicaiTargetStudent] = useState<{ id?: string; name: string; class: string; guardian?: string; phone?: string } | undefined>(undefined);
   const [civicFicaiInitialReport, setCivicFicaiInitialReport] = useState<string>('');
+
+  // Protocolo de Saúde Escolar & Emergências (Lei Lucas) States
+  const [isHealthEmergencyModalOpen, setIsHealthEmergencyModalOpen] = useState(false);
+  const [healthEmergencyTargetStudent, setHealthEmergencyTargetStudent] = useState<any>(null);
+
+  const handleOpenHealthEmergencyModal = (student?: any) => {
+    setHealthEmergencyTargetStudent(student || null);
+    setIsHealthEmergencyModalOpen(true);
+  };
 
   // Main lists loaded from LocalStorage & Supabase
   const [inspections, setInspections] = useState<InspectionRecord[]>([]);
@@ -2550,6 +2561,23 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               Guia
             </span>
           </button>
+
+          {/* BOTÃO SAÚDE & EMERGÊNCIA / ACIDENTES (LEI LUCAS) */}
+          <button
+            type="button"
+            onClick={() => handleOpenHealthEmergencyModal(null)}
+            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-red-950 to-rose-900 hover:from-red-900 hover:to-rose-800 text-rose-300 border border-rose-500/30 shadow-lg transition-all"
+            title="Atendimento de Saúde, Alunos Passando Mal e Acidentes Escolares (Lei Lucas nº 13.722/18)"
+          >
+            <div className="flex items-center gap-3">
+              <HeartPulse size={18} className="text-rose-400 animate-pulse" />
+              <span>Saúde & Emergências</span>
+            </div>
+            <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-200 font-bold text-[9px]">
+              Lei Lucas
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveTab('fatos_observados')}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'fatos_observados'
@@ -6973,6 +7001,20 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   <button
                     type="button"
                     onClick={() => {
+                      const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                          INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                          selectedStudentState;
+                      handleOpenHealthEmergencyModal(studentFull);
+                    }}
+                    className="w-full py-2.5 bg-gradient-to-r from-red-700 to-rose-800 hover:from-red-600 hover:to-rose-700 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                    title="Registrar Atendimento de Saúde / Primeiros Socorros para este Aluno (Lei Lucas)"
+                  >
+                    <HeartPulse size={13} className="animate-pulse" /> Atendimento de Saúde / Acidente (Lei Lucas)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
                       setIsBehaviorModalOpen(false);
                       setSelectedStudentState(null);
                     }}
@@ -7082,6 +7124,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         initialStudent={civicFicaiTargetStudent}
         initialReport={civicFicaiInitialReport}
         user={user}
+      />
+
+      {/* MODAL: PROTOCOLO DE SAÚDE ESCOLAR & EMERGÊNCIA / ACIDENTES (LEI LUCAS) */}
+      <SchoolHealthEmergencyModal
+        isOpen={isHealthEmergencyModalOpen}
+        onClose={() => {
+          setIsHealthEmergencyModalOpen(false);
+          setHealthEmergencyTargetStudent(null);
+        }}
+        initialStudent={healthEmergencyTargetStudent}
+        originModule="CIVICO_MILITAR"
+        userName={user?.name || "Gestor Educacional Militar"}
+        userRole={user?.role}
       />
 
     </div>
