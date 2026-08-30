@@ -885,6 +885,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     });
   }, [selectedStudentState, newOccurrence.type, newOccurrence.selectedCategories, modalRecidivismAnalysis]);
 
+  const suggestedMeasureForModal = useMemo(() => {
+    if (!modalSuggestedMeasure) return null;
+    return {
+      measureName: modalSuggestedMeasure.suggestedMeasure,
+      severityLevel: modalSuggestedMeasure.severityLevel,
+      legalArticle: modalSuggestedMeasure.legalBasis,
+      explanation: modalSuggestedMeasure.rationale,
+      isRecidivistAggravation: !!modalRecidivismAnalysis?.hasSpecificRecurrence
+    };
+  }, [modalSuggestedMeasure, modalRecidivismAnalysis]);
+
   useEffect(() => {
     if (!isInspectionModalOpen) {
       setStudentSearchTerm('');
