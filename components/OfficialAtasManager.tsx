@@ -1351,7 +1351,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
         @media print {
           @page {
             size: A4 portrait;
-            margin: 10mm 12mm 12mm 12mm !important;
+            margin: 8mm 12mm 10mm 12mm !important;
           }
           html, body {
             height: 100% !important;
@@ -1368,35 +1368,30 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
-            min-height: 275mm !important;
-            height: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
+            display: block !important;
             background: white !important;
             color: black !important;
             box-sizing: border-box !important;
-            padding: 0 !important;
+            padding: 0 0 22mm 0 !important;
+            margin: 0 !important;
           }
           .pdf-page { 
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            min-height: 275mm !important;
-            height: 100% !important;
+            display: block !important;
             width: 100% !important;
             box-sizing: border-box !important;
-            padding: 0 0 5mm 0 !important;
+            padding: 0 !important;
             margin: 0 !important;
-            position: relative !important;
           }
           .print-footer-address {
-            position: absolute !important;
+            position: fixed !important;
             bottom: 0 !important;
             left: 0 !important;
             right: 0 !important;
             width: 100% !important;
             background: white !important;
+            padding-top: 6px !important;
+            border-top: 1px solid rgba(0, 0, 0, 0.4) !important;
+            z-index: 9999 !important;
           }
         }
       `}} />
