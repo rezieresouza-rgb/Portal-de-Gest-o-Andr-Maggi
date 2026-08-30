@@ -6370,6 +6370,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                               })
                               .map(d => {
                                 const isSelected = (newOccurrence.selectedCategories || []).includes(d.category);
+                                const prevCount = (selectedStudentState?.occurrences || []).filter(o => 
+                                  (o.type === 'DEMERIT' || (o.type as any) === 'demerit') && 
+                                  (o.category === d.category || (o.categories && o.categories.includes(d.category)))
+                                ).length;
+
                                 return (
                                   <button
                                     key={d.category}
@@ -6385,12 +6390,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                       });
                                       setCategorySearchTerm('');
                                     }}
-                                    className="w-full text-left p-3 hover:bg-blue-50 text-[10px] font-bold uppercase transition-colors flex justify-between items-center"
+                                    className="w-full text-left p-3 hover:bg-blue-50 text-[10px] font-bold uppercase transition-colors flex justify-between items-center gap-2"
                                   >
                                     <span className="flex-1 pr-2">{`[${d.severity}] ${d.category}`}</span>
-                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                                      {isSelected ? 'Selecionado' : 'Adicionar'}
-                                    </span>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      {prevCount > 0 && (
+                                        <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                                          <RotateCcw size={8} /> {prevCount}x já cometida
+                                        </span>
+                                      )}
+                                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                        {isSelected ? 'Selecionado' : 'Adicionar'}
+                                      </span>
+                                    </div>
                                   </button>
                                 );
                               })}
@@ -6402,10 +6414,22 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       <div className="flex flex-col gap-1.5 mt-2 max-h-36 overflow-y-auto pr-1">
                         {(newOccurrence.selectedCategories || []).map(cat => {
                           const dem = demeritOptions.find(d => d.category === cat);
+                          const prevCount = (selectedStudentState?.occurrences || []).filter(o => 
+                            (o.type === 'DEMERIT' || (o.type as any) === 'demerit') && 
+                            (o.category === cat || (o.categories && o.categories.includes(cat)))
+                          ).length;
                           const severityColor = dem?.severity === 'GRAVE' ? 'bg-red-50 text-red-700 border-red-100' : dem?.severity === 'MÉDIA' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100';
+                          
                           return (
                             <div key={cat} className={`flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-bold uppercase tracking-wider ${severityColor}`}>
-                              <span className="leading-snug">{cat}</span>
+                              <div className="flex items-center gap-2 flex-1">
+                                <span className="leading-snug">{cat}</span>
+                                {prevCount > 0 && (
+                                  <span className="px-1.5 py-0.5 bg-amber-200/90 text-amber-900 rounded font-black text-[8px] shrink-0 flex items-center gap-0.5">
+                                    <RotateCcw size={8} /> Reincidente ({prevCount + 1}ª vez)
+                                  </span>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => {
