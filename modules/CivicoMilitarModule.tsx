@@ -50,6 +50,7 @@ import { CivicMediationReferralModal } from '../components/CivicMediationReferra
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
 import { DisciplinaryChecklistModal } from '../components/DisciplinaryChecklistModal';
+import { CivicFicaiReferralModal } from '../components/CivicFicaiReferralModal';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -586,6 +587,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [civicReferrals, setCivicReferrals] = useState<any[]>([]);
   const [mediationLoading, setMediationLoading] = useState(false);
   const [mediationSearchTerm, setMediationSearchTerm] = useState('');
+
+  // Encaminhamento de FICAI para Busca Ativa States
+  const [isCivicFicaiModalOpen, setIsCivicFicaiModalOpen] = useState(false);
+  const [civicFicaiTargetStudent, setCivicFicaiTargetStudent] = useState<{ id?: string; name: string; class: string; guardian?: string; phone?: string } | undefined>(undefined);
+  const [civicFicaiInitialReport, setCivicFicaiInitialReport] = useState<string>('');
 
   // Main lists loaded from LocalStorage & Supabase
   const [inspections, setInspections] = useState<InspectionRecord[]>([]);
@@ -1948,6 +1954,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setChecklistOccurrenceCategory(category || '');
     setChecklistOccurrenceObservations(observations || '');
     setIsChecklistModalOpen(true);
+  };
+
+  const handleOpenCivicFicaiModal = (studentObj?: any, initialReport?: string) => {
+    let sId = studentObj?.CodigoAluno || studentObj?.studentId || '';
+    let sName = studentObj?.Nome || studentObj?.studentName || '';
+    let sClass = studentObj?.Turma || studentObj?.className || '';
+    let sGuardian = studentObj?.NomeResponsavel || studentObj?.guardian_name || '';
+    let sPhone = studentObj?.TelefoneContato || studentObj?.contact_phone || '';
+
+    setCivicFicaiTargetStudent({
+      id: sId,
+      name: sName,
+      class: sClass,
+      guardian: sGuardian,
+      phone: sPhone
+    });
+    setCivicFicaiInitialReport(initialReport || '');
+    setIsCivicFicaiModalOpen(true);
   };
 
   const handleGenerateExternalReferralDoc = (
@@ -3666,6 +3690,23 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                   title="Ver Dossiê e Linha do Tempo de Conduta"
                                 >
                                   Dossiê
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const studentFull = student.fullStudent || {
+                                      CodigoAluno: student.studentId,
+                                      Nome: student.studentName,
+                                      Turma: student.className,
+                                      Turno: student.shiftName || ''
+                                    };
+                                    handleOpenCivicFicaiModal(studentFull, `Discente com ${student.analysis.totalDemerits} faltas disciplinares e reincidência continuada (${analysis.specificRecurrences.map(r => r.category).join('; ')}). Encaminhamento para a Busca Ativa expedir FICAI e notificar o Conselho Tutelar (Art. 56 ECA).`);
+                                  }}
+                                  className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-700 text-rose-700 hover:text-white border border-rose-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1"
+                                  title="Encaminhar Discente para a Central de Busca Ativa (Expedição de FICAI)"
+                                >
+                                  <Send size={10} /> FICAI
                                 </button>
 
                                 {analysis.requiresTACE && (
@@ -7061,9 +7102,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         }}
         onOpenFICAI={(std) => {
           setIsChecklistModalOpen(false);
-          if (std) setSelectedStudentForDoc(std);
-          handleGenerateExternalReferralDoc('oficio_conselho_tutelar', std, 'Infrequência Escolar e Evasão Reiterada (Art. 56, II do ECA)', 'Comunicação formal de infrequência escolar grave associada a reincidência disciplinar para providências tutelares do Art. 56 do ECA e FICAI.');
+          const studentFull = dbStudents.find(s => String(s.CodigoAluno || s.id) === String(std?.CodigoAluno || std?.studentId)) ||
+                              INITIAL_STUDENTS.find(s => String(s.CodigoAluno || s.id) === String(std?.CodigoAluno || std?.studentId)) || std;
+          handleOpenCivicFicaiModal(studentFull, checklistOccurrenceObservations || 'Discente com reincidência de indisciplina / infrequência escolar grave. Encaminhado para expedição de FICAI na Busca Ativa.');
         }}
+      />
+
+      {/* MODAL: ENCAMINHAMENTO DE FICAI PARA A BUSCA ATIVA */}
+      <CivicFicaiReferralModal
+        isOpen={isCivicFicaiModalOpen}
+        onClose={() => setIsCivicFicaiModalOpen(false)}
+        initialStudent={civicFicaiTargetStudent}
+        initialReport={civicFicaiInitialReport}
+        user={user}
       />
 
     </div>

@@ -113,6 +113,10 @@ const BuscaAtivaFICAI: React.FC = () => {
   const [responsibleName, setResponsibleName] = useState('EQUIPE BUSCA ATIVA ESCOLAR');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estados de Encaminhamentos do Cívico-Militar para FICAI
+  const [pendingCivicReferrals, setPendingCivicReferrals] = useState<any[]>([]);
+  const [activeReferralOriginId, setActiveReferralOriginId] = useState<string | null>(null);
+
   // Estados para Devolutiva do Conselho
   const [devolutivaForm, setDevolutivaForm] = useState({
     receivedDate: new Date().toLocaleDateString('sv-SE'),
@@ -124,6 +128,46 @@ const BuscaAtivaFICAI: React.FC = () => {
 
   // Estudantes em Risco Automático (com base em frequência ou cadastro)
   const [studentsAtRisk, setStudentsAtRisk] = useState<any[]>([]);
+
+  // Carregar encaminhamentos do Cívico-Militar
+  const fetchCivicReferrals = async () => {
+    try {
+      const local = JSON.parse(localStorage.getItem('busca_ativa_ficai_referrals_v1') || '[]');
+      try {
+        const { data, error } = await supabase
+          .from('busca_ativa_ficai_referrals')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          setPendingCivicReferrals(data);
+          return;
+        }
+      } catch (e) {}
+      setPendingCivicReferrals(local);
+    } catch (err) {
+      console.warn('Erro ao carregar encaminhamentos cívico-militares:', err);
+    }
+  };
+
+  const handleImportCivicReferral = (refItem: any) => {
+    setSelectedStudent({
+      id: refItem.student_id || '',
+      name: refItem.student_name || '',
+      class: refItem.class_name || '',
+      guardian: refItem.guardian_name || '',
+      phone: refItem.guardian_phone || ''
+    });
+    setStudentSearch(refItem.student_name || '');
+    if (refItem.reasons && refItem.reasons.length > 0) {
+      setSelectedReasons(refItem.reasons);
+    }
+    if (refItem.adopted_procedures && refItem.adopted_procedures.length > 0) {
+      setSelectedProcedures(refItem.adopted_procedures);
+    }
+    setDetailsReport(refItem.report_details || `Encaminhamento originado do Módulo Cívico-Militar por ${refItem.responsible_name}.\nMotivos: ${(refItem.reasons || []).join('; ')}`);
+    setActiveReferralOriginId(refItem.id);
+    setCurrentTab('nova');
+  };
 
   // Unifica todos os estudantes para busca
   const masterStudents = useMemo(() => {
@@ -196,6 +240,7 @@ const BuscaAtivaFICAI: React.FC = () => {
 
   useEffect(() => {
     fetchFicaiRecords();
+    fetchCivicReferrals();
   }, []);
 
   // Gerar número de protocolo automático ao abrir formulário de criação
@@ -294,7 +339,19 @@ const BuscaAtivaFICAI: React.FC = () => {
         date: todayDate
       }]);
 
-      // 3. Salvar em LocalStorage
+      // 3. Se tiver vindo de solicitação do Cívico-Militar, conclui o encaminhamento
+      if (activeReferralOriginId) {
+        const pending = JSON.parse(localStorage.getItem('busca_ativa_ficai_referrals_v1') || '[]');
+        const updated = pending.map((p: any) => p.id === activeReferralOriginId ? { ...p, status: 'FICAI_EXPEDIDA', protocol_generated: recordData.protocolNumber } : p);
+        localStorage.setItem('busca_ativa_ficai_referrals_v1', JSON.stringify(updated));
+        setPendingCivicReferrals(updated);
+        try {
+          await supabase.from('busca_ativa_ficai_referrals').update({ status: 'FICAI_EXPEDIDA', protocol_generated: recordData.protocolNumber }).eq('id', activeReferralOriginId);
+        } catch (e) {}
+        setActiveReferralOriginId(null);
+      }
+
+      // 4. Salvar em LocalStorage
       const updatedLocal = [recordData, ...ficaiRecords];
       setFicaiRecords(updatedLocal);
       localStorage.setItem('busca_ativa_ficai_records_v2', JSON.stringify(updatedLocal));
@@ -428,6 +485,67 @@ const BuscaAtivaFICAI: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* INBOX DE ENCAMINHAMENTOS DO CÍVICO-MILITAR */}
+        {pendingCivicReferrals.filter(r => r.status === 'PENDENTE_BUSCA_ATIVA').length > 0 && (
+          <div className="mt-8 p-6 bg-gradient-to-r from-rose-950 via-red-900 to-slate-900 rounded-[2rem] border border-rose-600/40 text-white shadow-xl animate-fadeIn">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-rose-800/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-md">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    Solicitações de FICAI Recebidas do Cívico-Militar
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse">
+                      {pendingCivicReferrals.filter(r => r.status === 'PENDENTE_BUSCA_ATIVA').length} pendente(s)
+                    </span>
+                  </h3>
+                  <p className="text-[10px] text-rose-200 font-bold uppercase tracking-wider">
+                    Alunos encaminhados pela gestão militar por reincidência disciplinar e infrequência (Art. 56 do ECA)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {pendingCivicReferrals
+                .filter(r => r.status === 'PENDENTE_BUSCA_ATIVA')
+                .map(refItem => (
+                  <div key={refItem.id} className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 flex flex-col justify-between gap-3 text-xs">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-[9px] font-mono text-rose-300 block">{refItem.forwarded_date || 'Hoje'}</span>
+                          <h4 className="text-sm font-black text-white uppercase">{refItem.student_name}</h4>
+                          <p className="text-[10px] text-rose-200 font-semibold">
+                            Turma: {refItem.class_name} • Responsável: {refItem.guardian_name} ({refItem.guardian_phone})
+                          </p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                          refItem.urgency === 'CRÍTICA' ? 'bg-red-500 text-white' : refItem.urgency === 'URGENTE' ? 'bg-amber-500 text-slate-950' : 'bg-blue-500 text-white'
+                        }`}>
+                          {refItem.urgency || 'URGENTE'}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 text-[10px] text-slate-200 bg-black/20 p-2 rounded-xl line-clamp-2">
+                        "{refItem.report_details || (refItem.reasons || []).join('; ')}"
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleImportCivicReferral(refItem)}
+                      className="w-full py-2.5 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-black uppercase text-[10px] tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <FileCheck size={14} /> Preencher FICAI Oficial com estes Dados
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ABA 1: HISTÓRICO DE FICAIS REGISTRADAS */}
