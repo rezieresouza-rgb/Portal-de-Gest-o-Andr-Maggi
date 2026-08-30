@@ -233,6 +233,91 @@ export const getOccurrenceSeverity = (occ: any): string => {
   return maxSeverity;
 };
 
+export interface ExternalReferralRecommendation {
+  requiresPolice: boolean;
+  requiresConselhoTutelar: boolean;
+  requiresMinisterioPublico: boolean;
+  policeRationale?: string;
+  conselhoRationale?: string;
+  mpRationale?: string;
+  recommendedDocTemplate: 'oficio_policia' | 'oficio_conselho_tutelar' | 'oficio_ministerio_publico';
+  urgencyLevel: 'URGENTE' | 'ALTA' | 'PADRÃO';
+  legalSummary: string;
+}
+
+export const getExternalReferralRecommendation = (params: {
+  category: string;
+  studentScore?: number;
+  agravantes?: string;
+  isEscalated?: boolean;
+}): ExternalReferralRecommendation | null => {
+  const { category, studentScore, agravantes = '', isEscalated = false } = params;
+  if (!category) return null;
+
+  const matchNum = category.match(/^(\d+)\./);
+  const itemNum = matchNum ? parseInt(matchNum[1], 10) : 0;
+  const isGrave = (itemNum >= 63 && itemNum <= 91) || category.toLowerCase().includes('grave');
+
+  // Tipificações específicas de faltas graves
+  const isDrogas = [73].includes(itemNum) || /droga|entorpecente|substância proibida|entorpecentes/i.test(category);
+  const isArmas = [80].includes(itemNum) || /arma|objeto que ameaça|segurança|faca|canivete|explosivo/i.test(category);
+  const isSexual = [76].includes(itemNum) || /libidinosa|sexual|assédio|importunação/i.test(category);
+  const isAgressao = [84].includes(itemNum) || /rixa|luta corporal|agressão|violência física/i.test(category);
+  const isPatrimonio = [64, 91].includes(itemNum) || /dano.*patrimônio|avaria|destruição|pichou/i.test(category);
+  const isFurtoRoubo = [89].includes(itemNum) || /subtraiu|furto|roubo|extorsão|valores alheios/i.test(category);
+  const isPornografiaApologia = [69].includes(itemNum) || /pornografia|apologia.*drogas/i.test(category);
+  const isFalsificacao = [63, 86].includes(itemNum) || /assinou pelo responsável|rasurou|violou ou alterou documento/i.test(category);
+  const isBullying = [78].includes(itemNum) || /bullying|cyberbullying/i.test(category);
+  const isEvasao = [70].includes(itemNum) || /ausentou.*unidade escolar|evasão/i.test(category);
+
+  const isIncompativel = typeof studentScore === 'number' && studentScore < 2.0;
+  const hasSevereAgravantes = agravantes.includes('VIII') || agravantes.includes('V') || agravantes.toLowerCase().includes('premeditação');
+
+  const requiresPolice = isDrogas || isArmas || isSexual || isAgressao || isPatrimonio || isFurtoRoubo || isPornografiaApologia || isFalsificacao;
+  const requiresConselhoTutelar = requiresPolice || isBullying || isEvasao || isIncompativel || isGrave;
+  const requiresMinisterioPublico = isDrogas || isArmas || isSexual || (isGrave && (isIncompativel || isEscalated || hasSevereAgravantes));
+
+  if (!requiresPolice && !requiresConselhoTutelar && !requiresMinisterioPublico) {
+    return null;
+  }
+
+  let policeRationale = '';
+  if (requiresPolice) {
+    policeRationale = 'Conduta com indício de ato infracional/crime (Art. 29 do Regulamento EECM c/c Lei 8.069/90 ECA). Comunicação imediata à Autoridade Policial para lavratura de B.O. e investigação.';
+  }
+
+  let conselhoRationale = '';
+  if (requiresConselhoTutelar) {
+    conselhoRationale = 'Notificação obrigatória ao Conselho Tutelar para aplicação de medidas de proteção e acompanhamento familiar (Arts. 22 §4º e 29 do Regulamento EECM c/c Art. 136 do ECA).';
+  }
+
+  let mpRationale = '';
+  if (requiresMinisterioPublico) {
+    mpRationale = 'Expediente formal à Promotoria da Infância e Juventude para fiscalização, controle de medidas socioeducativas ou apuração de recusa dos responsáveis (Arts. 22 §4º e 26 do Regulamento EECM).';
+  }
+
+  const urgencyLevel: 'URGENTE' | 'ALTA' | 'PADRÃO' = (isDrogas || isArmas || isSexual || isAgressao) ? 'URGENTE' : isGrave ? 'ALTA' : 'PADRÃO';
+  const recommendedDocTemplate = requiresPolice ? 'oficio_policia' : requiresMinisterioPublico ? 'oficio_ministerio_publico' : 'oficio_conselho_tutelar';
+
+  const legalSummary = requiresPolice 
+    ? 'Art. 29 do Regulamento Disciplinar EECM-MT c/c Lei 8.069/90 (ECA)'
+    : requiresMinisterioPublico
+    ? 'Art. 26 e Art. 22 §4º do Regulamento Disciplinar EECM-MT'
+    : 'Art. 22 §4º e Art. 29 do Regulamento Disciplinar EECM-MT c/c Art. 136 do ECA';
+
+  return {
+    requiresPolice,
+    requiresConselhoTutelar,
+    requiresMinisterioPublico,
+    policeRationale,
+    conselhoRationale,
+    mpRationale,
+    recommendedDocTemplate,
+    urgencyLevel,
+    legalSummary
+  };
+};
+
 export const CivicoMilitarLogoBadge: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl', showLabel?: boolean }> = ({ size = 'md', showLabel = false }) => {
   const badgeClasses = 
     size === 'sm' ? 'w-9 h-9' :
@@ -427,7 +512,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     dataInicio: new Date().toISOString().split('T')[0],
     dataFim: new Date().toISOString().split('T')[0],
     motivoUniforme: '',
-    pecaFaltante: ''
+    pecaFaltante: '',
+    // Ofícios e Encaminhamentos Institucionais Externos (B.O., Conselho Tutelar, MP)
+    destinatarioOrgao: '',
+    cargoDestinatario: '',
+    enderecoOrgao: '',
+    oficioNumber: '',
+    boNumero: '',
+    boStatus: 'A Lavrar / Requisitado Formalmente',
+    protocoloExterno: '',
+    dataFato: new Date().toISOString().split('T')[0],
+    horaFato: '',
+    localFato: 'Dependências da EECM André Maggi',
+    descricaoFatoGrave: '',
+    testemunhasEnvolvidos: '',
+    providenciasTomadas: '',
+    medidasSolicitadas: '',
+    recusaPaisMotivo: '',
+    anexosDocumentos: 'Cópia da Ficha Disciplinar; Histórico de Ocorrências; Relatório do Fato'
   });
   const [docHistory, setDocHistory] = useState<any[]>([]);
   const [docFaltaSeverityFilter, setDocFaltaSeverityFilter] = useState<'TODAS' | 'LEVE' | 'MÉDIA' | 'GRAVE'>('TODAS');
@@ -464,6 +566,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     return `${(docsThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
   }, [selectedDocTemplate, docHistory]);
 
+  const nextOficioNumber = useMemo(() => {
+    if (!['oficio_policia', 'oficio_conselho_tutelar', 'oficio_ministerio_publico'].includes(selectedDocTemplate)) return '';
+    const currentYear = new Date().getFullYear();
+    const oficiosThisYear = docHistory.filter(d => {
+      return ['oficio_policia', 'oficio_conselho_tutelar', 'oficio_ministerio_publico'].includes(d.template) && new Date(d.date).getFullYear() === currentYear;
+    });
+    return `${(oficiosThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
+  }, [selectedDocTemplate, docHistory]);
+
   const selectedStudentBehaviorState = useMemo(() => {
     if (!selectedStudentForDoc) return null;
     return studentStates.find(s => s.id === selectedStudentForDoc.CodigoAluno || s.name === selectedStudentForDoc.Nome) || null;
@@ -482,6 +593,26 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       previousInfractionsCount: prevCount
     });
   }, [selectedDocTemplate, docFields.itensEnquadramento, docFields.atenuantes, docFields.agravantes, selectedStudentBehaviorState]);
+
+  const externalReferralReport = useMemo(() => {
+    let category = docFields.itensEnquadramento || newOccurrence.category || '';
+    if (newOccurrence.type === 'DEMERIT' && newOccurrence.selectedCategories && newOccurrence.selectedCategories.length > 0) {
+      for (const c of newOccurrence.selectedCategories) {
+        if (getOccurrenceSeverity({ type: 'DEMERIT', category: c }) === 'GRAVE') {
+          category = c;
+          break;
+        }
+      }
+      if (!category) category = newOccurrence.selectedCategories[0];
+    }
+    if (!category) return null;
+    return getExternalReferralRecommendation({
+      category,
+      studentScore: selectedStudentBehaviorState?.score || selectedStudentState?.score,
+      agravantes: docFields.agravantes,
+      isEscalated: (selectedStudentBehaviorState?.occurrences || selectedStudentState?.occurrences || []).length > 1
+    });
+  }, [docFields.itensEnquadramento, newOccurrence.category, newOccurrence.type, newOccurrence.selectedCategories, docFields.agravantes, selectedStudentBehaviorState, selectedStudentState]);
 
   // Automatically infer Series/Year and prefill studentName & studentClass when a student is selected
   useEffect(() => {
@@ -1571,6 +1702,82 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setIsBehaviorModalOpen(false);
   };
 
+  const handleGenerateExternalReferralDoc = (
+    template: 'oficio_policia' | 'oficio_conselho_tutelar' | 'oficio_ministerio_publico',
+    studentObj?: any,
+    occCategory?: string,
+    occObservations?: string
+  ) => {
+    let student = studentObj || selectedStudentForDoc || (selectedStudentState ? dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) : null);
+    if (!student && selectedStudentState) {
+      const initStudent = INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
+      student = {
+        CodigoAluno: selectedStudentState.studentId,
+        Nome: selectedStudentState.studentName,
+        Turma: selectedStudentState.className,
+        Turno: initStudent?.Turno || 'MATUTINO',
+        DataNascimento: initStudent?.DataNascimento || '',
+        PAED: initStudent?.PAED || 'Não',
+        TransporteEscolar: initStudent?.TransporteEscolar || 'Não',
+        NomeResponsavel: (initStudent as any)?.NomeResponsavel || '',
+        TelefoneContato: (initStudent as any)?.TelefoneContato || ''
+      };
+    }
+    if (student) {
+      setSelectedStudentForDoc(student);
+    }
+
+    const currentYear = new Date().getFullYear();
+    const oficiosCount = docHistory.filter(d => ['oficio_policia', 'oficio_conselho_tutelar', 'oficio_ministerio_publico'].includes(d.template) && new Date(d.date).getFullYear() === currentYear).length;
+    const autoOficioNum = `${(oficiosCount + 1).toString().padStart(3, '0')}/${currentYear} - EECM-AM`;
+
+    let dest = '';
+    let cargo = '';
+    let ender = 'Colíder - MT';
+    let providencias = 'Estudante ouvido pela equipe gestora; Pais/responsáveis notificados; Ficha de medida disciplinar lavrada; Registro em livro de ocorrências.';
+    let medidasSol = '';
+    let recusa = '';
+
+    if (template === 'oficio_policia') {
+      dest = 'Ilmo(a). Sr(a). Delegado(a) de Polícia Civil do Município de Colíder - MT';
+      cargo = 'Delegado(a) Titular da Delegacia de Polícia Civil';
+      medidasSol = 'Requer-se a lavratura do respectivo Boletim de Ocorrência (B.O.), apuração dos fatos e demais procedimentos investigatórios e de polícia judiciária cabíveis nos termos da legislação vigente.';
+    } else if (template === 'oficio_conselho_tutelar') {
+      dest = 'Ilmos(as). Srs(as). Conselheiros(as) Tutelares do Município de Colíder - MT';
+      cargo = 'Conselho Tutelar Municipal de Colíder';
+      medidasSol = 'Solicita-se a intervenção deste Órgão Protetivo para realização de visita técnica familiar, acompanhamento protetivo e aplicação das medidas pertinentes previstas no Art. 136 do ECA (Lei 8.069/90).';
+    } else if (template === 'oficio_ministerio_publico') {
+      dest = 'Exmo(a). Sr(a). Promotor(a) de Justiça da Infância e Juventude da Comarca de Colíder - MT';
+      cargo = 'Promotor(a) de Justiça da Infância e Juventude';
+      medidasSol = 'Encaminha-se o presente expediente para ciência, fiscalização e adoção das providências ministeriais cabíveis quanto à responsabilização e garantia de direitos do estudante, nos termos do Art. 26 do Regulamento EECM c/c Lei 8.069/90.';
+      recusa = 'Recusa/Não comparecimento dos pais na formalização do Termo de Adequação de Conduta Escolar (TACE - Art. 26).';
+    }
+
+    const desc = occObservations || docFields.achado || docFields.falta || `Em data recente, constatou-se nas dependências escolares o cometimento de falta disciplinar de natureza grave envolvendo o(a) estudante, enquadrada como: ${occCategory || docFields.itensEnquadramento || 'Falta grave regulamentar'}.`;
+
+    setDocFields(prev => ({
+      ...prev,
+      oficioNumber: autoOficioNum,
+      destinatarioOrgao: dest,
+      cargoDestinatario: cargo,
+      enderecoOrgao: ender,
+      descricaoFatoGrave: desc,
+      itensEnquadramento: occCategory || prev.itensEnquadramento,
+      providenciasTomadas: providencias,
+      medidasSolicitadas: medidasSol,
+      recusaPaisMotivo: recusa,
+      date: new Date().toISOString().split('T')[0],
+      dataFato: new Date().toISOString().split('T')[0],
+      horaFato: prev.horaFato || '10:00',
+      localFato: 'Dependências da Escola Estadual Cívico-Militar André Maggi - Colíder/MT',
+      anexosDocumentos: 'Cópia da Ficha de Medida Disciplinar; Relatório de Fato Observado; Extrato de Atitude Escolar'
+    }));
+
+    setSelectedDocTemplate(template);
+    setActiveTab('documentos');
+    setIsBehaviorModalOpen(false);
+  };
+
   const handleDeleteOccurrence = async (studentId: string, occId: string) => {
     if (!window.confirm('Excluir esta ocorrência? A nota de atitude do aluno será recalculada.')) return;
 
@@ -1703,6 +1910,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         : selectedDocTemplate === 'fato_observado' ? 'Relatório de Fato Observado' 
         : selectedDocTemplate === 'autorizacao_uniforme' ? 'Autorização de Uniforme Incompleto'
         : selectedDocTemplate === 'termo_adequacao_conduta' ? 'Termo de Adequação de Conduta Escolar'
+        : selectedDocTemplate === 'oficio_policia' ? 'Ofício p/ B.O. (Polícia Civil/PM - Art. 29)'
+        : selectedDocTemplate === 'oficio_conselho_tutelar' ? 'Ofício ao Conselho Tutelar (Arts. 22 e 29)'
+        : selectedDocTemplate === 'oficio_ministerio_publico' ? 'Expediente à Promotoria de Infância / MP (Art. 26)'
         : 'Ficha de Medida Disciplinar',
       date: docFields.date,
       fields: { 
@@ -1713,6 +1923,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           ? (docFields.documentNumber || nextTaceNumber)
           : selectedDocTemplate === 'autorizacao_uniforme'
           ? (docFields.documentNumber || nextAutorizacaoNumber)
+          : ['oficio_policia', 'oficio_conselho_tutelar', 'oficio_ministerio_publico'].includes(selectedDocTemplate)
+          ? (docFields.oficioNumber || nextOficioNumber)
           : docFields.documentNumber
       },
       timestamp: Date.now()
@@ -2970,13 +3182,20 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     <select
                       value={selectedDocTemplate}
                       onChange={e => setSelectedDocTemplate(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 uppercase"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 shadow-sm"
                     >
-                      <option value="termo_ciencia">Termo de Ciência e Concordância</option>
-                      <option value="fato_observado">Relatório de Fato Observado</option>
-                      <option value="ficha_medida_disciplinar">Ficha de Medida Disciplinar (Anexo III)</option>
-                      <option value="termo_adequacao_conduta">Termo de Adequação de Conduta Escolar (TACE)</option>
-                      <option value="autorizacao_uniforme">Autorização Temporária de Uniforme Incompleto</option>
+                      <optgroup label="📋 DOCUMENTOS DISCIPLINARES INTERNOS">
+                        <option value="ficha_medida_disciplinar">Ficha de Medida Disciplinar (Anexo III)</option>
+                        <option value="termo_adequacao_conduta">Termo de Adequação de Conduta Escolar (TACE)</option>
+                        <option value="termo_ciencia">Termo de Ciência e Concordância</option>
+                        <option value="fato_observado">Relatório de Fato Observado (RFO)</option>
+                        <option value="autorizacao_uniforme">Autorização Temporária de Uniforme Incompleto</option>
+                      </optgroup>
+                      <optgroup label="🚨 ENCAMINHAMENTOS INSTITUCIONAIS EXTERNOS">
+                        <option value="oficio_policia">🚓 Ofício p/ B.O. (Polícia Civil / PM - Art. 29 EECM)</option>
+                        <option value="oficio_conselho_tutelar">🛡️ Ofício ao Conselho Tutelar (Arts. 22 e 29 EECM / ECA)</option>
+                        <option value="oficio_ministerio_publico">⚖️ Expediente à Promotoria da Infância / MP (Art. 26 EECM)</option>
+                      </optgroup>
                     </select>
                   </div>
 
@@ -3666,6 +3885,81 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         </div>
                       )}
 
+                      {/* CARD DE ENCAMINHAMENTO INSTITUCIONAL EXTERNO (B.O. / CONSELHO TUTELAR / MP) */}
+                      {externalReferralReport && (
+                        <div className="p-4 rounded-2xl border bg-gradient-to-r from-red-50 via-rose-50 to-amber-50 border-red-200 ring-1 ring-red-300 space-y-3 animate-fadeIn">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div className="flex items-center gap-2">
+                              <ShieldAlert size={18} className="text-red-600 animate-pulse" />
+                              <span className="text-[11px] font-black uppercase tracking-wider text-red-950">
+                                🚨 Encaminhamento Institucional Externo Recomendado
+                              </span>
+                            </div>
+                            <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase bg-red-600 text-white shadow-xs">
+                              Prioridade: {externalReferralReport.urgencyLevel}
+                            </span>
+                          </div>
+
+                          <div className="bg-white/90 p-3 rounded-xl border border-red-200/90 text-xs space-y-2">
+                            <p className="text-[10px] font-bold text-slate-700">
+                              Base Legal: <span className="text-red-700 underline font-semibold">{externalReferralReport.legalSummary}</span>
+                            </p>
+                            
+                            <div className="space-y-1.5 text-[10px] text-slate-600">
+                              {externalReferralReport.requiresPolice && (
+                                <p className="flex items-start gap-1.5">
+                                  <span className="font-bold text-red-700 shrink-0">🚓 Polícia (B.O. - Art. 29):</span>
+                                  <span>{externalReferralReport.policeRationale}</span>
+                                </p>
+                              )}
+                              {externalReferralReport.requiresConselhoTutelar && (
+                                <p className="flex items-start gap-1.5">
+                                  <span className="font-bold text-purple-700 shrink-0">🛡️ Conselho Tutelar (Arts. 22 e 29):</span>
+                                  <span>{externalReferralReport.conselhoRationale}</span>
+                                </p>
+                              )}
+                              {externalReferralReport.requiresMinisterioPublico && (
+                                <p className="flex items-start gap-1.5">
+                                  <span className="font-bold text-rose-800 shrink-0">⚖️ Ministério Público (Art. 26):</span>
+                                  <span>{externalReferralReport.mpRationale}</span>
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Botões de Ação Rápida para Gerar os Ofícios */}
+                            <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2">
+                              {externalReferralReport.requiresPolice && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleGenerateExternalReferralDoc('oficio_policia', selectedStudentForDoc, docFields.itensEnquadramento, docFields.achado || docFields.falta)}
+                                  className="px-3 py-2 rounded-xl text-[10px] font-black uppercase bg-red-600 hover:bg-red-700 text-white flex items-center gap-1.5 shadow-sm transition-all"
+                                >
+                                  <FileText size={12} /> Gerar Ofício p/ B.O. (Polícia)
+                                </button>
+                              )}
+                              {externalReferralReport.requiresConselhoTutelar && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleGenerateExternalReferralDoc('oficio_conselho_tutelar', selectedStudentForDoc, docFields.itensEnquadramento, docFields.achado || docFields.falta)}
+                                  className="px-3 py-2 rounded-xl text-[10px] font-black uppercase bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1.5 shadow-sm transition-all"
+                                >
+                                  <FileText size={12} /> Notificar Conselho Tutelar
+                                </button>
+                              )}
+                              {externalReferralReport.requiresMinisterioPublico && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleGenerateExternalReferralDoc('oficio_ministerio_publico', selectedStudentForDoc, docFields.itensEnquadramento, docFields.achado || docFields.falta)}
+                                  className="px-3 py-2 rounded-xl text-[10px] font-black uppercase bg-rose-700 hover:bg-rose-800 text-white flex items-center gap-1.5 shadow-sm transition-all"
+                                >
+                                  <FileText size={12} /> Expediente à Promotoria / MP
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold text-slate-500 uppercase">Gestor Educacional Militar</label>
                         <input
@@ -3822,6 +4116,167 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           value={docFields.gestorMilitar}
                           onChange={e => setDocFields(prev => ({ ...prev, gestorMilitar: e.target.value }))}
                           placeholder="Nome de quem assina"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        />
+                      </div>
+                    </div>
+                  ) : ['oficio_policia', 'oficio_conselho_tutelar', 'oficio_ministerio_publico'].includes(selectedDocTemplate) ? (
+                    <div className="border-t border-slate-100 pt-5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-1.5">
+                          <Scale size={14} /> 
+                          {selectedDocTemplate === 'oficio_policia' ? 'Ofício p/ B.O. (Polícia Civil / PM)' :
+                           selectedDocTemplate === 'oficio_conselho_tutelar' ? 'Ofício ao Conselho Tutelar' :
+                           'Expediente à Promotoria de Infância e Juventude (MP)'}
+                        </h4>
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase bg-rose-100 text-rose-800 border border-rose-200">
+                          {selectedDocTemplate === 'oficio_policia' ? 'Art. 29 EECM' :
+                           selectedDocTemplate === 'oficio_conselho_tutelar' ? 'Arts. 22 §4º e 29' :
+                           'Art. 26 EECM'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Número do Ofício / Expediente</label>
+                        <input
+                          type="text"
+                          value={docFields.oficioNumber}
+                          onChange={e => setDocFields(prev => ({ ...prev, oficioNumber: e.target.value }))}
+                          placeholder={`Automático: ${nextOficioNumber || '001/2026 - EECM-AM'}`}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 placeholder-slate-400"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Destinatário (Autoridade / Órgão)</label>
+                        <input
+                          type="text"
+                          value={docFields.destinatarioOrgao}
+                          onChange={e => setDocFields(prev => ({ ...prev, destinatarioOrgao: e.target.value }))}
+                          placeholder="Ex: Ilmo(a). Sr(a). Delegado(a) de Polícia Civil / Conselheiros Tutelares / Promotor(a) de Justiça"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Data do Fato</label>
+                          <input
+                            type="date"
+                            value={docFields.dataFato}
+                            onChange={e => setDocFields(prev => ({ ...prev, dataFato: e.target.value }))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Horário Aproximado</label>
+                          <input
+                            type="time"
+                            value={docFields.horaFato}
+                            onChange={e => setDocFields(prev => ({ ...prev, horaFato: e.target.value }))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Local do Fato</label>
+                        <input
+                          type="text"
+                          value={docFields.localFato}
+                          onChange={e => setDocFields(prev => ({ ...prev, localFato: e.target.value }))}
+                          placeholder="Ex: Dependências da Escola Estadual Cívico-Militar André Maggi"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Descrição Detalhada do Fato Grave / Ato Infracional</label>
+                        <textarea
+                          value={docFields.descricaoFatoGrave}
+                          onChange={e => setDocFields(prev => ({ ...prev, descricaoFatoGrave: e.target.value }))}
+                          placeholder="Descreva minuciosamente os acontecimentos, condutas, objetos/substâncias envolvidas..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[90px]"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Testemunhas, Servidores ou Vítimas Envolvidas</label>
+                        <input
+                          type="text"
+                          value={docFields.testemunhasEnvolvidos}
+                          onChange={e => setDocFields(prev => ({ ...prev, testemunhasEnvolvidos: e.target.value }))}
+                          placeholder="Nomes de professores, monitores, servidores ou outros alunos testemunhas..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Providências Escolares Preliminares Adotadas</label>
+                        <textarea
+                          value={docFields.providenciasTomadas}
+                          onChange={e => setDocFields(prev => ({ ...prev, providenciasTomadas: e.target.value }))}
+                          placeholder="Ex: Estudante ouvido; Responsáveis comunicados; Apreensão cautelar de objeto; Lavratura de Ficha Disciplinar..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[60px]"
+                        />
+                      </div>
+
+                      {selectedDocTemplate === 'oficio_ministerio_publico' && (
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-rose-600 uppercase">Motivo da Recusa / Não Anuência dos Pais (Art. 26)</label>
+                          <textarea
+                            value={docFields.recusaPaisMotivo}
+                            onChange={e => setDocFields(prev => ({ ...prev, recusaPaisMotivo: e.target.value }))}
+                            placeholder="Descreva a recusa, não comparecimento ou falta de anuência dos responsáveis para cumprimento do TACE..."
+                            className="w-full bg-rose-50/70 border border-rose-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-rose-200 text-slate-900 min-h-[60px]"
+                          />
+                        </div>
+                      )}
+
+                      {selectedDocTemplate === 'oficio_policia' && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase">Status do B.O.</label>
+                            <select
+                              value={docFields.boStatus}
+                              onChange={e => setDocFields(prev => ({ ...prev, boStatus: e.target.value }))}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                            >
+                              <option value="A Lavrar / Requisitado Formalmente">A Lavrar / Requisitado Formalmente</option>
+                              <option value="Lavrado na PJC / PM">Lavrado na PJC / PM</option>
+                              <option value="Em Andamento / Investigação">Em Andamento / Investigação</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase">Número do B.O. (se houver)</label>
+                            <input
+                              type="text"
+                              value={docFields.boNumero}
+                              onChange={e => setDocFields(prev => ({ ...prev, boNumero: e.target.value }))}
+                              placeholder="Ex: 2026/145892"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Requerimento / Medidas Solicitadas</label>
+                        <textarea
+                          value={docFields.medidasSolicitadas}
+                          onChange={e => setDocFields(prev => ({ ...prev, medidasSolicitadas: e.target.value }))}
+                          placeholder="Medidas formais solicitadas ao órgão competente..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[60px]"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Documentos Anexados</label>
+                        <input
+                          type="text"
+                          value={docFields.anexosDocumentos}
+                          onChange={e => setDocFields(prev => ({ ...prev, anexosDocumentos: e.target.value }))}
+                          placeholder="Ex: Cópia da Ficha Disciplinar; Extrato de Atitude; Termo de Apreensão"
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                         />
                       </div>
@@ -4526,6 +4981,384 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           </div>
                         </div>
                       </>
+                    ) : selectedDocTemplate === 'oficio_policia' ? (
+                      <>
+                        {/* OFÍCIO DE COMUNICAÇÃO DE FATO GRAVE / ATO INFRACIONAL À POLÍCIA (ART. 29 EECM) */}
+                        <div className="flex justify-between items-start my-6">
+                          <div>
+                            <p className="text-sm font-black text-gray-900 uppercase">
+                              OFÍCIO Nº {docFields.oficioNumber || nextOficioNumber || '001/2026 - EECM-AM'}
+                            </p>
+                            <p className="text-[11px] font-bold text-gray-600 mt-1">
+                              Assunto: Comunicação de Ato Infracional / Solicitação de B.O. (Art. 29 EECM)
+                            </p>
+                          </div>
+                          <div className="text-right text-xs text-gray-600 font-bold">
+                            <p>{docFields.city ? docFields.city.split('-')[0].trim() : 'Colíder - MT'}, {formatDocDate(docFields.date)}.</p>
+                          </div>
+                        </div>
+
+                        {/* Endereçamento */}
+                        <div className="text-xs text-gray-900 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <p className="font-bold uppercase">Ao(À) Ilustríssimo(a) Senhor(a):</p>
+                          <p className="font-black uppercase text-sm mt-0.5">{docFields.destinatarioOrgao || 'Delegado(a) de Polícia Civil / Comandante da Polícia Militar'}</p>
+                          <p className="text-gray-600 font-semibold">{docFields.cargoDestinatario || 'Delegacia de Polícia Civil / 9º Comando Regional da PMMT'}</p>
+                          <p className="text-gray-600 font-semibold">{docFields.enderecoOrgao || 'Município de Colíder - Estado de Mato Grosso'}</p>
+                        </div>
+
+                        {/* Corpo do Ofício */}
+                        <div className="text-xs text-gray-900 text-justify leading-relaxed space-y-4 mb-6">
+                          <p>
+                            <strong>Senhor(a) Autoridade Policial,</strong>
+                          </p>
+                          <p>
+                            Cumprimentando-o(a) cordialmente, servimo-nos do presente expediente para, nos termos do <strong>Artigo 29 do Regulamento Disciplinar das Escolas Estaduais Cívico-Militares do Estado de Mato Grosso</strong> e das disposições aplicáveis da <strong>Lei Federal nº 8.069/1990 (Estatuto da Criança e do Adolescente)</strong>, <strong>COMUNICAR</strong> formalmente a esta digna Autoridade Policial a ocorrência de fato de natureza grave com indícios de ato infracional/crime ocorrido no âmbito escolar, conforme qualificação e fatos abaixo circunstanciados:
+                          </p>
+
+                          {/* Qualificação do Aluno */}
+                          <div className="bg-gray-50/70 p-3 rounded-lg border border-gray-200 space-y-1.5 font-sans">
+                            <p className="font-black text-[11px] uppercase text-blue-900 border-b border-gray-200 pb-1">1. Qualificação do Estudante Envolvido</p>
+                            <div className="grid grid-cols-2 gap-2 text-[11px]">
+                              <p><strong>Nome:</strong> <span className="uppercase">{selectedStudentForDoc?.Nome || docFields.studentName || 'Não informado'}</span></p>
+                              <p><strong>Matrícula / R.A.:</strong> {selectedStudentForDoc?.CodigoAluno || '---'}</p>
+                              <p><strong>Turma / Turno:</strong> {selectedStudentForDoc?.Turma || docFields.series || '---'} ({selectedStudentForDoc?.Turno || 'MATUTINO'})</p>
+                              <p><strong>Data de Nasc.:</strong> {selectedStudentForDoc?.DataNascimento ? formatSimpleDate(selectedStudentForDoc.DataNascimento) : '---'}</p>
+                              <p><strong>Responsável Legal:</strong> <span className="uppercase">{selectedStudentForDoc?.NomeResponsavel || docFields.responsibleName || 'Responsável'}</span></p>
+                              <p><strong>Telefone / Contato:</strong> {selectedStudentForDoc?.TelefoneContato || '---'}</p>
+                            </div>
+                          </div>
+
+                          {/* Dados do Fato */}
+                          <div className="space-y-2">
+                            <p className="font-black text-[11px] uppercase text-gray-900">2. Data, Local e Enquadramento Disciplinar</p>
+                            <p>
+                              <strong>Data do Fato:</strong> {formatDocDate(docFields.dataFato || docFields.date)} às {docFields.horaFato || '10:00'} | <strong>Local:</strong> {docFields.localFato || 'Dependências da EECM André Maggi'}.
+                            </p>
+                            <p>
+                              <strong>Enquadramento no Regulamento EECM:</strong> <span className="font-semibold text-rose-900">{docFields.itensEnquadramento || 'Falta grave regulamentar'}</span>.
+                            </p>
+                          </div>
+
+                          {/* Descrição do Fato */}
+                          <div className="space-y-2">
+                            <p className="font-black text-[11px] uppercase text-gray-900">3. Relato Sucinto e Circunstanciado dos Fatos</p>
+                            <div className="p-3 bg-white border border-gray-300 rounded-lg text-justify text-[11px] leading-relaxed">
+                              {docFields.descricaoFatoGrave || 'Fato disciplinar grave constatado nas dependências escolares, demandando apuração pelas autoridades competentes.'}
+                            </div>
+                          </div>
+
+                          {/* Testemunhas e Providências */}
+                          <div className="space-y-1.5 text-[11px]">
+                            <p><strong>Testemunhas / Servidores / Vítimas:</strong> {docFields.testemunhasEnvolvidos || 'Equipe escolar de serviço e testemunhas qualificadas na Ficha Disciplinar.'}</p>
+                            <p><strong>Providências Escolares Preliminares:</strong> {docFields.providenciasTomadas || 'Estudante acolhido e ouvido; Pais formalmente cientificados; Ficha de Medida Disciplinar lavrada; Objeto acautelado para perícia/entrega se aplicável.'}</p>
+                            {docFields.boNumero && (
+                              <p><strong>Boletim de Ocorrência Vinculado:</strong> B.O. Nº {docFields.boNumero} ({docFields.boStatus})</p>
+                            )}
+                          </div>
+
+                          {/* Requerimento Final */}
+                          <div className="space-y-2 pt-2">
+                            <p className="font-black text-[11px] uppercase text-gray-900">4. Requerimento e Medidas Solicitadas</p>
+                            <p>
+                              {docFields.medidasSolicitadas || 'Diante da gravidade dos fatos narrados, requer-se o registro e lavratura do Boletim de Ocorrência (B.O.), a instauração dos competentes procedimentos investigatórios de polícia judiciária e a adoção das providências protetivas e de segurança pertinentes.'}
+                            </p>
+                          </div>
+
+                          {/* Anexos */}
+                          <div className="text-[10px] text-gray-600 border-t border-gray-200 pt-2">
+                            <p><strong>Documentos Anexados:</strong> {docFields.anexosDocumentos || 'Cópia da Ficha de Medida Disciplinar; Relatório de Fato Observado; Extrato de Atitude Escolar'}</p>
+                          </div>
+                        </div>
+
+                        {/* Assinaturas Oficiais */}
+                        <div className="grid grid-cols-2 gap-8 text-xs text-gray-900 mt-12 mb-8">
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="font-bold uppercase mt-2 text-center text-[10px]">{docFields.gestorEducacional || 'DIRETOR(A) ESCOLAR'}</p>
+                            <p className="text-center text-[9px] text-gray-600">Direção da Unidade Escolar</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="font-bold uppercase mt-2 text-center text-[10px]">{docFields.gestorMilitar || 'GESTOR EDUCACIONAL MILITAR'}</p>
+                            <p className="text-center text-[9px] text-gray-600">Oficial de Gestão Educacional Militar</p>
+                          </div>
+                        </div>
+
+                        {/* Protocolo de Recebimento da Autoridade Policial */}
+                        <div className="mt-8 border-2 border-dashed border-gray-400 p-4 rounded-xl text-[10px] text-gray-900 bg-gray-50/60">
+                          <p className="font-black uppercase tracking-wider mb-2 text-center text-blue-900">PROTOCOLO DE RECEBIMENTO — AUTORIDADE POLICIAL</p>
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-4 flex items-end">
+                              <span className="font-bold mr-1">Data:</span>
+                              <span className="flex-1 border-b border-gray-400">____/____/________</span>
+                            </div>
+                            <div className="col-span-3 flex items-end">
+                              <span className="font-bold mr-1">Horário:</span>
+                              <span className="flex-1 border-b border-gray-400">____:____</span>
+                            </div>
+                            <div className="col-span-5 flex items-end">
+                              <span className="font-bold mr-1">B.O. Nº:</span>
+                              <span className="flex-1 border-b border-gray-400">________________________</span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mt-3">
+                            <div className="flex items-end">
+                              <span className="font-bold mr-1">Recebedor:</span>
+                              <span className="flex-1 border-b border-gray-400">________________________________</span>
+                            </div>
+                            <div className="flex items-end">
+                              <span className="font-bold mr-1">Matrícula / Cargo:</span>
+                              <span className="flex-1 border-b border-gray-400">________________________</span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : selectedDocTemplate === 'oficio_conselho_tutelar' ? (
+                      <>
+                        {/* OFÍCIO AO CONSELHO TUTELAR (ARTS. 22 §4º E 29 EECM / ECA) */}
+                        <div className="flex justify-between items-start my-6">
+                          <div>
+                            <p className="text-sm font-black text-gray-900 uppercase">
+                              OFÍCIO Nº {docFields.oficioNumber || nextOficioNumber || '001/2026 - EECM-AM'}
+                            </p>
+                            <p className="text-[11px] font-bold text-gray-600 mt-1">
+                              Assunto: Notificação de Ocorrência Escolar / Acompanhamento Protetivo (Arts. 22 e 29 EECM / ECA)
+                            </p>
+                          </div>
+                          <div className="text-right text-xs text-gray-600 font-bold">
+                            <p>{docFields.city ? docFields.city.split('-')[0].trim() : 'Colíder - MT'}, {formatDocDate(docFields.date)}.</p>
+                          </div>
+                        </div>
+
+                        {/* Endereçamento */}
+                        <div className="text-xs text-gray-900 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <p className="font-bold uppercase">Aos(Às) Ilustríssimos(as) Senhores(as):</p>
+                          <p className="font-black uppercase text-sm mt-0.5">{docFields.destinatarioOrgao || 'Membros do Conselho Tutelar do Município de Colíder - MT'}</p>
+                          <p className="text-gray-600 font-semibold">{docFields.cargoDestinatario || 'Conselho Tutelar Municipal'}</p>
+                          <p className="text-gray-600 font-semibold">{docFields.enderecoOrgao || 'Colíder - Estado de Mato Grosso'}</p>
+                        </div>
+
+                        {/* Corpo do Ofício */}
+                        <div className="text-xs text-gray-900 text-justify leading-relaxed space-y-4 mb-6">
+                          <p>
+                            <strong>Prezados(as) Conselheiros(as) Tutelares,</strong>
+                          </p>
+                          <p>
+                            Com os nossos cordiais cumprimentos, servimo-nos do presente para, com amparo no <strong>Artigo 22, § 4º e Artigo 29 do Regulamento Disciplinar das Escolas Estaduais Cívico-Militares do Estado de Mato Grosso</strong>, e em estrita consonância com os <strong>Artigos 18, 56 e 136 da Lei Federal nº 8.069/1990 (Estatuto da Criança e do Adolescente)</strong>, <strong>NOTIFICAR E ENCAMINHAR</strong> a este Órgão Protetivo a situação disciplinar e comportamental do(a) estudante abaixo identificado(a):
+                          </p>
+
+                          {/* Qualificação do Aluno */}
+                          <div className="bg-gray-50/70 p-3 rounded-lg border border-gray-200 space-y-1.5 font-sans">
+                            <p className="font-black text-[11px] uppercase text-purple-900 border-b border-gray-200 pb-1">1. Identificação do(a) Estudante e Responsáveis</p>
+                            <div className="grid grid-cols-2 gap-2 text-[11px]">
+                              <p><strong>Nome:</strong> <span className="uppercase">{selectedStudentForDoc?.Nome || docFields.studentName || 'Não informado'}</span></p>
+                              <p><strong>Matrícula:</strong> {selectedStudentForDoc?.CodigoAluno || '---'}</p>
+                              <p><strong>Turma / Turno:</strong> {selectedStudentForDoc?.Turma || docFields.series || '---'} ({selectedStudentForDoc?.Turno || 'MATUTINO'})</p>
+                              <p><strong>Data de Nasc.:</strong> {selectedStudentForDoc?.DataNascimento ? formatSimpleDate(selectedStudentForDoc.DataNascimento) : '---'}</p>
+                              <p><strong>Responsável Legal:</strong> <span className="uppercase">{selectedStudentForDoc?.NomeResponsavel || docFields.responsibleName || 'Responsável'}</span></p>
+                              <p><strong>Telefone / Endereço:</strong> {selectedStudentForDoc?.TelefoneContato || '---'} - {docFields.responsibleAddress || 'Colíder/MT'}</p>
+                            </div>
+                          </div>
+
+                          {/* Contexto dos Fatos */}
+                          <div className="space-y-2">
+                            <p className="font-black text-[11px] uppercase text-gray-900">2. Fatos Observados e Histórico de Conduta</p>
+                            <p>
+                              <strong>Data da Ocorrência:</strong> {formatDocDate(docFields.dataFato || docFields.date)} | <strong>Enquadramento:</strong> <span className="font-semibold text-purple-900">{docFields.itensEnquadramento || 'Falta Disciplinar Regulamentar'}</span>.
+                            </p>
+                            <div className="p-3 bg-white border border-gray-300 rounded-lg text-justify text-[11px] leading-relaxed">
+                              {docFields.descricaoFatoGrave || 'Ocorrência registrada no ambiente escolar indicando necessidade de intervenção e orientação psicossocial/protetiva.'}
+                            </div>
+                          </div>
+
+                          {/* Intervenções Escolares */}
+                          <div className="space-y-1.5 text-[11px]">
+                            <p><strong>Intervenções Pedagógicas já Realizadas:</strong> {docFields.providenciasTomadas || 'Atendimento com a Gestão Militar e Psicossocial; Comunicação com os pais; Aplicação de medidas educativas; Termo de Adequação de Conduta proposto/assinado.'}</p>
+                          </div>
+
+                          {/* Requerimento */}
+                          <div className="space-y-2 pt-2">
+                            <p className="font-black text-[11px] uppercase text-gray-900">3. Solicitação ao Conselho Tutelar</p>
+                            <p>
+                              {docFields.medidasSolicitadas || 'Solicita-se a este nobre Colegiado o acompanhamento protetivo do estudante e do seu núcleo familiar, a realização de visita técnica domiciliar e a aplicação das medidas de proteção de sua competência legal, visando à garantia integral do direito à educação e ao desenvolvimento saudável.'}
+                            </p>
+                          </div>
+
+                          {/* Anexos */}
+                          <div className="text-[10px] text-gray-600 border-t border-gray-200 pt-2">
+                            <p><strong>Documentos Anexados:</strong> {docFields.anexosDocumentos || 'Cópia da Ficha Disciplinar; Cópia do TACE; Relatório de Atendimento Psicossocial'}</p>
+                          </div>
+                        </div>
+
+                        {/* Assinaturas */}
+                        <div className="grid grid-cols-2 gap-8 text-xs text-gray-900 mt-12 mb-8">
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="font-bold uppercase mt-2 text-center text-[10px]">{docFields.gestorEducacional || 'DIRETOR(A) ESCOLAR'}</p>
+                            <p className="text-center text-[9px] text-gray-600">Direção da Unidade Escolar</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="font-bold uppercase mt-2 text-center text-[10px]">{docFields.gestorMilitar || 'GESTOR EDUCACIONAL MILITAR'}</p>
+                            <p className="text-center text-[9px] text-gray-600">Oficial de Gestão Educacional Militar</p>
+                          </div>
+                        </div>
+
+                        {/* Protocolo do Conselho Tutelar */}
+                        <div className="mt-8 border-2 border-dashed border-gray-400 p-4 rounded-xl text-[10px] text-gray-900 bg-gray-50/60">
+                          <p className="font-black uppercase tracking-wider mb-2 text-center text-purple-900">PROTOCOLO DE RECEBIMENTO — CONSELHO TUTELAR</p>
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-4 flex items-end">
+                              <span className="font-bold mr-1">Data:</span>
+                              <span className="flex-1 border-b border-gray-400">____/____/________</span>
+                            </div>
+                            <div className="col-span-3 flex items-end">
+                              <span className="font-bold mr-1">Horário:</span>
+                              <span className="flex-1 border-b border-gray-400">____:____</span>
+                            </div>
+                            <div className="col-span-5 flex items-end">
+                              <span className="font-bold mr-1">Protocolo Nº:</span>
+                              <span className="flex-1 border-b border-gray-400">________________________</span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mt-3">
+                            <div className="flex items-end">
+                              <span className="font-bold mr-1">Conselheiro(a) Recebedor(a):</span>
+                              <span className="flex-1 border-b border-gray-400">________________________________</span>
+                            </div>
+                            <div className="flex items-end">
+                              <span className="font-bold mr-1">Assinatura / Carimbo:</span>
+                              <span className="flex-1 border-b border-gray-400">________________________</span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : selectedDocTemplate === 'oficio_ministerio_publico' ? (
+                      <>
+                        {/* EXPEDIENTE À PROMOTORIA DA INFÂNCIA E JUVENTUDE / MP (ART. 26 EECM) */}
+                        <div className="flex justify-between items-start my-6">
+                          <div>
+                            <p className="text-sm font-black text-gray-900 uppercase">
+                              EXPEDIENTE/OFÍCIO Nº {docFields.oficioNumber || nextOficioNumber || '001/2026 - EECM-AM'}
+                            </p>
+                            <p className="text-[11px] font-bold text-gray-600 mt-1">
+                              Assunto: Comunicação de Recusa de TACE / Fatos Graves (Art. 26 do Regulamento EECM c/c ECA)
+                            </p>
+                          </div>
+                          <div className="text-right text-xs text-gray-600 font-bold">
+                            <p>{docFields.city ? docFields.city.split('-')[0].trim() : 'Colíder - MT'}, {formatDocDate(docFields.date)}.</p>
+                          </div>
+                        </div>
+
+                        {/* Endereçamento */}
+                        <div className="text-xs text-gray-900 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <p className="font-bold uppercase">Ao(À) Excelentíssimo(a) Senhor(a):</p>
+                          <p className="font-black uppercase text-sm mt-0.5">{docFields.destinatarioOrgao || 'Promotor(a) de Justiça da Infância e Juventude da Comarca de Colíder - MT'}</p>
+                          <p className="text-gray-600 font-semibold">{docFields.cargoDestinatario || 'Promotoria de Justiça da Infância e Juventude / Ministério Público do Estado de Mato Grosso'}</p>
+                          <p className="text-gray-600 font-semibold">{docFields.enderecoOrgao || 'Comarca de Colíder - MT'}</p>
+                        </div>
+
+                        {/* Corpo do Expediente */}
+                        <div className="text-xs text-gray-900 text-justify leading-relaxed space-y-4 mb-6">
+                          <p>
+                            <strong>Excelentíssimo(a) Senhor(a) Promotor(a) de Justiça,</strong>
+                          </p>
+                          <p>
+                            Ao cumprimentá-lo(a) respeitosamente, a Direção da <strong>Escola Estadual Cívico-Militar André Maggi</strong> vem, nos estritos termos do <strong>Artigo 26 do Regulamento Disciplinar das Escolas Estaduais Cívico-Militares (SEDUC-MT)</strong>, encaminhar a Vossa Excelência o presente expediente instruído com os registros disciplinares referentes ao(à) estudante abaixo qualificado(a):
+                          </p>
+
+                          {/* Qualificação do Aluno */}
+                          <div className="bg-gray-50/70 p-3 rounded-lg border border-gray-200 space-y-1.5 font-sans">
+                            <p className="font-black text-[11px] uppercase text-red-900 border-b border-gray-200 pb-1">1. Qualificação do Estudante e Responsáveis Legais</p>
+                            <div className="grid grid-cols-2 gap-2 text-[11px]">
+                              <p><strong>Nome:</strong> <span className="uppercase">{selectedStudentForDoc?.Nome || docFields.studentName || 'Não informado'}</span></p>
+                              <p><strong>Matrícula / R.A.:</strong> {selectedStudentForDoc?.CodigoAluno || '---'}</p>
+                              <p><strong>Turma / Turno:</strong> {selectedStudentForDoc?.Turma || docFields.series || '---'} ({selectedStudentForDoc?.Turno || 'MATUTINO'})</p>
+                              <p><strong>Data de Nasc.:</strong> {selectedStudentForDoc?.DataNascimento ? formatSimpleDate(selectedStudentForDoc.DataNascimento) : '---'}</p>
+                              <p><strong>Responsável Legal:</strong> <span className="uppercase">{selectedStudentForDoc?.NomeResponsavel || docFields.responsibleName || 'Responsável'}</span></p>
+                              <p><strong>Telefone / Contato:</strong> {selectedStudentForDoc?.TelefoneContato || '---'}</p>
+                            </div>
+                          </div>
+
+                          {/* Certificação da Recusa / Não Anuência (Art. 26) */}
+                          <div className="bg-red-50/60 p-3 rounded-lg border border-red-200 space-y-1 text-[11px]">
+                            <p className="font-black uppercase text-red-800">2. Certificação de Recusa / Não Anuência dos Responsáveis (Art. 26)</p>
+                            <p className="text-justify">
+                              {docFields.recusaPaisMotivo || 'Certifica-se formalmente que, devidamente convocados pela Direção Escolar e Gestão Militar, os pais/responsáveis legais recusaram-se a anuir aos termos do Termo de Adequação de Conduta Escolar (TACE) ou houve recusa na execução das medidas pedagógicas e disciplinares propostas, ensejando a remessa obrigatória à Promotoria da Infância e Juventude.'}
+                            </p>
+                          </div>
+
+                          {/* Fatos Ocorridos */}
+                          <div className="space-y-2">
+                            <p className="font-black text-[11px] uppercase text-gray-900">3. Fatos Disciplinares e Enquadramento Regulamentar</p>
+                            <p>
+                              <strong>Falta Disciplinar:</strong> <span className="font-semibold text-red-900">{docFields.itensEnquadramento || 'Falta grave regulamentar'}</span>.
+                            </p>
+                            <div className="p-3 bg-white border border-gray-300 rounded-lg text-justify text-[11px] leading-relaxed">
+                              {docFields.descricaoFatoGrave || 'Fatos apurados no procedimento disciplinar escolar que fundamentaram a propositura das medidas pedagógicas.'}
+                            </div>
+                          </div>
+
+                          {/* Requerimento Ministerial */}
+                          <div className="space-y-2 pt-2">
+                            <p className="font-black text-[11px] uppercase text-gray-900">4. Requerimento Ministerial</p>
+                            <p>
+                              {docFields.medidasSolicitadas || 'Requer-se a intervenção do Ministério Público Estadual para a adoção das providências ministeriais e judiciais cabíveis, inclusive quanto à advertência e responsabilização dos genitores/responsáveis legais (Art. 249 do ECA) e aplicação de medidas socioeducativas ou protetivas pertinentes.'}
+                            </p>
+                          </div>
+
+                          {/* Anexos Obrigatórios do Art. 26 */}
+                          <div className="text-[10px] text-gray-700 bg-gray-100 p-2.5 rounded-lg border border-gray-300 space-y-0.5">
+                            <p className="font-bold uppercase text-gray-900">Instrução Documental (Artigo 26, Incisos I a III do Regulamento EECM):</p>
+                            <p>• I - Cópia integral do Registro de Ocorrência Escolar;</p>
+                            <p>• II - Cópia do Termo de Adequação de Conduta Escolar (TACE) não anuído;</p>
+                            <p>• III - Certificação formal de recusa na execução da ação educativa.</p>
+                          </div>
+                        </div>
+
+                        {/* Assinaturas Oficiais */}
+                        <div className="grid grid-cols-2 gap-8 text-xs text-gray-900 mt-12 mb-8">
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="font-bold uppercase mt-2 text-center text-[10px]">{docFields.gestorEducacional || 'DIRETOR(A) ESCOLAR'}</p>
+                            <p className="text-center text-[9px] text-gray-600">Direção da Unidade Escolar</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="border-t border-black w-full"></div>
+                            <p className="font-bold uppercase mt-2 text-center text-[10px]">{docFields.gestorMilitar || 'GESTOR EDUCACIONAL MILITAR'}</p>
+                            <p className="text-center text-[9px] text-gray-600">Oficial de Gestão Educacional Militar</p>
+                          </div>
+                        </div>
+
+                        {/* Protocolo do Ministério Público */}
+                        <div className="mt-8 border-2 border-dashed border-gray-400 p-4 rounded-xl text-[10px] text-gray-900 bg-gray-50/60">
+                          <p className="font-black uppercase tracking-wider mb-2 text-center text-red-900">PROTOCOLO DE RECEBIMENTO — MINISTÉRIO PÚBLICO DO ESTADO DE MATO GROSSO</p>
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-4 flex items-end">
+                              <span className="font-bold mr-1">Data:</span>
+                              <span className="flex-1 border-b border-gray-400">____/____/________</span>
+                            </div>
+                            <div className="col-span-3 flex items-end">
+                              <span className="font-bold mr-1">Horário:</span>
+                              <span className="flex-1 border-b border-gray-400">____:____</span>
+                            </div>
+                            <div className="col-span-5 flex items-end">
+                              <span className="font-bold mr-1">SIMP / Protocolo Nº:</span>
+                              <span className="flex-1 border-b border-gray-400">________________________</span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mt-3">
+                            <div className="flex items-end">
+                              <span className="font-bold mr-1">Servidor(a) Recebedor(a):</span>
+                              <span className="flex-1 border-b border-gray-400">________________________________</span>
+                            </div>
+                            <div className="flex items-end">
+                              <span className="font-bold mr-1">Matrícula / Cargo:</span>
+                              <span className="flex-1 border-b border-gray-400">________________________</span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     ) : null}
                   </div>
                 )}
@@ -5089,6 +5922,83 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                       </div>
                     )}
 
+                    {/* ALERTA DE ENCAMINHAMENTO INSTITUCIONAL NO MODAL (B.O. / CONSELHO TUTELAR / MP) */}
+                    {externalReferralReport && (
+                      <div className="p-3.5 rounded-2xl border bg-gradient-to-br from-red-50 via-rose-50 to-amber-50 border-red-200 ring-1 ring-red-300 space-y-2.5 animate-fadeIn">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <ShieldAlert size={15} className="text-red-600 animate-pulse" />
+                            <span className="text-[9px] font-black uppercase tracking-wider text-red-950">
+                              🚨 Encaminhamento Institucional Externo
+                            </span>
+                          </div>
+                          <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase bg-red-600 text-white">
+                            {externalReferralReport.urgencyLevel}
+                          </span>
+                        </div>
+
+                        <div className="bg-white/95 p-2.5 rounded-xl border border-red-200 text-slate-700 text-[10px] space-y-1.5">
+                          <p className="font-semibold text-slate-800">
+                            Base Legal: <span className="text-red-700 font-bold">{externalReferralReport.legalSummary}</span>
+                          </p>
+
+                          <div className="space-y-1 text-[9px] text-slate-600">
+                            {externalReferralReport.requiresPolice && (
+                              <p><strong>🚓 Polícia (Art. 29):</strong> {externalReferralReport.policeRationale}</p>
+                            )}
+                            {externalReferralReport.requiresConselhoTutelar && (
+                              <p><strong>🛡️ Conselho Tutelar:</strong> {externalReferralReport.conselhoRationale}</p>
+                            )}
+                            {externalReferralReport.requiresMinisterioPublico && (
+                              <p><strong>⚖️ Ministério Público (Art. 26):</strong> {externalReferralReport.mpRationale}</p>
+                            )}
+                          </div>
+
+                          <div className="pt-1.5 border-t border-slate-100 flex flex-wrap gap-1.5">
+                            {externalReferralReport.requiresPolice && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                                      INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
+                                  handleGenerateExternalReferralDoc('oficio_policia', studentFull, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
+                                }}
+                                className="px-2 py-1 rounded-lg text-[8px] font-black uppercase bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 shadow-xs transition-all"
+                              >
+                                <FileText size={10} /> Ofício p/ B.O.
+                              </button>
+                            )}
+                            {externalReferralReport.requiresConselhoTutelar && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                                      INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
+                                  handleGenerateExternalReferralDoc('oficio_conselho_tutelar', studentFull, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
+                                }}
+                                className="px-2 py-1 rounded-lg text-[8px] font-black uppercase bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1 shadow-xs transition-all"
+                              >
+                                <FileText size={10} /> Conselho Tutelar
+                              </button>
+                            )}
+                            {externalReferralReport.requiresMinisterioPublico && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                                      INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
+                                  handleGenerateExternalReferralDoc('oficio_ministerio_publico', studentFull, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
+                                }}
+                                className="px-2 py-1 rounded-lg text-[8px] font-black uppercase bg-rose-700 hover:bg-rose-800 text-white flex items-center gap-1 shadow-xs transition-all"
+                              >
+                                <FileText size={10} /> Expediente MP
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Medida Disciplinar Aplicada</label>
                       <select
@@ -5198,14 +6108,32 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <span>Monitor: {occ.responsible.split(' ')[0]}</span>
                         <div className="flex items-center gap-3">
                           {occ.type === 'DEMERIT' && (
-                             <button
-                               type="button"
-                               onClick={() => handleGenerateMeasureDoc(occ, selectedStudentState.studentId)}
-                               className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-                               title="Gerar Ficha de Medida Disciplinar"
-                             >
-                               <FileText size={10} /> Gerar Ficha
-                             </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateMeasureDoc(occ, selectedStudentState.studentId)}
+                                className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-black"
+                                title="Gerar Ficha de Medida Disciplinar"
+                              >
+                                <FileText size={10} /> Ficha
+                              </button>
+                              {getOccurrenceSeverity(occ) === 'GRAVE' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                                        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
+                                    const ref = getExternalReferralRecommendation({ category: occ.category, studentScore: selectedStudentState.score });
+                                    const template = ref.requiresPolice ? 'oficio_policia' : ref.requiresMinisterioPublico ? 'oficio_ministerio_publico' : 'oficio_conselho_tutelar';
+                                    handleGenerateExternalReferralDoc(template, studentFull, occ.category, occ.observations);
+                                  }}
+                                  className="text-rose-600 hover:text-rose-800 flex items-center gap-1 font-black"
+                                  title="Gerar Ofício Institucional Externo (Polícia/Conselho/MP)"
+                                >
+                                  <Scale size={10} /> Ofício
+                                </button>
+                              )}
+                            </>
                           )}
                           <button
                             type="button"
