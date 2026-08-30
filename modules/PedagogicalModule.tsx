@@ -40,7 +40,8 @@ import {
   Filter,
   Music,
   Printer,
-  ChevronDown
+  ChevronDown,
+  Send
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ClassroomObservation, PedagogicalProject, LessonPlan, Assessment, PedagogicalIntervention } from '../types';
@@ -74,8 +75,6 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const [riskFilter, setRiskFilter] = useState<'ALL' | 'GRADES' | 'ATTENDANCE'>('ALL');
-
   const [filterTurma, setFilterTurma] = useState<string>('');
   const [filterStudent, setFilterStudent] = useState<string>('');
   const [filterSubject, setFilterSubject] = useState<string>('');
@@ -91,11 +90,6 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   const [aiLoading, setAiLoading] = useState(false);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, { total: number, present: number, name: string, className: string }>>({});
   const [interventions, setInterventions] = useState<PedagogicalIntervention[]>([]);
-  const [activeBuscaAtivaIds, setActiveBuscaAtivaIds] = useState<Set<string>>(new Set());
-  const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
-  const [interventionStudent, setInterventionStudent] = useState<{name: string, className: string} | null>(null);
-  const [newIntervention, setNewIntervention] = useState({ reason: '', action_plan: '', deadline: '', status: 'EM_ANDAMENTO' as 'EM_ANDAMENTO' | 'AGUARDANDO_FAMILIA' | 'RESOLVIDO' });
-  const [isSavingIntervention, setIsSavingIntervention] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -342,23 +336,39 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
     }
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Monitor Pedagógico 360°', icon: LayoutDashboard },
-    { id: 'performance', label: 'Radar de Alunos em Risco', icon: AlertTriangle, highlight: true },
-    { id: 'aee_special_education', label: 'Educação Especial (PAEDE)', icon: BrainCircuit },
-    { id: 'educarte', label: 'Supervisão Banda Educarte', icon: Music },
-    { id: 'plans', label: 'Validar Roteiros Pedagógicos', icon: FileCheck },
-    { id: 'occurrences', label: 'Livro de Ocorrências', icon: BookOpen },
-    { id: 'observations', label: 'Observação de Aula', icon: Eye },
-    { id: 'class_council', label: 'Conselho de Classe', icon: Users },
-    { id: 'external_grades', label: 'Avaliações Externas (CAED)', icon: FileBarChart },
-    { id: 'referrals', label: 'Encaminhamentos', icon: FileSpreadsheet },
-    { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
-    { id: 'atas', label: 'Registro de Atas', icon: FileSpreadsheet },
-    { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
-    { id: 'schedules', label: 'Horários (Cronos)', icon: Clock },
-    { id: 'projects', label: 'Projetos da Escola', icon: Rocket },
-    { id: 'ia_insights', label: 'IA Estratégica', icon: Sparkles },
+  // ESTRUTURA ORGANIZADA E CATEGORIZADA DOS SUBMÓDULOS
+  const menuSections = [
+    {
+      category: 'DIAGNÓSTICO & ACOMPANHAMENTO',
+      items: [
+        { id: 'dashboard', label: 'Monitor Pedagógico 360°', icon: LayoutDashboard },
+        { id: 'performance', label: 'Radar de Alunos em Risco', icon: AlertTriangle, highlight: true },
+        { id: 'aee_special_education', label: 'Educação Especial (PAEDE)', icon: BrainCircuit },
+        { id: 'educarte', label: 'Supervisão Banda Educarte', icon: Music },
+        { id: 'external_grades', label: 'Avaliações Externas (CAED)', icon: FileBarChart },
+        { id: 'ia_insights', label: 'Diagnóstico Estratégico IA', icon: Sparkles },
+      ]
+    },
+    {
+      category: 'ROTINA DA SALA DE AULA',
+      items: [
+        { id: 'plans', label: 'Roteiros de Aula (BNCC)', icon: FileCheck },
+        { id: 'occurrences', label: 'Livro de Ocorrências', icon: BookOpen },
+        { id: 'observations', label: 'Observação de Aula', icon: Eye },
+        { id: 'class_council', label: 'Conselho de Classe', icon: Users },
+        { id: 'schedules', label: 'Quadro de Horários (Cronos)', icon: Clock },
+        { id: 'calendar', label: 'Calendário Escolar', icon: CalendarDays },
+      ]
+    },
+    {
+      category: 'DOCUMENTAÇÃO & PROJETOS',
+      items: [
+        { id: 'atas', label: 'Registro e Lavratura de Atas', icon: FileSpreadsheet },
+        { id: 'oficios', label: 'Ofícios Expedidos', icon: FileText },
+        { id: 'referrals', label: 'Encaminhamentos à Rede', icon: Send },
+        { id: 'projects', label: 'Projetos da Escola', icon: Rocket },
+      ]
+    }
   ];
 
   const renderContent = () => {
@@ -716,8 +726,8 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
       
-      {/* SIDEBAR MODERNA DA COORDENAÇÃO (Slate Escuro / Indigo) */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} border-r border-white/10 shadow-2xl`}>
+      {/* SIDEBAR MODERNA E ORGANIZADA DA COORDENAÇÃO */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-80 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} border-r border-white/10 shadow-2xl`}>
         
         {/* LOGO & CABEÇALHO DA SIDEBAR */}
         <div className="p-6 flex items-center justify-between border-b border-white/10">
@@ -739,28 +749,42 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
           </button>
         </div>
 
-        {/* LISTA DE SUBMÓDULOS */}
-        <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {menuItems.map(item => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id as TabType);
-                  setIsSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all text-left ${
-                  isActive
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25'
-                    : 'text-slate-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <item.icon size={17} className={isActive ? 'text-white' : 'text-purple-300'} />
-                <span className="truncate">{item.label}</span>
-              </button>
-            );
-          })}
+        {/* LISTA DE SUBMÓDULOS COM GRUPOS CATEGORIZADOS */}
+        <nav className="flex-1 px-3.5 py-3 space-y-4 overflow-y-auto custom-scrollbar">
+          {menuSections.map((section, sIdx) => (
+            <div key={sIdx} className="space-y-1">
+              <div className="px-3 pt-2 pb-1 text-[9px] font-black text-purple-300/80 uppercase tracking-widest">
+                {section.category}
+              </div>
+              <div className="space-y-1">
+                {section.items.map(item => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id as TabType);
+                        setIsSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all text-left group ${
+                        isActive
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25'
+                          : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <item.icon size={16} className={`shrink-0 ${isActive ? 'text-white' : 'text-purple-300 group-hover:text-white'}`} />
+                        <span className="leading-snug">{item.label}</span>
+                      </div>
+                      {item.highlight && !isActive && (
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0 ml-1" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* RODAPÉ DA SIDEBAR */}
