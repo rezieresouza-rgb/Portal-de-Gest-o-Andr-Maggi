@@ -224,7 +224,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     // Fato Observado fields
     series: '',
     discipline: '',
-    teacher: user ? user.name : '',
+    teacher: '',
     achado: '',
     monitor: 'Monitor Silva',
     recebidoDate: new Date().toISOString().split('T')[0],
@@ -1356,7 +1356,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       achado: occ.observations,
       date: new Date().toISOString().split('T')[0],
       city: 'Colíder - MT',
-      teacher: user?.name || '',
+      teacher: '',
       monitor: occ.responsible,
       atenuantes: '',
       agravantes: occ.isEscalated ? 'Reincidência' : ''
@@ -1589,7 +1589,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       date: new Date().toISOString().split('T')[0],
       series: '',
       discipline: '',
-      teacher: user ? user.name : '',
+      teacher: '',
       achado: '',
       monitor: 'Monitor Silva',
       recebidoDate: new Date().toISOString().split('T')[0],
