@@ -938,16 +938,16 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
       {/* MODAL DE IMPRESSÃO / VISUALIZAÇÃO DO OFÍCIO FORMAL (TIMBRADO SEDUC/MT) */}
       {printingOficio && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
-          <div className="print-oficio-area bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 print:border-none print:shadow-none print:m-0 print:w-full print:max-w-none print:rounded-none">
+        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md overflow-y-auto p-4 md:p-8 flex justify-center items-start print:hidden">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 my-4">
             
-            {/* Header de Controle (Não sai na impressão) */}
-            <div className="p-6 bg-slate-900 text-white flex justify-between items-center print:hidden">
+            {/* Header de Controle (Fixo no Topo do Modal) */}
+            <div className="p-6 bg-slate-900 text-white flex justify-between items-center sticky top-0 z-20 shadow-md">
               <div className="flex items-center gap-3">
                 <span className="font-mono text-xs font-black bg-indigo-600 px-3 py-1 rounded-lg">
                   OFÍCIO Nº {printingOficio.formatted_number}
                 </span>
-                <span className="text-xs font-bold uppercase text-slate-300">Visualização de Impressão Oficial A4</span>
+                <span className="text-xs font-bold uppercase text-slate-300 hidden sm:inline">Visualização Oficial A4</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -956,7 +956,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                     onClick={() => handleOpenSignModal(printingOficio)}
                     className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95"
                   >
-                    <KeyRound size={14} /> Assinar com Senha / Selo Digital
+                    <KeyRound size={14} /> Assinar
                   </button>
                 )}
 
@@ -976,8 +976,8 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               </div>
             </div>
 
-            {/* FOLHA A4 TIMBRADA OFICIAL */}
-            <div className="pdf-oficio-page p-8 sm:p-14 bg-white text-black min-h-[275mm] flex flex-col justify-between" style={{ fontFamily: 'Times New Roman, Georgia, serif' }}>
+            {/* FOLHA A4 VISUALIZADA NA TELA */}
+            <div className="p-8 sm:p-14 bg-white text-black min-h-[275mm] flex flex-col justify-between" style={{ fontFamily: 'Times New Roman, Georgia, serif' }}>
               
               <div className="flex-1 flex flex-col justify-start pb-6">
                 
@@ -1075,8 +1075,8 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 )}
               </div>
 
-              {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar Fixado na Parte Inferior */}
-              <div className="print-oficio-footer mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+              {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar */}
+              <div className="mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
                 <div className="text-left space-y-0.5">
                   <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
                   <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
@@ -1094,9 +1094,131 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         </div>
       )}
 
+      {/* ÁREA DE IMPRESSÃO PURA (Ativada exclusivamente no @media print) */}
+      {printingOficio && (
+        <div className="print-oficio-area">
+          <div className="pdf-oficio-page p-8 sm:p-14 bg-white text-black min-h-[275mm] flex flex-col justify-between" style={{ fontFamily: 'Times New Roman, Georgia, serif' }}>
+            
+            <div className="flex-1 flex flex-col justify-start pb-6">
+              
+              {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita */}
+              <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
+                <img 
+                  src="/brasao_mt.png" 
+                  alt="Brasão do Estado de Mato Grosso" 
+                  className="h-20 sm:h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                  onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+                />
+                <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                  <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                  <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                  <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                  <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                  <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
+                </div>
+                <img 
+                  src="/logo-escola-oficial.png" 
+                  alt="Escola Cívico-Militar" 
+                  className="h-20 sm:h-24 w-auto object-contain shrink-0 max-h-[105px]" 
+                  onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+                />
+              </div>
+
+              {/* Número do Ofício Formatado (Alinhado à ESQUERDA) */}
+              <div className="text-left mb-3">
+                <p className="text-sm font-bold uppercase font-mono text-black">
+                  OFÍCIO Nº {printingOficio.formatted_number}
+                </p>
+              </div>
+
+              {/* Cidade e Data (Alinhado à Direita) */}
+              <div className="text-right mb-4 text-sm text-black">
+                <p>{printingOficio.city_date}</p>
+              </div>
+
+              {/* Dados do Destinatário */}
+              <div className="mb-4 text-sm space-y-0.5 text-black font-normal">
+                <p className="font-bold">Ao(À) Senhor(a):</p>
+                <p className="uppercase text-base font-bold">{printingOficio.recipient_name}</p>
+                {printingOficio.recipient_role && <p className="uppercase font-normal">{printingOficio.recipient_role}</p>}
+                {printingOficio.recipient_org && <p className="uppercase font-normal">{printingOficio.recipient_org}</p>}
+              </div>
+
+              {/* Assunto */}
+              <div className="mb-4 text-sm text-black">
+                <p className="font-bold">
+                  Assunto: <span className="underline">{printingOficio.title_subject}</span>
+                </p>
+              </div>
+
+              {/* Vocativo Inicial */}
+              <div className="mb-3 text-sm font-normal text-black">
+                <p>{printingOficio.salutation}</p>
+              </div>
+
+              {/* Corpo do Texto Principal */}
+              <div className="mb-6 text-[14px] leading-relaxed text-justify space-y-3 text-black font-normal">
+                {printingOficio.body_text.split('\n\n').map((paragraph, idx) => (
+                  <p key={idx} style={{ textIndent: '1.5rem' }}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              {/* Fecho de Cortesia */}
+              <div className="mb-6 text-sm text-black font-normal">
+                <p>{printingOficio.closure_text}</p>
+              </div>
+
+              {/* ASSINATURA ELETRÔNICA OFICIAL / CARIMBO OU LINHA FÍSICA */}
+              {printingOficio.signatures && printingOficio.signatures.length > 0 ? (
+                <div className="my-6 space-y-4">
+                  {printingOficio.signatures.map((sig, idx) => (
+                    <ElectronicSignatureStamp key={idx} signature={sig} />
+                  ))}
+                </div>
+              ) : (
+                (() => {
+                  const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
+                  const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
+                  return (
+                    <div className="text-center w-2/3 mx-auto pt-6 text-black" style={{ color: '#000000' }}>
+                      <div className="border-t border-black pt-1.5">
+                        <p className="font-bold uppercase text-sm text-black" style={{ color: '#000000' }}>{printingOficio.signatory_name}</p>
+                        <p className="text-xs uppercase text-black font-medium" style={{ color: '#000000' }}>{matchedRole}</p>
+                        <p className="text-[10px] text-black font-medium uppercase mt-0.5" style={{ color: '#000000' }}>EE Cívico-Militar André Antônio Maggi</p>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+
+            {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar Fixado no Fundo da Folha A4 */}
+            <div className="print-oficio-footer mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+              <div className="text-left space-y-0.5">
+                <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
+                <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
+                <p>Site: www.seduc.mt.gov.br</p>
+              </div>
+              <div className="text-left space-y-0.5 pl-6">
+                <p>Rua Borba Gato, nº 80, Bairro Torre</p>
+                <p>CEP: 78500-000 – Colíder-MT Fones +55 (66) 99682-7608</p>
+                <p>Email: escola.158330@edu.mt.gov.br</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Estilos CSS de Impressão Oficial do Ofício */}
       <style dangerouslySetInnerHTML={{
         __html: `
+        @media screen {
+          .print-oficio-area { display: none !important; }
+        }
         @media print {
           @page {
             size: A4 portrait;
