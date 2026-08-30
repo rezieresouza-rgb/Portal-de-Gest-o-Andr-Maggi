@@ -36,7 +36,10 @@ import {
   HeartHandshake,
   Send,
   FileSpreadsheet,
-  ShieldAlert
+  ShieldAlert,
+  RotateCcw,
+  History,
+  Layers
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
@@ -319,6 +322,139 @@ export const getExternalReferralRecommendation = (params: {
   };
 };
 
+export interface RecidivismAnalysis {
+  totalDemerits: number;
+  specificRecurrences: { category: string; count: number; severity: 'LEVE' | 'MÉDIA' | 'GRAVE' }[];
+  recidivismLevel: 1 | 2 | 3 | 4;
+  recidivismLevelLabel: string;
+  recidivismLevelBadge: string;
+  hasSpecificRecurrence: boolean;
+  currentRecurrenceCount: number;
+  recommendedEscalation?: string;
+  recommendedDays?: number;
+  requiresFamilySummons: boolean;
+  requiresTACE: boolean;
+  requiresCouncil: boolean;
+  pedagogicalAdvice: string;
+}
+
+export const analyzeStudentRecidivism = (
+  student: { score: number; occurrences?: { type: string; category: string; categories?: string[]; date: string; disciplinaryMeasure?: string }[] } | null | undefined,
+  currentCategory?: string
+): RecidivismAnalysis => {
+  if (!student || !student.occurrences) {
+    return {
+      totalDemerits: 0,
+      specificRecurrences: [],
+      recidivismLevel: 1,
+      recidivismLevelLabel: 'Atenção Inicial',
+      recidivismLevelBadge: 'bg-slate-100 text-slate-700 border-slate-200',
+      hasSpecificRecurrence: false,
+      currentRecurrenceCount: 0,
+      requiresFamilySummons: false,
+      requiresTACE: false,
+      requiresCouncil: false,
+      pedagogicalAdvice: 'Aluno sem histórico de faltas anteriores.'
+    };
+  }
+
+  const demerits = student.occurrences.filter(o => o.type === 'DEMERIT' || (o.type as any) === 'demerit');
+  const totalDemerits = demerits.length;
+
+  // Contagem por categoria
+  const catCountMap = new Map<string, number>();
+  for (const dem of demerits) {
+    const cats = dem.categories && dem.categories.length > 0 ? dem.categories : [dem.category];
+    for (const c of cats) {
+      if (!c) continue;
+      catCountMap.set(c, (catCountMap.get(c) || 0) + 1);
+    }
+  }
+
+  const specificRecurrences: { category: string; count: number; severity: 'LEVE' | 'MÉDIA' | 'GRAVE' }[] = [];
+  catCountMap.forEach((count, cat) => {
+    if (count >= 1) {
+      const sev = getOccurrenceSeverity({ type: 'DEMERIT', category: cat }) as 'LEVE' | 'MÉDIA' | 'GRAVE';
+      specificRecurrences.push({ category: cat, count, severity: sev });
+    }
+  });
+
+  // Ordenar por maior contagem
+  specificRecurrences.sort((a, b) => b.count - a.count);
+
+  let currentRecurrenceCount = 0;
+  if (currentCategory) {
+    const found = specificRecurrences.find(r => r.category === currentCategory || currentCategory.includes(r.category) || r.category.includes(currentCategory));
+    currentRecurrenceCount = found ? found.count : 0;
+  }
+  const hasSpecificRecurrence = currentRecurrenceCount >= 1;
+
+  // Determinar Nível de Reincidência
+  const score = student.score;
+  let level: 1 | 2 | 3 | 4 = 1;
+  let levelLabel = 'Nível 1: Atenção Inicial';
+  let levelBadge = 'bg-blue-50 text-blue-700 border-blue-200';
+  let advice = 'Orientação verbal e registro disciplinar padrão (Art. 14).';
+  let reqSummons = false;
+  let reqTACE = false;
+  let reqCouncil = false;
+
+  if (score < 2.0 || totalDemerits >= 6 || specificRecurrences.some(r => r.severity === 'GRAVE' && r.count >= 2)) {
+    level = 4;
+    levelLabel = 'Nível 4: Conselho Disciplinar';
+    levelBadge = 'bg-red-600 text-white border-red-700 shadow-sm animate-pulse';
+    reqCouncil = true;
+    reqTACE = true;
+    reqSummons = true;
+    advice = 'Reincidência crítica e comportamento Incompatível (< 2,0). Exige convocação formal do Conselho de Ensino Disciplinar (Art. 30 e 54) e comunicação ao Ministério Público (Art. 26).';
+  } else if (score < 5.0 || totalDemerits >= 3 || specificRecurrences.some(r => r.severity === 'MÉDIA' && r.count >= 2) || specificRecurrences.some(r => r.severity === 'GRAVE')) {
+    level = 3;
+    levelLabel = 'Nível 3: TACE Obrigatório (Art. 22)';
+    levelBadge = 'bg-rose-50 text-rose-800 border-rose-300';
+    reqTACE = true;
+    reqSummons = true;
+    advice = 'Reincidência qualificada / Comportamento Insuficiente. Celebração obrigatória do Termo de Ajustamento de Conduta Escolar (Art. 22) e envio de cópia ao Conselho Tutelar (Art. 22 §4º).';
+  } else if (score < 7.0 || totalDemerits >= 2 || specificRecurrences.some(r => r.count >= 2)) {
+    level = 2;
+    levelLabel = 'Nível 2: Convocação Familiar';
+    levelBadge = 'bg-amber-50 text-amber-800 border-amber-300';
+    reqSummons = true;
+    advice = 'Reincidência detectada (Arts. 15 e 16). Exige notificação e convocação presencial dos responsáveis legais com a Gestão Educacional Militar.';
+  }
+
+  // Recomendação de Elevação da Medida
+  let recommendedEscalation: string | undefined = undefined;
+  let recommendedDays: number | undefined = undefined;
+  if (currentCategory) {
+    const curSeverity = getOccurrenceSeverity({ type: 'DEMERIT', category: currentCategory });
+    if (curSeverity === 'LEVE' && hasSpecificRecurrence) {
+      recommendedEscalation = 'Advertência Escrita (Elevação por Reincidência - Art. 15)';
+    } else if (curSeverity === 'MÉDIA' && hasSpecificRecurrence) {
+      recommendedEscalation = 'Suspensão de Sala de Aula (Elevação por Reincidência - Art. 16)';
+      recommendedDays = 1;
+    } else if (curSeverity === 'GRAVE' && hasSpecificRecurrence) {
+      recommendedEscalation = 'Suspensão de Sala de Aula com Abertura de Conselho (Art. 16 e 30)';
+      recommendedDays = 3;
+    }
+  }
+
+  return {
+    totalDemerits,
+    specificRecurrences,
+    recidivismLevel: level,
+    recidivismLevelLabel: levelLabel,
+    recidivismLevelBadge: levelBadge,
+    hasSpecificRecurrence,
+    currentRecurrenceCount,
+    recommendedEscalation,
+    recommendedDays,
+    requiresFamilySummons: reqSummons,
+    requiresTACE: reqTACE,
+    requiresCouncil: reqCouncil,
+    pedagogicalAdvice: advice
+  };
+};
+
 export const CivicoMilitarLogoBadge: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl', showLabel?: boolean }> = ({ size = 'md', showLabel = false }) => {
   const badgeClasses = 
     size === 'sm' ? 'w-9 h-9' :
@@ -425,11 +561,15 @@ interface CivicRoutineRecord {
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
   // 1. TODOS OS ESTADOS (useState) DECLARADOS NO TOPO PARA EVITAR ERROS DE INICIALIZAÇÃO (TDZ)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('ALL');
+
+  // Radar de Reincidência States
+  const [recidivismFilter, setRecidivismFilter] = useState<'ALL' | '1' | '2' | '3' | '4'>('ALL');
+  const [recidivismSearchTerm, setRecidivismSearchTerm] = useState('');
 
   // Mediação Escolar States
   const [isMediationModalOpen, setIsMediationModalOpen] = useState(false);
@@ -629,19 +769,32 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     return studentStates.find(s => s.id === selectedStudentForDoc.CodigoAluno || s.name === selectedStudentForDoc.Nome) || null;
   }, [studentStates, selectedStudentForDoc]);
 
+  const docRecidivismAnalysis = useMemo(() => {
+    if (selectedDocTemplate !== 'ficha_medida_disciplinar' || !selectedStudentBehaviorState || !docFields.itensEnquadramento) {
+      return null;
+    }
+    return analyzeStudentRecidivism(selectedStudentBehaviorState, docFields.itensEnquadramento);
+  }, [selectedDocTemplate, selectedStudentBehaviorState, docFields.itensEnquadramento]);
+
   const suggestedMeasureReport = useMemo(() => {
     if (selectedDocTemplate !== 'ficha_medida_disciplinar' || !docFields.itensEnquadramento) {
       return null;
     }
-    const prevCount = selectedStudentBehaviorState?.occurrences ? selectedStudentBehaviorState.occurrences.filter(o => o.type === 'demerit').length : 0;
+    const prevCount = selectedStudentBehaviorState?.occurrences ? selectedStudentBehaviorState.occurrences.filter(o => o.type === 'demerit' || (o.type as any) === 'DEMERIT').length : 0;
+    const isSpecificRecidivist = docRecidivismAnalysis?.hasSpecificRecurrence || false;
+    let effectiveAgravantes = docFields.agravantes || '';
+    if (isSpecificRecidivist && !effectiveAgravantes.includes('III')) {
+      effectiveAgravantes = effectiveAgravantes ? `${effectiveAgravantes}; III - Ser reincidente em falta disciplinar de mesma classificação (Art. 35, III)` : 'III - Ser reincidente em falta disciplinar de mesma classificação (Art. 35, III)';
+    }
+
     return getEECMSuggestedMeasure({
       itemCategory: docFields.itensEnquadramento,
       atenuantes: docFields.atenuantes,
-      agravantes: docFields.agravantes,
+      agravantes: effectiveAgravantes,
       studentScore: selectedStudentBehaviorState?.score,
       previousInfractionsCount: prevCount
     });
-  }, [selectedDocTemplate, docFields.itensEnquadramento, docFields.atenuantes, docFields.agravantes, selectedStudentBehaviorState]);
+  }, [selectedDocTemplate, docFields.itensEnquadramento, docFields.atenuantes, docFields.agravantes, selectedStudentBehaviorState, docRecidivismAnalysis]);
 
   const externalReferralReport = useMemo(() => {
     let category = docFields.itensEnquadramento || newOccurrence.category || '';
@@ -681,12 +834,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
   }, [selectedStudentForDoc]);
 
+  const modalRecidivismAnalysis = useMemo(() => {
+    if (!selectedStudentState || newOccurrence.type !== 'DEMERIT') return null;
+    const cats = newOccurrence.selectedCategories || [];
+    const primaryCat = cats.length > 0 ? cats[0] : newOccurrence.category;
+    return analyzeStudentRecidivism(selectedStudentState, primaryCat);
+  }, [selectedStudentState, newOccurrence.type, newOccurrence.selectedCategories, newOccurrence.category]);
+
   const modalSuggestedMeasure = useMemo(() => {
     if (!selectedStudentState || newOccurrence.type !== 'DEMERIT') return null;
     const cats = newOccurrence.selectedCategories || [];
     if (cats.length === 0) return null;
     
-    const prevCount = selectedStudentState.occurrences ? selectedStudentState.occurrences.filter(o => o.type === 'demerit').length : 0;
+    const prevCount = selectedStudentState.occurrences ? selectedStudentState.occurrences.filter(o => o.type === 'demerit' || (o.type as any) === 'DEMERIT').length : 0;
     
     // Check if any is GRAVE or MEDIA
     let primaryCat = cats[0];
@@ -699,12 +859,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       }
     }
 
+    const recidivismAgravante = modalRecidivismAnalysis?.hasSpecificRecurrence
+      ? 'III - Ser reincidente em falta disciplinar de mesma classificação (Art. 35, III)'
+      : '';
+
     return getEECMSuggestedMeasure({
       itemCategory: primaryCat,
       studentScore: selectedStudentState.score,
-      previousInfractionsCount: prevCount
+      previousInfractionsCount: prevCount,
+      agravantes: recidivismAgravante
     });
-  }, [selectedStudentState, newOccurrence.type, newOccurrence.selectedCategories]);
+  }, [selectedStudentState, newOccurrence.type, newOccurrence.selectedCategories, modalRecidivismAnalysis]);
 
   useEffect(() => {
     if (!isInspectionModalOpen) {
@@ -721,6 +886,57 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       s.Turma.toLowerCase().includes(term)
     );
   }, [dbStudents, studentSearchTerm]);
+
+  // Radar de Reincidência Memos
+  const recidivistStudents = useMemo(() => {
+    return studentStates
+      .map(student => {
+        const analysis = analyzeStudentRecidivism(student);
+        const fullStudent = dbStudents.find(s => String(s.CodigoAluno) === String(student.studentId)) ||
+                            INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(student.studentId));
+        return {
+          ...student,
+          fullStudent,
+          analysis
+        };
+      })
+      .filter(item => item.analysis.totalDemerits >= 1)
+      .sort((a, b) => {
+        if (b.analysis.recidivismLevel !== a.analysis.recidivismLevel) {
+          return b.analysis.recidivismLevel - a.analysis.recidivismLevel;
+        }
+        return a.score - b.score;
+      });
+  }, [studentStates, dbStudents]);
+
+  const filteredRecidivistStudents = useMemo(() => {
+    return recidivistStudents.filter(item => {
+      const matchesClass = selectedClass === 'ALL' || item.className === selectedClass;
+      const matchesLevel = recidivismFilter === 'ALL' || String(item.analysis.recidivismLevel) === recidivismFilter;
+      const matchesSearch = !recidivismSearchTerm || 
+        item.studentName.toLowerCase().includes(recidivismSearchTerm.toLowerCase()) ||
+        item.className.toLowerCase().includes(recidivismSearchTerm.toLowerCase()) ||
+        item.analysis.specificRecurrences.some(r => r.category.toLowerCase().includes(recidivismSearchTerm.toLowerCase()));
+      return matchesClass && matchesLevel && matchesSearch;
+    });
+  }, [recidivistStudents, selectedClass, recidivismFilter, recidivismSearchTerm]);
+
+  const recidivismStats = useMemo(() => {
+    const total = recidivistStudents.length;
+    const nivel1 = recidivistStudents.filter(s => s.analysis.recidivismLevel === 1).length;
+    const nivel2 = recidivistStudents.filter(s => s.analysis.recidivismLevel === 2).length;
+    const nivel3 = recidivistStudents.filter(s => s.analysis.recidivismLevel === 3).length;
+    const nivel4 = recidivistStudents.filter(s => s.analysis.recidivismLevel === 4).length;
+    const withSpecificRecurrence = recidivistStudents.filter(s => s.analysis.hasSpecificRecurrence || s.analysis.specificRecurrences.some(r => r.count >= 2)).length;
+    return {
+      total,
+      nivel1,
+      nivel2,
+      nivel3,
+      nivel4,
+      withSpecificRecurrence
+    };
+  }, [recidivistStudents]);
 
   // Load students from Supabase
   useEffect(() => {
@@ -2216,6 +2432,26 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <TrendingUp size={18} /> Conduta & Atitude
           </button>
           <button
+            onClick={() => setActiveTab('reincidencia')}
+            className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'reincidencia'
+              ? 'bg-rose-600 text-white shadow-xl shadow-rose-600/10'
+              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+              }`}
+          >
+            <div className="flex items-center gap-4">
+              <RotateCcw size={18} /> Radar Reincidência
+            </div>
+            {recidivismStats.nivel3 + recidivismStats.nivel4 > 0 ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-sm animate-pulse">
+                {recidivismStats.nivel3 + recidivismStats.nivel4}
+              </span>
+            ) : recidivismStats.total > 0 ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">
+                {recidivismStats.total}
+              </span>
+            ) : null}
+          </button>
+          <button
             onClick={() => setActiveTab('honra')}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'honra'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
@@ -2301,6 +2537,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'rotina' && 'Rotina Cívico-Militar Diária'}
                 {activeTab === 'inspecao' && 'Inspeção de Uniformes e Padrões'}
                 {activeTab === 'comportamento' && 'Gestão de Conduta e Atitude'}
+                {activeTab === 'reincidencia' && 'Radar de Reincidência Disciplinar'}
                 {activeTab === 'honra' && 'Quadro de Honra e Destaques'}
                 {activeTab === 'documentos' && 'Preenchimento de Documentos'}
                 {activeTab === 'oficios' && 'Ofícios Escolares Expedidos'}
@@ -2311,6 +2548,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'rotina' && 'Controle de Formatura, Hasteamento e Hinos • SEDUC/MT'}
                 {activeTab === 'inspecao' && 'Apresentação Pessoal e Fardamento • PECIM'}
                 {activeTab === 'comportamento' && 'Histórico de Méritos e Deméritos • Regulamento Disciplinar'}
+                {activeTab === 'reincidencia' && 'Monitoramento de Infrações Recorrentes, Escalação Progressiva e TACE • Arts. 9º, 15, 16 e 35 EECM'}
                 {activeTab === 'honra' && 'Líderes de Turma e Destaques de Atitude'}
                 {activeTab === 'documentos' && 'Emissão e Impressão de Fichas Oficiais Timbradas'}
                 {activeTab === 'oficios' && 'Emissão, Sequencial e Arquivo de Ofícios Oficiais'}
@@ -2389,6 +2627,52 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                    </button>
                 </div>
               )}
+
+              {/* Widget de Radar de Reincidência no Dashboard */}
+              <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-[2.5rem] text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-indigo-900/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shrink-0">
+                    <RotateCcw size={28} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-black uppercase tracking-tight text-white">Radar de Reincidência Disciplinar</h3>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-500 text-white">
+                        Regulamento EECM
+                      </span>
+                    </div>
+                    <p className="text-slate-300 text-xs mt-1">
+                      {recidivismStats.total} aluno{recidivismStats.total !== 1 ? 's' : ''} com histórico de deméritos • {recidivismStats.withSpecificRecurrence} com reincidência específica detectada (Art. 35, III).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-2xl border border-slate-700">
+                    <div className="text-center">
+                      <span className="text-[9px] font-black uppercase text-amber-400 block">Nível 2 (Pais)</span>
+                      <span className="text-sm font-black text-white">{recidivismStats.nivel2}</span>
+                    </div>
+                    <div className="h-6 w-px bg-slate-700 mx-1"></div>
+                    <div className="text-center">
+                      <span className="text-[9px] font-black uppercase text-rose-400 block">Nível 3 (TACE)</span>
+                      <span className="text-sm font-black text-white">{recidivismStats.nivel3}</span>
+                    </div>
+                    <div className="h-6 w-px bg-slate-700 mx-1"></div>
+                    <div className="text-center">
+                      <span className="text-[9px] font-black uppercase text-red-400 block">Nível 4 (Conselho)</span>
+                      <span className="text-sm font-black text-white">{recidivismStats.nivel4}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab('reincidencia')}
+                    className="px-5 py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-lg hover:shadow-rose-600/30 shrink-0"
+                  >
+                    Abrir Radar
+                  </button>
+                </div>
+              </div>
 
               {/* 1. Meta do Batalhão & Termômetro */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -3061,6 +3345,307 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <tr>
                           <td colSpan={9} className="py-12 text-center text-slate-400 uppercase font-semibold text-xs">
                             Nenhum aluno encontrado para a pesquisa.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: RADAR DE REINCIDÊNCIA */}
+          {activeTab === 'reincidencia' && (
+            <div className="space-y-8">
+              {/* Cards de Métricas dos 4 Níveis Regulamentares */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div 
+                  onClick={() => setRecidivismFilter(recidivismFilter === '1' ? 'ALL' : '1')}
+                  className={`p-6 rounded-[2rem] border transition-all cursor-pointer ${
+                    recidivismFilter === '1' ? 'ring-2 ring-blue-500 bg-blue-50/80 border-blue-300' : 'bg-white border-slate-200/80 hover:border-blue-300 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
+                      Nível 1 • Atenção
+                    </span>
+                    <Info size={18} className="text-blue-500" />
+                  </div>
+                  <div className="text-3xl font-black text-slate-900">{recidivismStats.nivel1}</div>
+                  <p className="text-xs font-bold text-slate-600 mt-1">1ª a 2ª Falta Leve</p>
+                  <p className="text-[10px] text-slate-400 mt-2">Advertência Oral / Escrita (Art. 14 e 15)</p>
+                </div>
+
+                <div 
+                  onClick={() => setRecidivismFilter(recidivismFilter === '2' ? 'ALL' : '2')}
+                  className={`p-6 rounded-[2rem] border transition-all cursor-pointer ${
+                    recidivismFilter === '2' ? 'ring-2 ring-amber-500 bg-amber-50/80 border-amber-300' : 'bg-white border-slate-200/80 hover:border-amber-300 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
+                      Nível 2 • Pais
+                    </span>
+                    <AlertTriangle size={18} className="text-amber-500" />
+                  </div>
+                  <div className="text-3xl font-black text-slate-900">{recidivismStats.nivel2}</div>
+                  <p className="text-xs font-bold text-slate-600 mt-1">Convocação Familiar</p>
+                  <p className="text-[10px] text-slate-400 mt-2">Reincidência Média / Suspensão (Art. 16)</p>
+                </div>
+
+                <div 
+                  onClick={() => setRecidivismFilter(recidivismFilter === '3' ? 'ALL' : '3')}
+                  className={`p-6 rounded-[2rem] border transition-all cursor-pointer ${
+                    recidivismFilter === '3' ? 'ring-2 ring-rose-500 bg-rose-50/80 border-rose-300' : 'bg-white border-slate-200/80 hover:border-rose-300 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-rose-800 bg-rose-100 px-3 py-1 rounded-full">
+                      Nível 3 • TACE
+                    </span>
+                    <FileText size={18} className="text-rose-500" />
+                  </div>
+                  <div className="text-3xl font-black text-slate-900">{recidivismStats.nivel3}</div>
+                  <p className="text-xs font-bold text-slate-600 mt-1">TACE Obrigatório</p>
+                  <p className="text-[10px] text-slate-400 mt-2">Insuficiente (2,0 a 4,99) • Art. 22 EECM</p>
+                </div>
+
+                <div 
+                  onClick={() => setRecidivismFilter(recidivismFilter === '4' ? 'ALL' : '4')}
+                  className={`p-6 rounded-[2rem] border transition-all cursor-pointer ${
+                    recidivismFilter === '4' ? 'ring-2 ring-red-600 bg-red-50/80 border-red-400 shadow-md' : 'bg-white border-slate-200/80 hover:border-red-400 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-red-700 bg-red-100 px-3 py-1 rounded-full animate-pulse">
+                      Nível 4 • Conselho
+                    </span>
+                    <ShieldAlert size={18} className="text-red-600" />
+                  </div>
+                  <div className="text-3xl font-black text-red-600">{recidivismStats.nivel4}</div>
+                  <p className="text-xs font-bold text-slate-600 mt-1">Conselho Disciplinar</p>
+                  <p className="text-[10px] text-slate-400 mt-2">Incompatível (&lt; 2,0) / Transf. Educativa (Art. 30)</p>
+                </div>
+              </div>
+
+              {/* Filtros e Busca */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Buscar aluno ou tipo de falta reincidente..."
+                    value={recidivismSearchTerm}
+                    onChange={e => setRecidivismSearchTerm(e.target.value)}
+                    className="pl-12 pr-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-rose-100 w-full transition-all text-slate-900 placeholder-slate-400"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex bg-white border border-slate-200 rounded-2xl p-1 text-xs">
+                    <button
+                      onClick={() => setRecidivismFilter('ALL')}
+                      className={`px-3 py-2 rounded-xl font-black transition-all ${
+                        recidivismFilter === 'ALL' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Todos ({recidivismStats.total})
+                    </button>
+                    <button
+                      onClick={() => setRecidivismFilter('1')}
+                      className={`px-3 py-2 rounded-xl font-black transition-all ${
+                        recidivismFilter === '1' ? 'bg-blue-600 text-white' : 'text-blue-700 hover:bg-blue-50'
+                      }`}
+                    >
+                      Nível 1 ({recidivismStats.nivel1})
+                    </button>
+                    <button
+                      onClick={() => setRecidivismFilter('2')}
+                      className={`px-3 py-2 rounded-xl font-black transition-all ${
+                        recidivismFilter === '2' ? 'bg-amber-600 text-white' : 'text-amber-800 hover:bg-amber-50'
+                      }`}
+                    >
+                      Nível 2 ({recidivismStats.nivel2})
+                    </button>
+                    <button
+                      onClick={() => setRecidivismFilter('3')}
+                      className={`px-3 py-2 rounded-xl font-black transition-all ${
+                        recidivismFilter === '3' ? 'bg-rose-600 text-white' : 'text-rose-800 hover:bg-rose-50'
+                      }`}
+                    >
+                      Nível 3 ({recidivismStats.nivel3})
+                    </button>
+                    <button
+                      onClick={() => setRecidivismFilter('4')}
+                      className={`px-3 py-2 rounded-xl font-black transition-all ${
+                        recidivismFilter === '4' ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'
+                      }`}
+                    >
+                      Nível 4 ({recidivismStats.nivel4})
+                    </button>
+                  </div>
+
+                  <select
+                    value={selectedClass}
+                    onChange={e => setSelectedClass(e.target.value)}
+                    className="bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-100"
+                  >
+                    <option value="ALL">Todas as Turmas</option>
+                    {classesList.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Tabela de Alunos Reincidentes */}
+              <div className="bg-white p-8 rounded-[3rem] border border-slate-200/80 shadow-sm overflow-hidden text-slate-800">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 uppercase font-black tracking-widest text-[9px] pb-3">
+                        <th className="pb-3 pl-2">Aluno & Turma</th>
+                        <th className="pb-3 text-center">Nota / Gradação</th>
+                        <th className="pb-3 text-center">Total Deméritos</th>
+                        <th className="pb-3">Infrações Mais Recorrentes</th>
+                        <th className="pb-3 text-center">Nível de Risco</th>
+                        <th className="pb-3">Encaminhamento Recomendado (EECM)</th>
+                        <th className="pb-3 text-right pr-2">Ações Rápidas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredRecidivistStudents.map(student => {
+                        const status = getBehaviorStatus(student.score);
+                        const analysis = student.analysis;
+                        return (
+                          <tr key={student.studentId} className="border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-slate-700">
+                            <td className="py-4 pl-2">
+                              <div className="font-bold uppercase text-slate-900">{student.studentName}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Mat: {student.studentId} • Turma: <span className="font-semibold text-slate-600">{student.className}</span>
+                              </div>
+                            </td>
+
+                            <td className="py-4 text-center">
+                              <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-black ${
+                                student.score >= 9.0 ? 'bg-emerald-100 text-emerald-800' :
+                                student.score >= 7.0 ? 'bg-blue-100 text-blue-800' :
+                                student.score >= 5.0 ? 'bg-amber-100 text-amber-800' :
+                                student.score >= 2.0 ? 'bg-rose-100 text-rose-800' :
+                                'bg-red-600 text-white animate-pulse'
+                              }`}>
+                                {student.score.toFixed(2)} • {status}
+                              </span>
+                            </td>
+
+                            <td className="py-4 text-center">
+                              <span className="font-black text-sm text-slate-900 bg-slate-100 px-3 py-1 rounded-xl">
+                                {analysis.totalDemerits}
+                              </span>
+                            </td>
+
+                            <td className="py-4 max-w-xs">
+                              <div className="flex flex-wrap gap-1.5">
+                                {analysis.specificRecurrences.slice(0, 3).map((rec, idx) => (
+                                  <span 
+                                    key={idx}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border flex items-center gap-1 ${
+                                      rec.severity === 'GRAVE'
+                                        ? 'bg-red-50 text-red-700 border-red-200'
+                                        : rec.severity === 'MÉDIA'
+                                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                        : 'bg-blue-50 text-blue-700 border-blue-200'
+                                    }`}
+                                    title={rec.category}
+                                  >
+                                    <RotateCcw size={10} />
+                                    {rec.category.length > 28 ? rec.category.substring(0, 28) + '...' : rec.category}
+                                    <span className="bg-white/80 px-1.5 py-0.2 rounded-full font-black text-[9px]">
+                                      {rec.count}x
+                                    </span>
+                                  </span>
+                                ))}
+                                {analysis.specificRecurrences.length === 0 && (
+                                  <span className="text-[10px] text-slate-400 italic">Sem reincidência específica</span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="py-4 text-center">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase ${analysis.recidivismLevelBadge}`}>
+                                {analysis.recidivismLevelLabel}
+                              </span>
+                            </td>
+
+                            <td className="py-4 max-w-sm">
+                              <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
+                                {analysis.pedagogicalAdvice}
+                              </p>
+                            </td>
+
+                            <td className="py-4 text-right pr-2">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    setSelectedStudentState(student);
+                                    setIsBehaviorModalOpen(true);
+                                  }}
+                                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                  title="Ver Dossiê e Linha do Tempo de Conduta"
+                                >
+                                  Dossiê
+                                </button>
+
+                                {analysis.requiresTACE && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedStudentForDoc(student.fullStudent || {
+                                        CodigoAluno: student.studentId,
+                                        Nome: student.studentName,
+                                        Turma: student.className,
+                                        Turno: student.shiftName || ''
+                                      });
+                                      setSelectedDocTemplate('termo_adequacao_conduta');
+                                      setDocFields(prev => ({
+                                        ...prev,
+                                        studentName: student.studentName,
+                                        studentClass: student.className,
+                                        obrigacoesPrazo: `Compromisso formal de adequação de conduta frente às reincidências disciplinares (${analysis.specificRecurrences.map(r => r.category).slice(0, 2).join('; ')}). Cumprimento de ações educativas e melhoria da pontuação disciplinar.`
+                                      }));
+                                      setActiveTab('documentos');
+                                    }}
+                                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                    title="Gerar Termo de Ajustamento de Conduta Escolar (Art. 22)"
+                                  >
+                                    TACE
+                                  </button>
+                                )}
+
+                                {analysis.requiresCouncil && (
+                                  <button
+                                    onClick={() => {
+                                      handleGenerateExternalReferralDoc(student, 'MP');
+                                    }}
+                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm"
+                                    title="Instaurar Conselho Disciplinar e Expediente ao MP"
+                                  >
+                                    Conselho
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {filteredRecidivistStudents.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="py-16 text-center text-slate-400 font-semibold text-xs">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                              <CheckCircle2 size={24} />
+                            </div>
+                            Nenhum aluno com ocorrências ou reincidências registrado com os filtros atuais.
                           </td>
                         </tr>
                       )}
@@ -3782,6 +4367,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           />
                         </div>
                       </div>
+
+                      {/* ALERTA DE REINCIDÊNCIA ESPECÍFICA NA FICHA DISCIPLINAR */}
+                      {docRecidivismAnalysis && docRecidivismAnalysis.hasSpecificRecurrence && (
+                        <div className="p-3.5 rounded-2xl border bg-amber-50 border-amber-300 text-amber-950 text-xs space-y-1.5 animate-fadeIn">
+                          <div className="flex items-center justify-between font-black uppercase text-[11px]">
+                            <span className="flex items-center gap-1.5 text-amber-900">
+                              <RotateCcw size={14} className="text-amber-700" />
+                              Reincidência Identificada ({docRecidivismAnalysis.currentRecurrenceCount}ª falta nesta categoria)
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-black text-[9px]">
+                              Agravante Art. 35, III
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-amber-800 font-medium">
+                            O aluno já possui histórico anterior desta infração. A medida sugerida foi elevada de acordo com os Arts. 15 e 16 do Regulamento EECM.
+                          </p>
+                        </div>
+                      )}
 
                       {/* CARD VISUAL DE SUGESTÃO REGULAMENTAR INTELIGENTE (REGULAMENTO EECM-MT) */}
                       {suggestedMeasureReport && (
@@ -5857,6 +6460,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
                 {newOccurrence.type === 'DEMERIT' && (
                   <>
+                    {/* ALERTA DE REINCIDÊNCIA ESPECÍFICA DETECTADA */}
+                    {modalRecidivismAnalysis && modalRecidivismAnalysis.hasSpecificRecurrence && (
+                      <div className="p-3 rounded-xl border bg-amber-50 border-amber-200 text-amber-900 text-[9px] space-y-1 animate-fadeIn">
+                        <div className="flex items-center justify-between font-black uppercase text-[10px]">
+                          <span className="flex items-center gap-1 text-amber-800">
+                            <RotateCcw size={12} />
+                            Reincidência Detectada ({modalRecidivismAnalysis.currentRecurrenceCount}ª falta desta categoria)
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-black text-[8px]">
+                            Art. 35, III
+                          </span>
+                        </div>
+                        <p className="text-amber-800 font-medium">
+                          Conforme o Regulamento EECM, esta falta possui circunstância agravante legal e elevação progressiva de penalidade (Arts. 15 e 16).
+                        </p>
+                      </div>
+                    )}
+
                     {/* CARD VISUAL DE SUGESTÃO REGULAMENTAR INTELIGENTE (NO MODAL DE ATITUDE) */}
                     {modalSuggestedMeasure && (
                       <div className={`p-3 rounded-xl border transition-all animate-fadeIn ${
@@ -6071,7 +6692,55 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             {/* Direita: Histórico de Ocorrências e Botão de Fechar */}
             <div className="flex flex-col h-full border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8 justify-between">
               <div className="space-y-4 flex-1 overflow-y-auto max-h-[420px] pr-2 custom-scrollbar">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Histórico de Atitude</h4>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Histórico de Atitude</h4>
+                  {(() => {
+                    const studentAnalysis = analyzeStudentRecidivism(selectedStudentState);
+                    if (studentAnalysis.totalDemerits === 0) return null;
+                    return (
+                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-black border uppercase ${studentAnalysis.recidivismLevelBadge}`}>
+                        {studentAnalysis.recidivismLevelLabel}
+                      </span>
+                    );
+                  })()}
+                </div>
+
+                {/* DOSSIÊ DE REINCIDÊNCIA DO ALUNO */}
+                {(() => {
+                  const studentAnalysis = analyzeStudentRecidivism(selectedStudentState);
+                  if (studentAnalysis.totalDemerits === 0) return null;
+                  return (
+                    <div className="p-3.5 rounded-2xl border bg-slate-50 border-slate-200 text-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 font-black text-[10px] uppercase text-slate-800">
+                          <RotateCcw size={12} className="text-rose-600" />
+                          Dossiê de Reincidência
+                        </div>
+                        <span className="text-[9px] font-black text-slate-600">
+                          {studentAnalysis.totalDemerits} falta{studentAnalysis.totalDemerits > 1 ? 's' : ''} no total
+                        </span>
+                      </div>
+                      
+                      {studentAnalysis.specificRecurrences.length > 0 && (
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-600 block mb-1">Faltas Reincidentes:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {studentAnalysis.specificRecurrences.map((r, idx) => (
+                              <span key={idx} className="bg-white px-2 py-0.5 rounded border border-slate-200 text-[8px] font-bold text-slate-700 flex items-center gap-1">
+                                <RotateCcw size={8} className="text-rose-500" />
+                                {r.category.length > 25 ? r.category.substring(0, 25) + '...' : r.category} ({r.count}x)
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-[9px] text-slate-700 font-semibold italic pt-1 border-t border-slate-200/60 leading-tight">
+                        💡 {studentAnalysis.pedagogicalAdvice}
+                      </p>
+                    </div>
+                  );
+                })()}
                 
                 <div className="space-y-3">
                   {selectedStudentState.occurrences.map(occ => (
