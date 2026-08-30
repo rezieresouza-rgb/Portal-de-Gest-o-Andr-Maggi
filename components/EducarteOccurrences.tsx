@@ -19,7 +19,8 @@ import {
   X,
   Loader2,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  Send
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './Toast';
@@ -38,8 +39,8 @@ export interface EducarteOccurrence {
   description: string;
   actionTaken?: string;
   feedback?: string;
-  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'RESOLVIDO';
-  forwardedTo?: string;
+  status: 'PENDENTE' | 'EM_ATENDIMENTO' | 'RESOLVIDO' | 'TRAMITADO';
+  forwardedTo?: 'COORDENACAO_PEDAGOGICA' | 'CIVICO_MILITAR' | 'PSICOSSOCIAL_MEDIACAO' | 'INTERNO_EDUCARTE';
   responsibleName: string;
   timestamp: number;
 }
@@ -72,6 +73,7 @@ const INITIAL_EDUCARTE_OCCS: EducarteOccurrence[] = [
     actionTaken: 'Elogio registrado em ficha e indicação para monitoria de percussão.',
     feedback: 'Aluno exemplar no contraturno.',
     status: 'RESOLVIDO',
+    forwardedTo: 'INTERNO_EDUCARTE',
     responsibleName: 'Maestro / Regente Educarte',
     timestamp: Date.now() - 3600000 * 48
   },
@@ -88,6 +90,7 @@ const INITIAL_EDUCARTE_OCCS: EducarteOccurrence[] = [
     description: 'Faltou a 2 ensaios consecutivos da linha de metais sem apresentar justificativa prévia do responsável.',
     actionTaken: 'Contato com o responsável via telefone e advertência verbal.',
     status: 'EM_ATENDIMENTO',
+    forwardedTo: 'INTERNO_EDUCARTE',
     responsibleName: 'Instrutor de Metais',
     timestamp: Date.now() - 3600000 * 24
   }
@@ -111,6 +114,13 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
   const [actionModalOcc, setActionModalOcc] = useState<EducarteOccurrence | null>(null);
   const [actionFeedback, setActionFeedback] = useState('');
   const [actionStatus, setActionStatus] = useState<'RESOLVIDO' | 'EM_ATENDIMENTO'>('RESOLVIDO');
+  
+  // Modal de Tramitação Setorial (Coordenação, Militar, Psicossocial)
+  const [tramitateModalOcc, setTramitateModalOcc] = useState<EducarteOccurrence | null>(null);
+  const [tramitateTarget, setTramitateTarget] = useState<'COORDENACAO_PEDAGOGICA' | 'CIVICO_MILITAR' | 'PSICOSSOCIAL_MEDIACAO'>('COORDENACAO_PEDAGOGICA');
+  const [tramitateReason, setTramitateReason] = useState('');
+  const [isSubmittingTramitate, setIsSubmittingTramitate] = useState(false);
+
   const [printingDoc, setPrintingDoc] = useState<EducarteOccurrence | null>(null);
 
   // Form de Novo Registro
@@ -124,7 +134,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
   const [formTime, setFormTime] = useState('14:30');
   const [formDescription, setFormDescription] = useState('');
   const [formActionTaken, setFormActionTaken] = useState('');
-  const [forwardCoordination, setForwardCoordination] = useState(false);
+  const [formDestination, setFormDestination] = useState<'INTERNO_EDUCARTE' | 'COORDENACAO_PEDAGOGICA' | 'CIVICO_MILITAR' | 'PSICOSSOCIAL_MEDIACAO'>('INTERNO_EDUCARTE');
 
   // Salvar no LocalStorage sempre que alterar
   useEffect(() => {
@@ -143,7 +153,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
 
       if (data) {
         const educarteFromDb: EducarteOccurrence[] = data
-          .filter(o => (o.description || '').includes('[SETOR: EDUCARTE]') || (o.category || '').toUpperCase().includes('EDUCARTE') || (o.category || '').toUpperCase().includes('BANDA'))
+          .filter(o => (o.description || '').includes('[ORIGEM: PROJETO EDUCARTE') || (o.description || '').includes('[SETOR: EDUCARTE]') || (o.category || '').toUpperCase().includes('EDUCARTE') || (o.category || '').toUpperCase().includes('BANDA'))
           .map(o => {
             let cat: EducarteOccurrence['category'] = 'DISCIPLINA_POSTURA';
             const catUp = (o.category || '').toUpperCase();
@@ -151,6 +161,18 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
             else if (catUp.includes('FALTA') || catUp.includes('ENSAIO')) cat = 'FALTA_ENSAIO';
             else if (catUp.includes('MERITO') || catUp.includes('ELOGIO')) cat = 'MERITO_ELOGIO';
             else if (catUp.includes('PEDAGOGICO')) cat = 'PEDAGOGICO';
+
+            const rawDesc = o.description || '';
+            let fwd: EducarteOccurrence['forwardedTo'] = 'INTERNO_EDUCARTE';
+            if (rawDesc.includes('[SETOR: COORDENACAO_PEDAGOGICA]') || rawDesc.includes('COORDENAÇÃO')) fwd = 'COORDENACAO_PEDAGOGICA';
+            else if (rawDesc.includes('[SETOR: CIVICO_MILITAR]')) fwd = 'CIVICO_MILITAR';
+            else if (rawDesc.includes('[SETOR: PSICOSSOCIAL]')) fwd = 'PSICOSSOCIAL_MEDIACAO';
+
+            let parsedFeedback: string | undefined = undefined;
+            if (rawDesc.includes('[DEVOLUTIVA')) {
+              const match = rawDesc.match(/\[DEVOLUTIVA (?:DA COORDENAÇÃO|DO REGENTE|DA GESTÃO)?\s*(?:-\s*([^\]]+))?\]:?([\s\S]*)/i);
+              if (match) parsedFeedback = (match[2] || '').trim();
+            }
 
             return {
               id: `db-${o.id}`,
@@ -161,8 +183,10 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
               severity: (o.severity || 'LEVE') as any,
               date: o.date || new Date().toISOString().split('T')[0],
               time: o.time || '14:00',
-              description: (o.description || '').replace(/\[SETOR: EDUCARTE\]/gi, '').trim(),
-              status: (o.status === 'RESOLVIDO' ? 'RESOLVIDO' : (o.status === 'EM_ATENDIMENTO' ? 'EM_ATENDIMENTO' : 'PENDENTE')),
+              description: rawDesc.replace(/\[(?:SETOR|ORIGEM|DEVOLUTIVA|TRAMITADO)[^\]]*\]/gi, '').trim(),
+              feedback: parsedFeedback,
+              status: (o.status === 'RESOLVIDO' ? 'RESOLVIDO' : (o.status === 'TRAMITADO' ? 'TRAMITADO' : (o.status === 'EM_ATENDIMENTO' ? 'EM_ATENDIMENTO' : 'PENDENTE'))),
+              forwardedTo: fwd,
               responsibleName: o.responsible_name || 'Instrutor Educarte',
               timestamp: new Date((o.date || '2026-08-29') + 'T' + (o.time || '10:00')).getTime()
             };
@@ -209,6 +233,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
       return;
     }
 
+    const isForwarded = formDestination !== 'INTERNO_EDUCARTE';
     const newOcc: EducarteOccurrence = {
       id: `edu-${Date.now()}`,
       studentName: formStudent.toUpperCase().trim(),
@@ -221,25 +246,41 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
       time: formTime,
       description: formDescription.trim(),
       actionTaken: formActionTaken.trim() || undefined,
-      status: 'PENDENTE',
-      responsibleName: user.name || 'Instrutor Educarte',
+      status: isForwarded ? 'TRAMITADO' : 'PENDENTE',
+      forwardedTo: formDestination,
+      responsibleName: user.name || 'Regente Educarte',
       timestamp: Date.now()
     };
 
-    // Sincronizar com Supabase se necessário
+    // Sincronizar com Supabase: entra diretamente no livro da coordenação / gestão!
     try {
-      const dbDescription = `[PROJETO EDUCARTE - NAIPE: ${formNaipe} | INSTRUMENTO: ${formInstrument || 'N/A'}]\n${formDescription.trim()}\n[SETOR: EDUCARTE]`;
+      let targetTag = '[SETOR: EDUCARTE]';
+      let categoryName = `EDUCARTE_${formCategory}`;
+
+      if (formDestination === 'COORDENACAO_PEDAGOGICA') {
+        targetTag = '[SETOR: COORDENACAO_PEDAGOGICA]\n[ORIGEM: PROJETO EDUCARTE - REGENTE]';
+        categoryName = 'ACOMPANHAMENTO PEDAGÓGICO';
+      } else if (formDestination === 'CIVICO_MILITAR') {
+        targetTag = '[SETOR: CIVICO_MILITAR]\n[ORIGEM: PROJETO EDUCARTE - REGENTE]';
+        categoryName = 'FATO OBSERVADO';
+      } else if (formDestination === 'PSICOSSOCIAL_MEDIACAO') {
+        targetTag = '[SETOR: PSICOSSOCIAL]\n[ORIGEM: PROJETO EDUCARTE - REGENTE]';
+        categoryName = 'MEDIAÇÃO / PSICOSSOCIAL';
+      }
+
+      const dbDescription = `[PROJETO EDUCARTE - NAIPE: ${formNaipe} | INSTRUMENTO: ${formInstrument || 'N/A'}]\n${formDescription.trim()}\n${targetTag}`;
+      
       await supabase.from('occurrences').insert([{
         date: formDate,
         time: formTime,
         student_name: newOcc.studentName,
         classroom_name: newOcc.className,
-        category: `EDUCARTE_${formCategory}`,
+        category: categoryName,
         severity: formSeverity,
         description: dbDescription,
-        status: 'PENDENTE',
-        responsible_name: user.name || 'Instrutor Educarte',
-        location: 'SALA DE ENSAIO / BANDA'
+        status: isForwarded ? 'TRAMITADO' : 'PENDENTE',
+        responsible_name: `${user.name || 'Regente'} (Educarte)`,
+        location: 'PROJETO EDUCARTE / BANDA'
       }]);
     } catch (e) {
       console.warn('Registro mantido localmente:', e);
@@ -247,8 +288,8 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
 
     setOccurrences(prev => [newOcc, ...prev]);
     addToast({
-      title: 'Registro Realizado!',
-      message: 'Ocorrência/Mérito musical registrado com sucesso.',
+      title: isForwarded ? 'Encaminhado com Sucesso!' : 'Registro Realizado!',
+      message: isForwarded ? 'A ocorrência foi tramitada diretamente para a Coordenação/Gestão!' : 'Ocorrência registrada no Projeto Educarte.',
       type: 'success'
     });
 
@@ -259,9 +300,92 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
     setFormInstrument('');
     setFormDescription('');
     setFormActionTaken('');
+    setFormDestination('INTERNO_EDUCARTE');
   };
 
-  // Salvar Devolutiva / Parecer
+  // Salvar Tramitação de Setor a partir de Card Existente
+  const handleSaveTramitate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tramitateModalOcc) return;
+    if (!tramitateReason.trim()) {
+      alert('Por favor, informe a justificativa da tramitação.');
+      return;
+    }
+
+    setIsSubmittingTramitate(true);
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const targetLabel = tramitateTarget === 'COORDENACAO_PEDAGOGICA' 
+      ? 'COORDENAÇÃO PEDAGÓGICA' 
+      : tramitateTarget === 'CIVICO_MILITAR' 
+        ? 'CORPO DE ALUNOS (MILITAR)' 
+        : 'MEDIAÇÃO PSICOSSOCIAL';
+
+    try {
+      const targetTag = tramitateTarget === 'COORDENACAO_PEDAGOGICA' 
+        ? '[SETOR: COORDENACAO_PEDAGOGICA]' 
+        : tramitateTarget === 'CIVICO_MILITAR' 
+          ? '[SETOR: CIVICO_MILITAR]' 
+          : '[SETOR: PSICOSSOCIAL]';
+
+      let newCategory = 'ACOMPANHAMENTO PEDAGÓGICO';
+      if (tramitateTarget === 'CIVICO_MILITAR') newCategory = 'FATO OBSERVADO';
+      if (tramitateTarget === 'PSICOSSOCIAL_MEDIACAO') newCategory = 'MEDIAÇÃO / PSICOSSOCIAL';
+
+      const tramitationBlock = `\n\n[TRAMITADO DO EDUCARTE EM ${nowStr} PARA ${targetLabel}]: ${tramitateReason.trim()}\n${targetTag}`;
+      const newDescription = `${tramitateModalOcc.description}${tramitationBlock}`;
+
+      // Envia para o Supabase
+      if (tramitateModalOcc.id.startsWith('db-')) {
+        const rawId = tramitateModalOcc.id.replace('db-', '');
+        await supabase.from('occurrences').update({
+          category: newCategory,
+          status: 'TRAMITADO',
+          description: newDescription
+        }).eq('id', rawId);
+      } else {
+        await supabase.from('occurrences').insert([{
+          date: tramitateModalOcc.date,
+          time: tramitateModalOcc.time,
+          student_name: tramitateModalOcc.studentName,
+          classroom_name: tramitateModalOcc.className,
+          category: newCategory,
+          severity: tramitateModalOcc.severity,
+          description: `[PROJETO EDUCARTE - NAIPE: ${tramitateModalOcc.naipe}]\n${newDescription}`,
+          status: 'TRAMITADO',
+          responsible_name: `${user.name || 'Regente'} (Educarte)`,
+          location: 'PROJETO EDUCARTE'
+        }]);
+      }
+
+      // Atualiza estado local
+      setOccurrences(prev => prev.map(o => {
+        if (o.id === tramitateModalOcc.id) {
+          return {
+            ...o,
+            status: 'TRAMITADO',
+            forwardedTo: tramitateTarget
+          };
+        }
+        return o;
+      }));
+
+      addToast({
+        title: 'Tramitado com Sucesso!',
+        message: `Caso encaminhado para ${targetLabel}. A equipe já tem acesso no sistema!`,
+        type: 'success'
+      });
+
+      setTramitateModalOcc(null);
+      setTramitateReason('');
+    } catch (err) {
+      console.error(err);
+      addToast({ title: 'Erro', message: 'Falha ao tramitar ocorrência.', type: 'error' });
+    } finally {
+      setIsSubmittingTramitate(false);
+    }
+  };
+
+  // Salvar Devolutiva / Parecer Interno
   const handleSaveAction = (e: React.FormEvent) => {
     e.preventDefault();
     if (!actionModalOcc) return;
@@ -323,9 +447,9 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
     const meritos = occurrences.filter(o => o.category === 'MERITO_ELOGIO').length;
     const faltas = occurrences.filter(o => o.category === 'FALTA_ENSAIO').length;
     const instrumentos = occurrences.filter(o => o.category === 'INSTRUMENTO_ZELLO').length;
-    const pendentes = occurrences.filter(o => o.status === 'PENDENTE').length;
+    const tramitados = occurrences.filter(o => o.status === 'TRAMITADO' || o.forwardedTo !== 'INTERNO_EDUCARTE').length;
     const resolvidos = occurrences.filter(o => o.status === 'RESOLVIDO').length;
-    return { total, meritos, faltas, instrumentos, pendentes, resolvidos };
+    return { total, meritos, faltas, instrumentos, tramitados, resolvidos };
   }, [occurrences]);
 
   return (
@@ -339,13 +463,13 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
 
         <div className="space-y-2 z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 border border-amber-400/30 rounded-xl text-amber-300 text-xs font-black uppercase tracking-wider">
-            <Sparkles size={14} /> Gestão de Conduta, Mérito & Cuidados
+            <Sparkles size={14} /> Gestão de Conduta, Mérito & Tramitação
           </div>
           <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
             Livro de Ocorrências & Méritos • Educarte
           </h2>
           <p className="text-slate-300 text-xs md:text-sm max-w-2xl leading-relaxed font-medium">
-            Registre faltas aos ensaios, zelo com instrumentos, postura nas apresentações e condecorações de mérito musical dos integrantes da banda.
+            Registre faltas aos ensaios, zelo com instrumentos, postura e méritos musicais com opção de <strong>tramitação direta para a Coordenação Pedagógica ou Gestão Militar</strong>.
           </p>
         </div>
 
@@ -389,12 +513,12 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
           <span className="text-[10px] text-amber-600 font-bold mt-1">Avarias e cuidados</span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-orange-200 bg-orange-50/20 shadow-sm flex flex-col justify-between">
-          <span className="text-[10px] font-black text-orange-700 uppercase tracking-widest flex items-center gap-1">
-            <Clock size={12} /> Pendentes
+        <div className="bg-white p-5 rounded-2xl border border-purple-200 bg-purple-50/20 shadow-sm flex flex-col justify-between">
+          <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-1">
+            <ArrowRightLeft size={12} /> Tramitados
           </span>
-          <div className="text-2xl font-black text-orange-700 mt-2">{stats.pendentes}</div>
-          <span className="text-[10px] text-orange-600 font-bold mt-1">Aguardando providência</span>
+          <div className="text-2xl font-black text-purple-700 mt-2">{stats.tramitados}</div>
+          <span className="text-[10px] text-purple-600 font-bold mt-1">Coordenação & Militar</span>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-blue-200 bg-blue-50/20 shadow-sm flex flex-col justify-between">
@@ -453,6 +577,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
             <option value="TODOS">TODOS OS STATUS</option>
             <option value="PENDENTE">⏳ PENDENTE</option>
             <option value="EM_ATENDIMENTO">🔍 EM ATENDIMENTO</option>
+            <option value="TRAMITADO">🔁 TRAMITADO P/ OUTRO SETOR</option>
             <option value="RESOLVIDO">✅ RESOLVIDO</option>
           </select>
         </div>
@@ -466,6 +591,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
             const CatIcon = catInfo.icon;
             const isResolved = occ.status === 'RESOLVIDO';
             const isAttending = occ.status === 'EM_ATENDIMENTO';
+            const isTramitated = occ.status === 'TRAMITADO' || occ.forwardedTo !== 'INTERNO_EDUCARTE';
 
             return (
               <div
@@ -528,6 +654,15 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                       <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
                         <CheckCircle2 size={13} className="text-emerald-600" /> Resolvido
                       </span>
+                    ) : isTramitated ? (
+                      <span className="px-3 py-1 bg-purple-50 text-purple-800 border border-purple-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
+                        <ArrowRightLeft size={13} className="text-purple-600" /> 
+                        {occ.forwardedTo === 'COORDENACAO_PEDAGOGICA' 
+                          ? 'Tramitado p/ Coordenação' 
+                          : occ.forwardedTo === 'CIVICO_MILITAR' 
+                            ? 'Tramitado p/ Militar' 
+                            : 'Tramitado de Setor'}
+                      </span>
                     ) : isAttending ? (
                       <span className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
                         <User size={13} className="text-blue-600" /> Em Atendimento
@@ -538,6 +673,20 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                       </span>
                     )}
 
+                    {/* BOTÃO TRAMITAR SETOR */}
+                    <button
+                      onClick={() => {
+                        setTramitateModalOcc(occ);
+                        setTramitateReason('');
+                        setTramitateTarget('COORDENACAO_PEDAGOGICA');
+                      }}
+                      className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-black text-xs uppercase rounded-xl flex items-center gap-1.5 transition-all shadow-sm"
+                      title="Tramitar para Coordenação Pedagógica ou Gestão Cívico-Militar"
+                    >
+                      <ArrowRightLeft size={13} /> Tramitar Setor
+                    </button>
+
+                    {/* BOTÃO DEVOLUTIVA / PARECER */}
                     <button
                       onClick={() => {
                         setActionModalOcc(occ);
@@ -546,9 +695,10 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                       }}
                       className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase rounded-xl flex items-center gap-1.5 transition-all shadow-sm"
                     >
-                      <MessageSquare size={13} /> Devolutiva / Parecer
+                      <MessageSquare size={13} /> Devolutiva
                     </button>
 
+                    {/* BOTÃO IMPRIMIR NOTIFICAÇÃO A4 */}
                     <button
                       onClick={() => setPrintingDoc(occ)}
                       className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
@@ -557,6 +707,7 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                       <Printer size={16} />
                     </button>
 
+                    {/* BOTÃO EXCLUIR */}
                     <button
                       onClick={(e) => handleDelete(occ.id, e)}
                       className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
@@ -715,6 +866,30 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                 </div>
               </div>
 
+              {/* ENCAMINHAMENTO SETORIAL */}
+              <div className="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-2">
+                <label className="block text-[11px] font-black text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <ArrowRightLeft size={14} className="text-purple-700" />
+                  Encaminhar / Tramitar para Outro Setor?
+                </label>
+                <select
+                  value={formDestination}
+                  onChange={(e) => setFormDestination(e.target.value as any)}
+                  className="w-full px-3 py-2.5 bg-white border border-purple-200 rounded-xl text-xs font-black uppercase text-purple-900 outline-none cursor-pointer"
+                >
+                  <option value="INTERNO_EDUCARTE">🎺 APENAS INTERNO NO EDUCARTE (Acompanhamento da Banda)</option>
+                  <option value="COORDENACAO_PEDAGOGICA">🎓 TRAMITAR P/ COORDENAÇÃO PEDAGÓGICA (Rendimento/BNCC)</option>
+                  <option value="CIVICO_MILITAR">🛡️ TRAMITAR P/ CORPO DE ALUNOS (Cívico-Militar / Disciplina)</option>
+                  <option value="PSICOSSOCIAL_MEDIACAO">🤝 TRAMITAR P/ MEDIAÇÃO ESCOLAR / PSICOSSOCIAL</option>
+                </select>
+                <p className="text-[10px] text-purple-700 font-medium">
+                  {formDestination === 'COORDENACAO_PEDAGOGICA' && '✓ O caso entrará imediatamente na fila de resolução da Coordenação Pedagógica.'}
+                  {formDestination === 'CIVICO_MILITAR' && '✓ O caso será encaminhado aos monitores cívico-militares para providência disciplinar.'}
+                  {formDestination === 'PSICOSSOCIAL_MEDIACAO' && '✓ O caso será aberto na mediação para escuta e acolhimento.'}
+                  {formDestination === 'INTERNO_EDUCARTE' && '✓ O caso fica sob gestão exclusiva do Regente e Instrutores do Educarte.'}
+                </p>
+              </div>
+
               {/* Data e Hora */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -779,6 +954,80 @@ const EducarteOccurrences: React.FC<EducarteOccurrencesProps> = ({ user, members
                   className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-amber-500/20"
                 >
                   <CheckCircle2 size={16} /> Salvar Registro
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: TRAMITAR SETOR */}
+      {tramitateModalOcc && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-6 bg-purple-950 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white font-black">
+                  <ArrowRightLeft size={20} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-purple-300">Tramitação Setorial</span>
+                  <h3 className="text-base font-black uppercase">{tramitateModalOcc.studentName}</h3>
+                </div>
+              </div>
+              <button onClick={() => setTramitateModalOcc(null)} className="p-2 text-purple-300 hover:text-white rounded-xl">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTramitate} className="p-6 space-y-4">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700">
+                <strong>Relato do Educarte:</strong> {tramitateModalOcc.description}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1">
+                  Selecione o Setor de Destino *
+                </label>
+                <select
+                  value={tramitateTarget}
+                  onChange={(e) => setTramitateTarget(e.target.value as any)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+                >
+                  <option value="COORDENACAO_PEDAGOGICA">🎓 COORDENAÇÃO PEDAGÓGICA (Rendimento / Dificuldades / BNCC)</option>
+                  <option value="CIVICO_MILITAR">🛡️ CORPO DE ALUNOS (Gestão Cívico-Militar / Disciplina Grave)</option>
+                  <option value="PSICOSSOCIAL_MEDIACAO">🤝 EQUIPE PSICOSSOCIAL / MEDIAÇÃO ESCOLAR</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1">
+                  Justificativa do Encaminhamento *
+                </label>
+                <textarea
+                  rows={4}
+                  value={tramitateReason}
+                  onChange={(e) => setTramitateReason(e.target.value)}
+                  placeholder="Explique o motivo do encaminhamento para que a Coordenação ou Gestão Militar dê continuidade..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setTramitateModalOcc(null)}
+                  className="px-4 py-2.5 text-slate-500 hover:bg-slate-100 rounded-xl text-xs font-black uppercase"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingTramitate}
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl flex items-center gap-2 shadow-lg shadow-purple-600/20"
+                >
+                  {isSubmittingTramitate ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  Confirmar Tramitação
                 </button>
               </div>
             </form>
