@@ -34,7 +34,8 @@ import {
   RotateCcw,
   ExternalLink,
   Bell,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
@@ -66,6 +67,7 @@ const DEFAULT_DOCUMENTS_CHECKLIST = [
   'Relatório Geral da Equipe Psicossocial Escolar',
   'Relatório do Professor Mediador / Práticas Restaurativas',
   'Relatório da Coordenação Pedagógica / Laboratório de Letramento',
+  'Ficha Disciplinar & Deméritos do Corpo de Alunos (Cívico-Militar)',
   'Atas e Registros de Ocorrências Anteriores (Reincidências)',
   'Boletim de Ocorrência Policial (B.O.)',
   'Ficha FICAI / Notificação de Infrequência Escolar',
@@ -94,6 +96,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
   // Checklist Interativo de Provas
   const [evidenceItems, setEvidenceItems] = useState<RawEvidenceItem[]>([]);
   const [showEvidenceChecklist, setShowEvidenceChecklist] = useState(false);
+  const [studentMilitaryScore, setStudentMilitaryScore] = useState<number | null>(null);
 
   // Modal de Protocolo Externo
   const [protocolModalReport, setProtocolModalReport] = useState<PsychosocialCircumstantiatedReport | null>(null);
@@ -249,6 +252,16 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     handleAutoCompileDossier(studentName, targetClass);
   };
 
+  // Classificação da Nota Disciplinar Militar
+  const getMilitaryConcept = (score: number) => {
+    if (score >= 9.0) return 'EXCEPCIONAL';
+    if (score >= 8.0) return 'ÓTIMO';
+    if (score >= 7.0) return 'BOM';
+    if (score >= 5.0) return 'REGULAR';
+    if (score >= 3.0) return 'INSUFICIENTE';
+    return 'INCOMPATÍVEL';
+  };
+
   // Compilação inteligente com checklist de evidências
   const handleAutoCompileDossier = async (studentName: string, className: string) => {
     if (!studentName.trim()) {
@@ -260,28 +273,28 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     try {
       const cleanName = studentName.trim();
 
-      // 1. Ocorrências
+      // 1. Ocorrências Gerais (Supabase)
       const { data: occData } = await supabase
         .from('occurrences')
         .select('*')
         .ilike('student_name', `%${cleanName}%`)
         .order('date', { ascending: true });
 
-      // 2. Mediações
+      // 2. Mediações Escolares (Supabase)
       const { data: medData } = await supabase
         .from('mediation_cases')
         .select('*')
         .ilike('student_name', `%${cleanName}%`)
         .order('opened_at', { ascending: true });
 
-      // 3. Psicossocial
+      // 3. Encaminhamentos Psicossociais (Supabase)
       const { data: psychoData } = await supabase
         .from('psychosocial_referrals')
         .select('*')
         .ilike('student_name', `%${cleanName}%`)
         .order('date', { ascending: true });
 
-      // 4. FICAI
+      // 4. FICAI / Busca Ativa (LocalStorage)
       let ficaiRecords: any[] = [];
       try {
         const savedFicai = localStorage.getItem('busca_ativa_ficai_records_v2');
@@ -291,19 +304,53 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         }
       } catch (e) {}
 
-      // 5. Militares
+      // 5. CÍVICO-MILITAR: Deméritos, Nota de Conduta e Medidas Disciplinares
+      let loadedMilitaryScore: number | null = null;
+      let militaryDemerits: any[] = [];
+      try {
+        const savedScores = localStorage.getItem('civico_militar_student_scores_v3');
+        if (savedScores) {
+          const list = JSON.parse(savedScores);
+          const studentState = list.find((s: any) => 
+            (s.studentName || '').toLowerCase().includes(cleanName.toLowerCase())
+          );
+          if (studentState) {
+            loadedMilitaryScore = typeof studentState.score === 'number' ? studentState.score : 10.0;
+            militaryDemerits = (studentState.occurrences || []).filter((o: any) => o.type === 'DEMERIT');
+          }
+        }
+      } catch (e) {}
+      setStudentMilitaryScore(loadedMilitaryScore);
+
+      // 6. CÍVICO-MILITAR: Documentos Formais, Termos e Fatos Observados
       let militaryDocs: any[] = [];
       try {
-        const savedMil = localStorage.getItem('civico_militar_documentos_v2');
-        if (savedMil) {
-          const list = JSON.parse(savedMil);
-          militaryDocs = list.filter((m: any) => (m.studentName || '').toLowerCase().includes(cleanName.toLowerCase()));
+        const savedDocs1 = localStorage.getItem('civico_militar_documentos_v2');
+        const savedDocs2 = localStorage.getItem('civic_militar_docs_history_v1');
+        const list1 = savedDocs1 ? JSON.parse(savedDocs1) : [];
+        const list2 = savedDocs2 ? JSON.parse(savedDocs2) : [];
+        const combined = [...list1, ...list2];
+        militaryDocs = combined.filter((m: any) => 
+          (m.studentName || '').toLowerCase().includes(cleanName.toLowerCase())
+        );
+      } catch (e) {}
+
+      // 7. CÍVICO-MILITAR: Inspeções de Postura / Uniforme
+      let militaryInspections: any[] = [];
+      try {
+        const savedInsp = localStorage.getItem('civico_militar_inspections_v2');
+        if (savedInsp) {
+          const list = JSON.parse(savedInsp);
+          militaryInspections = list.filter((i: any) => 
+            (i.studentName || '').toLowerCase().includes(cleanName.toLowerCase())
+          );
         }
       } catch (e) {}
 
-      // Montar lista de evidências brutas com toggle
+      // Montar lista unificada de evidências com toggle
       const compiledEvidenceList: RawEvidenceItem[] = [];
 
+      // A. Ocorrências Gerais
       (occData || []).forEach((o: any, idx: number) => {
         const cleanDesc = (o.description || '').replace(/\[(?:SETOR|ORIGEM|TRAMITADO)[^\]]*\]/gi, '').trim();
         compiledEvidenceList.push({
@@ -320,6 +367,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         });
       });
 
+      // B. Mediações
       (medData || []).forEach((m: any, idx: number) => {
         compiledEvidenceList.push({
           id: `med-${m.id || idx}`,
@@ -332,6 +380,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         });
       });
 
+      // C. Psicossocial
       (psychoData || []).forEach((p: any, idx: number) => {
         compiledEvidenceList.push({
           id: `psy-${p.id || idx}`,
@@ -343,6 +392,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         });
       });
 
+      // D. FICAI
       ficaiRecords.forEach((f: any, idx: number) => {
         compiledEvidenceList.push({
           id: `ficai-${idx}`,
@@ -354,13 +404,43 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
         });
       });
 
+      // E. CÍVICO-MILITAR: Deméritos e Medidas Disciplinares
+      militaryDemerits.forEach((dem: any, idx: number) => {
+        const measure = dem.disciplinaryMeasure ? ` [Medida Disciplinar: ${dem.disciplinaryMeasure}]` : '';
+        const susp = dem.suspensionDays ? ` (${dem.suspensionDays} dias de suspensão)` : '';
+        compiledEvidenceList.push({
+          id: `mil-dem-${idx}`,
+          type: 'MILITAR',
+          date: dem.date || '2026',
+          title: `Demérito Disciplinar Militar #${idx + 1} (${dem.category || 'Conduta'}) [-${dem.points || 0.5} pts]`,
+          desc: `Infração: ${dem.observations || dem.category}${measure}${susp} • Aplicado por: ${dem.responsible || 'Corpo de Alunos'}`,
+          category: dem.category,
+          severity: (dem.points || 0) >= 2.0 ? 'ALTA' : 'MÉDIA',
+          author: dem.responsible || 'Monitoria Militar',
+          checked: true
+        });
+      });
+
+      // F. CÍVICO-MILITAR: Documentos e Termos Militares
       militaryDocs.forEach((m: any, idx: number) => {
         compiledEvidenceList.push({
-          id: `mil-${idx}`,
+          id: `mil-doc-${idx}`,
           type: 'MILITAR',
           date: m.date || '2026',
-          title: `Fato Observado Militar #${idx + 1}`,
-          desc: m.fields?.achado || m.templateLabel || 'Registro de postura / conduta disciplinar militar.',
+          title: `Documento Disciplinar Militar #${idx + 1} (${m.templateLabel || 'Termo Disciplinar'})`,
+          desc: m.fields?.achado || m.fields?.motivo || m.templateLabel || 'Termo / Notificação Disciplinar formal do Corpo de Alunos.',
+          checked: true
+        });
+      });
+
+      // G. CÍVICO-MILITAR: Inspeções
+      militaryInspections.forEach((insp: any, idx: number) => {
+        compiledEvidenceList.push({
+          id: `mil-insp-${idx}`,
+          type: 'MILITAR',
+          date: insp.date || '2026',
+          title: `Inspeção de Uniforme / Postura #${idx + 1} (${insp.item || 'Uniforme'})`,
+          desc: `Não-conformidade: ${insp.observations || insp.item} • Turno: ${insp.shift || 'Geral'}`,
           checked: true
         });
       });
@@ -369,7 +449,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       setShowEvidenceChecklist(compiledEvidenceList.length > 0);
 
       // Gerar redação baseada nas evidências selecionadas
-      generateFormalTextsFromEvidence(compiledEvidenceList, cleanName, className);
+      generateFormalTextsFromEvidence(compiledEvidenceList, cleanName, className, loadedMilitaryScore);
 
     } catch (e: any) {
       console.error('Erro na compilação:', e);
@@ -380,26 +460,36 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
   };
 
   // Atualizar textos formais a partir dos itens marcados
-  const generateFormalTextsFromEvidence = (items: RawEvidenceItem[], studentName: string, className: string) => {
+  const generateFormalTextsFromEvidence = (
+    items: RawEvidenceItem[],
+    studentName: string,
+    className: string,
+    militaryScoreOverride?: number | null
+  ) => {
     const activeOccurrences = items.filter(i => i.checked && i.type === 'OCORRENCIA');
     const activeMediation = items.filter(i => i.checked && i.type === 'MEDIACAO');
     const activePsycho = items.filter(i => i.checked && i.type === 'PSICOSSOCIAL');
     const activeFicai = items.filter(i => i.checked && i.type === 'FICAI');
     const activeMilitar = items.filter(i => i.checked && i.type === 'MILITAR');
 
+    const milScore = militaryScoreOverride !== undefined ? militaryScoreOverride : studentMilitaryScore;
+
     // 1. FATOS REGISTRADOS
     let compiledFacts = '';
     if (activeOccurrences.length > 0) {
-      compiledFacts += `HISTÓRICO DE OCORRÊNCIAS ESCOLARES (${activeOccurrences.length} registros selecionados):\n`;
+      compiledFacts += `HISTÓRICO DE OCORRÊNCIAS ESCOLARES (${activeOccurrences.length} registros):\n`;
       activeOccurrences.forEach((o, idx) => {
         compiledFacts += `\n• Ocorrência #${idx + 1} (${o.date}${o.time ? ` às ${o.time}` : ''}): Categoria: ${o.category || 'Geral'} [Gravidade: ${o.severity || 'Média'}]\nRelato: ${o.desc}\nRegistrado por: ${o.author || 'Equipe Escolar'}\n`;
       });
     }
 
-    if (activeMilitar.length > 0) {
-      compiledFacts += `\nFATOS OBSERVADOS PELA MONITORIA CÍVICO-MILITAR (${activeMilitar.length} registros):\n`;
+    if (activeMilitar.length > 0 || milScore !== null) {
+      compiledFacts += `\nHISTÓRICO DISCIPLINAR DO CORPO DE ALUNOS (REGIME CÍVICO-MILITAR - ${activeMilitar.length} registros):\n`;
+      if (milScore !== null) {
+        compiledFacts += `• Nota de Conduta & Comportamento Militar Atual: ${milScore.toFixed(1)}/10.0 [Classificação: ${getMilitaryConcept(milScore)}]\n`;
+      }
       activeMilitar.forEach((m, idx) => {
-        compiledFacts += `• Registro #${idx + 1} (${m.date}): ${m.desc}\n`;
+        compiledFacts += `• Registro Disciplinar #${idx + 1} (${m.date}): ${m.title} — ${m.desc}\n`;
       });
     }
 
@@ -407,11 +497,26 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       compiledFacts = `Estudante ${studentName} apresenta histórico de condutas disciplinares recorrentes, conflitos interpessoais e necessidade de intervenção intersetorial da rede de proteção.`;
     }
 
-    // 2. PROVIDÊNCIAS ESCOLARES ADOTADAS
+    // 2. PROVIDÊNCIAS ESCOLARES ADOTADAS (INCLUINDO MEDIDAS DISCIPLINARES MILITARES)
     let compiledMeasures = `1. Atendimento e Notificação aos Responsáveis: A gestão escolar convocou os pais/responsáveis legais para ciência formal das ocorrências, sendo firmados termos de compromisso e orientações sobre os deveres previstos no regimento escolar;\n`;
     compiledMeasures += `2. Intervenções Pedagógicas e Restaurativas: A equipe de coordenação realizou acompanhamento em sala de aula, orientações individuais e advertências pedagógicas cabíveis;\n`;
     compiledMeasures += `3. Informação sobre a LGPD (Lei Federal nº 13.709/2018): Esclareceu-se à família sobre o sigilo das gravações do circuito interno de monitoramento da escola, resguardando a imagem de outros menores envolvidos;\n`;
-    compiledMeasures += `4. Esgotamento das Medidas Administrativas: A unidade escolar empregou todos os recursos pedagógicos, preventivos e restaurativos disponíveis em âmbito institucional, justificando o presente acionamento da rede de proteção.`;
+    compiledMeasures += `4. Esgotamento das Medidas Administrativas: A unidade escolar empregou todos os recursos pedagógicos, preventivos e restaurativos disponíveis em âmbito institucional, justificando o presente acionamento da rede de proteção;\n`;
+
+    const militaryMeasures = activeMilitar.filter(m => 
+      m.desc.includes('Medida Disciplinar') || 
+      m.desc.includes('Termo') || 
+      m.desc.includes('Advertência') || 
+      m.desc.includes('suspensão') ||
+      m.desc.includes('Infração')
+    );
+
+    if (militaryMeasures.length > 0) {
+      compiledMeasures += `5. Medidas Disciplinares Aplicadas pelo Corpo de Alunos (Cívico-Militar):\n`;
+      militaryMeasures.forEach((mm, idx) => {
+        compiledMeasures += `   • Registro #${idx + 1} (${mm.date}): ${mm.desc}\n`;
+      });
+    }
 
     // 3. AÇÕES DA EQUIPE PSICOSSOCIAL E MEDIAÇÃO
     let compiledPsychosocial = '';
@@ -433,8 +538,11 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       compiledPsychosocial = `Acolhimento da família e do estudante pelo Professor Mediador e pela Equipe Psicossocial Escolar, realização de escuta qualificada individualizada e aplicação de práticas de resolução pacífica de conflitos.`;
     }
 
-    // 4. PERFIL SOCIOEDUCACIONAL
+    // 4. PERFIL SOCIOEDUCACIONAL (INCLUINDO CONCEITO DISCIPLINAR CÍVICO-MILITAR)
     let compiledProfile = `Estudante: ${studentName} | Turma: ${className || 'Regular'}\n`;
+    if (milScore !== null) {
+      compiledProfile += `• Regime Disciplinar Cívico-Militar: Nota de Conduta ${milScore.toFixed(1)}/10.0 [Classificação: ${getMilitaryConcept(milScore)}], acumulando ${activeMilitar.length} registros de deméritos e infrações disciplinares aplicadas pela monitoria militar;\n`;
+    }
     if (activeFicai.length > 0) {
       compiledProfile += `• Notificação de Infrequência Escolar (FICAI) ativa na Busca Ativa;\n`;
     }
@@ -692,7 +800,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Instrumento formal de juntada probatória com fundamentação jurídica no ECA (Art. 56), anexos digitais e controle de protocolo.
+              Instrumento formal de juntada probatória com medidas disciplinares cívico-militares, fundamentação no ECA (Art. 56), anexos digitais e protocolos.
             </p>
           </div>
         </div>
@@ -723,6 +831,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
               });
               setEvidenceItems([]);
               setShowEvidenceChecklist(false);
+              setStudentMilitaryScore(null);
               setIsModalOpen(true);
             }}
             className="px-6 py-3.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-rose-600/20 active:scale-95 transition-all flex items-center gap-2"
@@ -992,11 +1101,11 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                     >
                       {isCompilingDossier ? (
                         <>
-                          <Loader2 size={16} className="animate-spin" /> Compilando Histórico e Juntada de Fatos...
+                          <Loader2 size={16} className="animate-spin" /> Compilando Histórico e Medidas Disciplinares...
                         </>
                       ) : (
                         <>
-                          <Sparkles size={16} /> ⚡ Compilar Juntada Automática de Fatos (Ocorrências + Mediações + Atendimentos + Faltas)
+                          <Sparkles size={16} /> ⚡ Compilar Juntada Automática de Fatos (Ocorrências + Medidas Militares + Mediações + Faltas)
                         </>
                       )}
                     </button>
@@ -1006,14 +1115,21 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {/* PAINEL INTERATIVO DE SELEÇÃO DE EVIDÊNCIAS / PROVAS */}
                 {showEvidenceChecklist && evidenceItems.length > 0 && (
                   <div className="p-5 bg-indigo-50/70 border border-indigo-200 rounded-3xl space-y-3 animate-in fade-in">
-                    <div className="flex justify-between items-center pb-2 border-b border-indigo-200">
+                    <div className="flex justify-between items-center pb-2 border-b border-indigo-200 flex-wrap gap-2">
                       <div>
-                        <h4 className="text-xs font-black text-indigo-950 uppercase tracking-tight flex items-center gap-2">
-                          <CheckSquare size={16} className="text-indigo-600" />
-                          Checklist Interativo de Provas ({evidenceItems.filter(i => i.checked).length}/{evidenceItems.length} selecionadas)
-                        </h4>
-                        <p className="text-[10px] text-indigo-700 font-medium">
-                          Marque ou desmarque quais registros devem ser incorporados ao texto oficial.
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-black text-indigo-950 uppercase tracking-tight flex items-center gap-2">
+                            <CheckSquare size={16} className="text-indigo-600" />
+                            Checklist Interativo de Provas ({evidenceItems.filter(i => i.checked).length}/{evidenceItems.length} selecionadas)
+                          </h4>
+                          {studentMilitaryScore !== null && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-900 border border-blue-300 rounded-lg text-[9px] font-black uppercase flex items-center gap-1">
+                              <Shield size={10} /> Nota Cívico-Militar: {studentMilitaryScore.toFixed(1)}/10 ({getMilitaryConcept(studentMilitaryScore)})
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-indigo-700 font-medium mt-0.5">
+                          Marque ou desmarque ocorrências, medidas disciplinares militares e mediações para compor o texto oficial.
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1041,7 +1157,9 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                           onClick={() => handleToggleEvidenceItem(item.id)}
                           className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-2.5 ${
                             item.checked
-                              ? 'bg-white border-indigo-400 shadow-sm text-indigo-950'
+                              ? item.type === 'MILITAR'
+                                ? 'bg-blue-50/80 border-blue-300 shadow-sm text-blue-950'
+                                : 'bg-white border-indigo-400 shadow-sm text-indigo-950'
                               : 'bg-slate-100/70 border-slate-200 text-slate-400 opacity-60'
                           }`}
                         >
@@ -1053,6 +1171,14 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                           />
                           <div className="min-w-0 text-left">
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
+                                item.type === 'MILITAR' ? 'bg-blue-600 text-white' :
+                                item.type === 'MEDIACAO' ? 'bg-purple-600 text-white' :
+                                item.type === 'FICAI' ? 'bg-rose-600 text-white' :
+                                'bg-slate-200 text-slate-700'
+                              }`}>
+                                {item.type}
+                              </span>
                               <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">
                                 {item.date}
                               </span>
@@ -1073,7 +1199,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {/* 1. FATO REGISTRADO */}
                 <div>
                   <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-1">
-                    1. Fato Registrado (Descrição do Incidente & Histórico)
+                    1. Fato Registrado (Descrição do Incidente & Histórico Disciplinar)
                   </label>
                   <textarea
                     required
@@ -1085,17 +1211,17 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                   />
                 </div>
 
-                {/* 2. PROVIDÊNCIAS ADOTADAS PELA ESCOLA */}
+                {/* 2. PROVIDÊNCIAS ADOTADAS PELA ESCOLA (INCLUINDO MEDIDAS CÍVICO-MILITARES) */}
                 <div>
                   <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-1">
-                    2. Providências Adotadas pela Escola
+                    2. Providências Adotadas pela Escola & Medidas Disciplinares Aplicadas
                   </label>
                   <textarea
                     required
                     rows={4}
                     value={form.schoolMeasuresTaken || ''}
                     onChange={e => setForm(prev => ({ ...prev, schoolMeasuresTaken: e.target.value }))}
-                    placeholder="Comunicação aos responsáveis, socorro/assistência médica, Boletim de Ocorrência, escuta individual, orientações regimentais e informação sobre a LGPD..."
+                    placeholder="Comunicação aos responsáveis, advertências militares, termos de ajuste de conduta, LGPD..."
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -1117,13 +1243,13 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {/* 4. PERFIL SOCIOEDUCACIONAL */}
                 <div>
                   <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest block mb-1">
-                    4. Perfil Socioeducacional do Estudante
+                    4. Perfil Socioeducacional & Conceito de Conduta Cívico-Militar
                   </label>
                   <textarea
                     rows={4}
                     value={form.socioEducationalProfile || ''}
                     onChange={e => setForm(prev => ({ ...prev, socioEducationalProfile: e.target.value }))}
-                    placeholder="Comportamento no domicílio, reincidência, monitoramento de frequência na Busca Ativa, rendimento pedagógico e programas sociais..."
+                    placeholder="Nota de conduta militar, comportamento no domicílio, reincidência, monitoramento de frequência na Busca Ativa, rendimento pedagógico e programas sociais..."
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -1180,7 +1306,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                         Galeria de Anexos & Evidências Digitais ({(form.evidenceAttachments || []).length})
                       </h4>
                       <p className="text-[10px] text-slate-500 font-medium">
-                        Anexe cópias digitalizadas do B.O., prints de ameaças, fotos de termos físicos ou laudos médicos.
+                        Anexe cópias digitalizadas do B.O., prints de ameaças, fotos de termos físicos, partes disciplinares militares ou laudos médicos.
                       </p>
                     </div>
 
@@ -1251,7 +1377,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                       type="text"
                       value={form.participants || ''}
                       onChange={e => setForm(prev => ({ ...prev, participants: e.target.value }))}
-                      placeholder="Pais, Estudantes, Técnico Psicossocial, Mediadora, Direção..."
+                      placeholder="Pais, Estudantes, Técnico Psicossocial, Mediadora, Direção, Monitoria Militar..."
                       className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none"
                     />
                   </div>
@@ -1431,7 +1557,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Governo do Estado de Mato Grosso</h2>
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">Secretaria de Estado de Educação — SEDUC/MT</h3>
                 <h4 className="text-sm font-black uppercase tracking-tight text-slate-900">E.E. Cívico-Militar André Antônio Maggi</h4>
-                <p className="text-[10px] text-slate-600">Diretoria Regional de Educação de Sinop • Núcleo de Mediação Escolar e Equipe Psicossocial</p>
+                <p className="text-[10px] text-slate-600">Diretoria Regional de Educação de Sinop • Corpo de Alunos, Núcleo de Mediação Escolar e Equipe Psicossocial</p>
               </div>
 
               {/* TÍTULO DO DOCUMENTO */}
@@ -1457,7 +1583,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 
                 {/* 1. FATO */}
                 <div className="space-y-1">
-                  <h5 className="font-black uppercase text-slate-900">1. Fato Registrado & Histórico de Ocorrências:</h5>
+                  <h5 className="font-black uppercase text-slate-900">1. Fato Registrado & Histórico de Ocorrências e Infrações Disciplinares:</h5>
                   <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                     {selectedReport.recordedFact}
                   </p>
@@ -1465,7 +1591,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
 
                 {/* 2. PROVIDÊNCIAS */}
                 <div className="space-y-1">
-                  <h5 className="font-black uppercase text-slate-900">2. Providências Adotadas pela Unidade Escolar:</h5>
+                  <h5 className="font-black uppercase text-slate-900">2. Providências Adotadas pela Unidade Escolar & Medidas Disciplinares Aplicadas:</h5>
                   <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                     {selectedReport.schoolMeasuresTaken}
                   </p>
@@ -1484,7 +1610,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 {/* 4. PERFIL SOCIOEDUCACIONAL */}
                 {selectedReport.socioEducationalProfile && (
                   <div className="space-y-1">
-                    <h5 className="font-black uppercase text-slate-900">4. Perfil Socioeducacional do Estudante:</h5>
+                    <h5 className="font-black uppercase text-slate-900">4. Perfil Socioeducacional & Regime Disciplinar Cívico-Militar:</h5>
                     <p className="p-3 bg-white border border-slate-300 rounded-lg text-[11px] leading-relaxed whitespace-pre-line">
                       {selectedReport.socioEducationalProfile}
                     </p>
