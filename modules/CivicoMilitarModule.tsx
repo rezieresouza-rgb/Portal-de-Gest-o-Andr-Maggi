@@ -35,7 +35,8 @@ import {
   Scale,
   HeartHandshake,
   Send,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ShieldAlert
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
