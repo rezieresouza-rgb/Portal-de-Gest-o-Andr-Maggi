@@ -699,6 +699,8 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ user, initialView
                   const hasCaregiver = paedeMovement?.doctor_name === 'COM CUIDADOR';
                   const attendsAee = paedeMovement?.responsible_name === 'FREQUENTA AEE';
                   const pedagogicalGuidelines = paedeMovement?.destination_school || '';
+                  const studentRisk = riskStats[student.CodigoAluno];
+                  const isAtRisk = Boolean(studentRisk && studentRisk.percentage < 75);
 
                   return (
                     <div 
