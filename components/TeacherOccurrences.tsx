@@ -331,7 +331,8 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
                category: categoryName,
                severity: form.severity,
                description: formattedDesc,
-               status: 'REGISTRADO',
+               status: 'PENDENTE',
+               target_dept: targetDept,
                location: 'SALA DE AULA'
             };
 
@@ -701,75 +702,119 @@ const TeacherOccurrences: React.FC<TeacherOccurrencesProps> = ({ user }) => {
 
                            const isPedagogical = category.includes('PEDAGÓGICO') || category.includes('PEDAGOGICO') || category.includes('ACOMPANHAMENTO');
                            const isCivicoMilitar = category.includes('FATO') || category.includes('DISCIPLINAR') || category.includes('MILITAR');
-                           const isPsychosocial = category.includes('MEDIAÇÃO') || category.includes('PSICOSSOCIAL');
+                           const statusRaw = (occ.status || 'PENDENTE').toUpperCase();
+                           const isResolved = statusRaw === 'RESOLVIDO' || statusRaw === 'CONCLUÍDO';
+                           const isAttending = statusRaw === 'EM_ATENDIMENTO';
+                           const isTramitated = statusRaw === 'TRAMITADO';
 
                            return (
-                              <div key={occ.id} className="p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:bg-gray-50/60 transition-all group">
-                                 <div className="flex items-start gap-5 flex-1">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
-                                       isPedagogical 
-                                          ? 'bg-blue-50 text-blue-600 border-blue-200' 
-                                          : isCivicoMilitar 
-                                             ? 'bg-amber-50 text-amber-600 border-amber-200' 
-                                             : 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                    }`}>
-                                       {isPedagogical ? <BookOpen size={20} /> : isCivicoMilitar ? <Shield size={20} /> : <HeartHandshake size={20} />}
-                                    </div>
-                                    
-                                    <div className="space-y-1.5 flex-1">
-                                       <div className="flex flex-wrap items-center gap-2.5">
-                                          <h4 className="font-black text-gray-900 uppercase tracking-tight text-base">{studentName}</h4>
-                                          <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 rounded-lg text-[10px] font-black uppercase">
-                                             {className}
-                                          </span>
-                                          <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${
-                                             isPedagogical 
-                                                ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                                                : isCivicoMilitar 
-                                                   ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                                                   : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                          }`}>
-                                             {isPedagogical ? 'Coord. Pedagógica' : isCivicoMilitar ? 'Cívico-Militar' : 'Mediação Escolar'}
-                                          </span>
-                                          {occ.severity && (
-                                             <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                                                occ.severity === 'CRÍTICA' || occ.severity === 'ALTA' ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-600'
+                              <div key={occ.id} className="p-6 md:p-8 flex flex-col justify-between gap-4 hover:bg-gray-50/60 transition-all group">
+                                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                                    <div className="flex items-start gap-4 flex-1">
+                                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                                          isPedagogical 
+                                             ? 'bg-blue-50 text-blue-600 border-blue-200' 
+                                             : isCivicoMilitar 
+                                                ? 'bg-amber-50 text-amber-600 border-amber-200' 
+                                                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                       }`}>
+                                          {isPedagogical ? <BookOpen size={20} /> : isCivicoMilitar ? <Shield size={20} /> : <HeartHandshake size={20} />}
+                                       </div>
+                                       
+                                       <div className="space-y-1.5 flex-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                             <h4 className="font-black text-gray-900 uppercase tracking-tight text-base">{studentName}</h4>
+                                             <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 rounded-lg text-[10px] font-black uppercase">
+                                                {className}
+                                             </span>
+                                             <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${
+                                                isPedagogical 
+                                                   ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                                   : isCivicoMilitar 
+                                                      ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                                                      : 'bg-purple-50 text-purple-700 border-purple-200'
                                              }`}>
-                                                Grau: {occ.severity}
+                                                {isPedagogical ? 'Coord. Pedagógica' : isCivicoMilitar ? 'Gestão Militar' : 'Mediação Escolar'}
                                              </span>
-                                          )}
-                                          {isMyRecord ? (
-                                             <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-[9px] font-black uppercase">
-                                                ★ Lançado por Você
-                                             </span>
-                                          ) : (
-                                             <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[9px] font-black uppercase">
-                                                Docente: {teacherAuthor}
-                                             </span>
-                                          )}
-                                       </div>
+                                             {occ.severity && (
+                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                                                   occ.severity === 'CRÍTICA' || occ.severity === 'ALTA' ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                   Grau: {occ.severity}
+                                                </span>
+                                             )}
+                                             {isMyRecord ? (
+                                                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-[9px] font-black uppercase">
+                                                   ★ Seu Registro
+                                                </span>
+                                             ) : (
+                                                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[9px] font-black uppercase">
+                                                   Docente: {teacherAuthor}
+                                                </span>
+                                             )}
+                                          </div>
 
-                                       <p className="text-xs text-gray-600 font-medium whitespace-pre-line line-clamp-2">
-                                          {description}
-                                       </p>
+                                          <p className="text-xs text-gray-700 font-medium whitespace-pre-line">
+                                             {description}
+                                          </p>
 
-                                       <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-1">
-                                          <span className="flex items-center gap-1"><Clock size={12} /> {date}</span>
-                                          <span>•</span>
-                                          <span>Registrado por: <strong>{teacherAuthor}</strong></span>
+                                          <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-1">
+                                             <span className="flex items-center gap-1"><Clock size={12} /> {date}</span>
+                                             <span>•</span>
+                                             <span>Registrado por: <strong>{teacherAuthor}</strong></span>
+                                          </div>
                                        </div>
+                                    </div>
+
+                                    {/* Badges de Status do Atendimento na Coordenação */}
+                                    <div className="flex items-center gap-2 self-start shrink-0">
+                                       {isResolved ? (
+                                          <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
+                                             <CheckCircle2 size={13} className="text-emerald-600" /> Resolvido / Devolutiva Pronta
+                                          </span>
+                                       ) : isAttending ? (
+                                          <span className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
+                                             <User size={13} className="text-blue-600" /> Em Atendimento
+                                          </span>
+                                       ) : isTramitated ? (
+                                          <span className="px-3 py-1 bg-purple-50 text-purple-800 border border-purple-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
+                                             <ArrowRightLeft size={13} className="text-purple-600" /> Tramitado de Setor
+                                          </span>
+                                       ) : (
+                                          <span className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-1">
+                                             <Clock size={13} className="text-amber-600" /> Aguardando Ação
+                                          </span>
+                                       )}
+
+                                       <button 
+                                          onClick={() => deleteOccurrence(occ.id)}
+                                          className="p-2 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                          title="Excluir Registro"
+                                       >
+                                          <Trash2 size={15} />
+                                       </button>
                                     </div>
                                  </div>
 
-                                 <div className="flex items-center gap-2 self-end lg:self-center">
-                                    <button 
-                                       onClick={() => deleteOccurrence(occ.id)}
-                                       className="p-3 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                       title="Excluir Registro"
-                                    >
-                                       <Trash2 size={16} />
-                                    </button>
-                                 </div>
+                                 {/* BLOCO DE DEVOLUTIVA / PARECER DA COORDENAÇÃO OU GESTÃO */}
+                                 {occ.feedback && (
+                                    <div className="mt-2 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl space-y-1.5 animate-in fade-in">
+                                       <div className="flex items-center justify-between text-[10px] font-black text-emerald-800 uppercase tracking-wider">
+                                          <span className="flex items-center gap-1.5">
+                                             <CheckCircle2 size={14} className="text-emerald-600" />
+                                             Devolutiva da Coordenação Pedagógica / Gestão Escolar:
+                                          </span>
+                                          {occ.resolved_at && (
+                                             <span className="text-emerald-700 font-bold">
+                                                {occ.resolved_at} {occ.resolved_by ? `• Por: ${occ.resolved_by}` : ''}
+                                             </span>
+                                          )}
+                                       </div>
+                                       <p className="text-xs text-emerald-950 font-medium leading-relaxed whitespace-pre-line">
+                                          {occ.feedback}
+                                       </p>
+                                    </div>
+                                 )}
                               </div>
                            );
                         })
