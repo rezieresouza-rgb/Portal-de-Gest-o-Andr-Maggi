@@ -423,6 +423,7 @@ interface CivicRoutineRecord {
 }
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
+  // 1. TODOS OS ESTADOS (useState) DECLARADOS NO TOPO PARA EVITAR ERROS DE INICIALIZAÇÃO (TDZ)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas'>('dashboard');
 
   // Search & Filter States
@@ -436,36 +437,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [civicReferrals, setCivicReferrals] = useState<any[]>([]);
   const [mediationLoading, setMediationLoading] = useState(false);
   const [mediationSearchTerm, setMediationSearchTerm] = useState('');
-
-  const fetchCivicReferrals = async () => {
-    setMediationLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('psychosocial_referrals')
-        .select('*')
-        .eq('referral_destination', 'MEDIACAO')
-        .order('date', { ascending: false });
-
-      if (!error && data) {
-        setCivicReferrals(data);
-      } else {
-        const local = JSON.parse(localStorage.getItem('civic_militar_mediacoes_v1') || '[]');
-        setCivicReferrals(local);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar encaminhamentos para mediação:', err);
-      const local = JSON.parse(localStorage.getItem('civic_militar_mediacoes_v1') || '[]');
-      setCivicReferrals(local);
-    } finally {
-      setMediationLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'mediacao') {
-      fetchCivicReferrals();
-    }
-  }, [activeTab]);
 
   // Main lists loaded from LocalStorage & Supabase
   const [inspections, setInspections] = useState<InspectionRecord[]>([]);
@@ -538,6 +509,83 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [batchClassSelect, setBatchClassSelect] = useState<string>('ALL');
   const [isBatchPrinting, setIsBatchPrinting] = useState<boolean>(false);
   const [batchStudentsList, setBatchStudentsList] = useState<any[]>([]);
+
+  // Modals & Form States
+  const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
+  const [isBehaviorModalOpen, setIsBehaviorModalOpen] = useState(false);
+  const [selectedStudentState, setSelectedStudentState] = useState<StudentBehaviorState | null>(null);
+
+  // Form Fields
+  const [newInspection, setNewInspection] = useState({
+    studentId: '',
+    item: 'Farda incompleta',
+    date: new Date().toISOString().split('T')[0],
+    observations: ''
+  });
+
+  const [newOccurrence, setNewOccurrence] = useState({
+    type: 'DEMERIT' as 'MERIT' | 'DEMERIT',
+    category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
+    selectedCategories: ['1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme'] as string[],
+    date: new Date().toISOString().split('T')[0],
+    observations: '',
+    disciplinaryMeasure: 'Advertência Oral',
+    suspensionDays: 1
+  });
+
+  const [categorySearchTerm, setCategorySearchTerm] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [modalCategorySeverityFilter, setModalCategorySeverityFilter] = useState<'TODAS' | 'LEVE' | 'MÉDIA' | 'GRAVE'>('TODAS');
+
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
+
+  // Civic Routine Form Checklist State
+  const [routineForm, setRoutineForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    shift: 'MATUTINO',
+    formationOk: true,
+    commandersPresent: true,
+    flagNational: true,
+    flagState: true,
+    flagMunicipal: true,
+    anthemNational: true,
+    anthemState: true,
+    anthemSchool: true,
+    marchingOk: true,
+    bulletinRead: true
+  });
+
+  // 2. FUNÇÕES E MEMOS DO COMPONENTE
+  const fetchCivicReferrals = async () => {
+    setMediationLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('psychosocial_referrals')
+        .select('*')
+        .eq('referral_destination', 'MEDIACAO')
+        .order('date', { ascending: false });
+
+      if (!error && data) {
+        setCivicReferrals(data);
+      } else {
+        const local = JSON.parse(localStorage.getItem('civic_militar_mediacoes_v1') || '[]');
+        setCivicReferrals(local);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar encaminhamentos para mediação:', err);
+      const local = JSON.parse(localStorage.getItem('civic_militar_mediacoes_v1') || '[]');
+      setCivicReferrals(local);
+    } finally {
+      setMediationLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'mediacao') {
+      fetchCivicReferrals();
+    }
+  }, [activeTab]);
 
   const nextFichaNumber = useMemo(() => {
     if (selectedDocTemplate !== 'ficha_medida_disciplinar') return '';
@@ -632,33 +680,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     }
   }, [selectedStudentForDoc]);
 
-  // Modals
-  const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
-  const [isBehaviorModalOpen, setIsBehaviorModalOpen] = useState(false);
-  const [selectedStudentState, setSelectedStudentState] = useState<StudentBehaviorState | null>(null);
-
-  // Form Fields
-  const [newInspection, setNewInspection] = useState({
-    studentId: '',
-    item: 'Farda incompleta',
-    date: new Date().toISOString().split('T')[0],
-    observations: ''
-  });
-
-  const [newOccurrence, setNewOccurrence] = useState({
-    type: 'DEMERIT' as 'MERIT' | 'DEMERIT',
-    category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
-    selectedCategories: ['1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme'] as string[],
-    date: new Date().toISOString().split('T')[0],
-    observations: '',
-    disciplinaryMeasure: 'Advertência Oral',
-    suspensionDays: 1
-  });
-
-  const [categorySearchTerm, setCategorySearchTerm] = useState('');
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [modalCategorySeverityFilter, setModalCategorySeverityFilter] = useState<'TODAS' | 'LEVE' | 'MÉDIA' | 'GRAVE'>('TODAS');
-
   const modalSuggestedMeasure = useMemo(() => {
     if (!selectedStudentState || newOccurrence.type !== 'DEMERIT') return null;
     const cats = newOccurrence.selectedCategories || [];
@@ -683,9 +704,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       previousInfractionsCount: prevCount
     });
   }, [selectedStudentState, newOccurrence.type, newOccurrence.selectedCategories]);
-
-  const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (!isInspectionModalOpen) {
@@ -742,22 +760,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     };
     fetchStudents();
   }, []);
-
-  // Civic Routine Form Checklist State
-  const [routineForm, setRoutineForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    shift: 'MATUTINO',
-    formationOk: true,
-    commandersPresent: true,
-    flagNational: true,
-    flagState: true,
-    flagMunicipal: true,
-    anthemNational: true,
-    anthemState: true,
-    anthemSchool: true,
-    marchingOk: true,
-    bulletinRead: true
-  });
 
   // 1. Initial Data Load & Sync
   // Fetch data from Supabase on mount
