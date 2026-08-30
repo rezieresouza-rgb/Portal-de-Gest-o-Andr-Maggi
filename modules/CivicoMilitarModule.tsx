@@ -77,6 +77,136 @@ export const CIRCUNSTANCIAS_ATENUANTES_ART34 = [
   'V - Ter agido sob provocação injusta ou coação'
 ];
 
+export interface EECMSuggestionResult {
+  suggestedMeasure: 'Advertência Oral' | 'Advertência Escrita' | 'Suspensão de Sala de Aula' | 'Ações Educativas' | 'Transferência Educativa';
+  severityLevel: 'LEVE' | 'MÉDIA' | 'GRAVE';
+  legalBasis: string;
+  recommendedDays?: number;
+  pointsImpact: number;
+  competence: string;
+  rationale: string;
+  requiresTACE?: boolean;
+  requiresCouncil?: boolean;
+}
+
+export const getEECMSuggestedMeasure = (params: {
+  itemCategory: string;
+  atenuantes?: string;
+  agravantes?: string;
+  studentScore?: number;
+  previousInfractionsCount?: number;
+}): EECMSuggestionResult | null => {
+  const { itemCategory, atenuantes = '', agravantes = '', studentScore, previousInfractionsCount = 0 } = params;
+  if (!itemCategory || itemCategory.trim() === '') return null;
+
+  // 1. Identificar número do item e gravidade
+  const matchNum = itemCategory.match(/^(\d+)\./);
+  const itemNum = matchNum ? parseInt(matchNum[1], 10) : 0;
+
+  let severity: 'LEVE' | 'MÉDIA' | 'GRAVE' = 'LEVE';
+  if (itemNum >= 1 && itemNum <= 26) severity = 'LEVE';
+  else if (itemNum >= 27 && itemNum <= 62) severity = 'MÉDIA';
+  else if (itemNum >= 63 && itemNum <= 91) severity = 'GRAVE';
+  else if (itemCategory.toLowerCase().includes('grave')) severity = 'GRAVE';
+  else if (itemCategory.toLowerCase().includes('média') || itemCategory.toLowerCase().includes('media')) severity = 'MÉDIA';
+  else severity = 'LEVE';
+
+  // 2. Flags circunstanciais
+  const hasAgravantes = agravantes.trim().length > 0 && !agravantes.toLowerCase().includes('nenhuma');
+  const hasAtenuantes = atenuantes.trim().length > 0 && !atenuantes.toLowerCase().includes('nenhuma');
+  const isReincidente = previousInfractionsCount > 0 || agravantes.includes('III') || agravantes.toLowerCase().includes('reincidente');
+  const isPatrimonioDamage = [64, 79, 86, 91].includes(itemNum) || itemCategory.toLowerCase().includes('patrimônio') || itemCategory.toLowerCase().includes('danos') || itemCategory.toLowerCase().includes('avaria');
+  const isIncompativel = typeof studentScore === 'number' && studentScore < 2.0;
+
+  // 3. Regras Oficiais do Regulamento Disciplinar EECM-MT
+
+  // CASO 1: Comportamento Incompatível (< 2.0) ou Reincidência Grave Qualificada (Art. 30 e 56)
+  if (isIncompativel || (severity === 'GRAVE' && isReincidente && hasAgravantes)) {
+    return {
+      suggestedMeasure: 'Transferência Educativa',
+      severityLevel: severity,
+      legalBasis: 'Art. 30 c/c Art. 53, parágrafo único e Art. 56 do Regulamento EECM',
+      pointsImpact: 0,
+      competence: 'Conselho de Ensino Disciplinar e Direção Escolar (Art. 31, IV)',
+      rationale: 'O discente atingiu a gradação comportamental Incompatível (< 2,0) ou reincidência grave qualificada. Exige deliberação do Conselho de Ensino Disciplinar para aplicação de Transferência Educativa ou Termo de Ajustamento de Conduta Escolar (Art. 53 p.único).',
+      requiresCouncil: true,
+      requiresTACE: true
+    };
+  }
+
+  // CASO 2: Dano ao Patrimônio Público Escolar (Art. 17, II, Art. 19 e Art. 28)
+  if (isPatrimonioDamage) {
+    return {
+      suggestedMeasure: 'Ações Educativas',
+      severityLevel: severity,
+      legalBasis: 'Art. 17, II e Art. 19 c/c Art. 18 do Regulamento EECM',
+      recommendedDays: 5,
+      pointsImpact: -1.0,
+      competence: 'Oficial de Gestão Educacional-Militar e Direção (Art. 31, II)',
+      rationale: 'Infração que gerou avaria/dano ao patrimônio da unidade escolar. Conforme Art. 17 e 19, aplica-se Ação Educativa (de até 5 dias) e Termo de Adequação de Conduta Escolar (TACE) com anuência dos responsáveis para reparação do bem público.',
+      requiresTACE: true
+    };
+  }
+
+  // CASO 3: Falta Disciplinar GRAVE (Itens 63 a 91)
+  if (severity === 'GRAVE') {
+    const days = hasAgravantes ? 3 : 2;
+    return {
+      suggestedMeasure: 'Suspensão de Sala de Aula',
+      severityLevel: 'GRAVE',
+      legalBasis: hasAgravantes ? 'Art. 16 c/c Art. 35 do Regulamento EECM' : 'Art. 16, § 4º do Regulamento EECM',
+      recommendedDays: days,
+      pointsImpact: -(0.5 * days),
+      competence: 'Oficial de Gestão Educacional-Militar e Direção (Art. 31, II)',
+      rationale: `Falta de natureza Grave (Art. 10). O Art. 16 determina a Suspensão de Sala de Aula por ${days} dias letivos com realização de atividades pedagógicas obrigatórias na unidade escolar.`
+    };
+  }
+
+  // CASO 4: Falta Disciplinar MÉDIA (Itens 27 a 62)
+  if (severity === 'MÉDIA') {
+    if (isReincidente || (hasAgravantes && !hasAtenuantes)) {
+      return {
+        suggestedMeasure: 'Suspensão de Sala de Aula',
+        severityLevel: 'MÉDIA',
+        legalBasis: 'Art. 16 (Reincidência em Falta Média / Agravação) c/c Art. 35 do Regulamento EECM',
+        recommendedDays: 1,
+        pointsImpact: -0.5,
+        competence: 'Oficial de Gestão Educacional-Militar e Direção (Art. 31, II)',
+        rationale: 'Falta disciplinar de natureza Média com presença de circunstâncias agravantes ou reincidência. O Art. 16 e Art. 42 autorizam a elevação da penalidade para Suspensão de Sala de Aula de 1 dia letivo.'
+      };
+    }
+    return {
+      suggestedMeasure: 'Advertência Escrita',
+      severityLevel: 'MÉDIA',
+      legalBasis: 'Art. 15 do Regulamento Disciplinar EECM',
+      pointsImpact: -0.3,
+      competence: 'Diretoria, Gestão Militar, Monitores, Coordenadores e Professores (Art. 31, I)',
+      rationale: 'Falta disciplinar de natureza Média (Art. 9º). A penalidade proporcional padrão educativa aplicável é a Advertência Escrita (Art. 15), gerando cômputo de –0,30 ponto no comportamento.'
+    };
+  }
+
+  // CASO 5: Falta Disciplinar LEVE (Itens 1 a 26)
+  if (isReincidente || (hasAgravantes && !hasAtenuantes)) {
+    return {
+      suggestedMeasure: 'Advertência Escrita',
+      severityLevel: 'LEVE',
+      legalBasis: 'Art. 15 (Reincidência de Falta Leve / Agravação) do Regulamento EECM',
+      pointsImpact: -0.3,
+      competence: 'Diretoria, Gestão Militar, Monitores, Coordenadores e Professores (Art. 31, I)',
+      rationale: 'Falta disciplinar de natureza Leve, porém com agravante do Art. 35 ou reincidência. Conforme o Art. 15, aplica-se a Advertência Escrita, gerando –0,30 ponto no comportamento.'
+    };
+  }
+
+  return {
+    suggestedMeasure: 'Advertência Oral',
+    severityLevel: 'LEVE',
+    legalBasis: 'Art. 14, § 1º do Regulamento Disciplinar EECM',
+    pointsImpact: -0.1,
+    competence: 'Diretoria, Gestão Militar, Monitores, Coordenadores e Professores (Art. 31, I)',
+    rationale: 'Falta disciplinar de natureza Leve (Art. 8º). Aplica-se medida branda de Advertência Oral (Art. 14), gerando –0,10 ponto no comportamento escolar.'
+  };
+};
+
 export const CivicoMilitarLogoBadge: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl', showLabel?: boolean }> = ({ size = 'md', showLabel = false }) => {
   const badgeClasses = 
     size === 'sm' ? 'w-9 h-9' :
@@ -301,6 +431,25 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     });
     return `${(docsThisYear.length + 1).toString().padStart(3, '0')}/${currentYear}`;
   }, [selectedDocTemplate, docHistory]);
+
+  const selectedStudentBehaviorState = useMemo(() => {
+    if (!selectedStudentForDoc) return null;
+    return studentStates.find(s => s.id === selectedStudentForDoc.CodigoAluno || s.name === selectedStudentForDoc.Nome) || null;
+  }, [studentStates, selectedStudentForDoc]);
+
+  const suggestedMeasureReport = useMemo(() => {
+    if (selectedDocTemplate !== 'ficha_medida_disciplinar' || !docFields.itensEnquadramento) {
+      return null;
+    }
+    const prevCount = selectedStudentBehaviorState?.occurrences ? selectedStudentBehaviorState.occurrences.filter(o => o.type === 'demerit').length : 0;
+    return getEECMSuggestedMeasure({
+      itemCategory: docFields.itensEnquadramento,
+      atenuantes: docFields.atenuantes,
+      agravantes: docFields.agravantes,
+      studentScore: selectedStudentBehaviorState?.score,
+      previousInfractionsCount: prevCount
+    });
+  }, [selectedDocTemplate, docFields.itensEnquadramento, docFields.atenuantes, docFields.agravantes, selectedStudentBehaviorState]);
 
   // Automatically infer Series/Year and prefill studentName & studentClass when a student is selected
   useEffect(() => {
@@ -1366,12 +1515,19 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
        else if (severity === 'MÉDIA') severity = 'GRAVE';
     }
 
-    // 4. Preencher automaticamente o formulário do documento
+    // 4. Calcular sugestão regulamentar EECM
+    const suggested = getEECMSuggestedMeasure({
+      itemCategory: occ.category,
+      agravantes: occ.isEscalated ? 'III - Ser reincidente em falta disciplinar de mesma classificação' : '',
+      studentScore: selectedStudentState?.score
+    });
+
+    // 5. Preencher automaticamente o formulário do documento
     setDocFields(prev => ({
       ...prev,
       faltaDate: occ.date,
-      medidaAplicada: occ.disciplinaryMeasure || 'Advertência Oral',
-      falta: severity,
+      medidaAplicada: occ.disciplinaryMeasure || suggested?.suggestedMeasure || 'Advertência Oral',
+      falta: occ.observations || (suggested ? suggested.rationale : severity),
       itensEnquadramento: occ.category,
       achado: occ.observations,
       date: new Date().toISOString().split('T')[0],
@@ -3375,6 +3531,111 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           />
                         </div>
                       </div>
+
+                      {/* CARD VISUAL DE SUGESTÃO REGULAMENTAR INTELIGENTE (REGULAMENTO EECM-MT) */}
+                      {suggestedMeasureReport && (
+                        <div className={`p-4 rounded-2xl border transition-all animate-fadeIn ${
+                          suggestedMeasureReport.suggestedMeasure === 'Advertência Oral' 
+                            ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-200'
+                            : suggestedMeasureReport.suggestedMeasure === 'Advertência Escrita'
+                            ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-200'
+                            : suggestedMeasureReport.suggestedMeasure === 'Suspensão de Sala de Aula'
+                            ? 'bg-rose-50/80 border-rose-300 ring-1 ring-rose-200'
+                            : suggestedMeasureReport.suggestedMeasure === 'Ações Educativas'
+                            ? 'bg-purple-50/80 border-purple-300 ring-1 ring-purple-200'
+                            : 'bg-red-100/90 border-red-300 ring-1 ring-red-200'
+                        }`}>
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <Scale size={16} className={
+                                suggestedMeasureReport.suggestedMeasure === 'Advertência Oral' ? 'text-emerald-700' :
+                                suggestedMeasureReport.suggestedMeasure === 'Advertência Escrita' ? 'text-amber-700' :
+                                suggestedMeasureReport.suggestedMeasure === 'Suspensão de Sala de Aula' ? 'text-rose-700' :
+                                suggestedMeasureReport.suggestedMeasure === 'Ações Educativas' ? 'text-purple-700' : 'text-red-700'
+                              } />
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1">
+                                <Sparkles size={12} className="text-amber-500 fill-amber-500" />
+                                Sugestão Regulamentar (Regulamento EECM-MT)
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase bg-white/90 border border-slate-200 text-slate-700 shadow-xs">
+                                Gravidade: {suggestedMeasureReport.severityLevel}
+                              </span>
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-xs ${
+                                suggestedMeasureReport.pointsImpact < 0 ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-slate-100 text-slate-700'
+                              }`}>
+                                {suggestedMeasureReport.pointsImpact < 0 ? `${suggestedMeasureReport.pointsImpact.toFixed(2)} pts` : '0.00 pts'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/95 p-3.5 rounded-xl border border-slate-200/90 shadow-xs">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-black text-slate-900 uppercase">
+                                  {suggestedMeasureReport.suggestedMeasure}
+                                </span>
+                                {suggestedMeasureReport.recommendedDays && (
+                                  <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                                    {suggestedMeasureReport.recommendedDays} dias letivos
+                                  </span>
+                                )}
+                                {selectedStudentBehaviorState && (
+                                  <span className="text-[9px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200">
+                                    Nota atual: {selectedStudentBehaviorState.score.toFixed(1)} ({getBehaviorStatus(selectedStudentBehaviorState.score).label})
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] font-bold text-slate-600">
+                                Base Legal: <span className="text-blue-700 underline font-semibold">{suggestedMeasureReport.legalBasis}</span>
+                              </p>
+                              <p className="text-[10px] text-slate-600 leading-snug">
+                                {suggestedMeasureReport.rationale}
+                              </p>
+                              <p className="text-[9px] text-slate-400">
+                                <strong className="text-slate-500">Competência:</strong> {suggestedMeasureReport.competence}
+                              </p>
+                              {suggestedMeasureReport.requiresTACE && (
+                                <div className="mt-1 flex items-center gap-1 text-[9px] font-bold text-purple-700">
+                                  <FileText size={11} />
+                                  <span>Requer lavratura de Termo de Adequação de Conduta Escolar (TACE - Art. 18/22)</span>
+                                </div>
+                              )}
+                              {suggestedMeasureReport.requiresCouncil && (
+                                <div className="mt-1 flex items-center gap-1 text-[9px] font-bold text-red-700">
+                                  <AlertTriangle size={11} />
+                                  <span>Requer convocação do Conselho de Ensino Disciplinar (Art. 30 e 54)</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDocFields(prev => ({
+                                  ...prev,
+                                  medidaAplicada: suggestedMeasureReport.suggestedMeasure
+                                }));
+                              }}
+                              className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-sm transition-all text-white ${
+                                suggestedMeasureReport.suggestedMeasure === 'Advertência Oral'
+                                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                                  : suggestedMeasureReport.suggestedMeasure === 'Advertência Escrita'
+                                  ? 'bg-amber-600 hover:bg-amber-700'
+                                  : suggestedMeasureReport.suggestedMeasure === 'Suspensão de Sala de Aula'
+                                  ? 'bg-rose-600 hover:bg-rose-700'
+                                  : suggestedMeasureReport.suggestedMeasure === 'Ações Educativas'
+                                  ? 'bg-purple-600 hover:bg-purple-700'
+                                  : 'bg-red-600 hover:bg-red-700'
+                              }`}
+                            >
+                              <Sparkles size={13} />
+                              {docFields.medidaAplicada === suggestedMeasureReport.suggestedMeasure ? 'Medida Aplicada ✓' : 'Aplicar Sugestão'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold text-slate-500 uppercase">Gestor Educacional Militar</label>
