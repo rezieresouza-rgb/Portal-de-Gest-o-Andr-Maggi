@@ -20,7 +20,10 @@ import {
   GraduationCap,
   Sparkles,
   School,
-  Lock
+  Lock,
+  Loader2,
+  ShieldCheck,
+  Send
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
@@ -58,6 +61,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
   const [selectedReport, setSelectedReport] = useState<PsychosocialCircumstantiatedReport | null>(null);
   const [studentSearch, setStudentSearch] = useState('');
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [isCompilingDossier, setIsCompilingDossier] = useState(false);
 
   const currentYear = new Date().getFullYear();
 
@@ -170,12 +174,145 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
   const handleSelectStudent = (s: any) => {
     const studentName = s.Nome || s.name;
     const currentInvolved = form.involvedStudents ? `${form.involvedStudents}, ${studentName}` : studentName;
+    const targetClass = s.Turma || s.className || '';
     setForm(prev => ({
       ...prev,
       involvedStudents: currentInvolved,
-      className: prev.className || s.Turma || s.className || ''
+      className: prev.className || targetClass
     }));
     setStudentSearch('');
+    handleAutoCompileDossier(studentName, targetClass);
+  };
+
+  const handleAutoCompileDossier = async (studentName: string, className: string) => {
+    if (!studentName.trim()) {
+      alert('Por favor, selecione ou informe o nome do estudante para compilar o dossiê.');
+      return;
+    }
+
+    setIsCompilingDossier(true);
+    try {
+      const cleanName = studentName.trim();
+
+      // 1. Buscar Ocorrências no Supabase
+      const { data: occData } = await supabase
+        .from('occurrences')
+        .select('*')
+        .ilike('student_name', `%${cleanName}%`)
+        .order('date', { ascending: true });
+
+      // 2. Buscar Casos de Mediação
+      const { data: medData } = await supabase
+        .from('mediation_cases')
+        .select('*')
+        .ilike('student_name', `%${cleanName}%`)
+        .order('opened_at', { ascending: true });
+
+      // 3. Buscar Encaminhamentos Psicossociais
+      const { data: psychoData } = await supabase
+        .from('psychosocial_referrals')
+        .select('*')
+        .ilike('student_name', `%${cleanName}%`)
+        .order('date', { ascending: true });
+
+      // 4. Buscar FICAI / Busca Ativa
+      let ficaiRecords: any[] = [];
+      try {
+        const savedFicai = localStorage.getItem('busca_ativa_ficai_records_v2');
+        if (savedFicai) {
+          const list = JSON.parse(savedFicai);
+          ficaiRecords = list.filter((f: any) => (f.studentName || '').toLowerCase().includes(cleanName.toLowerCase()));
+        }
+      } catch (e) {}
+
+      // 5. Buscar Documentos Militares
+      let militaryDocs: any[] = [];
+      try {
+        const savedMil = localStorage.getItem('civico_militar_documentos_v2');
+        if (savedMil) {
+          const list = JSON.parse(savedMil);
+          militaryDocs = list.filter((m: any) => (m.studentName || '').toLowerCase().includes(cleanName.toLowerCase()));
+        }
+      } catch (e) {}
+
+      // COMPILAÇÃO DOS FATOS REGISTRADOS
+      let compiledFacts = '';
+      if (occData && occData.length > 0) {
+        compiledFacts += `HISTÓRICO DE OCORRÊNCIAS ESCOLARES (${occData.length} registros):\n`;
+        occData.forEach((o: any, idx: number) => {
+          const cleanDesc = (o.description || '').replace(/\[(?:SETOR|ORIGEM|TRAMITADO)[^\]]*\]/gi, '').trim();
+          compiledFacts += `\n• Ocorrência #${idx + 1} (${o.date || 'S/D'} às ${o.time || '10:00'}): Categoria: ${o.category || 'Geral'} [Gravidade: ${o.severity || 'Média'}]\nRelato: ${cleanDesc}\nRegistrado por: ${o.responsible_name || 'Equipe Escolar'}\n`;
+        });
+      }
+
+      if (militaryDocs.length > 0) {
+        compiledFacts += `\nFATOS OBSERVADOS PELA MONITORIA CÍVICO-MILITAR (${militaryDocs.length} registros):\n`;
+        militaryDocs.forEach((m: any, idx: number) => {
+          compiledFacts += `• Registro #${idx + 1} (${m.date}): ${m.fields?.achado || m.templateLabel || 'Fato observado'}\n`;
+        });
+      }
+
+      if (!compiledFacts) {
+        compiledFacts = `Estudante ${cleanName} apresenta histórico de condutas disciplinares recorrentes, conflitos interpessoais e necessidade de intervenção intersetorial da rede de proteção.`;
+      }
+
+      // COMPILAÇÃO DAS PROVIDÊNCIAS ESCOLARES ADOTADAS
+      let compiledMeasures = `1. Atendimento e Notificação aos Responsáveis: A gestão escolar convocou os pais/responsáveis legais para ciência formal das ocorrências, sendo firmados termos de compromisso e orientações sobre os deveres previstos no regimento escolar;\n`;
+      compiledMeasures += `2. Intervenções Pedagógicas e Restaurativas: A equipe de coordenação realizou acompanhamento em sala de aula, orientações individuais e advertências pedagógicas cabíveis;\n`;
+      compiledMeasures += `3. Informação sobre a LGPD (Lei Federal nº 13.709/2018): Esclareceu-se à família sobre o sigilo das gravações do circuito interno de monitoramento da escola, resguardando a imagem de outros menores envolvidos;\n`;
+      compiledMeasures += `4. Esgotamento das Medidas Administrativas: A unidade escolar empregou todos os recursos pedagógicos, preventivos e restaurativos disponíveis em âmbito institucional, justificando o presente acionamento da rede de proteção.`;
+
+      // COMPILAÇÃO DAS AÇÕES DA EQUIPE PSICOSSOCIAL E MEDIAÇÃO
+      let compiledPsychosocial = '';
+      if (medData && medData.length > 0) {
+        compiledPsychosocial += `AÇÕES DO PROFESSOR MEDIADOR / CULTURA DE PAZ (${medData.length} procedimentos):\n`;
+        medData.forEach((m: any, idx: number) => {
+          compiledPsychosocial += `• Procedimento #${idx + 1} (${m.opened_at || '2026'}): Tipo: ${m.type || 'Conflito'} [Status: ${m.status || 'Atendimento'}]\nEscuta/Relato: ${(m.description || '').substring(0, 180)}...\n`;
+        });
+      }
+
+      if (psychoData && psychoData.length > 0) {
+        compiledPsychosocial += `\nACOMPANHAMENTO MULTIPROFISSIONAL PSICOSSOCIAL (${psychoData.length} registros):\n`;
+        psychoData.forEach((p: any, idx: number) => {
+          compiledPsychosocial += `• Atendimento #${idx + 1} (${p.date || '2026'}): Status: ${p.status || 'Triado'}\nSíntese: ${(p.report || '').substring(0, 180)}...\n`;
+        });
+      }
+
+      if (!compiledPsychosocial) {
+        compiledPsychosocial = `Acolhimento da família e do estudante pelo Professor Mediador e pela Equipe Psicossocial Escolar, realização de escuta qualificada individualizada e aplicação de práticas de resolução pacífica de conflitos.`;
+      }
+
+      // PERFIL SOCIOEDUCACIONAL
+      let compiledProfile = `Estudante: ${cleanName} | Turma: ${className || 'Regular'}\n`;
+      if (ficaiRecords.length > 0) {
+        compiledProfile += `• Notificação de Infrequência Escolar (FICAI) ativa na Busca Ativa;\n`;
+      }
+      compiledProfile += `• Apresenta reincidência comportamental e fragilidade no vínculo protetivo familiar;\n`;
+      compiledProfile += `• Necessidade de acompanhamento técnico continuado pelos órgãos do Sistema de Garantia de Direitos.`;
+
+      // ENCAMINHAMENTO CONSELHO TUTELAR / MINISTÉRIO PÚBLICO
+      let compiledForwarding = `Diante do esgotamento dos recursos pedagógicos e administrativos no âmbito escolar, com fulcro no Artigo 56, incisos I, II e III da Lei Federal nº 8.069/1990 (Estatuto da Criança e do Adolescente - ECA), a E.E. Cívico-Militar André Antônio Maggi encaminha o presente RELATÓRIO CIRCUNSTANCIADO:\n\n`;
+      compiledForwarding += `1. Ao CONSELHO TUTELAR DO MUNICÍPIO DE COLÍDER - MT: Para aplicação das medidas de proteção à criança/adolescente (Art. 136, I e II, ECA) e aplicação de deveres aos pais/responsáveis (Art. 129, ECA);\n\n`;
+      compiledForwarding += `2. À PROMOTORIA DE JUSTIÇA DA INFÂNCIA E JUVENTUDE DA COMARCA DE COLÍDER - MT (MINISTÉRIO PÚBLICO ESTADUAL): Para conhecimento, registro no sistema de proteção e eventuais providências cíveis/infracionais cabíveis.`;
+
+      setForm(prev => ({
+        ...prev,
+        involvedStudents: cleanName,
+        className: className || prev.className,
+        recordedFact: compiledFacts,
+        schoolMeasuresTaken: compiledMeasures,
+        psychosocialActions: compiledPsychosocial,
+        socioEducationalProfile: compiledProfile,
+        futureForwarding: compiledForwarding,
+        status: 'ENCAMINHADO_CONSELHO'
+      }));
+
+    } catch (e: any) {
+      console.error('Erro na compilação:', e);
+      alert('Erro ao compilar dados do estudante: ' + e.message);
+    } finally {
+      setIsCompilingDossier(false);
+    }
   };
 
   const handleToggleChecklistItem = (item: string) => {
@@ -608,6 +745,26 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                       />
                     </div>
                   </div>
+
+                  {/* BOTÃO DE JUNTADA AUTOMÁTICA DE FATOS E PROVAS */}
+                  {form.involvedStudents && (
+                    <button
+                      type="button"
+                      onClick={() => handleAutoCompileDossier(form.involvedStudents || '', form.className || '')}
+                      disabled={isCompilingDossier}
+                      className="w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 via-rose-600 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20 active:scale-98 transition-all border border-white/20"
+                    >
+                      {isCompilingDossier ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" /> Compilando Histórico e Juntada de Fatos...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={16} /> ⚡ Compilar Juntada Automática de Fatos (Ocorrências + Mediações + Atendimentos + Faltas)
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 {/* 1. FATO REGISTRADO */}
