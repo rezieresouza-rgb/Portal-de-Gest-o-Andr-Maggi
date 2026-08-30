@@ -22,7 +22,8 @@ import {
    MessageSquare,
    AlertTriangle,
    Send,
-   Users
+   Users,
+   ArrowRightLeft
 } from 'lucide-react';
 import { ClassroomOccurrence } from '../types';
 import { SCHOOL_CLASSES } from '../constants/initialData';
