@@ -19,7 +19,11 @@ import {
   TrendingUp,
   Percent,
   RefreshCw,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Filter,
+  RotateCcw,
+  SlidersHorizontal,
+  BookOpen
 } from 'lucide-react';
 import { Shift, User as UserType } from '../types';
 import { supabase } from '../supabaseClient';
@@ -39,10 +43,12 @@ interface TeacherAttendanceProps {
 
 const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ user, initialViewMode = 'form' }) => {
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedShift, setSelectedShift] = useState<Shift>('MATUTINO');
-  const [date, setDate] = useState(new Date().toLocaleDateString('sv-SE'));
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [existingRecordIds, setExistingRecordIds] = useState<Record<number, string>>({});
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);
 
@@ -51,6 +57,14 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ user, initialView
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Filtros Avançados do Histórico de Chamadas
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyDate, setHistoryDate] = useState('');
+  const [historyClassFilter, setHistoryClassFilter] = useState('TODAS');
+  const [historySubjectFilter, setHistorySubjectFilter] = useState('TODAS');
+  const [historyShiftFilter, setHistoryShiftFilter] = useState('TODOS');
+  const [historyPreset, setHistoryPreset] = useState<'TODAS' | 'HOJE' | 'ONTEM' | '7DIAS' | 'MES_ATUAL'>('TODAS');
 
   const [selectedPeriods, setSelectedPeriods] = useState<number[]>([1]); // Default 1st period
 
@@ -492,6 +506,93 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ user, initialView
     }
   };
 
+  // Agrupamento dos diários de chamada
+  const groupedHistory = useMemo(() => {
+    return Object.values(
+      attendanceHistory.reduce((acc: any, record) => {
+        const baseSubject = record.subject ? record.subject.split(' - ')[0] : 'AULA';
+        const key = `${record.date}|${record.classroom_name}|${record.shift}|${baseSubject}`;
+        
+        if (!acc[key]) {
+          acc[key] = {
+            id: record.id,
+            date: record.date,
+            classroom_name: record.classroom_name,
+            shift: record.shift,
+            baseSubject: baseSubject,
+            periods: [],
+            recordIds: []
+          };
+        }
+        
+        const match = record.subject ? record.subject.match(/(\d+)ª Aula/) : null;
+        if (match) {
+          acc[key].periods.push(parseInt(match[1]));
+        }
+        acc[key].recordIds.push(record.id);
+        
+        return acc;
+      }, {})
+    );
+  }, [attendanceHistory]);
+
+  const uniqueHistoryClasses = useMemo(() => {
+    return Array.from(new Set(groupedHistory.map((g: any) => g.classroom_name))).filter(Boolean).sort();
+  }, [groupedHistory]);
+
+  const uniqueHistorySubjects = useMemo(() => {
+    return Array.from(new Set(groupedHistory.map((g: any) => g.baseSubject))).filter(Boolean).sort();
+  }, [groupedHistory]);
+
+  // Lista Filtrada do Histórico com Múltiplos Filtros
+  const filteredHistory = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    const currentMonth = today.substring(0, 7);
+
+    return groupedHistory.filter((g: any) => {
+      // 1. Busca por texto (Turma ou Matéria)
+      if (historySearch.trim()) {
+        const query = historySearch.toLowerCase().trim();
+        const matchText = (g.classroom_name || '').toLowerCase().includes(query) ||
+                          (g.baseSubject || '').toLowerCase().includes(query);
+        if (!matchText) return false;
+      }
+
+      // 2. Filtro por Turma
+      if (historyClassFilter !== 'TODAS' && g.classroom_name !== historyClassFilter) return false;
+
+      // 3. Filtro por Disciplina
+      if (historySubjectFilter !== 'TODAS' && g.baseSubject !== historySubjectFilter) return false;
+
+      // 4. Filtro por Turno
+      if (historyShiftFilter !== 'TODOS' && g.shift !== historyShiftFilter) return false;
+
+      // 5. Filtro por Data Específica
+      if (historyDate && g.date !== historyDate) return false;
+
+      // 6. Filtro por Atalho Rápido de Data
+      if (historyPreset === 'HOJE' && g.date !== today) return false;
+      if (historyPreset === 'ONTEM' && g.date !== yesterday) return false;
+      if (historyPreset === '7DIAS' && g.date < sevenDaysAgo) return false;
+      if (historyPreset === 'MES_ATUAL' && !g.date.startsWith(currentMonth)) return false;
+
+      return true;
+    }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [groupedHistory, historySearch, historyClassFilter, historySubjectFilter, historyShiftFilter, historyDate, historyPreset]);
+
+  const isAnyHistoryFilterActive = historySearch !== '' || historyDate !== '' || historyClassFilter !== 'TODAS' || historySubjectFilter !== 'TODAS' || historyShiftFilter !== 'TODOS' || historyPreset !== 'TODAS';
+
+  const handleClearHistoryFilters = () => {
+    setHistorySearch('');
+    setHistoryDate('');
+    setHistoryClassFilter('TODAS');
+    setHistorySubjectFilter('TODAS');
+    setHistoryShiftFilter('TODOS');
+    setHistoryPreset('TODAS');
+  };
+
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-20 no-print">
       
@@ -848,127 +949,246 @@ const TeacherAttendance: React.FC<TeacherAttendanceProps> = ({ user, initialView
         </>
       ) : (
         /* VISUALIZAÇÃO DE HISTÓRICO */
-        <div className="bg-white rounded-[3rem] border border-slate-200/80 shadow-sm overflow-hidden">
-          <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50/50">
-            <div className="flex items-center gap-4">
-              <div className="p-3.5 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-500/20">
-                <History size={24} />
+        <div className="space-y-6">
+          
+          {/* PAINEL DE CABEÇALHO E ESTATÍSTICAS */}
+          <div className="bg-white rounded-[3rem] border border-slate-200/80 shadow-sm p-6 md:p-8 space-y-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-slate-100">
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-500/20">
+                  <History size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Histórico de Chamadas</h3>
+                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+                    Aulas registradas pelo docente {user.name}
+                  </p>
+                </div>
               </div>
+
+              {/* CONTADORES RÁPIDOS */}
+              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                <div className="px-4 py-2 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+                  <div>
+                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest block">Aulas Encontradas</span>
+                    <span className="text-sm font-black text-blue-900">{filteredHistory.length} registros</span>
+                  </div>
+                </div>
+
+                <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Turmas no Filtro</span>
+                  <span className="text-sm font-black text-slate-800">{new Set(filteredHistory.map((g: any) => g.classroom_name)).size} turmas</span>
+                </div>
+
+                <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Dias Letivos</span>
+                  <span className="text-sm font-black text-slate-800">{new Set(filteredHistory.map((g: any) => g.date)).size} dias</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ATALHOS RÁPIDOS DE DATA */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 mr-2">
+                <Calendar size={13} /> Período Rápido:
+              </span>
+              {[
+                { id: 'TODAS', label: '📅 Todas as Datas' },
+                { id: 'HOJE', label: '⚡ Hoje' },
+                { id: 'ONTEM', label: '⏳ Ontem' },
+                { id: '7DIAS', label: '📊 Últimos 7 Dias' },
+                { id: 'MES_ATUAL', label: '🗓️ Mês Atual' }
+              ].map(preset => (
+                <button
+                  key={preset.id}
+                  onClick={() => {
+                    setHistoryPreset(preset.id as any);
+                    setHistoryDate('');
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
+                    historyPreset === preset.id && !historyDate
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* BARRA DE FILTROS AVANÇADOS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-2">
+              
+              {/* 1. BUSCA POR TEXTO */}
+              <div className="relative lg:col-span-2">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por turma ou disciplina..." 
+                  value={historySearch}
+                  onChange={e => setHistorySearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* 2. FILTRO POR DATA EXATA */}
+              <div className="relative">
+                <input
+                  type="date"
+                  value={historyDate}
+                  onChange={e => {
+                    setHistoryDate(e.target.value);
+                    setHistoryPreset('TODAS');
+                  }}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer text-slate-700"
+                  title="Selecione uma data específica para filtrar"
+                />
+              </div>
+
+              {/* 3. FILTRO POR TURMA */}
               <div>
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Histórico de Chamadas</h3>
-                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Aulas registradas pelo docente {user.name}</p>
+                <select
+                  value={historyClassFilter}
+                  onChange={e => setHistoryClassFilter(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer text-slate-700"
+                >
+                  <option value="TODAS">🏫 TODAS AS TURMAS</option>
+                  {uniqueHistoryClasses.map(c => (
+                    <option key={c} value={c}>TURMA {c}</option>
+                  ))}
+                </select>
               </div>
+
+              {/* 4. FILTRO POR DISCIPLINA */}
+              <div>
+                <select
+                  value={historySubjectFilter}
+                  onChange={e => setHistorySubjectFilter(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer text-slate-700"
+                >
+                  <option value="TODAS">📖 TODAS AS MATÉRIAS</option>
+                  {uniqueHistorySubjects.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 5. FILTRO POR TURNO */}
+              <div>
+                <select
+                  value={historyShiftFilter}
+                  onChange={e => setHistoryShiftFilter(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer text-slate-700"
+                >
+                  <option value="TODOS">⏰ TODOS OS TURNOS</option>
+                  <option value="MATUTINO">MATUTINO</option>
+                  <option value="VESPERTINO">VESPERTINO</option>
+                  <option value="NOTURNO">NOTURNO</option>
+                </select>
+              </div>
+
             </div>
-            
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="Filtrar por turma..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold uppercase outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
-              />
-            </div>
+
+            {/* BOTÃO LIMPAR FILTROS */}
+            {isAnyHistoryFilterActive && (
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 animate-in fade-in">
+                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">
+                  ⚡ Filtros ativos aplicados na listagem
+                </span>
+                <button
+                  onClick={handleClearHistoryFilters}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                >
+                  <RotateCcw size={12} /> Limpar Todos os Filtros
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="p-6 md:p-8">
+          {/* GRID DE CARDS DO HISTÓRICO */}
+          <div className="bg-white rounded-[3rem] border border-slate-200/80 shadow-sm p-6 md:p-8">
             {isFetchingHistory ? (
               <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
                 <Loader2 size={36} className="animate-spin text-blue-600" />
                 <p className="text-xs font-bold uppercase tracking-widest">Carregando registros...</p>
               </div>
-            ) : attendanceHistory.length > 0 ? (
+            ) : filteredHistory.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.values(
-                  attendanceHistory
-                    .filter(h => h.classroom_name.toLowerCase().includes(searchTerm.toLowerCase()))
-                    .reduce((acc: any, record) => {
-                      const baseSubject = record.subject.split(' - ')[0];
-                      const key = `${record.date}|${record.classroom_name}|${record.shift}|${baseSubject}`;
-                      
-                      if (!acc[key]) {
-                        acc[key] = {
-                          id: record.id,
-                          date: record.date,
-                          classroom_name: record.classroom_name,
-                          shift: record.shift,
-                          baseSubject: baseSubject,
-                          periods: [],
-                          recordIds: []
-                        };
-                      }
-                      
-                      const match = record.subject.match(/(\d+)ª Aula/);
-                      if (match) {
-                        acc[key].periods.push(parseInt(match[1]));
-                      }
-                      acc[key].recordIds.push(record.id);
-                      
-                      return acc;
-                    }, {})
-                )
-                  .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                  .map((group: any) => (
-                  <div key={group.id} className="bg-white border border-slate-200/80 rounded-[2rem] p-6 hover:shadow-xl hover:border-blue-200 transition-all relative overflow-hidden group">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                          <Calendar size={18} />
+                {filteredHistory.map((group: any) => (
+                  <div key={group.id} className="bg-white border border-slate-200/80 rounded-[2rem] p-6 hover:shadow-xl hover:border-blue-200 transition-all relative overflow-hidden group flex flex-col justify-between gap-4">
+                    
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <Calendar size={18} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Data da Aula</p>
+                            <p className="text-sm font-black text-slate-900">
+                              {new Date(group.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Data da Aula</p>
-                          <p className="text-sm font-black text-slate-900">
-                            {new Date(group.date + 'T12:00:00').toLocaleDateString('pt-BR')}
-                          </p>
+                        <button 
+                          onClick={() => handleDeleteRecord(group.recordIds)}
+                          className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                          title="Excluir Diário"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-400 uppercase">Turma:</span>
+                          <span className="font-black text-slate-900 uppercase px-2.5 py-0.5 bg-slate-100 rounded-lg">{group.classroom_name}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-400 uppercase">Turno:</span>
+                          <span className="font-black text-slate-700 uppercase">{group.shift}</span>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                      <p className="text-[11px] font-black text-slate-700 uppercase truncate" title={group.baseSubject}>
+                        📖 {group.baseSubject} ({group.periods.sort().join(', ')}ª Aula)
+                      </p>
                       <button 
-                        onClick={() => handleDeleteRecord(group.recordIds)}
-                        className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                        title="Excluir Diário"
+                        onClick={() => {
+                          setSelectedClass(group.classroom_name);
+                          setDate(group.date);
+                          setSelectedShift(group.shift as Shift);
+                          setSelectedPeriods(group.periods);
+                          setSelectedSubject(group.baseSubject);
+                          setViewMode('form');
+                        }}
+                        className="px-4 py-2 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 shadow-sm"
                       >
-                        <Trash2 size={16} />
+                        Editar
                       </button>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-slate-400 uppercase">Turma:</span>
-                        <span className="font-black text-slate-900 uppercase">{group.classroom_name}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-slate-400 uppercase">Turno:</span>
-                        <span className="font-black text-slate-900 uppercase">{group.shift}</span>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                        <p className="text-[11px] font-bold text-slate-500 uppercase truncate">
-                          {group.baseSubject} ({group.periods.sort().join(', ')}ª Aula)
-                        </p>
-                        <button 
-                          onClick={() => {
-                            setSelectedClass(group.classroom_name);
-                            setDate(group.date);
-                            setSelectedShift(group.shift as Shift);
-                            setSelectedPeriods(group.periods);
-                            setSelectedSubject(group.baseSubject);
-                            setViewMode('form');
-                          }}
-                          className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
-                        >
-                          Editar
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-20 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-                <History size={48} className="opacity-20 mb-2" />
-                <p className="text-xs font-black uppercase tracking-widest">Nenhum diário registrado ainda.</p>
+              <div className="py-20 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+                <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                  <History size={32} />
+                </div>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-700">Nenhum diário encontrado com estes filtros.</p>
+                {isAnyHistoryFilterActive && (
+                  <button
+                    onClick={handleClearHistoryFilters}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all mt-2 shadow-md shadow-blue-500/20"
+                  >
+                    Redefinir Filtros
+                  </button>
+                )}
               </div>
             )}
           </div>
