@@ -1325,7 +1325,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
             </div>
 
             {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar */}
-            <div className="mt-auto pt-3 border-t border-black/40 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+            <div className="print-footer-address mt-auto pt-3 border-t border-black/40 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
               <div className="text-left space-y-0.5">
                 <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
                 <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
@@ -1351,14 +1351,15 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 8mm 10mm !important;
+            margin: 10mm 12mm 12mm 12mm !important;
           }
           html, body {
-            height: auto !important;
+            height: 100% !important;
             width: 100% !important;
             overflow: visible !important;
             margin: 0 !important;
             padding: 0 !important;
+            background: white !important;
           }
           body * { visibility: hidden !important; }
           .print-ata-area, .print-ata-area * { visibility: visible !important; }
@@ -1367,8 +1368,11 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
-            min-height: 100% !important;
-            display: block !important;
+            min-height: 275mm !important;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
             background: white !important;
             color: black !important;
             box-sizing: border-box !important;
@@ -1379,11 +1383,20 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
             flex-direction: column !important;
             justify-content: space-between !important;
             min-height: 275mm !important;
+            height: 100% !important;
             width: 100% !important;
             box-sizing: border-box !important;
-            padding: 0 !important;
+            padding: 0 0 5mm 0 !important;
             margin: 0 !important;
-            page-break-inside: avoid !important;
+            position: relative !important;
+          }
+          .print-footer-address {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            background: white !important;
           }
         }
       `}} />

@@ -939,7 +939,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       {/* MODAL DE IMPRESSÃO / VISUALIZAÇÃO DO OFÍCIO FORMAL (TIMBRADO SEDUC/MT) */}
       {printingOficio && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 print:border-none print:shadow-none print:m-0 print:w-full print:max-w-none print:rounded-none">
+          <div className="print-oficio-area bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 print:border-none print:shadow-none print:m-0 print:w-full print:max-w-none print:rounded-none">
             
             {/* Header de Controle (Não sai na impressão) */}
             <div className="p-6 bg-slate-900 text-white flex justify-between items-center print:hidden">
@@ -977,9 +977,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
             </div>
 
             {/* FOLHA A4 TIMBRADA OFICIAL */}
-            <div className="p-8 sm:p-14 bg-white text-black min-h-[297mm] flex flex-col justify-between" style={{ fontFamily: 'Times New Roman, Georgia, serif' }}>
+            <div className="pdf-oficio-page p-8 sm:p-14 bg-white text-black min-h-[275mm] flex flex-col justify-between" style={{ fontFamily: 'Times New Roman, Georgia, serif' }}>
               
-              <div className="flex-1 flex flex-col justify-start">
+              <div className="flex-1 flex flex-col justify-start pb-6">
                 
                 {/* Cabeçalho Oficial com Brasão MT à Esquerda e Logo Cívico-Militar à Direita */}
                 <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4">
@@ -1076,7 +1076,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               </div>
 
               {/* Rodapé Oficial SEDUC-MT / EE Cívico-Militar Fixado na Parte Inferior */}
-              <div className="mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+              <div className="print-oficio-footer mt-auto border-t border-black/40 pt-2 grid grid-cols-2 gap-4 text-[8.5px] leading-tight text-black" style={{ color: '#000000', fontFamily: 'Arial, sans-serif' }}>
                 <div className="text-left space-y-0.5">
                   <p>Rua Engenheiro Edgar Prado Arze, Quadra 01, Lote 05, Setor A, Centro Político Administrativo,</p>
                   <p>CEP: 78049-906 – Cuiabá-MT Fone (65) 3613-6300</p>
@@ -1093,6 +1093,62 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
           </div>
         </div>
       )}
+
+      {/* Estilos CSS de Impressão Oficial do Ofício */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 10mm 12mm 12mm 12mm !important;
+          }
+          html, body {
+            height: 100% !important;
+            width: 100% !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
+          body * { visibility: hidden !important; }
+          .print-oficio-area, .print-oficio-area * { visibility: visible !important; }
+          .print-oficio-area { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important; 
+            min-height: 275mm !important;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            background: white !important;
+            color: black !important;
+            box-sizing: border-box !important;
+            padding: 0 !important;
+          }
+          .pdf-oficio-page { 
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            min-height: 275mm !important;
+            height: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 0 0 5mm 0 !important;
+            margin: 0 !important;
+            position: relative !important;
+          }
+          .print-oficio-footer {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            background: white !important;
+          }
+        }
+      `}} />
 
       {/* MODAL DE ASSINATURA ELETRÔNICA POR SENHA / PIN */}
       {isSigningModalOpen && signingOficio && (
