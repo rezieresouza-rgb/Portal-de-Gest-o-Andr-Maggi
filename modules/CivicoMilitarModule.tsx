@@ -6334,695 +6334,650 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         </div>
       )}
 
-      {/* MODAL 2: DETALHES DE COMPORTAMENTO / LANÇAR OCORRÊNCIA */}
+            {/* MODAL 2: DETALHES DE COMPORTAMENTO / LANÇAR OCORRÊNCIA */}
       {isBehaviorModalOpen && selectedStudentState && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-[3rem] p-8 max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800 my-auto overflow-hidden">
             
-            {/* Esquerda: Informações Gerais e Formulário de Lançamento */}
-            <div className="space-y-6">
-              <div className="flex justify-between items-start gap-2">
+            {/* HEADER FIXO SUPERIOR TIMBRADO */}
+            <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 border-b border-slate-800">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-500/30 font-black text-lg shadow-md shrink-0">
+                  {selectedStudentState.studentName.charAt(0)}
+                </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight truncate max-w-[240px]">
-                    {selectedStudentState.studentName}
-                  </h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                    Turma: {selectedStudentState.className} • Código: {selectedStudentState.studentId}
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-black text-white uppercase tracking-tight">
+                      {selectedStudentState.studentName}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-white/10 border border-white/20 text-slate-200">
+                      {selectedStudentState.className}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-mono">
+                      Código: {selectedStudentState.studentId}
+                    </span>
+                  </div>
                   {(() => {
                     const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
                                         INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
                     if (studentFull && (studentFull.NomeResponsavel || studentFull.TelefoneContato)) {
                       return (
-                        <p className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
-                          <Users size={10} /> 
-                          {studentFull.NomeResponsavel || 'RESPONSÁVEL NÃO INFORMADO'} 
-                          {studentFull.TelefoneContato && ` • ${studentFull.TelefoneContato}`}
+                        <p className="text-[10px] text-slate-300 font-medium uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
+                          <Users size={11} className="text-amber-400" />
+                          <span>{studentFull.NomeResponsavel || 'RESPONSÁVEL NÃO INFORMADO'}</span>
+                          {studentFull.TelefoneContato && (
+                            <span className="text-slate-400 font-mono">• {studentFull.TelefoneContato}</span>
+                          )}
                         </p>
                       );
                     }
                     return null;
                   })()}
                 </div>
+              </div>
 
+              <div className="flex items-center gap-3 shrink-0">
+                {/* Placa Nota de Atitude */}
+                <div className="bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/15 flex items-center gap-2.5">
+                  <div className="text-right">
+                    <span className="text-[7px] text-slate-300 font-black uppercase tracking-widest block">Nota de Atitude</span>
+                    <span className="text-lg font-black text-white leading-none">{selectedStudentState.score.toFixed(1)}</span>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black border uppercase ${getBehaviorStatus(selectedStudentState.score).color}`}>
+                    {getBehaviorStatus(selectedStudentState.score).label}
+                  </span>
+                </div>
+
+                {/* Botão Checklist do Gestor */}
                 <button
                   type="button"
                   onClick={() => {
                     const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                        selectedStudentState;
+                                        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
                     const isSevere = newOccurrence.type === 'DEMERIT' && getOccurrenceSeverity(newOccurrence) === 'GRAVE';
                     const mode = isSevere ? 'FLAGRANTE' : (modalRecidivismAnalysis?.hasSpecificRecurrence ? 'REINCIDENCIA' : 'FLAGRANTE');
                     handleOpenChecklistModal(studentFull, mode, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
                   }}
-                  className="px-3 py-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md shadow-red-600/20 shrink-0"
+                  className="px-3 py-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md shadow-red-600/20"
                   title="Abrir Guia & Checklist do Gestor (Flagrante / Reincidência)"
                 >
                   <Scale size={13} /> Checklist do Gestor
                 </button>
-              </div>
 
-              {/* Placa de Nota de Atitude */}
-              <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex justify-between items-center text-slate-900">
-                <div>
-                  <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest block mb-0.5">Nota de Atitude</span>
-                  <span className="text-3xl font-black text-slate-900">{selectedStudentState.score.toFixed(1)}</span>
-                </div>
-                <span className={`px-3 py-1 rounded-xl text-[10px] font-black border uppercase ${getBehaviorStatus(selectedStudentState.score).color}`}>
-                  {getBehaviorStatus(selectedStudentState.score).label}
-                </span>
-              </div>
-
-              {/* Form Lançamento de Méritos / Deméritos */}
-              <form onSubmit={handleAddOccurrence} className="space-y-4 pt-2 border-t border-slate-100">
-                <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Lançar Ação / Incidente</h4>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewOccurrence(prev => ({
-                        ...prev,
-                        type: 'DEMERIT',
-                        category: demeritOptions[0].category,
-                        selectedCategories: prev.selectedCategories && prev.selectedCategories.length > 0 ? prev.selectedCategories : [demeritOptions[0].category]
-                      }));
-                    }}
-                    className={`py-2 rounded-xl text-[9px] font-black uppercase border transition-all flex items-center justify-center gap-1.5 ${
-                      newOccurrence.type === 'DEMERIT'
-                        ? 'bg-red-50 text-red-600 border-red-200 shadow-sm'
-                        : 'text-slate-500 border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <ThumbsDown size={12} /> Demérito (Falta)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewOccurrence(prev => ({
-                        ...prev,
-                        type: 'MERIT',
-                        category: meritOptions[0].category,
-                        selectedCategories: []
-                      }));
-                    }}
-                    className={`py-2 rounded-xl text-[9px] font-black uppercase border transition-all flex items-center justify-center gap-1.5 ${
-                      newOccurrence.type === 'MERIT'
-                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm'
-                        : 'text-slate-500 border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <ThumbsUp size={12} /> Mérito (Elogio)
-                  </button>
-                </div>
-
-                <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Enquadramento / Categoria</label>
-                  {newOccurrence.type === 'DEMERIT' ? (
-                    <div className="space-y-3 relative">
-                      {/* FILTROS RÁPIDOS POR GRAVIDADE */}
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => setModalCategorySeverityFilter('TODAS')}
-                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
-                            modalCategorySeverityFilter === 'TODAS'
-                              ? 'bg-slate-900 text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                        >
-                          Todas (91)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setModalCategorySeverityFilter('LEVE')}
-                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
-                            modalCategorySeverityFilter === 'LEVE'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                          }`}
-                        >
-                          🟢 Leves (1-26)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setModalCategorySeverityFilter('MÉDIA')}
-                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
-                            modalCategorySeverityFilter === 'MÉDIA'
-                              ? 'bg-amber-600 text-white shadow-xs'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
-                          }`}
-                        >
-                          🟡 Médias (27-62)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setModalCategorySeverityFilter('GRAVE')}
-                          className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase transition-all ${
-                            modalCategorySeverityFilter === 'GRAVE'
-                              ? 'bg-rose-600 text-white shadow-xs'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                          }`}
-                        >
-                          🔴 Graves (63-91)
-                        </button>
-                      </div>
-
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="Clique para ver todas ou busque falta disciplinar..."
-                          value={categorySearchTerm}
-                          onChange={e => setCategorySearchTerm(e.target.value)}
-                          onFocus={() => setIsCategoryDropdownOpen(true)}
-                          onBlur={() => setTimeout(() => setIsCategoryDropdownOpen(false), 200)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                        />
-                        {isCategoryDropdownOpen && (
-                          <div className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-2xl divide-y divide-slate-100 text-slate-800">
-                            {demeritOptions
-                              .filter(d => {
-                                const matchesFilter = modalCategorySeverityFilter === 'TODAS' || d.severity === modalCategorySeverityFilter;
-                                const matchesSearch = !categorySearchTerm || d.category.toLowerCase().includes(categorySearchTerm.toLowerCase());
-                                return matchesFilter && matchesSearch;
-                              })
-                              .map(d => {
-                                const isSelected = (newOccurrence.selectedCategories || []).includes(d.category);
-                                const prevCount = (selectedStudentState?.occurrences || []).filter(o => 
-                                  (o.type === 'DEMERIT' || (o.type as any) === 'demerit') && 
-                                  (o.category === d.category || (o.categories && o.categories.includes(d.category)))
-                                ).length;
-
-                                return (
-                                  <button
-                                    key={d.category}
-                                    type="button"
-                                    onClick={() => {
-                                      setNewOccurrence(prev => {
-                                        const current = prev.selectedCategories || [];
-                                        const updated = current.includes(d.category)
-                                          ? current.filter(c => c !== d.category)
-                                          : [...current, d.category];
-                                        const suggestion = generateObservationSuggestion(updated, 'DEMERIT');
-                                        return { ...prev, selectedCategories: updated, observations: suggestion };
-                                      });
-                                      setCategorySearchTerm('');
-                                    }}
-                                    className="w-full text-left p-3 hover:bg-blue-50 text-[10px] font-bold uppercase transition-colors flex justify-between items-center gap-2"
-                                  >
-                                    <span className="flex-1 pr-2">{`[${d.severity}] ${d.category}`}</span>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      {prevCount > 0 && (
-                                        <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
-                                          <RotateCcw size={8} /> {prevCount}x já cometida
-                                        </span>
-                                      )}
-                                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                                        {isSelected ? 'Selecionado' : 'Adicionar'}
-                                      </span>
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* List of Selected Categories */}
-                      <div className="flex flex-col gap-1.5 mt-2 max-h-36 overflow-y-auto pr-1">
-                        {(newOccurrence.selectedCategories || []).map(cat => {
-                          const dem = demeritOptions.find(d => d.category === cat);
-                          const prevCount = (selectedStudentState?.occurrences || []).filter(o => 
-                            (o.type === 'DEMERIT' || (o.type as any) === 'demerit') && 
-                            (o.category === cat || (o.categories && o.categories.includes(cat)))
-                          ).length;
-                          const severityColor = dem?.severity === 'GRAVE' ? 'bg-red-50 text-red-700 border-red-100' : dem?.severity === 'MÉDIA' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100';
-                          
-                          return (
-                            <div key={cat} className={`flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-bold uppercase tracking-wider ${severityColor}`}>
-                              <div className="flex items-center gap-2 flex-1">
-                                <span className="leading-snug">{cat}</span>
-                                {prevCount > 0 && (
-                                  <span className="px-1.5 py-0.5 bg-amber-200/90 text-amber-900 rounded font-black text-[8px] shrink-0 flex items-center gap-0.5">
-                                    <RotateCcw size={8} /> Reincidente ({prevCount + 1}ª vez)
-                                  </span>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setNewOccurrence(prev => {
-                                    const updated = (prev.selectedCategories || []).filter(c => c !== cat);
-                                    const suggestion = generateObservationSuggestion(updated, 'DEMERIT');
-                                    return { ...prev, selectedCategories: updated, observations: suggestion };
-                                  });
-                                }}
-                                className="hover:text-slate-950 font-bold shrink-0 ml-1 p-0.5 bg-white/60 hover:bg-white rounded-full w-4 h-4 flex items-center justify-center border border-current"
-                                title="Remover"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          );
-                        })}
-                        {(newOccurrence.selectedCategories || []).length === 0 && (
-                          <p className="text-[9px] text-red-500 font-black uppercase tracking-wider italic">Nenhuma falta selecionada. Selecione pelo menos uma falta disciplinar.</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <select
-                      value={newOccurrence.category}
-                      onChange={e => {
-                        const cat = e.target.value;
-                        const suggestion = generateObservationSuggestion([cat], 'MERIT');
-                        setNewOccurrence(prev => ({ ...prev, category: cat, observations: suggestion }));
-                      }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                    >
-                      {meritOptions.map(m => (
-                        <option key={m.category} value={m.category}>
-                          {m.category} (+{m.points.toFixed(2)})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Data</label>
-                  <input
-                    type="date"
-                    value={newOccurrence.date}
-                    onChange={e => setNewOccurrence(prev => ({ ...prev, date: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                    required
-                  />
-                </div>
-
-                {newOccurrence.type === 'DEMERIT' && (
-                  <>
-                    {/* ALERTA DE REINCIDÊNCIA ESPECÍFICA DETECTADA */}
-                    {modalRecidivismAnalysis && modalRecidivismAnalysis.hasSpecificRecurrence && (
-                      <div className="p-3 rounded-xl border bg-amber-50 border-amber-200 text-amber-900 text-[9px] space-y-1 animate-fadeIn">
-                        <div className="flex items-center justify-between font-black uppercase text-[10px]">
-                          <span className="flex items-center gap-1 text-amber-800">
-                            <RotateCcw size={12} />
-                            Reincidência Detectada ({modalRecidivismAnalysis.currentRecurrenceCount}ª falta desta categoria)
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-black text-[8px]">
-                            Art. 35, III
-                          </span>
-                        </div>
-                        <p className="text-amber-800 font-medium">
-                          Conforme o Regulamento EECM, esta falta possui circunstância agravante legal e elevação progressiva de penalidade (Arts. 15 e 16).
-                        </p>
-                      </div>
-                    )}
-
-                    {/* CARD VISUAL DE SUGESTÃO REGULAMENTAR INTELIGENTE (NO MODAL DE ATITUDE) */}
-                    {modalSuggestedMeasure && (
-                      <div className={`p-3 rounded-xl border transition-all animate-fadeIn ${
-                        modalSuggestedMeasure.suggestedMeasure === 'Advertência Oral' 
-                          ? 'bg-emerald-50/80 border-emerald-300 ring-1 ring-emerald-200'
-                          : modalSuggestedMeasure.suggestedMeasure === 'Advertência Escrita'
-                          ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-200'
-                          : modalSuggestedMeasure.suggestedMeasure === 'Suspensão de Sala de Aula'
-                          ? 'bg-rose-50/80 border-rose-300 ring-1 ring-rose-200'
-                          : modalSuggestedMeasure.suggestedMeasure === 'Ações Educativas'
-                          ? 'bg-purple-50/80 border-purple-300 ring-1 ring-purple-200'
-                          : 'bg-red-100/90 border-red-300 ring-1 ring-red-200'
-                      }`}>
-                        <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <Scale size={13} className={
-                              modalSuggestedMeasure.suggestedMeasure === 'Advertência Oral' ? 'text-emerald-700' :
-                              modalSuggestedMeasure.suggestedMeasure === 'Advertência Escrita' ? 'text-amber-700' :
-                              modalSuggestedMeasure.suggestedMeasure === 'Suspensão de Sala de Aula' ? 'text-rose-700' : 'text-purple-700'
-                            } />
-                            <span className="text-[9px] font-black uppercase text-slate-800 flex items-center gap-1">
-                              <Sparkles size={11} className="text-amber-500 fill-amber-500" />
-                              Sugestão Regulamentar EECM
-                            </span>
-                          </div>
-                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700">
-                            {modalSuggestedMeasure.severityLevel}
-                          </span>
-                        </div>
-
-                        <div className="bg-white/90 p-2.5 rounded-lg border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-black text-slate-900 uppercase">
-                                {modalSuggestedMeasure.suggestedMeasure}
-                              </span>
-                              {modalSuggestedMeasure.recommendedDays && (
-                                <span className="text-[9px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
-                                  {modalSuggestedMeasure.recommendedDays} dias
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[9px] font-bold text-blue-700">
-                              {modalSuggestedMeasure.legalBasis}
-                            </p>
-                            <p className="text-[9px] text-slate-500 leading-tight">
-                              {modalSuggestedMeasure.rationale}
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNewOccurrence(prev => ({
-                                ...prev,
-                                disciplinaryMeasure: modalSuggestedMeasure.suggestedMeasure,
-                                suspensionDays: modalSuggestedMeasure.recommendedDays || prev.suspensionDays || 1
-                              }));
-                            }}
-                            className="shrink-0 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-1 shadow-xs transition-all"
-                          >
-                            <Sparkles size={11} />
-                            {newOccurrence.disciplinaryMeasure === modalSuggestedMeasure.suggestedMeasure ? 'Aplicada ✓' : 'Aplicar'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ALERTA DE ENCAMINHAMENTO INSTITUCIONAL NO MODAL (B.O. / CONSELHO TUTELAR / MP) */}
-                    {externalReferralReport && (
-                      <div className="p-3.5 rounded-2xl border bg-gradient-to-br from-red-50 via-rose-50 to-amber-50 border-red-200 ring-1 ring-red-300 space-y-2.5 animate-fadeIn">
-                        <div className="flex items-center justify-between gap-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <ShieldAlert size={15} className="text-red-600 animate-pulse" />
-                            <span className="text-[9px] font-black uppercase tracking-wider text-red-950">
-                              🚨 Encaminhamento Institucional Externo
-                            </span>
-                          </div>
-                          <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase bg-red-600 text-white">
-                            {externalReferralReport.urgencyLevel}
-                          </span>
-                        </div>
-
-                        <div className="bg-white/95 p-2.5 rounded-xl border border-red-200 text-slate-700 text-[10px] space-y-1.5">
-                          <p className="font-semibold text-slate-800">
-                            Base Legal: <span className="text-red-700 font-bold">{externalReferralReport.legalSummary}</span>
-                          </p>
-
-                          <div className="space-y-1 text-[9px] text-slate-600">
-                            {externalReferralReport.requiresPolice && (
-                              <p><strong>🚓 Polícia (Art. 29):</strong> {externalReferralReport.policeRationale}</p>
-                            )}
-                            {externalReferralReport.requiresConselhoTutelar && (
-                              <p><strong>🛡️ Conselho Tutelar:</strong> {externalReferralReport.conselhoRationale}</p>
-                            )}
-                            {externalReferralReport.requiresMinisterioPublico && (
-                              <p><strong>⚖️ Ministério Público (Art. 26):</strong> {externalReferralReport.mpRationale}</p>
-                            )}
-                          </div>
-
-                          <div className="pt-1.5 border-t border-slate-100 flex flex-wrap gap-1.5">
-                            {externalReferralReport.requiresPolice && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                                      INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
-                                  handleGenerateExternalReferralDoc('oficio_policia', studentFull, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
-                                }}
-                                className="px-2 py-1 rounded-lg text-[8px] font-black uppercase bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 shadow-xs transition-all"
-                              >
-                                <FileText size={10} /> Ofício p/ B.O.
-                              </button>
-                            )}
-                            {externalReferralReport.requiresConselhoTutelar && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                                      INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
-                                  handleGenerateExternalReferralDoc('oficio_conselho_tutelar', studentFull, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
-                                }}
-                                className="px-2 py-1 rounded-lg text-[8px] font-black uppercase bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1 shadow-xs transition-all"
-                              >
-                                <FileText size={10} /> Conselho Tutelar
-                              </button>
-                            )}
-                            {externalReferralReport.requiresMinisterioPublico && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                                      INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
-                                  handleGenerateExternalReferralDoc('oficio_ministerio_publico', studentFull, (newOccurrence.selectedCategories || []).join('; '), newOccurrence.observations);
-                                }}
-                                className="px-2 py-1 rounded-lg text-[8px] font-black uppercase bg-rose-700 hover:bg-rose-800 text-white flex items-center gap-1 shadow-xs transition-all"
-                              >
-                                <FileText size={10} /> Expediente MP
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Medida Disciplinar Aplicada</label>
-                      <select
-                        value={newOccurrence.disciplinaryMeasure || 'Advertência Oral'}
-                        onChange={e => setNewOccurrence(prev => ({ ...prev, disciplinaryMeasure: e.target.value }))}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                      >
-                        {disciplinaryMeasuresList.map(measure => {
-                          let pts = 0.1;
-                          if (measure === 'Advertência Escrita') pts = 0.3;
-                          else if (measure === 'Suspensão de Sala de Aula') pts = 0.5;
-                          else if (measure === 'Ações Educativas') pts = 1.0;
-                          else if (measure === 'Transferência Educativa') pts = 2.0;
-                          else if (measure === 'Estudo Orientado de Caráter Educativo') pts = 0.5;
-                          
-                          return (
-                            <option key={measure} value={measure}>
-                              {measure} {measure === 'Suspensão de Sala de Aula' ? `(-${pts.toFixed(2)} por dia)` : `(-${pts.toFixed(2)})`}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                    {newOccurrence.disciplinaryMeasure === 'Suspensão de Sala de Aula' && (
-                      <div>
-                        <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Quantidade de Dias (-0,50 / dia)</label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="3"
-                          value={newOccurrence.suspensionDays || 1}
-                          onChange={e => setNewOccurrence(prev => ({ ...prev, suspensionDays: parseInt(e.target.value) || 1 }))}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                          required
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">
-                    {newOccurrence.category.startsWith('9') ? 'Descrição da Falta (Obrigatório)' : 'Detalhes / Observações'}
-                  </label>
-                  <textarea
-                    value={newOccurrence.observations}
-                    onChange={e => setNewOccurrence(prev => ({ ...prev, observations: e.target.value }))}
-                    placeholder={newOccurrence.category.startsWith('9') ? "Especifique a falta e descreva os detalhes do fato gerador..." : "Descreva detalhes específicos do fato gerador..."}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[60px]"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className={`w-full py-3.5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all ${
-                    newOccurrence.type === 'MERIT'
-                      ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/10'
-                      : 'bg-red-600 hover:bg-red-500 shadow-red-600/10'
-                  }`}
-                >
-                  Aplicar Lançamento
-                </button>
-              </form>
-            </div>
-
-            {/* Direita: Histórico de Ocorrências e Botão de Fechar */}
-            <div className="flex flex-col h-full border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8 justify-between">
-              <div className="space-y-4 flex-1 overflow-y-auto max-h-[420px] pr-2 custom-scrollbar">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Histórico de Atitude</h4>
-                  {(() => {
-                    const studentAnalysis = analyzeStudentRecidivism(selectedStudentState);
-                    if (studentAnalysis.totalDemerits === 0) return null;
-                    return (
-                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-black border uppercase ${studentAnalysis.recidivismLevelBadge}`}>
-                        {studentAnalysis.recidivismLevelLabel}
-                      </span>
-                    );
-                  })()}
-                </div>
-
-                {/* DOSSIÊ DE REINCIDÊNCIA DO ALUNO */}
-                {(() => {
-                  const studentAnalysis = analyzeStudentRecidivism(selectedStudentState);
-                  if (studentAnalysis.totalDemerits === 0) return null;
-                  return (
-                    <div className="p-3.5 rounded-2xl border bg-slate-50 border-slate-200 text-slate-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 font-black text-[10px] uppercase text-slate-800">
-                          <RotateCcw size={12} className="text-rose-600" />
-                          Dossiê de Reincidência
-                        </div>
-                        <span className="text-[9px] font-black text-slate-600">
-                          {studentAnalysis.totalDemerits} falta{studentAnalysis.totalDemerits > 1 ? 's' : ''} no total
-                        </span>
-                      </div>
-                      
-                      {studentAnalysis.specificRecurrences.length > 0 && (
-                        <div>
-                          <span className="text-[9px] font-bold text-slate-600 block mb-1">Faltas Reincidentes:</span>
-                          <div className="flex flex-wrap gap-1">
-                            {studentAnalysis.specificRecurrences.map((r, idx) => (
-                              <span key={idx} className="bg-white px-2 py-0.5 rounded border border-slate-200 text-[8px] font-bold text-slate-700 flex items-center gap-1">
-                                <RotateCcw size={8} className="text-rose-500" />
-                                {r.category.length > 25 ? r.category.substring(0, 25) + '...' : r.category} ({r.count}x)
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <p className="text-[9px] text-slate-700 font-semibold italic pt-1 border-t border-slate-200/60 leading-tight">
-                        💡 {studentAnalysis.pedagogicalAdvice}
-                      </p>
-                    </div>
-                  );
-                })()}
-                
-                <div className="space-y-3">
-                  {selectedStudentState.occurrences.map(occ => (
-                    <div key={occ.id} className={`p-4 rounded-2xl border ${
-                      occ.type === 'MERIT'
-                        ? 'bg-emerald-50/50 border-emerald-100'
-                        : 'bg-red-50/50 border-red-100'
-                    }`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase ${
-                          occ.type === 'MERIT' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
-                        }`}>
-                          {occ.type === 'MERIT' ? `MÉRITO (+${occ.points})` : `DEMÉRITO (-${occ.points})`}
-                        </span>
-                        <span className="text-[8px] font-bold text-slate-500">{new Date(occ.date).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                      <h5 className="text-[10px] font-black text-slate-800 uppercase whitespace-pre-line">{occ.category}</h5>
-                      <p className="text-[9px] text-slate-600 mt-1 italic">"{occ.observations}"</p>
-                      
-                      {occ.disciplinaryMeasure && (
-                        <div className="mt-2 bg-white/60 p-2 rounded border border-slate-100 flex items-center justify-between">
-                          <span className="text-[8px] font-black uppercase text-slate-500">Medida Aplicada:</span>
-                          <span className="text-[9px] font-bold text-indigo-700">
-                             {occ.disciplinaryMeasure}
-                             {occ.suspensionDays ? ` (${occ.suspensionDays} dia${occ.suspensionDays > 1 ? 's' : ''})` : ''}
-                          </span>
-                        </div>
-                      )}
-
-                      {occ.isEscalated && (
-                        <div className="mt-1 bg-red-100 text-red-700 px-2 py-1 rounded text-[8px] font-black uppercase inline-flex items-center gap-1">
-                           <AlertTriangle size={10} /> Agravada por Reincidência
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[8px] font-bold text-slate-500 uppercase">
-                        <span>Monitor: {occ.responsible.split(' ')[0]}</span>
-                        <div className="flex items-center gap-3">
-                          {occ.type === 'DEMERIT' && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => handleGenerateMeasureDoc(occ, selectedStudentState.studentId)}
-                                className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-black"
-                                title="Gerar Ficha de Medida Disciplinar"
-                              >
-                                <FileText size={10} /> Ficha
-                              </button>
-                              {getOccurrenceSeverity(occ) === 'GRAVE' && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                                        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
-                                    const ref = getExternalReferralRecommendation({ category: occ.category, studentScore: selectedStudentState.score });
-                                    const template = ref.requiresPolice ? 'oficio_policia' : ref.requiresMinisterioPublico ? 'oficio_ministerio_publico' : 'oficio_conselho_tutelar';
-                                    handleGenerateExternalReferralDoc(template, studentFull, occ.category, occ.observations);
-                                  }}
-                                  className="text-rose-600 hover:text-rose-800 flex items-center gap-1 font-black"
-                                  title="Gerar Ofício Institucional Externo (Polícia/Conselho/MP)"
-                                >
-                                  <Scale size={10} /> Ofício
-                                </button>
-                              )}
-                            </>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteOccurrence(selectedStudentState.studentId, occ.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {selectedStudentState.occurrences.length === 0 && (
-                    <p className="text-center text-slate-500 py-16 text-[9px] font-black uppercase">Excelente conduta. Nenhuma ocorrência registrada.</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-slate-100 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMediationTargetStudent({
-                      id: selectedStudentState.studentId,
-                      name: selectedStudentState.studentName,
-                      class: selectedStudentState.className
-                    });
-                    const demeritSummary = selectedStudentState.occurrences
-                      .filter(o => o.type === 'DEMERIT')
-                      .map(o => `[${o.date}] ${o.category}: ${o.observations}`)
-                      .join('\n');
-                    setMediationInitialReport(demeritSummary ? `Histórico de Ocorrências:\n${demeritSummary}` : '');
-                    setIsMediationModalOpen(true);
-                  }}
-                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-blue-600 hover:from-amber-600 hover:to-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 transition-all"
-                >
-                  <Scale size={16} /> Encaminhar para Mediação Escolar
-                </button>
+                {/* Botão Fechar */}
                 <button
                   type="button"
                   onClick={() => {
                     setIsBehaviorModalOpen(false);
                     setSelectedStudentState(null);
                   }}
-                  className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all"
+                  title="Fechar Janela"
                 >
-                  Fechar Painel
+                  <X size={16} />
                 </button>
               </div>
+            </div>
+
+            {/* CORPO DO MODAL (SCROLL INTERNO DE 2 COLUNAS) */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+              
+              {/* Coluna Esquerda: Formulário de Lançamento (7/12) */}
+              <div className="lg:col-span-7 space-y-5">
+                <form onSubmit={handleAddOccurrence} className="space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h4 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2">
+                      <FileText size={14} /> Lançar Ação / Incidente Disciplinar
+                    </h4>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">
+                      Regulamento Disciplinar EECM-MT
+                    </span>
+                  </div>
+                  
+                  {/* Seletor de Tipo: Demérito vs Mérito */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewOccurrence(prev => ({
+                          ...prev,
+                          type: 'DEMERIT',
+                          category: demeritOptions[0].category,
+                          selectedCategories: prev.selectedCategories && prev.selectedCategories.length > 0 ? prev.selectedCategories : [demeritOptions[0].category]
+                        }));
+                      }}
+                      className={`py-2.5 rounded-xl text-[10px] font-black uppercase border transition-all flex items-center justify-center gap-2 ${
+                        newOccurrence.type === 'DEMERIT'
+                          ? 'bg-red-50 text-red-700 border-red-300 shadow-xs'
+                          : 'text-slate-500 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <ThumbsDown size={14} /> Demérito (Falta)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewOccurrence(prev => ({
+                          ...prev,
+                          type: 'MERIT',
+                          category: meritOptions[0].category,
+                          selectedCategories: []
+                        }));
+                      }}
+                      className={`py-2.5 rounded-xl text-[10px] font-black uppercase border transition-all flex items-center justify-center gap-2 ${
+                        newOccurrence.type === 'MERIT'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-xs'
+                          : 'text-slate-500 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <ThumbsUp size={14} /> Mérito (Elogio)
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Enquadramento / Categoria</label>
+                    {newOccurrence.type === 'DEMERIT' ? (
+                      <div className="space-y-3 relative">
+                        {/* FILTROS RÁPIDOS POR GRAVIDADE */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setModalCategorySeverityFilter('TODAS')}
+                            className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase transition-all ${
+                              modalCategorySeverityFilter === 'TODAS'
+                                ? 'bg-slate-900 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            Todas (91)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setModalCategorySeverityFilter('LEVE')}
+                            className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase transition-all ${
+                              modalCategorySeverityFilter === 'LEVE'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                            }`}
+                          >
+                            🟢 Leves (1-26)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setModalCategorySeverityFilter('MÉDIA')}
+                            className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase transition-all ${
+                              modalCategorySeverityFilter === 'MÉDIA'
+                                ? 'bg-amber-600 text-white shadow-xs'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                            }`}
+                          >
+                            🟡 Médias (27-62)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setModalCategorySeverityFilter('GRAVE')}
+                            className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase transition-all ${
+                              modalCategorySeverityFilter === 'GRAVE'
+                                ? 'bg-rose-600 text-white shadow-xs'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                            }`}
+                          >
+                            🔴 Graves (63-91)
+                          </button>
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Clique para ver todas ou busque falta disciplinar..."
+                            value={categorySearchTerm}
+                            onChange={e => setCategorySearchTerm(e.target.value)}
+                            onFocus={() => setIsCategoryDropdownOpen(true)}
+                            onBlur={() => setTimeout(() => setIsCategoryDropdownOpen(false), 200)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                          />
+                          {isCategoryDropdownOpen && (
+                            <div className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-2xl divide-y divide-slate-100 text-slate-800">
+                              {demeritOptions
+                                .filter(d => {
+                                  const matchesFilter = modalCategorySeverityFilter === 'TODAS' || d.severity === modalCategorySeverityFilter;
+                                  const matchesSearch = !categorySearchTerm || d.category.toLowerCase().includes(categorySearchTerm.toLowerCase());
+                                  return matchesFilter && matchesSearch;
+                                })
+                                .map(d => {
+                                  const isSelected = (newOccurrence.selectedCategories || []).includes(d.category);
+                                  const prevCount = (selectedStudentState?.occurrences || []).filter(o => 
+                                    (o.type === 'DEMERIT' || (o.type as any) === 'demerit') && 
+                                    (o.category === d.category || (o.categories && o.categories.includes(d.category)))
+                                  ).length;
+
+                                  return (
+                                    <button
+                                      key={d.category}
+                                      type="button"
+                                      onClick={() => {
+                                        setNewOccurrence(prev => {
+                                          const current = prev.selectedCategories || [];
+                                          const updated = current.includes(d.category)
+                                            ? current.filter(c => c !== d.category)
+                                            : [...current, d.category];
+                                          const suggestion = generateObservationSuggestion(updated, 'DEMERIT');
+                                          return { ...prev, selectedCategories: updated, observations: suggestion };
+                                        });
+                                        setCategorySearchTerm('');
+                                      }}
+                                      className="w-full text-left p-3 hover:bg-blue-50 text-[10px] font-bold uppercase transition-colors flex justify-between items-center gap-2"
+                                    >
+                                      <span className="flex-1 pr-2">{`[${d.severity}] ${d.category}`}</span>
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        {prevCount > 0 && (
+                                          <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                                            <RotateCcw size={8} /> {prevCount}x já cometida
+                                          </span>
+                                        )}
+                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                          {isSelected ? 'Selecionado' : 'Adicionar'}
+                                        </span>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* LISTA DE CATEGORIAS SELECIONADAS (TAGS) */}
+                        {newOccurrence.selectedCategories && newOccurrence.selectedCategories.length > 0 && (
+                          <div className="space-y-1.5">
+                            {newOccurrence.selectedCategories.map((cat, idx) => {
+                              const found = demeritOptions.find(d => d.category === cat);
+                              const prevCommittedCount = (selectedStudentState?.occurrences || []).filter(o => 
+                                (o.type === 'DEMERIT' || (o.type as any) === 'demerit') && 
+                                (o.category === cat || (o.categories && o.categories.includes(cat)))
+                              ).length;
+
+                              return (
+                                <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-950 text-[9px] font-bold">
+                                  <div className="flex items-center gap-1.5 flex-1 pr-2">
+                                    <span className="px-1.5 py-0.5 bg-amber-200 text-amber-900 rounded text-[8px] font-black uppercase shrink-0">
+                                      {found?.severity || 'LEVE'}
+                                    </span>
+                                    <span className="truncate">{cat}</span>
+                                    {prevCommittedCount > 0 && (
+                                      <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200 text-[8px] font-black uppercase shrink-0 flex items-center gap-1">
+                                        <RotateCcw size={8} /> Reincidente ({prevCommittedCount + 1}ª vez)
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = (newOccurrence.selectedCategories || []).filter(c => c !== cat);
+                                      const suggestion = generateObservationSuggestion(updated, 'DEMERIT');
+                                      setNewOccurrence(prev => ({ ...prev, selectedCategories: updated, observations: suggestion }));
+                                    }}
+                                    className="text-amber-800 hover:text-red-600 p-1"
+                                    title="Remover"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                      </div>
+                    ) : (
+                      <select
+                        value={newOccurrence.category}
+                        onChange={e => {
+                          const cat = e.target.value;
+                          const suggestion = generateObservationSuggestion([cat], 'MERIT');
+                          setNewOccurrence(prev => ({ ...prev, category: cat, observations: suggestion }));
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                      >
+                        {meritOptions.map(m => (
+                          <option key={m.category} value={m.category}>
+                            {m.category} (+{m.points.toFixed(2)})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* DATA DA OCORRÊNCIA */}
+                  <div>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Data</label>
+                    <input
+                      type="date"
+                      value={newOccurrence.date}
+                      onChange={e => setNewOccurrence(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                      required
+                    />
+                  </div>
+
+                  {/* SUGESTÃO REGULAMENTAR EECM */}
+                  {newOccurrence.type === 'DEMERIT' && suggestedMeasureForModal && (
+                    <div className={`p-3.5 rounded-2xl border transition-all ${
+                      suggestedMeasureForModal.isRecidivistAggravation
+                        ? 'bg-rose-50 border-rose-300 text-rose-950'
+                        : 'bg-emerald-50/60 border-emerald-200 text-emerald-950'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5 font-black text-[9px] uppercase tracking-wider">
+                          <Scale size={12} className={suggestedMeasureForModal.isRecidivistAggravation ? 'text-rose-600' : 'text-emerald-600'} />
+                          <span>Sugestão Regulamentar EECM</span>
+                        </div>
+                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          suggestedMeasureForModal.severityLevel === 'GRAVE'
+                            ? 'bg-rose-200 text-rose-900'
+                            : suggestedMeasureForModal.severityLevel === 'MÉDIA'
+                            ? 'bg-amber-200 text-amber-900'
+                            : 'bg-emerald-200 text-emerald-900'
+                        }`}>
+                          {suggestedMeasureForModal.severityLevel}
+                        </span>
+                      </div>
+
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="text-xs font-black uppercase text-slate-900">
+                            {suggestedMeasureForModal.measureName}
+                          </div>
+                          <div className="text-[9px] font-mono text-slate-600 mt-0.5">
+                            {suggestedMeasureForModal.legalArticle}
+                          </div>
+                          <p className="text-[9px] text-slate-600 mt-1 leading-snug">
+                            {suggestedMeasureForModal.explanation}
+                          </p>
+                        </div>
+
+                        {newOccurrence.disciplinaryMeasure === suggestedMeasureForModal.measureName && (
+                          <span className="px-2.5 py-1 bg-blue-600 text-white rounded-lg text-[8px] font-black uppercase shrink-0 flex items-center gap-1">
+                            <CheckCircle2 size={10} /> Aplicada
+                          </span>
+                        )}
+                      </div>
+
+                      {suggestedMeasureForModal.isRecidivistAggravation && (
+                        <div className="mt-2 pt-2 border-t border-rose-200 text-[8px] font-bold text-rose-800 flex items-center gap-1">
+                          <AlertTriangle size={10} className="shrink-0" />
+                          <span>Agravação por reincidência processual conforme Art. 35, Inciso III do EECM.</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* SELETOR DE MEDIDA DISCIPLINAR */}
+                  {newOccurrence.type === 'DEMERIT' && (
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Medida Disciplinar Aplicada</label>
+                        <select
+                          value={newOccurrence.disciplinaryMeasure || ''}
+                          onChange={e => setNewOccurrence(prev => ({ ...prev, disciplinaryMeasure: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
+                        >
+                          <option value="Advertência Oral (-0.10)">Advertência Oral (-0.10)</option>
+                          <option value="Advertência Escrita (-0.20)">Advertência Escrita (-0.20)</option>
+                          <option value="Ação Educativa Escolar (-0.30)">Ação Educativa Escolar (-0.30)</option>
+                          <option value="Suspensão de Sala de Aula (1 a 3 dias) (-0.50)">Suspensão de Sala de Aula (1 a 3 dias) (-0.50)</option>
+                          <option value="Termo de Ajustamento de Conduta Escolar (TACE)">Termo de Ajustamento de Conduta Escolar (TACE)</option>
+                          <option value="Transferência Educativa (Conselho Disciplinar)">Transferência Educativa (Conselho Disciplinar)</option>
+                        </select>
+                      </div>
+
+                      {newOccurrence.disciplinaryMeasure?.includes('Suspensão') && (
+                        <div>
+                          <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Dias de Suspensão (com Estudo Orientado)</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={3}
+                            value={newOccurrence.suspensionDays || 1}
+                            onChange={e => setNewOccurrence(prev => ({ ...prev, suspensionDays: Number(e.target.value) }))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-semibold text-slate-900"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* OBSERVAÇÕES DETALHADAS */}
+                  <div>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Detalhes / Observações</label>
+                    <textarea
+                      value={newOccurrence.observations}
+                      onChange={e => setNewOccurrence(prev => ({ ...prev, observations: e.target.value }))}
+                      placeholder="Descreva detalhes específicos do fato ocorrido..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[70px]"
+                      required
+                    />
+                  </div>
+
+                  {/* BOTÃO DE SUBMIT */}
+                  <button
+                    type="submit"
+                    className={`w-full py-3.5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 ${
+                      newOccurrence.type === 'MERIT'
+                        ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                        : 'bg-red-600 hover:bg-red-500 shadow-red-600/20'
+                    }`}
+                  >
+                    <Save size={14} /> Aplicar e Salvar Lançamento
+                  </button>
+                </form>
+              </div>
+
+              {/* Coluna Direita: Histórico de Ocorrências e Ações (5/12) */}
+              <div className="lg:col-span-5 space-y-4 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-8">
+                
+                <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <Clock size={12} /> Histórico de Atitude
+                    </h4>
+                    {(() => {
+                      const studentAnalysis = analyzeStudentRecidivism(selectedStudentState);
+                      if (studentAnalysis.totalDemerits === 0) return null;
+                      return (
+                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black border uppercase ${studentAnalysis.recidivismLevelBadge}`}>
+                          {studentAnalysis.recidivismLevelLabel}
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  {/* DOSSIÊ DE REINCIDÊNCIA DO ALUNO */}
+                  {(() => {
+                    const studentAnalysis = analyzeStudentRecidivism(selectedStudentState);
+                    if (studentAnalysis.totalDemerits === 0) return null;
+                    return (
+                      <div className="p-3.5 rounded-2xl border bg-slate-50 border-slate-200 text-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-black text-[10px] uppercase text-slate-800">
+                            <RotateCcw size={12} className="text-rose-600" />
+                            Dossiê de Reincidência
+                          </div>
+                          <span className="text-[9px] font-black text-slate-600">
+                            {studentAnalysis.totalDemerits} falta{studentAnalysis.totalDemerits > 1 ? 's' : ''} no total
+                          </span>
+                        </div>
+                        
+                        {studentAnalysis.specificRecurrences.length > 0 && (
+                          <div>
+                            <span className="text-[8px] font-bold text-slate-600 block mb-1">Faltas Reincidentes:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {studentAnalysis.specificRecurrences.map((r, idx) => (
+                                <span key={idx} className="bg-white px-2 py-0.5 rounded border border-slate-200 text-[8px] font-bold text-slate-700 flex items-center gap-1">
+                                  <RotateCcw size={8} />
+                                  {r.category.length > 22 ? r.category.substring(0, 22) + '...' : r.category} ({r.count}x)
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <p className="text-[9px] text-slate-700 font-semibold italic pt-1 border-t border-slate-200/60 leading-tight">
+                          💡 {studentAnalysis.pedagogicalAdvice}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* LISTAGEM DAS OCORRÊNCIAS */}
+                  <div className="space-y-2.5">
+                    {selectedStudentState.occurrences.map(occ => (
+                      <div key={occ.id} className={`p-3.5 rounded-2xl border ${
+                        occ.type === 'MERIT'
+                          ? 'bg-emerald-50/50 border-emerald-100'
+                          : 'bg-red-50/50 border-red-100'
+                      }`}>
+                        <div className="flex justify-between items-start mb-1.5">
+                          <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase ${
+                            occ.type === 'MERIT' ? `MÉRITO (+${occ.points})` : `DEMÉRITO (-${occ.points})`
+                          }`}>
+                            {occ.type === 'MERIT' ? `MÉRITO (+${occ.points})` : `DEMÉRITO (-${occ.points})`}
+                          </span>
+                          <span className="text-[8px] font-bold text-slate-500">{new Date(occ.date).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <h5 className="text-[10px] font-black text-slate-800 uppercase whitespace-pre-line leading-tight">{occ.category}</h5>
+                        <p className="text-[9px] text-slate-600 mt-1 italic">"{occ.observations}"</p>
+                        
+                        {occ.disciplinaryMeasure && (
+                          <div className="mt-2 bg-white/70 p-1.5 rounded-lg border border-slate-100 flex items-center justify-between text-[8px]">
+                            <span className="font-black uppercase text-slate-500">Medida:</span>
+                            <span className="font-bold text-indigo-700">
+                               {occ.disciplinaryMeasure}
+                               {occ.suspensionDays ? ` (${occ.suspensionDays}d)` : ''}
+                            </span>
+                          </div>
+                        )}
+
+                        {occ.isEscalated && (
+                          <div className="mt-1 bg-red-100 text-red-700 px-2 py-0.5 rounded text-[8px] font-black uppercase inline-flex items-center gap-1">
+                             <AlertTriangle size={10} /> Agravada por Reincidência
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center mt-2.5 pt-1.5 border-t border-slate-200/60 text-[8px] font-bold text-slate-500 uppercase">
+                          <span>Monitor: {occ.responsible.split(' ')[0]}</span>
+                          <div className="flex items-center gap-2">
+                            {occ.type === 'DEMERIT' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleGenerateMeasureDoc(occ, selectedStudentState.studentId)}
+                                  className="text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 font-black"
+                                  title="Gerar Ficha de Medida Disciplinar"
+                                >
+                                  <FileText size={10} /> Ficha
+                                </button>
+                                {getOccurrenceSeverity(occ) === 'GRAVE' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                                          INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
+                                      const ref = getExternalReferralRecommendation({ category: occ.category, studentScore: selectedStudentState.score });
+                                      const template = ref.requiresPolice ? 'oficio_policia' : ref.requiresMinisterioPublico ? 'oficio_ministerio_publico' : 'oficio_conselho_tutelar';
+                                      handleGenerateExternalReferralDoc(template, studentFull, occ.category, occ.observations);
+                                    }}
+                                    className="text-rose-600 hover:text-rose-800 flex items-center gap-0.5 font-black"
+                                    title="Gerar Ofício Institucional Externo (Polícia/Conselho/MP)"
+                                  >
+                                    <Scale size={10} /> Ofício
+                                  </button>
+                                )}
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOccurrence(selectedStudentState.studentId, occ.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {selectedStudentState.occurrences.length === 0 && (
+                      <div className="p-8 text-center bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 space-y-2">
+                        <CheckCircle2 size={28} className="mx-auto text-emerald-500" />
+                        <p className="text-[10px] font-black uppercase text-slate-600">Excelente conduta</p>
+                        <p className="text-[9px] text-slate-400">Nenhuma ocorrência registrada para este discente.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* BOTÕES DE AÇÕES INSTITUCIONAIS */}
+                <div className="pt-4 border-t border-slate-200 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMediationTargetStudent({
+                          id: selectedStudentState.studentId,
+                          name: selectedStudentState.studentName,
+                          class: selectedStudentState.className
+                        });
+                        const demeritSummary = selectedStudentState.occurrences
+                          .filter(o => o.type === 'DEMERIT')
+                          .map(o => `[${o.date}] ${o.category}: ${o.observations}`)
+                          .join('\n');
+                        setMediationInitialReport(demeritSummary ? `Histórico de Ocorrências:\n${demeritSummary}` : '');
+                        setIsMediationModalOpen(true);
+                      }}
+                      className="py-2.5 px-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all"
+                      title="Encaminhar discente para Mediação Escolar"
+                    >
+                      <Scale size={12} /> Mediação Escolar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                            INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
+                        const demeritSummary = selectedStudentState.occurrences
+                          .filter(o => o.type === 'DEMERIT')
+                          .map(o => `[${o.date}] ${o.category}: ${o.observations}`)
+                          .join('\n');
+                        handleOpenCivicFicaiModal(studentFull, demeritSummary || 'Discente com faltas disciplinares reiteradas encaminhado para expedição de FICAI na Busca Ativa.');
+                      }}
+                      className="py-2.5 px-2 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all"
+                      title="Encaminhar solicitação de FICAI para a Busca Ativa"
+                    >
+                      <Send size={12} /> Solicitar FICAI
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBehaviorModalOpen(false);
+                      setSelectedStudentState(null);
+                    }}
+                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+                  >
+                    Fechar Painel
+                  </button>
+                </div>
+
+              </div>
+
             </div>
 
           </div>
         </div>
       )}
+
 
       {/* MODAL: ENCAMINHAMENTO PARA MEDIAÇÃO ESCOLAR */}
       <CivicMediationReferralModal
