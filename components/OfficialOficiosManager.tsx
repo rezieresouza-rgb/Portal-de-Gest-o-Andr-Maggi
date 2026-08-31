@@ -217,12 +217,53 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       console.warn('Erro na conexão com Supabase para ofícios:', err);
     }
 
-    // 3. Mesclar dados garantindo unicidade por formatted_number ou id
+    // 3. Auto-sync: se existirem ofícios salvos no localStorage que ainda não estão no Supabase, subir para a nuvem
+    if (localOficios.length > 0) {
+      const dbIds = new Set(dbOficios.map(o => o.id));
+      const dbFormatted = new Set(dbOficios.map(o => o.formatted_number));
+      const toUpload = localOficios.filter(o => !dbIds.has(o.id) && !dbFormatted.has(o.formatted_number) && !o.id?.startsWith('seed-'));
+      
+      if (toUpload.length > 0) {
+        try {
+          for (const item of toUpload) {
+            await supabase.from('school_oficios').upsert([{
+              number: item.number,
+              year: item.year,
+              formatted_number: item.formatted_number,
+              module_source: item.module_source || 'SECRETARIA',
+              title_subject: item.title_subject,
+              recipient_name: item.recipient_name,
+              recipient_role: item.recipient_role,
+              recipient_org: item.recipient_org,
+              city_date: item.city_date,
+              salutation: item.salutation,
+              body_text: item.body_text,
+              closure_text: item.closure_text,
+              signatory_name: item.signatory_name,
+              signatory_role: item.signatory_role,
+              signatures: item.signatures || [],
+              is_signed: item.is_signed || false
+            }]);
+          }
+        } catch (syncErr) {
+          console.warn('Erro ao subir ofícios locais para o Supabase:', syncErr);
+        }
+      }
+    }
+
+    // 4. Mesclar dados garantindo unicidade por número e ano (ou formatted_number)
     const map = new Map<string, SchoolOficio>();
-    [...localOficios, ...dbOficios].forEach(o => {
-      const key = o.id || o.formatted_number;
-      if (!map.has(key) || (o.signatures && o.signatures.length > 0)) {
+    [...dbOficios, ...localOficios].forEach(o => {
+      const key = o.number && o.year ? `${o.number}_${o.year}` : (o.formatted_number || o.id);
+      if (!map.has(key)) {
         map.set(key, o);
+      } else {
+        const existing = map.get(key)!;
+        if ((!existing.id || existing.id.startsWith('seed-')) && o.id && !o.id.startsWith('seed-')) {
+          map.set(key, o);
+        } else if (!existing.is_signed && o.is_signed) {
+          map.set(key, o);
+        }
       }
     });
 
@@ -265,6 +306,16 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
   useEffect(() => {
     fetchOficios();
+
+    const channel = supabase.channel('school_oficios_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'school_oficios' }, () => {
+        fetchOficios();
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   const handleApplyTemplate = (template: typeof TEMPLATES[0]) => {

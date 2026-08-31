@@ -13,21 +13,29 @@ import {
   Layers,
   FlaskConical,
   UserCheck,
-  Save
+  Save,
+  Lock,
+  User as UserIcon
 } from 'lucide-react';
-import { ScienceLabBooking, Shift, StaffMember } from '../types';
+import { ScienceLabBooking, Shift, StaffMember, User } from '../types';
 import { useStaff } from '../hooks/useStaff';
 import { useClassrooms } from '../hooks/useClassrooms';
 import { useSubjects } from '../hooks/useSubjects';
 import { supabase } from '../supabaseClient';
+import { canCancelBooking, isMyBooking } from '../utils/bookingAuth';
+
+interface ScienceLabSchedulerProps {
+  user?: User;
+}
 
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
 
-const ScienceLabScheduler: React.FC = () => {
+const ScienceLabScheduler: React.FC<ScienceLabSchedulerProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [bookings, setBookings] = useState<ScienceLabBooking[]>([]);
+  const [onlyMyBookings, setOnlyMyBookings] = useState(false);
   const { staff } = useStaff();
   const { classrooms } = useClassrooms();
   const { subjects } = useSubjects();
@@ -88,6 +96,29 @@ const ScienceLabScheduler: React.FC = () => {
     return bookings.filter(b => b.date === selectedDate);
   }, [bookings, selectedDate]);
 
+  const myBookingsCount = useMemo(() => {
+    return currentBookings.filter(b => isMyBooking(b.teacherName, user)).length;
+  }, [currentBookings, user]);
+
+  const handleOpenNewModal = () => {
+    let defaultTeacher = '';
+    if (user?.name) {
+      const matchingStaff = staff.find(s => isMyBooking(s.name, user));
+      defaultTeacher = matchingStaff ? matchingStaff.name : user.name;
+    }
+    setNewBooking({
+      shift: 'MATUTINO' as Shift,
+      classes: [],
+      teacherName: defaultTeacher,
+      className: '',
+      subject: '',
+      experimentName: '',
+      needsTechnician: false,
+      observations: ''
+    });
+    setIsModalOpen(true);
+  };
+
   const handleAddBooking = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -142,12 +173,31 @@ const ScienceLabScheduler: React.FC = () => {
     }));
   };
 
-  const deleteBooking = async (id: string) => {
-    if (window.confirm("Deseja cancelar este agendamento do laboratório?")) {
+  const deleteBooking = async (
+    id: string, 
+    teacherName?: string, 
+    date?: string, 
+    shift?: string, 
+    classes?: string[]
+  ) => {
+    const formattedDate = date ? date.split('-').reverse().join('/') : '';
+    const details = [
+      'Laboratório de Ciências',
+      shift,
+      classes && classes.length > 0 ? `aulas ${classes.join(', ')}` : '',
+      formattedDate
+    ].filter(Boolean).join(' • ');
+
+    const confirmMsg = teacherName
+      ? `Deseja realmente CANCELAR o agendamento de:\n\n👤 ${teacherName}\n🔬 ${details}\n\nO espaço será liberado imediatamente no sistema.`
+      : "Deseja cancelar este agendamento do laboratório?";
+
+    if (window.confirm(confirmMsg)) {
       try {
         const { error } = await supabase.from('bookings').delete().eq('id', id);
         if (error) throw error;
         setBookings(prev => prev.filter(b => b.id !== id));
+        alert("Agendamento cancelado com sucesso!");
       } catch (error) {
         console.error("Erro ao cancelar agendamento:", error);
         alert("Erro ao cancelar agendamento.");
@@ -157,7 +207,7 @@ const ScienceLabScheduler: React.FC = () => {
 
   const renderStatus = () => (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-6">
           <div className="p-4 bg-emerald-50 text-emerald-600 rounded-3xl">
             <Beaker size={32} />
@@ -167,15 +217,38 @@ const ScienceLabScheduler: React.FC = () => {
             <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Clique para selecionar o dia de visualização</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
           />
+
+          {user && (
+            <button
+              type="button"
+              onClick={() => setOnlyMyBookings(!onlyMyBookings)}
+              className={`px-5 py-4 rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center gap-2 border ${
+                onlyMyBookings
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm'
+                  : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'
+              }`}
+              title="Filtrar apenas as minhas reservas"
+            >
+              <UserIcon size={16} className={onlyMyBookings ? 'text-emerald-600' : 'text-gray-400'} />
+              <span className="hidden sm:inline">Minhas Reservas</span>
+              {myBookingsCount > 0 && (
+                <span className="bg-emerald-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
+                  {myBookingsCount}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenNewModal}
             className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus size={18} /> Novo Agendamento
@@ -191,7 +264,11 @@ const ScienceLabScheduler: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {SHIFTS.map(shift => {
-            const shiftBookings = currentBookings.filter(b => b.shift === shift);
+            let shiftBookings = currentBookings.filter(b => b.shift === shift);
+            if (onlyMyBookings) {
+              shiftBookings = shiftBookings.filter(b => isMyBooking(b.teacherName, user));
+            }
+
             return (
               <div key={shift} className="space-y-4">
                 <div className="flex items-center justify-between px-2">
@@ -200,25 +277,48 @@ const ScienceLabScheduler: React.FC = () => {
                 </div>
                 <div className="space-y-3">
                   {shiftBookings.length > 0 ? (
-                    shiftBookings.map(sb => (
-                      <div key={sb.id} className="p-5 rounded-[2rem] bg-emerald-50 border border-emerald-100 relative group overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <FlaskConical size={60} />
-                        </div>
-                        <div className="relative z-10">
-                          <div className="flex justify-between items-start mb-3">
-                            <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-lg uppercase">Aulas: {sb.classes.join(', ')}</span>
-                            {sb.needsTechnician && <span className="text-[8px] font-black text-amber-600 uppercase flex items-center gap-1"><UserCheck size={10} /> C/ Técnico</span>}
+                    shiftBookings.map(sb => {
+                      const isMine = isMyBooking(sb.teacherName, user);
+                      const canCancel = canCancelBooking(sb.teacherName, user);
+
+                      return (
+                        <div key={sb.id} className="p-5 rounded-[2rem] bg-emerald-50 border border-emerald-100 relative group overflow-hidden">
+                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <FlaskConical size={60} />
                           </div>
-                          <p className="text-xs font-black text-gray-900 uppercase leading-tight mb-1">{sb.teacherName}</p>
-                          <p className="text-[10px] text-emerald-700 font-bold uppercase">{sb.className}</p>
-                          <div className="mt-4 pt-3 border-t border-emerald-200/50">
-                            <p className="text-[9px] text-gray-400 font-black uppercase mb-1">Prática:</p>
-                            <p className="text-[10px] text-gray-700 font-bold uppercase italic line-clamp-2">"{sb.experimentName}"</p>
+                          <div className="relative z-10">
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-lg uppercase">Aulas: {sb.classes.join(', ')}</span>
+                                {isMine && (
+                                  <span className="text-[7px] font-black uppercase bg-emerald-800 text-white px-1.5 py-0.5 rounded tracking-wider shadow-xs">
+                                    Você
+                                  </span>
+                                )}
+                                {sb.needsTechnician && <span className="text-[8px] font-black text-amber-600 uppercase flex items-center gap-1"><UserCheck size={10} /> C/ Técnico</span>}
+                              </div>
+
+                              {canCancel && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteBooking(sb.id, sb.teacherName, sb.date, sb.shift, sb.classes)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95"
+                                  title="Cancelar esta reserva"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-xs font-black text-gray-900 uppercase leading-tight mb-1">{sb.teacherName}</p>
+                            <p className="text-[10px] text-emerald-700 font-bold uppercase">{sb.className}</p>
+                            <div className="mt-4 pt-3 border-t border-emerald-200/50">
+                              <p className="text-[9px] text-gray-400 font-black uppercase mb-1">Prática:</p>
+                              <p className="text-[10px] text-gray-700 font-bold uppercase italic line-clamp-2">"{sb.experimentName}"</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="py-12 border-2 border-dashed border-gray-100 rounded-[2rem] flex flex-col items-center justify-center text-gray-300">
                       <Clock size={24} className="mb-2 opacity-20" />
@@ -270,14 +370,25 @@ const ScienceLabScheduler: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-sm">
-              {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => (
+              {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => {
+                const isMine = isMyBooking(b.teacherName, user);
+                const canCancel = canCancelBooking(b.teacherName, user);
+
+                return (
                 <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-8 py-6">
                     <p className="font-black text-gray-900">{b.date.split('-').reverse().join('/')}</p>
                     <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{b.shift} • Aulas: {b.classes.join(', ')}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                      {isMine && (
+                        <span className="text-[7px] font-black uppercase bg-emerald-600 text-white px-1.5 py-0.5 rounded tracking-wider">
+                          Você
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase">{b.className}</p>
                   </td>
                   <td className="px-8 py-6">
@@ -289,12 +400,22 @@ const ScienceLabScheduler: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button onClick={() => deleteBooking(b.id)} className="p-3 text-gray-300 hover:text-red-500 transition-colors">
-                      <Trash2 size={18} />
-                    </button>
+                    {canCancel ? (
+                      <button 
+                        onClick={() => deleteBooking(b.id, b.teacherName, b.date, b.shift, b.classes)} 
+                        className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        title="Cancelar esta reserva"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <span className="p-3 text-gray-300 inline-block" title="Apenas o responsável ou a gestão pode cancelar">
+                        <Lock size={16} />
+                      </span>
+                    )}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
           {bookings.length === 0 && (

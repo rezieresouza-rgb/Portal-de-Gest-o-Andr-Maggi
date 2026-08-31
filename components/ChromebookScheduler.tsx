@@ -15,13 +15,21 @@ import {
   ChevronRight,
   ArrowLeft,
   Layers,
-  Save
+  Save,
+  Lock,
+  User as UserIcon,
+  Filter
 } from 'lucide-react';
-import { ChromebookBooking, Shift, StaffMember } from '../types';
+import { ChromebookBooking, Shift, StaffMember, User } from '../types';
 import { useStaff } from '../hooks/useStaff';
 import { useClassrooms } from '../hooks/useClassrooms';
 import { useSubjects } from '../hooks/useSubjects';
 import { supabase } from '../supabaseClient';
+import { canCancelBooking, isMyBooking } from '../utils/bookingAuth';
+
+interface ChromebookSchedulerProps {
+  user?: User;
+}
 
 const STATIONS = [
   "Estação 01 (biblioteca)", 
@@ -33,10 +41,11 @@ const STATIONS = [
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
 
-const ChromebookScheduler: React.FC = () => {
+const ChromebookScheduler: React.FC<ChromebookSchedulerProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [bookings, setBookings] = useState<ChromebookBooking[]>([]);
+  const [onlyMyBookings, setOnlyMyBookings] = useState(false);
   const { staff } = useStaff();
   const { classrooms } = useClassrooms();
   const { subjects } = useSubjects();
@@ -97,6 +106,28 @@ const ChromebookScheduler: React.FC = () => {
     return bookings.filter(b => b.date === selectedDate);
   }, [bookings, selectedDate]);
 
+  const myBookingsCount = useMemo(() => {
+    return currentBookings.filter(b => isMyBooking(b.teacherName, user)).length;
+  }, [currentBookings, user]);
+
+  const handleOpenNewModal = () => {
+    let defaultTeacher = '';
+    if (user?.name) {
+      const matchingStaff = staff.find(s => isMyBooking(s.name, user));
+      defaultTeacher = matchingStaff ? matchingStaff.name : user.name;
+    }
+    setNewBooking({
+      stationId: STATIONS[0],
+      shift: 'MATUTINO' as Shift,
+      classes: [],
+      teacherName: defaultTeacher,
+      className: '',
+      subject: '',
+      observations: ''
+    });
+    setIsModalOpen(true);
+  };
+
   const handleAddBooking = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -152,12 +183,32 @@ const ChromebookScheduler: React.FC = () => {
     }));
   };
 
-  const deleteBooking = async (id: string) => {
-    if (window.confirm("Deseja cancelar este agendamento permanentemente?")) {
+  const deleteBooking = async (
+    id: string, 
+    teacherName?: string, 
+    stationId?: string, 
+    date?: string, 
+    shift?: string, 
+    classes?: string[]
+  ) => {
+    const formattedDate = date ? date.split('-').reverse().join('/') : '';
+    const details = [
+      stationId,
+      shift,
+      classes && classes.length > 0 ? `aulas ${classes.join(', ')}` : '',
+      formattedDate
+    ].filter(Boolean).join(' • ');
+
+    const confirmMsg = teacherName
+      ? `Deseja realmente CANCELAR o agendamento de:\n\n👤 ${teacherName}\n📍 ${details}\n\nO horário será liberado imediatamente no sistema.`
+      : "Deseja realmente cancelar este agendamento permanentemente?";
+
+    if (window.confirm(confirmMsg)) {
       try {
         const { error } = await supabase.from('bookings').delete().eq('id', id);
         if (error) throw error;
         setBookings(prev => prev.filter(b => b.id !== id));
+        alert("Agendamento cancelado com sucesso!");
       } catch (error) {
         console.error("Erro ao cancelar agendamento:", error);
         alert("Erro ao cancelar agendamento.");
@@ -167,7 +218,7 @@ const ChromebookScheduler: React.FC = () => {
 
   const renderStatus = () => (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-6">
           <div className="p-4 bg-fuchsia-50 text-fuchsia-600 rounded-3xl">
             <CalendarDays size={32} />
@@ -177,18 +228,38 @@ const ChromebookScheduler: React.FC = () => {
             <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Status para o dia selecionado</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-fuchsia-500/10 transition-all"
           />
+
+          {user && (
+            <button
+              type="button"
+              onClick={() => setOnlyMyBookings(!onlyMyBookings)}
+              className={`px-5 py-4 rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center gap-2 border ${
+                onlyMyBookings
+                  ? 'bg-fuchsia-50 border-fuchsia-300 text-fuchsia-700 shadow-sm'
+                  : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'
+              }`}
+              title="Filtrar apenas as minhas reservas"
+            >
+              <UserIcon size={16} className={onlyMyBookings ? 'text-fuchsia-600' : 'text-gray-400'} />
+              <span className="hidden sm:inline">Minhas Reservas</span>
+              {myBookingsCount > 0 && (
+                <span className="bg-fuchsia-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
+                  {myBookingsCount}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
-            onClick={() => {
-              setNewBooking({ ...newBooking, stationId: STATIONS[0], classes: [], teacherName: '', className: '', subject: '' });
-              setIsModalOpen(true);
-            }}
+            onClick={handleOpenNewModal}
             className="px-8 py-4 bg-fuchsia-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-fuchsia-600/20 hover:bg-fuchsia-700 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus size={18} /> Novo Agendamento
@@ -208,7 +279,11 @@ const ChromebookScheduler: React.FC = () => {
 
             <div className="space-y-3">
               {SHIFTS.map(shift => {
-                const shiftBookings = currentBookings.filter(b => b.stationId === station && b.shift === shift);
+                let shiftBookings = currentBookings.filter(b => b.stationId === station && b.shift === shift);
+                if (onlyMyBookings) {
+                  shiftBookings = shiftBookings.filter(b => isMyBooking(b.teacherName, user));
+                }
+
                 return (
                   <div key={shift} className={`p-4 rounded-2xl border ${shiftBookings.length > 0 ? 'bg-fuchsia-50 border-fuchsia-100' : 'bg-gray-50 border-transparent'} transition-all`}>
                     <div className="flex justify-between items-center mb-1">
@@ -217,14 +292,47 @@ const ChromebookScheduler: React.FC = () => {
                     </div>
                     {shiftBookings.length > 0 ? (
                       <div className="mt-2 space-y-2">
-                        {shiftBookings.map(sb => (
-                          <div key={sb.id} className="border-t border-fuchsia-200/50 pt-2 first:border-t-0 first:pt-0">
-                            <p className="text-[11px] font-black text-gray-900 uppercase truncate">{sb.teacherName}</p>
-                            <p className="text-[9px] text-fuchsia-500 font-bold uppercase mt-0.5">
-                              {sb.className} • {sb.classes.join(', ')} aula
-                            </p>
-                          </div>
-                        ))}
+                        {shiftBookings.map(sb => {
+                          const isMine = isMyBooking(sb.teacherName, user);
+                          const canCancel = canCancelBooking(sb.teacherName, user);
+
+                          return (
+                            <div key={sb.id} className="border-t border-fuchsia-200/50 pt-2 first:border-t-0 first:pt-0 flex items-start justify-between gap-2 group">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="text-[11px] font-black text-gray-900 uppercase truncate">{sb.teacherName}</p>
+                                  {isMine && (
+                                    <span className="text-[7px] font-black uppercase bg-fuchsia-600 text-white px-1.5 py-0.5 rounded tracking-wider shrink-0 shadow-xs">
+                                      Você
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[9px] text-fuchsia-600 font-bold uppercase mt-0.5">
+                                  {sb.className} • {sb.classes.join(', ')} aula
+                                </p>
+                                {sb.subject && (
+                                  <p className="text-[8px] text-gray-400 font-semibold uppercase truncate">
+                                    {sb.subject}
+                                  </p>
+                                )}
+                              </div>
+
+                              {canCancel && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteBooking(sb.id, sb.teacherName, sb.stationId, sb.date, sb.shift, sb.classes);
+                                  }}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all shrink-0 active:scale-95"
+                                  title="Cancelar meu agendamento"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-gray-300 uppercase italic mt-1">Disponível</p>
@@ -278,6 +386,9 @@ const ChromebookScheduler: React.FC = () => {
               {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => {
                 const [year, month, day] = b.date.split('-');
                 const formattedDate = `${day}/${month}/${year}`;
+                const isMine = isMyBooking(b.teacherName, user);
+                const canCancel = canCancelBooking(b.teacherName, user);
+
                 return (
                 <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-8 py-6">
@@ -291,16 +402,33 @@ const ChromebookScheduler: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                      {isMine && (
+                        <span className="text-[7px] font-black uppercase bg-fuchsia-600 text-white px-1.5 py-0.5 rounded tracking-wider">
+                          Você
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase">{b.className}</p>
                   </td>
                   <td className="px-8 py-6">
                     <p className="font-bold text-gray-600 uppercase italic line-clamp-1">{b.subject}</p>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button onClick={() => deleteBooking(b.id)} className="p-3 text-gray-300 hover:text-red-500 transition-colors">
-                      <Trash2 size={18} />
-                    </button>
+                    {canCancel ? (
+                      <button 
+                        onClick={() => deleteBooking(b.id, b.teacherName, b.stationId, b.date, b.shift, b.classes)} 
+                        className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        title="Cancelar este agendamento"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    ) : (
+                      <span className="p-2.5 text-gray-300 inline-block" title="Apenas o responsável ou a gestão pode cancelar">
+                        <Lock size={15} />
+                      </span>
+                    )}
                   </td>
                 </tr>
               )})}

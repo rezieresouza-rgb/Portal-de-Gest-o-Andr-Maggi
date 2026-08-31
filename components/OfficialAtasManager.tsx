@@ -251,7 +251,42 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
       console.warn('Erro ao conectar com Supabase para atas:', e);
     }
 
-    // 3. Merge Local + DB by ID
+    // 3. Auto-sync: se existirem atas locais que ainda não estão no Supabase, subir para a nuvem
+    if (localAtas.length > 0) {
+      const dbIds = new Set(dbAtas.map(a => a.id));
+      const dbFormatted = new Set(dbAtas.map(a => a.formatted_number));
+      const toUpload = localAtas.filter(a => !dbIds.has(a.id) && !dbFormatted.has(a.formatted_number) && !a.id?.startsWith('seed-'));
+      
+      if (toUpload.length > 0) {
+        try {
+          for (const item of toUpload) {
+            await supabase.from('school_atas').upsert([{
+              number: item.number,
+              year: item.year,
+              formatted_number: item.formatted_number,
+              module_source: item.module_source || 'COORDENACAO',
+              category: item.category || 'PEDAGOGICO',
+              pauta_assunto: item.pauta_assunto,
+              meeting_date: item.meeting_date,
+              meeting_time_start: item.meeting_time_start,
+              meeting_time_end: item.meeting_time_end,
+              location: item.location,
+              participants: item.participants || [],
+              objectives: item.objectives || '',
+              content_deliberations: item.content_deliberations || '',
+              forwarding_actions: item.forwarding_actions || '',
+              signatory_name: item.signatory_name,
+              signatory_role: item.signatory_role,
+              signatories: item.signatories || []
+            }]);
+          }
+        } catch (syncErr) {
+          console.warn('Erro ao subir atas locais para o Supabase:', syncErr);
+        }
+      }
+    }
+
+    // 4. Merge Local + DB by ID
     const map = new Map<string, SchoolAta>();
     localAtas.forEach(a => map.set(a.id, a));
     dbAtas.forEach(a => map.set(a.id, a));
@@ -282,6 +317,16 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
 
   useEffect(() => {
     loadAtas();
+
+    const channel = supabase.channel('school_atas_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'school_atas' }, () => {
+        loadAtas();
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   // Handle AI generation for Minutes

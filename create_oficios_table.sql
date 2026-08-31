@@ -1,4 +1,4 @@
--- Script para criação da tabela de Ofícios Escolares com sequencial global
+-- Script para criação da tabela de Ofícios Escolares com sequencial global e assinaturas eletrônicas
 CREATE TABLE IF NOT EXISTS public.school_oficios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   number INTEGER NOT NULL,
@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS public.school_oficios (
   closure_text TEXT DEFAULT 'Atenciosamente,',
   signatory_name TEXT NOT NULL,
   signatory_role TEXT NOT NULL,
+  signatures JSONB DEFAULT '[]'::jsonb,
+  is_signed BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

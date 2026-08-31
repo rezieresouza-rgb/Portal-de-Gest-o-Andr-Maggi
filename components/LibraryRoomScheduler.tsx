@@ -13,22 +13,30 @@ import {
    Layers,
    Sparkles,
    MonitorPlay,
-   Library
+   Library,
+   Lock,
+   User as UserIcon
 } from 'lucide-react';
-import { LibraryRoomBooking, Shift, StaffMember } from '../types';
+import { LibraryRoomBooking, Shift, StaffMember, User } from '../types';
 import { useStaff } from '../hooks/useStaff';
 import { useClassrooms } from '../hooks/useClassrooms';
 import { useSubjects } from '../hooks/useSubjects';
 import { supabase } from '../supabaseClient';
+import { canCancelBooking, isMyBooking } from '../utils/bookingAuth';
+
+interface LibraryRoomSchedulerProps {
+   user?: User;
+}
 
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
 const ACTIVITY_TYPES = ['Leitura Livre', 'Pesquisa Orientada', 'Contação de Histórias', 'Exposição', 'Outros'];
 
-const LibraryRoomScheduler: React.FC = () => {
+const LibraryRoomScheduler: React.FC<LibraryRoomSchedulerProps> = ({ user }) => {
    const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
    const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
    const [bookings, setBookings] = useState<LibraryRoomBooking[]>([]);
+   const [onlyMyBookings, setOnlyMyBookings] = useState(false);
    const { staff } = useStaff();
    const { classrooms } = useClassrooms();
    const { subjects } = useSubjects();
@@ -89,6 +97,29 @@ const LibraryRoomScheduler: React.FC = () => {
       return bookings.filter(b => b.date === selectedDate);
    }, [bookings, selectedDate]);
 
+   const myBookingsCount = useMemo(() => {
+      return currentBookings.filter(b => isMyBooking(b.teacherName, user)).length;
+   }, [currentBookings, user]);
+
+   const handleOpenNewModal = () => {
+      let defaultTeacher = '';
+      if (user?.name) {
+         const matchingStaff = staff.find(s => isMyBooking(s.name, user));
+         defaultTeacher = matchingStaff ? matchingStaff.name : user.name;
+      }
+      setNewBooking({
+         shift: 'MATUTINO' as Shift,
+         classes: [],
+         teacherName: defaultTeacher,
+         className: '',
+         subject: '',
+         activityType: 'Leitura Livre',
+         needsMediaProjector: false,
+         observations: ''
+      });
+      setIsModalOpen(true);
+   };
+
    const handleAddBooking = async (e: React.FormEvent) => {
       e.preventDefault();
 
@@ -143,12 +174,31 @@ const LibraryRoomScheduler: React.FC = () => {
       }));
    };
 
-   const deleteBooking = async (id: string) => {
-      if (window.confirm("Deseja cancelar esta reserva do espaço da biblioteca?")) {
+   const deleteBooking = async (
+      id: string, 
+      teacherName?: string, 
+      date?: string, 
+      shift?: string, 
+      classes?: string[]
+   ) => {
+      const formattedDate = date ? date.split('-').reverse().join('/') : '';
+      const details = [
+         'Espaço Biblioteca',
+         shift,
+         classes && classes.length > 0 ? `aulas ${classes.join(', ')}` : '',
+         formattedDate
+      ].filter(Boolean).join(' • ');
+
+      const confirmMsg = teacherName
+         ? `Deseja realmente CANCELAR o agendamento de:\n\n👤 ${teacherName}\n📖 ${details}\n\nO espaço será liberado imediatamente no sistema.`
+         : "Deseja cancelar esta reserva do espaço da biblioteca?";
+
+      if (window.confirm(confirmMsg)) {
          try {
             const { error } = await supabase.from('bookings').delete().eq('id', id);
             if (error) throw error;
             setBookings(prev => prev.filter(b => b.id !== id));
+            alert("Agendamento cancelado com sucesso!");
          } catch (error) {
             console.error("Erro ao cancelar agendamento:", error);
             alert("Erro ao cancelar agendamento.");
@@ -158,7 +208,7 @@ const LibraryRoomScheduler: React.FC = () => {
 
    const renderStatus = () => (
       <div className="space-y-8 animate-in fade-in duration-500">
-         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-6">
                <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl">
                   <BookOpen size={32} />
@@ -168,15 +218,38 @@ const LibraryRoomScheduler: React.FC = () => {
                   <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Agenda para Atividades Coletivas e Aulas</p>
                </div>
             </div>
-            <div className="flex items-center gap-4">
+            
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
                <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
                />
+
+               {user && (
+                  <button
+                     type="button"
+                     onClick={() => setOnlyMyBookings(!onlyMyBookings)}
+                     className={`px-5 py-4 rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center gap-2 border ${
+                        onlyMyBookings
+                           ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-sm'
+                           : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'
+                     }`}
+                     title="Filtrar apenas as minhas reservas"
+                  >
+                     <UserIcon size={16} className={onlyMyBookings ? 'text-indigo-600' : 'text-gray-400'} />
+                     <span className="hidden sm:inline">Minhas Reservas</span>
+                     {myBookingsCount > 0 && (
+                        <span className="bg-indigo-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
+                           {myBookingsCount}
+                        </span>
+                     )}
+                  </button>
+               )}
+
                <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={handleOpenNewModal}
                   className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-2"
                >
                   <Plus size={18} /> Reservar Espaço
@@ -192,7 +265,11 @@ const LibraryRoomScheduler: React.FC = () => {
 
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                {SHIFTS.map(shift => {
-                  const shiftBookings = currentBookings.filter(b => b.shift === shift);
+                  let shiftBookings = currentBookings.filter(b => b.shift === shift);
+                  if (onlyMyBookings) {
+                     shiftBookings = shiftBookings.filter(b => isMyBooking(b.teacherName, user));
+                  }
+
                   return (
                      <div key={shift} className="space-y-4">
                         <div className="flex items-center justify-between px-2">
@@ -201,24 +278,49 @@ const LibraryRoomScheduler: React.FC = () => {
                         </div>
                         <div className="space-y-4">
                            {shiftBookings.length > 0 ? (
-                              shiftBookings.map(sb => (
-                                 <div key={sb.id} className="p-6 rounded-[2.5rem] bg-gray-50 border border-gray-100 hover:border-indigo-200 hover:bg-white transition-all relative group shadow-sm">
-                                    <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                                       <BookOpen size={60} className="text-indigo-900" />
-                                    </div>
-                                    <div className="relative z-10">
-                                       <div className="flex justify-between items-start mb-4">
-                                          <span className="text-[8px] font-black bg-indigo-600 text-white px-2 py-1 rounded-lg uppercase">Aulas: {sb.classes.join(', ')}</span>
-                                          {sb.needsMediaProjector && <MonitorPlay size={14} className="text-indigo-500" />}
+                              shiftBookings.map(sb => {
+                                 const isMine = isMyBooking(sb.teacherName, user);
+                                 const canCancel = canCancelBooking(sb.teacherName, user);
+
+                                 return (
+                                    <div key={sb.id} className="p-6 rounded-[2.5rem] bg-gray-50 border border-gray-100 hover:border-indigo-200 hover:bg-white transition-all relative group shadow-sm">
+                                       <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                                          <BookOpen size={60} className="text-indigo-900" />
                                        </div>
-                                       <p className="text-xs font-black text-gray-900 uppercase leading-tight mb-1">{sb.teacherName}</p>
-                                       <p className="text-[10px] text-gray-400 font-bold uppercase mb-4">{sb.className}</p>
-                                       <div className="flex items-center gap-2 text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 w-fit px-3 py-1.5 rounded-full border border-indigo-100">
-                                          <Sparkles size={10} /> {sb.activityType}
+                                       <div className="relative z-10">
+                                          <div className="flex justify-between items-start mb-4">
+                                             <div className="flex items-center gap-2">
+                                                <span className="text-[8px] font-black bg-indigo-600 text-white px-2 py-1 rounded-lg uppercase">Aulas: {sb.classes.join(', ')}</span>
+                                                {isMine && (
+                                                   <span className="text-[7px] font-black uppercase bg-indigo-800 text-white px-1.5 py-0.5 rounded tracking-wider shadow-xs">
+                                                      Você
+                                                   </span>
+                                                )}
+                                             </div>
+
+                                             <div className="flex items-center gap-2">
+                                                {canCancel && (
+                                                   <button
+                                                      type="button"
+                                                      onClick={() => deleteBooking(sb.id, sb.teacherName, sb.date, sb.shift, sb.classes)}
+                                                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95"
+                                                      title="Cancelar esta reserva"
+                                                   >
+                                                      <Trash2 size={15} />
+                                                   </button>
+                                                )}
+                                                {sb.needsMediaProjector && <MonitorPlay size={14} className="text-indigo-500" />}
+                                             </div>
+                                          </div>
+                                          <p className="text-xs font-black text-gray-900 uppercase leading-tight mb-1">{sb.teacherName}</p>
+                                          <p className="text-[10px] text-gray-400 font-bold uppercase mb-4">{sb.className}</p>
+                                          <div className="flex items-center gap-2 text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 w-fit px-3 py-1.5 rounded-full border border-indigo-100">
+                                             <Sparkles size={10} /> {sb.activityType}
+                                          </div>
                                        </div>
                                     </div>
-                                 </div>
-                              ))
+                                 );
+                              })
                            ) : (
                               <div className="py-20 border-2 border-dashed border-gray-100 rounded-[2.5rem] flex flex-col items-center justify-center text-gray-300">
                                  <Clock size={32} className="mb-3 opacity-20" />
@@ -270,14 +372,25 @@ const LibraryRoomScheduler: React.FC = () => {
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50 text-sm">
-                     {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => (
+                     {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => {
+                        const isMine = isMyBooking(b.teacherName, user);
+                        const canCancel = canCancelBooking(b.teacherName, user);
+
+                        return (
                         <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                            <td className="px-8 py-6">
                               <p className="font-black text-gray-900">{b.date.split('-').reverse().join('/')}</p>
                               <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-widest">{b.shift} • Aulas: {b.classes.join(', ')}</p>
                            </td>
                            <td className="px-8 py-6">
-                              <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                              <div className="flex items-center gap-2">
+                                 <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                                 {isMine && (
+                                    <span className="text-[7px] font-black uppercase bg-indigo-600 text-white px-1.5 py-0.5 rounded tracking-wider">
+                                       Você
+                                    </span>
+                                 )}
+                              </div>
                               <p className="text-[10px] text-gray-400 font-bold uppercase">{b.className}</p>
                            </td>
                            <td className="px-8 py-6">
@@ -289,12 +402,22 @@ const LibraryRoomScheduler: React.FC = () => {
                               </span>
                            </td>
                            <td className="px-8 py-6 text-right">
-                              <button onClick={() => deleteBooking(b.id)} className="p-3 text-gray-300 hover:text-red-500 transition-colors">
-                                 <Trash2 size={18} />
-                              </button>
+                              {canCancel ? (
+                                 <button 
+                                    onClick={() => deleteBooking(b.id, b.teacherName, b.date, b.shift, b.classes)} 
+                                    className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                    title="Cancelar esta reserva"
+                                 >
+                                    <Trash2 size={18} />
+                                 </button>
+                              ) : (
+                                 <span className="p-3 text-gray-300 inline-block" title="Apenas o responsável ou a gestão pode cancelar">
+                                    <Lock size={16} />
+                                 </span>
+                              )}
                            </td>
                         </tr>
-                     ))}
+                     )})}
                   </tbody>
                </table>
                {bookings.length === 0 && (

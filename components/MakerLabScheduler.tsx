@@ -14,22 +14,30 @@ import {
   CircuitBoard,
   Save,
   Library,
-  BookOpen
+  BookOpen,
+  Lock,
+  User as UserIcon
 } from 'lucide-react';
-import { MakerLabBooking, Shift, StaffMember } from '../types';
+import { MakerLabBooking, Shift, StaffMember, User } from '../types';
 import { useStaff } from '../hooks/useStaff';
 import { useClassrooms } from '../hooks/useClassrooms';
 import { useSubjects } from '../hooks/useSubjects';
 import { supabase } from '../supabaseClient';
+import { canCancelBooking, isMyBooking } from '../utils/bookingAuth';
+
+interface MakerLabSchedulerProps {
+  user?: User;
+}
 
 const SHIFTS: Shift[] = ['MATUTINO', 'VESPERTINO'];
 const AVAILABLE_CLASSES = ["1ª", "2ª", "3ª", "4ª", "5ª"];
 const EQUIPMENTS = ["Impressora 3D", "Cortadora Laser", "Kits Robótica", "Bancada Eletrônica", "Ferramentas Manuais"];
 
-const MakerLabScheduler: React.FC = () => {
+const MakerLabScheduler: React.FC<MakerLabSchedulerProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status');
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [bookings, setBookings] = useState<MakerLabBooking[]>([]);
+  const [onlyMyBookings, setOnlyMyBookings] = useState(false);
   const { staff } = useStaff();
   const { classrooms } = useClassrooms();
   const { subjects } = useSubjects();
@@ -70,7 +78,7 @@ const MakerLabScheduler: React.FC = () => {
         })));
       }
     } catch (error) {
-      console.error("Erro ao buscar agendamentos do Maker Lab:", error);
+      console.error("Erro ao buscar agendamentos da Biblioteca Antiga:", error);
     }
   };
 
@@ -89,6 +97,29 @@ const MakerLabScheduler: React.FC = () => {
   const currentBookings = useMemo(() => {
     return bookings.filter(b => b.date === selectedDate);
   }, [bookings, selectedDate]);
+
+  const myBookingsCount = useMemo(() => {
+    return currentBookings.filter(b => isMyBooking(b.teacherName, user)).length;
+  }, [currentBookings, user]);
+
+  const handleOpenNewModal = () => {
+    let defaultTeacher = '';
+    if (user?.name) {
+      const matchingStaff = staff.find(s => isMyBooking(s.name, user));
+      defaultTeacher = matchingStaff ? matchingStaff.name : user.name;
+    }
+    setNewBooking({
+      shift: 'MATUTINO' as Shift,
+      classes: [],
+      teacherName: defaultTeacher,
+      className: '',
+      subject: '',
+      projectName: '',
+      equipmentUsed: [],
+      observations: ''
+    });
+    setIsModalOpen(true);
+  };
 
   const handleAddBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +161,7 @@ const MakerLabScheduler: React.FC = () => {
       setNewBooking({ ...newBooking, classes: [], teacherName: '', className: '', subject: '', projectName: '', equipmentUsed: [], observations: '' });
       alert("Agendamento realizado com sucesso!");
     } catch (error) {
-      console.error("Erro ao agendar Maker Lab:", error);
+      console.error("Erro ao agendar Biblioteca Antiga:", error);
       alert("Erro ao realizar agendamento.");
     }
   };
@@ -153,12 +184,31 @@ const MakerLabScheduler: React.FC = () => {
     }));
   };
 
-  const deleteBooking = async (id: string) => {
-    if (window.confirm("Deseja cancelar esta reserva da Biblioteca Antiga?")) {
+  const deleteBooking = async (
+    id: string, 
+    teacherName?: string, 
+    date?: string, 
+    shift?: string, 
+    classes?: string[]
+  ) => {
+    const formattedDate = date ? date.split('-').reverse().join('/') : '';
+    const details = [
+      'Biblioteca Antiga',
+      shift,
+      classes && classes.length > 0 ? `aulas ${classes.join(', ')}` : '',
+      formattedDate
+    ].filter(Boolean).join(' • ');
+
+    const confirmMsg = teacherName
+      ? `Deseja realmente CANCELAR o agendamento de:\n\n👤 ${teacherName}\n📚 ${details}\n\nO espaço será liberado imediatamente no sistema.`
+      : "Deseja cancelar esta reserva da Biblioteca Antiga?";
+
+    if (window.confirm(confirmMsg)) {
       try {
         const { error } = await supabase.from('bookings').delete().eq('id', id);
         if (error) throw error;
         setBookings(prev => prev.filter(b => b.id !== id));
+        alert("Agendamento cancelado com sucesso!");
       } catch (error) {
         console.error("Erro ao cancelar agendamento:", error);
         alert("Erro ao cancelar agendamento.");
@@ -168,7 +218,7 @@ const MakerLabScheduler: React.FC = () => {
 
   const renderStatus = () => (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-6">
           <div className="p-4 bg-sky-50 text-sky-600 rounded-3xl">
             <Library size={32} />
@@ -178,15 +228,38 @@ const MakerLabScheduler: React.FC = () => {
             <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Agenda de Leitura e Estudos</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-sky-500/10 transition-all"
           />
+
+          {user && (
+            <button
+              type="button"
+              onClick={() => setOnlyMyBookings(!onlyMyBookings)}
+              className={`px-5 py-4 rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center gap-2 border ${
+                onlyMyBookings
+                  ? 'bg-sky-50 border-sky-300 text-sky-700 shadow-sm'
+                  : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'
+              }`}
+              title="Filtrar apenas as minhas reservas"
+            >
+              <UserIcon size={16} className={onlyMyBookings ? 'text-sky-600' : 'text-gray-400'} />
+              <span className="hidden sm:inline">Minhas Reservas</span>
+              {myBookingsCount > 0 && (
+                <span className="bg-sky-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
+                  {myBookingsCount}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenNewModal}
             className="px-8 py-4 bg-sky-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-sky-600/20 hover:bg-sky-700 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus size={18} /> Agendar Oficina
@@ -196,7 +269,11 @@ const MakerLabScheduler: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {SHIFTS.map(shift => {
-          const shiftBookings = currentBookings.filter(b => b.shift === shift);
+          let shiftBookings = currentBookings.filter(b => b.shift === shift);
+          if (onlyMyBookings) {
+            shiftBookings = shiftBookings.filter(b => isMyBooking(b.teacherName, user));
+          }
+
           return (
             <div key={shift} className="space-y-6">
               <div className="flex items-center justify-between px-4">
@@ -206,33 +283,58 @@ const MakerLabScheduler: React.FC = () => {
 
               <div className="space-y-4">
                 {shiftBookings.length > 0 ? (
-                  shiftBookings.map(sb => (
-                    <div key={sb.id} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-sky-200 transition-all relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <BookOpen size={80} className="text-sky-900" />
-                      </div>
-                      <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                          <span className="text-[8px] font-black bg-sky-100 text-sky-700 px-2 py-1 rounded-lg uppercase">Aulas: {sb.classes.join(', ')}</span>
-                          <CheckCircle2 size={16} className="text-sky-500" />
-                        </div>
-                        <p className="text-xs font-black text-gray-900 uppercase leading-tight mb-1">{sb.teacherName}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-4">{sb.className}</p>
+                  shiftBookings.map(sb => {
+                    const isMine = isMyBooking(sb.teacherName, user);
+                    const canCancel = canCancelBooking(sb.teacherName, user);
 
-                        <div className="space-y-3">
-                          <div className="bg-sky-50 p-4 rounded-2xl border border-sky-100/50">
-                            <p className="text-[8px] font-black text-sky-600 uppercase tracking-widest mb-1.5">Projeto:</p>
-                            <p className="text-[11px] font-bold text-sky-900 uppercase italic">"{sb.projectName}"</p>
+                    return (
+                      <div key={sb.id} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-sky-200 transition-all relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <BookOpen size={80} className="text-sky-900" />
+                        </div>
+                        <div className="relative z-10">
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[8px] font-black bg-sky-100 text-sky-700 px-2 py-1 rounded-lg uppercase">Aulas: {sb.classes.join(', ')}</span>
+                              {isMine && (
+                                <span className="text-[7px] font-black uppercase bg-sky-600 text-white px-1.5 py-0.5 rounded tracking-wider shadow-xs">
+                                  Você
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5">
+                              {canCancel && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteBooking(sb.id, sb.teacherName, sb.date, sb.shift, sb.classes)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95"
+                                  title="Cancelar esta reserva"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              )}
+                              <CheckCircle2 size={16} className="text-sky-500" />
+                            </div>
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            {sb.equipmentUsed.map(e => (
-                              <span key={e} className="text-[7px] font-black bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md uppercase">{e}</span>
-                            ))}
+                          <p className="text-xs font-black text-gray-900 uppercase leading-tight mb-1">{sb.teacherName}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase mb-4">{sb.className}</p>
+
+                          <div className="space-y-3">
+                            <div className="bg-sky-50 p-4 rounded-2xl border border-sky-100/50">
+                              <p className="text-[8px] font-black text-sky-600 uppercase tracking-widest mb-1.5">Projeto:</p>
+                              <p className="text-[11px] font-bold text-sky-900 uppercase italic">"{sb.projectName}"</p>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {sb.equipmentUsed.map(e => (
+                                <span key={e} className="text-[7px] font-black bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md uppercase">{e}</span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="py-16 border-2 border-dashed border-gray-100 rounded-[2.5rem] flex flex-col items-center justify-center text-gray-300">
                     <Clock size={28} className="mb-3 opacity-20" />
@@ -283,14 +385,25 @@ const MakerLabScheduler: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-sm">
-              {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => (
+              {bookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(b => {
+                const isMine = isMyBooking(b.teacherName, user);
+                const canCancel = canCancelBooking(b.teacherName, user);
+
+                return (
                 <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-8 py-6">
                     <p className="font-black text-gray-900">{b.date.split('-').reverse().join('/')}</p>
                     <p className="text-[9px] text-sky-600 font-bold uppercase tracking-widest">{b.shift} • {b.classes.join(', ')} aulas</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-black text-gray-800 uppercase">{b.teacherName}</p>
+                      {isMine && (
+                        <span className="text-[7px] font-black uppercase bg-sky-600 text-white px-1.5 py-0.5 rounded tracking-wider">
+                          Você
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase">{b.className}</p>
                   </td>
                   <td className="px-8 py-6">
@@ -304,12 +417,22 @@ const MakerLabScheduler: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button onClick={() => deleteBooking(b.id)} className="p-3 text-gray-300 hover:text-red-500 transition-colors">
-                      <Trash2 size={18} />
-                    </button>
+                    {canCancel ? (
+                      <button 
+                        onClick={() => deleteBooking(b.id, b.teacherName, b.date, b.shift, b.classes)} 
+                        className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        title="Cancelar esta reserva"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ) : (
+                      <span className="p-3 text-gray-300 inline-block" title="Apenas o responsável ou a gestão pode cancelar">
+                        <Lock size={16} />
+                      </span>
+                    )}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
           {bookings.length === 0 && (
@@ -421,7 +544,7 @@ const MakerLabScheduler: React.FC = () => {
                     <input
                       required
                       type="text"
-                      placeholder="EX: ROBÔ SEGUIDOR DE LINHA"
+                      placeholder="EX: PROJETO DE LEITURA EM GRUPO"
                       value={newBooking.projectName}
                       onChange={e => setNewBooking({ ...newBooking, projectName: e.target.value.toUpperCase() })}
                       className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:bg-white transition-all"
@@ -453,7 +576,7 @@ const MakerLabScheduler: React.FC = () => {
                   <textarea
                     value={newBooking.observations}
                     onChange={e => setNewBooking({ ...newBooking, observations: e.target.value })}
-                    placeholder="Ex: Filamento PLA vermelho, resistores, servos..."
+                    placeholder="Ex: Livros do acervo, dicionários, materiais de apoio..."
                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-medium text-sm outline-none focus:bg-white transition-all h-20 resize-none"
                   />
                 </div>

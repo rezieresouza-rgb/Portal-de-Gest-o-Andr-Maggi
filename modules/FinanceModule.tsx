@@ -50,7 +50,10 @@ import {
   HelpCircle,
   Activity,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Layers,
+  Folder,
+  FolderCheck
 } from 'lucide-react';
 import { extractInvoiceInfo } from '../geminiService';
 import { supabase } from '../supabaseClient';
@@ -289,7 +292,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     date: '',
     type: 'ALL',
     fundingSource: 'ALL',
-    group: 'ALL'
+    group: 'ALL',
+    category: 'ALL'
   });
 
   const [reportFilters, setReportFilters] = useState({
@@ -650,7 +654,12 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     // Filtro Custeio vs Capital
     const groupMatch = !filters.group || filters.group === 'ALL' || tx.group === filters.group;
 
-    return searchMatch && invoiceMatch && valueMatch && dateMatch && typeMatch && sourceMatch && groupMatch;
+    // Filtro Categoria Contábil
+    const categoryMatch = !filters.category || filters.category === 'ALL' || (
+      tx.category && tx.category.trim().toUpperCase() === filters.category.trim().toUpperCase()
+    );
+
+    return searchMatch && invoiceMatch && valueMatch && dateMatch && typeMatch && sourceMatch && groupMatch && categoryMatch;
   };
 
   // Lista consolidada de todas as notas fiscais (com filtro)
@@ -677,6 +686,33 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         return dateTimeA - dateTimeB;
       });
   }, [funds, activeTab, filters]);
+
+  // [NOVO] Resumo consolidado de gastos por Categoria Contábil para o fundo ativo
+  const categoryExpensesSummary = useMemo(() => {
+    if (!funds[activeTab]) return [];
+    const map = new Map<string, { category: string, totalExpense: number, totalEntry: number, count: number, group: 'CUSTEIO' | 'CAPITAL' }>();
+    
+    const txs = funds[activeTab].transactions;
+    txs.forEach(t => {
+      const cat = (t.category && t.category.trim()) || 'Sem Categoria Contábil';
+      const current = map.get(cat) || { 
+        category: cat, 
+        totalExpense: 0, 
+        totalEntry: 0, 
+        count: 0, 
+        group: (t.group || 'CUSTEIO') as 'CUSTEIO' | 'CAPITAL' 
+      };
+      if (t.type === 'EXPENSE') {
+        current.totalExpense += Number(t.value || 0);
+      } else if (t.type === 'ENTRY') {
+        current.totalEntry += Number(t.value || 0);
+      }
+      current.count += 1;
+      map.set(cat, current);
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.totalExpense - a.totalExpense);
+  }, [funds, activeTab]);
 
   // Filtro específico para relatório de impostos AF
   const afTaxReport = useMemo(() => {
@@ -1896,7 +1932,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                         {p2 ? '✓ 2ª Parcela (Creditada)' : '⏳ 2ª Parcela'}
                                       </span>
                                       <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase inline-flex items-center gap-1 border ${
-                                        p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 text-white/40 border-white/10'
+p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 text-white/40 border-white/10'
                                       }`}>
                                         {p3 ? '✓ 3ª Parcela (Creditada)' : '⏳ 3ª Parcela'}
                                       </span>
@@ -2074,6 +2110,23 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                    </select>
                                 </div>
 
+                                {/* Filtro: Categoria Contábil */}
+                                <div className="relative border-l border-white/10">
+                                   <select
+                                      value={filters.category}
+                                      onChange={e => setFilters({...filters, category: e.target.value})}
+                                      className="bg-transparent px-3 py-2 text-[10px] font-black uppercase text-emerald-300 outline-none cursor-pointer max-w-[200px] truncate"
+                                      title="Filtrar por Categoria Contábil"
+                                   >
+                                      <option value="ALL" className="bg-gray-900 text-white">📁 Todas Categorias Contábeis</option>
+                                      {categoryExpensesSummary.map(c => (
+                                         <option key={c.category} value={c.category} className="bg-gray-900 text-emerald-300">
+                                            {c.category} ({c.totalExpense > 0 ? `R$ ${c.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'})
+                                         </option>
+                                      ))}
+                                   </select>
+                                </div>
+
                                 <div className="relative border-l border-white/10">
                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
                                    <input 
@@ -2084,9 +2137,9 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                    />
                                 </div>
 
-                                {(filters.search || filters.invoice || filters.value || filters.date || filters.type !== 'ALL' || filters.fundingSource !== 'ALL' || filters.group !== 'ALL') && (
+                                {(filters.search || filters.invoice || filters.value || filters.date || filters.type !== 'ALL' || filters.fundingSource !== 'ALL' || filters.group !== 'ALL' || filters.category !== 'ALL') && (
                                    <button 
-                                      onClick={() => setFilters({ search: '', invoice: '', value: '', date: '', type: 'ALL', fundingSource: 'ALL', group: 'ALL' })}
+                                      onClick={() => setFilters({ search: '', invoice: '', value: '', date: '', type: 'ALL', fundingSource: 'ALL', group: 'ALL', category: 'ALL' })}
                                       className="p-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-all flex items-center gap-1 text-[9px] font-black uppercase"
                                       title="Limpar Filtros"
                                    >
@@ -2102,6 +2155,36 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                              }} className={`px-6 py-2.5 ${funds[activeTab].color === 'purple' ? 'bg-purple-600' : funds[activeTab].color === 'emerald' ? 'bg-emerald-600' : 'bg-blue-600'} text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 transition-all shadow-lg`}><Plus size={16} /> Novo Lançamento</button>
                           </div>
                         </div>
+
+                        {/* BANNER INFORMATIVO QUANDO UMA CATEGORIA CONTÁBIL ESTIVER FILTRADA */}
+                        {filters.category !== 'ALL' && (
+                          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-200 animate-in fade-in">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400 shrink-0">
+                                <FolderCheck size={20} />
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 block">
+                                  Filtro Ativo • Categoria Contábil
+                                </span>
+                                <h4 className="text-xs font-black text-white uppercase">
+                                  {filters.category}
+                                </h4>
+                                <p className="text-[11px] text-emerald-200/80 font-bold mt-0.5">
+                                  Total Gasto nesta Categoria: <span className="text-emerald-300 font-black">R$ {activeFundTransactions.filter(t => t.type === 'EXPENSE').reduce((acc, curr) => acc + (curr.value || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> • <span className="text-white">{activeFundTransactions.length} lançamentos</span> encontrados
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFilters({ ...filters, category: 'ALL' })}
+                              className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer flex items-center gap-1"
+                            >
+                              <X size={12} /> Limpar Filtro
+                            </button>
+                          </div>
+                        )}
+
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-[11px] border-collapse">
                             <thead><tr className="text-white/40 border-b border-white/5"><th className="px-6 py-4 font-black uppercase tracking-widest">Data Op.</th><th className="px-6 py-4 font-black uppercase tracking-widest">Descrição / NF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Grupo / AF</th><th className="px-6 py-4 font-black uppercase tracking-widest text-right">Valor</th><th className="px-6 py-4 font-black uppercase tracking-widest text-center">Docs</th></tr></thead>
@@ -2372,6 +2455,23 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                </select>
                             </div>
 
+                            {/* Filtro Categoria Contábil */}
+                            <div className="relative flex items-center bg-white/5 rounded-2xl border border-white/10 px-2">
+                               <select
+                                  value={filters.category}
+                                  onChange={e => setFilters({...filters, category: e.target.value})}
+                                  className="bg-transparent px-2 py-2 text-[10px] font-black uppercase text-emerald-300 outline-none cursor-pointer max-w-[180px] truncate"
+                                  title="Filtrar por Categoria Contábil"
+                               >
+                                  <option value="ALL" className="bg-gray-900 text-white">📁 Categorias (Todas)</option>
+                                  {categoryExpensesSummary.map(c => (
+                                     <option key={c.category} value={c.category} className="bg-gray-900 text-emerald-300">
+                                        {c.category} ({c.totalExpense > 0 ? `R$ ${c.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'})
+                                     </option>
+                                  ))}
+                               </select>
+                            </div>
+
                             <div className="flex items-center bg-white/5 rounded-2xl border border-white/10 px-3">
                                <Calendar className="text-white/30" size={14} />
                                <input 
@@ -2382,9 +2482,9 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                />
                             </div>
 
-                            {(filters.search || filters.invoice || filters.value || filters.date || filters.type !== 'ALL' || filters.fundingSource !== 'ALL' || filters.group !== 'ALL') && (
+                            {(filters.search || filters.invoice || filters.value || filters.date || filters.type !== 'ALL' || filters.fundingSource !== 'ALL' || filters.group !== 'ALL' || filters.category !== 'ALL') && (
                                <button 
-                                  onClick={() => setFilters({search: '', invoice: '', value: '', date: '', type: 'ALL', fundingSource: 'ALL', group: 'ALL'})}
+                                  onClick={() => setFilters({search: '', invoice: '', value: '', date: '', type: 'ALL', fundingSource: 'ALL', group: 'ALL', category: 'ALL'})}
                                   className="p-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-all flex items-center gap-1 text-[9px] font-black uppercase"
                                   title="Limpar Filtros"
                                >

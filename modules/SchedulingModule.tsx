@@ -14,6 +14,7 @@ import {
   Cpu,
   Library
 } from 'lucide-react';
+import { User } from '../types';
 import ChromebookScheduler from '../components/ChromebookScheduler';
 import ScienceLabScheduler from '../components/ScienceLabScheduler';
 import PedagogicalKitchenScheduler from '../components/PedagogicalKitchenScheduler';
@@ -22,12 +23,13 @@ import MakerLabScheduler from '../components/MakerLabScheduler';
 import AuditoriumScheduler from '../components/AuditoriumScheduler';
 
 interface SchedulingModuleProps {
+  user?: User;
   onExit: () => void;
 }
 
 type SubTab = 'chromebooks' | 'science_lab' | 'maker_lab' | 'pedagogical_kitchen' | 'library_room' | 'auditorium';
 
-const SchedulingModule: React.FC<SchedulingModuleProps> = ({ onExit }) => {
+const SchedulingModule: React.FC<SchedulingModuleProps> = ({ user, onExit }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('chromebooks');
 
   const toggleFullScreen = () => {
@@ -50,17 +52,17 @@ const SchedulingModule: React.FC<SchedulingModuleProps> = ({ onExit }) => {
   const renderContent = () => {
     switch (activeSubTab) {
       case 'chromebooks':
-        return <ChromebookScheduler />;
+        return <ChromebookScheduler user={user} />;
       case 'science_lab':
-        return <ScienceLabScheduler />;
+        return <ScienceLabScheduler user={user} />;
       case 'maker_lab':
-        return <MakerLabScheduler />;
+        return <MakerLabScheduler user={user} />;
       case 'pedagogical_kitchen':
-        return <PedagogicalKitchenScheduler />;
+        return <PedagogicalKitchenScheduler user={user} />;
       case 'library_room':
-        return <LibraryRoomScheduler />;
+        return <LibraryRoomScheduler user={user} />;
       case 'auditorium':
-        return <AuditoriumScheduler />;
+        return <AuditoriumScheduler user={user} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
@@ -129,7 +131,7 @@ const SchedulingModule: React.FC<SchedulingModuleProps> = ({ onExit }) => {
              <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight">Módulo de Agendamentos: {menuItems.find(i => i.id === activeSubTab)?.label}</h2>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6">
             <button 
               onClick={toggleFullScreen}
               className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group flex items-center gap-2"
@@ -142,6 +144,18 @@ const SchedulingModule: React.FC<SchedulingModuleProps> = ({ onExit }) => {
                <div className="w-2 h-2 bg-fuchsia-500 rounded-full animate-ping"></div>
                <span className="text-[10px] font-black text-fuchsia-700 uppercase tracking-widest">Base de Dados SEDUC</span>
             </div>
+
+            {user && (
+              <div className="flex items-center gap-3 pl-4 border-l border-gray-100">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{user.name}</p>
+                  <p className="text-[9px] text-fuchsia-600 font-bold uppercase tracking-widest">{user.role || 'USUÁRIO'}</p>
+                </div>
+                <div className="w-9 h-9 rounded-xl bg-fuchsia-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-fuchsia-600/20 uppercase">
+                  {user.name ? user.name.substring(0, 2) : 'US'}
+                </div>
+              </div>
+            )}
           </div>
         </header>
 

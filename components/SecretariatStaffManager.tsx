@@ -46,7 +46,8 @@ import {
    Scale,
    CalendarDays,
    Users,
-   Lock
+   Lock,
+   Cake
 } from 'lucide-react';
 import { StaffMember, UserRole, StaffMovement, MovementType, Shift } from '../types';
 import { supabase } from '../supabaseClient';
@@ -102,7 +103,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
    const [movementsData, setMovementsData] = useState<StaffMovement[]>([]);
    const [loading, setLoading] = useState(true);
 
-   const [activeTab, setActiveTab] = useState<'ativos' | 'afastados' | 'movements' | 'calendar'>('ativos');
+   const [activeTab, setActiveTab] = useState<'ativos' | 'contratos' | 'afastados' | 'sem_aniversario' | 'movements' | 'calendar'>('ativos');
    const [roleFilter, setRoleFilter] = useState<string>('TODOS');
    const [isModalOpen, setIsModalOpen] = useState(false);
    const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
@@ -586,7 +587,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
          name: form.name?.toUpperCase(),
          role: finalRole, // Use the proper mapped role
          cpf: form.cpf,
-         birth_date: form.birthDate,
+         birth_date: form.birthDate ? form.birthDate : null,
          entry_profile: form.entryProfile?.toUpperCase(),
          qualification: form.qualification?.toUpperCase(),
          server_type: form.serverType,
@@ -733,8 +734,12 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       today.setHours(0, 0, 0, 0);
       let expiredCount = 0;
       let contratadosCount = 0;
+      let semAniversarioCount = 0;
 
       staff.forEach(s => {
+         if (!s.birthDate) {
+            semAniversarioCount++;
+         }
          if (s.entryProfile === 'CONTRATADO') {
             contratadosCount++;
             if (isContractExpired(s)) {
@@ -751,13 +756,16 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
          afastados: inactiveStaff.length,
          contratos: contratadosCount,
          vencidos: expiredCount,
+         semAniversario: semAniversarioCount,
          movements: movementsData.length
       };
    }, [staff, movementsData]);
 
    const filteredStaff = useMemo(() => {
       return staff.filter(member => {
-         const matchSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) || member.registration.includes(searchTerm);
+         const matchSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            member.registration.includes(searchTerm) || 
+            (member.cpf && member.cpf.includes(searchTerm));
          const matchRole = roleFilter === 'TODOS' || member.role === roleFilter;
          const expired = isContractExpired(member);
          const matchStatus = activeTab === 'ativos'
@@ -766,7 +774,9 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                ? member.status !== 'EM_ATIVIDADE' || expired
                : activeTab === 'contratos'
                   ? member.entryProfile === 'CONTRATADO'
-                  : true;
+                  : activeTab === 'sem_aniversario'
+                     ? !member.birthDate
+                     : true;
          if (activeTab === 'calendar' || activeTab === 'movements') return true;
          return matchSearch && matchRole && matchStatus;
       });
@@ -897,6 +907,31 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
             </div>
          </div>
 
+         {/* ALERTA DE SERVIDORES SEM DATA DE ANIVERSÁRIO */}
+         {counts.semAniversario > 0 && activeTab !== 'sem_aniversario' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-amber-900 shadow-sm animate-in fade-in">
+               <div className="flex items-center gap-3.5">
+                  <div className="p-3 bg-amber-200/70 rounded-2xl text-amber-800 shrink-0">
+                     <Cake size={22} />
+                  </div>
+                  <div>
+                     <p className="text-xs font-black uppercase tracking-tight flex items-center gap-2">
+                        <AlertTriangle size={14} className="text-amber-600 inline" /> {counts.semAniversario} cadastro{counts.semAniversario > 1 ? 's' : ''} de servidor sem a data de aniversário preenchida
+                     </p>
+                     <p className="text-[11px] font-medium text-amber-800/80 mt-0.5">
+                        Servidores sem data de nascimento não aparecem no mural de aniversariantes do mês nem nas celebrações da escola.
+                     </p>
+                  </div>
+               </div>
+               <button
+                  onClick={() => setActiveTab('sem_aniversario')}
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 shadow-sm flex items-center gap-2"
+               >
+                  <Cake size={13} /> Ver Servidores Pendentes ({counts.semAniversario})
+               </button>
+            </div>
+         )}
+
          {/* TABS E FILTROS */}
          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
             <div className="flex bg-gray-100 p-1.5 rounded-2xl flex-wrap gap-1">
@@ -904,19 +939,26 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                   { id: 'ativos', label: 'Quadro Ativo', icon: Users, count: counts.ativos },
                   { id: 'contratos', label: 'Contratados', icon: Clock, count: counts.contratos, alertCount: counts.vencidos },
                   { id: 'afastados', label: 'Licenças/Afastados', icon: UserCheck, count: counts.afastados },
+                  { id: 'sem_aniversario', label: 'Sem Aniversário', icon: Cake, count: counts.semAniversario, isWarning: counts.semAniversario > 0 },
                   { id: 'movements', label: 'Histórico RH', icon: History, count: counts.movements },
                   { id: 'calendar', label: 'Calendário', icon: CalendarDays }
                ].map(t => (
                   <button
                      key={t.id}
                      onClick={() => setActiveTab(t.id as any)}
-                     className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === t.id ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                     className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 ${activeTab === t.id 
+                        ? (t.id === 'sem_aniversario' && t.count > 0 ? 'bg-amber-500 text-white shadow-sm' : 'bg-white text-emerald-600 shadow-sm') 
+                        : (t.id === 'sem_aniversario' && t.count > 0 ? 'text-amber-700 hover:text-amber-900 bg-amber-100/60' : 'text-gray-400 hover:text-gray-600')
                         }`}
                   >
                      <t.icon size={12} />
                      {t.label}
                      {t.count !== undefined && (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[8px] ${activeTab === t.id ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'}`}>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black ${
+                           activeTab === t.id 
+                              ? (t.id === 'sem_aniversario' && t.count > 0 ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700')
+                              : (t.id === 'sem_aniversario' && t.count > 0 ? 'bg-amber-200 text-amber-900' : 'bg-gray-200 text-gray-500')
+                        }`}>
                            {t.count}
                         </span>
                      )}
@@ -1063,6 +1105,23 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                                     <div className="flex flex-wrap items-center gap-y-2 gap-x-6 mt-3">
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><Fingerprint size={12} className="text-indigo-500" /> CPF: {member.cpf}</span>
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><FileBadge size={12} className="text-blue-500" /> MAT: {member.registration}</span>
+                                       {member.birthDate ? (
+                                          <span className="text-[10px] font-bold text-gray-600 uppercase flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
+                                             <Cake size={12} className="text-pink-500" /> Nasc: {(() => {
+                                                const parts = member.birthDate.split('-');
+                                                if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                                                return member.birthDate;
+                                             })()}
+                                          </span>
+                                       ) : (
+                                          <button
+                                             onClick={(e) => { e.stopPropagation(); setForm(member); setEditingId(member.id); setIsModalOpen(true); }}
+                                             className="text-[9px] font-black text-amber-800 uppercase flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-300 transition-colors shadow-sm cursor-pointer"
+                                             title="Clique para preencher a data de aniversário"
+                                          >
+                                             <AlertTriangle size={12} className="text-amber-600" /> Sem Data de Aniversário (Preencher)
+                                          </button>
+                                       )}
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><ShieldCheck size={12} className="text-emerald-500" /> {member.jobFunction}</span>
                                        <span className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1.5"><BookOpen size={12} className="text-amber-500" /> {member.qualification}</span>
                                        {member.assignedSubjects && member.assignedSubjects.length > 0 && (
