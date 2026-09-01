@@ -44,8 +44,9 @@ interface PsychosocialModuleProps {
   onExit: () => void;
 }
 
-const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'cases' | 'mediation' | 'mediation_calendar' | 'circumstantiated_report' | 'external_network' | 'campaigns' | 'agenda' | 'reports' | 'referrals' | 'calendar' | 'violation_notification' | 'atas' | 'aee_special_education'>('dashboard');
+const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user }) => {
+  const [activeTab, setActiveTab] = useState<'screening' | 'interventions' | 'network' | 'campaigns' | 'reports' | 'agenda' | 'mediation' | 'monitoring' | 'risk_board' | 'ata_printer' | 'atas' | 'collective_sessions' | 'dashboard'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const isDanubia = user?.name?.toUpperCase().includes('DANUBIA') || user?.login?.includes('35636524811');
   const [userRole, setUserRole] = useState<PsychosocialRole>(
@@ -84,30 +85,25 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
   useEffect(() => {
     fetchNotifications();
 
-    const subscription = supabase
-      .channel('psychosocial_notifications_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'psychosocial_notifications'
-      }, fetchNotifications)
+    const channel = supabase
+      .channel('public:psychosocial_notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'psychosocial_notifications' }, () => {
+        fetchNotifications();
+      })
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, []);
 
   const clearNotifications = async () => {
     try {
-      const { error } = await supabase
+      await supabase
         .from('psychosocial_notifications')
         .update({ is_read: true })
         .eq('is_read', false);
-
-      if (!error) {
-        setNotifCount(0);
-      }
+      setNotifCount(0);
     } catch (error) {
       console.error("Erro ao limpar notificações:", error);
     }
@@ -115,13 +111,13 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
 
   const menuItems = [
     { id: 'dashboard', label: 'Monitor de Saúde & Alertas', icon: LayoutDashboard },
-    { id: 'cases', label: 'Prontuários & Atendimentos', icon: Brain },
-    { id: 'mediation', label: 'Triagens da Mediação (Fila)', icon: HeartHandshake },
-    { id: 'mediation_calendar', label: 'Calendário de Mediação & Paz', icon: CalendarDays },
-    { id: 'circumstantiated_report', label: 'Relatório Circunstanciado (Fatos)', icon: FileText },
-    { id: 'aee_special_education', label: 'Educação Especial & AEE', icon: Brain },
-    { id: 'external_network', label: 'Rede de Proteção & Ofícios', icon: Building2 },
-    { id: 'violation_notification', label: 'Notificação Violação ECA', icon: ShieldAlert },
+    { id: 'screening', label: 'Triagem & Acolhimento', icon: Activity },
+    { id: 'risk_board', label: 'Radar de Risco & Urgência', icon: AlertTriangle },
+    { id: 'monitoring', label: 'Monitoramento Contínuo', icon: Eye },
+    { id: 'mediation', label: 'Casos da Mediação', icon: HeartHandshake },
+    { id: 'interventions', label: 'Ações e Intervenções', icon: ShieldCheck },
+    { id: 'collective_sessions', label: 'Acolhimento Coletivo (Luto/Crise)', icon: Users },
+    { id: 'network', label: 'Rede de Proteção (CREAS/CT)', icon: BookOpen },
     { id: 'agenda', label: 'Agenda de Atendimentos', icon: Calendar },
     { id: 'atas', label: 'Atas de Reunião Técnica', icon: FileText },
     { id: 'reports', label: 'Indicadores & Relatórios', icon: History },
@@ -129,11 +125,18 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
-      
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800 relative w-full min-w-0">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
       {/* Sidebar Navegação Moderna */}
-      <aside className="w-72 bg-slate-900 text-white flex flex-col shrink-0 no-print border-r border-slate-800">
-        <div className="p-6 border-b border-slate-800">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white flex flex-col shrink-0 no-print border-r border-slate-800 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-rose-600 to-indigo-600 rounded-2xl text-white shadow-lg shadow-rose-600/20">
               <Brain size={26} />
@@ -147,6 +150,12 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
               </p>
             </div>
           </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
 
         {/* Links de Navegação */}
@@ -157,6 +166,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
               onClick={() => {
                 setActiveTab(item.id as any);
                 if (item.id === 'mediation') clearNotifications();
+                setIsSidebarOpen(false);
               }}
               className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
                 activeTab === item.id
@@ -204,32 +214,40 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ user, onExit })
       </aside>
 
       {/* Área Principal de Conteúdo */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         
         {/* Header Superior */}
-        <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-8 shrink-0 no-print shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100">
+        <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 lg:px-8 shrink-0 no-print shadow-sm gap-3">
+          <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl transition-all shrink-0"
+              title="Menu Psicossocial"
+            >
+              <Brain size={20} />
+            </button>
+            <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100 hidden sm:block shrink-0">
               <HeartHandshake size={22} />
             </div>
-            <div>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-tight truncate">
                 Módulo da Equipe Psicossocial & Proteção Discente
               </h2>
-              <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-rose-600 font-bold uppercase tracking-widest truncate">
                 Escuta Especializada • Triagem da Mediação • Rede de Proteção
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 lg:gap-4 shrink-0">
             {notifCount > 0 ? (
               <button
                 onClick={() => { setActiveTab('mediation'); clearNotifications(); }}
-                className="flex items-center gap-2.5 px-4 py-2 bg-rose-50 text-rose-700 rounded-full border border-rose-200 hover:bg-rose-100 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-3 py-1.5 lg:px-4 lg:py-2 bg-rose-50 text-rose-700 rounded-full border border-rose-200 hover:bg-rose-100 transition-colors shadow-sm text-xs"
               >
-                <AlertCircle size={14} className="animate-pulse text-rose-600" />
-                <span className="text-[10px] font-black uppercase tracking-widest">{notifCount} Novos Casos Triados</span>
+                <AlertCircle size={14} className="animate-pulse text-rose-600 shrink-0" />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{notifCount} Novos Casos Triados</span>
+                <span className="text-[10px] font-black uppercase tracking-widest sm:hidden">{notifCount}</span>
               </button>
             ) : (
               <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200 shadow-sm">

@@ -107,6 +107,7 @@ interface GroupedBook {
 
 const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'loans' | 'reservations' | 'readers' | 'ai' | 'reports' | 'apa' | 'apa-loans'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   /*
    * MIGRAÇÃO SUPABASE: Biblioteca
@@ -2157,10 +2158,29 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-      <aside className="w-64 bg-indigo-950 text-white flex flex-col no-print">
-        <div className="p-6"><h1 className="text-xl font-bold flex items-center gap-2"><span className="bg-indigo-500 p-1.5 rounded-lg shadow-lg">📚</span>Biblioteca</h1></div>
-        <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans relative w-full min-w-0">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 bg-indigo-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 flex items-center justify-between">
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <span className="bg-indigo-500 p-1.5 rounded-lg shadow-lg">📚</span>
+            Biblioteca
+          </h1>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-indigo-300 hover:text-white rounded-xl hover:bg-white/10"
+          >
+            <ArrowLeft size={20} />
+          </button>
+        </div>
+        <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {[
             { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
             { id: 'catalog', label: 'Acervo Digital', icon: BookOpen },
@@ -2173,23 +2193,40 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           ].map((item) => {
             const isActive = activeTab === item.id || (item.id === 'apa' && activeTab === 'apa-loans');
             return (
-              <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${isActive ? 'bg-indigo-800 text-white shadow-lg' : 'text-indigo-100 hover:bg-indigo-800/50'}`}>
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id as any);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${isActive ? 'bg-indigo-800 text-white shadow-lg' : 'text-indigo-100 hover:bg-indigo-800/50'}`}
+              >
                 <item.icon size={18} /> {item.label}
               </button>
             )
           })}
         </nav>
         <div className="p-6 border-t border-indigo-900 space-y-3">
-          <button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest transition-all"><ArrowLeft size={16} /> Voltar</button>
+          <button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest transition-all"><ArrowLeft size={16} /> Voltar ao Hub</button>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0">
-          <div className="flex items-center gap-4"><div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><BookOpen size={20} /></div><h2 className="text-sm font-black text-gray-900 uppercase">Biblioteca André Maggi</h2></div>
-          <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors"><Maximize2 size={18} /></button>
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all shrink-0"
+              title="Menu Biblioteca"
+            >
+              <BookOpen size={20} />
+            </button>
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hidden sm:block shrink-0"><BookOpen size={20} /></div>
+            <h2 className="text-xs sm:text-sm font-black text-gray-900 uppercase truncate">Biblioteca André Maggi</h2>
+          </div>
+          <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors hidden sm:block"><Maximize2 size={18} /></button>
         </header>
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
           {renderContent()}
         </div>
       </main>

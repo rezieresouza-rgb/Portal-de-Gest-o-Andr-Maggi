@@ -22,6 +22,7 @@ interface SpecialEducationModuleProps {
 
 const SpecialEducationModule: React.FC<SpecialEducationModuleProps> = ({ onExit }) => {
     const [activeSubTab, setActiveSubTab] = useState<'pei' | 'sondagem'>('pei');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [peiRecords, setPeiRecords] = useState<any[]>([]);
     const [assessmentRecords, setAssessmentRecords] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -67,20 +68,36 @@ const SpecialEducationModule: React.FC<SpecialEducationModuleProps> = ({ onExit 
     };
 
     return (
-        <div className="flex h-screen bg-gray-50 overflow-hidden font-sans text-gray-900">
+        <div className="flex h-screen bg-gray-50 overflow-hidden font-sans text-gray-900 relative w-full min-w-0">
+            {/* Backdrop Mobile */}
+            {isSidebarOpen && (
+                <div
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-72 bg-indigo-950 text-white flex flex-col no-print shadow-2xl relative z-10">
-                <div className="p-8 bg-indigo-900/50">
-                    <h1 className="text-xl font-black flex items-center gap-3">
-                        <span className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">🧠</span>
-                        Sala de Recursos
-                    </h1>
-                    <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest mt-2 ml-11">Portal André Maggi</p>
+            <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-indigo-950 text-white flex flex-col no-print shadow-2xl transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                <div className="p-6 bg-indigo-900/50 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-black flex items-center gap-3">
+                            <span className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">🧠</span>
+                            Sala de Recursos
+                        </h1>
+                        <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest mt-1 ml-11">Portal André Maggi</p>
+                    </div>
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="lg:hidden p-2 text-indigo-300 hover:text-white rounded-xl hover:bg-white/10"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
                 </div>
 
-                <div className="flex-1 mt-8 px-4 space-y-2">
+                <div className="flex-1 mt-6 px-4 space-y-2">
                     <button
-                        onClick={() => setActiveSubTab('pei')}
+                        onClick={() => { setActiveSubTab('pei'); setIsSidebarOpen(false); }}
                         className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeSubTab === 'pei'
                             ? 'bg-white text-indigo-900 shadow-xl shadow-white/5'
                             : 'text-indigo-300 hover:bg-white/5'
@@ -89,7 +106,7 @@ const SpecialEducationModule: React.FC<SpecialEducationModuleProps> = ({ onExit 
                         <FileText size={18} /> Plano (PEI)
                     </button>
                     <button
-                        onClick={() => setActiveSubTab('sondagem')}
+                        onClick={() => { setActiveSubTab('sondagem'); setIsSidebarOpen(false); }}
                         className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeSubTab === 'sondagem'
                             ? 'bg-white text-indigo-900 shadow-xl shadow-white/5'
                             : 'text-indigo-300 hover:bg-white/5'
@@ -117,38 +134,45 @@ const SpecialEducationModule: React.FC<SpecialEducationModuleProps> = ({ onExit 
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col overflow-hidden bg-white">
-                <header className="h-24 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0">
-                    <div className="flex items-center gap-5">
-                        <div className={`p-4 rounded-2xl ${activeSubTab === 'pei' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+            <main className="flex-1 flex flex-col overflow-hidden bg-white min-w-0">
+                <header className="h-20 lg:h-24 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0 gap-3">
+                    <div className="flex items-center gap-3 lg:gap-5 min-w-0">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="lg:hidden p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all shrink-0"
+                            title="Menu Sala de Recursos"
+                        >
+                            <Brain size={20} />
+                        </button>
+                        <div className={`p-3 lg:p-4 rounded-2xl hidden sm:block shrink-0 ${activeSubTab === 'pei' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
                             {activeSubTab === 'pei' ? <ClipboardList size={22} /> : <TrendingUp size={22} />}
                         </div>
-                        <div>
-                            <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">
-                                {activeSubTab === 'pei' ? 'Gestão de PEIs' : 'Sondagem de Aprendizagem (APA)'}
+                        <div className="min-w-0">
+                            <h2 className="text-xs lg:text-lg font-black text-gray-900 uppercase tracking-tight truncate">
+                                {activeSubTab === 'pei' ? 'Gestão de PEIs' : 'Sondagem (APA)'}
                             </h2>
-                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest truncate">
                                 {activeSubTab === 'pei' ? 'Resolução Normativa nº 010/2023/CEE-MT' : 'Avaliação da Psicogênese da Língua Escrita'}
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="relative">
+                    <div className="flex items-center gap-3 lg:gap-6 shrink-0">
+                        <div className="relative hidden md:block">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                             <input
                                 type="text"
                                 placeholder={`Buscar em ${activeSubTab === 'pei' ? 'PEIs' : 'Avaliações'}...`}
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="pl-12 pr-6 py-3.5 bg-gray-50 border-none rounded-[1.25rem] text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-100 w-80 transition-all"
+                                className="pl-12 pr-6 py-3 bg-gray-50 border-none rounded-[1.25rem] text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-100 w-64 lg:w-80 transition-all"
                             />
                         </div>
                         <button
                             onClick={handleAddNew}
-                            className={`px-8 py-3.5 ${activeSubTab === 'pei' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white rounded-[1.25rem] text-[11px] font-black uppercase tracking-widest shadow-xl transition-all flex items-center gap-2 hover:scale-105 active:scale-95`}
+                            className={`px-4 lg:px-8 py-3 lg:py-3.5 ${activeSubTab === 'pei' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white rounded-[1.25rem] text-[11px] font-black uppercase tracking-widest shadow-xl transition-all flex items-center gap-2 hover:scale-105 active:scale-95`}
                         >
-                            <Plus size={16} /> {activeSubTab === 'pei' ? 'Novo PEI' : 'Nova Avaliação'}
+                            <Plus size={16} /> <span className="hidden sm:inline">{activeSubTab === 'pei' ? 'Novo PEI' : 'Nova Avaliação'}</span>
                         </button>
                     </div>
                 </header>

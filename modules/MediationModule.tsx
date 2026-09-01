@@ -40,6 +40,7 @@ interface MediationModuleProps {
 
 const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'cases' | 'atas' | 'agenda' | 'reports' | 'calendar'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<PsychosocialRole>('PSICOSSOCIAL');
   const [casesCount, setCasesCount] = useState({ total: 0, active: 0, agreements: 0, triaged: 0 });
   const [rawCases, setRawCases] = useState<any[]>([]);
@@ -60,7 +61,7 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
         setCasesCount({ total, active, agreements, triaged });
       }
     } catch (err) {
-      console.error('Erro ao buscar estatísticas da mediação:', err);
+      console.error("Erro ao buscar estatísticas da mediação:", err);
     }
   };
 
@@ -98,26 +99,28 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
     };
   }, [rawCases, casesCount]);
 
-  const handleOpenAtaForCase = (c: MediationCase) => {
-    setCaseForAta(c);
-    setActiveTab('atas');
-  };
-
   const navItems = [
-    { id: 'dashboard', label: 'Painel & Clima Escolar', icon: <Scale size={18} /> },
-    { id: 'cases', label: 'Atendimentos & Círculos', icon: <HeartHandshake size={18} /> },
-    { id: 'calendar', label: 'Calendário de Ações 2026', icon: <CalendarDays size={18} /> },
+    { id: 'dashboard', label: 'Painel & Diagnóstico', icon: <LayoutDashboard size={18} /> },
+    { id: 'cases', label: 'Casos em Mediação', icon: <Scale size={18} /> },
+    { id: 'calendar', label: 'Calendário de Círculos', icon: <CalendarDays size={18} /> },
     { id: 'atas', label: 'Central de Atas (SEDUC)', icon: <FileText size={18} /> },
     { id: 'agenda', label: 'Agenda de Conciliação', icon: <Calendar size={18} /> },
     { id: 'reports', label: 'Indicadores & Triagens', icon: <TrendingUp size={18} /> },
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
-      
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800 relative w-full min-w-0">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
       {/* Sidebar Navegação do Módulo de Mediação Escolar */}
-      <aside className="w-72 bg-slate-900 text-white flex flex-col shrink-0 no-print border-r border-slate-800">
-        <div className="p-6 border-b border-slate-800">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white flex flex-col shrink-0 no-print border-r border-slate-800 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-indigo-500 to-amber-500 rounded-2xl text-white shadow-lg shadow-indigo-500/20">
               <Scale size={26} />
@@ -131,6 +134,12 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
               </p>
             </div>
           </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
 
         {/* Links de Navegação */}
@@ -141,6 +150,7 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
               onClick={() => {
                 if (item.id !== 'atas') setCaseForAta(null);
                 setActiveTab(item.id as any);
+                setIsSidebarOpen(false);
               }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
                 activeTab === item.id
@@ -156,7 +166,7 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
           {/* Botão de Atalho para o Guia Restaurativo */}
           <div className="pt-4 border-t border-slate-800/80 mt-2">
             <button
-              onClick={() => setIsGuideOpen(true)}
+              onClick={() => { setIsGuideOpen(true); setIsSidebarOpen(false); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-all shadow-sm"
             >
               <BookOpen size={16} />
@@ -176,7 +186,7 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
               onChange={(e) => setUserRole(e.target.value as PsychosocialRole)}
               className="w-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-tight p-2 rounded-xl outline-none border border-slate-700 cursor-pointer"
             >
-              <option value="PSICOSSOCIAL">PROFESSOR MEDIADOR</option>
+              <option value="PSICOSSOCIAL">MEDIADOR(A) ESCOLAR</option>
               <option value="GESTAO">GESTÃO ESCOLAR</option>
               <option value="PROFESSOR">DOCENTE (CONSULTA)</option>
             </select>
@@ -192,25 +202,32 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
       </aside>
 
       {/* Área Principal de Conteúdo */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         
         {/* Header Superior */}
-        <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-8 shrink-0 no-print shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100">
+        <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 lg:px-8 shrink-0 no-print shadow-sm gap-3">
+          <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all shrink-0"
+              title="Menu Mediação"
+            >
+              <Scale size={20} />
+            </button>
+            <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100 hidden sm:block shrink-0">
               <Scale size={22} />
             </div>
-            <div>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-tight truncate">
                 Módulo de Mediação Escolar & Justiça Restaurativa
               </h2>
-              <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest truncate">
                 Círculos de Paz • Escuta Ativa • Solução Conflitiva
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <button
               onClick={() => setIsGuideOpen(true)}
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-800 rounded-full border border-amber-200 shadow-sm hover:bg-amber-100 transition-all font-black text-[10px] uppercase tracking-wider"
@@ -223,16 +240,11 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
               <ShieldCheck size={14} className="text-emerald-600" />
               <span className="text-[10px] font-black uppercase tracking-widest">Cultura de Paz Ativa</span>
             </div>
-
-            <div className="flex items-center gap-2">
-              <img src="/brasao_mt.png" alt="MT" className="h-8 w-auto object-contain hidden lg:block" onError={(e) => e.currentTarget.style.display = 'none'} />
-              <img src="/logo-escola-oficial.png" alt="Escola Logo" className="h-8 w-auto object-contain hidden lg:block" onError={(e) => e.currentTarget.style.display = 'none'} />
-            </div>
           </div>
         </header>
 
         {/* Conteúdo Dinâmico */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
           
           {/* TAB 1: PAINEL & CLIMA ESCOLAR */}
           {activeTab === 'dashboard' && (

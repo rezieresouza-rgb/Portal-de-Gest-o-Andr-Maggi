@@ -22,6 +22,7 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
   const [activeSeducDoc, setActiveSeducDoc] = useState<SeducDocType>('doc1');
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
   const [allActiveEmployees, setAllActiveEmployees] = useState<CleaningEmployee[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -76,21 +77,38 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
   const openSeducDoc = (doc: SeducDocType) => {
     setActiveSeducDoc(doc);
     setActiveTab('seduc_docs');
+    setIsSidebarOpen(false);
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
-      <aside className="w-64 shrink-0 bg-slate-900 text-white flex flex-col no-print min-w-0">
-        <div className="p-6">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <div className="bg-amber-500/20 text-amber-400 p-1.5 rounded-lg">🛠️</div>
-            Infraestrutura
-          </h1>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Manutenção Predial</p>
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0 relative">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 shrink-0 bg-slate-900 text-white flex flex-col no-print min-w-0 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <div className="bg-amber-500/20 text-amber-400 p-1.5 rounded-lg">🛠️</div>
+              Infraestrutura
+            </h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Manutenção Predial</p>
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
         <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           <button
-            onClick={() => setActiveTab('predial')}
+            onClick={() => { setActiveTab('predial'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'predial' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
             }`}
@@ -100,7 +118,7 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
           </button>
 
           <button
-            onClick={() => setActiveTab('preventive_plan')}
+            onClick={() => { setActiveTab('preventive_plan'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'preventive_plan' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
             }`}
@@ -116,7 +134,7 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
             </p>
 
             <button
-              onClick={() => setActiveTab('seduc_docs')}
+              onClick={() => { setActiveTab('seduc_docs'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'seduc_docs' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'
               }`}
@@ -164,7 +182,14 @@ const InfrastructureModule: React.FC<{ user?: User, onExit: () => void }> = ({ u
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg shrink-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition-all shrink-0"
+              title="Menu Infraestrutura"
+            >
+              <Hammer size={20} />
+            </button>
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg shrink-0 hidden sm:block">
               <Hammer size={20} />
             </div>
             <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Gestão de Manutenção Predial & Infraestrutura</h2>

@@ -31,6 +31,7 @@ type SubTab = 'chromebooks' | 'science_lab' | 'maker_lab' | 'pedagogical_kitchen
 
 const SchedulingModule: React.FC<SchedulingModuleProps> = ({ user, onExit }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('chromebooks');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -65,8 +66,7 @@ const SchedulingModule: React.FC<SchedulingModuleProps> = ({ user, onExit }) => 
         return <AuditoriumScheduler user={user} />;
       default:
         return (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
-             <Lock size={64} className="mb-6 opacity-20" />
+          <div className="bg-white p-12 rounded-3xl border border-gray-100 text-center text-gray-400">
              <h3 className="text-xl font-black uppercase tracking-widest">Módulo em Implementação</h3>
              <p className="text-sm font-medium mt-2">Esta agenda será liberada na próxima atualização da SEDUC.</p>
           </div>
@@ -75,21 +75,38 @@ const SchedulingModule: React.FC<SchedulingModuleProps> = ({ user, onExit }) => 
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans relative w-full min-w-0">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
       {/* Sidebar de Agendamentos */}
-      <aside className="w-64 bg-fuchsia-950 text-white flex flex-col no-print">
-        <div className="p-6">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 bg-fuchsia-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 flex items-center justify-between">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-fuchsia-600 p-1.5 rounded-lg shadow-lg">📅</span>
             Agendas
           </h1>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-fuchsia-300 hover:text-white rounded-xl hover:bg-fuchsia-900/50"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
         
-        <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSubTab(item.id as SubTab)}
+              onClick={() => {
+                setActiveSubTab(item.id as SubTab);
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
                 activeSubTab === item.id 
                   ? 'bg-fuchsia-900 text-white shadow-lg' 
@@ -122,45 +139,50 @@ const SchedulingModule: React.FC<SchedulingModuleProps> = ({ user, onExit }) => 
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 shrink-0">
-          <div className="flex items-center gap-4">
-             <div className="p-2 bg-fuchsia-50 text-fuchsia-600 rounded-lg">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+             <button
+               onClick={() => setIsSidebarOpen(true)}
+               className="lg:hidden p-2.5 bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-700 rounded-xl transition-all shrink-0"
+               title="Menu de Agendas"
+             >
+               <CalendarDays size={20} />
+             </button>
+             <div className="p-2 bg-fuchsia-50 text-fuchsia-600 rounded-lg hidden sm:block shrink-0">
                <CalendarDays size={20} />
              </div>
-             <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight">Módulo de Agendamentos: {menuItems.find(i => i.id === activeSubTab)?.label}</h2>
+             <h2 className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-tight truncate">
+               Agendamentos: {menuItems.find(i => i.id === activeSubTab)?.label}
+             </h2>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-6 shrink-0">
             <button 
               onClick={toggleFullScreen}
-              className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group flex items-center gap-2"
+              className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors group hidden sm:flex items-center gap-2"
               title="Alternar Tela Cheia"
             >
               <Maximize2 size={18} className="group-hover:text-fuchsia-600" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Expandir</span>
             </button>
-            <div className="hidden lg:flex items-center gap-2 bg-fuchsia-50 px-3 py-1.5 rounded-full border border-fuchsia-100">
-               <div className="w-2 h-2 bg-fuchsia-500 rounded-full animate-ping"></div>
-               <span className="text-[10px] font-black text-fuchsia-700 uppercase tracking-widest">Base de Dados SEDUC</span>
-            </div>
 
             {user && (
-              <div className="flex items-center gap-3 pl-4 border-l border-gray-100">
+              <div className="flex items-center gap-3 pl-3 md:pl-4 border-l border-gray-200">
                 <div className="text-right hidden sm:block">
-                  <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{user.name}</p>
-                  <p className="text-[9px] text-fuchsia-600 font-bold uppercase tracking-widest">{user.role || 'USUÁRIO'}</p>
+                  <p className="text-xs font-black text-gray-900 uppercase truncate max-w-[150px]">{user.name}</p>
+                  <p className="text-[9px] font-bold text-fuchsia-600 uppercase tracking-widest">{user.role || 'Docente'}</p>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-fuchsia-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-fuchsia-600/20 uppercase">
-                  {user.name ? user.name.substring(0, 2) : 'US'}
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-fuchsia-600 to-purple-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-fuchsia-500/20 uppercase shrink-0">
+                  {user.name.substring(0, 2)}
                 </div>
               </div>
             )}
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          {renderContent()}
+        {/* Content Container */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
+           {renderContent()}
         </div>
       </main>
 

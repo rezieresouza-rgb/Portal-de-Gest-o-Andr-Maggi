@@ -188,6 +188,15 @@ export const PAF_OFFICIAL_CLASSES_2026: PAFMaterialClass[] = [
     keywords: ['manutencao ar condicionado', 'manutenção ar condicionado', 'limpeza de ar condicionado', 'climatizacao', 'climatização', 'pintura', 'jardinagem', 'dedetizacao', 'servicos de terceiros', 'servico pedreiro', 'servico eletrico']
   },
   {
+    id: 'passagens_intermunicipais',
+    name: 'Compra de passagens intermunicipais (autorizada pela DRE, em casos excepcionais)',
+    group: 'CUSTEIO',
+    budgetedValue: 0.00,
+    description: 'Compra e contratação de passagens intermunicipais devidamente autorizadas pela DRE em casos excepcionais para deslocamento e transporte escolar/institucional.',
+    examples: ['Passagens de ônibus intermunicipais', 'Transporte rodoviário intermunicipal para eventos e formações autorizados pela DRE'],
+    keywords: ['passagem', 'passagens', 'passagem intermunicipal', 'passagens intermunicipais', 'dre', 'bilhete', 'viagem', 'transporte intermunicipal']
+  },
+  {
     id: 'emenda_parlamentar',
     name: 'Emenda Parlamentar (Aditivo ao PAF - Custeio)',
     group: 'CUSTEIO',
@@ -318,16 +327,19 @@ export const PAFPlanManager: React.FC<PAFPlanManagerProps> = ({
     const totalSpent = custeioSpent + capitalSpent;
 
     return {
+      custeioCount: custeioClasses.length,
       custeioBudget,
       custeioSpent,
       custeioRemaining: custeioBudget - custeioSpent,
       custeioPct: custeioBudget > 0 ? (custeioSpent / custeioBudget) * 100 : 0,
 
+      capitalCount: capitalClasses.length,
       capitalBudget,
       capitalSpent,
       capitalRemaining: capitalBudget - capitalSpent,
       capitalPct: capitalBudget > 0 ? (capitalSpent / capitalBudget) * 100 : 0,
 
+      totalCount: classesWithStats.length,
       totalBudget,
       totalSpent,
       totalRemaining: totalBudget - totalSpent,
@@ -410,7 +422,7 @@ export const PAFPlanManager: React.FC<PAFPlanManagerProps> = ({
           {/* CUSTEIO DO PLANO */}
           <div className="bg-blue-950/40 p-6 rounded-3xl border border-blue-500/20 shadow-lg backdrop-blur-md">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest">Custeio Previsto (17 Classes)</p>
+              <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest">Custeio Previsto ({totals.custeioCount} Classes)</p>
               <span className="text-[9px] font-black text-blue-300 bg-blue-500/20 px-2.5 py-0.5 rounded-full">Consumo / Serviços</span>
             </div>
             <p className="text-2xl font-black text-blue-400">
@@ -428,7 +440,7 @@ export const PAFPlanManager: React.FC<PAFPlanManagerProps> = ({
           {/* CAPITAL DO PLANO */}
           <div className="bg-purple-950/40 p-6 rounded-3xl border border-purple-500/20 shadow-lg backdrop-blur-md">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-black text-purple-300 uppercase tracking-widest">Capital Previsto (3 Classes)</p>
+              <p className="text-[10px] font-black text-purple-300 uppercase tracking-widest">Capital Previsto ({totals.capitalCount} Classes)</p>
               <span className="text-[9px] font-black text-purple-300 bg-purple-500/20 px-2.5 py-0.5 rounded-full">Bens Permanentes</span>
             </div>
             <p className="text-2xl font-black text-purple-400">
@@ -465,7 +477,7 @@ export const PAFPlanManager: React.FC<PAFPlanManagerProps> = ({
               selectedGroup === 'CUSTEIO' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-white/50 hover:text-white'
             }`}
           >
-            Custeio (17)
+            Custeio ({totals.custeioCount})
           </button>
           <button
             onClick={() => setSelectedGroup('CAPITAL')}
@@ -473,7 +485,7 @@ export const PAFPlanManager: React.FC<PAFPlanManagerProps> = ({
               selectedGroup === 'CAPITAL' ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-white/50 hover:text-white'
             }`}
           >
-            Capital (3)
+            Capital ({totals.capitalCount})
           </button>
         </div>
 

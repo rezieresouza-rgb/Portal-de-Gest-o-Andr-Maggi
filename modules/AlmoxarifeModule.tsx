@@ -19,7 +19,8 @@ import {
   BookMarked,
   Library,
   BookOpen,
-  Headphones
+  Headphones,
+  Menu
 } from 'lucide-react';
 import AlmoxarifeInventory from '../components/AlmoxarifeInventory';
 import AlmoxarifeRequestManager from '../components/AlmoxarifeRequestManager';
@@ -36,6 +37,7 @@ interface AlmoxarifeModuleProps {
 
 const AlmoxarifeModule: React.FC<AlmoxarifeModuleProps> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<'inventory' | 'requests' | 'history' | 'uniforms' | 'kits' | 'structured' | 'other_books' | 'equipment_loans'>('inventory');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
@@ -58,38 +60,77 @@ const AlmoxarifeModule: React.FC<AlmoxarifeModuleProps> = ({ onExit }) => {
     { id: 'requests', label: 'Gestão de Pedidos', icon: ClipboardList },
     { id: 'equipment_loans', label: 'Empréstimos T.I.', icon: Headphones },
     { id: 'inventory', label: 'Materiais Pedagógicos', icon: Box },
+    { id: 'uniforms', label: 'Uniformes Escolares', icon: Shirt },
+    { id: 'kits', label: 'Kits Escolares', icon: PackageCheck },
     { id: 'structured', label: 'Material Estruturado', icon: BookMarked },
-    { id: 'kits', label: 'Kits Escolares', icon: LibraryBig },
-    { id: 'other_books', label: 'Outros Livros', icon: BookOpen },
-    { id: 'uniforms', label: 'Controle de Uniformes', icon: Shirt },
-    { id: 'history', label: 'Relatórios de Uso', icon: History },
+    { id: 'other_books', label: 'Outros Livros', icon: Layers },
+    { id: 'history', label: 'Histórico & Movimentações', icon: History },
   ];
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'requests':
+        return <AlmoxarifeRequestManager />;
+      case 'equipment_loans':
+        return <AlmoxarifeEquipmentManager />;
+      case 'uniforms':
+        return <AlmoxarifeUniforms />;
+      case 'kits':
+        return <AlmoxarifeSchoolKits />;
+      case 'structured':
+        return <AlmoxarifeStructuredMaterial />;
+      case 'other_books':
+        return <AlmoxarifeOtherBooks />;
+      case 'history':
+        return <AlmoxarifeHistory />;
+      case 'inventory':
+      default:
+        return <AlmoxarifeInventory />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 font-sans relative overflow-hidden text-white">
+    <div className="min-h-screen bg-gray-900 font-sans relative overflow-hidden text-white w-full min-w-0">
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10 fixed"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-orange-950 to-black fixed opacity-90"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-10 fixed"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-orange-950/40 to-black fixed"></div>
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-orange-600/20 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite] fixed"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-amber-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
       </div>
 
-      <div className="relative z-10 flex h-screen">
+      <div className="relative z-10 flex h-screen w-full min-w-0">
+        {/* Backdrop Mobile */}
+        {isSidebarOpen && (
+          <div
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+
         {/* Sidebar */}
-        <aside className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col no-print">
-          <div className="p-6">
+        <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 shrink-0 bg-slate-950 lg:bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+          <div className="p-6 flex items-center justify-between">
             <h1 className="text-xl font-bold flex items-center gap-2">
               <span className="bg-gradient-to-br from-orange-500 to-amber-600 p-2 rounded-xl shadow-lg shadow-orange-500/20">📦</span>
               Almoxarifado
             </h1>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-2 text-white/50 hover:text-white rounded-xl hover:bg-white/10"
+            >
+              <ArrowLeft size={20} />
+            </button>
           </div>
 
-          <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+          <nav className="flex-1 mt-2 px-4 space-y-2 overflow-y-auto custom-scrollbar">
             {menuItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
+                onClick={() => {
+                  setActiveTab(item.id as any);
+                  setIsSidebarOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
                   ? 'bg-orange-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] border border-orange-500/30'
                   : 'text-white/60 hover:bg-white/10 hover:text-white'
@@ -108,28 +149,28 @@ const AlmoxarifeModule: React.FC<AlmoxarifeModuleProps> = ({ onExit }) => {
             >
               <ArrowLeft size={16} /> Voltar ao Hub
             </button>
-
-            <div className="bg-orange-900/40 p-4 rounded-2xl border border-orange-500/20 backdrop-blur-sm">
-              <p className="text-[10px] text-orange-300 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                <ShieldCheck size={10} /> Estoque Seguro
-              </p>
-              <div className="text-xs font-black uppercase tracking-tight text-white/80">Logística Escolar</div>
-            </div>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-10 shrink-0 backdrop-blur-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-white/5 text-orange-400 rounded-lg border border-white/10">
+        <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-4 lg:px-10 shrink-0 backdrop-blur-sm gap-3">
+            <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all shrink-0"
+                title="Menu Almoxarifado"
+              >
+                <Menu size={20} />
+              </button>
+              <div className="p-2 bg-white/5 text-orange-400 rounded-lg border border-white/10 hidden sm:block shrink-0">
                 {activeTab === 'structured' ? <BookMarked size={20} /> : activeTab === 'equipment_loans' ? <Headphones size={20} /> : <Box size={20} />}
               </div>
-              <div>
-                <h2 className="text-sm font-black text-white/80 uppercase tracking-tight leading-none">
-                  {activeTab === 'structured' ? 'Material Estruturado' : activeTab === 'equipment_loans' ? 'Controle de Empréstimos de T.I.' : 'Almoxarifado Pedagógico'}
+              <div className="min-w-0">
+                <h2 className="text-xs sm:text-sm font-black text-white/80 uppercase tracking-tight leading-none truncate">
+                  {activeTab === 'structured' ? 'Material Estruturado' : activeTab === 'equipment_loans' ? 'Empréstimos T.I.' : 'Almoxarifado Pedagógico'}
                 </h2>
-                {isLocked && <span className="text-[8px] font-black text-orange-400 uppercase tracking-widest mt-1">Base Blindada Ativa</span>}
+                {isLocked && <span className="text-[8px] font-black text-orange-400 uppercase tracking-widest mt-1 truncate">Base Blindada Ativa</span>}
               </div>
             </div>
 

@@ -110,7 +110,8 @@ export function classifyPurchaseItem(description: string, value?: number): Class
     'lampada', 'fio', 'disjuntor', 'tomada', 'torneira', 'cano', 'conexao',
     'pedreiro', 'eletricista', 'pintor', 'chaveiro', 'diaria', 'frete',
     'reforma', 'pintura', 'verniz', 'cimento', 'tijolo', 'areia',
-    'alimentacao', 'lanche', 'dedetizacao', 'extintor'
+    'alimentacao', 'lanche', 'dedetizacao', 'extintor',
+    'passagem', 'passagens', 'passagem intermunicipal', 'passagens intermunicipais', 'transporte intermunicipal', 'viagem'
   ];
 
   const hasCusteioModifier = custeioKeywords.some(w => desc.includes(w));
@@ -136,6 +137,8 @@ export function classifyPurchaseItem(description: string, value?: number): Class
       pafCat = 'Confecção de Uniformes';
     } else if (desc.includes('epi') || desc.includes('bota') || desc.includes('touca') || desc.includes('luva') || desc.includes('mascara')) {
       pafCat = 'EPIs (Equipamento de Proteção Individual)';
+    } else if (desc.includes('passag') || desc.includes('transporte intermunicipal') || desc.includes('viagem')) {
+      pafCat = 'Compra de passagens intermunicipais (autorizada pela DRE, em casos excepcionais)';
     } else if (desc.includes('bola') || desc.includes('esporte') || desc.includes('colete') || desc.includes('cone')) {
       pafCat = 'Itens e Materiais Esportivos';
     } else if (desc.includes('eva') || desc.includes('tinta guache') || desc.includes('cartolina') || desc.includes('lapis')) {
@@ -270,6 +273,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
    * MÓDULO FINANCEIRO - MIGRAÇÃO SUPABASE
    */
   const [activeTab, setActiveTab] = useState<SubModuleType>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -769,7 +773,20 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     if (group === 'CAPITAL') {
       return ['Equipamentos e Material Permanente', 'Mobiliário Escolar', 'Equipamentos de Informática', 'Utensílios de Cozinha (Bens Permanentes)', 'Eletrodomésticos', 'Máquinas e Equipamentos'];
     }
-    const commonCusteio = ['Gás', 'Telefone', 'EPI e Uniformes', 'Internet', 'Material de Consumo', 'Serviços de Terceiros - Pessoa Jurídica', 'Serviços de Terceiros - Pessoa Física', 'Pequenos Reparos e Manutenção Predial', 'Material Pedagógico e Esportivo', 'Material de Expediente', 'Material de Limpeza e Higiene'];
+    const commonCusteio = [
+      'Gás',
+      'Telefone',
+      'EPI e Uniformes',
+      'Internet',
+      'Material de Consumo',
+      'Serviços de Terceiros - Pessoa Jurídica',
+      'Serviços de Terceiros - Pessoa Física',
+      'Pequenos Reparos e Manutenção Predial',
+      'Material Pedagógico e Esportivo',
+      'Material de Expediente',
+      'Material de Limpeza e Higiene',
+      'Compra de passagens intermunicipais (autorizada pela DRE, em casos excepcionais)'
+    ];
     if (fundId === 'merenda') return ['Aquisição de Gêneros Alimentícios', 'Gás de Cozinha', 'Material de Higiene (Cozinha)', ...commonCusteio];
     if (fundId === 'pdde_qualidade') return ['Material de Apoio Pedagógico', 'Conectividade e Internet', 'Capacitação e Formação', ...commonCusteio];
     return commonCusteio;
@@ -1033,22 +1050,35 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       <div className="absolute inset-0 z-0 print:hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-20 fixed"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-indigo-950 to-black fixed opacity-90"></div>
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite] fixed"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite] fixed"></div>
       </div>
 
       <div className="relative z-10 flex h-screen w-full min-w-0 print:h-auto print:overflow-visible print:block">
-        <aside className="w-64 shrink-0 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col print:hidden">
-          <div className="p-6">
+        {/* Backdrop Mobile */}
+        {isSidebarOpen && (
+          <div
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+
+        <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 shrink-0 bg-slate-950 lg:bg-white/5 backdrop-blur-2xl border-r border-white/10 flex flex-col print:hidden transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+          <div className="p-6 flex items-center justify-between">
             <h1 className="text-xl font-bold flex items-center gap-2">
               <span className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">💰</span>
               Financeiro
             </h1>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-2 text-white/50 hover:text-white rounded-xl hover:bg-white/10"
+            >
+              <ArrowLeft size={20} />
+            </button>
           </div>
 
-          <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+          <nav className="flex-1 mt-2 px-4 space-y-2 overflow-y-auto custom-scrollbar">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'dashboard'
                 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
@@ -1057,7 +1087,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
             </button>
 
             <button
-              onClick={() => setActiveTab('paf_plan')}
+              onClick={() => { setActiveTab('paf_plan'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'paf_plan'
                 ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] border border-emerald-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
@@ -1066,7 +1096,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
             </button>
 
             <button
-              onClick={() => setActiveTab('budget')}
+              onClick={() => { setActiveTab('budget'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'budget'
                 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
@@ -1085,7 +1115,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                 ].map(item => (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id as SubModuleType)}
+                    onClick={() => { setActiveTab(item.id as SubModuleType); setIsSidebarOpen(false); }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === item.id
                       ? 'bg-blue-600/20 text-blue-200 border border-blue-500/30 shadow-lg'
                       : 'text-white/50 hover:bg-white/5 hover:text-white'}`}
@@ -1097,7 +1127,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
             </div>
 
             <button
-              onClick={() => setActiveTab('reports')}
+              onClick={() => { setActiveTab('reports'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all mb-2 ${activeTab === 'reports'
                 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
@@ -1105,7 +1135,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
               <FileText size={18} /> Prestação de Contas
             </button>
             <button
-              onClick={() => setActiveTab('transaction_reports')}
+              onClick={() => { setActiveTab('transaction_reports'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all mb-2 ${activeTab === 'transaction_reports'
                 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
@@ -1113,8 +1143,8 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
               <FileSearch size={18} /> Relatório de Lançamentos
             </button>
             <button
-              onClick={() => setActiveTab('ecf')}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ecf'
+              onClick={() => { setActiveTab('ecf'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all mb-2 ${activeTab === 'ecf'
                 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] border border-blue-400/30'
                 : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
             >
@@ -1124,7 +1154,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
 
           <div className="p-6 border-t border-white/10 space-y-3">
             <button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 hover:text-white border border-white/5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-white/60">
-              <ArrowLeft size={16} /> Voltar
+              <ArrowLeft size={16} /> Voltar ao Hub
             </button>
           </div>
         </aside>
@@ -1132,7 +1162,14 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
         <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full print:h-auto print:overflow-visible print:block">
           <header className="h-20 bg-transparent border-b border-white/10 flex items-center justify-between px-4 md:px-8 shrink-0 backdrop-blur-sm min-w-0 w-full gap-2 print:hidden">
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
-              <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10 shrink-0"><Wallet size={20} /></div>
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all shrink-0"
+                title="Menu Financeiro"
+              >
+                <PieChart size={20} />
+              </button>
+              <div className="p-2 bg-white/5 text-blue-400 rounded-lg border border-white/10 shrink-0 hidden sm:block"><Wallet size={20} /></div>
               <h2 className="text-xs md:text-sm font-black text-white/80 uppercase tracking-widest truncate">{user.name}</h2>
             </div>
             <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">

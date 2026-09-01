@@ -37,6 +37,7 @@ interface SecretariatModuleProps {
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'reports' | 'oficios' | 'atas'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
@@ -56,21 +57,38 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0 relative">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 shrink-0 bg-indigo-950 text-white flex flex-col no-print transition-all duration-300">
-        <div className="p-6">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 shrink-0 bg-indigo-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 flex items-center justify-between">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-indigo-500 p-1.5 rounded-lg shadow-lg">🏢</span>
             Secretaria
           </h1>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-indigo-300 hover:text-white rounded-xl hover:bg-white/10"
+          >
+            <ArrowLeftRight size={20} />
+          </button>
         </div>
 
-        <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
+              onClick={() => {
+                setActiveTab(item.id as any);
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
                 ? 'bg-indigo-800 text-white shadow-lg'
                 : 'text-indigo-100 hover:bg-indigo-800/50'
@@ -102,7 +120,14 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 no-print min-w-0 gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all shrink-0"
+              title="Abrir Menu da Secretaria"
+            >
+              <LayoutDashboard size={20} />
+            </button>
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0 hidden sm:block">
               <Landmark size={20} />
             </div>
             <div className="min-w-0">

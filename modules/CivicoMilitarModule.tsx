@@ -567,6 +567,7 @@ interface CivicRoutineRecord {
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
   // 1. TODOS OS ESTADOS (useState) DECLARADOS NO TOPO PARA EVITAR ERROS DE INICIALIZAÇÃO (TDZ)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -2456,10 +2457,18 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans relative">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
       {/* Sidebar do Módulo */}
-      <aside className="w-80 bg-slate-950 flex flex-col no-print border-r border-slate-900 shadow-2xl relative z-10">
-        <div className="p-6 bg-slate-900/60 border-b border-slate-900/80">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-80 bg-slate-950 flex flex-col no-print border-r border-slate-900 shadow-2xl transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="p-6 bg-slate-900/60 border-b border-slate-900/80 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <CivicoMilitarLogoBadge size="lg" />
             <div>
@@ -2467,12 +2476,18 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               <p className="text-[9px] text-amber-400 font-black uppercase tracking-[0.2em] mt-1">E.E. André Maggi</p>
             </div>
           </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/50"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Abas */}
-        <nav className="flex-1 mt-8 px-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">
           <button
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'dashboard'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2481,7 +2496,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <ClipboardList size={18} /> Painel Geral
           </button>
           <button
-            onClick={() => setActiveTab('rotina')}
+            onClick={() => { setActiveTab('rotina'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'rotina'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2490,7 +2505,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <Flag size={18} /> Rotina Cívica
           </button>
           <button
-            onClick={() => setActiveTab('inspecao')}
+            onClick={() => { setActiveTab('inspecao'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'inspecao'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2499,7 +2514,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <UserCheck size={18} /> Inspeção Fardamento
           </button>
           <button
-            onClick={() => setActiveTab('comportamento')}
+            onClick={() => { setActiveTab('comportamento'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'comportamento'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2508,7 +2523,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <TrendingUp size={18} /> Conduta & Atitude
           </button>
           <button
-            onClick={() => setActiveTab('reincidencia')}
+            onClick={() => { setActiveTab('reincidencia'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'reincidencia'
               ? 'bg-rose-600 text-white shadow-xl shadow-rose-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2528,7 +2543,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             ) : null}
           </button>
           <button
-            onClick={() => setActiveTab('honra')}
+            onClick={() => { setActiveTab('honra'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'honra'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2537,7 +2552,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <Award size={18} /> Quadro de Honra
           </button>
           <button
-            onClick={() => setActiveTab('documentos')}
+            onClick={() => { setActiveTab('documentos'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'documentos'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2549,7 +2564,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           {/* BOTÃO ASSISTENTE & CHECKLIST DO GESTOR */}
           <button
             type="button"
-            onClick={() => handleOpenChecklistModal(null, 'FLAGRANTE')}
+            onClick={() => { handleOpenChecklistModal(null, 'FLAGRANTE'); setIsSidebarOpen(false); }}
             className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 text-amber-400 border border-amber-400/30 shadow-lg transition-all"
             title="Abrir Guia & Checklist do Gestor (Flagrante & Reincidência)"
           >
@@ -2565,7 +2580,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           {/* BOTÃO SAÚDE & EMERGÊNCIA / ACIDENTES (LEI LUCAS) */}
           <button
             type="button"
-            onClick={() => handleOpenHealthEmergencyModal(null)}
+            onClick={() => { handleOpenHealthEmergencyModal(null); setIsSidebarOpen(false); }}
             className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-red-950 to-rose-900 hover:from-red-900 hover:to-rose-800 text-rose-300 border border-rose-500/30 shadow-lg transition-all"
             title="Atendimento de Saúde, Alunos Passando Mal e Acidentes Escolares (Lei Lucas nº 13.722/18)"
           >
@@ -2579,7 +2594,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           </button>
 
           <button
-            onClick={() => setActiveTab('fatos_observados')}
+            onClick={() => { setActiveTab('fatos_observados'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'fatos_observados'
               ? 'bg-amber-600 text-white shadow-xl shadow-amber-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2588,7 +2603,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <MessageSquare size={18} /> Caixa de Fatos
           </button>
           <button
-            onClick={() => setActiveTab('relatorios')}
+            onClick={() => { setActiveTab('relatorios'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'relatorios'
               ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2597,7 +2612,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <TrendingUp size={18} /> Relatórios
           </button>
           <button
-            onClick={() => setActiveTab('oficios')}
+            onClick={() => { setActiveTab('oficios'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'oficios'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2606,7 +2621,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <FileText size={18} /> Ofícios Expedidos
           </button>
           <button
-            onClick={() => setActiveTab('atas')}
+            onClick={() => { setActiveTab('atas'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'atas'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
               : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
@@ -2635,13 +2650,20 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       </aside>
 
       {/* Área Principal de Conteúdo */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50 min-w-0">
         {/* Header */}
-        <header className="h-24 bg-white border-b border-slate-200 flex items-center justify-between px-10 shrink-0 shadow-sm">
-          <div className="flex items-center gap-5">
-            <CivicoMilitarLogoBadge size="lg" />
-            <div>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+        <header className="h-20 lg:h-24 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 shrink-0 shadow-sm gap-3">
+          <div className="flex items-center gap-3 lg:gap-5 min-w-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition-all shrink-0"
+              title="Abrir Menu Cívico-Militar"
+            >
+              <LayoutList size={20} />
+            </button>
+            <CivicoMilitarLogoBadge size="md" />
+            <div className="min-w-0">
+              <h2 className="text-xs lg:text-lg font-black text-slate-900 uppercase tracking-tight truncate">
                 {activeTab === 'dashboard' && 'Painel Geral Disciplinar'}
                 {activeTab === 'rotina' && 'Rotina Cívico-Militar Diária'}
                 {activeTab === 'inspecao' && 'Inspeção de Uniformes e Padrões'}

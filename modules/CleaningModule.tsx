@@ -44,6 +44,7 @@ const INITIAL_ENVIRONMENTS: SchoolEnvironment[] = [
 
 const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'scheduler' | 'protocol_official' | 'work_plan' | 'occurrences' | 'kitchen' | 'materials' | 'ppe'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
@@ -198,18 +199,34 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
-      <aside className="w-64 shrink-0 bg-emerald-950 text-white flex flex-col no-print min-w-0">
-        <div className="p-6">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <div className="bg-white/20 p-1.5 rounded-lg">🧹</div>
-            Limpeza & Zelo
-          </h1>
-          <p className="text-[10px] text-emerald-300 font-bold uppercase tracking-widest mt-1">Higienização Escolar</p>
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0 relative">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 shrink-0 bg-emerald-950 text-white flex flex-col no-print min-w-0 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <div className="bg-white/20 p-1.5 rounded-lg">🧹</div>
+              Limpeza & Zelo
+            </h1>
+            <p className="text-[10px] text-emerald-300 font-bold uppercase tracking-widest mt-1">Higienização Escolar</p>
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-emerald-300 hover:text-white rounded-xl hover:bg-white/10"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
         <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           <button
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'dashboard' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -219,7 +236,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('scheduler')}
+            onClick={() => { setActiveTab('scheduler'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'scheduler' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -229,7 +246,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('work_plan')}
+            onClick={() => { setActiveTab('work_plan'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'work_plan' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -239,7 +256,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('occurrences')}
+            onClick={() => { setActiveTab('occurrences'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'occurrences' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -249,7 +266,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('kitchen')}
+            onClick={() => { setActiveTab('kitchen'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'kitchen' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -259,7 +276,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('materials')}
+            onClick={() => { setActiveTab('materials'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'materials' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -269,7 +286,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('ppe')}
+            onClick={() => { setActiveTab('ppe'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'ppe' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -279,7 +296,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setActiveTab('protocol_official')}
+            onClick={() => { setActiveTab('protocol_official'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'protocol_official' ? 'bg-emerald-800 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-900/60'
             }`}
@@ -289,7 +306,7 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
           </button>
 
           <button
-            onClick={() => setIsConfigModalOpen(true)}
+            onClick={() => { setIsConfigModalOpen(true); setIsSidebarOpen(false); }}
             className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold text-emerald-200 hover:bg-emerald-900/60 mt-8 border-t border-emerald-800/80 pt-6"
           >
             <Settings2 size={18} className="shrink-0" />
@@ -310,7 +327,14 @@ const CleaningModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, o
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl transition-all shrink-0"
+              title="Menu Limpeza"
+            >
+              <Brush size={20} />
+            </button>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg shrink-0 hidden sm:block">
               <Brush size={20} />
             </div>
             <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Gestão de Limpeza, Zelo & Higienização</h2>

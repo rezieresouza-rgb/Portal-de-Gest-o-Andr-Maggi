@@ -162,6 +162,7 @@ import { supabase } from '../supabaseClient';
 
 const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'inventory' | 'history' | 'ambientes' | 'relatorios' | 'cronograma' | 'processos' | 'chromebooks'>('inventory');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState<Asset | null>(null);
@@ -1437,34 +1438,48 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
-      <aside className="w-64 shrink-0 bg-blue-950 text-white flex flex-col no-print">
-        <div className="p-6">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0 relative">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 shrink-0 bg-blue-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 flex items-center justify-between">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="bg-blue-600 p-1.5 rounded-lg shadow-lg">📋</span>
             Bens Móveis
           </h1>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-blue-300 hover:text-white rounded-xl hover:bg-white/10"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
-        <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto">
-          <button onClick={() => { setActiveTab('inventory'); setLocationFilter(null); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'inventory' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+        <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          <button onClick={() => { setActiveTab('inventory'); setLocationFilter(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'inventory' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <Monitor size={18} /> Inventário Ativo
           </button>
-          <button onClick={() => setActiveTab('ambientes')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ambientes' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+          <button onClick={() => { setActiveTab('ambientes'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ambientes' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <MapPin size={18} /> Ambientes (QR Code)
           </button>
-          <button onClick={() => setActiveTab('history')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+          <button onClick={() => { setActiveTab('history'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <History size={18} /> Baixas e Inservíveis
           </button>
-          <button onClick={() => setActiveTab('relatorios')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'relatorios' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+          <button onClick={() => { setActiveTab('relatorios'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'relatorios' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <ClipboardList size={18} /> Emissão de Relatório
           </button>
-          <button onClick={() => setActiveTab('cronograma')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'cronograma' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+          <button onClick={() => { setActiveTab('cronograma'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'cronograma' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <Calendar size={18} /> Cronograma do Processo
           </button>
-          <button onClick={() => setActiveTab('processos')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'processos' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+          <button onClick={() => { setActiveTab('processos'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'processos' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <FileText size={18} /> Processos Patrimoniais
           </button>
-          <button onClick={() => setActiveTab('chromebooks')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'chromebooks' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+          <button onClick={() => { setActiveTab('chromebooks'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'chromebooks' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
             <Laptop size={18} /> Gestão de Chromebooks
           </button>
         </nav>
@@ -1478,7 +1493,14 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
       <main className="flex-1 flex flex-col overflow-hidden min-w-0 w-full">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 w-full gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0"><ShieldCheck size={20} /></div>
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl transition-all shrink-0"
+              title="Menu Bens Móveis"
+            >
+              <Monitor size={20} />
+            </button>
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0 hidden sm:block"><ShieldCheck size={20} /></div>
             <div className="min-w-0">
               <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Inventário de Bens Móveis</h2>
               {locationFilter && (

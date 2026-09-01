@@ -132,6 +132,7 @@ import { supabase } from '../supabaseClient';
 
 const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> = ({ user, onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tasks' | 'team' | 'predial' | 'kitchen' | 'ppe' | 'materials' | 'protocol_official' | 'scheduler' | 'preventive_plan' | 'occurrences' | 'work_plan'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [environments, setEnvironments] = useState<SchoolEnvironment[]>([]);
   const [employees, setEmployees] = useState<CleaningEmployee[]>([]);
@@ -334,22 +335,36 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
 
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0">
-      <aside className="w-64 shrink-0 bg-orange-950 text-white flex flex-col no-print min-w-0">
-        <div className="p-6">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans w-full min-w-0 relative">
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 shrink-0 bg-orange-950 text-white flex flex-col no-print min-w-0 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 flex items-center justify-between">
           <h1 className="text-xl font-bold flex items-center gap-2">
             <div className="bg-white/20 p-1.5 rounded-lg">🧹</div>
             Zeladoria MT
           </h1>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-orange-300 hover:text-white rounded-xl hover:bg-white/10"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
-        <nav className="flex-1 mt-6 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><LayoutDashboard size={18} className="shrink-0" /> <span className="truncate">Painel Geral</span></button>
-          <button onClick={() => setActiveTab('protocol_official')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'protocol_official' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><BookOpen size={18} className="shrink-0" /> <span className="truncate">Protocolo Manual</span></button>
-          <button onClick={() => setActiveTab('preventive_plan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'preventive_plan' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><ShieldCheck size={18} className="shrink-0" /> <span className="truncate">Plano SEDUC</span></button>
+        <nav className="flex-1 mt-2 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          <button onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><LayoutDashboard size={18} className="shrink-0" /> <span className="truncate">Painel Geral</span></button>
+          <button onClick={() => { setActiveTab('protocol_official'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'protocol_official' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><BookOpen size={18} className="shrink-0" /> <span className="truncate">Protocolo Manual</span></button>
+          <button onClick={() => { setActiveTab('preventive_plan'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'preventive_plan' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><ShieldCheck size={18} className="shrink-0" /> <span className="truncate">Plano SEDUC</span></button>
 
-          <button onClick={() => setActiveTab('scheduler')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'scheduler' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Calendar size={18} className="shrink-0" /> <span className="truncate">Cronograma (Blocos)</span></button>
+          <button onClick={() => { setActiveTab('scheduler'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'scheduler' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Calendar size={18} className="shrink-0" /> <span className="truncate">Cronograma (Blocos)</span></button>
               <button
-                onClick={() => setActiveTab('work_plan')}
+                onClick={() => { setActiveTab('work_plan'); setIsSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'work_plan'
                     ? 'bg-indigo-600 text-white shadow-md'
                     : 'text-orange-100 hover:bg-orange-800/50'
@@ -358,14 +373,14 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
                 <ClipboardList size={18} className="shrink-0" />
                 <span className="truncate">Plano de Trab.</span>
               </button>
-          <button onClick={() => setActiveTab('occurrences')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'occurrences' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><AlertTriangle size={18} className="shrink-0" /> <span className="truncate">Registro de Ocorrências</span></button>
-          <button onClick={() => setActiveTab('team')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Users size={18} className="shrink-0" /> <span className="truncate">Equipe de Apoio</span></button>
-          <button onClick={() => setActiveTab('predial')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'predial' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Hammer size={18} className="shrink-0" /> <span className="truncate">Manutenção Predial</span></button>
-          <button onClick={() => setActiveTab('kitchen')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><CookingPot size={18} className="shrink-0" /> <span className="truncate">Higiene Cozinha/Refeitório</span></button>
-          <button onClick={() => setActiveTab('materials')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'materials' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Droplets size={18} className="shrink-0" /> <span className="truncate">Insumos Limpeza</span></button>
-          <button onClick={() => setActiveTab('ppe')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ppe' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><HardHat size={18} className="shrink-0" /> <span className="truncate">Controle EPIs</span></button>
+          <button onClick={() => { setActiveTab('occurrences'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'occurrences' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><AlertTriangle size={18} className="shrink-0" /> <span className="truncate">Registro de Ocorrências</span></button>
+          <button onClick={() => { setActiveTab('team'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'team' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Users size={18} className="shrink-0" /> <span className="truncate">Equipe de Apoio</span></button>
+          <button onClick={() => { setActiveTab('predial'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'predial' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Hammer size={18} className="shrink-0" /> <span className="truncate">Manutenção Predial</span></button>
+          <button onClick={() => { setActiveTab('kitchen'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'kitchen' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><CookingPot size={18} className="shrink-0" /> <span className="truncate">Higiene Cozinha/Refeitório</span></button>
+          <button onClick={() => { setActiveTab('materials'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'materials' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><Droplets size={18} className="shrink-0" /> <span className="truncate">Insumos Limpeza</span></button>
+          <button onClick={() => { setActiveTab('ppe'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'ppe' ? 'bg-orange-800 text-white shadow-lg' : 'text-orange-100 hover:bg-orange-800/50'}`}><HardHat size={18} className="shrink-0" /> <span className="truncate">Controle EPIs</span></button>
 
-          <button onClick={() => setIsConfigModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold text-orange-200 hover:bg-orange-800/50 mt-10 border-t border-orange-800 pt-10"><Settings2 size={18} className="shrink-0" /> <span className="truncate">Configurar Ambientes</span></button>
+          <button onClick={() => { setIsConfigModalOpen(true); setIsSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold text-orange-200 hover:bg-orange-800/50 mt-10 border-t border-orange-800 pt-10"><Settings2 size={18} className="shrink-0" /> <span className="truncate">Configurar Ambientes</span></button>
         </nav>
         <div className="p-6"><button onClick={onExit} className="w-full flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase tracking-widest leading-none"><ArrowLeft size={16} className="shrink-0" /> <span className="truncate">Voltar ao Hub</span></button></div>
       </aside>
@@ -373,7 +388,14 @@ const CleaningMaintenanceModule: React.FC<{ user?: User, onExit: () => void }> =
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0 min-w-0 gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
-            <div className="p-2 bg-orange-50 text-orange-600 rounded-lg shrink-0"><Brush size={20} /></div>
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-xl transition-all shrink-0"
+              title="Menu Zeladoria"
+            >
+              <Brush size={20} />
+            </button>
+            <div className="p-2 bg-orange-50 text-orange-600 rounded-lg shrink-0 hidden sm:block"><Brush size={20} /></div>
             <h2 className="text-xs md:text-sm font-black text-gray-900 uppercase truncate">Zeladoria & Conservação Escolar</h2>
           </div>
           <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">

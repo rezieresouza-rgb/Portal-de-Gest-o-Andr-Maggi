@@ -37,24 +37,33 @@ interface BuscaAtivaModuleProps {
 
 const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'commitments' | 'ficai' | 'attendance' | 'reports' | 'datastudio' | 'channels'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Radar de Hoje & Painel Geral', icon: LayoutDashboard },
-    { id: 'students', label: 'Monitoramento (6º ao 9º)', icon: Users },
-    { id: 'commitments', label: 'Convocações & Termos Pais', icon: UserCheck },
-    { id: 'ficai', label: 'Central Fichas FICAI (ECA)', icon: FileText },
-    { id: 'attendance', label: 'Conferência de Diários', icon: History },
-    { id: 'reports', label: 'Relatórios & Inteligência', icon: FileBarChart },
-    { id: 'datastudio', label: 'Painel DRE Sinop', icon: BarChart3 },
+    { id: 'dashboard', label: 'Painel & Diagnóstico', icon: LayoutDashboard },
+    { id: 'students', label: 'Alunos em Alerta (Infrequência)', icon: AlertTriangle },
+    { id: 'commitments', label: 'Termos de Compromisso', icon: FileCheck },
+    { id: 'ficai', label: 'Fichas FICAI / Notificações', icon: Send },
+    { id: 'attendance', label: 'Histórico de Faltas Diárias', icon: CalendarDays },
+    { id: 'reports', label: 'Relatórios Estatísticos', icon: FileText },
+    { id: 'datastudio', label: 'Painel Geral dos Dados', icon: BarChart3 },
     { id: 'channels', label: 'Canais WhatsApp', icon: Settings2 },
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800 relative w-full min-w-0">
       
+      {/* Backdrop Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+
       {/* SIDEBAR NAVEGAÇÃO MODERNA */}
-      <aside className="w-72 bg-slate-900 text-white flex flex-col shrink-0 no-print border-r border-slate-800">
-        <div className="p-6 border-b border-slate-800">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white flex flex-col shrink-0 no-print border-r border-slate-800 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} shadow-2xl lg:shadow-none`}>
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl text-white shadow-lg shadow-emerald-600/20">
               <PhoneCall size={26} />
@@ -68,6 +77,12 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
               </p>
             </div>
           </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
 
         {/* Links de Navegação */}
@@ -75,7 +90,10 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
+              onClick={() => {
+                setActiveTab(item.id as any);
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
                 activeTab === item.id
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20'
@@ -108,25 +126,32 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
       </aside>
 
       {/* ÁREA PRINCIPAL */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         
         {/* Header Superior */}
-        <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-8 shrink-0 no-print shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+        <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 lg:px-8 shrink-0 no-print shadow-sm gap-3">
+          <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl transition-all shrink-0"
+              title="Menu Busca Ativa"
+            >
+              <PhoneCall size={20} />
+            </button>
+            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 hidden sm:block shrink-0">
               <Users size={22} />
             </div>
-            <div>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-tight truncate">
                 Núcleo de Busca Ativa & Permanência Discente
               </h2>
-              <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest truncate">
                 Ensino Fundamental Anos Finais (6º ao 9º Ano) • SEDUC/MT
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200 shadow-sm">
               <ShieldCheck size={14} className="text-emerald-600" />
               <span className="text-[10px] font-black uppercase tracking-widest">Busca Ativa Ativa</span>
@@ -140,7 +165,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
         </header>
 
         {/* Conteúdo Dinâmico */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
           {activeTab === 'dashboard' && <BuscaAtivaDashboard onNavigate={(tab) => setActiveTab(tab)} />}
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'commitments' && <BuscaAtivaParentCommitmentManager />}
