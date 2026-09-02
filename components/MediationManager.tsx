@@ -36,7 +36,9 @@ import {
   Calendar,
   CalendarDays,
   School,
-  Layers
+  Layers,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
 import { supabase } from '../supabaseClient';
@@ -119,6 +121,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [activeCaseTab, setActiveCaseTab] = useState<'register' | 'timeline' | 'steps' | 'resolution'>('register');
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [isCaseModalMaximized, setIsCaseModalMaximized] = useState(false);
+  const [isTextareaExpanded, setIsTextareaExpanded] = useState(false);
   
   const availableClasses = useMemo(() => {
     const set = new Set<string>();
@@ -1460,10 +1464,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         </div>
       )}
 
-      {/* MODAL DETALHES DO CASO EXISTENTE - MODAL COMPACTO E ELEGANTE */}
+      {/* MODAL DETALHES DO CASO EXISTENTE - MODAL EXPANSÍVEL E RESPONSIVO */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-950/65 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-5xl h-[86vh] max-h-[820px] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200">
+        <div className={`fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-200 ${
+          isCaseModalMaximized ? 'p-0' : 'p-2 sm:p-4 md:p-6'
+        }`}>
+          <div className={`bg-white w-full transition-all duration-200 shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 ${
+            isCaseModalMaximized
+              ? 'h-full max-h-screen rounded-none'
+              : 'max-w-6xl h-[94vh] max-h-[900px] rounded-[2rem]'
+          }`}>
             
             {/* CABEÇALHO ELEGANTE E COMPACTO */}
             <div className="px-6 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-white/10 flex flex-col gap-3">
@@ -1668,13 +1678,23 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                     )}
                   </div>
 
+                  {/* Maximizar / Restaurar */}
+                  <button 
+                    type="button"
+                    onClick={() => setIsCaseModalMaximized(!isCaseModalMaximized)} 
+                    className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all ml-1"
+                    title={isCaseModalMaximized ? "Restaurar tamanho da janela" : "Maximizar janela (Tela Cheia)"}
+                  >
+                    {isCaseModalMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  </button>
+
                   {/* Fechar */}
                   <button 
                     onClick={() => {
                       setSelectedCase(null);
                       setIsActionMenuOpen(false);
                     }} 
-                    className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all ml-1"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
                     title="Fechar janela"
                   >
                     <X size={18} />
@@ -1756,21 +1776,21 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
             </div>
 
             {/* CORPO DO MODAL BASEADO NA ABA ATIVA */}
-            <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-slate-50/50 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-slate-50/50 flex flex-col min-h-0">
               
               {/* ABA 1: NOVO ATENDIMENTO (REGISTRO + CONTEXTO DO CASO) */}
               {activeCaseTab === 'register' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full h-full min-h-0 flex-1">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full min-h-0 flex-1">
                   
                   {/* Coluna Esquerda: Relato e Contexto (5 colunas) */}
-                  <div className="lg:col-span-5 flex flex-col gap-4 h-full min-h-0">
+                  <div className="lg:col-span-5 flex flex-col gap-4 min-h-0">
                     {/* Relato Original */}
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col flex-1 min-h-0">
-                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-3 shrink-0">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col flex-1 min-h-[160px]">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-2.5 shrink-0">
                         <FileText size={15} className="text-indigo-600" />
                         Relato Original do Caso
                       </h4>
-                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 text-slate-700 text-xs font-normal leading-relaxed whitespace-pre-wrap flex-1 overflow-y-auto custom-scrollbar">
+                      <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-150 text-slate-700 text-xs font-normal leading-relaxed whitespace-pre-wrap flex-1 overflow-y-auto custom-scrollbar max-h-56 lg:max-h-none">
                         {selectedCase.description || 'Sem descrição informada.'}
                       </div>
                     </div>
@@ -1812,10 +1832,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                   </div>
 
                   {/* Coluna Direita: Formulário de Registro de Atendimento (7 colunas) */}
-                  <div className="lg:col-span-7 flex flex-col h-full min-h-0">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col h-full min-h-0 space-y-4">
+                  <div className="lg:col-span-7 flex flex-col min-h-0">
+                    <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col flex-1 min-h-0 space-y-4">
                       
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0 flex-wrap gap-2">
                         <div>
                           <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <UserCheck size={17} className="text-indigo-600" />
@@ -1853,21 +1873,35 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                           </select>
                         </div>
 
-                        {/* Campo de Texto */}
+                        {/* Campo de Texto com Expandir e resize-y */}
                         <div className="flex-1 flex flex-col min-h-0">
-                          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
-                            Descrição da Escuta, Relatos e Combinados:
-                          </label>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                              Descrição da Escuta, Relatos e Combinados:
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setIsTextareaExpanded(!isTextareaExpanded)}
+                              className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50/70 hover:bg-indigo-100 transition-colors border border-indigo-100"
+                              title="Expandir / Reduzir área do campo de texto"
+                            >
+                              {isTextareaExpanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                              <span>{isTextareaExpanded ? 'Reduzir Campo' : 'Expandir Campo'}</span>
+                            </button>
+                          </div>
                           <textarea 
                             value={newLog.content}
                             onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
                             placeholder="Descreva detalhadamente a escuta realizada com os estudantes, familiares ou professores, os combinados e os encaminhamentos efetuados..."
-                            className="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 font-normal resize-none outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 min-h-[140px] transition-all"
+                            rows={isTextareaExpanded ? 14 : 7}
+                            className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 font-normal outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all resize-y ${
+                              isTextareaExpanded ? 'min-h-[280px] flex-1' : 'min-h-[160px] flex-1'
+                            }`}
                           />
                         </div>
 
                         {/* Rodapé da Caixa de Registro */}
-                        <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 shrink-0">
+                        <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 shrink-0 flex-wrap">
                           <div className="text-xs text-slate-500 truncate">
                             Responsável: <strong className="text-slate-800 font-bold">{user?.name ? `${user.name} (Mediador)` : 'Mediação Escolar'}</strong>
                           </div>
@@ -2240,7 +2274,8 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                         value={selectedCase?.feedback || ''}
                         onChange={(e) => setSelectedCase({ ...selectedCase, feedback: e.target.value })}
                         placeholder="Descreva o desfecho do caso, os combinados e acordos restaurativos firmados com os estudantes e familiares..."
-                        className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-normal text-slate-800 leading-relaxed resize-none outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 min-h-[260px] transition-all"
+                        rows={9}
+                        className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-normal text-slate-800 leading-relaxed resize-y outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 min-h-[240px] transition-all"
                       />
 
                       <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/70 text-xs text-emerald-800 flex items-center gap-2">
