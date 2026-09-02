@@ -20,7 +20,10 @@ import {
   MessageCircle,
   School,
   Building2,
-  Sparkles
+  Sparkles,
+  FileCheck,
+  Send,
+  CalendarDays
 } from 'lucide-react';
 import BuscaAtivaDashboard from '../components/BuscaAtivaDashboard';
 import BuscaAtivaStudentList from '../components/BuscaAtivaStudentManager';

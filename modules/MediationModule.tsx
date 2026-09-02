@@ -22,7 +22,8 @@ import {
   Sparkles,
   BarChart3,
   FileCheck,
-  AlertTriangle
+  AlertTriangle,
+  LayoutDashboard
 } from 'lucide-react';
 import { User, PsychosocialRole, MediationCase } from '../types';
 import MediationManager from '../components/MediationManager';
@@ -46,6 +47,11 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
   const [rawCases, setRawCases] = useState<any[]>([]);
   const [caseForAta, setCaseForAta] = useState<MediationCase | null>(null);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+
+  const handleOpenAtaForCase = (c: MediationCase) => {
+    setCaseForAta(c);
+    setActiveTab('atas');
+  };
 
   const fetchStats = async () => {
     try {
@@ -355,7 +361,8 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
                   </h3>
                   <div className="space-y-2.5 pt-1">
                     {Object.entries(conflictAnalytics.typeDistribution).map(([tipo, qtd]) => {
-                      const pct = casesCount.total > 0 ? Math.round((qtd / casesCount.total) * 100) : 0;
+                      const countNum = Number(qtd) || 0;
+                      const pct = casesCount.total > 0 ? Math.round((countNum / casesCount.total) * 100) : 0;
                       return (
                         <div key={tipo} className="space-y-1">
                           <div className="flex justify-between text-[10px] font-black uppercase">

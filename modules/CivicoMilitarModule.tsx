@@ -41,7 +41,8 @@ import {
   History,
   Layers,
   Save,
-  HeartPulse
+  HeartPulse,
+  LayoutList
 } from 'lucide-react';
 import { INITIAL_STUDENTS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';

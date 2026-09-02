@@ -20,7 +20,11 @@ import {
   FileText,
   Building2,
   Brain,
-  CalendarDays
+  CalendarDays,
+  Activity,
+  AlertTriangle,
+  Eye,
+  BookOpen
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import PsychosocialDashboard from '../components/PsychosocialDashboard';

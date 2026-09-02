@@ -845,3 +845,25 @@ export interface SchoolHealthIncident {
   created_at?: string;
   timestamp?: number;
 }
+
+export interface Transaction {
+  id: string;
+  fund_id?: string;
+  date: string;
+  description: string;
+  type: 'INCOME' | 'EXPENSE';
+  value: number;
+  category: string;
+  invoice_number?: string;
+  receipt_url?: string;
+  status?: string;
+  paf_classification?: string;
+  supplier?: string;
+  cnpj?: string;
+  expense_type?: string;
+  payment_method?: string;
+  destination?: string;
+  document_type?: string;
+  check_number?: string;
+  created_at?: string;
+}

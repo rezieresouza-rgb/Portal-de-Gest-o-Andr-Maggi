@@ -20,7 +20,9 @@ import {
   Library,
   BookOpen,
   Headphones,
-  Menu
+  Menu,
+  PackageCheck,
+  Layers
 } from 'lucide-react';
 import AlmoxarifeInventory from '../components/AlmoxarifeInventory';
 import AlmoxarifeRequestManager from '../components/AlmoxarifeRequestManager';
@@ -82,7 +84,7 @@ const AlmoxarifeModule: React.FC<AlmoxarifeModuleProps> = ({ onExit }) => {
       case 'other_books':
         return <AlmoxarifeOtherBooks />;
       case 'history':
-        return <AlmoxarifeHistory />;
+        return <AlmoxarifeInventory />;
       case 'inventory':
       default:
         return <AlmoxarifeInventory />;

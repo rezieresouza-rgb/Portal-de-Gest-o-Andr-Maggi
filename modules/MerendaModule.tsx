@@ -40,6 +40,7 @@ interface MerendaModuleProps {
 
 const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contracts' | 'suppliers' | 'inventory' | 'ai' | 'orders' | 'menuChecklist' | 'kitchenRequests' | 'shoppingList' | 'menuAudit' | 'supplierNotifications' | 'settings'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
