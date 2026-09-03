@@ -49,7 +49,7 @@ interface PsychosocialModuleProps {
 }
 
 const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user }) => {
-  const [activeTab, setActiveTab] = useState<'screening' | 'interventions' | 'network' | 'campaigns' | 'reports' | 'agenda' | 'mediation' | 'monitoring' | 'risk_board' | 'ata_printer' | 'atas' | 'collective_sessions' | 'dashboard'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'screening' | 'interventions' | 'network' | 'campaigns' | 'reports' | 'agenda' | 'mediation' | 'monitoring' | 'risk_board' | 'ata_printer' | 'atas' | 'collective_sessions' | 'circumstantiated_report' | 'cases' | 'dashboard'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const isDanubia = user?.name?.toUpperCase().includes('DANUBIA') || user?.login?.includes('35636524811');
@@ -64,33 +64,32 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
   }, [isDanubia]);
 
   const [notifCount, setNotifCount] = useState(0);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [pendingSearch, setPendingSearch] = useState<string | undefined>(undefined);
-
-  const navigateWithContext = (tab: any, search?: string) => {
-    setPendingSearch(search);
-    setActiveTab(tab);
-  };
 
   const fetchNotifications = async () => {
     try {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('psychosocial_notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_read', false);
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      if (!error && count !== null) {
-        setNotifCount(count);
+      if (!error && data) {
+        setNotifications(data);
+        const unread = data.filter((n: any) => !n.is_read).length;
+        setNotifCount(unread);
       }
     } catch (error) {
-      console.error("Erro ao buscar notificações:", error);
+      console.error("Erro ao buscar notificações psicossociais:", error);
     }
   };
 
   useEffect(() => {
     fetchNotifications();
-
     const channel = supabase
-      .channel('public:psychosocial_notifications')
+      .channel('psychosocial_notifs_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'psychosocial_notifications' }, () => {
         fetchNotifications();
       })
@@ -101,12 +100,18 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
     };
   }, []);
 
-  const clearNotifications = async () => {
+  const navigateWithContext = (tab: any, search?: string) => {
+    setPendingSearch(search);
+    setActiveTab(tab);
+  };
+
+  const handleClearNotifications = async () => {
     try {
       await supabase
         .from('psychosocial_notifications')
         .update({ is_read: true })
         .eq('is_read', false);
+      
       setNotifCount(0);
     } catch (error) {
       console.error("Erro ao limpar notificações:", error);
@@ -120,6 +125,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
     { id: 'monitoring', label: 'Monitoramento Contínuo', icon: Eye },
     { id: 'mediation', label: 'Casos da Mediação', icon: HeartHandshake },
     { id: 'interventions', label: 'Ações e Intervenções', icon: ShieldCheck },
+    { id: 'circumstantiated_report', label: 'Relatório Circunstanciado', icon: Scale },
     { id: 'collective_sessions', label: 'Acolhimento Coletivo (Luto/Crise)', icon: Users },
     { id: 'network', label: 'Rede de Proteção (CREAS/CT)', icon: BookOpen },
     { id: 'agenda', label: 'Agenda de Atendimentos', icon: Calendar },
