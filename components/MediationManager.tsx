@@ -776,20 +776,18 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
   const handleSaveFeedback = async () => {
     const feedbackValue = selectedCase?.feedback?.trim();
     if (!feedbackValue) {
-       alert('Por favor, escreva a devolutiva antes de salvar.');
+       alert('Por favor, escreva a devolutiva na aba "Acordo & Devolutiva" antes de salvar.');
        return false;
     }
     try {
        console.log('Salvando devolutiva para caso ID:', selectedCase.id, '| Texto:', feedbackValue);
        // 1. Salva no caso de mediação
-       const { data: updatedData, error: medError } = await supabase
+       const { error: medError } = await supabase
           .from('mediation_cases')
           .update({ feedback: feedbackValue })
-          .eq('id', selectedCase.id)
-          .select();
+          .eq('id', selectedCase.id);
        
        if (medError) throw medError;
-       console.log('Devolutiva salva com sucesso:', updatedData);
 
        // 2. Se houver vínculo, salva no encaminhamento original
        if (selectedCase.originReferralId) {
@@ -809,7 +807,29 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
        
        if (psyErr) console.warn('Aviso ao atualizar psychosocial_referrals:', psyErr.message);
 
-       alert("Devolutiva salva com sucesso!");
+       // 4. Sincroniza a devolutiva com a ocorrência original do Professor / Coordenação
+       const { error: occErr } = await supabase
+          .from('occurrences')
+          .update({ 
+            feedback: feedbackValue,
+            status: 'RESOLVIDO',
+            resolved_by: user?.name ? `${user.name} (Mediação Escolar)` : 'Mediação Escolar',
+            resolved_at: new Date().toLocaleDateString('pt-BR')
+          })
+          .ilike('student_name', selectedCase.studentName || '');
+
+       if (occErr) console.warn('Aviso ao atualizar occurrences:', occErr.message);
+
+       // 5. Notificação institucional
+       try {
+         await supabase.from('psychosocial_notifications').insert([{
+           title: 'Devolutiva de Mediação Registrada',
+           message: `A Mediação Escolar registrou a devolutiva do estudante ${selectedCase.studentName} (${selectedCase.className}).`,
+           is_read: false
+         }]);
+       } catch (notifErr) {}
+
+       alert("✅ Devolutiva salva e sincronizada com sucesso para o professor/solicitante!");
        setSelectedCase({ ...selectedCase, feedback: feedbackValue });
        await fetchCases();
        return true;
@@ -2317,13 +2337,31 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
                 <button 
                   onClick={async () => {
-                    if (!window.confirm("Deseja encerrar este caso com acordo restaurativo?")) return;
+                    if (!window.confirm("Deseja encerrar este caso com acordo restaurativo e enviar a devolutiva?")) return;
                     try {
-                      if (selectedCase?.feedback?.trim()) {
+                      const feedbackText = selectedCase?.feedback?.trim() || '';
+                      if (feedbackText) {
                         await supabase
                           .from('mediation_cases')
-                          .update({ feedback: selectedCase.feedback.trim() })
+                          .update({ feedback: feedbackText })
                           .eq('id', selectedCase.id);
+
+                        // Sincroniza com occurrences do professor
+                        await supabase
+                          .from('occurrences')
+                          .update({ 
+                            feedback: feedbackText,
+                            status: 'RESOLVIDO',
+                            resolved_by: user?.name ? `${user.name} (Mediação Escolar)` : 'Mediação Escolar',
+                            resolved_at: new Date().toLocaleDateString('pt-BR')
+                          })
+                          .ilike('student_name', selectedCase.studentName || '');
+
+                        // Sincroniza com encaminhamentos psicossociais
+                        await supabase
+                          .from('psychosocial_referrals')
+                          .update({ feedback: feedbackText })
+                          .ilike('student_name', selectedCase.studentName || '');
                       }
 
                       const { error } = await supabase
@@ -2335,7 +2373,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                         .eq('id', selectedCase.id);
                       if (error) throw error;
                       await fetchCases();
-                      alert("Caso encerrado com sucesso com acordo!");
+                      alert("✅ Caso encerrado com sucesso com acordo e devolutiva sincronizada!");
                       setSelectedCase(null);
                     } catch (err) {
                       alert("Erro ao encerrar caso.");
