@@ -136,6 +136,10 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
       setPriorityFilter('TODAS');
       setStatusFilter('TODOS');
       setDemandFilter('TODAS');
+    } else if (mode === 'interventions') {
+      setPriorityFilter('TODAS');
+      setStatusFilter('TODOS');
+      setDemandFilter('TODAS');
     } else if (mode === 'collective_sessions') {
       setPriorityFilter('TODAS');
       setStatusFilter('TODOS');
@@ -716,6 +720,22 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
             { id: 'AGUARDANDO_REDE', type: 'status', label: 'Monitorando com a Rede', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Acompanhamento conjunto', icon: Building2, activeBg: 'bg-purple-600 text-white border-purple-600', iconColor: 'bg-purple-50 text-purple-600' },
             { id: 'ACOLHIMENTO', type: 'status', label: 'Em Observação Inicial', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Fase de sondagem', icon: Brain, activeBg: 'bg-amber-600 text-white border-amber-600', iconColor: 'bg-amber-50 text-amber-600' },
             { id: 'CONCLUÍDO', type: 'status', label: 'Alta / Casos Estabilizados', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Metas superadas', icon: CheckCircle2, activeBg: 'bg-emerald-600 text-white border-emerald-600', iconColor: 'bg-emerald-50 text-emerald-600' },
+          ]
+        };
+      case 'interventions':
+        return {
+          title: 'Plano de Ações & Intervenções Psicossociais',
+          badge: 'Intervenções Especializadas • SEDUC/MT',
+          badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+          subtitle: 'Manejo de intervenções técnicas, adaptações curriculares, pactuação com famílias e encaminhamentos à rede.',
+          icon: <ShieldCheck size={32} className="text-white" />,
+          gradient: 'from-emerald-600 via-teal-700 to-indigo-700',
+          btnText: '+ Nova Intervenção',
+          stats: [
+            { id: 'EM_ACOMPANHAMENTO', type: 'status', label: 'Intervenções Ativas', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Planos singulares em execução', icon: ShieldCheck, activeBg: 'bg-emerald-600 text-white border-emerald-600', iconColor: 'bg-emerald-50 text-emerald-600' },
+            { id: 'AGUARDANDO_REDE', type: 'status', label: 'Encaminhados à Rede', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'CAPSi, CRAS, CT e Saúde', icon: Building2, activeBg: 'bg-purple-600 text-white border-purple-600', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'ACOLHIMENTO', type: 'status', label: 'Ações em Planejamento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Fase de elaboração de estratégias', icon: Brain, activeBg: 'bg-amber-600 text-white border-amber-600', iconColor: 'bg-amber-50 text-amber-600' },
+            { id: 'CONCLUÍDO', type: 'status', label: 'Intervenções Concluídas', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Objetivos superados', icon: CheckCircle2, activeBg: 'bg-blue-600 text-white border-blue-600', iconColor: 'bg-blue-50 text-blue-600' },
           ]
         };
       case 'collective_sessions':
