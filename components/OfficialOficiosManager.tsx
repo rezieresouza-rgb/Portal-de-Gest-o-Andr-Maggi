@@ -4,7 +4,7 @@ import { generateOficioBodyWithAI } from '../geminiService';
 import { 
   FileText, Plus, Search, Printer, Trash2, Building2, Calendar, User, Check, 
   Sparkles, Layers, Eye, X, Shield, BookOpen, Landmark, Filter, ArrowRight, Clock, Wand2,
-  ShieldCheck, Award, KeyRound
+  ShieldCheck, Award, KeyRound, Pencil
 } from 'lucide-react';
 import { ElectronicSignatureProof } from '../types';
 import ElectronicSignatureStamp from './ElectronicSignatureStamp';
@@ -89,6 +89,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingOficioId, setEditingOficioId] = useState<string | null>(null);
   const [printingOficio, setPrintingOficio] = useState<SchoolOficio | null>(null);
   const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
   const [staffRoleMap, setStaffRoleMap] = useState<Record<string, string>>({});
@@ -328,6 +329,26 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     }));
   };
 
+  const handleEditOficio = (oficio: SchoolOficio) => {
+    setEditingOficioId(oficio.id);
+    setFormData({
+      title_subject: oficio.title_subject || '',
+      recipient_name: oficio.recipient_name || '',
+      recipient_role: oficio.recipient_role || '',
+      recipient_org: oficio.recipient_org || '',
+      city_date: oficio.city_date || `Colíder - MT, ${new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+      salutation: oficio.salutation || 'Prezado(a) Senhor(a),',
+      body_text: oficio.body_text || '',
+      closure_text: oficio.closure_text || 'Atenciosamente,',
+      signatory_name: oficio.signatory_name || user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
+      signatory_role: oficio.signatory_role || (moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar')
+    });
+    setCustomSequenceNumber(String(oficio.number || ''));
+    setAiPromptInput('');
+    setPrintingOficio(null);
+    setIsModalOpen(true);
+  };
+
   const handleSaveOficio = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title_subject.trim() || !formData.recipient_name.trim() || !formData.body_text.trim()) {
@@ -345,6 +366,61 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     const cleanSignatory = (formData.signatory_name || '').trim().toUpperCase();
     const resolvedRole = staffRoleMap[cleanSignatory] || formData.signatory_role;
 
+    if (editingOficioId) {
+      // MODO EDIÇÃO: Atualizar ofício existente
+      const existing = oficios.find(o => o.id === editingOficioId);
+      const updatedOficio: SchoolOficio = {
+        ...(existing || {} as SchoolOficio),
+        id: editingOficioId,
+        number: nextNum,
+        year: existing?.year || currentYear,
+        formatted_number: formattedNum,
+        module_source: existing?.module_source || moduleSource,
+        title_subject: formData.title_subject.trim(),
+        recipient_name: formData.recipient_name.trim(),
+        recipient_role: formData.recipient_role.trim(),
+        recipient_org: formData.recipient_org.trim(),
+        city_date: formData.city_date.trim(),
+        salutation: formData.salutation.trim(),
+        body_text: formData.body_text.trim(),
+        closure_text: formData.closure_text.trim(),
+        signatory_name: formData.signatory_name.trim(),
+        signatory_role: resolvedRole,
+        created_at: existing?.created_at || new Date().toISOString(),
+        signatures: existing?.signatures || [],
+        is_signed: existing?.is_signed || false
+      };
+
+      const updatedList = oficios.map(o => o.id === editingOficioId ? updatedOficio : o);
+      setOficios(updatedList);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
+
+      try {
+        await supabase.from('school_oficios').update({
+          number: updatedOficio.number,
+          formatted_number: updatedOficio.formatted_number,
+          title_subject: updatedOficio.title_subject,
+          recipient_name: updatedOficio.recipient_name,
+          recipient_role: updatedOficio.recipient_role,
+          recipient_org: updatedOficio.recipient_org,
+          city_date: updatedOficio.city_date,
+          salutation: updatedOficio.salutation,
+          body_text: updatedOficio.body_text,
+          closure_text: updatedOficio.closure_text,
+          signatory_name: updatedOficio.signatory_name,
+          signatory_role: updatedOficio.signatory_role
+        }).eq('id', editingOficioId);
+      } catch (err) {
+        console.warn('Erro ao atualizar ofício no Supabase:', err);
+      }
+
+      setEditingOficioId(null);
+      setIsModalOpen(false);
+      setPrintingOficio(updatedOficio);
+      return;
+    }
+
+    // MODO CRIAÇÃO: Novo ofício
     const newOficio: SchoolOficio = {
       id: crypto.randomUUID ? crypto.randomUUID() : `ofi-${Date.now()}`,
       number: nextNum,
@@ -534,7 +610,21 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
+              setEditingOficioId(null);
+              setFormData({
+                title_subject: '',
+                recipient_name: '',
+                recipient_role: '',
+                recipient_org: '',
+                city_date: `Colíder - MT, ${new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+                salutation: 'Prezado(a) Senhor(a),',
+                body_text: '',
+                closure_text: 'Atenciosamente,',
+                signatory_name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
+                signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
+              });
               setCustomSequenceNumber('');
+              setAiPromptInput('');
               setIsModalOpen(true);
             }}
             className="px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95"
@@ -689,6 +779,13 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                       <td className="py-4 pl-3 pr-6 text-right align-middle">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => handleEditOficio(oficio)}
+                            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-600 hover:text-white text-amber-800 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-xs active:scale-95"
+                            title="Editar Informações do Ofício"
+                          >
+                            <Pencil size={13} /> Editar
+                          </button>
+                          <button
                             onClick={() => handlePrintOficio(oficio)}
                             className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-xs active:scale-95"
                             title="Visualizar e Imprimir Ofício A4"
@@ -713,7 +810,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         )}
       </div>
 
-      {/* MODAL DE NOVO OFÍCIO */}
+      {/* MODAL DE NOVO / EDITAR OFÍCIO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto print:hidden">
           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
@@ -724,7 +821,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                   <FileText size={24} />
                 </div>
                 <div>
-                  <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Novo Documento Oficial</span>
+                  <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">
+                    {editingOficioId ? 'Editar Documento Oficial' : 'Novo Documento Oficial'}
+                  </span>
                   <h3 className="text-base font-black uppercase tracking-tight font-mono">
                     OFÍCIO Nº {customSequenceNumber ? String(customSequenceNumber).padStart(3, '0') : String(nextSequenceInfo.number).padStart(3, '0')}/{currentYear}/EECAAMCOL/SEDUC/MT
                   </h3>
@@ -977,9 +1076,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                  className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2"
                 >
-                  Gerar e Salvar Ofício
+                  <Check size={16} /> {editingOficioId ? 'Salvar Alterações' : 'Gerar e Salvar Ofício'}
                 </button>
               </div>
             </form>
@@ -1002,6 +1101,14 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               </div>
 
               <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleEditOficio(printingOficio)}
+                  className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-amber-600/20 active:scale-95"
+                  title="Editar Texto e Dados do Ofício"
+                >
+                  <Pencil size={14} /> Editar
+                </button>
+
                 {(!printingOficio.signatures || printingOficio.signatures.length === 0) && (
                   <button
                     onClick={() => handleOpenSignModal(printingOficio)}
