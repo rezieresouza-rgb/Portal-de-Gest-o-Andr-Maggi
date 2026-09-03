@@ -270,13 +270,15 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
         {/* Conteúdo Dinâmico */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} onNavigate={navigateWithContext} />}
-          {activeTab === 'cases' && (
+          
+          {(activeTab === 'cases' || activeTab === 'screening' || activeTab === 'interventions' || activeTab === 'risk_board' || activeTab === 'monitoring' || activeTab === 'collective_sessions') && (
             <PsychosocialCaseManager
               user={user}
               role={userRole}
               initialSearch={pendingSearch}
             />
           )}
+
           {activeTab === 'mediation' && (
             <PsychosocialReferralList 
               user={user}
@@ -284,6 +286,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
               initialSearch={pendingSearch}
             />
           )}
+
           {activeTab === 'mediation_calendar' && (
             <MediationCalendarManager
               user={user}
@@ -291,24 +294,28 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
               onOpenNewCase={() => setActiveTab('cases')}
             />
           )}
+
           {activeTab === 'circumstantiated_report' && (
             <PsychosocialCircumstantiatedReportManager
               user={user}
               role={userRole}
             />
           )}
+
           {activeTab === 'aee_special_education' && (
             <SpecialEducationAEEHub
               sourceModule="PSICOSSOCIAL"
               user={user}
             />
           )}
-          {activeTab === 'external_network' && (
+
+          {(activeTab === 'network' || activeTab === 'external_network') && (
             <PsychosocialExternalNetworkManager
               user={user}
               role={userRole}
             />
           )}
+
           {activeTab === 'violation_notification' && <RightsViolationForm />}
           {activeTab === 'agenda' && <PsychosocialAgenda role={userRole} />}
           {activeTab === 'atas' && <PsychosocialMeetingAtaManager />}
