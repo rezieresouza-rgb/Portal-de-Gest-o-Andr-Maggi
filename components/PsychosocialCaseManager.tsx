@@ -134,7 +134,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
       setDemandFilter('TODAS');
     } else if (mode === 'monitoring') {
       setPriorityFilter('TODAS');
-      setStatusFilter('EM_ACOMPANHAMENTO');
+      setStatusFilter('TODOS');
       setDemandFilter('TODAS');
     } else if (mode === 'collective_sessions') {
       setPriorityFilter('TODAS');
@@ -680,10 +680,10 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
           gradient: 'from-red-600 via-rose-700 to-amber-600',
           btnText: '+ Novo Caso de Urgência',
           stats: [
-            { id: 'CRITICA', label: 'Risco Crítico (Imediato)', count: cases.filter(c => c.priority === 'CRÍTICA' || c.priority === 'CRITICA').length, desc: 'Ação imediata necessária', icon: ShieldAlert, activeColor: 'bg-red-900 border-red-700 text-white', iconColor: 'bg-red-50 text-red-600' },
-            { id: 'ALTA', label: 'Risco Alto (Vulnerabilidade)', count: cases.filter(c => c.priority === 'ALTA').length, desc: 'Atenção prioritária', icon: AlertTriangle, activeColor: 'bg-amber-900 border-amber-700 text-white', iconColor: 'bg-amber-50 text-amber-600' },
-            { id: 'EM_ACOMPANHAMENTO', label: 'Em Manejo Ativo', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Sessões periódicas', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
-            { id: 'AGUARDANDO_REDE', label: 'Rede Acionada (CAPS/CT)', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Articulação intersetorial', icon: Building2, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'CRÍTICA', type: 'priority', label: 'Risco Crítico (Imediato)', count: cases.filter(c => c.priority === 'CRÍTICA' || c.priority === 'CRITICA').length, desc: 'Ação imediata necessária', icon: ShieldAlert, activeBg: 'bg-red-600 text-white border-red-600', iconColor: 'bg-red-50 text-red-600' },
+            { id: 'ALTA', type: 'priority', label: 'Risco Alto (Vulnerabilidade)', count: cases.filter(c => c.priority === 'ALTA').length, desc: 'Atenção prioritária', icon: AlertTriangle, activeBg: 'bg-amber-600 text-white border-amber-600', iconColor: 'bg-amber-50 text-amber-600' },
+            { id: 'EM_ACOMPANHAMENTO', type: 'status', label: 'Em Manejo Ativo', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Sessões periódicas', icon: Activity, activeBg: 'bg-indigo-600 text-white border-indigo-600', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'AGUARDANDO_REDE', type: 'status', label: 'Rede Acionada (CAPS/CT)', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Articulação intersetorial', icon: Building2, activeBg: 'bg-purple-600 text-white border-purple-600', iconColor: 'bg-purple-50 text-purple-600' },
           ]
         };
       case 'screening':
@@ -696,10 +696,10 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
           gradient: 'from-rose-600 to-indigo-600',
           btnText: '+ Novo Acolhimento',
           stats: [
-            { id: 'ACOLHIMENTO', label: 'Em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Casos novos em escuta inicial', icon: Brain, activeColor: 'bg-rose-900 border-rose-700 text-white', iconColor: 'bg-rose-50 text-rose-600' },
-            { id: 'TRIAGEM_MEDIACAO', label: 'Triagens da Mediação', count: cases.filter(c => c.origin === 'TRIAGEM_MEDIACAO').length, desc: 'Encaminhados pelo mediador', icon: HeartHandshake, activeColor: 'bg-amber-900 border-amber-700 text-white', iconColor: 'bg-amber-50 text-amber-600' },
-            { id: 'EM_ACOMPANHAMENTO', label: 'Casos Triados', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Com plano singular ativado', icon: CheckCircle2, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
-            { id: 'CONCLUÍDO', label: 'Acolhimentos Finalizados', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Devolutiva concluída', icon: ShieldCheck, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+            { id: 'ACOLHIMENTO', type: 'status', label: 'Em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Casos novos em escuta inicial', icon: Brain, activeBg: 'bg-rose-600 text-white border-rose-600', iconColor: 'bg-rose-50 text-rose-600' },
+            { id: 'TRIAGEM_MEDIACAO', type: 'origin', label: 'Triagens da Mediação', count: cases.filter(c => c.origin === 'TRIAGEM_MEDIACAO').length, desc: 'Encaminhados pelo mediador', icon: HeartHandshake, activeBg: 'bg-blue-600 text-white border-blue-600', iconColor: 'bg-blue-50 text-blue-600' },
+            { id: 'EM_ACOMPANHAMENTO', type: 'status', label: 'Casos Triados', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Com plano singular ativado', icon: CheckCircle2, activeBg: 'bg-indigo-600 text-white border-indigo-600', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'CONCLUÍDO', type: 'status', label: 'Acolhimentos Finalizados', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Devolutiva concluída', icon: ShieldCheck, activeBg: 'bg-emerald-600 text-white border-emerald-600', iconColor: 'bg-emerald-50 text-emerald-600' },
           ]
         };
       case 'monitoring':
@@ -712,10 +712,10 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
           gradient: 'from-indigo-600 via-blue-600 to-teal-600',
           btnText: '+ Novo Acompanhamento',
           stats: [
-            { id: 'EM_ACOMPANHAMENTO', label: 'Em Acompanhamento Ativo', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Planos singulares ativos', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
-            { id: 'AGUARDANDO_REDE', label: 'Monitorando com a Rede', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Acompanhamento conjunto', icon: Building2, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
-            { id: 'ACOLHIMENTO', label: 'Em Observação Inicial', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Fase de sondagem', icon: Brain, activeColor: 'bg-amber-900 border-amber-700 text-white', iconColor: 'bg-amber-50 text-amber-600' },
-            { id: 'CONCLUÍDO', label: 'Alta / Casos Estabilizados', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Metas superadas', icon: CheckCircle2, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+            { id: 'EM_ACOMPANHAMENTO', type: 'status', label: 'Em Acompanhamento Ativo', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Planos singulares ativos', icon: Activity, activeBg: 'bg-indigo-600 text-white border-indigo-600', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'AGUARDANDO_REDE', type: 'status', label: 'Monitorando com a Rede', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Acompanhamento conjunto', icon: Building2, activeBg: 'bg-purple-600 text-white border-purple-600', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'ACOLHIMENTO', type: 'status', label: 'Em Observação Inicial', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Fase de sondagem', icon: Brain, activeBg: 'bg-amber-600 text-white border-amber-600', iconColor: 'bg-amber-50 text-amber-600' },
+            { id: 'CONCLUÍDO', type: 'status', label: 'Alta / Casos Estabilizados', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Metas superadas', icon: CheckCircle2, activeBg: 'bg-emerald-600 text-white border-emerald-600', iconColor: 'bg-emerald-50 text-emerald-600' },
           ]
         };
       case 'collective_sessions':
@@ -728,10 +728,10 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
           gradient: 'from-purple-600 via-violet-700 to-rose-600',
           btnText: '+ Nova Ação Coletiva',
           stats: [
-            { id: 'LUTO_CRISE', label: 'Demandas de Luto / Crise', count: cases.filter(c => c.demandType === 'LUTO_CRISE').length, desc: 'Acolhimento imediato', icon: HeartHandshake, activeColor: 'bg-rose-900 border-rose-700 text-white', iconColor: 'bg-rose-50 text-rose-600' },
-            { id: 'ACOLHIMENTO', label: 'Grupos em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Sessões em planejamento', icon: Users, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
-            { id: 'EM_ACOMPANHAMENTO', label: 'Rodas em Andamento', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Ciclos restaurativos ativos', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
-            { id: 'CONCLUÍDO', label: 'Ações Coletivas Concluídas', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Intervenções finalizadas', icon: CheckCircle2, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+            { id: 'LUTO_CRISE', type: 'demand', label: 'Demandas de Luto / Crise', count: cases.filter(c => c.demandType === 'LUTO_CRISE').length, desc: 'Acolhimento imediato', icon: HeartHandshake, activeBg: 'bg-rose-600 text-white border-rose-600', iconColor: 'bg-rose-50 text-rose-600' },
+            { id: 'ACOLHIMENTO', type: 'status', label: 'Grupos em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Sessões em planejamento', icon: Users, activeBg: 'bg-purple-600 text-white border-purple-600', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'EM_ACOMPANHAMENTO', type: 'status', label: 'Rodas em Andamento', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Ciclos restaurativos ativos', icon: Activity, activeBg: 'bg-indigo-600 text-white border-indigo-600', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'CONCLUÍDO', type: 'status', label: 'Ações Coletivas Concluídas', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Intervenções finalizadas', icon: CheckCircle2, activeBg: 'bg-emerald-600 text-white border-emerald-600', iconColor: 'bg-emerald-50 text-emerald-600' },
           ]
         };
       default:
@@ -744,16 +744,18 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
           gradient: 'from-rose-600 to-indigo-600',
           btnText: '+ Novo Acolhimento / Prontuário',
           stats: [
-            { id: 'ACOLHIMENTO', label: 'Em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Casos novos em escuta inicial', icon: Brain, activeColor: 'bg-rose-900 border-rose-700 text-white', iconColor: 'bg-rose-50 text-rose-600' },
-            { id: 'EM_ACOMPANHAMENTO', label: 'Em Acompanhamento', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Sessões periódicas e plano ativo', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
-            { id: 'AGUARDANDO_REDE', label: 'Rede de Proteção', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Encaminhado ao CAPSi / CT / CRAS', icon: Building2, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
-            { id: 'CONCLUÍDO', label: 'Casos Concluídos', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Superação com parecer final', icon: CheckCircle2, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+            { id: 'ACOLHIMENTO', type: 'status', label: 'Em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Casos novos em escuta inicial', icon: Brain, activeBg: 'bg-rose-600 text-white border-rose-600', iconColor: 'bg-rose-50 text-rose-600' },
+            { id: 'EM_ACOMPANHAMENTO', type: 'status', label: 'Em Acompanhamento', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Sessões periódicas e plano ativo', icon: Activity, activeBg: 'bg-indigo-600 text-white border-indigo-600', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'AGUARDANDO_REDE', type: 'status', label: 'Rede de Proteção', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Encaminhado ao CAPSi / CT / CRAS', icon: Building2, activeBg: 'bg-purple-600 text-white border-purple-600', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'CONCLUÍDO', type: 'status', label: 'Casos Concluídos', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Superação com parecer final', icon: CheckCircle2, activeBg: 'bg-emerald-600 text-white border-emerald-600', iconColor: 'bg-emerald-50 text-emerald-600' },
           ]
         };
     }
   }, [mode, cases]);
 
   // Filtros
+  const [originFilter, setOriginFilter] = useState<string>('TODAS');
+
   const filteredCases = cases.filter(c => {
     const matchesSearch =
       (c.studentName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -763,6 +765,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
 
     const matchesStatus = statusFilter === 'TODOS' || c.status === statusFilter;
     const matchesDemand = demandFilter === 'TODAS' || c.demandType === demandFilter;
+    const matchesOrigin = originFilter === 'TODAS' || c.origin === originFilter;
 
     let matchesPriority = true;
     if (priorityFilter === 'CRITICA_ALTA') {
@@ -771,7 +774,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
       matchesPriority = c.priority === priorityFilter;
     }
 
-    return matchesSearch && matchesStatus && matchesDemand && matchesPriority;
+    return matchesSearch && matchesStatus && matchesDemand && matchesPriority && matchesOrigin;
   });
 
   return (
@@ -860,26 +863,49 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
         </div>
       </div>
 
-      {/* CARDS DE STATUS RÁPIDO */}
+      {/* CARDS DE STATUS RÁPIDO INTERATIVOS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
         {modeConfig.stats.map((st: any, idx: number) => {
           const IconComp = st.icon;
+          const isSelected = 
+            (st.type === 'priority' && priorityFilter === st.id) ||
+            (st.type === 'origin' && originFilter === st.id) ||
+            (st.type === 'demand' && demandFilter === st.id) ||
+            (st.type === 'status' && statusFilter === st.id);
+
+          const handleClick = () => {
+            if (st.type === 'priority') {
+              setPriorityFilter(priorityFilter === st.id ? 'TODAS' : st.id);
+            } else if (st.type === 'origin') {
+              setOriginFilter(originFilter === st.id ? 'TODAS' : st.id);
+            } else if (st.type === 'demand') {
+              setDemandFilter(demandFilter === st.id ? 'TODAS' : st.id);
+            } else {
+              setStatusFilter(statusFilter === st.id ? 'TODOS' : st.id);
+            }
+          };
+
           return (
             <div 
               key={idx}
-              className="p-5 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between bg-white border-slate-100 hover:border-slate-300 shadow-sm"
+              onClick={handleClick}
+              className={`p-5 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between shadow-sm active:scale-98 select-none ${
+                isSelected 
+                  ? `${st.activeBg} shadow-lg scale-[1.02]` 
+                  : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'
+              }`}
             >
               <div className="flex items-center justify-between">
-                <div className={`p-3 rounded-2xl ${st.iconColor}`}>
+                <div className={`p-3 rounded-2xl ${isSelected ? 'bg-white/20 text-white' : st.iconColor}`}>
                   <IconComp size={22} />
                 </div>
-                <span className="text-2xl font-black text-slate-900">
+                <span className={`text-2xl font-black ${isSelected ? 'text-white' : 'text-slate-900'}`}>
                   {st.count}
                 </span>
               </div>
               <div className="mt-4">
-                <p className="text-xs font-black uppercase text-slate-900">{st.label}</p>
-                <p className="text-[10px] mt-1 text-slate-500">{st.desc}</p>
+                <p className={`text-xs font-black uppercase ${isSelected ? 'text-white' : 'text-slate-900'}`}>{st.label}</p>
+                <p className={`text-[10px] mt-1 ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>{st.desc}</p>
               </div>
             </div>
           );
