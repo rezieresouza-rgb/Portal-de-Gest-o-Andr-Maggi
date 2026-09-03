@@ -381,17 +381,17 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
       if (error) throw error;
       
-      // Buscar encaminhamentos psicossociais em paralelo para capturar teacher_name se houver vínculo
-      let referralsMap: Record<string, string> = {};
+      // Buscar encaminhamentos psicossociais em paralelo para capturar teacher_name, pareceres e histórico
+      let referralsMap: Record<string, any> = {};
       try {
         const { data: refData } = await supabase
           .from('psychosocial_referrals')
-          .select('id, teacher_name, student_name');
+          .select('*');
         if (refData) {
           refData.forEach((r: any) => {
-            if (r.id && r.teacher_name) referralsMap[r.id] = r.teacher_name;
-            if (r.student_name && r.teacher_name && !referralsMap[r.student_name.trim().toUpperCase()]) {
-              referralsMap[r.student_name.trim().toUpperCase()] = r.teacher_name;
+            if (r.id) referralsMap[r.id] = r;
+            if (r.student_name && !referralsMap[r.student_name.trim().toUpperCase()]) {
+              referralsMap[r.student_name.trim().toUpperCase()] = r;
             }
           });
         }
@@ -458,16 +458,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           }
         });
 
+        const matchingRef = (c.origin_referral_id && referralsMap[c.origin_referral_id]) || 
+                            (c.student_name && referralsMap[c.student_name.trim().toUpperCase()]);
+
         // Tentar resolver o nome do professor/solicitante
         let resolvedTeacherName = c.teacher_name || c.created_by || c.referred_by || '';
         if (!resolvedTeacherName && (c.description?.includes('[ENCAMINHAMENTO BUSCA ATIVA]') || c.description?.includes('[VIA BUSCA ATIVA]') || c.description?.includes('Busca Ativa'))) {
           resolvedTeacherName = 'BUSCA ATIVA ESCOLAR';
         }
-        if (!resolvedTeacherName && c.origin_referral_id && referralsMap[c.origin_referral_id]) {
-          resolvedTeacherName = referralsMap[c.origin_referral_id];
-        }
-        if (!resolvedTeacherName && c.student_name && referralsMap[c.student_name.trim().toUpperCase()]) {
-          resolvedTeacherName = referralsMap[c.student_name.trim().toUpperCase()];
+        if (!resolvedTeacherName && matchingRef?.teacher_name) {
+          resolvedTeacherName = matchingRef.teacher_name;
         }
         if (!resolvedTeacherName && c.description) {
           const match = c.description.match(/\[(?:Enviado por|Encaminhado por|Professor|Solicitante):\s*([^\]]+)\]/i);
@@ -475,6 +475,34 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         }
         if (!resolvedTeacherName && c.involved_parties && c.involved_parties.length > 0 && c.involved_parties[0] && c.involved_parties[0] !== 'EQUIPE MULTI') {
           resolvedTeacherName = c.involved_parties[0];
+        }
+
+        // Sintetizar logs do encaminhamento/psicossocial se a timeline estiver vazia
+        let resolvedLogs = c.logs || [];
+        if (matchingRef) {
+          const hasReferralLog = resolvedLogs.some((l: any) => l.content?.includes('[ENCAMINHAMENTO') || l.content?.includes('[TRIAGEM'));
+          if (!hasReferralLog) {
+            const autoLogs: any[] = [];
+            if (matchingRef.previous_strategies || matchingRef.reason) {
+              autoLogs.push({
+                id: `auto-ref-${matchingRef.id || c.id}`,
+                date: matchingRef.date || matchingRef.created_at || c.opened_at,
+                professional: matchingRef.teacher_name || 'Equipe Escolar',
+                category: 'ENCAMINHAMENTO',
+                content: `[ENCAMINHAMENTO / AVALIAÇÃO RECEBIDA]\nProfissional: ${matchingRef.teacher_name || 'Docente'}\n\nRelato:\n${matchingRef.previous_strategies || matchingRef.reason}`
+              });
+            }
+            if (matchingRef.feedback && !resolvedLogs.some((l: any) => l.content?.includes(matchingRef.feedback))) {
+              autoLogs.push({
+                id: `auto-feedback-${matchingRef.id || c.id}`,
+                date: matchingRef.date || matchingRef.created_at || c.opened_at,
+                professional: 'EQUIPE PSICOSSOCIAL',
+                category: 'PARECER',
+                content: `[PARECER TÉCNICO DA EQUIPE PSICOSSOCIAL]\n${matchingRef.feedback}`
+              });
+            }
+            resolvedLogs = [...autoLogs, ...resolvedLogs];
+          }
         }
 
         return {
@@ -487,12 +515,12 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           status: (c.status as MediationStatus) || 'ABERTURA',
           openedAt: c.opened_at,
           closedAt: c.closed_at,
-          description: c.description || '',
+          description: c.description || (matchingRef?.previous_strategies ? `[Origem: Encaminhamento Psicossocial - ${matchingRef.teacher_name}]\n${matchingRef.previous_strategies}` : ''),
           involvedParties: c.involved_parties || [],
           steps: mergedSteps,
           originReferralId: c.origin_referral_id,
-          feedback: c?.feedback,
-          logs: c.logs || [],
+          feedback: c.feedback || matchingRef?.feedback || null,
+          logs: resolvedLogs,
           teacherName: resolvedTeacherName || undefined
         };
       });
