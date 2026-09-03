@@ -802,66 +802,66 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-20">
 
-      {/* SELETOR DE VISÃO INTEGRADA (PILLS) */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto no-print">
+      {/* SELETOR DE VISÃO INTEGRADA (PILLS COMPACTAS SEM ROLAGEM) */}
+      <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 no-print w-full">
         <button
           onClick={() => setCurrentMode('all')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+          className={`px-2.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all flex items-center justify-center gap-1.5 text-center ${
             currentMode === 'all'
               ? 'bg-slate-900 text-white shadow-md'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
-          <Layers size={14} />
-          <span>Todos os Casos ({cases.length})</span>
+          <Layers size={13} className="shrink-0" />
+          <span className="truncate">Todos os Casos ({cases.length})</span>
         </button>
 
         <button
           onClick={() => setCurrentMode('risk_board')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+          className={`px-2.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all flex items-center justify-center gap-1.5 text-center ${
             currentMode === 'risk_board'
               ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
               : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
           }`}
         >
-          <AlertTriangle size={14} />
-          <span>Radar de Urgência ({cases.filter(c => c.priority === 'CRÍTICA' || c.priority === 'CRITICA' || c.priority === 'ALTA').length})</span>
+          <AlertTriangle size={13} className="shrink-0" />
+          <span className="truncate">Radar Urgência ({cases.filter(c => c.priority === 'CRÍTICA' || c.priority === 'CRITICA' || c.priority === 'ALTA').length})</span>
         </button>
 
         <button
           onClick={() => setCurrentMode('screening')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+          className={`px-2.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all flex items-center justify-center gap-1.5 text-center ${
             currentMode === 'screening'
               ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
               : 'text-slate-600 hover:bg-rose-50 hover:text-rose-700'
           }`}
         >
-          <Activity size={14} />
-          <span>Triagem & Acolhimento ({cases.filter(c => c.status === 'ACOLHIMENTO').length})</span>
+          <Activity size={13} className="shrink-0" />
+          <span className="truncate">Triagem ({cases.filter(c => c.status === 'ACOLHIMENTO').length})</span>
         </button>
 
         <button
           onClick={() => setCurrentMode('monitoring')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+          className={`px-2.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all flex items-center justify-center gap-1.5 text-center ${
             currentMode === 'monitoring'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-700'
           }`}
         >
-          <Eye size={14} />
-          <span>Monitoramento Contínuo ({cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length})</span>
+          <Eye size={13} className="shrink-0" />
+          <span className="truncate">Monitoramento ({cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length})</span>
         </button>
 
         <button
           onClick={() => setCurrentMode('interventions')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+          className={`px-2.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all flex items-center justify-center gap-1.5 text-center col-span-2 sm:col-span-1 ${
             currentMode === 'interventions'
               ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
               : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
           }`}
         >
-          <ShieldCheck size={14} />
-          <span>Ações & Intervenções ({cases.filter(c => c.status === 'EM_ACOMPANHAMENTO' || c.status === 'AGUARDANDO_REDE').length})</span>
+          <ShieldCheck size={13} className="shrink-0" />
+          <span className="truncate">Ações & Intervenções ({cases.filter(c => c.status === 'EM_ACOMPANHAMENTO' || c.status === 'AGUARDANDO_REDE').length})</span>
         </button>
       </div>
       
