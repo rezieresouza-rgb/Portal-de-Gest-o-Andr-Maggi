@@ -20,7 +20,9 @@ import {
   PlusCircle,
   HeartHandshake,
   X,
-  Scale
+  Scale,
+  MessageSquare,
+  Send
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { PsychosocialReferral, PsychosocialRole } from '../types';
@@ -47,6 +49,19 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [loading, setLoading] = useState(false);
   const [printingReferral, setPrintingReferral] = useState<PsychosocialReferral | null>(null);
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    referral: PsychosocialReferral | null;
+    feedbackText: string;
+    status: string;
+    isSaving: boolean;
+  }>({
+    isOpen: false,
+    referral: null,
+    feedbackText: '',
+    status: 'EM_ACOMPANHAMENTO',
+    isSaving: false
+  });
 
   const handlePrintReferral = (ref: PsychosocialReferral, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -358,37 +373,71 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
     }
   };
 
-  const handleProvideFeedbackToMediation = async (ref: PsychosocialReferral, e: React.MouseEvent) => {
+  const handleOpenFeedbackModal = (ref: PsychosocialReferral, e: React.MouseEvent) => {
     e.stopPropagation();
-    const feedbackText = window.prompt(
-      `Registrar Parecer / Devolutiva para a Mediação Escolar (${ref.studentName}):`,
-      ref.feedback || ''
-    );
-    if (feedbackText === null) return;
+    setFeedbackModal({
+      isOpen: true,
+      referral: ref,
+      feedbackText: ref.feedback || '',
+      status: ref.status === 'CONCLUIDO' ? 'CONCLUIDO' : 'EM_ACOMPANHAMENTO',
+      isSaving: false
+    });
+  };
 
+  const handleSaveFeedbackModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackModal.referral) return;
+    const ref = feedbackModal.referral;
+    const feedbackText = feedbackModal.feedbackText.trim();
+    if (!feedbackText) {
+      alert("Por favor, insira o parecer ou as orientações do atendimento.");
+      return;
+    }
+
+    setFeedbackModal(prev => ({ ...prev, isSaving: true }));
     try {
-      await supabase
-        .from('psychosocial_referrals')
-        .update({ feedback: feedbackText })
-        .eq('id', ref.id);
+      // 1. Atualizar em psychosocial_referrals (se não for ID virtual de mediação pura)
+      if (!ref.id.startsWith('med-')) {
+        await supabase
+          .from('psychosocial_referrals')
+          .update({ 
+            feedback: feedbackText,
+            status: feedbackModal.status
+          })
+          .eq('id', ref.id);
+      }
 
-      if ((ref as any).origin_case_id) {
+      // 2. Atualizar em mediation_cases
+      const caseId = (ref as any).origin_case_id || (ref.id.startsWith('med-') ? ref.id.replace('med-', '') : null);
+      if (caseId) {
         await supabase
           .from('mediation_cases')
           .update({ feedback: feedbackText })
-          .eq('id', (ref as any).origin_case_id);
+          .eq('id', caseId);
       } else {
         await supabase
           .from('mediation_cases')
           .update({ feedback: feedbackText })
-          .ilike('student_name', ref.studentName);
+          .ilike('student_name', ref.studentName.trim());
       }
 
-      alert('Parecer/Devolutiva registrada com sucesso e sincronizada com o Módulo de Mediação Escolar!');
-      fetchReferrals();
+      // 3. Notificar a equipe
+      await supabase
+        .from('psychosocial_notifications')
+        .insert([{
+          title: 'Parecer Técnico Registrado',
+          message: `A Equipe Psicossocial registrou um parecer técnico para ${ref.studentName} (${ref.className}).`,
+          is_read: false
+        }]);
+
+      alert('Parecer Técnico registrado com sucesso e sincronizado com o Módulo de Mediação Escolar!');
+      setFeedbackModal({ isOpen: false, referral: null, feedbackText: '', status: 'EM_ACOMPANHAMENTO', isSaving: false });
+      await fetchReferrals();
     } catch (err: any) {
-      console.error('Erro ao enviar parecer para a Mediação:', err);
-      alert('Ocorreu um erro ao salvar o parecer.');
+      console.error('Erro ao salvar parecer:', err);
+      alert('Erro ao salvar parecer: ' + (err.message || 'Erro inesperado'));
+    } finally {
+      setFeedbackModal(prev => ({ ...prev, isSaving: false }));
     }
   };
 
@@ -521,34 +570,47 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
             </div>
 
             {/* BARRA DE AÇÕES DO CARD */}
-            <div className="mt-6 flex gap-2 border-t border-gray-100 pt-4">
-               <button 
-                 type="button"
-                 onClick={(e) => handlePrintReferral(ref, e)}
-                 className="flex-1 py-3 bg-gray-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-sm"
-               >
-                  <Printer size={14} /> Imprimir / PDF
-               </button>
-               <button 
-                 type="button"
-                 onClick={(e) => {
-                   e.stopPropagation();
-                   setEditingReferral(ref);
-                   setIsModalOpen(true);
-                 }}
-                 className="p-3 bg-gray-100 hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-xl transition-all"
-                 title="Editar Encaminhamento"
-               >
-                  <Edit2 size={15} />
-               </button>
-               <button 
-                 type="button"
-                 onClick={(e) => handleDelete(ref.id, e)}
-                 className="p-3 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
-                 title="Excluir Encaminhamento"
-               >
-                  <Trash2 size={15} />
-               </button>
+            <div className="mt-6 flex flex-col gap-2 border-t border-gray-100 pt-4">
+               {role !== 'PROFESSOR' && (
+                 <button 
+                   type="button"
+                   onClick={(e) => handleOpenFeedbackModal(ref, e)}
+                   className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-rose-600/10 active:scale-[0.98]"
+                   title="Registrar Parecer Técnico e Devolutiva para a Mediação"
+                 >
+                    <MessageSquare size={14} /> {ref.feedback ? 'Atualizar Parecer / Devolutiva' : 'Registrar Parecer Técnico'}
+                 </button>
+               )}
+
+               <div className="flex gap-2">
+                 <button 
+                   type="button"
+                   onClick={(e) => handlePrintReferral(ref, e)}
+                   className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                 >
+                    <Printer size={13} /> Imprimir / PDF
+                 </button>
+                 <button 
+                   type="button"
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     setEditingReferral(ref);
+                     setIsModalOpen(true);
+                   }}
+                   className="p-2.5 bg-gray-100 hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-xl transition-all"
+                   title="Editar Encaminhamento"
+                 >
+                    <Edit2 size={14} />
+                 </button>
+                 <button 
+                   type="button"
+                   onClick={(e) => handleDelete(ref.id, e)}
+                   className="p-2.5 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                   title="Excluir Encaminhamento"
+                 >
+                    <Trash2 size={14} />
+                 </button>
+               </div>
             </div>
           </div>
         ))}
@@ -573,6 +635,87 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           </div>
         )}
       </div>
+
+      {/* MODAL DE REGISTRO DE PARECER / DEVOLUTIVA TÉCNICA */}
+      {feedbackModal.isOpen && feedbackModal.referral && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 bg-gradient-to-r from-rose-900 via-slate-900 to-indigo-950 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-lg">
+                  <MessageSquare size={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-tight">Parecer Técnico / Devolutiva</h3>
+                  <p className="text-[10px] text-rose-300 font-bold uppercase tracking-widest">
+                    Estudante: {feedbackModal.referral.studentName} ({feedbackModal.referral.className})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setFeedbackModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFeedbackModal} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Motivo / Relato Inicial</p>
+                <p className="text-xs text-slate-700 italic">"{feedbackModal.referral.reason}"</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                  Parecer Técnico, Encaminhamentos & Orientações do Atendimento
+                </label>
+                <textarea
+                  required
+                  rows={5}
+                  value={feedbackModal.feedbackText}
+                  onChange={e => setFeedbackModal(prev => ({ ...prev, feedbackText: e.target.value }))}
+                  placeholder="Descreva o atendimento realizado, orientações dadas à família/estudante, articulação com a rede ou procedimentos adotados..."
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-4 focus:ring-rose-500/10 outline-none transition-all resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                  Status do Acompanhamento
+                </label>
+                <select
+                  value={feedbackModal.status}
+                  onChange={e => setFeedbackModal(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white transition-all"
+                >
+                  <option value="EM_ACOMPANHAMENTO">EM ACOMPANHAMENTO / EM ANDAMENTO</option>
+                  <option value="CONCLUIDO">CONCLUÍDO / ATENDIMENTO FINALIZADO</option>
+                  <option value="AGUARDANDO">AGUARDANDO RETORNO / FAMÍLIA</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setFeedbackModal(prev => ({ ...prev, isOpen: false }))}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={feedbackModal.isSaving}
+                  className="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Send size={14} />
+                  {feedbackModal.isSaving ? 'Salvando...' : 'Salvar e Sincronizar Parecer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-rose-950/40 backdrop-blur-sm animate-in fade-in duration-200">
