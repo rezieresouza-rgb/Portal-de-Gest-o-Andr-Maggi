@@ -120,12 +120,9 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
 
   const menuItems = [
     { id: 'dashboard', label: 'Monitor de Saúde & Alertas', icon: LayoutDashboard },
-    { id: 'screening', label: 'Triagem & Acolhimento', icon: Activity },
-    { id: 'risk_board', label: 'Radar de Risco & Urgência', icon: AlertTriangle },
-    { id: 'monitoring', label: 'Monitoramento Contínuo', icon: Eye },
-    { id: 'interventions', label: 'Ações e Intervenções', icon: ShieldCheck },
-    { id: 'circumstantiated_report', label: 'Relatório Circunstanciado', icon: Scale },
+    { id: 'cases', label: 'Prontuários & Gestão de Casos', icon: Brain },
     { id: 'collective_sessions', label: 'Acolhimento Coletivo (Luto/Crise)', icon: Users },
+    { id: 'circumstantiated_report', label: 'Relatório Circunstanciado', icon: Scale },
     { id: 'network', label: 'Rede de Proteção (CREAS/CT)', icon: BookOpen },
     { id: 'agenda', label: 'Agenda de Atendimentos', icon: Calendar },
     { id: 'atas', label: 'Atas de Reunião Técnica', icon: FileText },

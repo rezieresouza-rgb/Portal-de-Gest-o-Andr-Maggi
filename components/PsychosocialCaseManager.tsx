@@ -28,7 +28,8 @@ import {
   Lock,
   Sparkles,
   Eye,
-  ShieldCheck
+  ShieldCheck,
+  Layers
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
@@ -115,32 +116,33 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
   const [cases, setCases] = useState<PsychosocialCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
+  const [currentMode, setCurrentMode] = useState<PsychosocialSubmoduleMode>(mode || 'all');
   const [priorityFilter, setPriorityFilter] = useState<string>(mode === 'risk_board' ? 'CRITICA_ALTA' : 'TODAS');
-  const [statusFilter, setStatusFilter] = useState<string>(
-    mode === 'screening' ? 'ACOLHIMENTO' : (mode === 'monitoring' ? 'EM_ACOMPANHAMENTO' : 'TODOS')
-  );
-  const [demandFilter, setDemandFilter] = useState<string>(
-    mode === 'collective_sessions' ? 'LUTO_CRISE' : 'TODAS'
-  );
+  const [statusFilter, setStatusFilter] = useState<string>('TODOS');
+  const [demandFilter, setDemandFilter] = useState<string>('TODAS');
 
   useEffect(() => {
-    if (mode === 'risk_board') {
+    if (mode) setCurrentMode(mode);
+  }, [mode]);
+
+  useEffect(() => {
+    if (currentMode === 'risk_board') {
       setPriorityFilter('CRITICA_ALTA');
       setStatusFilter('TODOS');
       setDemandFilter('TODAS');
-    } else if (mode === 'screening') {
+    } else if (currentMode === 'screening') {
       setPriorityFilter('TODAS');
       setStatusFilter('ACOLHIMENTO');
       setDemandFilter('TODAS');
-    } else if (mode === 'monitoring') {
+    } else if (currentMode === 'monitoring') {
       setPriorityFilter('TODAS');
       setStatusFilter('TODOS');
       setDemandFilter('TODAS');
-    } else if (mode === 'interventions') {
+    } else if (currentMode === 'interventions') {
       setPriorityFilter('TODAS');
       setStatusFilter('TODOS');
       setDemandFilter('TODAS');
-    } else if (mode === 'collective_sessions') {
+    } else if (currentMode === 'collective_sessions') {
       setPriorityFilter('TODAS');
       setStatusFilter('TODOS');
       setDemandFilter('LUTO_CRISE');
@@ -149,7 +151,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
       setStatusFilter('TODOS');
       setDemandFilter('TODAS');
     }
-  }, [mode]);
+  }, [currentMode]);
 
   // Modal de visualização / gestão do caso
   const [selectedCase, setSelectedCase] = useState<PsychosocialCase | null>(null);
@@ -673,7 +675,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
 
   // Configurações e Títulos dinâmicos por Submódulo
   const modeConfig = useMemo(() => {
-    switch (mode) {
+    switch (currentMode) {
       case 'risk_board':
         return {
           title: 'Radar de Risco & Urgência Psicossocial',
@@ -756,13 +758,13 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
         };
       default:
         return {
-          title: 'Prontuário & Atendimentos Psicossociais',
-          badge: 'Lei 13.935/2019 • SEDUC/MT',
+          title: 'Prontuários & Gestão de Casos Psicossociais',
+          badge: 'Central Unificada • SEDUC/MT',
           badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-          subtitle: 'Escuta especializada, plano singular de acompanhamento, registro de evoluções e pareceres técnicos.',
+          subtitle: 'Visão integral: triagem, urgências, plano de intervenção singular, evoluções clínicas e monitoramento longitudinal.',
           icon: <Brain size={32} className="text-white" />,
-          gradient: 'from-rose-600 to-indigo-600',
-          btnText: '+ Novo Acolhimento / Prontuário',
+          gradient: 'from-slate-900 via-indigo-950 to-rose-900',
+          btnText: '+ Novo Prontuário / Acolhimento',
           stats: [
             { id: 'ACOLHIMENTO', type: 'status', label: 'Em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Casos novos em escuta inicial', icon: Brain, activeBg: 'bg-rose-600 text-white border-rose-600', iconColor: 'bg-rose-50 text-rose-600' },
             { id: 'EM_ACOMPANHAMENTO', type: 'status', label: 'Em Acompanhamento', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Sessões periódicas e plano ativo', icon: Activity, activeBg: 'bg-indigo-600 text-white border-indigo-600', iconColor: 'bg-indigo-50 text-indigo-600' },
@@ -771,7 +773,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
           ]
         };
     }
-  }, [mode, cases]);
+  }, [currentMode, cases]);
 
   // Filtros
   const [originFilter, setOriginFilter] = useState<string>('TODAS');
@@ -798,7 +800,70 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
   });
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-20">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-20">
+
+      {/* SELETOR DE VISÃO INTEGRADA (PILLS) */}
+      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto no-print">
+        <button
+          onClick={() => setCurrentMode('all')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+            currentMode === 'all'
+              ? 'bg-slate-900 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Layers size={14} />
+          <span>Todos os Casos ({cases.length})</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentMode('risk_board')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+            currentMode === 'risk_board'
+              ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
+              : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
+          }`}
+        >
+          <AlertTriangle size={14} />
+          <span>Radar de Urgência ({cases.filter(c => c.priority === 'CRÍTICA' || c.priority === 'CRITICA' || c.priority === 'ALTA').length})</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentMode('screening')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+            currentMode === 'screening'
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+              : 'text-slate-600 hover:bg-rose-50 hover:text-rose-700'
+          }`}
+        >
+          <Activity size={14} />
+          <span>Triagem & Acolhimento ({cases.filter(c => c.status === 'ACOLHIMENTO').length})</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentMode('monitoring')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+            currentMode === 'monitoring'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-700'
+          }`}
+        >
+          <Eye size={14} />
+          <span>Monitoramento Contínuo ({cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length})</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentMode('interventions')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+            currentMode === 'interventions'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+              : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+          }`}
+        >
+          <ShieldCheck size={14} />
+          <span>Ações & Intervenções ({cases.filter(c => c.status === 'EM_ACOMPANHAMENTO' || c.status === 'AGUARDANDO_REDE').length})</span>
+        </button>
+      </div>
       
       {/* HEADER DE CONTROLE */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 no-print">
