@@ -194,42 +194,84 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
         .select('*')
         .order('opened_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        const formatted: PsychosocialCase[] = data.map((c: any) => ({
-          id: c.id,
-          caseNumber: c.case_number || ('PSI-' + String(c.id).substring(0, 5) + '/' + currentYear),
-          studentId: c.student_id,
-          studentName: c.student_name,
-          className: c.class_name,
-          studentAge: c.student_age,
-          birthDate: c.birth_date,
-          guardianName: c.guardian_name,
-          guardianPhone: c.guardian_phone,
-          guardianAddress: c.guardian_address,
-          status: c.status || 'ACOLHIMENTO',
-          priority: c.priority || 'MÉDIA',
-          demandType: c.demand_type || 'SAUDE_MENTAL',
-          origin: c.origin || 'TRIAGEM_MEDIACAO',
-          originReferralId: c.origin_referral_id,
-          openedAt: c.opened_at || new Date().toISOString(),
-          closedAt: c.closed_at,
-          initialDemand: c.initial_demand || c.description || 'Acolhimento psicossocial inicial.',
-          logs: Array.isArray(c.logs) ? c.logs : [],
-          steps: Array.isArray(c.steps) && c.steps.length > 0 ? c.steps : DEFAULT_PSYCHOSOCIAL_STEPS,
-          technicalOpinion: c.technical_opinion || '',
-          schoolRecommendations: c.school_recommendations || '',
-          externalNetworkAction: c.external_network_action || '',
-          professionalInCharge: c.professional_in_charge || user?.name || 'TÉCNICO PSICOSSOCIAL'
-        }));
-        setCases(formatted);
-      } else {
-        const saved = localStorage.getItem('psychosocial_cases_v2026');
-        if (saved) {
-          setCases(JSON.parse(saved));
-        } else {
-          setCases([]);
+      const formatted: PsychosocialCase[] = (data || []).map((c: any) => ({
+        id: c.id,
+        caseNumber: c.case_number || ('PSI-' + String(c.id).substring(0, 5) + '/' + currentYear),
+        studentId: c.student_id,
+        studentName: c.student_name,
+        className: c.class_name,
+        studentAge: c.student_age,
+        birthDate: c.birth_date,
+        guardianName: c.guardian_name,
+        guardianPhone: c.guardian_phone,
+        guardianAddress: c.guardian_address,
+        status: c.status || 'ACOLHIMENTO',
+        priority: c.priority || 'MÉDIA',
+        demandType: c.demand_type || 'SAUDE_MENTAL',
+        origin: c.origin || 'TRIAGEM_MEDIACAO',
+        originReferralId: c.origin_referral_id,
+        openedAt: c.opened_at || new Date().toISOString(),
+        closedAt: c.closed_at,
+        initialDemand: c.initial_demand || c.description || 'Acolhimento psicossocial inicial.',
+        logs: Array.isArray(c.logs) ? c.logs : [],
+        steps: Array.isArray(c.steps) && c.steps.length > 0 ? c.steps : DEFAULT_PSYCHOSOCIAL_STEPS,
+        technicalOpinion: c.technical_opinion || '',
+        schoolRecommendations: c.school_recommendations || '',
+        externalNetworkAction: c.external_network_action || '',
+        professionalInCharge: c.professional_in_charge || user?.name || 'TÉCNICO PSICOSSOCIAL'
+      }));
+
+      // 2. Sincronizar e carregar também os encaminhamentos triados da Mediação / Docentes
+      try {
+        const { data: refData } = await supabase
+          .from('psychosocial_referrals')
+          .select('*')
+          .order('date', { ascending: false });
+
+        if (refData && refData.length > 0) {
+          const existingNames = new Set(formatted.map(c => (c.studentName || '').toLowerCase().trim()));
+          refData.forEach((r: any) => {
+            const normName = (r.student_name || '').toLowerCase().trim();
+            if (normName && !existingNames.has(normName)) {
+              existingNames.add(normName);
+              const isHigh = r.priority === 'ALTA' || r.priority === 'CRÍTICA' || r.priority === 'CRITICA';
+              formatted.push({
+                id: 'ref-' + r.id,
+                caseNumber: 'PSI-REF/' + String(r.id).substring(0, 5),
+                studentId: 'N/A',
+                studentName: r.student_name,
+                className: r.class_name || '',
+                studentAge: r.student_age || '',
+                status: r.status === 'CONCLUIDO' ? 'CONCLUÍDO' : (r.status === 'EM_ACOMPANHAMENTO' ? 'EM_ACOMPANHAMENTO' : 'ACOLHIMENTO'),
+                priority: isHigh ? (r.priority === 'CRITICA' ? 'CRÍTICA' : r.priority) : 'MÉDIA',
+                demandType: isHigh ? 'VIOLENCIA_DOMESTICA' : 'SAUDE_MENTAL',
+                origin: 'TRIAGEM_MEDIACAO',
+                originReferralId: String(r.id),
+                openedAt: r.date || r.created_at || new Date().toISOString(),
+                initialDemand: r.report || r.reason || 'Encaminhamento para acolhimento e avaliação técnica da Equipe Psicossocial.',
+                logs: r.feedback ? [{
+                  id: 'log-initial',
+                  date: r.date || new Date().toLocaleDateString('sv-SE'),
+                  time: '08:00',
+                  type: 'ESCUTA_INDIVIDUAL_ALUNO',
+                  participants: r.student_name,
+                  professionalName: user?.name || 'TÉCNICO PSICOSSOCIAL',
+                  professionalRole: 'PSICÓLOGO(A) / ASSISTENTE SOCIAL',
+                  summary: r.feedback,
+                  immediateActions: 'Parecer técnico registrado.'
+                }] : [],
+                steps: DEFAULT_PSYCHOSOCIAL_STEPS,
+                technicalOpinion: r.feedback || '',
+                professionalInCharge: user?.name || 'TÉCNICO PSICOSSOCIAL'
+              });
+            }
+          });
         }
+      } catch (e) {
+        console.warn('Erro ao mesclar encaminhamentos:', e);
       }
+
+      setCases(formatted);
     } catch (err) {
       console.error('Erro ao buscar casos psicossociais:', err);
       const saved = localStorage.getItem('psychosocial_cases_v2026');
@@ -241,6 +283,20 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
 
   useEffect(() => {
     fetchCases();
+    const sub1 = supabase
+      .channel('psychosocial_cases_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'psychosocial_cases' }, fetchCases)
+      .subscribe();
+
+    const sub2 = supabase
+      .channel('psychosocial_referrals_changes_in_cases')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'psychosocial_referrals' }, fetchCases)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sub1);
+      supabase.removeChannel(sub2);
+    };
   }, []);
 
   const filteredStudents = useMemo(() => {
