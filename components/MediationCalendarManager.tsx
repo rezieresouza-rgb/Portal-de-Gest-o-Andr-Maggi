@@ -40,6 +40,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { MediationCalendarAction, MediationCalendarMonth, MediationActionType } from '../types';
+import { useStudents } from '../hooks/useStudents';
+import { SCHOOL_CLASSES } from '../constants/initialData';
 
 // ESTRUTURA OFICIAL DO CALENDÁRIO NÚCLEO DE MEDIAÇÃO ESCOLAR 2026 (SEDUC/MT)
 export interface OfficialMonthData {
@@ -312,14 +314,6 @@ export const OFFICIAL_CALENDAR_2026: OfficialMonthData[] = [
   }
 ];
 
-const SCHOOL_CLASSES = [
-  '6º ANO A', '6º ANO B', '6º ANO C', '6º ANO D',
-  '7º ANO A', '7º ANO B', '7º ANO C',
-  '8º ANO A', '8º ANO B', '8º ANO C',
-  '9º ANO A', '9º ANO B', '9º ANO C', '9º ANO D',
-  'TODAS AS TURMAS (GERAL)'
-];
-
 const ACTION_TYPE_OPTIONS: { id: MediationActionType; label: string; icon: string }[] = [
   { id: 'PALESTRA', label: 'Palestra / Ação Coletiva', icon: '📢' },
   { id: 'CÍRCULO_DE_PAZ', label: 'Círculo de Construção de Paz', icon: '⭕' },
@@ -382,6 +376,20 @@ interface MediationCalendarManagerProps {
 }
 
 const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ user, role, onOpenNewCase }) => {
+  const { students: dbStudents } = useStudents();
+
+  // Turmas oficiais sincronizadas com a Secretaria Escolar / Censo Discente
+  const availableClasses = useMemo(() => {
+    const dynamicClasses = Array.from(new Set(
+      dbStudents
+        .map(s => (s.class || s.Turma || '').trim().toUpperCase())
+        .filter(c => c.length > 0)
+    )).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+    const baseList = dynamicClasses.length > 0 ? dynamicClasses : SCHOOL_CLASSES;
+    return [...baseList, 'TODAS AS TURMAS (GERAL)'];
+  }, [dbStudents]);
+
   const [actions, setActions] = useState<MediationCalendarAction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('ALL');
@@ -1296,7 +1304,7 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
                   Turmas / Público-Alvo Envolvido:
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {SCHOOL_CLASSES.map(cls => {
+                  {availableClasses.map(cls => {
                     const isSelected = (formData.classes || []).includes(cls);
                     return (
                       <button
