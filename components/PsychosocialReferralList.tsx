@@ -95,10 +95,10 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
       const { data: medData } = await supabase
         .from('mediation_cases')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('opened_at', { ascending: false });
 
       const triagedFromMediation = (medData || []).filter((c: any) => 
-        (typeof c.description === 'string' && c.description.includes('PSICOSSOCIAL')) ||
+        (typeof c.description === 'string' && (c.description.includes('PSICOSSOCIAL') || c.description.includes('TRIAGEM P/ PSICOSSOCIAL'))) ||
         (c.feedback && c.feedback.includes('PSICOSSOCIAL'))
       );
 
@@ -121,7 +121,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
           report: c.description || 'Caso encaminhado pela Mediação Escolar para acompanhamento especializado.',
           status: c.status === 'CONCLUÍDO' || c.status === 'CONCLUIDO' ? 'CONCLUÍDO' : 'PENDENTE',
           date: c.opened_at ? c.opened_at.split('T')[0] : new Date().toLocaleDateString('sv-SE'),
-          timestamp: new Date(c.created_at || Date.now()).getTime(),
+          timestamp: new Date(c.opened_at || Date.now()).getTime(),
           reason: c.description || 'Triagem da Mediação Escolar',
           feedback: c.feedback,
           referralDestination: 'PSICOSSOCIAL',
@@ -133,12 +133,14 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
         const filteredData = role === 'PROFESSOR' ? (data || []) : (data || []).filter((r: any) => {
           const tName = (r.teacher_name || '').toUpperCase();
           const rReason = (r.reason || r.report || '').toUpperCase();
+          const rDest = (r.referral_destination || '').toUpperCase();
           return tName.includes('MEDIAÇÃO') || 
                  tName.includes('MEDIACAO') || 
                  rReason.includes('TRIAGEM DA MEDIAÇÃO') || 
                  rReason.includes('TRIADO VIA MEDIAÇÃO') ||
-                 r.origin_case_id ||
-                 r.referral_destination === 'PSICOSSOCIAL';
+                 rReason.includes('PSICOSSOCIAL') ||
+                 rDest === 'PSICOSSOCIAL' ||
+                 r.origin_case_id;
         });
 
         const formattedDb: PsychosocialReferral[] = filteredData.map(r => {
@@ -198,12 +200,20 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
 
   useEffect(() => {
     fetchReferrals();
-    const subscription = supabase
+    const sub1 = supabase
       .channel('psychosocial_referrals_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'psychosocial_referrals' }, fetchReferrals)
       .subscribe();
 
-    return () => { subscription.unsubscribe(); };
+    const sub2 = supabase
+      .channel('mediation_cases_changes_in_psycho')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mediation_cases' }, fetchReferrals)
+      .subscribe();
+
+    return () => { 
+      sub1.unsubscribe(); 
+      sub2.unsubscribe();
+    };
   }, [user?.name, role]);
 
   const handleCreateOrUpdate = async (formData: PsychosocialReferral) => {

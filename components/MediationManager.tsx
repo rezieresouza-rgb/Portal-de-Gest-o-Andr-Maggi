@@ -261,7 +261,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         await supabase
           .from('psychosocial_referrals')
           .delete()
-          .or(`origin_case_id.eq.${c.id},and(student_name.ilike.${c.studentName.trim()},teacher_name.ilike.%MEDIAÇÃO%)`);
+          .ilike('student_name', c.studentName.trim());
 
         // 2. Limpar a tag da descrição
         const cleanDescription = (c.description || '').replace(/\n?\[TRIAGEM P\/ PSICOSSOCIAL[^\]]*\][^\n]*/gi, '').trim();
@@ -314,10 +314,10 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           reason: `[TRIAGEM DA MEDIAÇÃO] ${c.description || 'Encaminhamento para avaliação técnica.'}`,
           priority: c.severity === 'CRÍTICA' ? 'CRÍTICA' : c.severity === 'ALTA' ? 'ALTA' : 'MEDIA',
           status: 'AGUARDANDO',
-          teacher_name: `MEDIAÇÃO (${user?.name || 'MEDIADOR'})`,
-          report: `[TRIADO VIA MEDIAÇÃO] Estudante necessita de acolhimento e avaliação técnica da Equipe Psicossocial.`,
+          teacher_name: `MEDIAÇÃO (${user?.name || 'PROFESSOR MEDIADOR'})`,
+          report: `[TRIADO VIA MEDIAÇÃO] Estudante necessita de acolhimento e avaliação técnica da Equipe Psicossocial. [Caso Mediação: ${c.id}]`,
           date: todayDate,
-          origin_case_id: c.id
+          referral_destination: 'PSICOSSOCIAL'
         }]);
 
       if (refErr) console.warn('Aviso ao inserir em psychosocial_referrals:', refErr.message);
@@ -328,8 +328,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         .insert([{
           title: 'Nova Triagem da Mediação Escolar',
           message: `A Mediação triou o estudante ${c.studentName} (${c.className}) para atendimento psicossocial.`,
-          date: todayDate,
-          read: false
+          is_read: false
         }]);
 
       // 3. Atualizar etapa de encaminhamento
