@@ -27,7 +27,8 @@ import {
   Calendar,
   Lock,
   Sparkles,
-  Eye
+  Eye,
+  ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
