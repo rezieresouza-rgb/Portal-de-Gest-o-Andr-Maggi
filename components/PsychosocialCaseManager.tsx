@@ -26,7 +26,8 @@ import {
   Check,
   Calendar,
   Lock,
-  Sparkles
+  Sparkles,
+  Eye
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStudents } from '../hooks/useStudents';
@@ -42,6 +43,7 @@ interface PsychosocialCaseManagerProps {
   user?: any;
   role: PsychosocialRole;
   initialSearch?: string;
+  mode?: 'screening' | 'risk_board' | 'monitoring' | 'interventions' | 'collective_sessions' | 'all';
 }
 
 const SESSION_TYPE_CONFIG: Record<PsychosocialSessionType, { label: string; icon: any; color: string; bg: string }> = {
@@ -105,14 +107,44 @@ const DEFAULT_PSYCHOSOCIAL_STEPS: PsychosocialProcessStep[] = [
 const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
   user,
   role,
-  initialSearch
+  initialSearch,
+  mode = 'all'
 }) => {
   const { students: dbStudents } = useStudents();
   const [cases, setCases] = useState<PsychosocialCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
-  const [statusFilter, setStatusFilter] = useState<string>('TODOS');
-  const [demandFilter, setDemandFilter] = useState<string>('TODAS');
+  const [priorityFilter, setPriorityFilter] = useState<string>(mode === 'risk_board' ? 'CRITICA_ALTA' : 'TODAS');
+  const [statusFilter, setStatusFilter] = useState<string>(
+    mode === 'screening' ? 'ACOLHIMENTO' : (mode === 'monitoring' ? 'EM_ACOMPANHAMENTO' : 'TODOS')
+  );
+  const [demandFilter, setDemandFilter] = useState<string>(
+    mode === 'collective_sessions' ? 'LUTO_CRISE' : 'TODAS'
+  );
+
+  useEffect(() => {
+    if (mode === 'risk_board') {
+      setPriorityFilter('CRITICA_ALTA');
+      setStatusFilter('TODOS');
+      setDemandFilter('TODAS');
+    } else if (mode === 'screening') {
+      setPriorityFilter('TODAS');
+      setStatusFilter('ACOLHIMENTO');
+      setDemandFilter('TODAS');
+    } else if (mode === 'monitoring') {
+      setPriorityFilter('TODAS');
+      setStatusFilter('EM_ACOMPANHAMENTO');
+      setDemandFilter('TODAS');
+    } else if (mode === 'collective_sessions') {
+      setPriorityFilter('TODAS');
+      setStatusFilter('TODOS');
+      setDemandFilter('LUTO_CRISE');
+    } else {
+      setPriorityFilter('TODAS');
+      setStatusFilter('TODOS');
+      setDemandFilter('TODAS');
+    }
+  }, [mode]);
 
   // Modal de visualização / gestão do caso
   const [selectedCase, setSelectedCase] = useState<PsychosocialCase | null>(null);
@@ -475,6 +507,92 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
     }
   };
 
+  // Configurações e Títulos dinâmicos por Submódulo
+  const modeConfig = useMemo(() => {
+    switch (mode) {
+      case 'risk_board':
+        return {
+          title: 'Radar de Risco & Urgência Psicossocial',
+          badge: 'Alerta & Urgência Discente',
+          badgeColor: 'bg-red-100 text-red-800 border-red-300',
+          subtitle: 'Mapeamento de vulnerabilidade crítica, ideação, automutilação, evasão iminente e proteção imediata.',
+          icon: <AlertTriangle size={32} className="text-white" />,
+          gradient: 'from-red-600 via-rose-700 to-amber-600',
+          btnText: '+ Novo Caso de Urgência',
+          stats: [
+            { id: 'CRITICA', label: 'Risco Crítico (Imediato)', count: cases.filter(c => c.priority === 'CRÍTICA' || c.priority === 'CRITICA').length, desc: 'Ação imediata necessária', icon: ShieldAlert, activeColor: 'bg-red-900 border-red-700 text-white', iconColor: 'bg-red-50 text-red-600' },
+            { id: 'ALTA', label: 'Risco Alto (Vulnerabilidade)', count: cases.filter(c => c.priority === 'ALTA').length, desc: 'Atenção prioritária', icon: AlertTriangle, activeColor: 'bg-amber-900 border-amber-700 text-white', iconColor: 'bg-amber-50 text-amber-600' },
+            { id: 'EM_ACOMPANHAMENTO', label: 'Em Manejo Ativo', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Sessões periódicas', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'AGUARDANDO_REDE', label: 'Rede Acionada (CAPS/CT)', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Articulação intersetorial', icon: Building2, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
+          ]
+        };
+      case 'screening':
+        return {
+          title: 'Triagem & Acolhimento Psicossocial',
+          badge: 'Acolhimento Inicial',
+          badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
+          subtitle: 'Recepção de demandas discentes, escuta especializada inicial e abertura de novos prontuários.',
+          icon: <Activity size={32} className="text-white" />,
+          gradient: 'from-rose-600 to-indigo-600',
+          btnText: '+ Novo Acolhimento',
+          stats: [
+            { id: 'ACOLHIMENTO', label: 'Em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Casos novos em escuta inicial', icon: Brain, activeColor: 'bg-rose-900 border-rose-700 text-white', iconColor: 'bg-rose-50 text-rose-600' },
+            { id: 'TRIAGEM_MEDIACAO', label: 'Triagens da Mediação', count: cases.filter(c => c.origin === 'TRIAGEM_MEDIACAO').length, desc: 'Encaminhados pelo mediador', icon: HeartHandshake, activeColor: 'bg-amber-900 border-amber-700 text-white', iconColor: 'bg-amber-50 text-amber-600' },
+            { id: 'EM_ACOMPANHAMENTO', label: 'Casos Triados', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Com plano singular ativado', icon: CheckCircle2, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'CONCLUÍDO', label: 'Acolhimentos Finalizados', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Devolutiva concluída', icon: ShieldCheck, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+          ]
+        };
+      case 'monitoring':
+        return {
+          title: 'Monitoramento Contínuo & Evolução Longitudinal',
+          badge: 'Acompanhamento Ativo',
+          badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+          subtitle: 'Acompanhamento sistemático da evolução comportamental, frequência e estabilidade emocional discente.',
+          icon: <Eye size={32} className="text-white" />,
+          gradient: 'from-indigo-600 via-blue-600 to-teal-600',
+          btnText: '+ Novo Acompanhamento',
+          stats: [
+            { id: 'EM_ACOMPANHAMENTO', label: 'Em Acompanhamento Ativo', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Planos singulares ativos', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'AGUARDANDO_REDE', label: 'Monitorando com a Rede', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Acompanhamento conjunto', icon: Building2, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'ACOLHIMENTO', label: 'Em Observação Inicial', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Fase de sondagem', icon: Brain, activeColor: 'bg-amber-900 border-amber-700 text-white', iconColor: 'bg-amber-50 text-amber-600' },
+            { id: 'CONCLUÍDO', label: 'Alta / Casos Estabilizados', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Metas superadas', icon: CheckCircle2, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+          ]
+        };
+      case 'collective_sessions':
+        return {
+          title: 'Acolhimento Coletivo (Luto / Crise & Pós-Crise)',
+          badge: 'Intervenção em Grupo / Comunidade Escolar',
+          badgeColor: 'bg-purple-100 text-purple-800 border-purple-300',
+          subtitle: 'Manejo de crise comunitária, rodas de conversa de acolhimento socioemocional, luto e fortalecimento de vínculos.',
+          icon: <Users size={32} className="text-white" />,
+          gradient: 'from-purple-600 via-violet-700 to-rose-600',
+          btnText: '+ Nova Ação Coletiva',
+          stats: [
+            { id: 'LUTO_CRISE', label: 'Demandas de Luto / Crise', count: cases.filter(c => c.demandType === 'LUTO_CRISE').length, desc: 'Acolhimento imediato', icon: HeartHandshake, activeColor: 'bg-rose-900 border-rose-700 text-white', iconColor: 'bg-rose-50 text-rose-600' },
+            { id: 'ACOLHIMENTO', label: 'Grupos em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Sessões em planejamento', icon: Users, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'EM_ACOMPANHAMENTO', label: 'Rodas em Andamento', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Ciclos restaurativos ativos', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'CONCLUÍDO', label: 'Ações Coletivas Concluídas', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Intervenções finalizadas', icon: CheckCircle2, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+          ]
+        };
+      default:
+        return {
+          title: 'Prontuário & Atendimentos Psicossociais',
+          badge: 'Lei 13.935/2019 • SEDUC/MT',
+          badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+          subtitle: 'Escuta especializada, plano singular de acompanhamento, registro de evoluções e pareceres técnicos.',
+          icon: <Brain size={32} className="text-white" />,
+          gradient: 'from-rose-600 to-indigo-600',
+          btnText: '+ Novo Acolhimento / Prontuário',
+          stats: [
+            { id: 'ACOLHIMENTO', label: 'Em Acolhimento', count: cases.filter(c => c.status === 'ACOLHIMENTO').length, desc: 'Casos novos em escuta inicial', icon: Brain, activeColor: 'bg-rose-900 border-rose-700 text-white', iconColor: 'bg-rose-50 text-rose-600' },
+            { id: 'EM_ACOMPANHAMENTO', label: 'Em Acompanhamento', count: cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length, desc: 'Sessões periódicas e plano ativo', icon: Activity, activeColor: 'bg-indigo-900 border-indigo-700 text-white', iconColor: 'bg-indigo-50 text-indigo-600' },
+            { id: 'AGUARDANDO_REDE', label: 'Rede de Proteção', count: cases.filter(c => c.status === 'AGUARDANDO_REDE').length, desc: 'Encaminhado ao CAPSi / CT / CRAS', icon: Building2, activeColor: 'bg-purple-900 border-purple-700 text-white', iconColor: 'bg-purple-50 text-purple-600' },
+            { id: 'CONCLUÍDO', label: 'Casos Concluídos', count: cases.filter(c => c.status === 'CONCLUÍDO').length, desc: 'Superação com parecer final', icon: CheckCircle2, activeColor: 'bg-emerald-900 border-emerald-700 text-white', iconColor: 'bg-emerald-50 text-emerald-600' },
+          ]
+        };
+    }
+  }, [mode, cases]);
+
   // Filtros
   const filteredCases = cases.filter(c => {
     const matchesSearch =
@@ -486,7 +604,14 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
     const matchesStatus = statusFilter === 'TODOS' || c.status === statusFilter;
     const matchesDemand = demandFilter === 'TODAS' || c.demandType === demandFilter;
 
-    return matchesSearch && matchesStatus && matchesDemand;
+    let matchesPriority = true;
+    if (priorityFilter === 'CRITICA_ALTA') {
+      matchesPriority = c.priority === 'CRÍTICA' || c.priority === 'CRITICA' || c.priority === 'ALTA';
+    } else if (priorityFilter !== 'TODAS') {
+      matchesPriority = c.priority === priorityFilter;
+    }
+
+    return matchesSearch && matchesStatus && matchesDemand && matchesPriority;
   });
 
   return (
@@ -495,20 +620,20 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
       {/* HEADER DE CONTROLE */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 no-print">
         <div className="flex items-center gap-5">
-          <div className="p-4 bg-gradient-to-br from-rose-600 to-indigo-600 text-white rounded-3xl shadow-lg shadow-rose-600/20">
-            <Brain size={32} />
+          <div className={`p-4 bg-gradient-to-br ${modeConfig.gradient} text-white rounded-3xl shadow-lg shadow-rose-600/20`}>
+            {modeConfig.icon}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                Prontuário & Atendimentos Psicossociais
+                {modeConfig.title}
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300 text-[8px] font-black uppercase tracking-wider">
-                Lei 13.935/2019 • SEDUC/MT
+              <span className={`px-2.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-wider ${modeConfig.badgeColor}`}>
+                {modeConfig.badge}
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Escuta especializada, plano singular de acompanhamento, registro de evoluções e pareceres técnicos.
+              {modeConfig.subtitle}
             </p>
           </div>
         </div>
@@ -524,6 +649,19 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
               className="pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none w-64 focus:bg-white focus:ring-2 focus:ring-rose-500"
             />
           </div>
+
+          {mode === 'risk_board' && (
+            <select
+              value={priorityFilter}
+              onChange={e => setPriorityFilter(e.target.value)}
+              className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black uppercase outline-none cursor-pointer focus:bg-white text-red-700 font-bold"
+            >
+              <option value="CRITICA_ALTA">🚨 Risco Crítico & Alto</option>
+              <option value="CRÍTICA">🚨 Apenas Risco Crítico</option>
+              <option value="ALTA">⚠️ Apenas Risco Alto</option>
+              <option value="TODAS">Todas as Prioridades</option>
+            </select>
+          )}
 
           <select
             value={statusFilter}
@@ -546,8 +684,8 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
                 guardianName: '',
                 guardianPhone: '',
                 guardianAddress: '',
-                priority: 'MÉDIA',
-                demandType: 'SAUDE_MENTAL',
+                priority: mode === 'risk_board' ? 'CRÍTICA' : 'MÉDIA',
+                demandType: mode === 'collective_sessions' ? 'LUTO_CRISE' : 'SAUDE_MENTAL',
                 origin: 'TRIAGEM_MEDIACAO',
                 initialDemand: '',
                 status: 'ACOLHIMENTO',
@@ -555,94 +693,37 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
               });
               setIsCreateModalOpen(true);
             }}
-            className="px-5 py-3 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 active:scale-95"
+            className={`px-5 py-3 bg-gradient-to-r ${modeConfig.gradient} hover:opacity-90 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 active:scale-95`}
           >
-            <Plus size={16} /> Novo Acolhimento / Prontuário
+            <Plus size={16} /> {modeConfig.btnText}
           </button>
         </div>
       </div>
 
       {/* CARDS DE STATUS RÁPIDO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <div 
-          onClick={() => setStatusFilter(statusFilter === 'ACOLHIMENTO' ? 'TODOS' : 'ACOLHIMENTO')}
-          className={`p-5 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-            statusFilter === 'ACOLHIMENTO' ? 'bg-rose-900 text-white border-rose-700 shadow-xl' : 'bg-white border-slate-100 hover:border-rose-200 shadow-sm'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className={`p-3 rounded-2xl ${statusFilter === 'ACOLHIMENTO' ? 'bg-white/10 text-white' : 'bg-rose-50 text-rose-600'}`}>
-              <Brain size={22} />
+        {modeConfig.stats.map((st: any, idx: number) => {
+          const IconComp = st.icon;
+          return (
+            <div 
+              key={idx}
+              className="p-5 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between bg-white border-slate-100 hover:border-slate-300 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div className={`p-3 rounded-2xl ${st.iconColor}`}>
+                  <IconComp size={22} />
+                </div>
+                <span className="text-2xl font-black text-slate-900">
+                  {st.count}
+                </span>
+              </div>
+              <div className="mt-4">
+                <p className="text-xs font-black uppercase text-slate-900">{st.label}</p>
+                <p className="text-[10px] mt-1 text-slate-500">{st.desc}</p>
+              </div>
             </div>
-            <span className={`text-2xl font-black ${statusFilter === 'ACOLHIMENTO' ? 'text-white' : 'text-slate-900'}`}>
-              {cases.filter(c => c.status === 'ACOLHIMENTO').length}
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className={`text-xs font-black uppercase ${statusFilter === 'ACOLHIMENTO' ? 'text-white' : 'text-slate-900'}`}>Em Acolhimento</p>
-            <p className={`text-[10px] mt-1 ${statusFilter === 'ACOLHIMENTO' ? 'text-rose-200' : 'text-slate-500'}`}>Casos novos em fase de escuta inicial</p>
-          </div>
-        </div>
-
-        <div 
-          onClick={() => setStatusFilter(statusFilter === 'EM_ACOMPANHAMENTO' ? 'TODOS' : 'EM_ACOMPANHAMENTO')}
-          className={`p-5 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-            statusFilter === 'EM_ACOMPANHAMENTO' ? 'bg-indigo-900 text-white border-indigo-700 shadow-xl' : 'bg-white border-slate-100 hover:border-indigo-200 shadow-sm'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className={`p-3 rounded-2xl ${statusFilter === 'EM_ACOMPANHAMENTO' ? 'bg-white/10 text-white' : 'bg-indigo-50 text-indigo-600'}`}>
-              <Activity size={22} />
-            </div>
-            <span className={`text-2xl font-black ${statusFilter === 'EM_ACOMPANHAMENTO' ? 'text-white' : 'text-slate-900'}`}>
-              {cases.filter(c => c.status === 'EM_ACOMPANHAMENTO').length}
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className={`text-xs font-black uppercase ${statusFilter === 'EM_ACOMPANHAMENTO' ? 'text-white' : 'text-slate-900'}`}>Em Acompanhamento</p>
-            <p className={`text-[10px] mt-1 ${statusFilter === 'EM_ACOMPANHAMENTO' ? 'text-indigo-200' : 'text-slate-500'}`}>Sessões periódicas e plano ativo</p>
-          </div>
-        </div>
-
-        <div 
-          onClick={() => setStatusFilter(statusFilter === 'AGUARDANDO_REDE' ? 'TODOS' : 'AGUARDANDO_REDE')}
-          className={`p-5 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-            statusFilter === 'AGUARDANDO_REDE' ? 'bg-purple-900 text-white border-purple-700 shadow-xl' : 'bg-white border-slate-100 hover:border-purple-200 shadow-sm'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className={`p-3 rounded-2xl ${statusFilter === 'AGUARDANDO_REDE' ? 'bg-white/10 text-white' : 'bg-purple-50 text-purple-600'}`}>
-              <Building2 size={22} />
-            </div>
-            <span className={`text-2xl font-black ${statusFilter === 'AGUARDANDO_REDE' ? 'text-white' : 'text-slate-900'}`}>
-              {cases.filter(c => c.status === 'AGUARDANDO_REDE').length}
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className={`text-xs font-black uppercase ${statusFilter === 'AGUARDANDO_REDE' ? 'text-white' : 'text-slate-900'}`}>Rede de Proteção</p>
-            <p className={`text-[10px] mt-1 ${statusFilter === 'AGUARDANDO_REDE' ? 'text-purple-200' : 'text-slate-500'}`}>Encaminhado ao CAPSi / Conselho / CRAS</p>
-          </div>
-        </div>
-
-        <div 
-          onClick={() => setStatusFilter(statusFilter === 'CONCLUÍDO' ? 'TODOS' : 'CONCLUÍDO')}
-          className={`p-5 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-            statusFilter === 'CONCLUÍDO' ? 'bg-emerald-900 text-white border-emerald-700 shadow-xl' : 'bg-white border-slate-100 hover:border-emerald-200 shadow-sm'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className={`p-3 rounded-2xl ${statusFilter === 'CONCLUÍDO' ? 'bg-white/10 text-white' : 'bg-emerald-50 text-emerald-600'}`}>
-              <CheckCircle2 size={22} />
-            </div>
-            <span className={`text-2xl font-black ${statusFilter === 'CONCLUÍDO' ? 'text-white' : 'text-slate-900'}`}>
-              {cases.filter(c => c.status === 'CONCLUÍDO').length}
-            </span>
-          </div>
-          <div className="mt-4">
-            <p className={`text-xs font-black uppercase ${statusFilter === 'CONCLUÍDO' ? 'text-white' : 'text-slate-900'}`}>Casos Concluídos</p>
-            <p className={`text-[10px] mt-1 ${statusFilter === 'CONCLUÍDO' ? 'text-emerald-200' : 'text-slate-500'}`}>Superação com parecer final emitido</p>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       {/* LISTAGEM DE CASOS PSICOSSOCIAIS */}

@@ -271,8 +271,54 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} onNavigate={navigateWithContext} />}
           
-          {(activeTab === 'cases' || activeTab === 'screening' || activeTab === 'interventions' || activeTab === 'risk_board' || activeTab === 'monitoring' || activeTab === 'collective_sessions') && (
+          {activeTab === 'cases' && (
             <PsychosocialCaseManager
+              mode="all"
+              user={user}
+              role={userRole}
+              initialSearch={pendingSearch}
+            />
+          )}
+
+          {activeTab === 'screening' && (
+            <PsychosocialCaseManager
+              mode="screening"
+              user={user}
+              role={userRole}
+              initialSearch={pendingSearch}
+            />
+          )}
+
+          {activeTab === 'risk_board' && (
+            <PsychosocialCaseManager
+              mode="risk_board"
+              user={user}
+              role={userRole}
+              initialSearch={pendingSearch}
+            />
+          )}
+
+          {activeTab === 'monitoring' && (
+            <PsychosocialCaseManager
+              mode="monitoring"
+              user={user}
+              role={userRole}
+              initialSearch={pendingSearch}
+            />
+          )}
+
+          {activeTab === 'interventions' && (
+            <PsychosocialCaseManager
+              mode="interventions"
+              user={user}
+              role={userRole}
+              initialSearch={pendingSearch}
+            />
+          )}
+
+          {activeTab === 'collective_sessions' && (
+            <PsychosocialCaseManager
+              mode="collective_sessions"
               user={user}
               role={userRole}
               initialSearch={pendingSearch}
