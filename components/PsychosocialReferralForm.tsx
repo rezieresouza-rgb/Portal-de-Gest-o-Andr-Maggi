@@ -48,6 +48,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
       emotional: Array.isArray(initialData?.observedAspects?.emotional) ? initialData.observedAspects.emotional : [],
     },
     report: initialData?.report || initialData?.reason || '',
+    feedback: initialData?.feedback || '',
     status: (initialData?.status as any) || 'PENDENTE',
     priority: (initialData?.priority as any) || 'MEDIA',
     date: initialData?.date || new Date().toISOString().split('T')[0],
@@ -75,6 +76,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
           emotional: Array.isArray(initialData.observedAspects?.emotional) ? initialData.observedAspects.emotional : [],
         },
         report: initialData.report || initialData.reason || '',
+        feedback: initialData.feedback || '',
         status: (initialData.status as any) || 'PENDENTE',
         priority: (initialData.priority as any) || 'MEDIA',
         date: initialData.date || new Date().toISOString().split('T')[0],
@@ -507,20 +509,49 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
           </div>
         </div>
 
-        {/* 4. BREVE RELATO */}
+        {/* 4. RELATO INICIAL / MOTIVO DO ENCAMINHAMENTO */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-gray-900 border-b border-gray-100 pb-3">
             <FileText size={18} className="text-rose-600" />
             <h4 className="text-xs font-black uppercase tracking-[0.15em]">
-              Escreva um breve relato:
+              4. Relato Inicial do Fato / Motivo do Encaminhamento:
             </h4>
           </div>
           <textarea
-            rows={6}
+            rows={4}
             value={formData.report}
             onChange={e => setFormData({ ...formData, report: e.target.value })}
-            placeholder="Descreva detalhadamente o ocorrido, contexto do conflito, atitudes do estudante, relacionamento com os colegas ou demanda específica para atendimento pelo professor mediador..."
+            placeholder="Relato dos fatos observados, histórico da queixa ou motivo que originou o encaminhamento..."
             className="w-full p-5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-normal text-gray-800 leading-relaxed outline-none focus:bg-white focus:border-rose-500 transition-all resize-none"
+          />
+        </div>
+
+        {/* 5. PARECER TÉCNICO & DEVOLUTIVA DA EQUIPE PSICOSSOCIAL */}
+        <div className="space-y-3 bg-gradient-to-br from-rose-50/40 via-indigo-50/30 to-purple-50/40 p-6 md:p-8 rounded-[2.5rem] border border-rose-200/80 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-100 pb-3">
+            <div className="flex items-center gap-3 text-gray-900">
+              <div className="p-2.5 bg-rose-600 text-white rounded-2xl shadow-md shadow-rose-600/20">
+                <Brain size={20} />
+              </div>
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-[0.15em] text-rose-950">
+                  5. Parecer Técnico, Escuta & Devolutiva da Equipe Psicossocial:
+                </h4>
+                <p className="text-[10px] text-rose-600 font-bold uppercase tracking-wider">
+                  Relato do atendimento, orientações à família/escola e intervenções clínicas
+                </p>
+              </div>
+            </div>
+            <span className="px-3 py-1 bg-white text-rose-700 border border-rose-200 rounded-full text-[9px] font-black uppercase tracking-widest shrink-0 self-start sm:self-auto">
+              Sincroniza com a Mediação
+            </span>
+          </div>
+          <textarea
+            rows={6}
+            value={formData.feedback || ''}
+            onChange={e => setFormData({ ...formData, feedback: e.target.value })}
+            placeholder="Digite aqui o parecer do atendimento psicossocial: escuta especializada realizada, orientações prestadas aos responsáveis e ao estudante, articulações com a rede externa e recomendações pedagógicas..."
+            className="w-full p-5 bg-white border border-rose-200 rounded-2xl text-sm font-normal text-gray-900 leading-relaxed outline-none focus:ring-4 focus:ring-rose-500/10 transition-all resize-none shadow-sm placeholder:text-gray-400"
           />
         </div>
 
@@ -530,7 +561,7 @@ const PsychosocialReferralForm: React.FC<PsychosocialReferralFormProps> = ({ onC
             type="submit"
             className="w-full py-5 bg-rose-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-rose-600/20 hover:bg-rose-700 active:scale-[0.99] transition-all flex items-center justify-center gap-3"
           >
-            <Save size={20} /> Salvar & Encaminhar para Mediação Escolar
+            <Save size={20} /> Salvar Avaliação & Parecer Técnico
           </button>
         </div>
       </form>

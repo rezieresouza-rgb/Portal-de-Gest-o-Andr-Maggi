@@ -235,7 +235,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
     setLoading(true);
     try {
       const isEditing = Boolean(editingReferral?.id);
-      const referralData = {
+      const referralData: any = {
         student_name: formData.studentName,
         class_name: formData.className,
         reason: formData.report || 'Encaminhamento',
@@ -250,18 +250,37 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
         attendance_frequency: formData.attendanceFrequency,
         adopted_procedures: formData.adoptedProcedures,
         report: formData.report,
+        feedback: formData.feedback || '',
         referral_destination: formData.referralDestination || 'MEDIACAO',
         mediation_procedures: formData.mediationProcedures || []
       };
 
       if (isEditing && editingReferral) {
         // UPDATE
-        const { error } = await supabase
-          .from('psychosocial_referrals')
-          .update(referralData)
-          .eq('id', editingReferral.id);
+        if (!editingReferral.id.startsWith('med-')) {
+          const { error } = await supabase
+            .from('psychosocial_referrals')
+            .update(referralData)
+            .eq('id', editingReferral.id);
 
-        if (error) throw error;
+          if (error) throw error;
+        }
+
+        // Sincronizar parecer com a Mediação Escolar
+        if (formData.feedback) {
+          const caseId = (formData as any).origin_case_id || (editingReferral.id.startsWith('med-') ? editingReferral.id.replace('med-', '') : null);
+          if (caseId) {
+            await supabase
+              .from('mediation_cases')
+              .update({ feedback: formData.feedback })
+              .eq('id', caseId);
+          } else {
+            await supabase
+              .from('mediation_cases')
+              .update({ feedback: formData.feedback })
+              .ilike('student_name', formData.studentName.trim());
+          }
+        }
       } else {
         // INSERT
         const { error } = await supabase
@@ -740,6 +759,7 @@ const PsychosocialReferralList: React.FC<PsychosocialReferralListProps> = ({
                   adoptedProcedures: editingReferral.adoptedProcedures || [],
                   observedAspects: editingReferral.observedAspects || { learning: [], behavioral: [], emotional: [] },
                   report: editingReferral.report || editingReferral.reason || '',
+                  feedback: editingReferral.feedback || '',
                   status: editingReferral.status || 'PENDENTE',
                   priority: editingReferral.priority || 'MEDIA',
                   date: editingReferral.date || new Date().toISOString().split('T')[0],
