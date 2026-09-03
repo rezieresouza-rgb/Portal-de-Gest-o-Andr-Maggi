@@ -123,7 +123,6 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
     { id: 'screening', label: 'Triagem & Acolhimento', icon: Activity },
     { id: 'risk_board', label: 'Radar de Risco & Urgência', icon: AlertTriangle },
     { id: 'monitoring', label: 'Monitoramento Contínuo', icon: Eye },
-    { id: 'mediation', label: 'Casos da Mediação', icon: HeartHandshake },
     { id: 'interventions', label: 'Ações e Intervenções', icon: ShieldCheck },
     { id: 'circumstantiated_report', label: 'Relatório Circunstanciado', icon: Scale },
     { id: 'collective_sessions', label: 'Acolhimento Coletivo (Luto/Crise)', icon: Users },

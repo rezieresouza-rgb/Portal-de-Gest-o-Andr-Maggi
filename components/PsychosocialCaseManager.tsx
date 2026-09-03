@@ -151,6 +151,19 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
   const [selectedCase, setSelectedCase] = useState<PsychosocialCase | null>(null);
   const [activeTab, setActiveTab] = useState<'sessions' | 'steps' | 'opinion'>('sessions');
 
+  // Modal de Parecer Técnico Rápido / Devolutiva
+  const [quickFeedbackModal, setQuickFeedbackModal] = useState<{
+    isOpen: boolean;
+    caseItem: PsychosocialCase | null;
+    feedbackText: string;
+    status: string;
+  }>({
+    isOpen: false,
+    caseItem: null,
+    feedbackText: '',
+    status: 'EM_ACOMPANHAMENTO'
+  });
+
   // Modal de abertura de novo caso
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
@@ -516,6 +529,96 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
     }
   };
 
+  // Salvar Parecer Técnico Rápido / Devolutiva Sincronizada
+  const handleSaveQuickFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickFeedbackModal.caseItem || !quickFeedbackModal.feedbackText.trim()) {
+      return alert("Por favor, digite o parecer técnico.");
+    }
+
+    const c = quickFeedbackModal.caseItem;
+    const text = quickFeedbackModal.feedbackText.trim();
+    const st = quickFeedbackModal.status;
+
+    const newLog: PsychosocialSessionLog = {
+      id: 'log-' + Date.now(),
+      date: new Date().toLocaleDateString('sv-SE'),
+      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      type: 'ESCUTA_INDIVIDUAL_ALUNO',
+      participants: c.studentName,
+      professionalName: user?.name || 'TÉCNICO PSICOSSOCIAL',
+      professionalRole: 'PSICÓLOGO(A) / ASSISTENTE SOCIAL',
+      summary: text,
+      immediateActions: `Parecer técnico registrado com status: ${st}`
+    };
+
+    const updatedLogs = [newLog, ...(c.logs || [])];
+    const updatedCase = {
+      ...c,
+      technicalOpinion: text,
+      status: st as any,
+      logs: updatedLogs
+    };
+
+    try {
+      // 1. Atualizar em psychosocial_cases se não for prefixo ref-
+      if (!c.id.startsWith('ref-')) {
+        await supabase
+          .from('psychosocial_cases')
+          .update({
+            technical_opinion: text,
+            status: st,
+            logs: updatedLogs
+          })
+          .eq('id', c.id);
+      }
+
+      // 2. Atualizar em psychosocial_referrals
+      const refId = c.originReferralId || (c.id.startsWith('ref-') ? c.id.replace('ref-', '') : null);
+      if (refId) {
+        await supabase
+          .from('psychosocial_referrals')
+          .update({
+            feedback: text,
+            status: st === 'CONCLUÍDO' ? 'CONCLUIDO' : st
+          })
+          .eq('id', refId);
+      } else {
+        await supabase
+          .from('psychosocial_referrals')
+          .update({
+            feedback: text,
+            status: st === 'CONCLUÍDO' ? 'CONCLUIDO' : st
+          })
+          .ilike('student_name', c.studentName.trim());
+      }
+
+      // 3. Sincronizar de volta com mediation_cases (Devolutiva da Mediação)
+      await supabase
+        .from('mediation_cases')
+        .update({ feedback: text })
+        .ilike('student_name', c.studentName.trim());
+
+      // 4. Inserir notificação para a Mediação
+      await supabase
+        .from('psychosocial_notifications')
+        .insert([{
+          title: 'Parecer Técnico Registrado',
+          message: `A equipe psicossocial emitiu parecer para o estudante ${c.studentName} (${c.className}).`,
+          is_read: false
+        }]);
+
+      const updatedList = cases.map(item => item.id === c.id ? updatedCase : item);
+      setCases(updatedList);
+      localStorage.setItem('psychosocial_cases_v2026', JSON.stringify(updatedList));
+      setQuickFeedbackModal({ isOpen: false, caseItem: null, feedbackText: '', status: 'EM_ACOMPANHAMENTO' });
+      alert("✅ Parecer Técnico registrado e sincronizado com a Mediação Escolar com sucesso!");
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao salvar parecer: " + err.message);
+    }
+  };
+
   // Concluir Caso
   const handleCloseCase = async () => {
     if (!selectedCase) return;
@@ -824,13 +927,31 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
                     }`}>
                       {caseItem.status}
                     </span>
+
+                    {caseItem.origin === 'TRIAGEM_MEDIACAO' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
+                        <HeartHandshake size={10} /> Mediação Escolar
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed">
                     <strong>Demanda:</strong> {caseItem.initialDemand}
                   </p>
 
-                  <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase flex-wrap">
+                  {/* PARECER TÉCNICO REGISTRADO (DESTAQUE) */}
+                  {caseItem.technicalOpinion && (
+                    <div className="bg-rose-50/70 p-3 rounded-2xl border border-rose-200/80 text-xs text-rose-950">
+                      <div className="flex items-center gap-1.5 font-black text-[9px] uppercase text-rose-700 mb-0.5">
+                        <MessageSquare size={12} /> Parecer Técnico & Devolutiva Psicossocial:
+                      </div>
+                      <p className="font-normal italic leading-relaxed text-slate-800 line-clamp-2">
+                        "{caseItem.technicalOpinion}"
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase flex-wrap pt-1">
                     <span>Turma: <strong className="text-slate-700">{caseItem.className || 'N/A'}</strong></span>
                     <span>•</span>
                     <span>Sessões: <strong className="text-rose-700">{caseItem.logs?.length || 0} evoluções</strong></span>
@@ -842,18 +963,46 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setQuickFeedbackModal({
+                      isOpen: true,
+                      caseItem,
+                      feedbackText: caseItem.technicalOpinion || '',
+                      status: caseItem.status === 'CONCLUÍDO' ? 'CONCLUÍDO' : 'EM_ACOMPANHAMENTO'
+                    });
+                  }}
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-rose-600/20 active:scale-95"
+                  title="Registrar ou Atualizar Parecer Técnico"
+                >
+                  <MessageSquare size={13} />
+                  <span>{caseItem.technicalOpinion ? 'Atualizar Parecer' : 'Registrar Parecer'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSelectedCase(caseItem);
+                    setActiveTab('sessions');
+                  }}
+                  className="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
+                  title="Ver Prontuário Completo"
+                >
+                  <Brain size={13} />
+                  <span>Prontuário</span>
+                </button>
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedCase(caseItem);
                     setTimeout(() => window.print(), 300);
                   }}
-                  className="px-4 py-2.5 bg-slate-900 hover:bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-slate-900/10"
+                  className="px-3 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
                   title="Imprimir Prontuário Oficial"
                 >
-                  <Printer size={14} />
-                  <span>Imprimir Prontuário</span>
+                  <Printer size={13} />
                 </button>
 
                 <button
@@ -861,7 +1010,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
                   className="p-2.5 bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
                   title="Excluir Prontuário"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
@@ -1511,6 +1660,91 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
                 </button>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE PARECER TÉCNICO RÁPIDO & DEVOLUTIVA */}
+      {quickFeedbackModal.isOpen && quickFeedbackModal.caseItem && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] max-w-xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
+            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-rose-900 to-indigo-950 p-6 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-rose-600/30 rounded-2xl border border-rose-500/30">
+                  <MessageSquare size={22} className="text-rose-300" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-tight">
+                    Registrar Parecer Técnico Psicossocial
+                  </h3>
+                  <p className="text-[10px] text-rose-300 font-bold uppercase tracking-widest">
+                    Estudante: {quickFeedbackModal.caseItem.studentName} ({quickFeedbackModal.caseItem.className})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setQuickFeedbackModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveQuickFeedback} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Demanda / Motivo do Acolhimento</p>
+                <p className="text-xs text-slate-700 italic">"{quickFeedbackModal.caseItem.initialDemand}"</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                  Parecer Técnico, Encaminhamentos & Orientações do Atendimento
+                </label>
+                <textarea
+                  required
+                  rows={6}
+                  value={quickFeedbackModal.feedbackText}
+                  onChange={e => setQuickFeedbackModal(prev => ({ ...prev, feedbackText: e.target.value }))}
+                  placeholder="Descreva a escuta especializada realizada, orientações aos responsáveis, encaminhamentos à rede e devolutiva para o professor mediador..."
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-4 focus:ring-rose-500/10 outline-none transition-all resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                  Status do Acompanhamento
+                </label>
+                <select
+                  value={quickFeedbackModal.status}
+                  onChange={e => setQuickFeedbackModal(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white transition-all cursor-pointer"
+                >
+                  <option value="EM_ACOMPANHAMENTO">🔄 Em Acompanhamento (Plano de Cuidado Ativo)</option>
+                  <option value="AGUARDANDO_REDE">🏛️ Aguardando Rede Externa (CAPSi / Conselho / CRAS)</option>
+                  <option value="CONCLUÍDO">✅ Concluído (Caso Finalizado com Êxito)</option>
+                </select>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setQuickFeedbackModal(prev => ({ ...prev, isOpen: false }))}
+                  className="px-5 py-3 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2"
+                >
+                  <Save size={16} />
+                  <span>Salvar & Sincronizar Parecer</span>
+                </button>
+              </div>
+            </form>
+
           </div>
         </div>
       )}
