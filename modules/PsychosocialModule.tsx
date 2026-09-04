@@ -368,7 +368,13 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
           {activeTab === 'agenda' && <PsychosocialAgenda role={userRole} />}
           {activeTab === 'atas' && <PsychosocialMeetingAtaManager />}
           {activeTab === 'reports' && <PsychosocialReports role={userRole} />}
-          {activeTab === 'campaigns' && <CampaignManager role={userRole} />}
+          {(activeTab === 'campaigns' || activeTab === 'mediation_calendar') && (
+            <MediationCalendarManager
+              user={user}
+              role={userRole}
+              onOpenNewCase={() => setActiveTab('cases')}
+            />
+          )}
         </div>
       </main>
     </div>

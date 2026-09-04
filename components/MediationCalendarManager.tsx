@@ -414,7 +414,9 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
     classes: [],
     participantCount: 0,
     executionDate: new Date().toISOString().split('T')[0],
-    responsibleMediator: user?.name ? `${user.name} (Mediador)` : 'Professor Mediador',
+    responsibleMediator: user?.name 
+      ? `${user.name} (${role === 'PSICOSSOCIAL' ? 'Equipe Psicossocial' : role === 'GESTAO' ? 'Gestão Escolar' : 'Mediação Escolar'})` 
+      : (role === 'PSICOSSOCIAL' ? 'Equipe Psicossocial' : 'Professor Mediador'),
     partnerships: '',
     description: '',
     outcomes: '',
@@ -513,7 +515,9 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
       classes: [],
       participantCount: 0,
       executionDate: new Date().toISOString().split('T')[0],
-      responsibleMediator: user?.name ? `${user.name} (Mediador)` : 'Professor Mediador',
+      responsibleMediator: user?.name 
+        ? `${user.name} (${role === 'PSICOSSOCIAL' ? 'Equipe Psicossocial' : role === 'GESTAO' ? 'Gestão Escolar' : 'Mediação Escolar'})` 
+        : (role === 'PSICOSSOCIAL' ? 'Equipe Psicossocial' : 'Professor Mediador'),
       partnerships: '',
       description: '',
       outcomes: '',
@@ -734,10 +738,10 @@ const MediationCalendarManager: React.FC<MediationCalendarManagerProps> = ({ use
           </div>
           <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white flex items-center gap-3">
             <CalendarDays className="text-amber-400" size={28} />
-            Calendário do Núcleo de Mediação Escolar
+            Calendário de Campanhas & Ações 2026
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-            Planejamento pedagógico e restaurativo, orientativos oficiais, marcos legais e registro sistemático com fotos das ações, palestras e círculos de paz executados na escola.
+            Planejamento socioemocional, orientativos oficiais SEDUC/MT, marcos legais e registro sistemático com fotos das ações, palestras, rodas de conversa e círculos de paz executados na escola.
           </p>
         </div>
 
