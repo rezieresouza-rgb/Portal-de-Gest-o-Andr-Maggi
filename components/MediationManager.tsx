@@ -477,28 +477,26 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           resolvedTeacherName = c.involved_parties[0];
         }
 
-        // Sintetizar logs do encaminhamento/psicossocial se a timeline estiver vazia
+        // Sintetizar logs objetivos da ação se a timeline estiver vazia
         let resolvedLogs = c.logs || [];
         if (matchingRef) {
-          const hasReferralLog = resolvedLogs.some((l: any) => l.content?.includes('[ENCAMINHAMENTO') || l.content?.includes('[TRIAGEM'));
+          const hasReferralLog = resolvedLogs.some((l: any) => l.content?.includes('Encaminhamento') || l.content?.includes('Psicossocial'));
           if (!hasReferralLog) {
             const autoLogs: any[] = [];
-            if (matchingRef.previous_strategies || matchingRef.reason) {
-              autoLogs.push({
-                id: `auto-ref-${matchingRef.id || c.id}`,
-                date: matchingRef.date || matchingRef.created_at || c.opened_at,
-                professional: matchingRef.teacher_name || 'Equipe Escolar',
-                category: 'ENCAMINHAMENTO',
-                content: `[ENCAMINHAMENTO / AVALIAÇÃO RECEBIDA]\nProfissional: ${matchingRef.teacher_name || 'Docente'}\n\nRelato:\n${matchingRef.previous_strategies || matchingRef.reason}`
-              });
-            }
-            if (matchingRef.feedback && !resolvedLogs.some((l: any) => l.content?.includes(matchingRef.feedback))) {
+            autoLogs.push({
+              id: `auto-ref-${matchingRef.id || c.id}`,
+              date: matchingRef.date || matchingRef.created_at || c.opened_at,
+              professional: matchingRef.teacher_name || 'EQUIPE PSICOSSOCIAL',
+              category: 'ENCAMINHAMENTO',
+              content: `Encaminhamento recebido da Equipe Psicossocial (${matchingRef.teacher_name || 'Psicologia / Assistência Social'}).`
+            });
+            if (matchingRef.feedback) {
               autoLogs.push({
                 id: `auto-feedback-${matchingRef.id || c.id}`,
                 date: matchingRef.date || matchingRef.created_at || c.opened_at,
                 professional: 'EQUIPE PSICOSSOCIAL',
                 category: 'PARECER',
-                content: `[PARECER TÉCNICO DA EQUIPE PSICOSSOCIAL]\n${matchingRef.feedback}`
+                content: 'Parecer Técnico e orientações registradas pela Equipe Psicossocial.'
               });
             }
             resolvedLogs = [...autoLogs, ...resolvedLogs];
@@ -515,7 +513,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           status: (c.status as MediationStatus) || 'ABERTURA',
           openedAt: c.opened_at,
           closedAt: c.closed_at,
-          description: c.description || (matchingRef?.previous_strategies ? `[Origem: Encaminhamento Psicossocial - ${matchingRef.teacher_name}]\n${matchingRef.previous_strategies}` : ''),
+          description: c.description || (matchingRef?.reason ? `[Origem: Encaminhamento Psicossocial - ${matchingRef.teacher_name}]\n${matchingRef.reason}` : ''),
           involvedParties: c.involved_parties || [],
           steps: mergedSteps,
           originReferralId: c.origin_referral_id,
