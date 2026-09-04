@@ -40,7 +40,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student } from '../types';
+import { MediationCase, MediationStatus, CaseSeverity, PsychosocialRole, Student, PsychosocialMeetingAta } from '../types';
 import { supabase } from '../supabaseClient';
 import MediationRestorativeGuideModal from './MediationRestorativeGuideModal';
 import MediationAgreementTermModal from './MediationAgreementTermModal';
@@ -78,6 +78,9 @@ const ATTENDANCE_CATEGORIES = [
   { id: 'RESPONSÁVEIS', label: 'Atendimento aos Pais', color: 'bg-teal-100 text-teal-800 border-teal-300' },
   { id: 'PALESTRA', label: 'Palestra / Ação Coletiva', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
   { id: 'CELULAR', label: 'Celular / Redes Sociais', color: 'bg-cyan-100 text-cyan-800 border-cyan-300' },
+  { id: 'ENCAMINHAMENTO', label: 'Encaminhamento', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  { id: 'PARECER', label: 'Parecer Técnico', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
+  { id: 'ATA', label: 'Ata Oficial SEDUC', color: 'bg-rose-100 text-rose-800 border-rose-300' },
   { id: 'OUTRO', label: 'Outro / Geral', color: 'bg-gray-100 text-gray-800 border-gray-300' }
 ];
 
@@ -109,6 +112,8 @@ const formatLocalDate = (dateStr?: string | null): string => {
 const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabChange, initialSearch, onOpenAtaForCase }) => {
   const { students: dbStudents } = useStudents();
   const [cases, setCases] = useState<MediationCase[]>([]);
+  const [cloudAtas, setCloudAtas] = useState<PsychosocialMeetingAta[]>([]);
+  const [viewingAtaFromCase, setViewingAtaFromCase] = useState<PsychosocialMeetingAta | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCase, setSelectedCase] = useState<MediationCase | null>(null);
@@ -523,6 +528,52 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
         };
       });
       setCases(formatted);
+
+      // Buscar atas oficiais da mediação
+      try {
+        const { data: atasData } = await supabase
+          .from('civic_documents')
+          .select('*')
+          .eq('template', 'psychosocial_ata')
+          .order('created_at', { ascending: false });
+        if (atasData) {
+          const mappedAtas: PsychosocialMeetingAta[] = atasData.map((d: any) => {
+            const content = typeof d.content === 'object' && d.content !== null ? d.content : {};
+            return {
+              id: d.id,
+              number: content.number || d.student_name?.match(/ATA Nº (\d+)/)?.[1] || '01',
+              year: content.year || (d.date ? d.date.split('-')[0] : new Date().getFullYear().toString()),
+              pauta: content.pauta || d.student_name || 'Mediação Escolar',
+              caseId: content.caseId || d.student_id,
+              date: content.date || d.date || new Date().toISOString().split('T')[0],
+              location: content.location || 'SALA DE MEDIAÇÃO - EE ANDRÉ ANTÔNIO MAGGI',
+              participants: content.participants || [],
+              objectives: content.objectives || '',
+              definitions: content.definitions || [],
+              forwarding: content.forwarding || [],
+              responsible: content.responsible || 'PROFESSOR MEDIADOR',
+              timestamp: d.timestamp || (d.created_at ? new Date(d.created_at).getTime() : Date.now()),
+              responsavelMediacao: content.responsavelMediacao,
+              horarioInicio: content.horarioInicio,
+              horarioTermino: content.horarioTermino,
+              descricaoConflito: content.descricaoConflito,
+              dataOcorrido: content.dataOcorrido,
+              parte1Nome: content.parte1Nome,
+              interessesParte1: content.interessesParte1,
+              parte2Nome: content.parte2Nome,
+              interessesParte2: content.interessesParte2,
+              desenvolvimentoSessao: content.desenvolvimentoSessao,
+              compromissoParte1: content.compromissoParte1,
+              compromissoParte2: content.compromissoParte2,
+              compromissoMutuo: content.compromissoMutuo,
+              encerramentoEncaminhamentos: content.encerramentoEncaminhamentos
+            };
+          });
+          setCloudAtas(mappedAtas);
+        }
+      } catch (e) {
+        console.warn('Aviso ao carregar atas da mediação:', e);
+      }
     } catch (error: any) {
       console.error("Erro ao buscar casos de mediação:", error);
       alert("Aviso: Não foi possível carregar o histórico. " + (error.message || "Erro de conexão"));
@@ -882,6 +933,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
 
   const activeCount = cases.filter(c => c.status !== 'CONCLUÍDO').length;
   const historyCount = cases.filter(c => c.status === 'CONCLUÍDO').length;
+
+  const linkedAtas = useMemo(() => {
+    if (!selectedCase) return [];
+    const nameUpper = (selectedCase.studentName || '').trim().toUpperCase();
+    return cloudAtas.filter(a => 
+      (a.caseId && a.caseId === selectedCase.id) || 
+      (a.parte1Nome && nameUpper && a.parte1Nome.trim().toUpperCase() === nameUpper) ||
+      (a.pauta && nameUpper && a.pauta.toUpperCase().includes(nameUpper))
+    );
+  }, [selectedCase, cloudAtas]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
@@ -1857,6 +1918,78 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                       </div>
                     )}
 
+                    {/* Atas Oficiais SEDUC Vinculadas a este Caso */}
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3 shrink-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                          <FileText size={15} className="text-rose-600" />
+                          Atas Oficiais SEDUC ({linkedAtas.length})
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenAtaForCase) {
+                              onOpenAtaForCase(selectedCase);
+                              setSelectedCase(null);
+                            } else if (onTabChange) {
+                              onTabChange('atas');
+                              setSelectedCase(null);
+                            }
+                          }}
+                          className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                        >
+                          <Plus size={12} /> + Nova Ata
+                        </button>
+                      </div>
+
+                      {linkedAtas.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                          {linkedAtas.map(ata => (
+                            <div key={ata.id} className="p-3 bg-slate-50 border border-slate-200/90 rounded-xl flex items-center justify-between gap-2 hover:bg-indigo-50/60 hover:border-indigo-200 transition-all">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-xs font-black text-slate-900 font-mono">
+                                    ATA Nº {ata.number}/{ata.year}
+                                  </span>
+                                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded">
+                                    Oficial
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 truncate mt-0.5">
+                                  {formatLocalDate(ata.date)} • {ata.responsavelMediacao || 'Professor Mediador'}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setViewingAtaFromCase(ata)}
+                                  className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm flex items-center gap-1"
+                                  title="Visualizar Ata Oficial"
+                                >
+                                  Ver
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setViewingAtaFromCase(ata);
+                                    setTimeout(() => window.print(), 350);
+                                  }}
+                                  className="p-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg transition-colors shadow-sm"
+                                  title="Imprimir Ata Oficial"
+                                >
+                                  <Printer size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                          Nenhuma ata lavrada para este caso ainda. Clique em "+ Nova Ata" ou no botão superior "Lavrar Ata SEDUC" para gerar.
+                        </p>
+                      )}
+                    </div>
+
                     {/* Resumo do Status */}
                     <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between shrink-0">
                       <div>
@@ -2458,6 +2591,151 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
           mediationCase={selectedCase}
           userName={user?.name}
         />
+      )}
+
+      {/* MODAL DE VISUALIZAÇÃO / IMPRESSÃO DA ATA OFICIAL SEDUC VINCULADA */}
+      {viewingAtaFromCase && (
+        <div className="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md overflow-y-auto p-4 md:p-8 flex justify-center items-start print:p-0 print:bg-white">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 my-4 print:shadow-none print:border-none print:m-0 print:rounded-none">
+            
+            {/* Header de Controle (Fixo no Topo do Modal) */}
+            <div className="p-6 bg-slate-900 text-white flex justify-between items-center sticky top-0 z-20 shadow-md print:hidden">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xs font-black bg-rose-600 px-3 py-1 rounded-lg">
+                  ATA OFICIAL Nº {viewingAtaFromCase.number}/{viewingAtaFromCase.year}
+                </span>
+                <span className="text-xs font-bold uppercase text-slate-300 hidden sm:inline">Modelo Professor Mediador (SEDUC/MT)</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-indigo-600/20 active:scale-95"
+                >
+                  <Printer size={16} /> Imprimir / PDF
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setViewingAtaFromCase(null)}
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo Oficial A4 da Ata */}
+            <div className="p-8 sm:p-12 text-slate-900 font-sans text-xs space-y-6 print:p-0 print:text-black leading-relaxed">
+              
+              {/* Cabeçalho Timbrado */}
+              <div className="text-center border-b-2 border-slate-900 pb-4 space-y-1">
+                <h2 className="font-black text-xs uppercase tracking-widest text-slate-900">
+                  GOVERNO DO ESTADO DE MATO GROSSO
+                </h2>
+                <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-800">
+                  SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC/MT
+                </h3>
+                <h4 className="font-extrabold text-[11px] uppercase text-indigo-900">
+                  E.E. CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI
+                </h4>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                  NÚCLEO DE MEDIAÇÃO ESCOLAR & PRÁTICAS RESTAURATIVAS
+                </p>
+                <div className="pt-2">
+                  <span className="inline-block px-4 py-1 bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-md print:border print:border-black print:text-black print:bg-transparent">
+                    ATA DE MEDIAÇÃO DE CONFLITO ESCOLAR Nº {viewingAtaFromCase.number}/{viewingAtaFromCase.year}
+                  </span>
+                </div>
+              </div>
+
+              {/* Corpo dos Fatos e Identificação */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] print:bg-transparent print:border-slate-300">
+                <p><strong>Data da Sessão:</strong> {formatLocalDate(viewingAtaFromCase.date)}</p>
+                <p><strong>Horário:</strong> {viewingAtaFromCase.horarioInicio || '---'} às {viewingAtaFromCase.horarioTermino || '---'}</p>
+                <p><strong>Professor(a) Mediador(a):</strong> {viewingAtaFromCase.responsavelMediacao || viewingAtaFromCase.responsible || '---'}</p>
+                <p><strong>Local:</strong> {viewingAtaFromCase.location || 'Sala de Mediação Escolar'}</p>
+              </div>
+
+              {/* Partes Envolvidas */}
+              <div className="space-y-3">
+                <h5 className="font-black text-[11px] uppercase tracking-wider text-slate-800 border-b border-slate-200 pb-1">
+                  1. IDENTIFICAÇÃO DAS PARTES E ASSUNTO
+                </h5>
+                <div className="space-y-2 text-[11px]">
+                  <p><strong>Descrição do Conflito / Fato:</strong> {viewingAtaFromCase.descricaoConflito || viewingAtaFromCase.pauta || '---'}</p>
+                  <p><strong>Data do Ocorrido:</strong> {formatLocalDate(viewingAtaFromCase.dataOcorrido)}</p>
+                  <p><strong>Parte 1 (Estudante/Envolvido):</strong> {viewingAtaFromCase.parte1Nome || '---'}</p>
+                  {viewingAtaFromCase.interessesParte1 && (
+                    <p className="italic text-slate-700"><strong>Relato/Interesse Parte 1:</strong> "{viewingAtaFromCase.interessesParte1}"</p>
+                  )}
+                  <p><strong>Parte 2 (Estudante/Envolvido):</strong> {viewingAtaFromCase.parte2Nome || '---'}</p>
+                  {viewingAtaFromCase.interessesParte2 && (
+                    <p className="italic text-slate-700"><strong>Relato/Interesse Parte 2:</strong> "{viewingAtaFromCase.interessesParte2}"</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Desenvolvimento da Sessão */}
+              {viewingAtaFromCase.desenvolvimentoSessao && (
+                <div className="space-y-2">
+                  <h5 className="font-black text-[11px] uppercase tracking-wider text-slate-800 border-b border-slate-200 pb-1">
+                    2. DESENVOLVIMENTO DO DIÁLOGO RESTAURATIVO
+                  </h5>
+                  <p className="text-[11px] leading-relaxed whitespace-pre-wrap text-justify">
+                    {viewingAtaFromCase.desenvolvimentoSessao}
+                  </p>
+                </div>
+              )}
+
+              {/* Acordos e Combinados Mútuos */}
+              <div className="space-y-2 bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 print:bg-transparent print:border-slate-300">
+                <h5 className="font-black text-[11px] uppercase tracking-wider text-emerald-900 border-b border-emerald-200 pb-1">
+                  3. PACTUAÇÕES, COMPROMISSOS E ACORDO MÚTUO
+                </h5>
+                <div className="space-y-2 text-[11px]">
+                  {viewingAtaFromCase.compromissoParte1 && (
+                    <p><strong>Compromisso de {viewingAtaFromCase.parte1Nome || 'Parte 1'}:</strong> {viewingAtaFromCase.compromissoParte1}</p>
+                  )}
+                  {viewingAtaFromCase.compromissoParte2 && (
+                    <p><strong>Compromisso de {viewingAtaFromCase.parte2Nome || 'Parte 2'}:</strong> {viewingAtaFromCase.compromissoParte2}</p>
+                  )}
+                  <p className="font-bold text-slate-900">
+                    <strong>Compromisso Mútuo Conclusivo:</strong> {viewingAtaFromCase.compromissoMutuo || 'As partes concordaram em restabelecer a convivência harmônica e o respeito mútuo no ambiente escolar.'}
+                  </p>
+                  {viewingAtaFromCase.encerramentoEncaminhamentos && (
+                    <p><strong>Encaminhamentos Adicionais:</strong> {viewingAtaFromCase.encerramentoEncaminhamentos}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Campo de Assinaturas */}
+              <div className="pt-8 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-center text-[10px]">
+                <div className="space-y-1">
+                  <div className="border-b border-slate-900 pb-8"></div>
+                  <p className="font-bold uppercase">{viewingAtaFromCase.responsavelMediacao || 'Professor(a) Mediador(a)'}</p>
+                  <p className="text-slate-500">Mediação Escolar</p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="border-b border-slate-900 pb-8"></div>
+                  <p className="font-bold uppercase">{viewingAtaFromCase.parte1Nome || 'Parte 1'}</p>
+                  <p className="text-slate-500">Estudante / Responsável</p>
+                </div>
+
+                {viewingAtaFromCase.parte2Nome && (
+                  <div className="space-y-1">
+                    <div className="border-b border-slate-900 pb-8"></div>
+                    <p className="font-bold uppercase">{viewingAtaFromCase.parte2Nome}</p>
+                    <p className="text-slate-500">Estudante / Responsável</p>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

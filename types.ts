@@ -384,6 +384,7 @@ export interface PsychosocialMeetingAta {
   encerramentoEncaminhamentos?: string;
 
   timestamp: number;
+  caseId?: string;
   signatures?: ElectronicSignatureProof[];
   isSigned?: boolean;
 }

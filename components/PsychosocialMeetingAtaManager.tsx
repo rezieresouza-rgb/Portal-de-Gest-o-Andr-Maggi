@@ -14,7 +14,9 @@ import {
   ShieldCheck,
   Calendar,
   UserCheck,
-  FileCheck
+  FileCheck,
+  Scale,
+  Link2
 } from 'lucide-react';
 import { PsychosocialMeetingAta, MediationCase } from '../types';
 import { supabase } from '../supabaseClient';
@@ -31,6 +33,7 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
   const [viewMode, setViewMode] = useState<'list' | 'form'>(initialCase ? 'form' : 'list');
   const [loading, setLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [availableCases, setAvailableCases] = useState<MediationCase[]>([]);
   const [atas, setAtas] = useState<PsychosocialMeetingAta[]>(() => {
     const saved = localStorage.getItem('psychosocial_atas_v2');
     return saved ? JSON.parse(saved) : [];
@@ -44,6 +47,7 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
     number: '',
     year: new Date().getFullYear().toString(),
     pauta: initialCase ? `SESSÃO DE MEDIAÇÃO ESCOLAR - ${initialCase.studentName}` : '',
+    caseId: initialCase?.id,
     date: new Date().toISOString().split('T')[0],
     location: 'SALA DE MEDIAÇÃO - EE ANDRÉ ANTÔNIO MAGGI',
     participants: initialCase ? [initialCase.studentName, ...(initialCase.involvedParties || [])] : [''],
@@ -55,7 +59,7 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
     horarioInicio: '08:00',
     horarioTermino: '09:00',
     descricaoConflito: initialCase ? (initialCase.description?.replace(/\[[^\]]+\]/g, '').trim() || '') : '',
-    dataOcorrido: initialCase?.openedAt || new Date().toISOString().split('T')[0],
+    dataOcorrido: initialCase?.openedAt?.split('T')[0] || new Date().toISOString().split('T')[0],
     parte1Nome: initialCase?.studentName || '',
     interessesParte1: '',
     parte2Nome: initialCase?.involvedParties?.[0] || '',
@@ -93,6 +97,7 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
             number: content.number || d.student_name?.match(/ATA Nº (\d+)/)?.[1] || '01',
             year: content.year || (d.date ? d.date.split('-')[0] : new Date().getFullYear().toString()),
             pauta: content.pauta || d.student_name || 'Mediação Escolar',
+            caseId: content.caseId || d.student_id,
             date: content.date || d.date || new Date().toISOString().split('T')[0],
             location: content.location || 'SALA DE MEDIAÇÃO - EE ANDRÉ ANTÔNIO MAGGI',
             participants: content.participants || [],
@@ -143,8 +148,33 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
     }
   };
 
+  const fetchAvailableCases = async () => {
+    try {
+      const { data } = await supabase
+        .from('mediation_cases')
+        .select('*')
+        .order('opened_at', { ascending: false });
+      if (data) {
+        setAvailableCases(data.map((c: any) => ({
+          id: c.id,
+          studentName: c.student_name || '',
+          className: c.class_name || '',
+          description: c.description || '',
+          openedAt: c.opened_at,
+          involvedParties: c.involved_parties || [],
+          teacherName: c.teacher_name,
+          steps: c.steps || [],
+          logs: c.logs || []
+        })) as any);
+      }
+    } catch (e) {
+      console.warn('Aviso ao buscar casos para atas:', e);
+    }
+  };
+
   useEffect(() => {
     fetchCloudAtas();
+    fetchAvailableCases();
 
     const channel = supabase
       .channel('civic_documents_mediation_atas')
@@ -164,11 +194,12 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
       setViewMode('form');
       setForm(prev => ({
         ...prev,
+        caseId: initialCase.id,
         pauta: `SESSÃO DE MEDIAÇÃO ESCOLAR - ${initialCase.studentName}`,
         parte1Nome: initialCase.studentName,
         parte2Nome: initialCase.involvedParties?.[0] || '',
         descricaoConflito: initialCase.description?.replace(/\[[^\]]+\]/g, '').trim() || '',
-        dataOcorrido: initialCase.openedAt || new Date().toISOString().split('T')[0],
+        dataOcorrido: initialCase.openedAt?.split('T')[0] || new Date().toISOString().split('T')[0],
         participants: [initialCase.studentName, ...(initialCase.involvedParties || [])],
         responsavelMediacao: initialCase.teacherName || 'PROFESSOR MEDIADOR'
       }));
@@ -193,9 +224,12 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
 
     setIsSaving(true);
     const generatedId = crypto.randomUUID();
+    const targetCaseId = initialCase?.id || form.caseId;
+
     const newAta: PsychosocialMeetingAta = {
       id: generatedId,
       ...form,
+      caseId: targetCaseId,
       timestamp: Date.now()
     };
 
@@ -226,27 +260,55 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
       console.error('Erro de rede ao salvar ata:', e);
     }
 
-    // 2. Se houver caso vinculado, salvar log no Supabase
-    if (initialCase?.id) {
+    // 2. Se houver caso vinculado, salvar ação na timeline, atualizar etapas e sincronizar acordos
+    if (targetCaseId) {
       try {
-        const ataLog = {
-          id: `log-${Date.now()}`,
+        const actionLog = {
+          id: `log-ata-${Date.now()}`,
           date: form.date,
           professional: form.responsavelMediacao || 'PROFESSOR MEDIADOR',
-          content: `[ATA OFICIAL SEDUC LAVRADA Nº ${newAta.number}/${newAta.year}] Ata de mediação registrada formalmente para ${form.parte1Nome} e ${form.parte2Nome || 'envolvidos'}.`
+          category: 'ATA',
+          content: `📌 Ata Oficial SEDUC Nº ${newAta.number}/${newAta.year} lavrada com os acordos e combinados das partes.`
         };
-        const updatedLogs = [ataLog, ...(initialCase.logs || [])];
-        await supabase
+
+        const { data: existingCase } = await supabase
           .from('mediation_cases')
-          .update({ logs: updatedLogs })
-          .eq('id', initialCase.id);
+          .select('*')
+          .eq('id', targetCaseId)
+          .single();
+
+        if (existingCase) {
+          const updatedLogs = [actionLog, ...(existingCase.logs || [])];
+          const updatedSteps = (existingCase.steps || []).map((s: any) => {
+            const labelLower = (s.label || '').toLowerCase();
+            if (labelLower.includes('círculo') || labelLower.includes('circulo') || labelLower.includes('ata') || labelLower.includes('acordo')) {
+              return { ...s, completed: true, date: form.date };
+            }
+            return s;
+          });
+
+          const updatePayload: any = {
+            logs: updatedLogs,
+            steps: updatedSteps
+          };
+
+          const pactoFinal = form.compromissoMutuo || form.encerramentoEncaminhamentos || (form.compromissoParte1 ? `[Parte 1]: ${form.compromissoParte1}\n[Parte 2]: ${form.compromissoParte2 || 'Concordou'}` : '');
+          if (pactoFinal && (!existingCase.feedback || existingCase.feedback.trim() === '')) {
+            updatePayload.feedback = `[Acordo em Ata Oficial SEDUC Nº ${newAta.number}/${newAta.year}]\n${pactoFinal}`;
+          }
+
+          await supabase
+            .from('mediation_cases')
+            .update(updatePayload)
+            .eq('id', targetCaseId);
+        }
       } catch (err) {
-        console.warn('Aviso ao registrar ata no caso de mediação:', err);
+        console.warn('Aviso ao sincronizar ata com caso de mediação:', err);
       }
     }
 
     setIsSaving(false);
-    alert("Ata de Mediação registrada e salva no histórico e na nuvem com sucesso!");
+    alert("✅ Ata de Mediação registrada e vinculada com sucesso ao caso e ao histórico!");
     setViewMode('list');
     resetForm();
   };
@@ -420,10 +482,60 @@ const PsychosocialMeetingAtaManager: React.FC<PsychosocialMeetingAtaManagerProps
                  </div>
               </div>
 
-              <div className="space-y-8 text-xs">
-                 
-                 {/* BLOCO 1: IDENTIFICAÇÃO */}
-                 <div className="space-y-4 bg-rose-50/40 p-6 rounded-3xl border border-rose-100/60">
+               <div className="space-y-8 text-xs">
+                  
+                  {/* SELETOR DE VÍNCULO COM CASO DE MEDIAÇÃO */}
+                  <div className="bg-indigo-50/70 border border-indigo-200 p-5 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-sm">
+                        <Scale size={18} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-black text-indigo-950 uppercase tracking-wider block">
+                          Vincular ao Caso de Mediação Escolar
+                        </label>
+                        <p className="text-[11px] text-indigo-700 font-medium">
+                          Selecione o caso do estudante para preencher os dados e vincular a ata automaticamente ao histórico.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="w-full md:w-80">
+                      <select
+                        value={form.caseId || ''}
+                        onChange={(e) => {
+                          const selectedId = e.target.value;
+                          const foundCase = availableCases.find(c => c.id === selectedId);
+                          if (foundCase) {
+                            setForm(prev => ({
+                              ...prev,
+                              caseId: foundCase.id,
+                              parte1Nome: foundCase.studentName || prev.parte1Nome,
+                              parte2Nome: foundCase.involvedParties?.[0] || prev.parte2Nome,
+                              pauta: `SESSÃO DE MEDIAÇÃO ESCOLAR - ${foundCase.studentName}`,
+                              descricaoConflito: foundCase.description?.replace(/\[[^\]]+\]/g, '').trim() || prev.descricaoConflito,
+                              dataOcorrido: foundCase.openedAt?.split('T')[0] || prev.dataOcorrido,
+                              participants: [foundCase.studentName, ...(foundCase.involvedParties || [])],
+                              objectives: `Acolhimento, escuta ativa e restauração do clima de convivência referente ao fato envolvendo ${foundCase.studentName}.`
+                            }));
+                          } else {
+                            setForm(prev => ({ ...prev, caseId: undefined }));
+                          }
+                        }}
+                        className="w-full p-3 bg-white border border-indigo-300 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                      >
+                        <option value="">-- Criar Ata Avulsa (Sem vínculo) --</option>
+                        {availableCases.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.studentName} ({c.className}) - Protocolo #{c.id?.substring(0, 6)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* BLOCO 1: IDENTIFICAÇÃO */}
+                  <div className="space-y-4 bg-rose-50/40 p-6 rounded-3xl border border-rose-100/60">
                     <h4 className="text-xs font-black text-rose-900 uppercase tracking-widest flex items-center gap-2 border-b border-rose-100 pb-2">
                        <FileCheck size={16} /> 1. Identificação da Mediação
                     </h4>
