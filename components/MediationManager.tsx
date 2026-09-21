@@ -162,7 +162,7 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
     selectedStudentsList: [],
     estimatedCount: 28
   });
-  const [activeTab, setActiveTab] = useState<'ativos' | 'historico'>('ativos');
+  const [activeTab, setActiveTab] = useState<'entrada' | 'acompanhamento' | 'historico'>('entrada');
 
   // Automatic professional title resolution based on user login/name
   const defaultProfessionalTitle = useMemo(() => {
@@ -924,14 +924,17 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
       (c.studentName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
       (c.className || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    if (activeTab === 'ativos') {
-      // Casos não concluídos OU concluídos hoje (para não "sumirem" na hora)
-      return matchesSearch && (c.status !== 'CONCLUÍDO' || c.closedAt === today);
+    if (activeTab === 'entrada') {
+      return matchesSearch && c.status === 'ABERTURA';
+    } else if (activeTab === 'acompanhamento') {
+      // Casos em andamento OU concluídos hoje (para não "sumirem" na hora)
+      return matchesSearch && (c.status === 'PLANEJAMENTO' || c.status === 'EXECUÇÃO' || (c.status !== 'ABERTURA' && c.status !== 'CONCLUÍDO') || (c.status === 'CONCLUÍDO' && c.closedAt === today));
     }
     return matchesSearch && c.status === 'CONCLUÍDO';
   });
 
-  const activeCount = cases.filter(c => c.status !== 'CONCLUÍDO').length;
+  const entradaCount = cases.filter(c => c.status === 'ABERTURA').length;
+  const acompanhamentoCount = cases.filter(c => c.status === 'PLANEJAMENTO' || c.status === 'EXECUÇÃO' || (c.status !== 'ABERTURA' && c.status !== 'CONCLUÍDO')).length;
   const historyCount = cases.filter(c => c.status === 'CONCLUÍDO').length;
 
   const linkedAtas = useMemo(() => {
@@ -956,10 +959,16 @@ const MediationManager: React.FC<MediationManagerProps> = ({ user, role, onTabCh
                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Mediação de Conflitos</h3>
                <div className="flex items-center gap-2 mt-1">
                    <button 
-                     onClick={() => setActiveTab('ativos')}
-                     className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${activeTab === 'ativos' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                     onClick={() => setActiveTab('entrada')}
+                     className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${activeTab === 'entrada' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
                    >
-                     Ativos ({activeCount})
+                     Caixa de Entrada ({entradaCount})
+                   </button>
+                   <button 
+                     onClick={() => setActiveTab('acompanhamento')}
+                     className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${activeTab === 'acompanhamento' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                   >
+                     Em Acompanhamento ({acompanhamentoCount})
                    </button>
                    <button 
                      onClick={() => setActiveTab('historico')}
