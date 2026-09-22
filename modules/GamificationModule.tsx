@@ -99,14 +99,14 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       }
 
       // 3. Civic Behavior (civic_student_behavior)
-      const { data: civic } = await supabase
+      // Since it's a running score, we just apply it globally for now
+      const { data: civic, error: errCivic } = await supabase
         .from('civic_student_behavior')
         .select('class_name, score');
-      if (civic) {
+      if (civic && !errCivic) {
         civic.forEach((c: any) => {
           const cName = c.class_name;
           if (cName && classScores[cName] && c.score) {
-             // 50 points per student with exceptional behavior (>9.0)
              if (c.score >= 9.0) classScores[cName].breakdown.civicBehavior += 50;
              else if (c.score >= 8.0) classScores[cName].breakdown.civicBehavior += 10;
              else if (c.score < 5.0) classScores[cName].breakdown.civicBehavior -= 20;
@@ -114,39 +114,32 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         });
       }
 
-      // 4. Pedagogical Occurrences (Negative)
-      const { data: pedOcc } = await supabase
-        .from('pedagogical_occurrences')
-        .select('class_name, severity')
-        .eq('status', 'REGISTRADO'); // Could filter by date matching the bimestre
-      if (pedOcc) {
-        pedOcc.forEach((o: any) => {
-          const cName = o.class_name;
+      // 4. Occurrences (Pedagogical and Classroom)
+      const { data: occurrences, error: errOcc } = await supabase
+        .from('occurrences')
+        .select('classroom_name, category, severity')
+        .eq('status', 'REGISTRADO');
+        
+      if (occurrences && !errOcc) {
+        occurrences.forEach((o: any) => {
+          const cName = o.classroom_name;
           if (cName && classScores[cName]) {
-             if (o.severity === 'ALTA' || o.severity === 'CRÍTICA') classScores[cName].breakdown.pedagogicalOccurrences -= 30;
-             else classScores[cName].breakdown.pedagogicalOccurrences -= 10;
+             if (o.category?.includes('ELOGIO') || o.severity === 'ELOGIO') {
+               classScores[cName].breakdown.classroomOccurrences += 20;
+             } else {
+               if (o.severity === 'ALTA' || o.severity === 'CRÍTICA') classScores[cName].breakdown.pedagogicalOccurrences -= 30;
+               else classScores[cName].breakdown.pedagogicalOccurrences -= 10;
+             }
           }
         });
       }
 
-      // 5. Classroom Occurrences (Positive and Negative)
-      const { data: classOcc } = await supabase
-        .from('classroom_occurrences')
-        .select('class_name, type, severity');
-      if (classOcc) {
-        classOcc.forEach((o: any) => {
-          const cName = o.class_name;
-          if (cName && classScores[cName]) {
-             if (o.type === 'ELOGIO') classScores[cName].breakdown.classroomOccurrences += 20;
-             else if (o.type === 'DISCIPLINAR') classScores[cName].breakdown.classroomOccurrences -= 15;
-          }
-        });
-      }
-
-      // 6. Cleaning Occurrences
-      const { data: cleanOcc } = await supabase
-        .from('cleaning_occurrences')
-        .select('location, category'); // location might contain room number, which needs mapping, or we just rely on explicit class name in description
+      // 5. Cleaning Occurrences - Safe fallback if table doesn't exist
+      try {
+        const { data: cleanOcc, error: errClean } = await supabase
+          .from('cleaning_occurrences')
+          .select('location, category');
+      } catch(e) {}
       
       // Calculate totals and badges
       const finalScores = Object.values(classScores).map(score => {
