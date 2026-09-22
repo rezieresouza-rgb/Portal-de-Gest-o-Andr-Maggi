@@ -70,6 +70,8 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         };
       });
 
+      let totalBimestreEvents = 0;
+      
       // 1. Grades (Assessments)
       const { data: assessments } = await supabase
         .from('assessments')
@@ -84,6 +86,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
           .in('assessment_id', assessmentIds);
 
         if (grades) {
+           totalBimestreEvents += grades.length;
            grades.forEach((g: any) => {
              const cName = g.assessments?.class_name;
              if (cName && classScores[cName]) {
@@ -103,28 +106,13 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         .gte('borrow_date', dateRange.start)
         .lte('borrow_date', dateRange.end);
       if (loans) {
+         totalBimestreEvents += loans.length;
          loans.forEach((l: any) => {
            const cName = l.reader_class;
            if (cName && classScores[cName]) {
              classScores[cName].breakdown.library += 2;
            }
          });
-      }
-
-      // 3. Civic Behavior (civic_student_behavior)
-      // Since it's a running score, we just apply it globally for now
-      const { data: civic, error: errCivic } = await supabase
-        .from('civic_student_behavior')
-        .select('class_name, score');
-      if (civic && !errCivic) {
-        civic.forEach((c: any) => {
-          const cName = c.class_name;
-          if (cName && classScores[cName] && c.score) {
-             if (c.score >= 9.0) classScores[cName].breakdown.civicBehavior += 50;
-             else if (c.score >= 8.0) classScores[cName].breakdown.civicBehavior += 10; // BASE 10 pts
-             else if (c.score < 5.0) classScores[cName].breakdown.civicBehavior -= 20;
-          }
-        });
       }
 
       // 4. Occurrences (Pedagogical and Classroom)
@@ -136,6 +124,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         .lte('date', dateRange.end);
         
       if (occurrences && !errOcc) {
+        totalBimestreEvents += occurrences.length;
         occurrences.forEach((o: any) => {
           const cName = o.classroom_name;
           if (cName && classScores[cName]) {
@@ -145,6 +134,27 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                if (o.severity === 'ALTA' || o.severity === 'CRÍTICA') classScores[cName].breakdown.pedagogicalOccurrences -= 30;
                else classScores[cName].breakdown.pedagogicalOccurrences -= 10;
              }
+          }
+        });
+      }
+
+      if (totalBimestreEvents === 0) {
+        setRankingData([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Civic Behavior (civic_student_behavior) - Only apply if the bimestre has started
+      const { data: civic, error: errCivic } = await supabase
+        .from('civic_student_behavior')
+        .select('class_name, score');
+      if (civic && !errCivic) {
+        civic.forEach((c: any) => {
+          const cName = c.class_name;
+          if (cName && classScores[cName] && c.score) {
+             if (c.score >= 9.0) classScores[cName].breakdown.civicBehavior += 50;
+             else if (c.score >= 8.0) classScores[cName].breakdown.civicBehavior += 10; // BASE 10 pts
+             else if (c.score < 5.0) classScores[cName].breakdown.civicBehavior -= 20;
           }
         });
       }
