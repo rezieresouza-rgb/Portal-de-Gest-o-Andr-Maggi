@@ -19,7 +19,8 @@ import {
   Settings,
   GraduationCap,
   Scale,
-  Music
+  Music,
+  Trophy
 } from 'lucide-react';
 import { ModuleTypeExtended } from '../App';
 import { User, AccessLog } from '../types';
@@ -34,16 +35,16 @@ interface HubProps {
 }
 
 const DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte', 'settings'],
-  'ADMINISTRADOR': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte', 'settings'],
-  'DIRETOR': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte', 'settings'],
-  'COORDENADOR PEDAGÓGICO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte'],
-  'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training', 'educarte'],
-  'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training', 'educarte'],
-  'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'mediacao', 'educarte'],
-  'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'educarte'],
-  'PSICOSSOCIAL': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training', 'educarte'],
-  'MEDIADOR': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training', 'educarte'],
+  'GESTAO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte', 'settings', 'gamification'],
+  'ADMINISTRADOR': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte', 'settings', 'gamification'],
+  'DIRETOR': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte', 'settings', 'gamification'],
+  'COORDENADOR PEDAGÓGICO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'special_education', 'civico_militar', 'training', 'educarte', 'gamification'],
+  'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training', 'educarte', 'gamification'],
+  'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'special_education', 'civico_militar', 'training', 'educarte', 'gamification'],
+  'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'mediacao', 'educarte', 'gamification'],
+  'REGÊNCIA': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'educarte', 'gamification'],
+  'PSICOSSOCIAL': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training', 'educarte', 'gamification'],
+  'MEDIADOR': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'special_education', 'teacher', 'training', 'educarte', 'gamification'],
   'OFICIAL DE GESTÃO CIVICO-MILITAR': ['civico_militar', 'scheduling', 'training', 'educarte'],
   'GESTOR EDUCACIONAL MILITAR': ['civico_militar', 'scheduling', 'training', 'educarte'],
   'MONITOR': ['civico_militar', 'scheduling', 'training', 'educarte'],
@@ -121,6 +122,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     { id: 'civico_militar', title: 'Cívico-Militar', status: 'Rotina OK', statusColor: 'blue', icon: <ShieldCheck size={20} /> },
     { id: 'educarte', title: 'Projeto Educarte', status: 'Banda & Fanfarra', statusColor: 'amber', icon: <Music size={20} /> },
     { id: 'training', title: 'Formação & Cursos', status: 'Capacitação', statusColor: 'violet', icon: <GraduationCap size={20} /> },
+    { id: 'gamification', title: 'Gamificação das Turmas', status: 'Ranking', statusColor: 'amber', icon: <Trophy size={20} /> },
     { id: 'settings', title: 'Configurações', status: 'Administração', statusColor: 'indigo', icon: <Settings size={20} />, adminOnly: true },
   ];
 

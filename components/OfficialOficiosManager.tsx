@@ -11,6 +11,45 @@ import ElectronicSignatureStamp from './ElectronicSignatureStamp';
 import ElectronicSignatureModal from './ElectronicSignatureModal';
 import { registerSignatureProof } from '../utils/signatureService';
 
+export interface OficioSignatory {
+  name: string;
+  role: string;
+}
+
+export const parseSignatories = (oficio: Partial<SchoolOficio> | null | undefined): OficioSignatory[] => {
+  if (!oficio) return [{ name: '', role: '' }];
+  if (oficio.signatories && Array.isArray(oficio.signatories) && oficio.signatories.length > 0) {
+    return oficio.signatories.map(s => ({
+      name: (s.name || '').trim(),
+      role: (s.role || '').trim()
+    })).filter(s => s.name.length > 0);
+  }
+  if (!oficio.signatory_name) return [{ name: '', role: oficio.signatory_role || '' }];
+  
+  if (oficio.signatory_name.includes('///')) {
+    const names = oficio.signatory_name.split('///').map(s => s.trim()).filter(Boolean);
+    const roles = (oficio.signatory_role || '').split('///').map(s => s.trim());
+    return names.map((name, i) => ({
+      name,
+      role: roles[i] || oficio.signatory_role || ''
+    }));
+  }
+
+  if (oficio.signatory_name.includes('\n')) {
+    const names = oficio.signatory_name.split('\n').map(s => s.trim()).filter(Boolean);
+    const roles = (oficio.signatory_role || '').split('\n').map(s => s.trim());
+    return names.map((name, i) => ({
+      name,
+      role: roles[i] || oficio.signatory_role || ''
+    }));
+  }
+
+  return [{
+    name: oficio.signatory_name.trim(),
+    role: (oficio.signatory_role || '').trim()
+  }];
+};
+
 export interface SchoolOficio {
   id: string;
   number: number;
@@ -27,6 +66,7 @@ export interface SchoolOficio {
   closure_text: string;
   signatory_name: string;
   signatory_role: string;
+  signatories?: OficioSignatory[];
   created_at: string;
   signatures?: ElectronicSignatureProof[];
   is_signed?: boolean;
@@ -99,7 +139,24 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   const [isSigningModalOpen, setIsSigningModalOpen] = useState<boolean>(false);
 
   // Form fields
-  const [formData, setFormData] = useState({
+  const defaultInitialSignatory: OficioSignatory = {
+    name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
+    role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
+  };
+
+  const [formData, setFormData] = useState<{
+    title_subject: string;
+    recipient_name: string;
+    recipient_role: string;
+    recipient_org: string;
+    city_date: string;
+    salutation: string;
+    body_text: string;
+    closure_text: string;
+    signatories: OficioSignatory[];
+    signatory_name: string;
+    signatory_role: string;
+  }>({
     title_subject: '',
     recipient_name: '',
     recipient_role: '',
@@ -108,9 +165,90 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     salutation: 'Prezado(a) Senhor(a),',
     body_text: '',
     closure_text: 'Atenciosamente,',
-    signatory_name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
-    signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
+    signatories: [defaultInitialSignatory],
+    signatory_name: defaultInitialSignatory.name,
+    signatory_role: defaultInitialSignatory.role
   });
+
+  const handleAddSignatory = () => {
+    setFormData(prev => ({
+      ...prev,
+      signatories: [
+        ...prev.signatories,
+        { name: '', role: '' }
+      ]
+    }));
+  };
+
+  const handleRemoveSignatory = (index: number) => {
+    if (formData.signatories.length <= 1) return;
+    setFormData(prev => {
+      const next = prev.signatories.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        signatories: next,
+        signatory_name: next[0]?.name || '',
+        signatory_role: next[0]?.role || ''
+      };
+    });
+  };
+
+  const handleSignatoryChange = (index: number, field: 'name' | 'role', value: string) => {
+    setFormData(prev => {
+      const next = [...prev.signatories];
+      const current = { ...next[index], [field]: value };
+
+      if (field === 'name') {
+        const clean = value.trim().toUpperCase();
+        if (staffRoleMap[clean]) {
+          current.role = staffRoleMap[clean];
+        }
+      }
+      next[index] = current;
+
+      return {
+        ...prev,
+        signatories: next,
+        signatory_name: next[0]?.name || '',
+        signatory_role: next[0]?.role || ''
+      };
+    });
+  };
+
+  const handleQuickAddSignatory = (name: string, role: string) => {
+    setFormData(prev => {
+      const exists = prev.signatories.some(s => s.name.trim().toUpperCase() === name.trim().toUpperCase());
+      if (exists) return prev;
+
+      if (prev.signatories.length === 1 && !prev.signatories[0].name.trim()) {
+        return {
+          ...prev,
+          signatories: [{ name, role }],
+          signatory_name: name,
+          signatory_role: role
+        };
+      }
+
+      const next = [...prev.signatories, { name, role }];
+      return {
+        ...prev,
+        signatories: next,
+        signatory_name: next[0]?.name || '',
+        signatory_role: next[0]?.role || ''
+      };
+    });
+  };
+
+  const commonStaffSuggestions: OficioSignatory[] = useMemo(() => [
+    { name: 'REZIERE DE SOUZA', role: 'DIRETOR ESCOLAR' },
+    { name: 'JAIME DE SOUZA COSTA', role: 'DIRETOR ESCOLAR' },
+    { name: 'MARCELO DA SILVA', role: 'GESTOR ESCOLAR' },
+    { name: 'DYNEA REIS VALLE LIRA', role: 'COORDENADORA PEDAGÓGICA' },
+    { name: 'FABIANA REGINA DE CAMPOS LOPES', role: 'SECRETÁRIA ESCOLAR' },
+    { name: 'LUCILEIA SANTOS FREIRE', role: 'SECRETÁRIA ESCOLAR' },
+    { name: 'DANUBIA DOS SANTOS HUSSEN ALI', role: 'EQUIPE PSICOSSOCIAL' },
+    { name: 'REGINALVA MENDES SANTANA', role: 'EQUIPE PSICOSSOCIAL' }
+  ], []);
 
   // AI Redaction Assistant States
   const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
@@ -146,44 +284,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
     }
   };
 
-  // Calculate next global sequential number for the current year (starts at 23)
-  const currentYear = useMemo(() => new Date().getFullYear(), []);
 
-  const nextSequenceInfo = useMemo(() => {
-    const maxNum = oficios.reduce((max, o) => {
-      let num = o.number || 0;
-      if (!num && o.formatted_number) {
-        const match = o.formatted_number.match(/^(\d+)/);
-        if (match) num = parseInt(match[1], 10);
-      }
-      return Math.max(max, num);
-    }, 0);
-    const nextNum = maxNum >= STARTING_SEQUENCE ? maxNum + 1 : STARTING_SEQUENCE;
-    const formatted = `${String(nextNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
-    return { number: nextNum, formatted };
-  }, [oficios, currentYear]);
-
-  // Carregar quadro de servidores para sincronização de cargo
-  useEffect(() => {
-    const fetchStaffRoles = async () => {
-      try {
-        const { data } = await supabase.from('staff').select('name, role, job_title');
-        if (data) {
-          const map: Record<string, string> = {};
-          data.forEach((s: any) => {
-            if (s.name) {
-              const cleanName = s.name.trim().toUpperCase();
-              map[cleanName] = s.job_title || s.role || 'Servidor(a) Público(a)';
-            }
-          });
-          setStaffRoleMap(map);
-        }
-      } catch (err) {
-        console.warn('Erro ao carregar cargos do staff:', err);
-      }
-    };
-    fetchStaffRoles();
-  }, []);
 
   // Fetch ofícios from Supabase (with fallback to localStorage)
   const fetchOficios = async () => {
@@ -331,6 +432,12 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
   const handleEditOficio = (oficio: SchoolOficio) => {
     setEditingOficioId(oficio.id);
+    const parsedSignatories = parseSignatories(oficio);
+    const initialSignatories = parsedSignatories.length > 0 ? parsedSignatories : [{
+      name: oficio.signatory_name || user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
+      role: oficio.signatory_role || (moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar')
+    }];
+
     setFormData({
       title_subject: oficio.title_subject || '',
       recipient_name: oficio.recipient_name || '',
@@ -340,8 +447,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       salutation: oficio.salutation || 'Prezado(a) Senhor(a),',
       body_text: oficio.body_text || '',
       closure_text: oficio.closure_text || 'Atenciosamente,',
-      signatory_name: oficio.signatory_name || user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
-      signatory_role: oficio.signatory_role || (moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar')
+      signatories: initialSignatories,
+      signatory_name: initialSignatories[0]?.name || '',
+      signatory_role: initialSignatories[0]?.role || ''
     });
     setCustomSequenceNumber(String(oficio.number || ''));
     setAiPromptInput('');
@@ -356,15 +464,32 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       return;
     }
 
+    const validSignatories = (formData.signatories && formData.signatories.length > 0)
+      ? formData.signatories.filter(s => s.name && s.name.trim())
+      : (formData.signatory_name.trim() ? [{ name: formData.signatory_name.trim(), role: formData.signatory_role.trim() }] : []);
+
+    if (validSignatories.length === 0) {
+      alert('Por favor, informe ao menos um signatário para assinar o ofício!');
+      return;
+    }
+
+    const resolvedSignatories = validSignatories.map(s => {
+      const clean = s.name.trim().toUpperCase();
+      const role = staffRoleMap[clean] || s.role.trim() || 'Servidor(a) Público(a)';
+      return {
+        name: s.name.trim(),
+        role
+      };
+    });
+
+    const primaryName = resolvedSignatories.map(s => s.name).join(' /// ');
+    const primaryRole = resolvedSignatories.map(s => s.role).join(' /// ');
+
     let nextNum = nextSequenceInfo.number;
     if (customSequenceNumber && !isNaN(parseInt(customSequenceNumber, 10))) {
       nextNum = parseInt(customSequenceNumber, 10);
     }
     const formattedNum = `${String(nextNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
-
-    // Atualizar o cargo dinâmico com base no staff
-    const cleanSignatory = (formData.signatory_name || '').trim().toUpperCase();
-    const resolvedRole = staffRoleMap[cleanSignatory] || formData.signatory_role;
 
     if (editingOficioId) {
       // MODO EDIÇÃO: Atualizar ofício existente
@@ -384,8 +509,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         salutation: formData.salutation.trim(),
         body_text: formData.body_text.trim(),
         closure_text: formData.closure_text.trim(),
-        signatory_name: formData.signatory_name.trim(),
-        signatory_role: resolvedRole,
+        signatory_name: primaryName,
+        signatory_role: primaryRole,
+        signatories: resolvedSignatories,
         created_at: existing?.created_at || new Date().toISOString(),
         signatures: existing?.signatures || [],
         is_signed: existing?.is_signed || false
@@ -435,8 +561,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       salutation: formData.salutation.trim(),
       body_text: formData.body_text.trim(),
       closure_text: formData.closure_text.trim(),
-      signatory_name: formData.signatory_name.trim(),
-      signatory_role: resolvedRole,
+      signatory_name: primaryName,
+      signatory_role: primaryRole,
+      signatories: resolvedSignatories,
       created_at: new Date().toISOString(),
       signatures: [],
       is_signed: false
@@ -471,7 +598,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
         is_signed: false
       }]);
     } catch (err) {
-      console.warn('Erro ao salvar ofício no banco do Supabase:', err);
+      console.warn('Erro ao salvar no Supabase:', err);
     }
 
     // Limpar formulário e fechar modal
@@ -484,9 +611,11 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       salutation: 'Prezado(a) Senhor(a),',
       body_text: '',
       closure_text: 'Atenciosamente,',
-      signatory_name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
-      signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
+      signatories: [defaultInitialSignatory],
+      signatory_name: defaultInitialSignatory.name,
+      signatory_role: defaultInitialSignatory.role
     });
+    setEditingOficioId(null);
     setCustomSequenceNumber('');
     setAiPromptInput('');
     setIsModalOpen(false);
@@ -620,8 +749,9 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 salutation: 'Prezado(a) Senhor(a),',
                 body_text: '',
                 closure_text: 'Atenciosamente,',
-                signatory_name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
-                signatory_role: moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar'
+                signatories: [defaultInitialSignatory],
+                signatory_name: defaultInitialSignatory.name,
+                signatory_role: defaultInitialSignatory.role
               });
               setCustomSequenceNumber('');
               setAiPromptInput('');

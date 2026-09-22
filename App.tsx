@@ -28,7 +28,7 @@ import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { INITIAL_STUDENTS } from './constants/initialData';
 
-export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'mediacao' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'educarte' | 'settings';
+export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'mediacao' | 'secretariat' | 'special_education' | 'civico_militar' | 'training' | 'educarte' | 'settings' | 'gamification';
 
 const App: React.FC = () => {
   const [isPending, startTransition] = useTransition();
@@ -62,7 +62,7 @@ const App: React.FC = () => {
       const validModules: ModuleTypeExtended[] = [
         'hub', 'merenda', 'finance', 'library', 'scheduling', 'teacher',
         'pedagogical', 'almoxarifado', 'patrimonio', 'limpeza', 'infraestrutura',
-        'busca_ativa', 'psychosocial', 'mediacao', 'secretariat', 'special_education', 'civico_militar', 'training', 'educarte', 'settings'
+        'busca_ativa', 'psychosocial', 'mediacao', 'secretariat', 'special_education', 'civico_militar', 'training', 'educarte', 'settings', 'gamification'
       ];
       if (validModules.includes(saved as ModuleTypeExtended)) {
         return saved as ModuleTypeExtended;
@@ -274,6 +274,14 @@ const App: React.FC = () => {
       case 'civico_militar': return <CivicoMilitarModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'training': return <TrainingModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'educarte': return <EducarteModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'gamification': {
+        const GamificationModule = React.lazy(() => import('./modules/GamificationModule'));
+        return (
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>}>
+            <GamificationModule user={user} onExit={() => handleModuleChange('hub')} />
+          </Suspense>
+        );
+      }
       case 'settings': return (
         <div className="min-h-screen bg-gray-50 p-8 lg:p-12">
           <div className="max-w-7xl mx-auto space-y-8">

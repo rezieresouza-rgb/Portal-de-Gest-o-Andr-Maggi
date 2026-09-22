@@ -247,8 +247,18 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
             updates.nextDueDate = undefined;
         }
 
+        const dbUpdates: any = { ...updates };
+        if ('lastExecutionDate' in updates) {
+            dbUpdates.last_execution_date = updates.lastExecutionDate;
+            delete dbUpdates.lastExecutionDate;
+        }
+        if ('nextDueDate' in updates) {
+            dbUpdates.next_due_date = updates.nextDueDate;
+            delete dbUpdates.nextDueDate;
+        }
+
         try {
-            await supabase.from('preventive_maintenance_plan').update(updates).eq('id', item.id);
+            await supabase.from('preventive_maintenance_plan').update(dbUpdates).eq('id', item.id);
         } catch (err) {
             console.error("Failed to update multi-date item:", err);
         }
@@ -265,13 +275,24 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                     const cleanData = data;
 
                     const formatted = cleanData.map(i => {
+                        let status = i.status;
+                        let cost = i.cost;
                         if (i.item === 'Ar Condicionado' && (i.intervention === 'Limpeza Interna' || i.description?.includes('Higienização profunda'))) {
-                            return { ...i, status: 'EM_EXECUCAO' as PreventiveStatus, cost: 6500 };
+                            status = 'EM_EXECUCAO';
+                            cost = 6500;
                         }
                         if (i.item === 'Controle de Pragas' || i.intervention === 'Dedetização') {
-                            return { ...i, status: 'EM_EXECUCAO' as PreventiveStatus, cost: 2800 };
+                            status = 'EM_EXECUCAO';
+                            cost = 2800;
                         }
-                        return i;
+                        return {
+                            ...i,
+                            lastExecutionDate: i.lastExecutionDate || i.last_execution_date,
+                            nextDueDate: i.nextDueDate || i.next_due_date,
+                            responsibleId: i.responsibleId || i.responsible_id,
+                            status: status as PreventiveStatus,
+                            cost
+                        };
                     });
                     setItems(formatted);
 
@@ -315,7 +336,14 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
                         .select();
 
                     if (insertError) throw insertError;
-                    if (inserted) setItems(inserted);
+                    if (inserted) {
+                        setItems(inserted.map(i => ({
+                            ...i,
+                            lastExecutionDate: i.lastExecutionDate || i.last_execution_date,
+                            nextDueDate: i.nextDueDate || i.next_due_date,
+                            responsibleId: i.responsibleId || i.responsible_id,
+                        })));
+                    }
                 }
             } catch (err) {
                 console.error("Error loading plan:", err);
@@ -330,8 +358,22 @@ const PreventiveMaintenancePlan: React.FC<{ employees: any[] }> = ({ employees }
         // Optimistic update
         setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
 
+        const dbUpdates: any = { ...updates };
+        if ('lastExecutionDate' in updates) {
+            dbUpdates.last_execution_date = updates.lastExecutionDate;
+            delete dbUpdates.lastExecutionDate;
+        }
+        if ('nextDueDate' in updates) {
+            dbUpdates.next_due_date = updates.nextDueDate;
+            delete dbUpdates.nextDueDate;
+        }
+        if ('responsibleId' in updates) {
+            dbUpdates.responsible_id = updates.responsibleId;
+            delete dbUpdates.responsibleId;
+        }
+
         try {
-            await supabase.from('preventive_maintenance_plan').update(updates).eq('id', id);
+            await supabase.from('preventive_maintenance_plan').update(dbUpdates).eq('id', id);
         } catch (err) {
             console.error("Failed to update item:", err);
         }
