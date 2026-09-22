@@ -24,7 +24,7 @@ interface ClassScore {
 }
 
 const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'ranking' | 'pontos_manuais'>('ranking');
+  const [activeTab, setActiveTab] = useState<'ranking' | 'pontos_manuais' | 'auditoria'>('ranking');
   const [bimestreFiltro, setBimestreFiltro] = useState<string>('1º BIMESTRE');
   const [rankingData, setRankingData] = useState<ClassScore[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -207,18 +207,26 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
           </div>
         </div>
 
-        <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+        <div className="flex gap-2 bg-slate-100 p-1 rounded-xl overflow-x-auto">
           <button
             onClick={() => setActiveTab('ranking')}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'ranking' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             Ranking
           </button>
           <button
+            onClick={() => setActiveTab('auditoria')}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'auditoria' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Auditoria
+          </button>
+          <button
             onClick={() => setActiveTab('pontos_manuais')}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'pontos_manuais' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -363,6 +371,59 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                   <p className="text-slate-500 text-sm mt-2">Os dados dos módulos ainda não foram lançados para gerar o ranking deste bimestre.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'auditoria' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 print:hidden">
+              <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <ShieldCheck className="text-indigo-600" /> Relatório de Auditoria - {bimestreFiltro}
+                </h2>
+                <button 
+                  onClick={() => calculateRanking(bimestreFiltro)}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 font-bold text-sm"
+                >
+                  <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                  Recalcular
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Turma</th>
+                      <th className="px-4 py-3 text-center">Pontos Iniciais</th>
+                      <th className="px-4 py-3 text-center text-emerald-600">Desempenho (Notas)</th>
+                      <th className="px-4 py-3 text-center text-blue-600">Biblioteca</th>
+                      <th className="px-4 py-3 text-center text-indigo-600">Cívico-Militar</th>
+                      <th className="px-4 py-3 text-center text-rose-600">Ocorrências (Pedagógicas)</th>
+                      <th className="px-4 py-3 text-center text-amber-600">Ocorrências (Sala)</th>
+                      <th className="px-4 py-3 text-center font-black text-slate-900">Total Final</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {rankingData.map(turma => (
+                      <tr key={turma.className} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-bold text-slate-800">{turma.className}</td>
+                        <td className="px-4 py-3 text-center text-slate-500 font-medium">1000</td>
+                        <td className="px-4 py-3 text-center text-emerald-600 font-bold">+{turma.breakdown.grades}</td>
+                        <td className="px-4 py-3 text-center text-blue-600 font-bold">+{turma.breakdown.library}</td>
+                        <td className="px-4 py-3 text-center text-indigo-600 font-bold">{turma.breakdown.civicBehavior > 0 ? `+${turma.breakdown.civicBehavior}` : turma.breakdown.civicBehavior}</td>
+                        <td className="px-4 py-3 text-center text-rose-600 font-bold">{turma.breakdown.pedagogicalOccurrences}</td>
+                        <td className="px-4 py-3 text-center text-amber-600 font-bold">{turma.breakdown.classroomOccurrences > 0 ? `+${turma.breakdown.classroomOccurrences}` : turma.breakdown.classroomOccurrences}</td>
+                        <td className="px-4 py-3 text-center font-black text-slate-900 bg-slate-50">{turma.totalPoints}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {rankingData.length === 0 && !isLoading && (
+                  <div className="p-8 text-center text-slate-500">
+                    Nenhum dado encontrado para gerar auditoria.
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
