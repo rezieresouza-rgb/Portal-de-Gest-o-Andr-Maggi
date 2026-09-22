@@ -12,8 +12,8 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
   const [bimestreFiltro, setBimestreFiltro] = useState<string>('1º BIMESTRE');
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20">
+    <div className="h-screen bg-slate-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-slate-200 px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center gap-4">
           <button
             onClick={onExit}
@@ -52,9 +52,10 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {activeTab === 'ranking' && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <main className="flex-1 overflow-y-auto w-full p-4 sm:p-6 lg:p-8 custom-scrollbar">
+        <div className="max-w-7xl mx-auto">
+          {activeTab === 'ranking' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Cabecalho de Filtros */}
             <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
               <div className="flex gap-2">
@@ -142,6 +143,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
              <p className="text-slate-500 mt-2">Em breve: Tela para coordenadores lançarem pontos de gincanas e feiras.</p>
           </div>
         )}
+        </div>
       </main>
     </div>
   );
