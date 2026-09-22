@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { ArrowLeft, Trophy, Medal, Star, ShieldCheck, HeartHandshake, TrendingDown, BookOpen, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Trophy, Medal, Star, ShieldCheck, HeartHandshake, TrendingDown, BookOpen, AlertCircle, RefreshCw, Printer } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
 
@@ -173,9 +173,14 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="h-screen bg-slate-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 z-20">
+    <div className="h-screen bg-slate-50 flex flex-col font-sans print:bg-white print:h-auto">
+      {/* Esconder cabeçalho original na impressão */}
+      <header className="bg-white border-b border-slate-200 px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 z-20 print:hidden">
         <div className="flex items-center gap-4">
           <button
             onClick={onExit}
@@ -214,12 +219,23 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto w-full p-4 sm:p-6 lg:p-8 custom-scrollbar">
-        <div className="max-w-7xl mx-auto">
+      {/* Cabeçalho exclusivo para impressão */}
+      <div className="hidden print:block text-center mb-8 border-b-2 border-slate-200 pb-4">
+         <div className="flex justify-center items-center gap-4 mb-2">
+           <Trophy className="text-amber-500" size={48} />
+           <h1 className="text-4xl font-black text-slate-900 uppercase">Liga Maggi</h1>
+           <Trophy className="text-amber-500" size={48} />
+         </div>
+         <h2 className="text-2xl font-bold text-slate-600">Boletim Semanal de Gamificação Escolar</h2>
+         <p className="text-lg text-slate-500 mt-2">Classificação Oficial referente ao {bimestreFiltro}</p>
+      </div>
+
+      <main className="flex-1 overflow-y-auto w-full p-4 sm:p-6 lg:p-8 custom-scrollbar print:overflow-visible print:p-0">
+        <div className="max-w-7xl mx-auto print:max-w-full">
           {activeTab === 'ranking' && (
             <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Cabecalho de Filtros */}
-              <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 gap-4 print:hidden">
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-center">
                   {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => (
                     <button
@@ -233,83 +249,92 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                     </button>
                   ))}
                 </div>
-                <button 
-                  onClick={() => calculateRanking(bimestreFiltro)}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 font-bold text-sm w-full sm:w-auto justify-center"
-                >
-                  <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-                  Atualizar Dados
-                </button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={handlePrint}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-700 font-bold text-sm flex-1 sm:flex-none shadow-md"
+                  >
+                    <Printer size={16} />
+                    Imprimir Mural
+                  </button>
+                  <button 
+                    onClick={() => calculateRanking(bimestreFiltro)}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 font-bold text-sm flex-1 sm:flex-none justify-center"
+                  >
+                    <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                    Atualizar Dados
+                  </button>
+                </div>
               </div>
 
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20">
+                <div className="flex flex-col items-center justify-center py-20 print:hidden">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
                   <p className="text-slate-500 font-medium">Cruzando dados de todos os módulos...</p>
                 </div>
               ) : rankingData.length >= 3 ? (
                 <>
                   {/* Area do Podio */}
-                  <div className="bg-gradient-to-b from-indigo-900 to-indigo-950 rounded-3xl p-4 sm:p-8 shadow-xl text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                  <div className="bg-gradient-to-b from-indigo-900 to-indigo-950 rounded-3xl p-4 sm:p-8 shadow-xl text-white relative overflow-hidden print:shadow-none print:border-2 print:border-indigo-900 print:text-slate-900 print:bg-none print:bg-white print:mb-8">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 print:hidden">
                       <Trophy size={200} />
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-black mb-8 text-center text-amber-400">Pódio do {bimestreFiltro}</h2>
-                    <div className="flex justify-center items-end gap-2 sm:gap-4 h-64 sm:h-72">
+                    <h2 className="text-2xl sm:text-3xl font-black mb-8 text-center text-amber-400 print:text-indigo-900 print:text-4xl">Pódio Oficial - Top 3</h2>
+                    <div className="flex justify-center items-end gap-2 sm:gap-4 h-64 sm:h-72 print:h-80">
                       {/* 2o Lugar */}
                       <div className="w-1/3 sm:w-1/4 flex flex-col items-center">
-                        <div className="text-sm sm:text-xl font-bold mb-1 sm:mb-2">{rankingData[1].className}</div>
-                        <div className="text-xs sm:text-sm text-indigo-200 mb-2 sm:mb-4">{rankingData[1].totalPoints} pts</div>
-                        <div className="w-full h-32 sm:h-40 bg-slate-300 rounded-t-lg flex justify-center items-start pt-2 sm:pt-4 border-t-4 border-slate-400 shadow-inner">
-                          <span className="text-2xl sm:text-4xl font-black text-slate-500">2</span>
+                        <div className="text-sm sm:text-xl font-bold mb-1 sm:mb-2 print:text-2xl print:text-slate-800">{rankingData[1].className}</div>
+                        <div className="text-xs sm:text-sm text-indigo-200 mb-2 sm:mb-4 print:text-indigo-600 print:font-bold print:text-lg">{rankingData[1].totalPoints} pts</div>
+                        <div className="w-full h-32 sm:h-40 bg-slate-300 rounded-t-lg flex justify-center items-start pt-2 sm:pt-4 border-t-4 border-slate-400 shadow-inner print:bg-slate-200 print:shadow-none">
+                          <span className="text-2xl sm:text-4xl font-black text-slate-500">2º</span>
                         </div>
                       </div>
                       {/* 1o Lugar */}
                       <div className="w-1/3 sm:w-1/3 flex flex-col items-center z-10">
-                        <div className="text-lg sm:text-3xl font-black text-amber-400 mb-1 sm:mb-2">{rankingData[0].className}</div>
-                        <div className="text-sm sm:text-lg text-amber-200 mb-2 sm:mb-4 font-bold flex items-center gap-1"><Star size={16}/> {rankingData[0].totalPoints} pts</div>
-                        <div className="w-full h-44 sm:h-56 bg-amber-500 rounded-t-lg flex justify-center items-start pt-2 sm:pt-4 border-t-4 border-amber-300 shadow-[0_0_30px_rgba(245,158,11,0.5)]">
-                          <span className="text-3xl sm:text-5xl font-black text-amber-100">1</span>
+                        <div className="text-lg sm:text-3xl font-black text-amber-400 mb-1 sm:mb-2 print:text-4xl print:text-amber-500">{rankingData[0].className}</div>
+                        <div className="text-sm sm:text-lg text-amber-200 mb-2 sm:mb-4 font-bold flex items-center gap-1 print:text-amber-600 print:text-2xl"><Star size={20}/> {rankingData[0].totalPoints} pts</div>
+                        <div className="w-full h-44 sm:h-56 bg-amber-500 rounded-t-lg flex justify-center items-start pt-2 sm:pt-4 border-t-4 border-amber-300 shadow-[0_0_30px_rgba(245,158,11,0.5)] print:bg-amber-400 print:shadow-none">
+                          <span className="text-3xl sm:text-5xl font-black text-amber-100 print:text-white">1º</span>
                         </div>
                       </div>
                       {/* 3o Lugar */}
                       <div className="w-1/3 sm:w-1/4 flex flex-col items-center">
-                        <div className="text-sm sm:text-xl font-bold mb-1 sm:mb-2">{rankingData[2].className}</div>
-                        <div className="text-xs sm:text-sm text-indigo-200 mb-2 sm:mb-4">{rankingData[2].totalPoints} pts</div>
-                        <div className="w-full h-24 sm:h-28 bg-amber-700/80 rounded-t-lg flex justify-center items-start pt-2 sm:pt-4 border-t-4 border-amber-600/60 shadow-inner">
-                          <span className="text-2xl sm:text-4xl font-black text-amber-900/40">3</span>
+                        <div className="text-sm sm:text-xl font-bold mb-1 sm:mb-2 print:text-2xl print:text-slate-800">{rankingData[2].className}</div>
+                        <div className="text-xs sm:text-sm text-indigo-200 mb-2 sm:mb-4 print:text-indigo-600 print:font-bold print:text-lg">{rankingData[2].totalPoints} pts</div>
+                        <div className="w-full h-24 sm:h-28 bg-amber-700/80 rounded-t-lg flex justify-center items-start pt-2 sm:pt-4 border-t-4 border-amber-600/60 shadow-inner print:bg-amber-100 print:border-amber-200 print:shadow-none">
+                          <span className="text-2xl sm:text-4xl font-black text-amber-900/40 print:text-amber-700">3º</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Restante do Ranking */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                      <h3 className="font-bold text-slate-700">Classificação Geral Escolar</h3>
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden print:border-2 print:border-slate-800 print:shadow-none">
+                    <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center print:bg-slate-800 print:text-white">
+                      <h3 className="font-bold text-slate-700 print:text-white print:text-xl">Classificação Geral Escolar</h3>
                     </div>
-                    <div className="divide-y divide-slate-50">
+                    <div className="divide-y divide-slate-50 print:divide-slate-200">
                       {rankingData.slice(3).map((turma, idx) => (
-                        <div key={turma.className} className="px-4 sm:px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors group">
+                        <div key={turma.className} className="px-4 sm:px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors group print:py-2">
                           <div className="flex items-center gap-4">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors print:bg-slate-200 print:text-slate-800">
                               {idx + 4}º
                             </div>
                             <div>
-                              <div className="font-bold text-slate-900">{turma.className}</div>
-                              <div className="text-[10px] sm:text-xs text-slate-500 flex flex-wrap gap-2 mt-1">
-                                {turma.badges.includes('Selo Paz') && <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded"><HeartHandshake size={10}/> Paz</span>}
-                                {turma.badges.includes('Selo Leitura') && <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded"><BookOpen size={10}/> Leitora</span>}
-                                {turma.badges.includes('Selo Coruja') && <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded"><Star size={10}/> Destaque Notas</span>}
+                              <div className="font-bold text-slate-900 print:text-xl">{turma.className}</div>
+                              <div className="text-[10px] sm:text-xs text-slate-500 flex flex-wrap gap-2 mt-1 print:text-sm">
+                                {turma.badges.includes('Selo Paz') && <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded print:border print:border-emerald-200"><HeartHandshake size={12}/> Paz</span>}
+                                {turma.badges.includes('Selo Leitura') && <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded print:border print:border-blue-200"><BookOpen size={12}/> Leitora</span>}
+                                {turma.badges.includes('Selo Coruja') && <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded print:border print:border-amber-200"><Star size={12}/> Destaque Notas</span>}
                                 {turma.badges.length === 0 && <span className="text-slate-400">Sem medalhas no bimestre</span>}
                               </div>
                             </div>
                           </div>
                           <div className="flex flex-col items-end">
-                            <div className="font-black text-indigo-600 sm:text-lg">
-                              {turma.totalPoints} <span className="text-xs text-indigo-400 font-bold uppercase">pts</span>
+                            <div className="font-black text-indigo-600 sm:text-lg print:text-2xl print:text-slate-900">
+                              {turma.totalPoints} <span className="text-xs text-indigo-400 font-bold uppercase print:text-slate-500">pts</span>
                             </div>
-                            <div className="text-[9px] text-slate-400 hidden sm:block">
+                            <div className="text-[9px] text-slate-400 hidden sm:block print:text-xs print:text-slate-600">
                               + {(turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) + turma.breakdown.grades} Ganhos | - {Math.abs((turma.breakdown.pedagogicalOccurrences < 0 ? turma.breakdown.pedagogicalOccurrences : 0))} Perdidos
                             </div>
                           </div>
@@ -317,9 +342,14 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                       ))}
                     </div>
                   </div>
+                  
+                  {/* Rodapé de Impressão */}
+                  <div className="hidden print:block text-center mt-8 text-sm text-slate-500 border-t border-slate-200 pt-4">
+                     Gerado automaticamente pelo Sistema de Gamificação Escolar - {new Date().toLocaleDateString('pt-BR')}
+                  </div>
                 </>
               ) : (
-                <div className="bg-white p-12 text-center rounded-2xl border border-slate-100">
+                <div className="bg-white p-12 text-center rounded-2xl border border-slate-100 print:hidden">
                   <AlertCircle size={48} className="mx-auto text-slate-300 mb-4" />
                   <h3 className="font-bold text-slate-700">Ainda não há dados suficientes</h3>
                   <p className="text-slate-500 text-sm mt-2">Os dados dos módulos ainda não foram lançados para gerar o ranking deste bimestre.</p>
@@ -329,7 +359,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
           )}
 
           {activeTab === 'pontos_manuais' && (
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center animate-in fade-in max-w-2xl mx-auto mt-8">
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center animate-in fade-in max-w-2xl mx-auto mt-8 print:hidden">
                <Trophy size={48} className="mx-auto text-amber-300 mb-4" />
                <h2 className="text-xl font-bold text-slate-700">Lançamento de Pontos Extras</h2>
                <p className="text-slate-500 mt-2 text-sm mb-8">Esta tela permitirá que a Gestão adicione pontos extras (Ex: Gincanas, Feira de Ciências, Arrecadações) diretamente na pontuação de uma turma.</p>
