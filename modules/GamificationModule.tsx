@@ -35,11 +35,23 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
     }
   }, [bimestreFiltro, activeTab]);
 
+  const getBimestreDateRange = (bimestre: string) => {
+    const year = new Date().getFullYear();
+    switch(bimestre) {
+      case '1º BIMESTRE': return { start: `${year}-02-01`, end: `${year}-04-30` };
+      case '2º BIMESTRE': return { start: `${year}-05-01`, end: `${year}-07-15` };
+      case '3º BIMESTRE': return { start: `${year}-07-16`, end: `${year}-09-30` };
+      case '4º BIMESTRE': return { start: `${year}-10-01`, end: `${year}-12-31` };
+      default: return { start: `${year}-01-01`, end: `${year}-12-31` };
+    }
+  };
+
   const calculateRanking = async (bimestre: string) => {
     setIsLoading(true);
     try {
       const classes = SCHOOL_CLASSES;
       const classScores: Record<string, ClassScore> = {};
+      const dateRange = getBimestreDateRange(bimestre);
       
       // Initialize scores
       classes.forEach(c => {
@@ -75,7 +87,6 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
            grades.forEach((g: any) => {
              const cName = g.assessments?.class_name;
              if (cName && classScores[cName]) {
-               // Give 5 points for every grade >= 7.0, and 10 points for every grade >= 9.0
                const score = g.score || 0;
                if (score >= 9) classScores[cName].breakdown.grades += 10;
                else if (score >= 7) classScores[cName].breakdown.grades += 5;
@@ -87,13 +98,15 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       // 2. Library (Loans)
       const { data: loans } = await supabase
         .from('library_loans')
-        .select('reader_class')
-        .in('status', ['ATIVO', 'DEVOLVIDO']); // Assuming this table has reader_class, we approximate
+        .select('reader_class, borrow_date')
+        .in('status', ['ATIVO', 'DEVOLVIDO'])
+        .gte('borrow_date', dateRange.start)
+        .lte('borrow_date', dateRange.end);
       if (loans) {
          loans.forEach((l: any) => {
            const cName = l.reader_class;
            if (cName && classScores[cName]) {
-             classScores[cName].breakdown.library += 2; // 2 points per borrowed book
+             classScores[cName].breakdown.library += 2;
            }
          });
       }
@@ -108,7 +121,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
           const cName = c.class_name;
           if (cName && classScores[cName] && c.score) {
              if (c.score >= 9.0) classScores[cName].breakdown.civicBehavior += 50;
-             else if (c.score >= 8.0) classScores[cName].breakdown.civicBehavior += 10;
+             else if (c.score >= 8.0) classScores[cName].breakdown.civicBehavior += 10; // BASE 10 pts
              else if (c.score < 5.0) classScores[cName].breakdown.civicBehavior -= 20;
           }
         });
@@ -117,8 +130,10 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       // 4. Occurrences (Pedagogical and Classroom)
       const { data: occurrences, error: errOcc } = await supabase
         .from('occurrences')
-        .select('classroom_name, category, severity')
-        .eq('status', 'REGISTRADO');
+        .select('classroom_name, category, severity, date')
+        .eq('status', 'REGISTRADO')
+        .gte('date', dateRange.start)
+        .lte('date', dateRange.end);
         
       if (occurrences && !errOcc) {
         occurrences.forEach((o: any) => {
