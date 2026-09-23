@@ -23,14 +23,28 @@ interface ClassScore {
   badges: string[];
 }
 
+interface StudentScore {
+  studentName: string;
+  className: string;
+  totalPoints: number;
+  breakdown: {
+    grades: number;
+    library: number;
+    pedagogicalOccurrences: number;
+    classroomOccurrences: number;
+    civicBehavior: number;
+  };
+  badges: string[];
+}
+
 const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'ranking' | 'pontos_manuais' | 'auditoria'>('ranking');
+  const [activeTab, setActiveTab] = useState<'ranking' | 'ranking_alunos' | 'pontos_manuais' | 'auditoria'>('ranking');
   const [bimestreFiltro, setBimestreFiltro] = useState<string>('1º BIMESTRE');
   const [rankingData, setRankingData] = useState<ClassScore[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (activeTab === 'ranking') {
+    if (activeTab === 'ranking' || activeTab === 'ranking_alunos') {
       calculateRanking(bimestreFiltro);
     }
   }, [bimestreFiltro, activeTab]);
@@ -51,21 +65,31 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
     try {
       const classes = SCHOOL_CLASSES;
       const classScores: Record<string, ClassScore> = {};
+      const studentScores: Record<string, StudentScore> = {};
       const dateRange = getBimestreDateRange(bimestre);
       
+      const getStudentKey = (name: string, cls: string) => `${name}::${cls}`;
+      
+      const initStudent = (name: string, cls: string) => {
+        const key = getStudentKey(name, cls);
+        if (!studentScores[key]) {
+          studentScores[key] = {
+            studentName: name,
+            className: cls,
+            totalPoints: 0,
+            breakdown: { grades: 0, library: 0, pedagogicalOccurrences: 0, classroomOccurrences: 0, civicBehavior: 0 },
+            badges: []
+          };
+        }
+        return studentScores[key];
+      };
+
       // Initialize scores
       classes.forEach(c => {
         classScores[c] = {
           className: c,
           totalPoints: 0,
-          breakdown: {
-            grades: 0,
-            library: 0,
-            cleaning: 0,
-            pedagogicalOccurrences: 0,
-            classroomOccurrences: 0,
-            civicBehavior: 0
-          },
+          breakdown: { grades: 0, library: 0, cleaning: 0, pedagogicalOccurrences: 0, classroomOccurrences: 0, civicBehavior: 0 },
           badges: []
         };
       });
@@ -82,17 +106,24 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         const assessmentIds = assessments.map(a => a.id);
         const { data: grades } = await supabase
           .from('grades')
-          .select('assessment_id, score, assessments(class_name)')
+          .select('assessment_id, score, student_name, assessments(class_name)')
           .in('assessment_id', assessmentIds);
 
         if (grades) {
            totalBimestreEvents += grades.length;
            grades.forEach((g: any) => {
              const cName = g.assessments?.class_name;
+             const sName = g.student_name;
              if (cName && classScores[cName]) {
                const score = g.score || 0;
                if (score >= 9) classScores[cName].breakdown.grades += 10;
                else if (score >= 7) classScores[cName].breakdown.grades += 5;
+               
+               if (sName) {
+                 const student = initStudent(sName, cName);
+                 if (score >= 9) student.breakdown.grades += 10;
+                 else if (score >= 7) student.breakdown.grades += 5;
+               }
              }
            });
         }
@@ -101,7 +132,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       // 2. Library (Loans)
       const { data: loans } = await supabase
         .from('library_loans')
-        .select('reader_class, borrow_date')
+        .select('reader_class, reader_name, borrow_date')
         .in('status', ['ATIVO', 'DEVOLVIDO'])
         .gte('borrow_date', dateRange.start)
         .lte('borrow_date', dateRange.end);
@@ -109,8 +140,14 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
          totalBimestreEvents += loans.length;
          loans.forEach((l: any) => {
            const cName = l.reader_class;
+           const sName = l.reader_name;
            if (cName && classScores[cName]) {
              classScores[cName].breakdown.library += 2;
+             
+             if (sName) {
+               const student = initStudent(sName, cName);
+               student.breakdown.library += 5; // Mais pontos pro aluno individual
+             }
            }
          });
       }
@@ -118,7 +155,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       // 4. Occurrences (Pedagogical and Classroom)
       const { data: occurrences, error: errOcc } = await supabase
         .from('occurrences')
-        .select('classroom_name, category, severity, date')
+        .select('classroom_name, student_name, category, severity, date')
         .eq('status', 'REGISTRADO')
         .gte('date', dateRange.start)
         .lte('date', dateRange.end);
@@ -127,12 +164,19 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         totalBimestreEvents += occurrences.length;
         occurrences.forEach((o: any) => {
           const cName = o.classroom_name;
+          const sName = o.student_name;
           if (cName && classScores[cName]) {
              if (o.category?.includes('ELOGIO') || o.severity === 'ELOGIO') {
                classScores[cName].breakdown.classroomOccurrences += 20;
+               if (sName) initStudent(sName, cName).breakdown.classroomOccurrences += 20;
              } else {
-               if (o.severity === 'ALTA' || o.severity === 'CRÍTICA') classScores[cName].breakdown.pedagogicalOccurrences -= 30;
-               else classScores[cName].breakdown.pedagogicalOccurrences -= 10;
+               if (o.severity === 'ALTA' || o.severity === 'CRÍTICA') {
+                 classScores[cName].breakdown.pedagogicalOccurrences -= 30;
+                 if (sName) initStudent(sName, cName).breakdown.pedagogicalOccurrences -= 30;
+               } else {
+                 classScores[cName].breakdown.pedagogicalOccurrences -= 10;
+                 if (sName) initStudent(sName, cName).breakdown.pedagogicalOccurrences -= 10;
+               }
              }
           }
         });
@@ -140,35 +184,42 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
 
       if (totalBimestreEvents === 0) {
         setRankingData([]);
+        setStudentRankingData([]);
         setIsLoading(false);
         return;
       }
 
-      // 3. Civic Behavior (civic_student_behavior) - Only apply if the bimestre has started
+      // 3. Civic Behavior (civic_student_behavior)
       const { data: civic, error: errCivic } = await supabase
         .from('civic_student_behavior')
-        .select('class_name, score');
+        .select('class_name, student_name, score');
       if (civic && !errCivic) {
         civic.forEach((c: any) => {
           const cName = c.class_name;
+          const sName = c.student_name;
           if (cName && classScores[cName] && c.score) {
              if (c.score >= 9.0) classScores[cName].breakdown.civicBehavior += 50;
-             else if (c.score >= 8.0) classScores[cName].breakdown.civicBehavior += 10; // BASE 10 pts
+             else if (c.score >= 8.0) classScores[cName].breakdown.civicBehavior += 10;
              else if (c.score < 5.0) classScores[cName].breakdown.civicBehavior -= 20;
+             
+             if (sName) {
+               const student = initStudent(sName, cName);
+               if (c.score >= 9.0) student.breakdown.civicBehavior += 50;
+               else if (c.score >= 8.0) student.breakdown.civicBehavior += 10;
+               else if (c.score < 5.0) student.breakdown.civicBehavior -= 20;
+             }
           }
         });
       }
 
-      // 5. Cleaning Occurrences - Safe fallback if table doesn't exist
+      // 5. Cleaning Occurrences
       try {
-        const { data: cleanOcc, error: errClean } = await supabase
-          .from('cleaning_occurrences')
-          .select('location, category');
+        await supabase.from('cleaning_occurrences').select('location, category');
       } catch(e) {}
       
-      // Calculate totals and badges
+      // Calculate totals and badges for Classes
       const finalScores = Object.values(classScores).map(score => {
-        score.totalPoints = Object.values(score.breakdown).reduce((a, b) => a + b, 0) + 1000; // Base score 1000
+        score.totalPoints = Object.values(score.breakdown).reduce((a, b) => a + b, 0) + 1000;
         
         if (score.breakdown.cleaning >= 0 && score.breakdown.classroomOccurrences > -15 && score.breakdown.pedagogicalOccurrences > -10) {
            score.badges.push('Selo Paz');
@@ -182,8 +233,21 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         
         return score;
       }).sort((a, b) => b.totalPoints - a.totalPoints);
+      
+      // Calculate totals and badges for Students
+      const finalStudentScores = Object.values(studentScores).map(score => {
+        score.totalPoints = Object.values(score.breakdown).reduce((a, b) => a + b, 0) + 1000;
+        
+        if (score.breakdown.classroomOccurrences > 0) score.badges.push('Selo Paz');
+        if (score.breakdown.library >= 10) score.badges.push('Selo Leitura');
+        if (score.breakdown.grades >= 30) score.badges.push('Selo Coruja');
+        if (score.breakdown.civicBehavior >= 50) score.badges.push('Selo Cívico');
+        
+        return score;
+      }).sort((a, b) => b.totalPoints - a.totalPoints);
 
-      setRankingData(finalScores.filter(s => s.totalPoints > 0)); // Only show active classes
+      setRankingData(finalScores.filter(s => s.totalPoints > 0));
+      setStudentRankingData(finalStudentScores.filter(s => s.totalPoints > 0));
     } catch (e) {
       console.error('Error calculating gamification:', e);
     } finally {
@@ -224,7 +288,15 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
               activeTab === 'ranking' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            Ranking
+            Ranking Turmas
+          </button>
+          <button
+            onClick={() => setActiveTab('ranking_alunos')}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'ranking_alunos' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Ranking Alunos
           </button>
           <button
             onClick={() => setActiveTab('auditoria')}
@@ -460,3 +532,4 @@ const LockIcon = ({ className }: { className?: string }) => (
 );
 
 export default GamificationModule;
+
