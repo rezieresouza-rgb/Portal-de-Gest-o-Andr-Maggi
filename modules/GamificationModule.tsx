@@ -41,6 +41,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
   const [activeTab, setActiveTab] = useState<'ranking' | 'ranking_alunos' | 'pontos_manuais' | 'auditoria'>('ranking');
   const [bimestreFiltro, setBimestreFiltro] = useState<string>('1º BIMESTRE');
   const [rankingData, setRankingData] = useState<ClassScore[]>([]);
+  const [studentRankingData, setStudentRankingData] = useState<StudentScore[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
