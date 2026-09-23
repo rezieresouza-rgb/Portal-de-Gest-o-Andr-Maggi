@@ -82,7 +82,7 @@ const STARTING_SEQUENCE = 23; // Sequence starts at 23 as per official directive
 
 const MODULE_LABELS: Record<'SECRETARIA' | 'COORDENACAO' | 'CIVICO_MILITAR', { label: string, badgeColor: string, icon: any }> = {
   SECRETARIA: { label: 'Secretaria Escolar', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200', icon: Landmark },
-  COORDENACAO: { label: 'Coordenação Pedagógica', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200', icon: BookOpen },
+  COORDENACAO: { label: 'Gestão', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200', icon: BookOpen },
   CIVICO_MILITAR: { label: 'Cívico-Militar', badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: Shield }
 };
 

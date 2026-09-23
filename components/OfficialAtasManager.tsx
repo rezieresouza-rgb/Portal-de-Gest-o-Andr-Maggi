@@ -18,7 +18,7 @@ const STARTING_SEQUENCE = 1;
 
 const MODULE_LABELS: Record<'SECRETARIA' | 'COORDENACAO' | 'CIVICO_MILITAR' | 'GESTAO', { label: string, badgeColor: string, icon: any }> = {
   SECRETARIA: { label: 'Secretaria Escolar', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200', icon: Landmark },
-  COORDENACAO: { label: 'Coordenação Pedagógica', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200', icon: BookOpen },
+  COORDENACAO: { label: 'Gestão', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200', icon: BookOpen },
   CIVICO_MILITAR: { label: 'Cívico-Militar', badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: Shield },
   GESTAO: { label: 'Gestão Escolar', badgeColor: 'bg-blue-100 text-blue-800 border-blue-200', icon: Landmark }
 };

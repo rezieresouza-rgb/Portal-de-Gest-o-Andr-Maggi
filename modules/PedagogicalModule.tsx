@@ -745,7 +745,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
               🎓
             </div>
             <div>
-              <h1 className="font-black text-sm uppercase tracking-tight text-white leading-tight">Coordenação</h1>
+              <h1 className="font-black text-sm uppercase tracking-tight text-white leading-tight">Gestão</h1>
               <p className="text-[9px] text-purple-300 font-bold uppercase tracking-widest">E.E. André Maggi</p>
             </div>
           </div>
@@ -825,7 +825,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
             </button>
             <div>
               <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-none">
-                Coordenação Pedagógica
+                Gestão
               </h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
                 Gestão Curricular, BNCC & Acompanhamento de Aprendizagem
