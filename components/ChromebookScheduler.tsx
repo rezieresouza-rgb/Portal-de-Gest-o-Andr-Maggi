@@ -58,7 +58,8 @@ const ChromebookScheduler: React.FC<ChromebookSchedulerProps> = ({ user }) => {
     teacherName: '',
     className: '',
     subject: '',
-    observations: ''
+    observations: '',
+    reserveLibrary: false
   });
 
   const fetchBookings = async () => {
@@ -123,7 +124,8 @@ const ChromebookScheduler: React.FC<ChromebookSchedulerProps> = ({ user }) => {
       teacherName: defaultTeacher,
       className: '',
       subject: '',
-      observations: ''
+      observations: '',
+      reserveLibrary: false
     });
     setIsModalOpen(true);
   };
@@ -151,7 +153,7 @@ const ChromebookScheduler: React.FC<ChromebookSchedulerProps> = ({ user }) => {
     }
 
     try {
-      const { error } = await supabase.from('bookings').insert([{
+      const inserts: any[] = [{
         resource_type: 'CHROMEBOOKS',
         date: selectedDate,
         shift: newBooking.shift,
@@ -161,12 +163,27 @@ const ChromebookScheduler: React.FC<ChromebookSchedulerProps> = ({ user }) => {
         resource_id: newBooking.stationId,
         title: newBooking.subject,
         description: newBooking.observations
-      }]);
+      }];
+
+      if (newBooking.reserveLibrary) {
+        inserts.push({
+          resource_type: 'LIBRARY_ROOM',
+          date: selectedDate,
+          shift: newBooking.shift,
+          classes: newBooking.classes,
+          teacher_name: newBooking.teacherName,
+          class_name: newBooking.className,
+          type: 'Pesquisa Orientada',
+          description: `Agendado via módulo de Chromebook (${newBooking.stationId}) - ${newBooking.observations}`
+        });
+      }
+
+      const { error } = await supabase.from('bookings').insert(inserts);
 
       if (error) throw error;
 
       setIsModalOpen(false);
-      setNewBooking({ ...newBooking, classes: [], teacherName: '', className: '', subject: '', observations: '' });
+      setNewBooking({ ...newBooking, classes: [], teacherName: '', className: '', subject: '', observations: '', reserveLibrary: false });
       alert("Agendamento realizado com sucesso!");
     } catch (error) {
       console.error("Erro ao agendar Chromebooks:", error);
@@ -565,6 +582,19 @@ const ChromebookScheduler: React.FC<ChromebookSchedulerProps> = ({ user }) => {
                     placeholder="Relate se algum Chromebook está com problema..."
                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-medium text-sm outline-none focus:bg-white transition-all h-20 resize-none"
                   />
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-fuchsia-50/50 rounded-2xl border border-fuchsia-100">
+                  <input
+                    type="checkbox"
+                    id="reserve-library"
+                    checked={newBooking.reserveLibrary}
+                    onChange={e => setNewBooking({ ...newBooking, reserveLibrary: e.target.checked })}
+                    className="w-5 h-5 accent-fuchsia-600 rounded cursor-pointer"
+                  />
+                  <label htmlFor="reserve-library" className="text-sm font-black text-gray-800 cursor-pointer select-none">
+                    Também reservar o Espaço da Biblioteca
+                  </label>
                 </div>
               </div>
 

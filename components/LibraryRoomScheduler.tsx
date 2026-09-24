@@ -15,7 +15,8 @@ import {
    MonitorPlay,
    Library,
    Lock,
-   User as UserIcon
+   User as UserIcon,
+   Laptop
 } from 'lucide-react';
 import { LibraryRoomBooking, Shift, StaffMember, User } from '../types';
 import { useStaff } from '../hooks/useStaff';
@@ -314,8 +315,15 @@ const LibraryRoomScheduler: React.FC<LibraryRoomSchedulerProps> = ({ user }) => 
                                           </div>
                                           <p className="text-xs font-black text-gray-900 uppercase leading-tight mb-1">{sb.teacherName}</p>
                                           <p className="text-[10px] text-gray-400 font-bold uppercase mb-4">{sb.className}</p>
-                                          <div className="flex items-center gap-2 text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 w-fit px-3 py-1.5 rounded-full border border-indigo-100">
-                                             <Sparkles size={10} /> {sb.activityType}
+                                          <div className="flex flex-wrap gap-2 mt-2">
+                                             <div className="flex items-center gap-2 text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 w-fit px-3 py-1.5 rounded-full border border-indigo-100">
+                                                <Sparkles size={10} /> {sb.activityType}
+                                             </div>
+                                             {sb.observations && sb.observations.includes('módulo de Chromebook') && (
+                                                <div className="flex items-center gap-2 text-[9px] font-black text-fuchsia-600 uppercase tracking-widest bg-fuchsia-50 w-fit px-3 py-1.5 rounded-full border border-fuchsia-100" title={sb.observations}>
+                                                   <Laptop size={10} /> {sb.observations.split('-')[0].trim()}
+                                                </div>
+                                             )}
                                           </div>
                                        </div>
                                     </div>
