@@ -155,7 +155,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
                     user.cpf?.replace(/\D/g, '') === '06185250179';
     
     if (isBruna) {
-      return ['teacher', 'scheduling'].includes(mod.id);
+      return ['teacher', 'scheduling', 'training'].includes(mod.id);
     }
 
     // Restrição específica para a servidora de login 63148480163 (Edna da Matta Tirolti)
