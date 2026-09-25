@@ -209,6 +209,21 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['busca_ativa', 'scheduling', 'training'].includes(mod.id);
     }
 
+    const isCleaningTeam = user.login?.replace(/\D/g, '') === '93070497187' || // Maria Aparecida
+                           user.cpf?.replace(/\D/g, '') === '93070497187' ||
+                           user.login?.replace(/\D/g, '') === '53788249153' || // Marli
+                           user.cpf?.replace(/\D/g, '') === '53788249153' ||
+                           user.login?.replace(/\D/g, '') === '04908771170' || // Jhenifa
+                           user.cpf?.replace(/\D/g, '') === '04908771170' ||
+                           user.login?.replace(/\D/g, '') === '07794468108' || // Nadija
+                           user.cpf?.replace(/\D/g, '') === '07794468108' ||
+                           user.login?.replace(/\D/g, '') === '03560590140' || // Adriana
+                           user.cpf?.replace(/\D/g, '') === '03560590140';
+
+    if (isCleaningTeam) {
+      return ['scheduling', 'limpeza', 'training'].includes(mod.id);
+    }
+
     if (isDanubia && ['teacher', 'scheduling'].includes(mod.id)) {
       return true;
     }
