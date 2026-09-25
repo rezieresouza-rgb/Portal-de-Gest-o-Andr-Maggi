@@ -102,12 +102,33 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           return;
         }
 
+        let actualJobFunction = user.job_function;
+
+        // SINCRONIZAÇÃO COM O RH: Busca a função atual na tabela 'staff'
+        if (user.cpf || user.login || user.name) {
+          // Tenta buscar por CPF primeiro, se falhar tenta pelo nome
+          const cpfQuery = user.cpf || user.login?.replace(/\D/g, '');
+          let staffQuery = supabase.from('staff').select('job_function');
+          
+          if (cpfQuery && cpfQuery.length === 11) {
+             staffQuery = staffQuery.eq('cpf', cpfQuery);
+          } else {
+             staffQuery = staffQuery.ilike('name', user.name);
+          }
+
+          const { data: staffData } = await staffQuery.limit(1);
+          
+          if (staffData && staffData.length > 0 && staffData[0].job_function) {
+            actualJobFunction = staffData[0].job_function;
+          }
+        }
+
         const sessionUser = {
           id: user.id,
           name: user.name,
           login: user.login,
           role: user.role,
-          jobFunction: user.job_function,
+          jobFunction: actualJobFunction,
           email: user.email,
           token: `sb_${user.id}_${Date.now()}`,
           lastLogin: new Date().toISOString()
