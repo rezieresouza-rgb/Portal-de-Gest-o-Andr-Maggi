@@ -214,6 +214,14 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return true;
     }
 
+    const isAdenes = user.name?.toUpperCase().includes('ADENES BATISTA BARBOSA') || 
+                     user.login?.replace(/\D/g, '') === '43915324841' ||
+                     user.cpf?.replace(/\D/g, '') === '43915324841';
+
+    if (isAdenes) {
+      return ['scheduling', 'educarte', 'training'].includes(mod.id);
+    }
+
     const isCivicoTeam = user.name?.toUpperCase().includes('RAUL') || 
                          user.name?.toUpperCase().includes('JOÃO VITOR') ||
                          user.name?.toUpperCase().includes('JOAO VITOR') ||
