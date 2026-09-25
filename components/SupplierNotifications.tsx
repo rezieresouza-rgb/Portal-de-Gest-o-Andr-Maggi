@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { SupplierOccurrence, OccurrenceType, OccurrenceStatus, Contract, Order } from '../types';
 import { INITIAL_CONTRACTS } from '../constants/initialData';
+import { supabase } from '../supabaseClient';
 
 const DIRECTOR_DATA = {
   name: "REZIERE DE SOUZA",
