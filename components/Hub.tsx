@@ -191,11 +191,22 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
                               user.login?.replace(/\D/g, '') === '86238270586' ||
                               user.cpf?.replace(/\D/g, '') === '86238270586';
 
+    const isAngelaOrZenir = user.name?.toUpperCase().includes('ANGELA MARIA TRAMARIN') || 
+                            user.login?.replace(/\D/g, '') === '57004641104' ||
+                            user.cpf?.replace(/\D/g, '') === '57004641104' ||
+                            user.name?.toUpperCase().includes('ZENIR RODRIGUES') ||
+                            user.login?.replace(/\D/g, '') === '46572740153' ||
+                            user.cpf?.replace(/\D/g, '') === '46572740153';
+
     if (mod.adminOnly && !isAdmin) return false;
     if (isAdmin) return true;
 
     if (isAnaiaraOrRafael) {
       return ['scheduling', 'psychosocial', 'training'].includes(mod.id);
+    }
+
+    if (isAngelaOrZenir) {
+      return ['busca_ativa', 'scheduling', 'training'].includes(mod.id);
     }
 
     if (isDanubia && ['teacher', 'scheduling'].includes(mod.id)) {
