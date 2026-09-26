@@ -174,7 +174,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
                         user.cpf?.replace(/\D/g, '') === '89436296134';
     
     if (isGenivaldo) {
-      return ['infraestrutura', 'limpeza', 'training', 'patrimonio'].includes(mod.id);
+      return ['training', 'patrimonio'].includes(mod.id);
     }
 
     const isDanubia = user.name?.toUpperCase().includes('DANUBIA') || 
