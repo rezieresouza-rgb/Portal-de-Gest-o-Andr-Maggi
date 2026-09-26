@@ -238,7 +238,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
 
     const isCelio = user.name?.toUpperCase().includes('CELIO RICARDO');
     if (isCelio) {
-      return ['secretariat', 'patrimonio'].includes(mod.id);
+      return ['secretariat', 'patrimonio', 'training'].includes(mod.id);
     }
 
     const isLucileia = user.name?.toUpperCase().includes('LUCILEIA');
