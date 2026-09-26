@@ -224,8 +224,8 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['scheduling', 'limpeza', 'training'].includes(mod.id);
     }
 
-    if (isDanubia && ['teacher', 'scheduling'].includes(mod.id)) {
-      return true;
+    if (isDanubia) {
+      return ['scheduling', 'training', 'gamification', 'mediacao', 'teacher'].includes(mod.id);
     }
     
     if (isVeraLucia && ['library', 'scheduling'].includes(mod.id)) {
