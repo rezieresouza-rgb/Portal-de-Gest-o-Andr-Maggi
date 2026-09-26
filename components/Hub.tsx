@@ -254,10 +254,14 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['scheduling', 'educarte', 'training'].includes(mod.id);
     }
 
+    const isEliezer = user.name?.toUpperCase().includes('ELIEZER');
+    if (isEliezer) {
+      return ['civico_militar', 'scheduling', 'training'].includes(mod.id);
+    }
+
     const isCivicoTeam = user.name?.toUpperCase().includes('RAUL') || 
                          user.name?.toUpperCase().includes('JOÃO VITOR') ||
                          user.name?.toUpperCase().includes('JOAO VITOR') ||
-                         user.name?.toUpperCase().includes('ELIEZER') ||
                          user.name?.toUpperCase().includes('MARCELO');
 
     if (isCivicoTeam && ['civico_militar', 'scheduling', 'training'].includes(mod.id)) {
