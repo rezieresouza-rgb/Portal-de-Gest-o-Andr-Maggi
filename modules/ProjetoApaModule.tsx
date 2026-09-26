@@ -261,7 +261,6 @@ const fetchRecords = async () => {
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
                         )}
                     </button>
-                    
                     <button
                         onClick={() => setActiveSubTab('diario')}
                         className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'diario'
@@ -277,8 +276,6 @@ const fetchRecords = async () => {
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full" />
                         )}
                     </button>
-
-                    
                     <button
                         onClick={() => setActiveSubTab('banco_atividades')}
                         className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'banco_atividades'
@@ -290,6 +287,18 @@ const fetchRecords = async () => {
                             <Library size={16} />
                             Banco de Sequências
                         </div>
+                        {activeSubTab === 'banco_atividades' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveSubTab('occurrences')}
+                        className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'occurrences'
+                                ? 'text-pink-600'
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        Ocorrências
                         {activeSubTab === 'occurrences' && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-pink-600 rounded-t-full" />
                         )}
@@ -299,20 +308,6 @@ const fetchRecords = async () => {
 
             {/* Content Area */}
             <main className="flex-1 overflow-y-auto">
-{activeSubTab === 'banco_atividades' && (
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
-                        )}
-                    </button>
-
-                    <button
-                        onClick={() => setActiveSubTab('occurrences')}
-                        className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'occurrences'
-                                ? 'text-pink-600'
-                                : 'text-gray-400 hover:text-gray-600'
-                            }`}
-                    >
-                        Ocorrências
-                        
                 {activeSubTab === 'banco_atividades' && (
                     <div className="p-8 max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-start">
                         {/* Coluna Esquerda: Upload */}
