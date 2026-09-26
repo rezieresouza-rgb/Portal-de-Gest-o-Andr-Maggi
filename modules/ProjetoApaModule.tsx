@@ -290,7 +290,16 @@ const fetchRecords = async () => {
                             <Library size={16} />
                             Banco de Sequências
                         </div>
-                        {activeSubTab === 'banco_atividades' && (
+                        {activeSubTab === 'occurrences' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-pink-600 rounded-t-full" />
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* Content Area */}
+            <main className="flex-1 overflow-y-auto">
+{activeSubTab === 'banco_atividades' && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
                         )}
                     </button>
@@ -434,16 +443,7 @@ const fetchRecords = async () => {
                     </div>
                 )}
 
-                {activeSubTab === 'occurrences' && (
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-pink-600 rounded-t-full" />
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            {/* Content Area */}
-            <main className="flex-1 overflow-y-auto">
-                {activeSubTab === 'occurrences' && (
+                                {activeSubTab === 'occurrences' && (
                     <div className="h-full">
                         <TeacherOccurrences user={user} />
                     </div>
