@@ -20,7 +20,8 @@ import {
   GraduationCap,
   Scale,
   Music,
-  Trophy
+  Trophy,
+  Layers
 } from 'lucide-react';
 import { ModuleTypeExtended } from '../App';
 import { User, AccessLog } from '../types';
