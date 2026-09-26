@@ -14,7 +14,8 @@ import {
     Library,
     FileDown,
     Upload,
-    Trash2
+    Trash2,
+    Package
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import LearningAssessmentForm from '../components/LearningAssessmentForm';
@@ -35,7 +36,7 @@ const LITERACY_LEVELS = [
 ];
 
 const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => {
-    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'diario' | 'banco_atividades' | 'occurrences'>('sondagem');
+    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'diario' | 'banco_atividades' | 'inventario' | 'occurrences'>('sondagem');
     const [assessmentRecords, setAssessmentRecords] = useState<any[]>([]);
 
 // Agrupar alunos pelo nível mais recente
@@ -71,6 +72,45 @@ const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => 
     const [editingRecord, setEditingRecord] = useState<any>(null);
 
     
+
+    
+    // Inventário do Laboratório State
+    const [inventory, setInventory] = useState<any[]>(() => {
+        const saved = localStorage.getItem('apa_inventory');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [newItemName, setNewItemName] = useState('');
+    const [newItemQuantity, setNewItemQuantity] = useState(1);
+    const [newItemStatus, setNewItemStatus] = useState('Bom');
+
+    const handleAddInventory = () => {
+        if (!newItemName.trim()) {
+            alert('Digite o nome do material ou jogo.');
+            return;
+        }
+        const newItem = {
+            id: Date.now().toString(),
+            name: newItemName,
+            quantity: newItemQuantity,
+            status: newItemStatus,
+            addedBy: user.name,
+            createdAt: new Date().toISOString()
+        };
+        const updated = [newItem, ...inventory];
+        setInventory(updated);
+        localStorage.setItem('apa_inventory', JSON.stringify(updated));
+        
+        setNewItemName('');
+        setNewItemQuantity(1);
+        setNewItemStatus('Bom');
+    };
+
+    const handleDeleteInventory = (id: string) => {
+        if (!confirm('Tem certeza que deseja remover este material do inventário?')) return;
+        const updated = inventory.filter(i => i.id !== id);
+        setInventory(updated);
+        localStorage.setItem('apa_inventory', JSON.stringify(updated));
+    };
 
     // Banco de Atividades State
     const [activities, setActivities] = useState<any[]>(() => {
@@ -289,6 +329,21 @@ const fetchRecords = async () => {
                         </div>
                         {activeSubTab === 'banco_atividades' && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveSubTab('inventario')}
+                        className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'inventario'
+                                ? 'text-amber-600'
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <Package size={16} />
+                            Inventário
+                        </div>
+                        {activeSubTab === 'inventario' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-600 rounded-t-full" />
                         )}
                     </button>
                     <button
