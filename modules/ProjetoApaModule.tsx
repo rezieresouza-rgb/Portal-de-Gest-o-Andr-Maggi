@@ -7,7 +7,10 @@ import {
     TrendingUp,
     AlertCircle,
     LayoutGrid,
-    BarChart3
+    BarChart3,
+    BookOpen,
+    Save,
+    CalendarCheck
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import LearningAssessmentForm from '../components/LearningAssessmentForm';
@@ -28,13 +31,57 @@ const LITERACY_LEVELS = [
 ];
 
 const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => {
-    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'occurrences'>('sondagem');
+    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'diario' | 'occurrences'>('sondagem');
     const [assessmentRecords, setAssessmentRecords] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<any>(null);
 
-    const fetchRecords = async () => {
+    
+    // Diário State
+    const [selectedLevel, setSelectedLevel] = useState<string>(LITERACY_LEVELS[0]);
+    const [logDate, setLogDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [intervention, setIntervention] = useState('');
+    const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+    const [logs, setLogs] = useState<any[]>(() => {
+        const saved = localStorage.getItem('apa_daily_logs');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    // Populate attendance map when selected group changes
+    useEffect(() => {
+        const currentGroup = groupedStudents[selectedLevel] || [];
+        const newAttendance: Record<string, boolean> = {};
+        currentGroup.forEach((s: any) => {
+            newAttendance[s.student_name] = true; // default presente
+        });
+        setAttendance(newAttendance);
+    }, [selectedLevel, groupedStudents]);
+
+    const handleSaveLog = () => {
+        if (!intervention.trim()) {
+            alert('Por favor, descreva a intervenção pedagógica.');
+            return;
+        }
+
+        const newLog = {
+            id: Date.now().toString(),
+            date: logDate,
+            level: selectedLevel,
+            intervention,
+            attendance,
+            teacherName: user.name,
+            createdAt: new Date().toISOString()
+        };
+
+        const updatedLogs = [newLog, ...logs];
+        setLogs(updatedLogs);
+        localStorage.setItem('apa_daily_logs', JSON.stringify(updatedLogs));
+        
+        setIntervention('');
+        alert('Diário salvo com sucesso!');
+    };
+const fetchRecords = async () => {
         try {
             const { data, error } = await supabase
                 .from('learning_assessment_records')
@@ -144,6 +191,23 @@ const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => 
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
                         )}
                     </button>
+                    
+                    <button
+                        onClick={() => setActiveSubTab('diario')}
+                        className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'diario'
+                                ? 'text-indigo-600'
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <BookOpen size={16} />
+                            Diário & Frequência
+                        </div>
+                        {activeSubTab === 'diario' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full" />
+                        )}
+                    </button>
+
                     <button
                         onClick={() => setActiveSubTab('occurrences')}
                         className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'occurrences'
