@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     ArrowLeft,
     Plus,
     Search,
     TrendingUp,
-    AlertCircle
+    AlertCircle,
+    LayoutGrid,
+    BarChart3
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import LearningAssessmentForm from '../components/LearningAssessmentForm';
@@ -16,15 +18,23 @@ interface ProjetoApaModuleProps {
     onExit: () => void;
 }
 
+const LITERACY_LEVELS = [
+    'Pré-silábico',
+    'Silábico sem valor sonoro',
+    'Silábico com valor sonoro',
+    'Silábico-alfabético',
+    'Alfabético',
+    'Alfabético consolidado'
+];
+
 const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => {
-    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'occurrences'>('sondagem');
+    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'occurrences'>('sondagem');
     const [assessmentRecords, setAssessmentRecords] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<any>(null);
 
     const fetchRecords = async () => {
-        if (activeSubTab !== 'sondagem') return;
         try {
             const { data, error } = await supabase
                 .from('learning_assessment_records')
@@ -51,6 +61,34 @@ const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => 
         setEditingRecord(null);
         setIsModalOpen(true);
     };
+
+    // Agrupar alunos pelo nível mais recente
+    const groupedStudents = useMemo(() => {
+        const groups: Record<string, any[]> = {};
+        LITERACY_LEVELS.forEach(level => {
+            groups[level] = [];
+        });
+
+        // Pegar apenas a avaliação mais recente de cada aluno
+        const latestAssessments = new Map();
+        assessmentRecords.forEach(record => {
+            if (!latestAssessments.has(record.student_name)) {
+                latestAssessments.set(record.student_name, record);
+            }
+        });
+
+        Array.from(latestAssessments.values()).forEach(record => {
+            if (groups[record.literacy_level]) {
+                groups[record.literacy_level].push(record);
+            } else {
+                // Fallback se tiver algum nível fora do padrão
+                if (!groups['Outros']) groups['Outros'] = [];
+                groups['Outros'].push(record);
+            }
+        });
+
+        return groups;
+    }, [assessmentRecords]);
 
     return (
         <div className="h-full flex flex-col bg-gray-50/50">
@@ -92,6 +130,21 @@ const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => 
                         )}
                     </button>
                     <button
+                        onClick={() => setActiveSubTab('agrupamentos')}
+                        className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'agrupamentos'
+                                ? 'text-emerald-600'
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <LayoutGrid size={16} />
+                            Farol & Agrupamentos
+                        </div>
+                        {activeSubTab === 'agrupamentos' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
+                        )}
+                    </button>
+                    <button
                         onClick={() => setActiveSubTab('occurrences')}
                         className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'occurrences'
                                 ? 'text-pink-600'
@@ -108,11 +161,76 @@ const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => 
 
             {/* Content Area */}
             <main className="flex-1 overflow-y-auto">
-                {activeSubTab === 'occurrences' ? (
+                {activeSubTab === 'occurrences' && (
                     <div className="h-full">
                         <TeacherOccurrences user={user} />
                     </div>
-                ) : (
+                )}
+                
+                {activeSubTab === 'agrupamentos' && (
+                    <div className="p-8 max-w-[1600px] mx-auto">
+                        <div className="mb-8 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-black text-gray-900 uppercase">Matriz de Agrupamentos (TaRL)</h2>
+                                <p className="text-sm font-medium text-gray-500 mt-1">Alunos agrupados automaticamente pela última sondagem registrada.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-6 overflow-x-auto pb-8 custom-scrollbar items-start">
+                            {LITERACY_LEVELS.map((level, idx) => (
+                                <div key={level} className="flex-shrink-0 w-80 bg-gray-50/80 border border-gray-200 rounded-[2rem] p-5 flex flex-col h-[70vh]">
+                                    <div className="mb-5 px-2">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h3 className="font-black text-gray-800 text-sm uppercase leading-tight line-clamp-2">{level}</h3>
+                                            <span className="bg-white text-gray-900 font-black text-xs px-2.5 py-1 rounded-xl shadow-sm border border-gray-100">
+                                                {groupedStudents[level]?.length || 0}
+                                            </span>
+                                        </div>
+                                        {/* Progress bar visual indicator */}
+                                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full rounded-full" 
+                                                style={{ 
+                                                    width: `${(idx + 1) * (100 / LITERACY_LEVELS.length)}%`,
+                                                    backgroundColor: idx === 0 ? '#ef4444' : idx < 3 ? '#f59e0b' : idx < 5 ? '#3b82f6' : '#10b981'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                                        {groupedStudents[level]?.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                                                <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                                                    <LayoutGrid className="text-gray-300" size={20} />
+                                                </div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase">Nenhum aluno neste nível</p>
+                                            </div>
+                                        ) : (
+                                            groupedStudents[level]?.map((student: any) => (
+                                                <div key={student.id} onClick={() => { setActiveSubTab('sondagem'); handleEdit(student); }} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-200 cursor-pointer transition-all group">
+                                                    <p className="font-black text-gray-800 text-xs uppercase mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                                        {student.student_name}
+                                                    </p>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[9px] font-black text-gray-400 uppercase">
+                                                            Score: {student.total_score} pts
+                                                        </span>
+                                                        <span className="text-[9px] font-black text-gray-300 uppercase">
+                                                            {new Date(student.created_at).toLocaleDateString('pt-BR')}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeSubTab === 'sondagem' && (
                     <div className="p-8 max-w-7xl mx-auto">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                             <div className="relative flex-1 max-w-md w-full">
