@@ -213,6 +213,14 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   };
 
   useEffect(() => {
+    const forceTab = localStorage.getItem('library_force_tab');
+    if (forceTab) {
+      setActiveTab(forceTab as any);
+      localStorage.removeItem('library_force_tab');
+    }
+  }, []);
+
+  useEffect(() => {
     fetchData();
 
     // Realtime subscriptions can be added here if needed

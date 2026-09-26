@@ -15,7 +15,8 @@ import {
     FileDown,
     Upload,
     Trash2,
-    Package
+    Package,
+    BookMarked
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import LearningAssessmentForm from '../components/LearningAssessmentForm';
@@ -24,6 +25,7 @@ import TeacherOccurrences from '../components/TeacherOccurrences';
 interface ProjetoApaModuleProps {
     user: any;
     onExit: () => void;
+    onNavigateToLibraryApa?: () => void;
 }
 
 const LITERACY_LEVELS = [
@@ -35,7 +37,7 @@ const LITERACY_LEVELS = [
     'Alfabético consolidado'
 ];
 
-const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => {
+const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit, onNavigateToLibraryApa }) => {
     const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'diario' | 'banco_atividades' | 'inventario' | 'occurrences'>('sondagem');
     const [assessmentRecords, setAssessmentRecords] = useState<any[]>([]);
 
@@ -345,6 +347,15 @@ const fetchRecords = async () => {
                         {activeSubTab === 'inventario' && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-600 rounded-t-full" />
                         )}
+                    </button>
+                    <button
+                        onClick={() => onNavigateToLibraryApa && onNavigateToLibraryApa()}
+                        className="pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative text-gray-400 hover:text-purple-600"
+                    >
+                        <div className="flex items-center gap-2">
+                            <BookMarked size={16} />
+                            Acervo Literário
+                        </div>
                     </button>
                     <button
                         onClick={() => setActiveSubTab('occurrences')}

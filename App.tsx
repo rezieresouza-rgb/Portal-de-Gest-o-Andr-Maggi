@@ -272,7 +272,7 @@ const App: React.FC = () => {
       case 'mediacao': return <MediationModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'secretariat': return <SecretariatModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'sala_recursos': return <SalaRecursosModule user={user} onExit={() => handleModuleChange('hub')} />;
-      case 'projeto_apa': return <ProjetoApaModule user={user} onExit={() => handleModuleChange('hub')} />;
+      case 'projeto_apa': return <ProjetoApaModule user={user} onExit={() => handleModuleChange('hub')} onNavigateToLibraryApa={() => { localStorage.setItem('library_force_tab', 'apa'); handleModuleChange('library'); }} />;
       case 'civico_militar': return <CivicoMilitarModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'training': return <TrainingModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'educarte': return <EducarteModule user={user} onExit={() => handleModuleChange('hub')} />;
