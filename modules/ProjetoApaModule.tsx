@@ -10,7 +10,11 @@ import {
     BarChart3,
     BookOpen,
     Save,
-    CalendarCheck
+    CalendarCheck,
+    Library,
+    FileDown,
+    Upload,
+    Trash2
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import LearningAssessmentForm from '../components/LearningAssessmentForm';
@@ -31,7 +35,7 @@ const LITERACY_LEVELS = [
 ];
 
 const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => {
-    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'diario' | 'occurrences'>('sondagem');
+    const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'diario' | 'banco_atividades' | 'occurrences'>('sondagem');
     const [assessmentRecords, setAssessmentRecords] = useState<any[]>([]);
 
 // Agrupar alunos pelo nível mais recente
@@ -67,6 +71,71 @@ const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => 
     const [editingRecord, setEditingRecord] = useState<any>(null);
 
     
+
+    // Banco de Atividades State
+    const [activities, setActivities] = useState<any[]>(() => {
+        const saved = localStorage.getItem('apa_activities');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [isUploading, setIsUploading] = useState(false);
+    const [activityFilter, setActivityFilter] = useState('TODOS');
+    const [newActivityLevel, setNewActivityLevel] = useState(LITERACY_LEVELS[0]);
+    const [newActivityTitle, setNewActivityTitle] = useState('');
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!newActivityTitle.trim()) {
+            alert('Por favor, digite o título da atividade antes de selecionar o arquivo.');
+            return;
+        }
+
+        try {
+            setIsUploading(true);
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `apa_activities/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('school-attachments')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('school-attachments')
+                .getPublicUrl(filePath);
+
+            const newAct = {
+                id: Date.now().toString(),
+                title: newActivityTitle,
+                level: newActivityLevel,
+                url: publicUrl,
+                uploadedBy: user.name,
+                createdAt: new Date().toISOString()
+            };
+
+            const updatedActivities = [newAct, ...activities];
+            setActivities(updatedActivities);
+            localStorage.setItem('apa_activities', JSON.stringify(updatedActivities));
+            
+            setNewActivityTitle('');
+            alert('Atividade salva no banco com sucesso!');
+        } catch (error) {
+            console.error('Erro no upload:', error);
+            alert('Falha ao subir arquivo. Tente novamente.');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleDeleteActivity = (id: string) => {
+        if(!confirm('Tem certeza que deseja excluir esta atividade do banco?')) return;
+        const updated = activities.filter(a => a.id !== id);
+        setActivities(updated);
+        localStorage.setItem('apa_activities', JSON.stringify(updated));
+    };
+
     // Diário State
     const [selectedLevel, setSelectedLevel] = useState<string>(LITERACY_LEVELS[0]);
     const [logDate, setLogDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -209,6 +278,23 @@ const fetchRecords = async () => {
                         )}
                     </button>
 
+                    
+                    <button
+                        onClick={() => setActiveSubTab('banco_atividades')}
+                        className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'banco_atividades'
+                                ? 'text-blue-600'
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <Library size={16} />
+                            Banco de Sequências
+                        </div>
+                        {activeSubTab === 'banco_atividades' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
+                        )}
+                    </button>
+
                     <button
                         onClick={() => setActiveSubTab('occurrences')}
                         className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'occurrences'
@@ -217,7 +303,138 @@ const fetchRecords = async () => {
                             }`}
                     >
                         Ocorrências
-                        {activeSubTab === 'occurrences' && (
+                        
+                {activeSubTab === 'banco_atividades' && (
+                    <div className="p-8 max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-start">
+                        {/* Coluna Esquerda: Upload */}
+                        <div className="w-full md:w-1/3 bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm sticky top-8">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                    <Upload size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-gray-900 uppercase">Compartilhar Atividade</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Envie PDFs ou Imagens</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Título da Sequência/Atividade</label>
+                                    <input 
+                                        type="text" 
+                                        value={newActivityTitle}
+                                        onChange={e => setNewActivityTitle(e.target.value)}
+                                        placeholder="Ex: Bingo de Letras, Jogo da Velha Silábico..."
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 font-medium text-gray-700"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Nível Alvo</label>
+                                    <select 
+                                        value={newActivityLevel}
+                                        onChange={e => setNewActivityLevel(e.target.value)}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 font-bold text-gray-700"
+                                    >
+                                        {LITERACY_LEVELS.map(lvl => (
+                                            <option key={lvl} value={lvl}>{lvl}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="pt-4">
+                                    <label className="relative w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-blue-200 rounded-xl bg-blue-50/50 hover:bg-blue-50 hover:border-blue-400 cursor-pointer transition-all group">
+                                        <div className="flex flex-col items-center justify-center">
+                                            {isUploading ? (
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                                            ) : (
+                                                <Upload className="text-blue-400 group-hover:text-blue-600 transition-colors mb-2" size={24} />
+                                            )}
+                                            <p className="text-xs font-black text-blue-600 uppercase text-center">
+                                                {isUploading ? 'Enviando...' : 'Clique para Escolher Arquivo'}
+                                            </p>
+                                        </div>
+                                        <input 
+                                            type="file" 
+                                            className="hidden" 
+                                            onChange={handleFileUpload} 
+                                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                            disabled={isUploading}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Coluna Direita: Acervo */}
+                        <div className="flex-1 w-full">
+                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase flex items-center gap-2">
+                                        <Library className="text-blue-600" size={24} /> Acervo Colaborativo TaRL
+                                    </h2>
+                                    <p className="text-sm font-medium text-gray-500 mt-1">Encontre atividades filtradas por nível de proficiência.</p>
+                                </div>
+                                <select 
+                                    value={activityFilter}
+                                    onChange={e => setActivityFilter(e.target.value)}
+                                    className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-700 text-sm focus:ring-4 focus:ring-blue-50 focus:border-blue-500"
+                                >
+                                    <option value="TODOS">Todos os Níveis</option>
+                                    {LITERACY_LEVELS.map(lvl => (
+                                        <option key={lvl} value={lvl}>{lvl}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {activities
+                                    .filter(act => activityFilter === 'TODOS' || act.level === activityFilter)
+                                    .map(act => (
+                                        <div key={act.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <span className="bg-blue-50 text-blue-600 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
+                                                        {act.level}
+                                                    </span>
+                                                    {act.uploadedBy === user.name && (
+                                                        <button 
+                                                            onClick={() => handleDeleteActivity(act.id)}
+                                                            className="text-gray-300 hover:text-red-500 transition-colors"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <h4 className="font-black text-gray-800 uppercase text-sm mb-1">{act.title}</h4>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase">Enviado por {act.uploadedBy}</p>
+                                            </div>
+                                            <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                                                <span className="text-[9px] text-gray-300 font-bold uppercase">{new Date(act.createdAt).toLocaleDateString('pt-BR')}</span>
+                                                <a 
+                                                    href={act.url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="bg-gray-50 text-blue-600 p-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                                >
+                                                    <FileDown size={18} />
+                                                </a>
+                                            </div>
+                                        </div>
+                                ))}
+                                {activities.filter(act => activityFilter === 'TODOS' || act.level === activityFilter).length === 0 && (
+                                    <div className="col-span-1 md:col-span-2 text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                        <Library className="mx-auto text-gray-300 mb-3" size={32} />
+                                        <p className="font-bold text-gray-400 uppercase text-sm">Nenhuma atividade encontrada neste nível.</p>
+                                        <p className="text-xs text-gray-400 mt-1">Seja o primeiro a compartilhar uma sequência didática!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeSubTab === 'occurrences' && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-pink-600 rounded-t-full" />
                         )}
                     </button>
