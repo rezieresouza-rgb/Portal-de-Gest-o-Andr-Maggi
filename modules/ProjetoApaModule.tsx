@@ -746,6 +746,117 @@ const fetchRecords = async () => {
                     </div>
                 )}
 
+            
+                {activeSubTab === 'inventario' && (
+                    <div className="p-8 max-w-6xl mx-auto flex flex-col md:flex-row gap-8 items-start">
+                        {/* Formulário de Adição */}
+                        <div className="w-full md:w-1/3 bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm sticky top-8">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                    <Package size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-gray-900 uppercase">Novo Material</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Cadastrar no Acervo</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Nome do Jogo / Material</label>
+                                    <input 
+                                        type="text" 
+                                        value={newItemName}
+                                        onChange={e => setNewItemName(e.target.value)}
+                                        placeholder="Ex: Alfabeto Móvel em EVA..."
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-amber-50 focus:border-amber-500 font-medium text-gray-700"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Qtd.</label>
+                                        <input 
+                                            type="number" 
+                                            min="1"
+                                            value={newItemQuantity}
+                                            onChange={e => setNewItemQuantity(Number(e.target.value))}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-amber-50 focus:border-amber-500 font-bold text-gray-700"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Estado</label>
+                                        <select 
+                                            value={newItemStatus}
+                                            onChange={e => setNewItemStatus(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-amber-50 focus:border-amber-500 font-bold text-gray-700"
+                                        >
+                                            <option value="Novo">Novo</option>
+                                            <option value="Bom">Bom</option>
+                                            <option value="Danificado">Danificado</option>
+                                            <option value="Faltando Peças">Faltando Peças</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="pt-4">
+                                    <button
+                                        onClick={handleAddInventory}
+                                        className="w-full bg-amber-600 text-white px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-amber-700 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Plus size={16} /> Adicionar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Lista do Inventário */}
+                        <div className="flex-1 w-full">
+                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm mb-6 flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase">Inventário do Laboratório</h2>
+                                    <p className="text-sm font-medium text-gray-500 mt-1">Total de {inventory.reduce((acc, curr) => acc + curr.quantity, 0)} itens cadastrados.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {inventory.map(item => (
+                                    <div key={item.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between group">
+                                        <div>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${
+                                                    item.status === 'Novo' ? 'bg-emerald-50 text-emerald-600' :
+                                                    item.status === 'Bom' ? 'bg-blue-50 text-blue-600' :
+                                                    item.status === 'Danificado' ? 'bg-red-50 text-red-600' :
+                                                    'bg-orange-50 text-orange-600'
+                                                }`}>
+                                                    {item.status}
+                                                </span>
+                                                <button 
+                                                    onClick={() => handleDeleteInventory(item.id)}
+                                                    className="text-gray-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                            <h4 className="font-black text-gray-800 uppercase text-sm mb-1">{item.name}</h4>
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase">Registrado por {item.addedBy}</p>
+                                        </div>
+                                        <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-2">
+                                            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-black text-xs">{item.quantity} un.</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {inventory.length === 0 && (
+                                    <div className="col-span-1 md:col-span-2 text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                        <Package className="mx-auto text-gray-300 mb-3" size={32} />
+                                        <p className="font-bold text-gray-400 uppercase text-sm">Inventário Vazio</p>
+                                        <p className="text-xs text-gray-400 mt-1">Nenhum material físico foi cadastrado no laboratório ainda.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </main>
 
             {isModalOpen && activeSubTab === 'sondagem' && (
