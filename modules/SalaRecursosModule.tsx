@@ -166,11 +166,13 @@ const fetchRecords = async () => {
 
             {/* Content Area */}
             <main className="flex-1 overflow-y-auto">
-                {activeSubTab === 'occurrences' ? (
+                {activeSubTab === 'occurrences' && (
                     <div className="h-full">
                         <TeacherOccurrences user={user} />
                     </div>
-                ) : (
+                )}
+
+                {activeSubTab === 'pei' && (
                     <div className="p-8 max-w-7xl mx-auto">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                             <div className="relative flex-1 max-w-md w-full">
