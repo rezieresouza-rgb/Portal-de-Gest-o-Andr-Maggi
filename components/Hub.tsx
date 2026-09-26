@@ -236,10 +236,13 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return false;
     }
 
-    const isCelioOrLucileia = user.name?.toUpperCase().includes('CELIO RICARDO') || 
-                              user.name?.toUpperCase().includes('LUCILEIA');
+    const isCelio = user.name?.toUpperCase().includes('CELIO RICARDO');
+    if (isCelio) {
+      return ['secretariat', 'patrimonio'].includes(mod.id);
+    }
 
-    if (isCelioOrLucileia && mod.id === 'secretariat') {
+    const isLucileia = user.name?.toUpperCase().includes('LUCILEIA');
+    if (isLucileia && mod.id === 'secretariat') {
       return true;
     }
 
