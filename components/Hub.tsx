@@ -261,6 +261,16 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['civico_militar', 'scheduling', 'training'].includes(mod.id);
     }
 
+    // Restrição específica para Herika e Lucineia conforme solicitado
+    const isHerikaOrLucineia = user.name?.toUpperCase().includes('HERIKA') || 
+                               user.name?.toUpperCase().includes('LUCINEIA') ||
+                               user.login?.replace(/\D/g, '') === '04987878186' ||
+                               user.login?.replace(/\D/g, '') === '01190587157';
+
+    if (isHerikaOrLucineia) {
+      return ['scheduling', 'projeto_apa', 'training'].includes(mod.id);
+    }
+
     const isCivicoTeam = user.name?.toUpperCase().includes('RAUL') || 
                          user.name?.toUpperCase().includes('JOÃO VITOR') ||
                          user.name?.toUpperCase().includes('JOAO VITOR') ||
