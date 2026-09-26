@@ -164,7 +164,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
                    user.cpf?.replace(/\D/g, '') === '63148480163';
     
     if (isEdna) {
-      return ['teacher', 'scheduling'].includes(mod.id);
+      return ['teacher', 'scheduling', 'training', 'gamification'].includes(mod.id);
     }
 
     // Restrição específica para o servidor Genivaldo conforme solicitado (Manutenção, Formação e Patrimônio)
