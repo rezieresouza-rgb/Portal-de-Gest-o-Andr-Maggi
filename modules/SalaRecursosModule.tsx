@@ -8,7 +8,12 @@ import {
     Brain,
     CalendarCheck,
     Info,
-    AlertCircle
+    AlertCircle,
+    BarChart,
+    CheckCircle,
+    XCircle,
+    Download,
+    Trash2
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import SpecialEducationForm from '../components/SpecialEducationForm';
@@ -20,13 +25,48 @@ interface SalaRecursosModuleProps {
 }
 
 const SalaRecursosModule: React.FC<SalaRecursosModuleProps> = ({ user, onExit }) => {
-    const [activeSubTab, setActiveSubTab] = useState<'pei' | 'occurrences'>('pei');
+    const [activeSubTab, setActiveSubTab] = useState<'pei' | 'censo' | 'occurrences'>('pei');
     const [peiRecords, setPeiRecords] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<any>(null);
 
-    const fetchRecords = async () => {
+    
+    // Censo Escolar AEE State
+    const [censoStudents, setCensoStudents] = useState<any[]>(() => {
+        const saved = localStorage.getItem('aee_censo_students');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [showCensoForm, setShowCensoForm] = useState(false);
+    const [censoForm, setCensoForm] = useState({ id: '', name: '', grade: '', cid: '', hasLaudo: 'Sim', hasPEI: 'Não', category: 'Transtorno do Espectro Autista (TEA)' });
+
+    const handleSaveCensoStudent = () => {
+        if (!censoForm.name.trim()) return alert('Nome é obrigatório');
+        
+        const newStudent = {
+            ...censoForm,
+            id: censoForm.id || Date.now().toString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        const updated = censoForm.id 
+            ? censoStudents.map(s => s.id === censoForm.id ? newStudent : s)
+            : [newStudent, ...censoStudents];
+            
+        setCensoStudents(updated);
+        localStorage.setItem('aee_censo_students', JSON.stringify(updated));
+        setShowCensoForm(false);
+        setCensoForm({ id: '', name: '', grade: '', cid: '', hasLaudo: 'Sim', hasPEI: 'Não', category: 'Transtorno do Espectro Autista (TEA)' });
+    };
+
+    const handleDeleteCensoStudent = (id: string) => {
+        if(!confirm('Remover aluno do Censo AEE?')) return;
+        const updated = censoStudents.filter(s => s.id !== id);
+        setCensoStudents(updated);
+        localStorage.setItem('aee_censo_students', JSON.stringify(updated));
+    };
+
+const fetchRecords = async () => {
         if (activeSubTab !== 'pei') return;
         try {
             const { data, error } = await supabase
@@ -92,6 +132,21 @@ const SalaRecursosModule: React.FC<SalaRecursosModuleProps> = ({ user, onExit })
                         Planos (PEI)
                         {activeSubTab === 'pei' && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveSubTab('censo')}
+                        className={`pb-4 pt-5 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'censo'
+                                ? 'text-blue-600'
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <BarChart size={16} />
+                            Censo AEE
+                        </div>
+                        {activeSubTab === 'censo' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />
                         )}
                     </button>
                     <button
