@@ -33,6 +33,35 @@ const LITERACY_LEVELS = [
 const ProjetoApaModule: React.FC<ProjetoApaModuleProps> = ({ user, onExit }) => {
     const [activeSubTab, setActiveSubTab] = useState<'sondagem' | 'agrupamentos' | 'diario' | 'occurrences'>('sondagem');
     const [assessmentRecords, setAssessmentRecords] = useState<any[]>([]);
+
+// Agrupar alunos pelo nível mais recente
+    const groupedStudents = useMemo(() => {
+        const groups: Record<string, any[]> = {};
+        LITERACY_LEVELS.forEach(level => {
+            groups[level] = [];
+        });
+
+        // Pegar apenas a avaliação mais recente de cada aluno
+        const latestAssessments = new Map();
+        assessmentRecords.forEach(record => {
+            if (!latestAssessments.has(record.student_name)) {
+                latestAssessments.set(record.student_name, record);
+            }
+        });
+
+        Array.from(latestAssessments.values()).forEach(record => {
+            if (groups[record.literacy_level]) {
+                groups[record.literacy_level].push(record);
+            } else {
+                // Fallback se tiver algum nível fora do padrão
+                if (!groups['Outros']) groups['Outros'] = [];
+                groups['Outros'].push(record);
+            }
+        });
+
+        return groups;
+    }, [assessmentRecords]);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState<any>(null);
@@ -109,35 +138,7 @@ const fetchRecords = async () => {
         setIsModalOpen(true);
     };
 
-    // Agrupar alunos pelo nível mais recente
-    const groupedStudents = useMemo(() => {
-        const groups: Record<string, any[]> = {};
-        LITERACY_LEVELS.forEach(level => {
-            groups[level] = [];
-        });
-
-        // Pegar apenas a avaliação mais recente de cada aluno
-        const latestAssessments = new Map();
-        assessmentRecords.forEach(record => {
-            if (!latestAssessments.has(record.student_name)) {
-                latestAssessments.set(record.student_name, record);
-            }
-        });
-
-        Array.from(latestAssessments.values()).forEach(record => {
-            if (groups[record.literacy_level]) {
-                groups[record.literacy_level].push(record);
-            } else {
-                // Fallback se tiver algum nível fora do padrão
-                if (!groups['Outros']) groups['Outros'] = [];
-                groups['Outros'].push(record);
-            }
-        });
-
-        return groups;
-    }, [assessmentRecords]);
-
-    return (
+        return (
         <div className="h-full flex flex-col bg-gray-50/50">
             {/* Header */}
             <div className="bg-white border-b border-gray-100 px-8 py-6">
