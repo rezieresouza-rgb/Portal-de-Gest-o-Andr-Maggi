@@ -232,6 +232,193 @@ const fetchRecords = async () => {
                         </div>
                     </div>
                 )}
+            
+                {activeSubTab === 'censo' && (
+                    <div className="p-8 max-w-7xl mx-auto space-y-8">
+                        {/* Dashboard Stats */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total AEE</p>
+                                    <h3 className="text-3xl font-black text-gray-900">{censoStudents.length}</h3>
+                                </div>
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                    <Brain size={24} />
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Com Laudo</p>
+                                    <h3 className="text-3xl font-black text-emerald-600">{censoStudents.filter(s => s.hasLaudo === 'Sim').length}</h3>
+                                </div>
+                                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                                    <CheckCircle size={24} />
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Sem Laudo</p>
+                                    <h3 className="text-3xl font-black text-red-600">{censoStudents.filter(s => s.hasLaudo === 'Não').length}</h3>
+                                </div>
+                                <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center">
+                                    <XCircle size={24} />
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">PEI Atualizado</p>
+                                    <h3 className="text-3xl font-black text-purple-600">{censoStudents.filter(s => s.hasPEI === 'Sim').length}</h3>
+                                </div>
+                                <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center">
+                                    <FileText size={24} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Listagem */}
+                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                            <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase">Lista do Censo Escolar</h2>
+                                    <p className="text-sm font-medium text-gray-500">Mapeamento de estudantes para o Educacenso.</p>
+                                </div>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <button 
+                                        onClick={() => setShowCensoForm(true)}
+                                        className="flex-1 sm:flex-none bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Plus size={16} /> Novo Aluno
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50">
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estudante / Turma</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Categoria</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">CID</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Laudo</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">PEI</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {censoStudents.map(student => (
+                                            <tr key={student.id} className="hover:bg-blue-50/30 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-bold text-gray-900 text-sm uppercase">{student.name}</p>
+                                                    <p className="text-xs font-medium text-gray-500 uppercase">{student.grade}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="bg-gray-100 text-gray-600 text-[10px] font-black uppercase px-2 py-1 rounded">{student.category}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm font-bold text-gray-700">{student.cid || '-'}</span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`text-xs font-black uppercase ${student.hasLaudo === 'Sim' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                        {student.hasLaudo}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`text-xs font-black uppercase ${student.hasPEI === 'Sim' ? 'text-purple-600' : 'text-gray-400'}`}>
+                                                        {student.hasPEI}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <button onClick={() => { setCensoForm(student); setShowCensoForm(true); }} className="text-gray-400 hover:text-blue-600 p-2">
+                                                            <BarChart size={16} />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteCensoStudent(student.id)} className="text-gray-400 hover:text-red-600 p-2">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {censoStudents.length === 0 && (
+                                            <tr>
+                                                <td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-medium">
+                                                    Nenhum estudante AEE cadastrado no Censo local.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Censo Form Modal */}
+                        {showCensoForm && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                                <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                        <div>
+                                            <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Registro do Estudante</h2>
+                                            <p className="text-sm font-bold text-gray-400 uppercase mt-1">Dados para Censo AEE</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-8 space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nome Completo</label>
+                                                <input type="text" value={censoForm.name} onChange={e => setCensoForm({...censoForm, name: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 font-bold text-gray-700 uppercase" placeholder="Ex: Maria Silva" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Turma / Ano</label>
+                                                <input type="text" value={censoForm.grade} onChange={e => setCensoForm({...censoForm, grade: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 font-bold text-gray-700 uppercase" placeholder="Ex: 6º Ano A" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Categoria da Deficiência</label>
+                                                <select value={censoForm.category} onChange={e => setCensoForm({...censoForm, category: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 font-bold text-gray-700">
+                                                    <option value="Transtorno do Espectro Autista (TEA)">TEA</option>
+                                                    <option value="Deficiência Intelectual">Deficiência Intelectual</option>
+                                                    <option value="Deficiência Visual">Deficiência Visual</option>
+                                                    <option value="Deficiência Auditiva / Surdez">Deficiência Auditiva / Surdez</option>
+                                                    <option value="Deficiência Física">Deficiência Física</option>
+                                                    <option value="Altas Habilidades / Superdotação">Altas Habilidades / Superdotação</option>
+                                                    <option value="Múltiplas Deficiências">Múltiplas Deficiências</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Código CID (Opcional)</label>
+                                                <input type="text" value={censoForm.cid} onChange={e => setCensoForm({...censoForm, cid: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 font-bold text-gray-700 uppercase" placeholder="Ex: F84.0" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between">
+                                                <span className="text-xs font-black text-gray-700 uppercase">Possui Laudo Médico?</span>
+                                                <select value={censoForm.hasLaudo} onChange={e => setCensoForm({...censoForm, hasLaudo: e.target.value})} className="bg-white border border-gray-200 rounded-lg px-3 py-1 font-bold text-sm">
+                                                    <option value="Sim">Sim</option>
+                                                    <option value="Não">Não</option>
+                                                </select>
+                                            </div>
+                                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between">
+                                                <span className="text-xs font-black text-gray-700 uppercase">Possui PEI Válido?</span>
+                                                <select value={censoForm.hasPEI} onChange={e => setCensoForm({...censoForm, hasPEI: e.target.value})} className="bg-white border border-gray-200 rounded-lg px-3 py-1 font-bold text-sm">
+                                                    <option value="Sim">Sim</option>
+                                                    <option value="Não">Não</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+                                        <button onClick={() => setShowCensoForm(false)} className="px-6 py-3 text-gray-500 font-bold text-sm uppercase tracking-widest hover:bg-gray-200 rounded-xl transition-all">Cancelar</button>
+                                        <button onClick={handleSaveCensoStudent} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">Salvar Estudante</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
             </main>
 
             {isModalOpen && activeSubTab === 'pei' && (
