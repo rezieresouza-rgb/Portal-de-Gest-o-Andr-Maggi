@@ -356,6 +356,129 @@ const fetchRecords = async () => {
                         </div>
                     </div>
                 )}
+            
+                {activeSubTab === 'diario' && (
+                    <div className="p-8 max-w-5xl mx-auto space-y-6">
+                        <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                                    <CalendarCheck size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase">Diário de Bordo TaRL</h2>
+                                    <p className="text-sm font-medium text-gray-400">Registre a frequência e a intervenção do agrupamento.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Data do Encontro</label>
+                                    <input 
+                                        type="date" 
+                                        value={logDate}
+                                        onChange={e => setLogDate(e.target.value)}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 font-bold text-gray-700"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nível de Proficiência (Agrupamento)</label>
+                                    <select 
+                                        value={selectedLevel}
+                                        onChange={e => setSelectedLevel(e.target.value)}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 font-bold text-gray-700"
+                                    >
+                                        {LITERACY_LEVELS.map(lvl => (
+                                            <option key={lvl} value={lvl}>{lvl} ({groupedStudents[lvl]?.length || 0} alunos)</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="mb-8">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Lista de Frequência do Grupo</label>
+                                <div className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
+                                    {(!groupedStudents[selectedLevel] || groupedStudents[selectedLevel].length === 0) ? (
+                                        <div className="p-6 text-center text-gray-400 font-bold text-sm">Nenhum aluno neste agrupamento.</div>
+                                    ) : (
+                                        <div className="divide-y divide-gray-200">
+                                            {groupedStudents[selectedLevel].map((student: any) => (
+                                                <div key={student.student_name} className="flex justify-between items-center p-4 bg-white">
+                                                    <span className="font-bold text-sm text-gray-700 uppercase">{student.student_name}</span>
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            onClick={() => setAttendance({...attendance, [student.student_name]: true})}
+                                                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${attendance[student.student_name] ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                                        >
+                                                            Presente
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setAttendance({...attendance, [student.student_name]: false})}
+                                                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${!attendance[student.student_name] ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                                        >
+                                                            Falta
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="mb-8">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Sequência Didática / Intervenção Pedagógica</label>
+                                <textarea 
+                                    rows={4}
+                                    value={intervention}
+                                    onChange={e => setIntervention(e.target.value)}
+                                    placeholder="Descreva as atividades, habilidades trabalhadas e metodologias utilizadas no laboratório APA de hoje..."
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 font-medium text-gray-700 resize-none"
+                                />
+                            </div>
+
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={handleSaveLog}
+                                    disabled={!groupedStudents[selectedLevel] || groupedStudents[selectedLevel].length === 0}
+                                    className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    <Save size={18} /> Salvar Diário
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Histórico Recente */}
+                        <div className="mt-8">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Histórico de Atendimentos</h3>
+                            <div className="space-y-4">
+                                {logs.map(log => (
+                                    <div key={log.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 sm:items-center">
+                                        <div className="w-12 h-12 bg-indigo-50 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
+                                            <span className="text-[10px] font-black text-indigo-400 uppercase">{new Date(log.date).toLocaleString('pt-BR', { month: 'short' })}</span>
+                                            <span className="text-lg font-black text-indigo-600 leading-none">{new Date(log.date).getDate()}</span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded font-black uppercase">{log.level}</span>
+                                            </div>
+                                            <p className="text-sm font-medium text-gray-600 line-clamp-2">{log.intervention}</p>
+                                        </div>
+                                        <div className="flex flex-col sm:items-end flex-shrink-0 text-left sm:text-right">
+                                            <span className="text-xs font-black text-gray-900">{Object.values(log.attendance).filter(Boolean).length} Presentes</span>
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Prof: {log.teacherName}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {logs.length === 0 && (
+                                    <p className="text-center text-sm font-medium text-gray-400 py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                        Nenhum diário registrado ainda.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </main>
 
             {isModalOpen && activeSubTab === 'sondagem' && (
