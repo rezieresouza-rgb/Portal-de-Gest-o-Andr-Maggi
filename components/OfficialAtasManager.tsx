@@ -144,13 +144,16 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     meeting_time_end: '09:30',
     location: 'Escola Estadual Cívico-Militar André Antônio Maggi • Colíder/MT',
     participants: [
-      { name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'), role: moduleSource === 'CIVICO_MILITAR' ? 'Gestor Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Secretário(a) Escolar' }
+      { 
+        name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'), 
+        role: user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'Gestor Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Secretário(a) Escolar') 
+      }
     ],
     objectives: '',
     content_deliberations: '',
     forwarding_actions: '',
     signatory_name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'),
-    signatory_role: moduleSource === 'CIVICO_MILITAR' ? 'Gestor Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Secretário(a) Escolar'
+    signatory_role: user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'Gestor Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Secretário(a) Escolar')
   });
 
   // Participant input state for custom manual additions
