@@ -832,8 +832,8 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                     placeholder="Descreva aqui o rascunho completo da reunião: o que foi discutido, quem falou o quê, quais decisões foram tomadas e quais são os próximos passos. A IA irá gerar a redação formal e organizar os dados nos campos abaixo..."
                     value={aiPromptInput}
                     onChange={e => setAiPromptInput(e.target.value)}
-                    rows={6}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-blue-400 transition-all font-medium resize-none"
+                    rows={12}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-blue-400 transition-all font-medium"
                   />
 
                   <div className="flex justify-end">
@@ -1053,7 +1053,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </div>
                 <textarea
                   required
-                  rows={10}
+                  rows={15}
                   value={formData.content_deliberations}
                   onChange={e => setFormData({ ...formData, content_deliberations: e.target.value })}
                   placeholder="Escreva detalhadamente o que foi tratado, manifestações dos presentes e deliberações..."
