@@ -1180,35 +1180,61 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                    Nome do Signatário *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.signatory_name}
-                    onChange={(e) => {
-                      const name = e.target.value;
-                      const cleanName = name.trim().toUpperCase();
-                      const matchedRole = staffRoleMap[cleanName] || formData.signatory_role;
-                      setFormData({ ...formData, signatory_name: name, signatory_role: matchedRole });
-                    }}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+              </div>
+
+              {/* Signatários */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Signatários do Ofício</h4>
+                  <button
+                    type="button"
+                    onClick={handleAddSignatory}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                  >
+                    <Plus size={14} /> Adicionar
+                  </button>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                    Cargo / Função Oficial
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.signatory_role}
-                    onChange={(e) => setFormData({ ...formData, signatory_role: e.target.value })}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
+                
+                {formData.signatories.map((sig, idx) => (
+                  <div key={idx} className="flex gap-4 items-start relative bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    {formData.signatories.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSignatory(idx)}
+                        className="absolute -top-2 -right-2 p-1.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors shadow-sm"
+                        title="Remover Signatário"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                          Nome do Signatário *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={sig.name}
+                          onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                          Cargo / Função Oficial
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={sig.role}
+                          onChange={(e) => handleSignatoryChange(idx, 'role', e.target.value)}
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Botões do Modal */}
