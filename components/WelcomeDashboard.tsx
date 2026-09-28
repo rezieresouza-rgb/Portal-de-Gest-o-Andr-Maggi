@@ -27,7 +27,8 @@ import {
    LogOut,
    Trash2,
    X,
-   PartyPopper
+   PartyPopper,
+   Edit3
 } from 'lucide-react';
 import { BirthdayPerson, SchoolAnnouncement, SchoolEvent, User } from '../types';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
@@ -162,6 +163,14 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
    });
 
    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+   const [isEditAgendaOpen, setIsEditAgendaOpen] = useState(false);
+   const [agendaEvents, setAgendaEvents] = useState(() => {
+      try {
+         const saved = localStorage.getItem('school_agenda_' + currentMonthIdx);
+         if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return SCHOOL_CALENDAR_2026.meses[currentMonthIdx].eventos.slice(0, 5);
+   });
 
 
 
@@ -429,10 +438,13 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
                               <Calendar size={18} className="text-indigo-600" /> Agenda
                            </h3>
-                           <button onClick={exportAgendaPDF} className="p-1.5 bg-slate-50 text-slate-400 hover:text-slate-700 rounded-lg transition-all hover:bg-slate-100"><Download size={14} /></button>
+                           <div className="flex gap-2">
+                              <button onClick={() => setIsEditAgendaOpen(true)} className="p-1.5 bg-blue-50 text-blue-600 hover:text-blue-700 rounded-lg transition-all hover:bg-blue-100" title="Editar Agenda"><Edit3 size={14} /></button>
+                              <button onClick={exportAgendaPDF} className="p-1.5 bg-slate-50 text-slate-400 hover:text-slate-700 rounded-lg transition-all hover:bg-slate-100" title="Exportar PDF"><Download size={14} /></button>
+                           </div>
                         </div>
                         <div className="space-y-4">
-                           {currentMonthData.eventos.slice(0, 5).map((event, i) => (
+                           {agendaEvents.map((event, i) => (
                               <div key={i} className="flex gap-3 group">
                                  <div className="flex flex-col items-center w-8 shrink-0">
                                     <div className="text-[8px] font-black text-slate-400 uppercase leading-none">{currentMonthData.mes.substring(0, 3)}</div>
@@ -649,6 +661,55 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
           .print-container { width: 100%; border: none !important; }
         }
       `}</style>
+
+      {/* MODAL EDITAR AGENDA */}
+      {isEditAgendaOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 print:hidden">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-sm font-black uppercase text-slate-800 tracking-wider">Editar Agenda</h3>
+              <button onClick={() => setIsEditAgendaOpen(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={16} /></button>
+            </div>
+            
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              {agendaEvents.map((evt, idx) => (
+                <div key={idx} className="flex gap-2 items-center bg-slate-50 p-4 rounded-xl border border-slate-200 relative">
+                   <button onClick={() => {
+                      const novo = [...agendaEvents];
+                      novo.splice(idx, 1);
+                      setAgendaEvents(novo);
+                   }} className="absolute -top-2 -right-2 p-1.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200"><X size={12}/></button>
+                   <input className="w-16 p-3 text-xs font-bold border rounded-lg uppercase" value={evt.dia} onChange={e => {
+                      const novo = [...agendaEvents];
+                      novo[idx].dia = e.target.value;
+                      setAgendaEvents(novo);
+                   }} placeholder="Dia" />
+                   <input className="flex-1 p-3 text-xs font-bold border rounded-lg uppercase" value={evt.tipo} onChange={e => {
+                      const novo = [...agendaEvents];
+                      novo[idx].tipo = e.target.value;
+                      setAgendaEvents(novo);
+                   }} placeholder="Evento" />
+                </div>
+              ))}
+              <button onClick={() => {
+                 setAgendaEvents([...agendaEvents, { dia: '01', categoria: 'GERAL', tipo: 'Novo Evento' }]);
+              }} className="w-full py-4 border-2 border-dashed border-indigo-200 text-indigo-600 text-xs font-bold uppercase rounded-2xl flex justify-center items-center gap-2 hover:bg-indigo-50">
+                 <Plus size={16} /> Adicionar Evento
+              </button>
+            </div>
+            
+            <div className="mt-8">
+              <button onClick={() => {
+                 localStorage.setItem('school_agenda_' + currentMonthIdx, JSON.stringify(agendaEvents));
+                 setIsEditAgendaOpen(false);
+              }} className="w-full py-4 bg-blue-600 text-white text-xs font-black uppercase rounded-2xl hover:bg-blue-700 shadow-lg">
+                 Salvar Agenda
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
    );
 };
