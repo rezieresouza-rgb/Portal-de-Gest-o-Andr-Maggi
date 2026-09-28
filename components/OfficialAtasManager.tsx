@@ -824,33 +824,34 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="text"
-                    placeholder="Ex: reunião com o pai do aluno Pedro do 9º A sobre faltas e indisciplina; pai se comprometeu a acompanhar tarefas diárias"
+                <div className="flex flex-col gap-3">
+                  <textarea
+                    placeholder="Descreva aqui o rascunho completo da reunião: o que foi discutido, quem falou o quê, quais decisões foram tomadas e quais são os próximos passos. A IA irá gerar a redação formal e organizar os dados nos campos abaixo..."
                     value={aiPromptInput}
                     onChange={e => setAiPromptInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleGenerateAI(); } }}
-                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-blue-400 transition-all font-medium"
+                    rows={4}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-blue-400 transition-all font-medium resize-none"
                   />
 
-                  <button
-                    type="button"
-                    onClick={handleGenerateAI}
-                    disabled={isGeneratingAI || (!aiPromptInput.trim() && !formData.content_deliberations.trim())}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 whitespace-nowrap shrink-0 active:scale-95"
-                  >
-                    {isGeneratingAI ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Lavrando Ata...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={16} /> Redigir Ata c/ IA
-                      </>
-                    )}
-                  </button>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleGenerateAI}
+                      disabled={isGeneratingAI || (!aiPromptInput.trim() && !formData.content_deliberations.trim())}
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Organizando e Lavrando Ata...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={16} /> Organizar Ata com IA
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
