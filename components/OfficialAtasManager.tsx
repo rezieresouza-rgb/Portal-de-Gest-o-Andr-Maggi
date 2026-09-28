@@ -729,7 +729,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
       {/* MODAL DE LAVRATURA DE NOVA ATA */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto print:hidden">
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-6xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
             {/* Modal Header */}
             <div className="p-6 md:p-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -829,7 +829,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                     placeholder="Descreva aqui o rascunho completo da reunião: o que foi discutido, quem falou o quê, quais decisões foram tomadas e quais são os próximos passos. A IA irá gerar a redação formal e organizar os dados nos campos abaixo..."
                     value={aiPromptInput}
                     onChange={e => setAiPromptInput(e.target.value)}
-                    rows={4}
+                    rows={6}
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-blue-400 transition-all font-medium resize-none"
                   />
 
@@ -1050,7 +1050,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </div>
                 <textarea
                   required
-                  rows={6}
+                  rows={10}
                   value={formData.content_deliberations}
                   onChange={e => setFormData({ ...formData, content_deliberations: e.target.value })}
                   placeholder="Escreva detalhadamente o que foi tratado, manifestações dos presentes e deliberações..."
@@ -1064,7 +1064,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                   Encaminhamentos, Prazos e Responsabilidades
                 </label>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={formData.forwarding_actions}
                   onChange={e => setFormData({ ...formData, forwarding_actions: e.target.value })}
                   placeholder="Ex: 1. Acompanhamento semanal de tarefas pela coordenação; 2. Retorno com a família em 15 dias..."
