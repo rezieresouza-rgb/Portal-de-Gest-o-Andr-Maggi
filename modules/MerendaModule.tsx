@@ -32,6 +32,7 @@ import KitchenRequests from '../components/KitchenRequests';
 import ShoppingList from '../components/ShoppingList';
 import MenuContractAudit from '../components/MenuContractAudit';
 import SupplierNotifications from '../components/SupplierNotifications';
+import MerendaDeliveryReport from '../components/MerendaDeliveryReport';
 
 interface MerendaModuleProps {
   onExit: () => void;
@@ -39,7 +40,7 @@ interface MerendaModuleProps {
 }
 
 const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'contracts' | 'suppliers' | 'inventory' | 'ai' | 'orders' | 'menuChecklist' | 'kitchenRequests' | 'shoppingList' | 'menuAudit' | 'supplierNotifications' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'contracts' | 'suppliers' | 'inventory' | 'ai' | 'orders' | 'menuChecklist' | 'kitchenRequests' | 'shoppingList' | 'menuAudit' | 'supplierNotifications' | 'deliveryReport' | 'settings'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
@@ -73,6 +74,7 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
     { id: 'kitchenRequests', label: 'Materiais Cozinha', icon: CookingPot },
     { id: 'contracts', label: 'Contratos', icon: FileText },
     { id: 'orders', label: 'Pedidos & Compras', icon: ShoppingCart },
+    { id: 'deliveryReport', label: 'Relatório de Entregas', icon: Package },
     { id: 'suppliers', label: 'Fornecedores', icon: Users },
     { id: 'inventory', label: 'Controle de Estoque', icon: Package },
     { id: 'ai', label: 'Consultoria IA', icon: BrainCircuit },
@@ -86,6 +88,7 @@ const MerendaModule: React.FC<MerendaModuleProps> = ({ onExit, user }) => {
       case 'inventory': return <Inventory />;
       case 'ai': return <AIConsultant />;
       case 'orders': return <Orders />;
+      case 'deliveryReport': return <MerendaDeliveryReport />;
       case 'menuChecklist': return <MenuChecklist />;
       case 'kitchenRequests': return <KitchenRequests />;
       case 'shoppingList': return <ShoppingList />;
