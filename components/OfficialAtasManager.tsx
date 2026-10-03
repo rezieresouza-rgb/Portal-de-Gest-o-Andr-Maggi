@@ -809,66 +809,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </div>
               </div>
 
-              {/* ASSISTENTE DE REDAÇÃO DE ATAS POR IA */}
-              <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-5 rounded-3xl border border-blue-500/20 text-white space-y-3 shadow-xl">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-2xl bg-blue-500/20 text-blue-300 flex items-center justify-center border border-blue-400/30 shrink-0">
-                      <Sparkles size={18} className="text-amber-400 animate-pulse" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-blue-200 flex items-center gap-2">
-                        Redação Inteligente de Ata por IA <span className="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full">SEDUC-MT IA</span>
-                      </h4>
-                      <p className="text-[10px] text-slate-300 font-medium">Digite os tópicos ou resumo do que foi dito e a IA gera a redação formal, deliberações e encaminhamentos.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <select
-                      value={aiTone}
-                      onChange={e => setAiTone(e.target.value as any)}
-                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase text-blue-200 outline-none focus:bg-slate-900"
-                    >
-                      <option value="PADRAO" className="bg-slate-900 text-white">Tom: Padrão Oficial</option>
-                      <option value="DISCIPLINAR" className="bg-slate-900 text-white">Tom: Cívico-Disciplinar</option>
-                      <option value="PEDAGOGICO" className="bg-slate-900 text-white">Tom: Pedagógico</option>
-                      <option value="CONCILIADOR" className="bg-slate-900 text-white">Tom: Conciliador / Mediação</option>
-                      <option value="DELIBERATIVO" className="bg-slate-900 text-white">Tom: Deliberativo</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <textarea
-                    placeholder="Descreva aqui o rascunho completo da reunião: o que foi discutido, quem falou o quê, quais decisões foram tomadas e quais são os próximos passos. A IA irá gerar a redação formal e organizar os dados nos campos abaixo..."
-                    value={aiPromptInput}
-                    onChange={e => setAiPromptInput(e.target.value)}
-                    rows={12}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-xs text-white placeholder-slate-400 outline-none focus:bg-white/20 focus:border-blue-400 transition-all font-medium"
-                  />
-
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleGenerateAI}
-                      disabled={isGeneratingAI || (!aiPromptInput.trim() && !formData.content_deliberations.trim())}
-                      className="px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
-                    >
-                      {isGeneratingAI ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Organizando e Lavrando Ata...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={16} /> Organizar Ata com IA
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+              {/* ASSISTENTE DE REDAÇÃO DE ATAS POR IA OMITIDO PARA LIMPEZA VISUAL */}
 
               {/* Informações Básicas da Sessão */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1054,14 +995,27 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                     Registro dos Fatos, Discussões e Deliberações *
                   </label>
                   {formData.content_deliberations.trim() && (
-                    <button
-                      type="button"
-                      onClick={handleGenerateAI}
-                      disabled={isGeneratingAI}
-                      className="text-[9px] font-black text-blue-600 hover:underline uppercase flex items-center gap-1"
-                    >
-                      <Wand2 size={12} /> Refinar Redação com IA
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={aiTone}
+                        onChange={e => setAiTone(e.target.value as any)}
+                        className="bg-transparent border-none text-[9px] font-black uppercase text-slate-500 outline-none cursor-pointer"
+                      >
+                        <option value="PADRAO">Tom: Padrão Oficial</option>
+                        <option value="DISCIPLINAR">Tom: Cívico-Disciplinar</option>
+                        <option value="PEDAGOGICO">Tom: Pedagógico</option>
+                        <option value="CONCILIADOR">Tom: Conciliador / Mediação</option>
+                        <option value="DELIBERATIVO">Tom: Deliberativo</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleGenerateAI}
+                        disabled={isGeneratingAI}
+                        className="text-[9px] font-black text-blue-600 hover:underline uppercase flex items-center gap-1"
+                      >
+                        <Wand2 size={12} /> Refinar Redação com IA
+                      </button>
+                    </div>
                   )}
                 </div>
                 <textarea
