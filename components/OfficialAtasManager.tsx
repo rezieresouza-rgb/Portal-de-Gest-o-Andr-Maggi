@@ -92,6 +92,16 @@ const ATA_TEMPLATES = [
     objectives: 'Deliberar sobre prioridades de infraestrutura, prestação de contas, organização de eventos institucionais e alinhamento com a DRE/SEDUC-MT.',
     content: 'Reunida a equipe gestora ampla para tratar dos encaminhamentos estruturais e administrativos da unidade escolar.\n\nForam avaliadas as necessidades de manutenção física, aquisição de suprimentos didáticos e cumprimento das metas pactuadas com a Diretoria Regional de Educação.\n\nDefiniram-se os planos de ação prioritários para o período subsequente.',
     forwarding: '1. Expedição de ofícios aos órgãos competentes com as demandas levantadas.\n2. Acompanhamento dos prazos de execução das manutenções prediais.\n3. Próxima reunião ordinária agendada para 30 dias.'
+  },
+  {
+    id: 'reuniao_servidor',
+    title: 'Reunião Individual de Alinhamento com Servidor',
+    category: 'GERAL' as const,
+    pauta: 'Alinhamento Funcional e Orientação de Rotinas',
+    location: 'Gabinete da Direção / Coordenação • EE Cívico-Militar André Maggi',
+    objectives: 'Realizar alinhamento funcional, repassar orientações sobre rotinas de trabalho, assiduidade e conduta profissional, bem como ouvir eventuais demandas do(a) servidor(a).',
+    content: 'Reuniram-se a equipe gestora/coordenação e o(a) servidor(a) para tratar de assuntos inerentes às suas funções na unidade escolar.\n\nForam pontuadas questões referentes ao cumprimento de horários, atribuições do cargo e a importância do trabalho em equipe para o bom andamento das atividades institucionais.\n\nO(a) servidor(a) teve a oportunidade de expor suas considerações e dificuldades, sendo orientado(a) de acordo com as diretrizes e normas internas da escola.',
+    forwarding: '1. Ciência do(a) servidor(a) quanto às orientações recebidas e registro em ata.\n2. Acompanhamento contínuo pela chefia imediata quanto ao alinhamento pontuado.\n3. Arquivamento da ata para registro funcional.'
   }
 ];
 
