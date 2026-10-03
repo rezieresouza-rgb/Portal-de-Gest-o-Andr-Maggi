@@ -29,6 +29,7 @@ const CATEGORY_LABELS: Record<string, { label: string, color: string }> = {
   PAIS_RESPONSAVEIS: { label: 'Atendimento a Pais / Família', color: 'bg-amber-50 text-amber-700 border-amber-200' },
   CONSELHO_CLASSE: { label: 'Conselho de Classe', color: 'bg-blue-50 text-blue-700 border-blue-200' },
   GESTAO_ALINHAMENTO: { label: 'Alinhamento de Gestão', color: 'bg-slate-100 text-slate-800 border-slate-300' },
+  ALINHAMENTO_SERVIDOR: { label: 'Alinhamento com Servidor', color: 'bg-teal-50 text-teal-700 border-teal-200' },
   GERAL: { label: 'Reunião Geral / Administrativa', color: 'bg-gray-100 text-gray-700 border-gray-200' }
 };
 
@@ -96,7 +97,7 @@ const ATA_TEMPLATES = [
   {
     id: 'reuniao_servidor',
     title: 'Reunião Individual de Alinhamento com Servidor',
-    category: 'GERAL' as const,
+    category: 'ALINHAMENTO_SERVIDOR' as const,
     pauta: 'Alinhamento Funcional e Orientação de Rotinas',
     location: 'Gabinete da Direção / Coordenação • EE Cívico-Militar André Maggi',
     objectives: 'Realizar alinhamento funcional, repassar orientações sobre rotinas de trabalho, assiduidade e conduta profissional, bem como ouvir eventuais demandas do(a) servidor(a).',
@@ -611,6 +612,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
             <option value="PAIS_RESPONSAVEIS">Atendimento a Pais</option>
             <option value="CONSELHO_CLASSE">Conselho de Classe</option>
             <option value="GESTAO_ALINHAMENTO">Alinhamento de Gestão</option>
+            <option value="ALINHAMENTO_SERVIDOR">Alinhamento com Servidor</option>
             <option value="GERAL">Geral / Administrativa</option>
           </select>
 
@@ -898,6 +900,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                     <option value="PAIS_RESPONSAVEIS">Atendimento a Pais / Família</option>
                     <option value="CONSELHO_CLASSE">Conselho de Classe</option>
                     <option value="GESTAO_ALINHAMENTO">Alinhamento de Gestão</option>
+                    <option value="ALINHAMENTO_SERVIDOR">Alinhamento com Servidor</option>
                     <option value="GERAL">Geral / Administrativa</option>
                   </select>
                 </div>
