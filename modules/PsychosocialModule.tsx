@@ -27,6 +27,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import PsychosocialDashboard from '../components/PsychosocialDashboard';
 import PsychosocialCaseManager from '../components/PsychosocialCaseManager';
 import MediationManager from '../components/MediationManager';
@@ -119,6 +120,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
   };
 
   const menuItems = [
+    { id: 'oficios', label: 'Ofícios Expedidos', icon: FileSpreadsheet },
     { id: 'dashboard', label: 'Monitor de Saúde & Alertas', icon: LayoutDashboard },
     { id: 'cases', label: 'Prontuários & Gestão de Casos', icon: Brain },
     { id: 'collective_sessions', label: 'Acolhimento Coletivo (Luto/Crise)', icon: Users },
@@ -271,6 +273,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
 
         {/* Conteúdo Dinâmico */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          {activeTab === 'oficios' && <OfficialOficiosManager user={user} />}
           {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} onNavigate={navigateWithContext} />}
           
           {activeTab === 'cases' && (

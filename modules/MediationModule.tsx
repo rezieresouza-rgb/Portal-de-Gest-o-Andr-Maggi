@@ -33,6 +33,7 @@ import PsychosocialReports from '../components/PsychosocialReports';
 import MediationRestorativeGuideModal from '../components/MediationRestorativeGuideModal';
 import MediationCalendarManager from '../components/MediationCalendarManager';
 import { supabase } from '../supabaseClient';
+import OfficialOficiosManager from '../components/OfficialOficiosManager';
 
 interface MediationModuleProps {
   user?: any;
@@ -106,6 +107,7 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
   }, [rawCases, casesCount]);
 
   const navItems = [
+    { id: 'oficios', label: 'Ofícios Expedidos', icon: <FileSpreadsheet size={18} /> },
     { id: 'dashboard', label: 'Painel & Diagnóstico', icon: <LayoutDashboard size={18} /> },
     { id: 'cases', label: 'Casos em Mediação', icon: <Scale size={18} /> },
     { id: 'calendar', label: 'Calendário de Círculos', icon: <CalendarDays size={18} /> },
@@ -253,7 +255,8 @@ const MediationModule: React.FC<MediationModuleProps> = ({ user, onExit }) => {
         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
           
           {/* TAB 1: PAINEL & CLIMA ESCOLAR */}
-          {activeTab === 'dashboard' && (
+          {activeTab === 'oficios' && <OfficialOficiosManager user={user} />}
+              {activeTab === 'dashboard' && (
             <div className="space-y-8 animate-in fade-in duration-300">
               
               {/* Banner Topo */}

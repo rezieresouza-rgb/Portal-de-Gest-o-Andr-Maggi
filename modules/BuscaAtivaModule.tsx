@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Users,
   ArrowLeft,
+  FileSpreadsheet,
   LayoutDashboard,
   FileText,
   UserCheck,
@@ -43,6 +44,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const menuItems = [
+    { id: 'oficios', label: 'Ofícios Expedidos', icon: FileSpreadsheet },
     { id: 'dashboard', label: 'Painel & Diagnóstico', icon: LayoutDashboard },
     { id: 'students', label: 'Alunos em Alerta (Infrequência)', icon: AlertTriangle },
     { id: 'commitments', label: 'Termos de Compromisso', icon: FileCheck },
@@ -169,6 +171,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
 
         {/* Conteúdo Dinâmico */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
+          {activeTab === 'oficios' && <OfficialOficiosManager user={user} />}
           {activeTab === 'dashboard' && <BuscaAtivaDashboard onNavigate={(tab) => setActiveTab(tab)} />}
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'commitments' && <BuscaAtivaParentCommitmentManager />}
