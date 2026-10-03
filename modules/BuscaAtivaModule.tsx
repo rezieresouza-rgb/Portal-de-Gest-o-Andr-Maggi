@@ -172,7 +172,7 @@ const BuscaAtivaModule: React.FC<BuscaAtivaModuleProps> = ({ onExit }) => {
 
         {/* Conteúdo Dinâmico */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
-          {activeTab === 'oficios' && <OfficialOficiosManager user={user} />}
+          {activeTab === 'oficios' && <OfficialOficiosManager user={null} />}
           {activeTab === 'dashboard' && <BuscaAtivaDashboard onNavigate={(tab) => setActiveTab(tab)} />}
           {activeTab === 'students' && <BuscaAtivaStudentList />}
           {activeTab === 'commitments' && <BuscaAtivaParentCommitmentManager />}

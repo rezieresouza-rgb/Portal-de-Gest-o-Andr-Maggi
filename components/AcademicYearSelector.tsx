@@ -40,14 +40,14 @@ export const AcademicYearSelector: React.FC<AcademicYearSelectorProps> = ({
   };
 
   return (
-    <div className={elative inline-block text-left } ref={dropdownRef}>
+    <div className="elative inline-block text-left" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={lex items-center gap-3 px-3.5 py-2 rounded-2xl transition-all border shadow-sm }
+        className="flex items-center gap-3 px-3.5 py-2 rounded-2xl transition-all border shadow-sm"
         title="Alternar Ano Letivo"
       >
-        <div className={w-8 h-8 rounded-xl flex items-center justify-center shrink-0 }>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
           <Calendar size={16} />
         </div>
 
@@ -65,7 +65,7 @@ export const AcademicYearSelector: React.FC<AcademicYearSelectorProps> = ({
           </span>
         </div>
 
-        <ChevronDown size={14} className={opacity-60 transition-transform duration-200 } />
+        <ChevronDown size={14} className="opacity-60 transition-transform duration-200" />
       </button>
 
       {/* DROPDOWN MENU */}
@@ -89,10 +89,10 @@ export const AcademicYearSelector: React.FC<AcademicYearSelectorProps> = ({
                     setSelectedYear(yr.year);
                     setIsOpen(false);
                   }}
-                  className={w-full flex items-center justify-between p-3 rounded-xl text-left transition-all }
+                  className="w-full flex items-center justify-between p-3 rounded-xl text-left transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs }>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs">
                       {yr.year}
                     </div>
                     <div>
@@ -100,7 +100,7 @@ export const AcademicYearSelector: React.FC<AcademicYearSelectorProps> = ({
                         {yr.name}
                         {isSelected && <Check size={14} className="text-emerald-400" />}
                       </p>
-                      <span className={inline-block mt-0.5 text-[8px] font-black px-2 py-0.5 rounded-md uppercase border }>
+                      <span className="inline-block mt-0.5 text-[8px] font-black px-2 py-0.5 rounded-md uppercase border">
                         {badge.label}
                       </span>
                     </div>

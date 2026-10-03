@@ -173,7 +173,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
               key={item.id}
               onClick={() => {
                 setActiveTab(item.id as any);
-                if (item.id === 'mediation') clearNotifications();
+                if (item.id === 'mediation') handleClearNotifications();
                 setIsSidebarOpen(false);
               }}
               className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
@@ -250,7 +250,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
           <div className="flex items-center gap-2 lg:gap-4 shrink-0">
             {notifCount > 0 ? (
               <button
-                onClick={() => { setActiveTab('mediation'); clearNotifications(); }}
+                onClick={() => { setActiveTab('mediation'); handleClearNotifications(); }}
                 className="flex items-center gap-2 px-3 py-1.5 lg:px-4 lg:py-2 bg-rose-50 text-rose-700 rounded-full border border-rose-200 hover:bg-rose-100 transition-colors shadow-sm text-xs"
               >
                 <AlertCircle size={14} className="animate-pulse text-rose-600 shrink-0" />
