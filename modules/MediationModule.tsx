@@ -24,6 +24,7 @@ import {
   FileCheck,
   AlertTriangle,
   LayoutDashboard
+  FileSpreadsheet,
 } from 'lucide-react';
 import { User, PsychosocialRole, MediationCase } from '../types';
 import MediationManager from '../components/MediationManager';
