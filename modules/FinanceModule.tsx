@@ -1835,15 +1835,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     <div className="flex justify-between items-center mb-3">
                                       <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full bg-${color === 'blue' ? 'blue' : color === 'red' ? 'rose' : 'amber'}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Teto Custeio (PAF)</p>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Custeio (PAF)</p>
                                       </div>
-                                      <p className={`text-[10px] font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-blue-300'}`}>
-                                        RESTANTE: R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                      </p>
                                     </div>
                                     <div className="flex justify-between items-end mb-2">
-                                      <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                      <p className={`text-xl font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-white'}`}>R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                       <div className="text-right">
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                         <p className="text-[9px] font-bold text-white/40 uppercase">Teto: R$ {tetoCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                       </div>
                                     </div>
@@ -1871,15 +1869,13 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     <div className="flex justify-between items-center mb-3">
                                       <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full bg-${color === 'purple' ? 'purple' : color === 'red' ? 'rose' : 'amber'}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Teto Capital (Permanente)</p>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Capital (Permanente)</p>
                                       </div>
-                                      <p className={`text-[10px] font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-purple-300'}`}>
-                                        RESTANTE: R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                      </p>
                                     </div>
                                     <div className="flex justify-between items-end mb-2">
-                                      <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                      <p className={`text-xl font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-white'}`}>R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                       <div className="text-right">
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                         <p className="text-[9px] font-bold text-white/40 uppercase">Teto: R$ {tetoCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                       </div>
                                     </div>
