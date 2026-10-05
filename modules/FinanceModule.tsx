@@ -1697,13 +1697,16 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     <div className="flex justify-between items-center mb-3">
                                       <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Custeio</p>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo de Custeio</p>
                                       </div>
-                                      <p className={`text-[10px] font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                        R$ {(saldoCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                      </p>
                                     </div>
-                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                    <div className="flex justify-between items-end mb-2">
+                                      <p className={`text-xl font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-white'}`}>R$ {(saldoCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      <div className="text-right">
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      </div>
+                                    </div>
                                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3">
                                       <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                                     </div>
@@ -1724,13 +1727,16 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                     <div className="flex justify-between items-center mb-3">
                                       <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo Capital</p>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo de Capital</p>
                                       </div>
-                                      <p className={`text-[10px] font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                        R$ {(saldoCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                      </p>
                                     </div>
-                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/40 font-bold uppercase">Gasto</span></p>
+                                    <div className="flex justify-between items-end mb-2">
+                                      <p className={`text-xl font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-white'}`}>R$ {(saldoCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      <div className="text-right">
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      </div>
+                                    </div>
                                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3">
                                       <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                                     </div>
@@ -2018,15 +2024,13 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                                   <div className="flex justify-between items-center mb-3">
                                     <div className="flex items-center gap-2">
                                       <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                      <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Limite Custeio</p>
+                                      <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo de Custeio</p>
                                     </div>
-                                    <p className={`text-[10px] font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                      SALDO: R$ {(saldoCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </p>
                                   </div>
                                   <div className="flex justify-between items-end mb-2">
-                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                    <p className={`text-xl font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-white'}`}>R$ {(saldoCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     <div className="text-right">
+                                      <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                       <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     </div>
                                   </div>
@@ -2054,15 +2058,13 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                                   <div className="flex justify-between items-center mb-3">
                                     <div className="flex items-center gap-2">
                                       <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                      <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Limite Capital</p>
+                                      <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo de Capital</p>
                                     </div>
-                                    <p className={`text-[10px] font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                      SALDO: R$ {(saldoCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </p>
                                   </div>
                                   <div className="flex justify-between items-end mb-2">
-                                    <p className="text-xl font-black text-white">R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                    <p className={`text-xl font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-white'}`}>R$ {(saldoCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     <div className="text-right">
+                                      <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                       <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     </div>
                                   </div>
