@@ -43,20 +43,30 @@ const ClassCouncilManager: React.FC = () => {
     }
 
     if (data) {
-      setCouncils(data.map(c => ({
-        id: c.id,
-        classroomId: c.classroom_id,
-        className: c.classrooms?.name || 'N/A',
-        bimestre: c.bimestre,
-        date: c.date,
-        generalDiagnosis: c.general_diagnosis,
-        leaderReports: c.leader_reports,
-        studentObservations: c.student_observations,
-        decisions: c.decisions,
+      setCouncils(data.map(c => {
+        let generalDiag = c.general_diagnosis || '';
+        let leaderRep = '';
+        if (generalDiag.includes('|||LEADER_REPORTS|||')) {
+          const parts = generalDiag.split('|||LEADER_REPORTS|||');
+          generalDiag = parts[0];
+          leaderRep = parts[1];
+        }
+
+        return {
+          id: c.id,
+          classroomId: c.classroom_id,
+          className: c.classrooms?.name || 'N/A',
+          bimestre: c.bimestre,
+          date: c.date,
+          generalDiagnosis: generalDiag,
+          leaderReports: leaderRep,
+          studentObservations: c.student_observations,
+          decisions: c.decisions,
         attendanceTeachers: c.attendance_teachers,
         status: c.status,
         timestamp: new Date(c.created_at).getTime()
-      })));
+        };
+      }));
     }
   };
 
@@ -66,12 +76,15 @@ const ClassCouncilManager: React.FC = () => {
 
   const handleSaveCouncil = async (council: ClassCouncil) => {
     try {
+      const combinedDiagnosis = council.leaderReports 
+        ? `${council.generalDiagnosis}|||LEADER_REPORTS|||${council.leaderReports}`
+        : council.generalDiagnosis;
+
       const councilData = {
         classroom_id: council.classroomId,
         bimestre: council.bimestre,
         date: council.date,
-        general_diagnosis: council.generalDiagnosis,
-        leader_reports: council.leaderReports,
+        general_diagnosis: combinedDiagnosis,
         student_observations: council.studentObservations,
         decisions: council.decisions,
         attendance_teachers: council.attendanceTeachers,
