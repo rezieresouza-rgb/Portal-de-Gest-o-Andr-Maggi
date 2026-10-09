@@ -292,16 +292,27 @@ const ClassCouncilManager: React.FC = () => {
       {printingCouncil && (
         <div style={{ position: 'absolute', top: -9999, left: -9999, width: '1000px' }}>
           <div id="ata-conselho-externo" className="bg-white text-black p-12 min-h-screen font-sans">
-            <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-8 gap-6">
-              <div className="flex items-center justify-start flex-1">
-                <img src="/logo-escola.png" alt="Escola Logo" className="h-44 w-auto object-contain" />
+            <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-8">
+              <img 
+                src="/brasao_mt.png" 
+                alt="Brasão do Estado de Mato Grosso" 
+                className="h-20 sm:h-24 w-auto object-contain shrink-0 max-h-[95px]" 
+                onError={(e) => (e.currentTarget.src = '/SEDUC 2.jpg')} 
+              />
+              <div className="text-center flex-1 mx-2 space-y-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>
+                <h1 className="text-[11px] font-bold uppercase text-black leading-tight">Governo do Estado de Mato Grosso</h1>
+                <h2 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria de Estado de Educação</h2>
+                <h3 className="text-[10px] font-bold uppercase text-black leading-tight">Secretaria Adjunta de Gestão Regional</h3>
+                <h4 className="text-[9px] font-bold uppercase text-black leading-tight">Superintendência de Gestão das Diretorias Regionais</h4>
+                <h5 className="text-[9px] font-bold uppercase text-black leading-tight">Diretoria Regional de Educação de Sinop</h5>
+                <h6 className="text-[11px] font-black uppercase text-black leading-tight pt-0.5">Escola Estadual Cívico-Militar André Antônio Maggi</h6>
               </div>
-              <div className="flex-[2] flex justify-center px-4">
-                <img src="/dados escola.jpeg" alt="Dados da Escola" className="h-44 w-full object-contain" />
-              </div>
-              <div className="flex items-center justify-end flex-1">
-                <img src="/SEDUC 2.jpg" alt="SEDUC MT" className="h-28 w-auto object-contain" />
-              </div>
+              <img 
+                src="/logo-escola-oficial.png" 
+                alt="Escola Cívico-Militar" 
+                className="h-20 sm:h-24 w-auto object-contain shrink-0 max-h-[105px]" 
+                onError={(e) => (e.currentTarget.src = '/logo-escola.png')} 
+              />
             </div>
 
             <div className="text-center mb-10">
