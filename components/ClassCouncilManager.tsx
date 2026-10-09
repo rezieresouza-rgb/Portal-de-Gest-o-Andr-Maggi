@@ -371,12 +371,23 @@ const ClassCouncilManager: React.FC = () => {
                 </table>
               </section>
 
-              <div className="mt-20 pt-10 grid grid-cols-2 gap-20 px-10">
+              <div className="mt-16 pt-10 grid grid-cols-2 gap-20 px-10">
                 <div className="text-center border-t border-black pt-4">
                   <p className="text-[10px] uppercase font-bold">Coordenação Pedagógica</p>
                 </div>
                 <div className="text-center border-t border-black pt-4">
                   <p className="text-[10px] uppercase font-bold">Direção Escolar</p>
+                </div>
+              </div>
+
+              <div className="mt-16 text-center pb-10">
+                <h3 className="text-[12px] font-bold uppercase mb-12">Assinaturas dos Professores</h3>
+                <div className="grid grid-cols-2 gap-x-20 gap-y-14 px-10">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="text-center border-t border-black pt-2">
+                      <p className="text-[10px] uppercase font-bold text-black/70">Professor(a) / Disciplina</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
