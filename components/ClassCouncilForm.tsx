@@ -63,6 +63,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
       const { data, error } = await supabase
         .from('enrollments')
         .select(`
+          status,
           student_id,
           students (*)
         `)
@@ -70,22 +71,41 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
 
       if (data) {
         const studentList = data
-          .map((e: any) => e.students)
-          .sort((a: any, b: any) => a.name.localeCompare(b.name, 'pt-BR'));
+          .map((e: any) => {
+            const status = e.status || e.students?.status || 'ATIVO';
+            const suffix = (status && status !== 'ATIVO' && status !== 'RECLASSIFICADO') ? ` (${status})` : '';
+            return {
+              ...e.students,
+              displayName: e.students.name + suffix,
+              status
+            };
+          })
+          .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName, 'pt-BR'));
         
         setStudents(studentList);
         
         // Se for um novo conselho, inicializar as observações
         if (!initialData) {
-          const initialObs: ClassCouncilStudentObservation[] = studentList.map(s => ({
-            studentId: s.id,
-            studentName: s.name,
-            pedagogicalProgress: 'ADEQUADO',
-            behavioralStatus: 'BOM',
-            notes: '',
-            recommendations: '',
-            frequentaAPA: false
-          }));
+          const initialObs: ClassCouncilStudentObservation[] = studentList.map(s => {
+            let preNotes = '';
+            if (s.status === 'TRANSFERIDO' || s.status === 'TRANSFERIDO DE ESCOLA' || s.status === 'TRANSFERIDO DE TURMA') {
+              preNotes = 'Aluno(a) transferido(a).';
+            } else if (s.status === 'ABANDONO') {
+              preNotes = 'Aluno(a) em abandono escolar.';
+            } else if (s.status !== 'ATIVO' && s.status !== 'RECLASSIFICADO') {
+              preNotes = `Situação: ${s.status}`;
+            }
+
+            return {
+              studentId: s.id,
+              studentName: s.displayName,
+              pedagogicalProgress: 'ADEQUADO',
+              behavioralStatus: 'BOM',
+              notes: preNotes,
+              recommendations: '',
+              frequentaAPA: false
+            };
+          });
           setFormData(prev => ({ ...prev, studentObservations: initialObs }));
         }
       }
