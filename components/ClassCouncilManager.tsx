@@ -380,6 +380,15 @@ const ClassCouncilManager: React.FC = () => {
                 </div>
               </div>
 
+              <div className="mt-16 pt-10 grid grid-cols-2 gap-20 px-10">
+                <div className="text-center border-t border-black pt-4">
+                  <p className="text-[10px] uppercase font-bold">Líder de Turma</p>
+                </div>
+                <div className="text-center border-t border-black pt-4">
+                  <p className="text-[10px] uppercase font-bold">Vice-Líder de Turma</p>
+                </div>
+              </div>
+
               <div className="mt-16 text-center pb-10">
                 <h3 className="text-[12px] font-bold uppercase mb-12">Assinaturas dos Professores</h3>
                 <div className="grid grid-cols-2 gap-x-20 gap-y-14 px-10">
