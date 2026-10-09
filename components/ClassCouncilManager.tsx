@@ -323,10 +323,14 @@ const ClassCouncilManager: React.FC = () => {
                   <tbody>
                     {printingCouncil.studentObservations?.map((obs, idx) => (
                       <tr key={idx}>
-                        <td className="border border-black px-3 py-2 font-bold uppercase">{obs.studentName}</td>
+                        <td className="border border-black px-3 py-2 font-bold uppercase">
+                          {obs.studentName}
+                          {obs.frequentaAPA && <span className="ml-1 text-[9px] font-black text-gray-600">(APA)</span>}
+                        </td>
                         <td className="border border-black px-2 py-2 text-center">{obs.pedagogicalProgress}</td>
                         <td className="border border-black px-2 py-2 text-center">{obs.behavioralStatus}</td>
                         <td className="border border-black px-3 py-2">
+                          {obs.frequentaAPA && <p><strong>- Frequenta o APA.</strong></p>}
                           {obs.notes && <p><strong>Obs:</strong> {obs.notes}</p>}
                           {obs.recommendations && <p><strong>Intervenção:</strong> {obs.recommendations}</p>}
                         </td>
