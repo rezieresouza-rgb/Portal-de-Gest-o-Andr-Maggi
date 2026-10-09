@@ -168,6 +168,7 @@ export interface ClassCouncil {
   bimestre: string;
   date: string;
   generalDiagnosis: string;
+  leaderReports?: string;
   studentObservations: ClassCouncilStudentObservation[];
   decisions: string;
   attendanceTeachers: string[];

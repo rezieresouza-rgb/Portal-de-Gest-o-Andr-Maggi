@@ -36,6 +36,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
     bimestre: '1º BIMESTRE',
     date: new Date().toISOString().split('T')[0],
     generalDiagnosis: '',
+    leaderReports: '',
     studentObservations: [],
     decisions: '',
     attendanceTeachers: [],
@@ -117,6 +118,7 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
         bimestre: formData.bimestre || '1º BIMESTRE',
         date: formData.date || new Date().toISOString().split('T')[0],
         generalDiagnosis: formData.generalDiagnosis || '',
+        leaderReports: formData.leaderReports || '',
         studentObservations: formData.studentObservations || [],
         decisions: formData.decisions || '',
         attendanceTeachers: formData.attendanceTeachers || [],
@@ -261,7 +263,19 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
               value={formData.generalDiagnosis}
               onChange={e => setFormData({...formData, generalDiagnosis: e.target.value})}
               placeholder="Descreva o perfil da turma neste bimestre, avanços coletivos e desafios..."
-              className="w-full h-36 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-900 outline-none focus:bg-white resize-none"
+              className="w-full h-24 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-900 outline-none focus:bg-white resize-none"
+            />
+          </div>
+
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-3">
+            <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+              <MessageSquareIcon size={14} /> Relatos do Líder e Vice-Líder
+            </h4>
+            <textarea 
+              value={formData.leaderReports}
+              onChange={e => setFormData({...formData, leaderReports: e.target.value})}
+              placeholder="Aponte os relatos, demandas e observações trazidas pelos representantes da turma..."
+              className="w-full h-24 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-900 outline-none focus:bg-white resize-none"
             />
           </div>
 

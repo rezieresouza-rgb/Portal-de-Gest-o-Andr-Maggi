@@ -50,6 +50,7 @@ const ClassCouncilManager: React.FC = () => {
         bimestre: c.bimestre,
         date: c.date,
         generalDiagnosis: c.general_diagnosis,
+        leaderReports: c.leader_reports,
         studentObservations: c.student_observations,
         decisions: c.decisions,
         attendanceTeachers: c.attendance_teachers,
@@ -70,6 +71,7 @@ const ClassCouncilManager: React.FC = () => {
         bimestre: council.bimestre,
         date: council.date,
         general_diagnosis: council.generalDiagnosis,
+        leader_reports: council.leaderReports,
         student_observations: council.studentObservations,
         decisions: council.decisions,
         attendance_teachers: council.attendanceTeachers,
@@ -305,12 +307,17 @@ const ClassCouncilManager: React.FC = () => {
               </section>
 
               <section>
-                <h2 className="text-lg font-bold border-b border-black mb-3 uppercase tracking-tight">2. Deliberações e Ações Pedagógicas</h2>
+                <h2 className="text-lg font-bold border-b border-black mb-3 uppercase tracking-tight">2. Relatos do Líder e Vice-Líder</h2>
+                <p className="text-sm leading-relaxed text-justify">{printingCouncil.leaderReports || 'Nenhum relato registrado.'}</p>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-bold border-b border-black mb-3 uppercase tracking-tight">3. Deliberações e Ações Pedagógicas</h2>
                 <p className="text-sm leading-relaxed text-justify">{printingCouncil.decisions || 'Nenhuma decisão registrada.'}</p>
               </section>
 
               <section>
-                <h2 className="text-lg font-bold border-b border-black mb-6 uppercase tracking-tight">3. Análise Individual dos Estudantes</h2>
+                <h2 className="text-lg font-bold border-b border-black mb-6 uppercase tracking-tight">4. Análise Individual dos Estudantes</h2>
                 <table className="w-full border-collapse border border-black text-[10px]">
                   <thead>
                     <tr className="bg-gray-100">
