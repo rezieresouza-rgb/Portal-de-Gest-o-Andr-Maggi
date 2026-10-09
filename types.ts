@@ -158,6 +158,7 @@ export interface ClassCouncilStudentObservation {
   behavioralStatus: 'BOM' | 'REGULAR' | 'CRITICO';
   notes: string;
   recommendations: string;
+  frequentaAPA?: boolean;
 }
 
 export interface ClassCouncil {

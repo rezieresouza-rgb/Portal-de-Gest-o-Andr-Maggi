@@ -82,7 +82,8 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
             pedagogicalProgress: 'ADEQUADO',
             behavioralStatus: 'BOM',
             notes: '',
-            recommendations: ''
+            recommendations: '',
+            frequentaAPA: false
           }));
           setFormData(prev => ({ ...prev, studentObservations: initialObs }));
         }
@@ -309,7 +310,18 @@ const ClassCouncilForm: React.FC<ClassCouncilFormProps> = ({ onCancel, onSave, i
               {formData.studentObservations?.map((obs, idx) => (
                 <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <span className="font-black text-xs uppercase text-slate-900">{obs.studentName}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-black text-xs uppercase text-slate-900">{obs.studentName}</span>
+                      <label className="flex items-center gap-1.5 cursor-pointer bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition-colors">
+                        <input 
+                          type="checkbox"
+                          checked={!!obs.frequentaAPA}
+                          onChange={e => handleStudentObservationChange(idx, 'frequentaAPA', e.target.checked)}
+                          className="w-3.5 h-3.5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-600"
+                        />
+                        <span className="text-[10px] font-black uppercase text-indigo-700">APA</span>
+                      </label>
+                    </div>
                     <div className="flex gap-2">
                       <select 
                         value={obs.pedagogicalProgress}
