@@ -17,7 +17,8 @@ export const SCHOOL_SUBJECTS = [
   "ARTE",
   "EDUCAÇÃO FÍSICA",
   "LÍNGUA INGLESA",
-  "APA"
+  "APA",
+  "AVALIAÇÃO"
 ];
 
 export const INITIAL_SUPPLIERS: Supplier[] = [

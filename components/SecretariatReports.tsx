@@ -114,7 +114,8 @@ export default function SecretariatReports() {
                                  s.registration_number.includes(searchTerm);
             
             const matchesClass = filters.classroom === 'TODOS' || s.current_class === filters.classroom;
-            const matchesStatus = filters.status === 'TODOS' || s.status === filters.status;
+            const matchesStatus = filters.status === 'TODOS' || 
+                                 (filters.status === 'TRANSFERIDO' ? s.status?.startsWith('TRANSFERIDO') : s.status === filters.status);
             const matchesPAED = filters.paed === 'TODOS' || 
                                (filters.paed === 'SIM' && s.paed) || 
                                (filters.paed === 'NAO' && !s.paed);
@@ -354,7 +355,7 @@ export default function SecretariatReports() {
                                     <td className="px-4 py-3.5 text-right print:px-2">
                                         <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
                                             s.status === 'ATIVO' ? 'bg-emerald-50 text-emerald-600 print:bg-transparent print:text-gray-900' : 
-                                            s.status === 'TRANSFERIDO' ? 'bg-amber-50 text-amber-600 print:bg-transparent print:text-gray-900' :
+                                            s.status?.startsWith('TRANSFERIDO') ? 'bg-amber-50 text-amber-600 print:bg-transparent print:text-gray-900' :
                                             'bg-red-50 text-red-600 print:bg-transparent print:text-gray-900'
                                         }`}>
                                             {s.status}

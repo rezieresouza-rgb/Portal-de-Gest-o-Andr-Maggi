@@ -24,6 +24,22 @@ export const isMyBooking = (teacherName: string, user?: User | null): boolean =>
   
   if (!normUser || !normTeacher) return false;
   
+  // Se o agendamento foi feito para a COORDENAÇÃO e o usuário logado é da coordenação ou gestão
+  if (normTeacher === 'COORDENACAO') {
+    const userRole = (user.role || '').toUpperCase();
+    const userJob = (user.jobFunction || '').toUpperCase();
+    if (
+      userRole.includes('COORD') ||
+      userRole.includes('GESTAO') ||
+      userRole.includes('ADMIN') ||
+      userJob.includes('COORD') ||
+      userJob.includes('GESTAO') ||
+      userJob.includes('DIRET')
+    ) {
+      return true;
+    }
+  }
+
   return (
     normUser === normTeacher ||
     normUser.includes(normTeacher) ||

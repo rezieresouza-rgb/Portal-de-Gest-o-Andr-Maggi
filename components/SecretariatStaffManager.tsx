@@ -765,7 +765,8 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
       return staff.filter(member => {
          const matchSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
             member.registration.includes(searchTerm) || 
-            (member.cpf && member.cpf.includes(searchTerm));
+            (member.cpf && member.cpf.includes(searchTerm)) ||
+            (member.serverType && member.serverType.toLowerCase().includes(searchTerm.toLowerCase()));
          const matchRole = roleFilter === 'TODOS' || member.role === roleFilter;
          const expired = isContractExpired(member);
          const matchStatus = activeTab === 'ativos'
@@ -880,7 +881,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                   <input
                      type="text"
-                     placeholder="Busca por nome ou matrícula..."
+                     placeholder="Busca por nome, matrícula ou tipo..."
                      value={searchTerm}
                      onChange={e => setSearchTerm(e.target.value)}
                      className="pl-12 pr-6 py-3.5 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all w-64 md:w-80"
@@ -1237,7 +1238,7 @@ const SecretariatStaffManager: React.FC<SecretariatStaffManagerProps> = ({ user 
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Servidor</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Cargo</label>
                               <select required value={form.serverType} onChange={e => setForm({ ...form, serverType: e.target.value as any })} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs uppercase outline-none focus:bg-white">
                                  <option value="Professor">Professor</option>
                                  <option value="Apoio">Apoio</option>

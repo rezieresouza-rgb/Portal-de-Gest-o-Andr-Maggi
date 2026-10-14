@@ -2,8 +2,29 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { StaffMember, UserRole, Shift } from '../types';
 
+const COORDINATION_STAFF: StaffMember = {
+    id: 'coordenacao',
+    code: 'COORD',
+    registration: 'COORD',
+    name: 'COORDENAÇÃO',
+    role: 'COORDENADOR' as UserRole,
+    cpf: '',
+    birthDate: '',
+    entryProfile: 'EFETIVO',
+    qualification: 'Ensino Superior',
+    serverType: 'EFETIVO' as any,
+    jobFunction: 'Coordenação Pedagógica',
+    shift: 'MATUTINO' as Shift,
+    email: '',
+    status: 'EM_ATIVIDADE' as any,
+    workload: '40H',
+    assignedSubjects: [],
+    contractTerm: '',
+    movementHistory: []
+};
+
 export const useStaff = () => {
-    const [staff, setStaff] = useState<StaffMember[]>([]);
+    const [staff, setStaff] = useState<StaffMember[]>([COORDINATION_STAFF]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -43,11 +64,22 @@ export const useStaff = () => {
                     photoUrl: s.photo_url,
                     movementHistory: []
                 }));
+
+                const hasCoordination = mappedStaff.some(
+                    s => s.name?.trim().toUpperCase() === 'COORDENAÇÃO' || s.name?.trim().toUpperCase() === 'COORDENACAO'
+                );
+
+                if (!hasCoordination) {
+                    mappedStaff.push(COORDINATION_STAFF);
+                }
+
+                mappedStaff.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
                 setStaff(mappedStaff);
             }
         } catch (err: any) {
             console.error('Error fetching staff:', err);
             setError(err.message);
+            setStaff(prev => (prev.length > 0 ? prev : [COORDINATION_STAFF]));
         } finally {
             setLoading(false);
         }
