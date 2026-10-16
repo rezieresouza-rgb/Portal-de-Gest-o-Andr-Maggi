@@ -1442,27 +1442,28 @@ export const generateAtaWithAI = async ({
   }
 
   const systemInstruction = `Você é um secretário executivo e especialista em Redação Oficial de Atos Administrativos e Atas Escolares Públicas no Brasil, atuando na Escola Estadual Cívico-Militar André Antônio Maggi (SEDUC-MT).
-Seu objetivo é redigir o CONTEÚDO ESTRUTURADO de uma Ata de Reunião Oficial com base nos apontamentos fornecidos.
+Seu objetivo é redigir o TEXTO CORRIDO UNIFICADO do corpo de uma Ata de Reunião Oficial com base nos apontamentos fornecidos.
 
 Diretrizes obrigatórias de redação de Atas:
 1. Siga rigorosamente as normas de redação oficial da SEDUC-MT e da administração pública.
-2. Utilize linguagem formal, culta, impessoal, no pretérito perfeito (ex: "reuniram-se", "foi deliberado", "ficou acordado").
-3. O conteúdo deve ser estritamente objetivo, fidedigno aos fatos relatados e articulado de forma clara e cronológica.
-4. Retorne sua resposta OBRIGATORIAMENTE em formato JSON com 3 campos:
-   - "objectives": Texto conciso descrevendo a finalidade e os objetivos principais da reunião/sessão.
-   - "deliberations": Registro detalhado e formal das discussões, fatos apresentados, manifestações e deliberações acordadas (organizado em parágrafos ou tópicos formais).
-   - "forwarding": Ações práticas a serem executadas, prazos e os responsáveis definidos durante a reunião.`;
+2. Utilize linguagem formal, culta, impessoal, no pretérito perfeito (ex: "reuniram-se", "foi exposto", "foi deliberado", "ficou acordado").
+3. Unifique em um único texto corrido (dividido em parágrafos fluidos e bem estruturados):
+   - A finalidade/objetivo da reunião;
+   - O relato detalhado dos fatos, discussões e manifestações dos presentes;
+   - As deliberações, encaminhamentos, prazos e compromissos firmados.
+4. Não inclua cabeçalho de data/hora inicial nem fecho de encerramento ("Nada mais havendo a tratar..."), pois o sistema já insere a abertura e o encerramento oficiais automaticamente.
+5. Retorne sua resposta OBRIGATORIAMENTE em formato JSON com a chave "deliberations" contendo o texto corrido completo (e deixe "objectives" e "forwarding" vazios "").`;
 
-  const prompt = `Elabore os textos da Ata Oficial com as seguintes informações:
+  const prompt = `Elabore o texto corrido unificado da Ata Oficial com as seguintes informações:
 - Pauta / Assunto: "${pauta || 'Não especificado'}"
 - Categoria da Reunião: "${category}"
 - Local: "${location}"
 - Data: "${date || 'Hoje'}"
-- Participantes citados: "${participants.join(', ') || 'Equipe escolar e interessados'}"
-- Rascunho / Apontamentos dos fatos: "${promptText}"
+- Participantes presentes: "${participants.join(', ') || 'Equipe escolar e interessados'}"
+- Rascunho / Apontamentos dos fatos, objetivos e encaminhamentos: "${promptText}"
 - Tom / Foco: "${tone}"
 
-Retorne um objeto JSON válido com as chaves: "objectives", "deliberations", "forwarding".`;
+Retorne um objeto JSON válido no formato: { "objectives": "", "deliberations": "Texto corrido completo em parágrafos...", "forwarding": "" }.`;
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
@@ -1478,10 +1479,14 @@ Retorne um objeto JSON válido com as chaves: "objectives", "deliberations", "fo
     const resultText = response.text?.trim();
     if (resultText) {
       const parsed = JSON.parse(resultText);
+      const unifiedText = [parsed.objectives, parsed.deliberations, parsed.forwarding]
+        .map((s: any) => (typeof s === 'string' ? s.trim() : ''))
+        .filter(Boolean)
+        .join('\n\n');
       return {
-        objectives: parsed.objectives || '',
-        deliberations: parsed.deliberations || '',
-        forwarding: parsed.forwarding || ''
+        objectives: '',
+        deliberations: unifiedText || '',
+        forwarding: ''
       };
     }
     return generateFallbackAtaText(promptText, pauta, category, location, date, participants, tone);
@@ -1503,18 +1508,22 @@ const generateFallbackAtaText = (
   const cleanPauta = pauta || 'Alinhamento Institucional e Acompanhamento Escolar';
   const cleanPrompt = promptText.trim() || 'tratar dos assuntos pertinentes ao bom andamento das atividades escolares e disciplinares.';
 
-  let objectives = `A presente reunião teve como objetivo principal deliberar acerca de "${cleanPauta}", procedendo ao alinhamento das ações cabíveis entre os membros participantes e a equipe gestora da Unidade Escolar.`;
+  const introParagraph = `A presente sessão teve por finalidade deliberar acerca da pauta "${cleanPauta}", promovendo o alinhamento institucional e os encaminhamentos cabíveis entre a equipe gestora da Unidade Escolar e os demais participantes presentes.`;
 
-  let deliberations = `Iniciada a sessão no local designado (${location}), foram expostos os pontos relativos à pauta em questão. Constatou-se a relevância de: ${cleanPrompt}\n\nApós ampla discussão e manifestação dos presentes, ficou estabelecido que as diretrizes pedagógicas e disciplinares estabelecidas pelo regimento da Escola Cívico-Militar e pela SEDUC-MT devem ser integralmente cumpridas, zelando pelo respeito mútuo, assiduidade e excelência no ambiente escolar.`;
+  let middleParagraph = `Durante a reunião, foram expostos e debatidos os seguintes fatos e apontamentos: ${cleanPrompt}\n\nApós ampla análise e manifestação dos presentes, reiterou-se a importância do cumprimento integral das diretrizes pedagógicas e regimentais da Escola Estadual Cívico-Militar André Antônio Maggi e da SEDUC-MT, zelando pelo respeito mútuo, assiduidade e compromisso com o processo educativo.`;
 
   if (category === 'DISCIPLINAR' || category === 'CIVICO_MILITAR') {
-    deliberations = `Instalada a reunião de alinhamento disciplinar e comportamental, foram apresentados aos presentes os registros e relatórios relativos à conduta discente e cumprimento das normas da Escola Cívico-Militar. Detalhou-se que: ${cleanPrompt}\n\nOs responsáveis foram formalmente cientificados das normas disciplinares e dos deveres do estudante. Ficou firmado o compromisso conjunto entre a família e a escola para a correção imediata das atitudes incompatíveis com o regimento escolar.`;
+    middleParagraph = `Em sede de alinhamento disciplinar e comportamental, foram apresentados aos presentes os registros e relatórios relativos à conduta discente e às normas da Escola Cívico-Militar, registrando-se que: ${cleanPrompt}\n\nOs responsáveis legais e o(a) estudante foram formalmente orientados e cientificados quanto aos deveres regimentais, firmando-se compromisso conjunto entre família e escola para o acompanhamento contínuo e a imediata adequação de conduta.`;
   } else if (category === 'CONSELHO_CLASSE' || category === 'PEDAGOGICO') {
-    deliberations = `Reunidos os membros do Conselho de Classe e corpo docente, procedeu-se à avaliação do desempenho acadêmico, assiduidade e participação discente no período letivo. Ponderou-se sobre: ${cleanPrompt}\n\nDeliberou-se pela aplicação de estratégias de intervenção pedagógica diferenciada, recuperação paralela contínua e intensificação do acompanhamento aos estudantes que demandam suporte pedagógico suplementar.`;
+    middleParagraph = `No âmbito do acompanhamento pedagógico, procedeu-se à análise do desempenho escolar, frequência e participação discente, destacando-se que: ${cleanPrompt}\n\nDeliberou-se pela adoção de estratégias conjuntas de intervenção pedagógica, acompanhamento sistemático das atividades escolares e fortalecimento da parceria entre a equipe escolar e a família.`;
   }
 
-  let forwarding = `1. Registro formal dos compromissos assumidos na presente ata para acompanhamento contínuo.\n2. Notificação e comunicação aos setores pertinentes da Unidade Escolar.\n3. Estabelecimento do prazo de 15 (quinze) dias para reavaliação dos resultados e cumprimento das deliberações.`;
+  const closingForwarding = `Como encaminhamentos finais e compromissos firmados na presente sessão, ficaram estabelecidos o registro formal das deliberações para acompanhamento pelos setores competentes da Unidade Escolar e a reavaliação periódica dos resultados alcançados.`;
 
-  return { objectives, deliberations, forwarding };
+  return {
+    objectives: '',
+    deliberations: `${introParagraph}\n\n${middleParagraph}\n\n${closingForwarding}`,
+    forwarding: ''
+  };
 };
 

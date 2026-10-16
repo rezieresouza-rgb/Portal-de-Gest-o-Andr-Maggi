@@ -441,17 +441,17 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     };
   }, []);
 
-  // Handle AI generation for Minutes
+  // Handle AI generation for Minutes (Unified Single Text Field)
   const handleGenerateAI = async () => {
     if (!aiPromptInput.trim() && !formData.content_deliberations.trim() && !formData.pauta_assunto.trim()) {
-      alert('Por favor, digite os tópicos ou fatos da reunião no campo da IA!');
+      alert('Por favor, informe a Pauta ou digite os tópicos/fatos da reunião no campo da Ata para redigir com a IA!');
       return;
     }
 
     setIsGeneratingAI(true);
     try {
       const result = await generateAtaWithAI({
-        promptText: aiPromptInput.trim() || formData.content_deliberations.trim(),
+        promptText: formData.content_deliberations.trim() || aiPromptInput.trim() || formData.pauta_assunto.trim(),
         pauta: formData.pauta_assunto,
         category: formData.category,
         location: formData.location,
@@ -461,11 +461,16 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
       });
 
       if (result) {
+        const unifiedText = [result.objectives, result.deliberations, result.forwarding]
+          .map(s => (s || '').trim())
+          .filter(Boolean)
+          .join('\n\n');
+
         setFormData(prev => ({
           ...prev,
-          objectives: result.objectives || prev.objectives,
-          content_deliberations: result.deliberations || prev.content_deliberations,
-          forwarding_actions: result.forwarding || prev.forwarding_actions
+          objectives: '',
+          content_deliberations: unifiedText || prev.content_deliberations,
+          forwarding_actions: ''
         }));
       }
     } catch (e) {
@@ -479,14 +484,23 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
   const handleApplyTemplate = (templateId: string) => {
     const tmpl = ATA_TEMPLATES.find(t => t.id === templateId);
     if (tmpl) {
+      const unifiedTemplateText = [
+        tmpl.objectives,
+        tmpl.content,
+        tmpl.forwarding ? `Encaminhamentos e compromissos firmados:\n${tmpl.forwarding}` : ''
+      ]
+        .map(s => (s || '').trim())
+        .filter(Boolean)
+        .join('\n\n');
+
       setFormData(prev => ({
         ...prev,
         category: tmpl.category,
         pauta_assunto: tmpl.pauta,
         location: tmpl.location,
-        objectives: tmpl.objectives,
-        content_deliberations: tmpl.content,
-        forwarding_actions: tmpl.forwarding
+        objectives: '',
+        content_deliberations: unifiedTemplateText,
+        forwarding_actions: ''
       }));
     }
   };
@@ -1404,71 +1418,41 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </div>
               </div>
 
-              {/* Objetivos */}
+              {/* Texto Corrido Unificado da Ata */}
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                  Objetivos e Finalidade da Reunião
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.objectives}
-                  onChange={e => setFormData({ ...formData, objectives: e.target.value })}
-                  placeholder="Descreva brevemente a finalidade pela qual a sessão foi convocada..."
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 leading-relaxed"
-                ></textarea>
-              </div>
-
-              {/* Discussões e Deliberações */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-1.5">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
-                    Registro dos Fatos, Discussões e Deliberações *
+                    Texto Corrido da Ata (Objetivos, Registro dos Fatos, Deliberações e Encaminhamentos) *
                   </label>
-                  {formData.content_deliberations.trim() && (
-                    <div className="flex items-center gap-3">
-                      <select
-                        value={aiTone}
-                        onChange={e => setAiTone(e.target.value as any)}
-                        className="bg-transparent border-none text-[9px] font-black uppercase text-slate-500 outline-none cursor-pointer"
-                      >
-                        <option value="PADRAO">Tom: Padrão Oficial</option>
-                        <option value="DISCIPLINAR">Tom: Cívico-Disciplinar</option>
-                        <option value="PEDAGOGICO">Tom: Pedagógico</option>
-                        <option value="CONCILIADOR">Tom: Conciliador / Mediação</option>
-                        <option value="DELIBERATIVO">Tom: Deliberativo</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={handleGenerateAI}
-                        disabled={isGeneratingAI}
-                        className="text-[9px] font-black text-blue-600 hover:underline uppercase flex items-center gap-1"
-                      >
-                        <Wand2 size={12} /> Refinar Redação com IA
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={aiTone}
+                      onChange={e => setAiTone(e.target.value as any)}
+                      className="bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-[9px] font-black uppercase text-slate-600 outline-none cursor-pointer"
+                    >
+                      <option value="PADRAO">Tom: Padrão Oficial</option>
+                      <option value="DISCIPLINAR">Tom: Cívico-Disciplinar</option>
+                      <option value="PEDAGOGICO">Tom: Pedagógico</option>
+                      <option value="CONCILIADOR">Tom: Conciliador / Mediação</option>
+                      <option value="DELIBERATIVO">Tom: Deliberativo</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleGenerateAI}
+                      disabled={isGeneratingAI}
+                      className="px-3 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-[9px] font-black text-blue-700 uppercase flex items-center gap-1 transition-colors disabled:opacity-50"
+                    >
+                      <Wand2 size={12} /> {isGeneratingAI ? 'Redigindo com IA...' : 'Redigir / Refinar com IA'}
+                    </button>
+                  </div>
                 </div>
                 <textarea
                   required
-                  rows={15}
+                  rows={18}
                   value={formData.content_deliberations}
-                  onChange={e => setFormData({ ...formData, content_deliberations: e.target.value })}
-                  placeholder="Escreva detalhadamente o que foi tratado, manifestações dos presentes e deliberações..."
+                  onChange={e => setFormData({ ...formData, content_deliberations: e.target.value, objectives: '', forwarding_actions: '' })}
+                  placeholder="Escreva em texto corrido (ou digite os tópicos/rascunho e clique em 'Redigir / Refinar com IA') incluindo os objetivos da reunião, os fatos tratados, manifestações dos presentes, deliberações e encaminhamentos..."
                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 leading-relaxed"
-                ></textarea>
-              </div>
-
-              {/* Encaminhamentos e Prazos */}
-              <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                  Encaminhamentos, Prazos e Responsabilidades
-                </label>
-                <textarea
-                  rows={4}
-                  value={formData.forwarding_actions}
-                  onChange={e => setFormData({ ...formData, forwarding_actions: e.target.value })}
-                  placeholder="Ex: 1. Acompanhamento semanal de tarefas pela coordenação; 2. Retorno com a família em 15 dias..."
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 leading-relaxed"
                 ></textarea>
               </div>
 
@@ -1585,15 +1569,6 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </p>
               </div>
 
-              {viewingAta.objectives && (
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Objetivos</h4>
-                  <p className="text-xs font-medium text-slate-700 bg-slate-50 p-3.5 rounded-2xl border border-slate-100 leading-relaxed">
-                    {viewingAta.objectives}
-                  </p>
-                </div>
-              )}
-
               <div>
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Participantes Presentes</h4>
                 <div className="flex flex-wrap gap-2">
@@ -1606,20 +1581,14 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
               </div>
 
               <div>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Discussões e Deliberações</h4>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Texto Integral da Ata</h4>
                 <div className="text-xs font-medium text-slate-800 bg-slate-50 p-4 rounded-2xl border border-slate-100 leading-relaxed whitespace-pre-wrap">
-                  {viewingAta.content_deliberations}
+                  {[viewingAta.objectives, viewingAta.content_deliberations, viewingAta.forwarding_actions]
+                    .map(s => (s || '').trim())
+                    .filter(Boolean)
+                    .join('\n\n')}
                 </div>
               </div>
-
-              {viewingAta.forwarding_actions && (
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Encaminhamentos e Prazos</h4>
-                  <div className="text-xs font-medium text-slate-800 bg-slate-50 p-4 rounded-2xl border border-slate-100 leading-relaxed whitespace-pre-wrap">
-                    {viewingAta.forwarding_actions}
-                  </div>
-                </div>
-              )}
 
               <div className="border-t border-slate-100 pt-4 flex justify-between items-center text-xs">
                 <div>
@@ -1679,63 +1648,42 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </p>
               </div>
 
-              {/* Preâmbulo Formal em Extenso */}
+              {/* Preâmbulo Formal em Extenso + Participantes + Corpo Corrido da Ata */}
               {(() => {
                 const dateObj = new Date(printingAta.meeting_date + 'T00:00:00');
                 const day = dateObj.getDate();
                 const dayStr = numberToWordsPtBr(day);
                 const month = dateObj.toLocaleDateString('pt-BR', { month: 'long' });
                 const year = dateObj.getFullYear();
-                const yearStr = numberToWordsPtBr(year);
+                const participantsStr =
+                  printingAta.participants?.map(p => `${p.name} (${p.role})`).join('; ') ||
+                  'participantes registrados abaixo';
+                const fullBodyText = [
+                  printingAta.objectives,
+                  printingAta.content_deliberations,
+                  printingAta.forwarding_actions
+                ]
+                  .map(s => (s || '').trim())
+                  .filter(Boolean)
+                  .join('\n\n');
 
                 return (
-                  <div className="mb-3 text-[13px] leading-relaxed text-justify text-black font-normal" style={{ textIndent: '1.5rem' }}>
-                    Aos {dayStr} ({day}) dias do mês de {month} do ano de dois mil e vinte e seis ({year}), às {printingAta.meeting_time_start} horas, reuniram-se nas dependências da {printingAta.location}, sob a condução de {printingAta.signatory_name} ({printingAta.signatory_role}), os membros e interessados abaixo nominados, a fim de deliberar acerca da seguinte pauta: <strong>{printingAta.pauta_assunto}</strong>.
+                  <div className="mb-3 text-[13px] leading-relaxed text-justify text-black font-normal space-y-2.5">
+                    <p style={{ textIndent: '1.5rem' }}>
+                      Aos {dayStr} ({day}) dias do mês de {month} do ano de dois mil e vinte e seis ({year}), às {printingAta.meeting_time_start} horas, reuniram-se nas dependências da {printingAta.location}, sob a condução de {printingAta.signatory_name} ({printingAta.signatory_role}), estando presentes: {participantsStr}; a fim de tratar da seguinte pauta: <strong>{printingAta.pauta_assunto}</strong>.
+                    </p>
+                    {fullBodyText
+                      .split(/\n{2,}/)
+                      .map(p => p.trim())
+                      .filter(Boolean)
+                      .map((paragraph, idx) => (
+                        <p key={idx} style={{ textIndent: '1.5rem' }} className="whitespace-pre-line">
+                          {paragraph}
+                        </p>
+                      ))}
                   </div>
                 );
               })()}
-
-              {/* Finalidade e Objetivos */}
-              {printingAta.objectives && (
-                <div className="mb-3 text-[13px] leading-relaxed text-justify text-black font-normal">
-                  <p className="font-bold text-[12px] uppercase mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>1. DA FINALIDADE E OBJETIVOS:</p>
-                  <p style={{ textIndent: '1.5rem' }}>{printingAta.objectives}</p>
-                </div>
-              )}
-
-              {/* Presentes */}
-              <div className="mb-3 text-[13px] leading-relaxed text-black font-normal">
-                <p className="font-bold text-[12px] uppercase mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>2. DOS PARTICIPANTES PRESENTES:</p>
-                <p style={{ textIndent: '1.5rem' }}>
-                  {printingAta.participants?.map((p, idx) => `${p.name} (${p.role})`).join('; ') || 'Participantes registrados em folha anexa.'}.
-                </p>
-              </div>
-
-              {/* Discussões e Deliberações */}
-              <div className="mb-3 text-[13px] leading-relaxed text-justify text-black font-normal">
-                <p className="font-bold text-[12px] uppercase mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>3. DO RELATO DOS FATOS, DISCUSSÕES E DELIBERAÇÕES:</p>
-                <div className="space-y-2">
-                  {printingAta.content_deliberations.split('\n\n').map((paragraph, idx) => (
-                    <p key={idx} style={{ textIndent: '1.5rem' }}>
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              {/* Encaminhamentos */}
-              {printingAta.forwarding_actions && (
-                <div className="mb-3 text-[13px] leading-relaxed text-justify text-black font-normal">
-                  <p className="font-bold text-[12px] uppercase mb-0.5" style={{ fontFamily: 'Arial, sans-serif' }}>4. DOS ENCAMINHAMENTOS E COMPROMISSOS FIRMADOS:</p>
-                  <div className="space-y-1">
-                    {printingAta.forwarding_actions.split('\n').filter(l => l.trim()).map((line, idx) => (
-                      <p key={idx} style={{ textIndent: '1.5rem' }}>
-                        {line}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Fecho Formal da Ata */}
               <div className="mb-4 text-[13px] leading-relaxed text-justify text-black font-normal" style={{ textIndent: '1.5rem' }}>
