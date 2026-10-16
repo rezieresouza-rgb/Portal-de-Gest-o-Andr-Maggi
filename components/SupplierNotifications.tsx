@@ -35,11 +35,15 @@ import {
   ClipboardList,
   UserCheck,
   FileBadge,
-  Eye
+  Eye,
+  KeyRound,
+  PenTool
 } from 'lucide-react';
-import { SupplierOccurrence, OccurrenceType, OccurrenceStatus, Contract, Order } from '../types';
+import { SupplierOccurrence, OccurrenceType, OccurrenceStatus, Contract, Order, ElectronicSignatureProof } from '../types';
 import { INITIAL_CONTRACTS, INITIAL_SUPPLIERS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
+import ElectronicSignatureModal from './ElectronicSignatureModal';
+import ElectronicSignatureStamp from './ElectronicSignatureStamp';
 
 const DIRECTOR_DATA = {
   name: "REZIERE DE SOUZA",
@@ -131,10 +135,94 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
   const [orders, setOrders] = useState<Order[]>([]);
   const [previewOcc, setPreviewOcc] = useState<SupplierOccurrence | null>(null);
 
+  // Estados de Assinatura Eletrônica
+  const [signingOcc, setSigningOcc] = useState<SupplierOccurrence | null>(null);
+  const [signaturesByOccId, setSignaturesByOccId] = useState<Record<string, ElectronicSignatureProof[]>>(() => {
+    try {
+      const saved = localStorage.getItem('merenda_notification_signatures_v1');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
+
+  const fetchSignatures = async () => {
+    try {
+      const merged: Record<string, ElectronicSignatureProof[]> = {};
+      const localMap = JSON.parse(localStorage.getItem('merenda_notification_signatures_v1') || '{}');
+      Object.assign(merged, localMap);
+
+      const globalLocal: ElectronicSignatureProof[] = JSON.parse(localStorage.getItem('portal_electronic_signatures_v1') || '[]');
+      globalLocal.forEach(sig => {
+        if (sig.documentId) {
+          if (!merged[sig.documentId]) merged[sig.documentId] = [];
+          if (!merged[sig.documentId].some(s => s.verificationCode === sig.verificationCode)) {
+            merged[sig.documentId].push(sig);
+          }
+        }
+      });
+
+      const { data, error } = await supabase
+        .from('electronic_signatures')
+        .select('*')
+        .order('signed_at', { ascending: false });
+
+      if (!error && data) {
+        data.forEach((r: any) => {
+          const proof: ElectronicSignatureProof = {
+            id: r.id,
+            documentId: r.document_id,
+            documentType: r.document_type,
+            documentTitle: r.document_title,
+            documentHash: r.document_hash,
+            signerId: r.signer_id,
+            signerName: r.signer_name,
+            signerRole: r.signer_role,
+            signerCpfOrMatricula: r.signer_cpf_matricula,
+            signatureType: r.signature_type,
+            verificationCode: r.verification_code,
+            signedAt: r.signed_at,
+            legalBasis: r.legal_basis,
+            touchSignatureDataUrl: r.touch_signature_data,
+            notes: r.notes
+          };
+          if (proof.documentId) {
+            if (!merged[proof.documentId]) merged[proof.documentId] = [];
+            if (!merged[proof.documentId].some(s => s.verificationCode === proof.verificationCode)) {
+              merged[proof.documentId].push(proof);
+            }
+          }
+        });
+      }
+
+      setSignaturesByOccId(merged);
+    } catch (e) {
+      console.warn('Erro ao carregar assinaturas eletrônicas:', e);
+    }
+  };
+
+  const handleSignatureComplete = (proof: ElectronicSignatureProof) => {
+    if (!signingOcc) return;
+    setSignaturesByOccId(prev => {
+      const current = prev[signingOcc.id] || [];
+      const updated = {
+        ...prev,
+        [signingOcc.id]: [proof, ...current.filter(s => s.verificationCode !== proof.verificationCode)]
+      };
+      try {
+        localStorage.setItem('merenda_notification_signatures_v1', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+    setSigningOcc(null);
+  };
 
   const fetchOccurrences = async () => {
     try {
@@ -226,6 +314,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
   useEffect(() => {
     fetchOccurrences();
     fetchContractsAndOrders();
+    fetchSignatures();
     const channel = supabase.channel('supplier_occurrences_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'supplier_occurrences' }, fetchOccurrences)
       .subscribe();
@@ -455,6 +544,46 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
     };
   }, [occurrences]);
 
+  const renderSignatureSection = (occ: SupplierOccurrence, showShortSchool = false) => {
+    const sigs = signaturesByOccId[occ.id] || [];
+    const primarySig = sigs[0];
+
+    return (
+      <div className="pt-8 text-center space-y-6">
+        <p className="font-bold">Colíder/MT, {formatDateLongBR(occ.issueDate)}.</p>
+
+        <div className="max-w-md mx-auto">
+          {primarySig?.touchSignatureDataUrl && (
+            <div className="flex justify-center mb-1">
+              <img
+                src={primarySig.touchSignatureDataUrl}
+                alt="Assinatura Manuscrita Digital"
+                className="h-16 object-contain"
+              />
+            </div>
+          )}
+          <div className="pt-4 border-t border-black">
+            <p className="font-bold uppercase">{primarySig?.signerName || DIRECTOR_DATA.name}</p>
+            <p className="text-xs font-bold uppercase">{primarySig?.signerRole || 'DIRETOR / PRESIDENTE DO CDCE'}</p>
+            {showShortSchool ? (
+              <p className="text-xs">{DIRECTOR_DATA.shortSchoolName}</p>
+            ) : (
+              <p className="text-xs">CPF/MF: {primarySig?.signerCpfOrMatricula || DIRECTOR_DATA.cpf}</p>
+            )}
+          </div>
+        </div>
+
+        {sigs.length > 0 && (
+          <div className="pt-4 space-y-3 text-left font-sans">
+            {sigs.map(sig => (
+              <ElectronicSignatureStamp key={sig.verificationCode} signature={sig} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Renderiza fielmente o documento MODELO - NOTIFICAÇÃO MERENDA ESCOLAR - NAO CUMPRIMENTO DE CONTRATO.docx
   const renderOfficialTemplate = (occ: SupplierOccurrence, mode: 'extrajudicial' | 'administrativa' | 'ambos' = templateMode) => {
     const sup = getSupplierDetailsForOcc(occ);
@@ -572,14 +701,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
               Esperamos e contamos com a vossa colaboração para a solução célere do presente impasse.
             </p>
 
-            <div className="pt-8 text-center space-y-8">
-              <p className="font-bold">Colíder/MT, {formatDateLongBR(occ.issueDate)}.</p>
-              <div className="pt-6 border-t border-black max-w-md mx-auto">
-                <p className="font-bold uppercase">{DIRECTOR_DATA.name}</p>
-                <p className="text-xs font-bold uppercase">DIRETOR / PRESIDENTE DO CDCE</p>
-                <p className="text-xs">CPF/MF: {DIRECTOR_DATA.cpf}</p>
-              </div>
-            </div>
+            {renderSignatureSection(occ, false)}
           </div>
         )}
 
@@ -651,14 +773,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
 
             <p>Atenciosamente,</p>
 
-            <div className="pt-8 text-center space-y-8">
-              <p className="font-bold">Colíder/MT, {formatDateLongBR(occ.issueDate)}.</p>
-              <div className="pt-6 border-t border-black max-w-md mx-auto">
-                <p className="font-bold uppercase">{DIRECTOR_DATA.name}</p>
-                <p className="text-xs font-bold uppercase">DIRETOR / PRESIDENTE DO CDCE</p>
-                <p className="text-xs">{DIRECTOR_DATA.shortSchoolName}</p>
-              </div>
-            </div>
+            {renderSignatureSection(occ, true)}
           </div>
         )}
       </div>
@@ -756,6 +871,9 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
         /* LISTA DE OCORRÊNCIAS / LAUDOS */
         <div className="grid grid-cols-1 gap-4">
           {filteredOccurrences.length > 0 ? filteredOccurrences.map(occ => {
+            const occSignatures = signaturesByOccId[occ.id] || [];
+            const isSigned = occSignatures.length > 0;
+
             return (
               <div key={occ.id} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:border-emerald-200 transition-all group flex flex-col lg:flex-row gap-8 relative overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-2 ${occ.type === 'PRODUTO_ESTRAGADO' ? 'bg-red-500' : 'bg-amber-500'
@@ -772,10 +890,15 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                 <div className="flex-1 space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <h4 className="text-xl font-black text-gray-900 uppercase tracking-tight">{occ.supplierName}</h4>
                         <span className={`px-3 py-1 rounded-xl text-[8px] font-black uppercase border-2 ${occ.status === 'RESOLVIDO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100 animate-pulse'
                           }`}>{occ.status}</span>
+                        {isSigned && (
+                          <span className="px-3 py-1 rounded-xl text-[8px] font-black uppercase bg-emerald-100 text-emerald-800 border-2 border-emerald-200 flex items-center gap-1">
+                            <ShieldCheck size={12} /> Assinado Digitalmente
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-4 text-[10px] text-gray-400 font-bold uppercase mt-2">
                         <span className="flex items-center gap-1.5"><AlertCircle size={14} className={occ.type === 'PRODUTO_ESTRAGADO' ? 'text-red-500' : 'text-amber-500'} /> {occ.type.replace('_', ' ')}</span>
@@ -800,9 +923,17 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                       <span key={idx} className="px-3 py-1 bg-gray-50 text-[9px] font-black text-gray-500 rounded-lg border border-gray-100 uppercase tracking-widest">{item}</span>
                     ))}
                   </div>
+
+                  {isSigned && (
+                    <div className="pt-2 space-y-2">
+                      {occSignatures.map(sig => (
+                        <ElectronicSignatureStamp key={sig.verificationCode} signature={sig} compact />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div className="lg:w-64 flex flex-col justify-center gap-3 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-8 no-print">
+                <div className="lg:w-64 flex flex-col justify-center gap-2.5 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-8 no-print">
                   <button
                     onClick={() => setPreviewOcc(occ)}
                     className="w-full py-3.5 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
@@ -810,9 +941,20 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                     <Eye size={16} /> Visualizar Notificação
                   </button>
                   <button
+                    onClick={() => setSigningOcc(occ)}
+                    className={`w-full py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 ${
+                      isSigned
+                        ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                  >
+                    <KeyRound size={16} />
+                    {isSigned ? 'Nova Assinatura Digital' : 'Assinar Digitalmente'}
+                  </button>
+                  <button
                     onClick={() => generateOccurrencePDF(occ)}
                     disabled={isGeneratingPDF === occ.id}
-                    className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 ${occ.notificationSent
+                    className={`w-full py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 ${occ.notificationSent
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                       : 'bg-red-600 text-white hover:bg-red-700'
                       }`}
@@ -823,9 +965,6 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                       <Scale size={16} />
                     )}
                     {occ.notificationSent ? 'Reemitir Notificação PDF' : 'Gerar Notificação Legal'}
-                  </button>
-                  <button className="w-full py-3 bg-gray-100 text-gray-600 rounded-2xl text-[10px] font-black uppercase hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
-                    <Mail size={16} /> Enviar Formalmente
                   </button>
                 </div>
 
@@ -954,6 +1093,12 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
 
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setSigningOcc(previewOcc)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                >
+                  <KeyRound size={14} /> Assinar Digitalmente
+                </button>
+                <button
                   onClick={() => generateOccurrencePDF(previewOcc)}
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
                 >
@@ -980,6 +1125,31 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL DE ASSINATURA ELETRÔNICA */}
+      {signingOcc && (
+        <ElectronicSignatureModal
+          isOpen={!!signingOcc}
+          onClose={() => setSigningOcc(null)}
+          documentId={signingOcc.id}
+          documentType="OUTRO"
+          documentTitle={`Notificação de Descumprimento Contratual - ${signingOcc.supplierName} (${signingOcc.orderNumber || 'PNAE'})`}
+          documentContent={{
+            id: signingOcc.id,
+            supplierName: signingOcc.supplierName,
+            orderNumber: signingOcc.orderNumber,
+            type: signingOcc.type,
+            issueDate: signingOcc.issueDate,
+            itemsAffected: signingOcc.itemsAffected,
+            description: signingOcc.description
+          }}
+          defaultSignerName={user?.name || DIRECTOR_DATA.name}
+          defaultSignerRole="DIRETOR ESCOLAR / PRESIDENTE DO CDCE"
+          defaultSignerCpf={DIRECTOR_DATA.cpf}
+          allowParentMode={true}
+          onSignatureComplete={handleSignatureComplete}
+        />
       )}
 
       {/* MODAL DE CADASTRO DE OCORRÊNCIA */}
