@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Bell,
@@ -35,15 +34,86 @@ import {
   Gavel,
   ClipboardList,
   UserCheck,
-  FileBadge
+  FileBadge,
+  Eye
 } from 'lucide-react';
 import { SupplierOccurrence, OccurrenceType, OccurrenceStatus, Contract, Order } from '../types';
-import { INITIAL_CONTRACTS } from '../constants/initialData';
+import { INITIAL_CONTRACTS, INITIAL_SUPPLIERS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 
 const DIRECTOR_DATA = {
   name: "REZIERE DE SOUZA",
-  cpf: "024.375.561-92"
+  cpf: "024.375.561-92",
+  schoolName: "CONSELHO DELIBERATIVO DA COMUNIDADE ESCOLAR (CDCE) DA ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI",
+  shortSchoolName: "ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI"
+};
+
+const formatDateBR = (dateStr?: string) => {
+  if (!dateStr) return '---';
+  if (dateStr.includes('/')) return dateStr;
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return new Date(dateStr).toLocaleDateString('pt-BR');
+};
+
+const formatDateLongBR = (dateStr?: string) => {
+  const months = [
+    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+  ];
+  if (!dateStr) {
+    const now = new Date();
+    return `${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+  }
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length === 3) {
+    const day = parseInt(parts[2], 10);
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    const year = parts[0];
+    return `${day} de ${months[monthIdx] || parts[1]} de ${year}`;
+  }
+  return dateStr;
+};
+
+const DEFAULT_NC_SANTOS_OCCURRENCE: SupplierOccurrence = {
+  id: 'bd26b169-77d1-4970-b023-0837af60bc61',
+  supplierId: 'd54ea1d1-4a5f-4432-b935-981c25e5feb3',
+  supplierName: 'N.C. SANTOS',
+  orderNumber: 'CT 006/2026 - Múltiplos Pedidos (20270171, 20270224 e outros)',
+  type: 'NÃO_ENTREGA',
+  status: 'PENDENTE',
+  description: `Em auditoria e cruzamento de dados entre o Contrato nº 006/2026/SEDUC/MT (Fornecedor: N.C. DOS SANTOS - CNPJ 20.112.223/0001-66) e o Módulo de Pedidos e Compras, constatou-se a inexecução parcial e atraso na entrega dos gêneros alimentícios abaixo discriminados:
+
+1. RESUMO GERAL DO CONTRATO Nº 006/2026/SEDUC/MT:
+• Quantidade Total Contratada: 122,000 KG (Valor Total: R$ 8.237,00)
+• Quantidade Total Entregue: 22,500 KG (18,44% - R$ 1.608,75)
+• Quantidade Total Não Entregue (Saldo Contratual): 99,500 KG (81,56% - R$ 6.628,25)
+
+2. CRUZAMENTO COM O MÓDULO DE PEDIDOS E COMPRAS (PEDIDOS EMITIDOS VS. ENTREGUES):
+• MANTEIGA PURA COM SAL (Marca Szura - R$ 71,50/KG):
+  - Quantidade Contratada: 86,000 KG
+  - Quantidade Pedida (21 pedidos emitidos): 61,000 KG
+  - Quantidade Entregue (Guias PAG-2026-4130, 9856, 2677, 9229, 2910, 4406 e 8738): 22,500 KG
+  - Quantidade PEDIDA E NÃO ENTREGUE: 38,500 KG (R$ 2.752,75 em aberto)
+  - Saldo Contratual ainda não solicitado: 25,000 KG (Total não entregue do contrato: 63,500 KG)
+
+• PEIXE CONGELADO FILÉ DE PINTADO (Marca Delicius Fish - R$ 58,00/KG):
+  - Quantidade Contratada: 36,000 KG
+  - Quantidade Pedida (2 pedidos emitidos: Pedido nº 20270171 de 09/09/2026 com 12,000 KG e Pedido nº 20270224 de 14/10/2026 com 12,000 KG): 24,000 KG
+  - Quantidade Entregue: 0,000 KG
+  - Quantidade PEDIDA E NÃO ENTREGUE: 24,000 KG (R$ 1.392,00 em aberto)
+  - Saldo Contratual ainda não solicitado: 12,000 KG (Total não entregue do contrato: 36,000 KG)
+
+• TOTAL PEDIDO E NÃO ENTREGUE (PENDENTE DE ENTREGA): 62,500 KG (38,500 KG de Manteiga + 24,000 KG de Peixe), perfazendo o montante de R$ 4.144,75 em ordens de fornecimento pendentes.`,
+  itemsAffected: [
+    'MANTEIGA PURA COM SAL (38,500 KG PEDIDOS E NÃO ENTREGUES)',
+    'PEIXE CONGELADO FILÉ DE PINTADO (24,000 KG PEDIDOS E NÃO ENTREGUES)'
+  ],
+  issueDate: '2026-10-15',
+  orderDate: '2026-09-09',
+  deadlineDate: '2026-10-19',
+  responsible: 'REZIERE DE SOUZA',
+  notificationSent: false
 };
 
 interface SupplierNotificationsProps {
@@ -52,37 +122,138 @@ interface SupplierNotificationsProps {
 
 const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) => {
   const [activeView, setActiveView] = useState<'occurrences' | 'suppliers'>('occurrences');
+  const [templateMode, setTemplateMode] = useState<'extrajudicial' | 'administrativa' | 'ambos'>('extrajudicial');
 
-  // Carrega ocorrências
-  const [occurrences, setOccurrences] = useState<SupplierOccurrence[]>(() => {
-    const saved = localStorage.getItem('merenda_supplier_occurrences_v1');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Carrega ocorrências do Supabase (com fallback inicial preenchido)
+  const [occurrences, setOccurrences] = useState<SupplierOccurrence[]>([DEFAULT_NC_SANTOS_OCCURRENCE]);
+  const [contracts, setContracts] = useState<Contract[]>(INITIAL_CONTRACTS);
+  const [dbSuppliers, setDbSuppliers] = useState<any[]>(INITIAL_SUPPLIERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [previewOcc, setPreviewOcc] = useState<SupplierOccurrence | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
 
-  // PUXA DOS CONTRATOS (Fonte de verdade solicitada)
-  const contracts: Contract[] = useMemo(() => {
-    const saved = localStorage.getItem('merenda_contracts');
-    return saved ? JSON.parse(saved) : INITIAL_CONTRACTS;
+  const fetchOccurrences = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('supplier_occurrences')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setOccurrences(data.map((d: any) => ({
+          id: d.id,
+          supplierId: d.supplier_id,
+          supplierName: d.supplier_name,
+          orderNumber: d.order_number,
+          type: d.type,
+          status: d.status,
+          description: d.description,
+          itemsAffected: d.items_affected || [],
+          issueDate: d.issue_date,
+          orderDate: d.order_date,
+          deadlineDate: d.deadline_date,
+          photo: d.photo,
+          responsible: d.responsible,
+          notificationSent: d.notification_sent,
+          resolutionDate: d.resolution_date
+        })));
+      }
+    } catch (e) {
+      console.error('Erro ao buscar ocorrências:', e);
+    }
+  };
+
+  const fetchContractsAndOrders = async () => {
+    try {
+      const { data: sData } = await supabase.from('suppliers').select('*');
+      if (sData && sData.length > 0) {
+        setDbSuppliers(sData);
+      }
+
+      const { data: cData } = await supabase
+        .from('contracts')
+        .select('*, supplier:suppliers(id, name, full_name, cnpj, email, phone, location), items:contract_items(*)');
+      if (cData && cData.length > 0) {
+        setContracts(cData.map((c: any) => ({
+          id: c.id,
+          number: c.number,
+          supplierId: c.supplier_id,
+          supplierName: c.supplier?.name || 'Desconhecido',
+          startDate: c.start_date,
+          endDate: c.end_date,
+          status: c.status,
+          type: c.type,
+          items: (c.items || []).map((i: any) => ({
+            id: i.id,
+            description: i.description,
+            contractedQuantity: i.contracted_quantity,
+            acquiredQuantity: i.acquired_quantity,
+            unit: i.unit,
+            unitPrice: i.unit_price,
+            brand: i.brand
+          }))
+        })));
+      }
+
+      const { data: oData } = await supabase
+        .from('orders')
+        .select('*, contract:contracts(number, supplier:suppliers(name)), items:order_items(*)')
+        .order('issue_date', { ascending: false });
+      if (oData && oData.length > 0) {
+        setOrders(oData.map((o: any) => ({
+          id: o.id,
+          orderNumber: o.order_number,
+          contractId: o.contract_id,
+          contractNumber: o.contract?.number || '---',
+          supplierName: o.contract?.supplier?.name || 'Desconhecido',
+          issueDate: o.issue_date,
+          deliveryDate: o.delivery_date,
+          totalValue: o.total_value,
+          status: o.status,
+          items: o.items || []
+        })));
+      }
+    } catch (e) {
+      console.error('Erro ao buscar contratos/pedidos:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchOccurrences();
+    fetchContractsAndOrders();
+    const channel = supabase.channel('supplier_occurrences_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'supplier_occurrences' }, fetchOccurrences)
+      .subscribe();
+    return () => { channel.unsubscribe(); };
   }, []);
 
-  // Consolida dados de fornecedores a partir dos contratos
+  // Consolida dados de fornecedores a partir dos contratos e cadastro de fornecedores
   const suppliersFromContracts = useMemo(() => {
     const map = new Map();
     contracts.forEach(c => {
+      const matchedSup = dbSuppliers.find(
+        s => s.id === c.supplierId || s.name?.toUpperCase() === c.supplierName?.toUpperCase()
+      ) || INITIAL_SUPPLIERS.find(
+        s => s.name?.toUpperCase() === c.supplierName?.toUpperCase()
+      );
+
       if (!map.has(c.supplierId)) {
         map.set(c.supplierId, {
           id: c.supplierId,
           name: c.supplierName,
+          fullName: matchedSup?.full_name || c.supplierName,
           category: c.type,
           contractNumbers: [c.number],
           totalItems: c.items.length,
-          cnpj: '---', // Estes dados viriam do registro de fornecedores se cruzados
-          email: 'escola.gestao@edu.mt.gov.br'
+          cnpj: matchedSup?.cnpj || '20.112.223/0001-66',
+          email: matchedSup?.email || 'escola.gestao@edu.mt.gov.br',
+          phone: matchedSup?.phone || '',
+          location: matchedSup?.location || 'COLÍDER/MT'
         });
       } else {
         const existing = map.get(c.supplierId);
@@ -93,12 +264,26 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
       }
     });
     return Array.from(map.values());
-  }, [contracts]);
+  }, [contracts, dbSuppliers]);
 
-  const orders: Order[] = useMemo(() => {
-    const saved = localStorage.getItem('merenda_order_history');
-    return saved ? JSON.parse(saved) : [];
-  }, []);
+  const getSupplierDetailsForOcc = (occ: SupplierOccurrence) => {
+    const found = suppliersFromContracts.find(
+      s => s.id === occ.supplierId || s.name?.toUpperCase() === occ.supplierName?.toUpperCase()
+    );
+    const initialFound = INITIAL_SUPPLIERS.find(
+      s => s.name?.toUpperCase() === occ.supplierName?.toUpperCase() || occ.supplierName?.toUpperCase().includes('SANTOS') && s.id === 'sup-nc-santos'
+    );
+    return {
+      razaoSocial: found?.fullName || initialFound?.full_name || occ.supplierName || 'N.C. DOS SANTOS',
+      nomeFantasia: found?.name || initialFound?.name || occ.supplierName,
+      cnpj: found?.cnpj || initialFound?.cnpj || '20.112.223/0001-66',
+      email: found?.email || initialFound?.email || 'nc.laticinios@terra.com.br',
+      phone: found?.phone || initialFound?.phone || '66 3541-2211',
+      location: found?.location || initialFound?.location || 'COLÍDER/MT',
+      contractNumber: found?.contractNumbers?.[0] || '006/2026/SEDUC/MT',
+      modality: found?.category || 'Pregão Presencial'
+    };
+  };
 
   const [form, setForm] = useState<Omit<SupplierOccurrence, 'id' | 'notificationSent'>>({
     supplierId: '',
@@ -114,10 +299,6 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
     orderNumber: ''
   });
 
-  useEffect(() => {
-    localStorage.setItem('merenda_supplier_occurrences_v1', JSON.stringify(occurrences));
-  }, [occurrences]);
-
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -131,22 +312,38 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.supplierId || !form.description) return alert("Preencha os campos obrigatórios.");
 
     const supplier = suppliersFromContracts.find(s => s.id === form.supplierId);
 
-    const newOcc: SupplierOccurrence = {
-      id: `occ-${Date.now()}`,
-      ...form,
-      supplierName: supplier?.name || "Desconhecido",
-      notificationSent: false
-    };
+    try {
+      const { error } = await supabase.from('supplier_occurrences').insert([{
+        supplier_id: form.supplierId,
+        supplier_name: supplier?.name || form.supplierName || "Desconhecido",
+        order_number: form.orderNumber,
+        type: form.type,
+        status: form.status,
+        description: form.description,
+        items_affected: form.itemsAffected || [],
+        issue_date: form.issueDate,
+        order_date: form.orderDate,
+        deadline_date: form.deadlineDate,
+        photo: form.photo,
+        responsible: form.responsible,
+        notification_sent: false
+      }]);
 
-    setOccurrences([newOcc, ...occurrences]);
-    setIsModalOpen(false);
-    resetForm();
+      if (error) throw error;
+
+      await fetchOccurrences();
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao salvar no Supabase");
+    }
   };
 
   const resetForm = () => {
@@ -170,6 +367,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
     setIsGeneratingPDF(occ.id);
 
     setTimeout(async () => {
+      const wrapper = document.getElementById(`notif-wrapper-${occ.id}`);
       const element = document.getElementById(`notif-pdf-${occ.id}`);
       if (!element) {
         setIsGeneratingPDF(null);
@@ -177,9 +375,17 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
       }
 
       try {
+        if (wrapper) {
+          wrapper.classList.remove('hidden');
+          wrapper.style.position = 'fixed';
+          wrapper.style.left = '-9999px';
+          wrapper.style.top = '0';
+          wrapper.style.width = '210mm';
+        }
+
         const opt = {
           margin: 10,
-          filename: `Notificacao_Extrajudicial_${occ.supplierName}_${occ.issueDate}.pdf`,
+          filename: `Notificacao_Merenda_Escolar_${occ.supplierName.replace(/\s+/g, '_')}_${occ.issueDate}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -187,26 +393,49 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
         // @ts-ignore
         await window.html2pdf().set(opt).from(element).save();
 
+        await supabase.from('supplier_occurrences').update({ notification_sent: true }).eq('id', occ.id);
         setOccurrences(prev => prev.map(o => o.id === occ.id ? { ...o, notificationSent: true } : o));
       } catch (e) {
         console.error(e);
       } finally {
+        if (wrapper) {
+          wrapper.classList.add('hidden');
+          wrapper.style.position = '';
+          wrapper.style.left = '';
+          wrapper.style.top = '';
+          wrapper.style.width = '';
+        }
         setIsGeneratingPDF(null);
       }
     }, 300);
   };
 
-  const updateStatus = (id: string, status: OccurrenceStatus) => {
-    setOccurrences(prev => prev.map(o => o.id === id ? {
-      ...o,
-      status,
-      resolutionDate: status === 'RESOLVIDO' ? new Date().toLocaleDateString('sv-SE') : o.resolutionDate
-    } : o));
+  const updateStatus = async (id: string, status: OccurrenceStatus) => {
+    const resDate = status === 'RESOLVIDO' ? new Date().toLocaleDateString('sv-SE') : null;
+    try {
+      const updateData: any = { status };
+      if (resDate) updateData.resolution_date = resDate;
+      const { error } = await supabase.from('supplier_occurrences').update(updateData).eq('id', id);
+      if (error) throw error;
+      setOccurrences(prev => prev.map(o => o.id === id ? {
+        ...o,
+        status,
+        resolutionDate: resDate || o.resolutionDate
+      } : o));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const deleteOccurrence = (id: string) => {
+  const deleteOccurrence = async (id: string) => {
     if (window.confirm("Deseja excluir este registro de ocorrência?")) {
-      setOccurrences(prev => prev.filter(o => o.id !== id));
+      try {
+        const { error } = await supabase.from('supplier_occurrences').delete().eq('id', id);
+        if (error) throw error;
+        setOccurrences(prev => prev.filter(o => o.id !== id));
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -225,6 +454,216 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
       logistic: occurrences.filter(o => o.type === 'NÃO_ENTREGA' && o.status === 'PENDENTE').length
     };
   }, [occurrences]);
+
+  // Renderiza fielmente o documento MODELO - NOTIFICAÇÃO MERENDA ESCOLAR - NAO CUMPRIMENTO DE CONTRATO.docx
+  const renderOfficialTemplate = (occ: SupplierOccurrence, mode: 'extrajudicial' | 'administrativa' | 'ambos' = templateMode) => {
+    const sup = getSupplierDetailsForOcc(occ);
+    const year = occ.issueDate ? occ.issueDate.split('-')[0] : String(new Date().getFullYear());
+    const notifNum = `006/${year}`;
+    const infractionLabel =
+      occ.type === 'NÃO_ENTREGA'
+        ? 'Atraso na Entrega, Falta de Entrega e Não Atendimento ao Cronograma'
+        : occ.type === 'ENTREGA_PARCIAL'
+          ? 'Entrega Parcial / Quantitativo Insuficiente'
+          : occ.type === 'PRODUTO_ESTRAGADO'
+            ? 'Entrega de Produto Estragado / Impróprio para Consumo'
+            : 'Fora do Padrão / Especificação do Contrato';
+
+    return (
+      <div className="p-10 md:p-14 space-y-8 text-gray-900 font-serif border-[1px] border-gray-200 bg-white min-h-[297mm] leading-relaxed">
+        {(mode === 'extrajudicial' || mode === 'ambos') && (
+          <div className="space-y-5 text-[13px]">
+            <div className="text-center border-b-2 border-black pb-4">
+              <h1 className="text-base font-bold uppercase tracking-wide">
+                NOTIFICAÇÃO POR IRREGULARIDADES NO FORNECIMENTO
+              </h1>
+            </div>
+
+            <p className="text-justify">
+              <strong>Assunto:</strong> Notificação Extrajudicial Nº {notifNum} C/C Solicitação de Regularização Urgente e Abertura de Processo Administrativo Sancionador - Contrato Nº {sup.contractNumber}
+            </p>
+
+            <p className="text-justify">
+              Prezada Empresa <strong>{sup.razaoSocial}</strong>, CNPJ nº <strong>{sup.cnpj}</strong>, A/C: Sr.(a) <strong>Representante Legal</strong>, com endereço em <strong>{sup.location} (E-mail: {sup.email} | Tel: {sup.phone})</strong>, pelo presente instrumento, o <strong>{DIRECTOR_DATA.schoolName}</strong>, representada neste ato por <strong>{DIRECTOR_DATA.name}</strong>, PORTADOR DO CPF <strong>{DIRECTOR_DATA.cpf}</strong>, vem apresentar
+            </p>
+
+            <div className="text-center py-2">
+              <h2 className="text-sm font-bold uppercase underline tracking-wider">
+                NOTIFICAÇÃO EXTRAJUDICIAL
+              </h2>
+            </div>
+
+            <p className="text-justify">
+              Em face de Vossa Senhoria, acerca do <strong>NÃO CUMPRIMENTO DAS OBRIGAÇÕES CONTRATUAIS</strong>, conforme detalhado a seguir:
+            </p>
+
+            <div className="space-y-3 pl-4 border-l-2 border-gray-400">
+              <p className="text-justify">
+                <strong>Contrato:</strong> Contrato nº <strong>{sup.contractNumber}</strong>, decorrente do <strong>{sup.modality} SRP nº 001/2026</strong>.
+              </p>
+
+              <p className="text-justify">
+                <strong>Infração Específica:</strong> Ocorrência de <strong>{infractionLabel}</strong> dos gêneros alimentícios, referente ao pedido nº <strong>{occ.orderNumber || '---'}</strong> formulado em <strong>{formatDateBR(occ.orderDate)}</strong>, com data limite para entrega em <strong>{formatDateBR(occ.deadlineDate)}</strong>.
+              </p>
+
+              {occ.itemsAffected && occ.itemsAffected.length > 0 && (
+                <div className="space-y-1">
+                  <p className="font-bold">Itens em Descumprimento / Pendentes de Entrega:</p>
+                  <ul className="list-disc pl-6 space-y-0.5 font-semibold">
+                    {occ.itemsAffected.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {occ.description && (
+                <div className="p-3.5 bg-gray-50 border border-gray-300 rounded text-[12px] whitespace-pre-line text-justify leading-snug">
+                  {occ.description}
+                </div>
+              )}
+
+              <div className="space-y-1 text-justify">
+                <p><strong>Cláusulas Violadas:</strong></p>
+                <p>
+                  Tal falha configura o descumprimento da <strong>Cláusula Quinta do Contrato</strong>, em especial no que concerne à obrigação de entregar os produtos em no máximo 05 (cinco) dias, devidamente embalados, identificados e acompanhados da Nota Fiscal, conforme o Cronograma de Entrega definido pela Unidade Escolar, além do descumprimento da Cláusula Quinta do Contrato, a conduta viola o <strong>Art. 7º, § 1º da Instrução Normativa nº 009/2024/GS/SEDUC/MT</strong> e as obrigações de fornecimento previstas na <strong>Instrução Normativa nº 011/2024/GS/SEDUC/MT</strong>.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-justify">
+              Em virtude do descumprimento contratual supracitado, informamos que a conduta da Contratada está sujeita às sanções previstas na legislação vigente e nas cláusulas contratuais:
+            </p>
+
+            <p className="text-justify">
+              <strong>Fundamento Legal:</strong> Nos termos da <strong>Lei Federal nº 14.133/2021 (Art. 156 e seguintes)</strong>, do <strong>Decreto Estadual nº 1.525/2022</strong> (que rege as Licitações no âmbito estadual) e da <strong>Cláusula Décima Quinta do Contrato</strong>.
+            </p>
+
+            <div className="space-y-1.5">
+              <p><strong>Sanções Aplicáveis (Exemplificativas):</strong> O descumprimento contratual sujeita a Contratada às penalidades de:</p>
+              <ul className="list-disc pl-8 space-y-1">
+                <li>Advertência;</li>
+                <li>Multa (Ex: Multa de 2% sobre o valor global do contrato, conforme item 13.6);</li>
+                <li>Suspensão Temporária de participar em licitações e impedimento de contratar com a Contratante pelo prazo de até 02 (dois) anos;</li>
+                <li>Declaração de Inidoneidade;</li>
+                <li>Rescisão Contratual (conforme Cláusula 13.8).</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2 text-justify">
+              <p><strong>A presente Notificação tem dupla finalidade:</strong></p>
+              <p>
+                <strong>1. Solicitar a Imediata Regularização:</strong> Viemos solicitar a imediata regularização da entrega dos gêneros alimentícios e o estrito cumprimento das obrigações contratuais remanescentes, devendo ocorrer no prazo de: <strong>02 (dois) dias úteis para produtos perecíveis</strong> (carnes, frutas, verduras, etc...) e <strong>05 (cinco) dias úteis para produtos não perecíveis</strong> (estocáveis).
+              </p>
+              <p>
+                <strong>2. Garantir Ampla Defesa:</strong> Em observância ao princípio da Ampla Defesa e do Contraditório, e nos termos do processo administrativo sancionador, fica Vossa Senhoria <strong>NOTIFICADA</strong> para, querendo, apresentar defesa prévia sobre a infração apontada, no prazo de <strong>05 (cinco) dias úteis</strong>, contados do recebimento desta.
+              </p>
+            </div>
+
+            <p className="text-justify">
+              A ausência de regularização e/ou de apresentação de defesa formal no prazo estipulado implicará na abertura do Processo Administrativo de Apuração de Responsabilidade e na aplicação das penalidades cabíveis, conforme a legislação e o Contrato.
+            </p>
+
+            <p className="text-justify">
+              Ademais, fica a contratada ciente de que, enquanto não houver a regularização do objeto desta notificação, o Fiscal do Contrato fica impedido de realizar o atesto da Nota Fiscal, suspendendo-se o respectivo pagamento (<strong>Art. 3º, XI da IN 009/2024</strong>).
+            </p>
+
+            <p className="text-justify">
+              Esperamos e contamos com a vossa colaboração para a solução célere do presente impasse.
+            </p>
+
+            <div className="pt-8 text-center space-y-8">
+              <p className="font-bold">Colíder/MT, {formatDateLongBR(occ.issueDate)}.</p>
+              <div className="pt-6 border-t border-black max-w-md mx-auto">
+                <p className="font-bold uppercase">{DIRECTOR_DATA.name}</p>
+                <p className="text-xs font-bold uppercase">DIRETOR / PRESIDENTE DO CDCE</p>
+                <p className="text-xs">CPF/MF: {DIRECTOR_DATA.cpf}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mode === 'ambos' && (
+          <hr className="my-10 border-t-2 border-dashed border-gray-400" />
+        )}
+
+        {(mode === 'administrativa' || mode === 'ambos') && (
+          <div className="space-y-5 text-[13px]">
+            <div className="text-center border-b-2 border-black pb-4 space-y-1">
+              <p className="text-xs font-bold uppercase text-gray-600">NOTIFICAÇÃO DE DESCUMPRIMENTO CONTRATUAL</p>
+              <h2 className="text-base font-bold uppercase">
+                NOTIFICAÇÃO ADMINISTRATIVA Nº {notifNum} - {DIRECTOR_DATA.shortSchoolName}
+              </h2>
+            </div>
+
+            <div className="p-4 bg-gray-50 border border-gray-300 rounded space-y-1 text-xs">
+              <p><strong>À Empresa:</strong> {sup.razaoSocial} (CNPJ nº {sup.cnpj})</p>
+              <p><strong>A/C:</strong> Representante Legal</p>
+              <p><strong>Endereço/E-mail:</strong> {sup.location} | {sup.email} | Tel: {sup.phone}</p>
+              <p><strong>Referência:</strong> Contrato nº {sup.contractNumber} / {sup.modality} nº 001/2026</p>
+              <p><strong>Assunto:</strong> Notificação por Irregularidade na Entrega de Gêneros Alimentícios (PNAE)</p>
+            </div>
+
+            <p>Prezado(a) Senhor(a),</p>
+
+            <p className="text-justify">
+              Na qualidade de Fiscal do Contrato / Gestor designado pela Unidade Escolar <strong>{DIRECTOR_DATA.shortSchoolName}</strong>, no uso das atribuições conferidas pelo <strong>Art. 117 da Lei nº 14.133/2021</strong> e pelo <strong>Art. 3º da Instrução Normativa nº 009/2024/GS/SEDUC/MT</strong>, venho por meio desta <strong>NOTIFICAR</strong> formalmente esta empresa acerca da(s) seguinte(s) irregularidade(s) verificada(s) na execução do objeto contratado:
+            </p>
+
+            <div className="space-y-2">
+              <p><strong>1. DESCRIÇÃO DOS FATOS:</strong></p>
+              <ul className="list-disc pl-6 space-y-1 text-justify">
+                <li>
+                  Conforme Ordens de Fornecimento nº <strong>{occ.orderNumber || '---'}</strong> (emitidas a partir de {formatDateBR(occ.orderDate)}, com data limite em {formatDateBR(occ.deadlineDate)}), a empresa deveria ter entregue os produtos: <strong>{(occ.itemsAffected || []).join('; ')}</strong>.
+                </li>
+                <li>
+                  <strong>Irregularidade constatada:</strong> {infractionLabel} (Atraso na entrega superior a 5 dias úteis e falta de entrega dos quantitativos solicitados no Módulo de Pedidos e Compras).
+                </li>
+              </ul>
+              {occ.description && (
+                <div className="p-3.5 bg-gray-50 border border-gray-300 rounded text-[12px] whitespace-pre-line text-justify leading-snug mt-2">
+                  {occ.description}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <p><strong>2. FUNDAMENTAÇÃO LEGAL E CONTRATUAL:</strong> Esta conduta infringe as seguintes normas e cláusulas:</p>
+              <ul className="list-disc pl-6 space-y-1 text-justify">
+                <li><strong>Prazo de Entrega:</strong> Cláusula Quinta da Minuta do Contrato e Item 7.1.1 do Termo de Referência (entrega em até 5 dias úteis após o pedido);</li>
+                <li><strong>Qualidade do Produto:</strong> Itens 7.2.7 e 7.2.8 do TR (produtos não podem apresentar deterioração ou contaminação);</li>
+                <li><strong>Dever de Comunicação:</strong> Item 28.38 do TR (obrigação de comunicar eventualidades com 48h de antecedência);</li>
+                <li><strong>Infração Administrativa:</strong> Art. 155, incisos I e VII da Lei nº 14.133/2021 (dar causa à inexecução parcial e ensejar o retardamento da execução).</li>
+              </ul>
+            </div>
+
+            <div className="space-y-1.5">
+              <p><strong>3. DETERMINAÇÃO:</strong> Diante do exposto, determino que esta empresa adote as seguintes providências imediatas:</p>
+              <ul className="list-disc pl-6 space-y-1 text-justify">
+                <li><strong>Regularização/Substituição:</strong> Promover a entrega ou substituição dos produtos em desacordo no prazo máximo de <strong>02 (dois) dias úteis</strong> (ou 48 horas, se for Chamada Pública), sob pena de recusa definitiva e bloqueio de pagamentos;</li>
+                <li><strong>Defesa Prévia/Justificativa:</strong> Apresentar, no prazo de <strong>02 (dois) dias úteis</strong>, justificativa por escrito acerca das causas do descumprimento, para análise desta fiscalização.</li>
+              </ul>
+            </div>
+
+            <p className="text-justify">
+              <strong>4. ADVERTÊNCIA SOBRE SANÇÕES:</strong> Informamos que a reincidência ou a manutenção da irregularidade ensejará a redução dos fatos a termo e o encaminhamento à autoridade superior para a abertura de Processo Administrativo de Responsabilização, conforme o rito da <strong>Instrução Normativa nº 011/2024/GS/SEDUC/MT</strong> e <strong>IN nº 009/2024/GS/SEDUC/MT</strong>, sujeitando a contratada às sanções de multa (de 0,5% a 30%), impedimento de licitar ou declaração de inidoneidade.
+            </p>
+
+            <p>Atenciosamente,</p>
+
+            <div className="pt-8 text-center space-y-8">
+              <p className="font-bold">Colíder/MT, {formatDateLongBR(occ.issueDate)}.</p>
+              <div className="pt-6 border-t border-black max-w-md mx-auto">
+                <p className="font-bold uppercase">{DIRECTOR_DATA.name}</p>
+                <p className="text-xs font-bold uppercase">DIRETOR / PRESIDENTE DO CDCE</p>
+                <p className="text-xs">{DIRECTOR_DATA.shortSchoolName}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -338,9 +777,12 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                         <span className={`px-3 py-1 rounded-xl text-[8px] font-black uppercase border-2 ${occ.status === 'RESOLVIDO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100 animate-pulse'
                           }`}>{occ.status}</span>
                       </div>
-                      <div className="flex items-center gap-4 text-[10px] text-gray-400 font-bold uppercase mt-2">
+                      <div className="flex flex-wrap items-center gap-4 text-[10px] text-gray-400 font-bold uppercase mt-2">
                         <span className="flex items-center gap-1.5"><AlertCircle size={14} className={occ.type === 'PRODUTO_ESTRAGADO' ? 'text-red-500' : 'text-amber-500'} /> {occ.type.replace('_', ' ')}</span>
-                        <span className="flex items-center gap-1.5"><Calendar size={14} /> Fato: {new Date(occ.issueDate).toLocaleDateString('pt-BR')}</span>
+                        <span className="flex items-center gap-1.5"><Calendar size={14} /> Fato: {formatDateBR(occ.issueDate)}</span>
+                        {occ.orderNumber && (
+                          <span className="flex items-center gap-1.5 text-indigo-600"><FileText size={14} /> {occ.orderNumber}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -351,7 +793,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                     </div>
                   </div>
 
-                  <p className="text-sm text-gray-600 leading-relaxed font-medium italic border-l-4 border-gray-100 pl-4 py-1">"{occ.description}"</p>
+                  <p className="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line border-l-4 border-gray-100 pl-4 py-1">{occ.description}</p>
 
                   <div className="flex flex-wrap gap-2">
                     {occ.itemsAffected.map((item, idx) => (
@@ -361,6 +803,12 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                 </div>
 
                 <div className="lg:w-64 flex flex-col justify-center gap-3 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-8 no-print">
+                  <button
+                    onClick={() => setPreviewOcc(occ)}
+                    className="w-full py-3.5 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Eye size={16} /> Visualizar Notificação
+                  </button>
                   <button
                     onClick={() => generateOccurrencePDF(occ)}
                     disabled={isGeneratingPDF === occ.id}
@@ -374,7 +822,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                     ) : (
                       <Scale size={16} />
                     )}
-                    {occ.notificationSent ? 'Reemitir Notificação' : 'Gerar Notificação Legal'}
+                    {occ.notificationSent ? 'Reemitir Notificação PDF' : 'Gerar Notificação Legal'}
                   </button>
                   <button className="w-full py-3 bg-gray-100 text-gray-600 rounded-2xl text-[10px] font-black uppercase hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
                     <Mail size={16} /> Enviar Formalmente
@@ -382,68 +830,9 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                 </div>
 
                 {/* TEMPLATE DE NOTIFICAÇÃO EXTRAJUDICIAL */}
-                <div className="hidden">
-                  <div id={`notif-pdf-${occ.id}`} className="p-16 space-y-10 text-gray-900 font-sans border-[1px] border-gray-200 bg-white min-h-[297mm]">
-                    <div className="text-center border-b-2 border-black pb-8 space-y-2">
-                      <h1 className="text-lg font-black uppercase">NOTIFICAÇÃO POR IRREGULARIDADES NO FORNECIMENTO</h1>
-                    </div>
-
-                    <div className="text-sm space-y-4">
-                      <p><strong>Assunto:</strong> Notificação Extrajudicial Nº {new Date().getFullYear()}/{occ.id.split('-')[1]} C/C Solicitação de Regularização Urgente e Abertura de Processo Administrativo Sancionador</p>
-
-                      <div className="space-y-1">
-                        <p><strong>Prezada Empresa:</strong> {occ.supplierName}</p>
-                        <p><strong>Recurso:</strong> Alimentação Escolar (PNAE)</p>
-                      </div>
-
-                      <p className="text-justify leading-relaxed">
-                        Pelo presente instrumento, a Unidade Escolar, representada neste ato por seu gestor, vem apresentar <strong>NOTIFICAÇÃO EXTRAJUDICIAL</strong> em face de Vossa Senhoria, acerca do <strong>NÃO CUMPRIMENTO DAS OBRIGAÇÕES CONTRATUAIS</strong>, conforme detalhado a seguir:
-                      </p>
-
-                      <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                        <p><strong>1. Infração Específica:</strong> Ocorrência de {occ.type.replace('_', ' ')} dos gêneros alimentícios, referente ao pedido nº {occ.orderNumber || '---'} formulado em {new Date(occ.orderDate || '').toLocaleDateString('pt-BR')}, com data limite para entrega em {new Date(occ.deadlineDate || '').toLocaleDateString('pt-BR')}.</p>
-
-                        <div className="space-y-2">
-                          <p><strong>2. Cláusulas Violadas:</strong></p>
-                          <p className="text-xs italic text-gray-700">"Tal falha configura o descumprimento da Cláusula Quinta do Contrato, em especial no que concerne à obrigação de entregar os produtos em no máximo 05 (cinco) dias, devidamente embalados, identificados e acompanhados da Nota Fiscal."</p>
-                          <p className="text-xs text-gray-700">A conduta viola o <strong>Art. 7º, § 1º da Instrução Normativa nº 009/2024/GS/SEDUC/MT</strong> e as obrigações de fornecimento previstas na <strong>Instrução Normativa nº 011/2024/GS/SEDUC/MT</strong>.</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <p><strong>3. Sanções Aplicáveis (Lei 14.133/2021):</strong> O descumprimento contratual sujeita a Contratada às penalidades de:</p>
-                        <ul className="list-disc pl-10 text-xs space-y-1">
-                          <li>Advertência;</li>
-                          <li>Multa (conforme item 13.6 do contrato);</li>
-                          <li>Suspensão Temporária de participar em licitações;</li>
-                          <li>Declaração de Inidoneidade;</li>
-                          <li>Rescisão Contratual (conforme Cláusula 13.8).</li>
-                        </ul>
-                      </div>
-
-                      <div className="p-6 bg-gray-50 border-2 border-black rounded-xl space-y-4">
-                        <h4 className="font-black uppercase text-xs text-center">Solicitação de Regularização Imediata</h4>
-                        <p className="text-xs text-justify">
-                          Viemos solicitar a imediata regularização da entrega e o estrito cumprimento das obrigações, devendo ocorrer no prazo de: <strong>02 (dois) dias úteis para produtos perecíveis</strong> e <strong>05 (cinco) dias úteis para produtos não perecíveis</strong>. Fica Vossa Senhoria <strong>NOTIFICADA</strong> para apresentar defesa prévia no prazo de 05 (cinco) dias úteis.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="pt-24 grid grid-cols-1 gap-20 text-center">
-                      <div className="text-center space-y-2">
-                        <p className="text-sm font-bold">Colíder/MT, {new Date().toLocaleDateString('pt-BR')}</p>
-                        <div className="pt-10 border-t border-black max-w-sm mx-auto">
-                          <p className="text-xs font-black uppercase">{DIRECTOR_DATA.name}</p>
-                          <p className="text-[9px] uppercase text-gray-500 font-bold">DIRETOR / PRESIDENTE DO CDCE</p>
-                          <p className="text-[8px] text-gray-400">CPF: {DIRECTOR_DATA.cpf}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-10 flex items-center justify-center gap-2 opacity-40">
-                      <ShieldCheck size={16} />
-                      <p className="text-[8px] font-black uppercase tracking-[0.3em]">Documento Gerado pelo Portal Gestão André Maggi - Auditoria SEDUC-MT</p>
-                    </div>
+                <div id={`notif-wrapper-${occ.id}`} className="hidden">
+                  <div id={`notif-pdf-${occ.id}`}>
+                    {renderOfficialTemplate(occ, templateMode)}
                   </div>
                 </div>
               </div>
@@ -459,7 +848,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
         /* VISUALIZAÇÃO DE DIRETÓRIO DE FORNECEDORES (Puxando dos Contratos) */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-500">
           {suppliersFromContracts.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())).map(supplier => {
-            const supplierOccurrences = occurrences.filter(o => o.supplierId === supplier.id);
+            const supplierOccurrences = occurrences.filter(o => o.supplierId === supplier.id || o.supplierName === supplier.name);
             const pendingOccurrences = supplierOccurrences.filter(o => o.status === 'PENDENTE');
 
             return (
@@ -478,7 +867,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
                   <h4 className="text-lg font-black text-gray-900 uppercase leading-tight">{supplier.name}</h4>
 
                   <div className="mt-4 space-y-2">
-                    {supplier.contractNumbers.map(cn => (
+                    {supplier.contractNumbers.map((cn: string) => (
                       <div key={cn} className="flex items-center gap-2 text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100 w-fit">
                         <FileBadge size={12} /> CT {cn}
                       </div>
@@ -526,6 +915,70 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* MODAL DE VISUALIZAÇÃO / IMPRESSÃO DA NOTIFICAÇÃO */}
+      {previewOcc && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="p-5 bg-gray-900 text-white flex flex-wrap justify-between items-center gap-4 no-print">
+              <div className="flex items-center gap-3">
+                <Scale size={22} className="text-red-400" />
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider">Modelo Oficial — Notificação Merenda Escolar (Não Cumprimento de Contrato)</h3>
+                  <p className="text-[10px] text-gray-400 uppercase">Fornecedor: {previewOcc.supplierName}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 bg-white/10 p-1 rounded-xl">
+                <button
+                  onClick={() => setTemplateMode('extrajudicial')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${templateMode === 'extrajudicial' ? 'bg-white text-gray-900' : 'text-gray-300 hover:text-white'}`}
+                >
+                  1. Notificação Extrajudicial (CDCE)
+                </button>
+                <button
+                  onClick={() => setTemplateMode('administrativa')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${templateMode === 'administrativa' ? 'bg-white text-gray-900' : 'text-gray-300 hover:text-white'}`}
+                >
+                  2. Notificação Administrativa (Fiscal)
+                </button>
+                <button
+                  onClick={() => setTemplateMode('ambos')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${templateMode === 'ambos' ? 'bg-white text-gray-900' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Completo (Ambos)
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => generateOccurrencePDF(previewOcc)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                >
+                  <Download size={14} /> Baixar PDF
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                >
+                  <Printer size={14} /> Imprimir
+                </button>
+                <button
+                  onClick={() => setPreviewOcc(null)}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-xl text-white transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-100 custom-scrollbar">
+              <div className="max-w-[210mm] mx-auto shadow-xl bg-white">
+                {renderOfficialTemplate(previewOcc, templateMode)}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
