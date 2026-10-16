@@ -37,6 +37,7 @@ import {
 import { useToast } from './Toast';
 import { supabase } from '../supabaseClient';
 import PsychosocialCircumstantiatedReportManager from './PsychosocialCircumstantiatedReportManager';
+import { resolveOfficialStaffRole } from '../utils/signatureService';
 
 interface PedagogicalOccurrenceBookProps {
   user?: any;
@@ -1440,7 +1441,7 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({
                 <div className="grid grid-cols-2 gap-8 pt-12 text-center text-xs">
                   <div className="border-t border-black pt-2">
                     <p className="font-bold uppercase">{user?.name || 'Coordenação Pedagógica'}</p>
-                    <p className="text-[10px] text-gray-700">Coordenação Pedagógica / Gestão Escolar</p>
+                    <p className="text-[10px] text-gray-700">{resolveOfficialStaffRole(user?.name, 'Coordenação Pedagógica')}</p>
                   </div>
                   <div className="border-t border-black pt-2">
                     <p className="font-bold uppercase">Pai / Mãe / Responsável Legal</p>
@@ -1591,7 +1592,7 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({
               <div className="grid grid-cols-2 gap-8 pt-12 text-center text-xs break-inside-avoid">
                 <div className="border-t border-black pt-2">
                   <p className="font-bold uppercase">{user?.name || 'Coordenação Pedagógica'}</p>
-                  <p className="text-[10px] text-gray-700">Coordenação Pedagógica / Gestão Escolar</p>
+                  <p className="text-[10px] text-gray-700">{resolveOfficialStaffRole(user?.name, 'Coordenação Pedagógica')}</p>
                 </div>
                 <div className="border-t border-black pt-2">
                   <p className="font-bold uppercase">Pai / Mãe / Responsável Legal</p>

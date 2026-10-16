@@ -44,6 +44,7 @@ import { INITIAL_CONTRACTS, INITIAL_SUPPLIERS } from '../constants/initialData';
 import { supabase } from '../supabaseClient';
 import ElectronicSignatureModal from './ElectronicSignatureModal';
 import ElectronicSignatureStamp from './ElectronicSignatureStamp';
+import { resolveOfficialStaffRole } from '../utils/signatureService';
 
 const DIRECTOR_DATA = {
   name: "REZIERE DE SOUZA",
@@ -564,7 +565,7 @@ const SupplierNotifications: React.FC<SupplierNotificationsProps> = ({ user }) =
           )}
           <div className="pt-4 border-t border-black">
             <p className="font-bold uppercase">{primarySig?.signerName || DIRECTOR_DATA.name}</p>
-            <p className="text-xs font-bold uppercase">{primarySig?.signerRole || 'DIRETOR / PRESIDENTE DO CDCE'}</p>
+            <p className="text-xs font-bold uppercase">{resolveOfficialStaffRole(primarySig?.signerName || DIRECTOR_DATA.name, primarySig?.signerRole || 'DIRETOR ESCOLAR')}</p>
             {showShortSchool ? (
               <p className="text-xs">{DIRECTOR_DATA.shortSchoolName}</p>
             ) : (

@@ -4184,7 +4184,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                 type="text"
                                 value={docFields.gestorMilitar}
                                 onChange={e => setDocFields(prev => ({ ...prev, gestorMilitar: e.target.value }))}
-                                placeholder="Capitão Fulano"
+                                placeholder="MARCELO DA SILVA"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                               />
                             </div>
@@ -4194,7 +4194,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                 type="text"
                                 value={docFields.gestorEducacional}
                                 onChange={e => setDocFields(prev => ({ ...prev, gestorEducacional: e.target.value }))}
-                                placeholder="Tenente Sicrano"
+                                placeholder="MARCELO DA SILVA"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                               />
                             </div>
@@ -4207,17 +4207,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                 type="text"
                                 value={docFields.teacher}
                                 onChange={e => setDocFields(prev => ({ ...prev, teacher: e.target.value }))}
-                                placeholder="JOÃO PAULO..."
+                                placeholder="REZIERE DE SOUZA"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-500 uppercase">Coordenador(a) Pedagógica</label>
+                              <label className="text-[9px] font-bold text-slate-500 uppercase">Coordenação Pedagógica</label>
                               <input
                                 type="text"
                                 value={docFields.coordenadorName}
                                 onChange={e => setDocFields(prev => ({ ...prev, coordenadorName: e.target.value }))}
-                                placeholder="MARISTELA..."
+                                placeholder="MARCIA CRISTINA FAVERO / DYNEA REIS VALLE LIRA"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
                               />
                             </div>
@@ -5412,13 +5412,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <div className="grid grid-cols-2 gap-x-8 gap-y-16 mt-16 text-xs text-gray-900 break-inside-avoid">
                           <div className="flex flex-col items-center">
                             <div className="w-full border-t border-black"></div>
-                            <p className="font-bold uppercase mt-2 text-center">{docFields.teacher || 'JOÃO PAULO DOS SANTOS NETO'}</p>
-                            <p className="text-center">Diretor(a) Escolar</p>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.teacher || 'REZIERE DE SOUZA'}</p>
+                            <p className="text-center">Diretor Escolar</p>
                           </div>
                           <div className="flex flex-col items-center">
                             <div className="w-full border-t border-black"></div>
-                            <p className="font-bold uppercase mt-2 text-center">{docFields.gestorMilitar || 'Capitão ANTONIO JOÃO RIBEIRO'}</p>
-                            <p className="text-center">Gestor Cívico-Militar</p>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.gestorMilitar || 'MARCELO DA SILVA'}</p>
+                            <p className="text-center">Gestor Educacional Militar</p>
                           </div>
                           <div className="flex flex-col items-center">
                             <div className="w-full border-t border-black"></div>
@@ -5427,12 +5427,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           </div>
                           <div className="flex flex-col items-center">
                             <div className="w-full border-t border-black"></div>
-                            <p className="font-bold uppercase mt-2 text-center">{docFields.coordenadorName || 'MARISTELA LÚCIA PONTES DE ALCANTARA'}</p>
-                            <p className="text-center">Coordenadora Pedagógica</p>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.coordenadorName || 'MARCIA CRISTINA FAVERO / DYNEA REIS VALLE LIRA'}</p>
+                            <p className="text-center">Coordenação Pedagógica</p>
                           </div>
                           <div className="col-span-2 flex flex-col items-center">
                             <div className="w-1/2 border-t border-black"></div>
-                            <p className="font-bold uppercase mt-2 text-center">{docFields.gestorEducacional || 'Tenente MARCELO DEL BOSCO DA COSTA'}</p>
+                            <p className="font-bold uppercase mt-2 text-center">{docFields.gestorEducacional || 'MARCELO DA SILVA'}</p>
                             <p className="text-center">Gestor Educacional Militar</p>
                           </div>
                         </div>

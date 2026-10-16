@@ -14,7 +14,7 @@ import {
   QrCode
 } from 'lucide-react';
 import { ElectronicSignatureProof } from '../types';
-import { verifySignatureByCode } from '../utils/signatureService';
+import { verifySignatureByCode, resolveOfficialStaffRole } from '../utils/signatureService';
 
 interface PublicDocumentVerifierProps {
   isOpen?: boolean;
@@ -167,7 +167,7 @@ export const PublicDocumentVerifier: React.FC<PublicDocumentVerifierProps> = ({
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Signatário Oficial</span>
                       <p className="font-black text-slate-900 uppercase text-sm">{proof.signerName}</p>
                       <p className="text-[10px] text-slate-600 font-bold uppercase">
-                        Cargo: {proof.signerRole} {proof.signerCpfOrMatricula && `• ${proof.signerCpfOrMatricula}`}
+                        Cargo: {resolveOfficialStaffRole(proof.signerName, proof.signerRole)} {proof.signerCpfOrMatricula && `• ${proof.signerCpfOrMatricula}`}
                       </p>
                     </div>
 

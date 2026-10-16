@@ -18,7 +18,8 @@ import {
   computeSha256,
   generateVerificationCode,
   authenticateSignatureCredential,
-  registerSignatureProof
+  registerSignatureProof,
+  resolveOfficialStaffRole
 } from '../utils/signatureService';
 
 interface ElectronicSignatureModalProps {
@@ -78,11 +79,17 @@ export const ElectronicSignatureModal: React.FC<ElectronicSignatureModalProps> =
       if (savedUser) {
         const u = JSON.parse(savedUser);
         setCurrentUser(u);
-        if (!defaultSignerName && u.name) setSignerName(u.name);
-        if (!defaultSignerRole && u.role) setSignerRole(u.role);
+        const nameToUse = defaultSignerName || u.name || '';
+        if (nameToUse) setSignerName(nameToUse);
+        
+        const fallback = defaultSignerRole || u.jobFunction || u.role;
+        setSignerRole(resolveOfficialStaffRole(nameToUse, fallback));
+
         if (!defaultSignerCpf && (u.cpf || (u as any).registration)) {
           setSignerCpf(u.cpf || (u as any).registration);
         }
+      } else if (defaultSignerName) {
+        setSignerRole(resolveOfficialStaffRole(defaultSignerName, defaultSignerRole));
       }
     } catch (e) {
       console.error(e);
@@ -190,7 +197,7 @@ export const ElectronicSignatureModal: React.FC<ElectronicSignatureModalProps> =
         documentHash: documentHash || (await computeSha256(documentContent)),
         signerId: currentUser?.id || 'public-signer',
         signerName: signerName.trim().toUpperCase(),
-        signerRole: signerRole.trim().toUpperCase(),
+        signerRole: resolveOfficialStaffRole(signerName, signerRole).trim().toUpperCase(),
         signerCpfOrMatricula: signerCpf.trim() || 'Cadastrado no Sistema',
         signatureType: signatureMode === 'SERVIDOR_SENHA' ? 'SENHA_INSTITUCIONAL' : 'TELA_TOUCH',
         verificationCode: verificationCode,
@@ -293,7 +300,14 @@ export const ElectronicSignatureModal: React.FC<ElectronicSignatureModalProps> =
                   type="text"
                   required
                   value={signerName}
-                  onChange={e => setSignerName(e.target.value)}
+                  onChange={e => {
+                    const newName = e.target.value;
+                    setSignerName(newName);
+                    const autoRole = resolveOfficialStaffRole(newName, '');
+                    if (autoRole && autoRole !== 'Servidor(a) Público(a)' && autoRole !== 'DIREÇÃO / COORDENAÇÃO ESCOLAR') {
+                      setSignerRole(autoRole);
+                    }
+                  }}
                   placeholder="Nome do servidor ou responsável"
                   className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500"
                 />

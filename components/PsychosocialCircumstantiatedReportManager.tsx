@@ -42,6 +42,7 @@ import { useStudents } from '../hooks/useStudents';
 import { PsychosocialCircumstantiatedReport, PsychosocialRole, ElectronicSignatureProof } from '../types';
 import ElectronicSignatureStamp from './ElectronicSignatureStamp';
 import ElectronicSignatureModal from './ElectronicSignatureModal';
+import { resolveOfficialStaffRole } from '../utils/signatureService';
 
 interface PsychosocialCircumstantiatedReportManagerProps {
   user?: any;
@@ -1914,13 +1915,13 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                 <div className="space-y-1">
                   <div className="border-b border-slate-900 w-48 mx-auto mb-1"></div>
                   <p className="font-black uppercase">{selectedReport.directorName || 'REZIERE DE SOUZA'}</p>
-                  <p className="text-[10px] text-slate-600 uppercase">Diretor Escolar</p>
+                  <p className="text-[10px] text-slate-600 uppercase">{resolveOfficialStaffRole(selectedReport.directorName || 'REZIERE DE SOUZA', 'DIRETOR ESCOLAR')}</p>
                 </div>
 
                 <div className="space-y-1">
                   <div className="border-b border-slate-900 w-48 mx-auto mb-1"></div>
                   <p className="font-black uppercase">{selectedReport.coordinatorName || 'COORDENAÇÃO PEDAGÓGICA'}</p>
-                  <p className="text-[10px] text-slate-600 uppercase">Coordenação Pedagógica</p>
+                  <p className="text-[10px] text-slate-600 uppercase">{resolveOfficialStaffRole(selectedReport.coordinatorName || 'MARCIA CRISTINA FAVERO / DYNEA REIS VALLE LIRA', 'COORDENAÇÃO PEDAGÓGICA')}</p>
                 </div>
 
                 <div className="space-y-1 mt-4">
@@ -2003,9 +2004,11 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
           onClose={() => setIsSignatureModalOpen(false)}
           documentId={selectedReport.id}
           documentType="RELATORIO_CIRCUNSTANCIADO"
-          documentTitle={selectedReport.reportNumber}
-          user={user}
-          onSignatureSuccess={(proof) => {
+          documentTitle={`RELATÓRIO CIRCUNSTANCIADO Nº ${selectedReport.reportNumber}`}
+          documentContent={selectedReport}
+          defaultSignerName={user?.name || ''}
+          defaultSignerRole={resolveOfficialStaffRole(user?.name, user?.jobFunction || 'COORDENAÇÃO PEDAGÓGICA')}
+          onSignatureComplete={(proof) => {
             const currentSignatures = selectedReport.signatures || [];
             const updated = {
               ...selectedReport,

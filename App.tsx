@@ -28,6 +28,7 @@ import { User } from './types';
 import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
 import { INITIAL_STUDENTS } from './constants/initialData';
+import { resolveOfficialStaffRole } from './utils/signatureService';
 
 export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'mediacao' | 'secretariat' | 'sala_recursos' | 'projeto_apa' | 'civico_militar' | 'training' | 'educarte' | 'settings' | 'gamification';
 
@@ -46,6 +47,7 @@ const App: React.FC = () => {
       const parsed = JSON.parse(saved);
       // Validação rigorosa de integridade da sessão
       if (parsed && typeof parsed === 'object' && parsed.id && parsed.role) {
+        parsed.jobFunction = resolveOfficialStaffRole(parsed.name, parsed.jobFunction || parsed.role);
         return parsed;
       }
       localStorage.removeItem('active_session_v1'); // Limpar se estiver inválido

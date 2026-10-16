@@ -2,6 +2,52 @@ import { ElectronicSignatureProof, User } from '../types';
 import { supabase } from '../supabaseClient';
 
 /**
+ * Tabela Oficial de Servidores Chave e seus Cargos Oficiais para Assinaturas e Documentos
+ */
+export const OFFICIAL_STAFF_ROLES: Record<string, string> = {
+  'REZIERE DE SOUZA': 'DIRETOR ESCOLAR',
+  'MARCIA CRISTINA FAVERO': 'COORDENAÇÃO PEDAGÓGICA',
+  'DYNEA REIS VALLE LIRA': 'COORDENAÇÃO PEDAGÓGICA',
+  'DYNEA': 'COORDENAÇÃO PEDAGÓGICA',
+  'JAIME DE SOUZA COSTA': 'SECRETÁRIO ESCOLAR',
+  'JAIME': 'SECRETÁRIO ESCOLAR',
+  'MARCELO DA SILVA': 'GESTOR EDUCACIONAL MILITAR',
+};
+
+/**
+ * Normaliza e garante que qualquer servidor chave saia com o cargo oficial exato
+ */
+export function resolveOfficialStaffRole(name?: string | null, fallbackRole?: string | null): string {
+  if (!name || !name.trim()) {
+    return fallbackRole || 'Servidor(a) Público(a)';
+  }
+
+  const clean = name.trim().toUpperCase();
+
+  if (clean.includes('REZIERE')) {
+    return 'DIRETOR ESCOLAR';
+  }
+  if (clean.includes('FAVERO') || (clean.includes('MARCIA') && clean.includes('CRISTINA'))) {
+    return 'COORDENAÇÃO PEDAGÓGICA';
+  }
+  if (clean.includes('DYNEA')) {
+    return 'COORDENAÇÃO PEDAGÓGICA';
+  }
+  if (clean.includes('JAIME')) {
+    return 'SECRETÁRIO ESCOLAR';
+  }
+  if (clean.includes('MARCELO') && clean.includes('SILVA')) {
+    return 'GESTOR EDUCACIONAL MILITAR';
+  }
+
+  if (fallbackRole && fallbackRole.trim().toUpperCase() === 'GESTAO') {
+    return 'DIREÇÃO / COORDENAÇÃO ESCOLAR';
+  }
+
+  return fallbackRole || 'Servidor(a) Público(a)';
+}
+
+/**
  * Calcula o Hash SHA-256 de um texto ou objeto JSON de forma determinística
  */
 export async function computeSha256(data: string | object): Promise<string> {

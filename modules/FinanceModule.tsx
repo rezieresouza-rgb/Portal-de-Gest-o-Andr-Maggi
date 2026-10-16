@@ -1839,7 +1839,12 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       </div>
                                     </div>
                                     <div className="flex justify-between items-end mb-2">
-                                      <p className={`text-xl font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-white'}`}>R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      <div>
+                                        <p className={`text-xl font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-white'}`}>R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        <p className="text-[9px] font-bold text-emerald-400 uppercase mt-0.5">
+                                          Saldo Real (Entradas - Saídas): R$ {(((stats?.entriesCusteio || 0) - (stats?.expensesCusteio || 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </p>
+                                      </div>
                                       <div className="text-right">
                                         <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                         <p className="text-[9px] font-bold text-white/40 uppercase">Teto: R$ {tetoCusteio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
@@ -1873,7 +1878,12 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
                                       </div>
                                     </div>
                                     <div className="flex justify-between items-end mb-2">
-                                      <p className={`text-xl font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-white'}`}>R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                      <div>
+                                        <p className={`text-xl font-black ${saldoTeto < 0 ? 'text-rose-400' : 'text-white'}`}>R$ {(saldoTeto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        <p className="text-[9px] font-bold text-amber-300 uppercase mt-0.5">
+                                          Saldo Real (Entradas - Saídas): R$ {(((stats?.entriesCapital || 0) - (stats?.expensesCapital || 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </p>
+                                      </div>
                                       <div className="text-right">
                                         <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                         <p className="text-[9px] font-bold text-white/40 uppercase">Teto: R$ {tetoCapital.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
@@ -2000,19 +2010,23 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                           </div>
                         ) : (
                           <div className="flex gap-6 w-full flex-col lg:flex-row">
-                            <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col justify-center min-w-[200px] text-center lg:text-left">
+                            <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-xl backdrop-blur-md flex flex-col justify-center min-w-[220px] text-center lg:text-left">
                               <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Saldo Geral Disponível</p>
                               <p className={`text-4xl font-black ${stats?.balance! < 0 ? 'text-red-500' : 'text-white'} tracking-tighter`}>
                                 R$ {stats?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                               </p>
+                              <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[9px] font-bold uppercase gap-2">
+                                <span className="text-emerald-400">Entradas: R$ {(stats?.totalEntries || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <span className="text-red-400">Saídas: R$ {(stats?.totalExpenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                              </div>
                             </div>
                             
-                            {/* CUSTEIO CARD (PDDE / Outros) */}
+                            {/* CUSTEIO CARD (SALDO REAL: ENTRADAS LANÇADAS - SAÍDAS) */}
                             {(() => {
-                              const orcado = stats?.entriesCusteio || 0;
-                              const gasto = stats?.expensesCusteio || 0;
-                              const pct = orcado > 0 ? (gasto / orcado) * 100 : 0;
-                              const saldoCusteio = orcado - gasto;
+                              const entradas = stats?.entriesCusteio || 0;
+                              const saidas = stats?.expensesCusteio || 0;
+                              const pct = entradas > 0 ? (saidas / entradas) * 100 : 0;
+                              const saldoRealCusteio = entradas - saidas;
                               const color = pct >= 95 ? 'red' : pct >= 80 ? 'amber' : 'emerald';
                               
                               return (
@@ -2020,33 +2034,44 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                                   <div className="flex justify-between items-center mb-3">
                                     <div className="flex items-center gap-2">
                                       <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                      <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo de Custeio</p>
+                                      <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">Saldo Real de Custeio</p>
                                     </div>
+                                    <span className="text-[8px] font-black uppercase text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                      Entradas - Saídas
+                                    </span>
                                   </div>
                                   <div className="flex justify-between items-end mb-2">
-                                    <p className={`text-xl font-black ${saldoCusteio < 0 ? 'text-red-400' : 'text-white'}`}>R$ {(saldoCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                    <div className="text-right">
-                                      <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                      <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                    <p className={`text-2xl font-black ${saldoRealCusteio < 0 ? 'text-red-400' : 'text-white'} tracking-tight`}>
+                                      R$ {(saldoRealCusteio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </p>
+                                    <div className="text-right space-y-0.5">
+                                      <p className="text-[9px] font-bold text-emerald-400 uppercase">
+                                        Entradas: R$ {(entradas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
+                                      <p className="text-[9px] font-bold text-red-400 uppercase">
+                                        Saídas: R$ {(saidas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
                                     </div>
                                   </div>
                                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                                     <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                                   </div>
                                   <div className="flex justify-between items-center mt-2">
-                                    <p className={`text-[10px] font-black ${pct >= 95 ? 'text-red-400' : pct >= 80 ? 'text-amber-400' : 'text-emerald-400'}`}>{pct.toFixed(1)}% Usado</p>
+                                    <p className={`text-[10px] font-black ${pct >= 95 ? 'text-red-400' : pct >= 80 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                      {pct.toFixed(1)}% Consumido das Entradas
+                                    </p>
                                     {pct >= 95 && <div className="flex items-center gap-1 text-red-500"><AlertCircle size={10} /><span className="text-[8px] font-black uppercase">Estourando</span></div>}
                                   </div>
                                 </div>
                               );
                             })()}
 
-                            {/* CAPITAL CARD (PDDE / Outros) */}
+                            {/* CAPITAL CARD (SALDO REAL: ENTRADAS LANÇADAS - SAÍDAS) */}
                             {(() => {
-                              const orcado = stats?.entriesCapital || 0;
-                              const gasto = stats?.expensesCapital || 0;
-                              const pct = orcado > 0 ? (gasto / orcado) * 100 : 0;
-                              const saldoCapital = orcado - gasto;
+                              const entradas = stats?.entriesCapital || 0;
+                              const saidas = stats?.expensesCapital || 0;
+                              const pct = entradas > 0 ? (saidas / entradas) * 100 : 0;
+                              const saldoRealCapital = entradas - saidas;
                               const color = pct >= 95 ? 'red' : pct >= 80 ? 'amber' : 'emerald';
                               
                               return (
@@ -2054,21 +2079,32 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                                   <div className="flex justify-between items-center mb-3">
                                     <div className="flex items-center gap-2">
                                       <div className={`w-2 h-2 rounded-full bg-${color}-500 ${pct >= 95 ? 'animate-pulse' : ''}`}></div>
-                                      <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Saldo de Capital</p>
+                                      <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">Saldo Real de Capital</p>
                                     </div>
+                                    <span className="text-[8px] font-black uppercase text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                                      Entradas - Saídas
+                                    </span>
                                   </div>
                                   <div className="flex justify-between items-end mb-2">
-                                    <p className={`text-xl font-black ${saldoCapital < 0 ? 'text-red-400' : 'text-white'}`}>R$ {(saldoCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                    <div className="text-right">
-                                      <p className="text-[9px] font-bold text-white/40 uppercase">Gasto: R$ {(gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                                      <p className="text-[9px] font-bold text-white/40 uppercase">Orçado: R$ {(orcado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                    <p className={`text-2xl font-black ${saldoRealCapital < 0 ? 'text-red-400' : 'text-white'} tracking-tight`}>
+                                      R$ {(saldoRealCapital || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </p>
+                                    <div className="text-right space-y-0.5">
+                                      <p className="text-[9px] font-bold text-emerald-400 uppercase">
+                                        Entradas: R$ {(entradas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
+                                      <p className="text-[9px] font-bold text-red-400 uppercase">
+                                        Saídas: R$ {(saidas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </p>
                                     </div>
                                   </div>
                                   <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                                     <div className={`h-full bg-${color}-500 rounded-full transition-all duration-1000`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                                   </div>
                                   <div className="flex justify-between items-center mt-2">
-                                    <p className={`text-[10px] font-black ${pct >= 95 ? 'text-red-400' : pct >= 80 ? 'text-amber-400' : 'text-emerald-400'}`}>{pct.toFixed(1)}% Usado</p>
+                                    <p className={`text-[10px] font-black ${pct >= 95 ? 'text-red-400' : pct >= 80 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                      {pct.toFixed(1)}% Consumido das Entradas
+                                    </p>
                                     {pct >= 95 && <div className="flex items-center gap-1 text-red-500"><AlertCircle size={10} /><span className="text-[8px] font-black uppercase">Estourando</span></div>}
                                   </div>
                                 </div>

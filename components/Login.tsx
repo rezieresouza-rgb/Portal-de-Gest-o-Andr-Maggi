@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { User as AuthUser, AccessLog } from '../types';
 import { supabase } from '../supabaseClient';
+import { resolveOfficialStaffRole } from '../utils/signatureService';
 
 interface LoginProps {
   onLogin: (user: AuthUser) => void;
@@ -102,26 +103,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           return;
         }
 
-        let actualJobFunction = user.job_function;
+        let actualJobFunction = resolveOfficialStaffRole(user.name, user.job_function);
 
         // SINCRONIZAÇÃO COM O RH: Busca a função atual na tabela 'staff'
         if (user.cpf || user.login || user.name) {
-          // Tenta buscar por CPF primeiro, se falhar tenta pelo nome
-          const cpfQuery = user.cpf || user.login?.replace(/\D/g, '');
-          let staffQuery = supabase.from('staff').select('job_function');
+          const cpfRaw = (user.cpf || user.login || '').replace(/\D/g, '');
+          let staffData: any[] | null = null;
           
-          if (cpfQuery && cpfQuery.length === 11) {
-             staffQuery = staffQuery.eq('cpf', cpfQuery);
-          } else {
-             staffQuery = staffQuery.ilike('name', user.name);
+          if (cpfRaw.length === 11) {
+            const res = await supabase.from('staff').select('job_function').or(`cpf.eq.${cpfRaw},cpf.ilike.%${cpfRaw}%`).limit(1);
+            staffData = res.data;
           }
-
-          const { data: staffData } = await staffQuery.limit(1);
+          if (!staffData || staffData.length === 0) {
+            const res = await supabase.from('staff').select('job_function').ilike('name', `%${user.name}%`).limit(1);
+            staffData = res.data;
+          }
           
           if (staffData && staffData.length > 0 && staffData[0].job_function) {
             actualJobFunction = staffData[0].job_function;
           }
         }
+
+        actualJobFunction = resolveOfficialStaffRole(user.name, actualJobFunction);
 
         const sessionUser = {
           id: user.id,

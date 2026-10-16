@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { generateAtaWithAI } from '../geminiService';
 import { SchoolAta, AtaParticipant } from '../types';
+import { resolveOfficialStaffRole } from '../utils/signatureService';
 import { 
   FileSpreadsheet, Plus, Search, Printer, Trash2, Calendar, User, Check, 
   Sparkles, Layers, Eye, X, Shield, BookOpen, Landmark, Filter, ArrowRight, Clock, Wand2,
@@ -173,14 +174,14 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     participants: [
       { 
         name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'), 
-        role: user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'Gestor Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Secretário(a) Escolar') 
+        role: resolveOfficialStaffRole(user?.name, user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'GESTOR EDUCACIONAL MILITAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'SECRETÁRIO ESCOLAR'))
       }
     ],
     objectives: '',
     content_deliberations: '',
     forwarding_actions: '',
     signatory_name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'),
-    signatory_role: user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'Gestor Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Secretário(a) Escolar')
+    signatory_role: resolveOfficialStaffRole(user?.name, user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'GESTOR EDUCACIONAL MILITAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'SECRETÁRIO ESCOLAR'))
   });
 
   // Participant input state for custom manual additions
@@ -342,7 +343,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
             .map((s: any) => ({
               id: s.id,
               name: (s.name || '').trim().toUpperCase(),
-              role: s.job_function || s.role || s.server_type || 'Servidor(a)'
+              role: resolveOfficialStaffRole(s.name, s.job_function || s.role || s.server_type || 'Servidor(a)')
             }))
         );
       }
@@ -507,11 +508,13 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
 
   const handleAddParticipant = () => {
     if (!newParticipantName.trim()) return;
+    const nameUpper = newParticipantName.trim().toUpperCase();
+    const resolvedRole = resolveOfficialStaffRole(nameUpper, newParticipantRole.trim());
     setFormData(prev => ({
       ...prev,
       participants: [
         ...prev.participants,
-        { name: newParticipantName.trim().toUpperCase(), role: newParticipantRole.trim() }
+        { name: nameUpper, role: resolvedRole }
       ]
     }));
     setNewParticipantName('');
@@ -1444,7 +1447,15 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                     type="text"
                     required
                     value={formData.signatory_name}
-                    onChange={e => setFormData({ ...formData, signatory_name: e.target.value })}
+                    onChange={e => {
+                      const newName = e.target.value;
+                      const autoRole = resolveOfficialStaffRole(newName, '');
+                      setFormData(prev => ({
+                        ...prev,
+                        signatory_name: newName,
+                        signatory_role: autoRole && autoRole !== 'Servidor(a) Público(a)' ? autoRole : prev.signatory_role
+                      }));
+                    }}
                     className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
@@ -1648,7 +1659,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 return (
                   <div className="mb-3 text-[13px] leading-relaxed text-justify text-black font-normal space-y-2.5">
                     <p style={{ textIndent: '1.5rem' }}>
-                      Aos {dayStr} ({day}) dias do mês de {month} do ano de dois mil e vinte e seis ({year}), às {printingAta.meeting_time_start} horas, reuniram-se nas dependências da {printingAta.location}, sob a condução de {printingAta.signatory_name} ({printingAta.signatory_role}), estando presentes: {participantsStr}; a fim de tratar da seguinte pauta: <strong>{printingAta.pauta_assunto}</strong>.
+                      Aos {dayStr} ({day}) dias do mês de {month} do ano de dois mil e vinte e seis ({year}), às {printingAta.meeting_time_start} horas, reuniram-se nas dependências da {printingAta.location}, sob a condução de {printingAta.signatory_name} ({resolveOfficialStaffRole(printingAta.signatory_name, printingAta.signatory_role)}), estando presentes: {participantsStr}; a fim de tratar da seguinte pauta: <strong>{printingAta.pauta_assunto}</strong>.
                     </p>
                     {fullBodyText
                       .split(/\n{2,}/)
@@ -1665,7 +1676,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
 
               {/* Fecho Formal da Ata */}
               <div className="mb-4 text-[13px] leading-relaxed text-justify text-black font-normal" style={{ textIndent: '1.5rem' }}>
-                Nada mais havendo a tratar, a sessão foi dada por encerrada às {printingAta.meeting_time_end} horas. Eu, <strong>{printingAta.signatory_name}</strong> ({printingAta.signatory_role}), lavrei a presente ata que, após lida e achada conforme por todos os presentes, vai por estes devidamente assinada.
+                Nada mais havendo a tratar, a sessão foi dada por encerrada às {printingAta.meeting_time_end} horas. Eu, <strong>{printingAta.signatory_name}</strong> ({resolveOfficialStaffRole(printingAta.signatory_name, printingAta.signatory_role)}), lavrei a presente ata que, após lida e achada conforme por todos os presentes, vai por estes devidamente assinada.
               </div>
 
               {/* Bloco de Assinaturas Estruturado */}
@@ -1678,7 +1689,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                   {/* Responsável Principal */}
                   <div className="border-t border-black pt-1">
                     <p className="font-bold uppercase text-[11px]">{printingAta.signatory_name}</p>
-                    <p className="text-[9px] uppercase font-medium">{printingAta.signatory_role}</p>
+                    <p className="text-[9px] uppercase font-medium">{resolveOfficialStaffRole(printingAta.signatory_name, printingAta.signatory_role)}</p>
                     <p className="text-[8px] uppercase text-black/70">EE Cívico-Militar André Antônio Maggi</p>
                   </div>
 
@@ -1688,7 +1699,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                     .map((p, idx) => (
                       <div key={idx} className="border-t border-black pt-1">
                         <p className="font-bold uppercase text-[11px] truncate">{p.name}</p>
-                        <p className="text-[9px] uppercase font-medium truncate">{p.role}</p>
+                        <p className="text-[9px] uppercase font-medium truncate">{resolveOfficialStaffRole(p.name, p.role)}</p>
                         <p className="text-[8px] uppercase text-black/70">Participante Presente</p>
                       </div>
                     ))}

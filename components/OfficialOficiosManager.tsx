@@ -9,7 +9,7 @@ import {
 import { ElectronicSignatureProof } from '../types';
 import ElectronicSignatureStamp from './ElectronicSignatureStamp';
 import ElectronicSignatureModal from './ElectronicSignatureModal';
-import { registerSignatureProof } from '../utils/signatureService';
+import { registerSignatureProof, resolveOfficialStaffRole } from '../utils/signatureService';
 
 export interface OficioSignatory {
   name: string;
@@ -141,7 +141,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   // Form fields
   const defaultInitialSignatory: OficioSignatory = {
     name: user?.name || (moduleSource === 'SECRETARIA' ? 'Secretaria Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Gestão Cívico-Militar'),
-    role: user?.jobFunction || user?.role || (moduleSource === 'SECRETARIA' ? 'Secretário(a) Escolar' : moduleSource === 'COORDENACAO' ? 'Coordenador(a) Pedagógico(a)' : 'Gestor Cívico-Militar')
+    role: resolveOfficialStaffRole(
+      user?.name,
+      user?.jobFunction || user?.role || (moduleSource === 'SECRETARIA' ? 'SECRETÁRIO ESCOLAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'GESTOR EDUCACIONAL MILITAR')
+    )
   };
 
   const [formData, setFormData] = useState<{
@@ -216,7 +219,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
       if (field === 'name') {
         const clean = value.trim().toUpperCase();
-        if (staffRoleMap[clean]) {
+        const autoRole = resolveOfficialStaffRole(clean, staffRoleMap[clean]);
+        if (autoRole && autoRole !== 'Servidor(a) Público(a)') {
+          current.role = autoRole;
+        } else if (staffRoleMap[clean]) {
           current.role = staffRoleMap[clean];
         }
       }
@@ -232,6 +238,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
   };
 
   const handleQuickAddSignatory = (name: string, role: string) => {
+    const resolvedRole = resolveOfficialStaffRole(name, role);
     setFormData(prev => {
       const exists = prev.signatories.some(s => s.name.trim().toUpperCase() === name.trim().toUpperCase());
       if (exists) return prev;
@@ -239,13 +246,13 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
       if (prev.signatories.length === 1 && !prev.signatories[0].name.trim()) {
         return {
           ...prev,
-          signatories: [{ name, role }],
+          signatories: [{ name, role: resolvedRole }],
           signatory_name: name,
-          signatory_role: role
+          signatory_role: resolvedRole
         };
       }
 
-      const next = [...prev.signatories, { name, role }];
+      const next = [...prev.signatories, { name, role: resolvedRole }];
       return {
         ...prev,
         signatories: next,
@@ -257,9 +264,10 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
   const commonStaffSuggestions: OficioSignatory[] = useMemo(() => [
     { name: 'REZIERE DE SOUZA', role: 'DIRETOR ESCOLAR' },
-    { name: 'JAIME DE SOUZA COSTA', role: 'DIRETOR ESCOLAR' },
-    { name: 'MARCELO DA SILVA', role: 'GESTOR ESCOLAR' },
-    { name: 'DYNEA REIS VALLE LIRA', role: 'COORDENADORA PEDAGÓGICA' },
+    { name: 'MARCIA CRISTINA FAVERO', role: 'COORDENAÇÃO PEDAGÓGICA' },
+    { name: 'DYNEA REIS VALLE LIRA', role: 'COORDENAÇÃO PEDAGÓGICA' },
+    { name: 'JAIME DE SOUZA COSTA', role: 'SECRETÁRIO ESCOLAR' },
+    { name: 'MARCELO DA SILVA', role: 'GESTOR EDUCACIONAL MILITAR' },
     { name: 'FABIANA REGINA DE CAMPOS LOPES', role: 'SECRETÁRIA ESCOLAR' },
     { name: 'LUCILEIA SANTOS FREIRE', role: 'SECRETÁRIA ESCOLAR' },
     { name: 'DANUBIA DOS SANTOS HUSSEN ALI', role: 'EQUIPE PSICOSSOCIAL' },
@@ -491,7 +499,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
 
     const resolvedSignatories = validSignatories.map(s => {
       const clean = s.name.trim().toUpperCase();
-      const role = staffRoleMap[clean] || s.role.trim() || 'Servidor(a) Público(a)';
+      const role = resolveOfficialStaffRole(clean, staffRoleMap[clean] || s.role.trim() || 'Servidor(a) Público(a)');
       return {
         name: s.name.trim(),
         role
@@ -1391,7 +1399,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
                 ) : (
                   (() => {
                     const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
-                    const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
+                    const matchedRole = resolveOfficialStaffRole(cleanSignatoryName, staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role);
                     return (
                       <div className="text-center w-2/3 mx-auto pt-6 text-black" style={{ color: '#000000' }}>
                         <div className="border-t border-black pt-1.5">
@@ -1511,7 +1519,7 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
               ) : (
                 (() => {
                   const cleanSignatoryName = (printingOficio.signatory_name || '').trim().toUpperCase();
-                  const matchedRole = staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role;
+                  const matchedRole = resolveOfficialStaffRole(cleanSignatoryName, staffRoleMap[cleanSignatoryName] || printingOficio.signatory_role);
                   return (
                     <div className="text-center w-2/3 mx-auto pt-6 text-black" style={{ color: '#000000' }}>
                       <div className="border-t border-black pt-1.5">
@@ -1609,7 +1617,8 @@ const OfficialOficiosManager: React.FC<OfficialOficiosManagerProps> = ({ moduleS
           documentType="OFÍCIO ESCOLAR"
           documentContentText={`OFÍCIO Nº ${signingOficio.formatted_number}\nASSUNTO: ${signingOficio.title_subject}\nDESTINATÁRIO: ${signingOficio.recipient_name}\n${signingOficio.body_text}`}
           allowedRoles={['DIRETOR', 'SECRETARIO', 'COORDENADOR', 'GESTOR_MILITAR', 'ADMIN']}
-          defaultSignerRole={moduleSource === 'SECRETARIA' ? 'SECRETÁRIO(A) ESCOLAR' : moduleSource === 'COORDENACAO' ? 'COORDENADOR(A) PEDAGÓGICO(A)' : 'DIRETOR ESCOLAR'}
+          defaultSignerName={user?.name || ''}
+          defaultSignerRole={resolveOfficialStaffRole(user?.name, moduleSource === 'SECRETARIA' ? 'SECRETÁRIO ESCOLAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'DIRETOR ESCOLAR')}
           onSignatureComplete={handleSignatureComplete}
         />
       )}

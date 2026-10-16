@@ -1,19 +1,25 @@
 import React from 'react';
 import { ShieldCheck, QrCode, CheckCircle2, Lock, ExternalLink } from 'lucide-react';
 import { ElectronicSignatureProof } from '../types';
-import { getVerificationUrl, getQrCodeUrl } from '../utils/signatureService';
+import { getVerificationUrl, getQrCodeUrl, resolveOfficialStaffRole } from '../utils/signatureService';
 
 interface ElectronicSignatureStampProps {
-  signature: ElectronicSignatureProof;
+  signature?: ElectronicSignatureProof;
+  proof?: ElectronicSignatureProof;
   compact?: boolean;
   onVerify?: (verificationCode: string) => void;
 }
 
 export const ElectronicSignatureStamp: React.FC<ElectronicSignatureStampProps> = ({
-  signature,
+  signature: directSig,
+  proof,
   compact = false,
   onVerify
 }) => {
+  const signature = directSig || proof;
+  if (!signature) return null;
+
+  const displayRole = resolveOfficialStaffRole(signature.signerName, signature.signerRole);
   const verificationUrl = getVerificationUrl(signature.verificationCode);
   const qrCodeUrl = getQrCodeUrl(verificationUrl);
 
@@ -42,7 +48,7 @@ export const ElectronicSignatureStamp: React.FC<ElectronicSignatureStampProps> =
               <CheckCircle2 size={12} className="text-emerald-600" />
             </div>
             <p className="text-[11px] font-bold text-slate-800 uppercase">
-              {signature.signerName} • <span className="text-slate-500 font-normal">{signature.signerRole}</span>
+              {signature.signerName} • <span className="text-slate-500 font-normal">{displayRole}</span>
             </p>
             <p className="text-[9px] font-mono text-slate-500">
               {formattedDate} {formattedTime} • Cód: <strong>{signature.verificationCode}</strong>
@@ -91,7 +97,7 @@ export const ElectronicSignatureStamp: React.FC<ElectronicSignatureStampProps> =
           <p className="text-[11px] leading-snug">
             Documento assinado eletronicamente por{' '}
             <strong className="text-slate-900 uppercase font-black">{signature.signerName}</strong>,{' '}
-            na função de <strong className="text-slate-800 uppercase font-bold">{signature.signerRole}</strong>
+            na função de <strong className="text-slate-800 uppercase font-bold">{displayRole}</strong>
             {signature.signerCpfOrMatricula && ` (Identificação: ${signature.signerCpfOrMatricula})`}, em{' '}
             <strong>{formattedDate}</strong> às <strong>{formattedTime}</strong>, conforme horário oficial de Mato Grosso.
           </p>
