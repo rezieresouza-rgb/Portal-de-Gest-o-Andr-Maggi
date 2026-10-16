@@ -1005,28 +1005,6 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </div>
               </div>
 
-              {/* Templates Quick Select */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-amber-500" /> Modelos Rápidos de Reunião e Atas (Opcional)
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  {ATA_TEMPLATES.map(t => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => handleApplyTemplate(t.id)}
-                      className="p-3 text-left bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 rounded-xl transition-all group"
-                    >
-                      <p className="text-xs font-black text-slate-800 uppercase group-hover:text-blue-600 line-clamp-1">{t.title}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase truncate mt-0.5">{t.pauta}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* ASSISTENTE DE REDAÇÃO DE ATAS POR IA OMITIDO PARA LIMPEZA VISUAL */}
-
               {/* Informações Básicas da Sessão */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
