@@ -418,50 +418,8 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                   </div>
                </div>
 
-               {/* COLUNA DIREITA: AGENDA, ANIVERSARIANTES */}
+               {/* COLUNA DIREITA: ANIVERSARIANTES, AGENDA */}
                <div className="w-full xl:w-80 shrink-0 space-y-6 lg:space-y-8">
-
-                  {/* AGENDA COMPACTA */}
-                  {visibleBlocks.agenda && (
-                     <div id="weekly-agenda-block" className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-
-                        {/* CABEÇALHO APENAS PARA PDF (Escondido na tela) */}
-                        <div id="pdf-header" className="hidden flex-row items-center gap-4 border-b border-gray-200 pb-4 mb-4">
-                           <img src="/logo-escola.png" alt="Logo" className="w-16 h-16 object-contain" />
-                           <div>
-                              <h1 className="text-xl font-bold text-gray-900 uppercase">Escola Estadual Cívico-Militar André Antônio Maggi</h1>
-                              <p className="text-xs text-gray-500 uppercase">Portal de Gestão Escolar - Agenda Semanal</p>
-                           </div>
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                           <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
-                              <Calendar size={18} className="text-indigo-600" /> Agenda
-                           </h3>
-                           <div className="flex gap-2">
-                              <button onClick={() => setIsEditAgendaOpen(true)} className="p-1.5 bg-blue-50 text-blue-600 hover:text-blue-700 rounded-lg transition-all hover:bg-blue-100" title="Editar Agenda"><Edit3 size={14} /></button>
-                              <button onClick={exportAgendaPDF} className="p-1.5 bg-slate-50 text-slate-400 hover:text-slate-700 rounded-lg transition-all hover:bg-slate-100" title="Exportar PDF"><Download size={14} /></button>
-                           </div>
-                        </div>
-                        <div className="space-y-4">
-                           {agendaEvents.map((event, i) => (
-                              <div key={i} className="flex gap-3 group">
-                                 <div className="flex flex-col items-center w-8 shrink-0">
-                                    <div className="text-[8px] font-black text-slate-400 uppercase leading-none">{currentMonthData.mes.substring(0, 3)}</div>
-                                    <div className="text-sm font-black text-slate-700 mt-0.5">{event.dia}</div>
-                                    <div className="w-px h-full bg-slate-100 mt-1"></div>
-                                 </div>
-                                 <div className="flex-1 pb-4">
-                                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-transparent group-hover:border-slate-200 group-hover:bg-slate-100/40 transition-all shadow-sm">
-                                       <span className="text-[8px] font-black uppercase px-2 py-1 rounded mb-2 inline-block border bg-slate-100 border-slate-200/50 text-slate-500">{event.categoria || 'GERAL'}</span>
-                                       <h4 className="text-xs font-black text-slate-800 uppercase leading-snug">{event.tipo}</h4>
-                                    </div>
-                                 </div>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-                  )}
 
                   {/* ANIVERSARIANTES DO MÊS */}
                   {visibleBlocks.birthdays && (
@@ -557,6 +515,48 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                                  Nenhum aniversariante este mês
                               </div>
                            )}
+                        </div>
+                     </div>
+                  )}
+
+                  {/* AGENDA COMPACTA */}
+                  {visibleBlocks.agenda && (
+                     <div id="weekly-agenda-block" className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+
+                        {/* CABEÇALHO APENAS PARA PDF (Escondido na tela) */}
+                        <div id="pdf-header" className="hidden flex-row items-center gap-4 border-b border-gray-200 pb-4 mb-4">
+                           <img src="/logo-escola.png" alt="Logo" className="w-16 h-16 object-contain" />
+                           <div>
+                              <h1 className="text-xl font-bold text-gray-900 uppercase">Escola Estadual Cívico-Militar André Antônio Maggi</h1>
+                              <p className="text-xs text-gray-500 uppercase">Portal de Gestão Escolar - Agenda Semanal</p>
+                           </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                           <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                              <Calendar size={18} className="text-indigo-600" /> Agenda
+                           </h3>
+                           <div className="flex gap-2">
+                              <button onClick={() => setIsEditAgendaOpen(true)} className="p-1.5 bg-blue-50 text-blue-600 hover:text-blue-700 rounded-lg transition-all hover:bg-blue-100" title="Editar Agenda"><Edit3 size={14} /></button>
+                              <button onClick={exportAgendaPDF} className="p-1.5 bg-slate-50 text-slate-400 hover:text-slate-700 rounded-lg transition-all hover:bg-slate-100" title="Exportar PDF"><Download size={14} /></button>
+                           </div>
+                        </div>
+                        <div className="space-y-4">
+                           {agendaEvents.map((event, i) => (
+                              <div key={i} className="flex gap-3 group">
+                                 <div className="flex flex-col items-center w-8 shrink-0">
+                                    <div className="text-[8px] font-black text-slate-400 uppercase leading-none">{currentMonthData.mes.substring(0, 3)}</div>
+                                    <div className="text-sm font-black text-slate-700 mt-0.5">{event.dia}</div>
+                                    <div className="w-px h-full bg-slate-100 mt-1"></div>
+                                 </div>
+                                 <div className="flex-1 pb-4">
+                                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-transparent group-hover:border-slate-200 group-hover:bg-slate-100/40 transition-all shadow-sm">
+                                       <span className="text-[8px] font-black uppercase px-2 py-1 rounded mb-2 inline-block border bg-slate-100 border-slate-200/50 text-slate-500">{event.categoria || 'GERAL'}</span>
+                                       <h4 className="text-xs font-black text-slate-800 uppercase leading-snug">{event.tipo}</h4>
+                                    </div>
+                                 </div>
+                              </div>
+                           ))}
                         </div>
                      </div>
                   )}
