@@ -639,7 +639,13 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         );
 
       case 'occurrences':
-        return <PedagogicalOccurrenceBook />;
+        return (
+          <PedagogicalOccurrenceBook
+            user={user}
+            globalFilterTurma={filterTurma}
+            globalFilterStudent={filterStudent}
+          />
+        );
 
       case 'observations':
         return <ClassroomObservationForm />;
@@ -660,7 +666,14 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         return <OfficialAtasManager moduleSource="COORDENACAO" user={user} />;
 
       case 'circumstantiated_reports':
-        return <PsychosocialCircumstantiatedReportManager user={user} role="COORDENADOR" />;
+        return (
+          <PsychosocialCircumstantiatedReportManager
+            user={user}
+            role="COORDENADOR"
+            globalFilterTurma={filterTurma}
+            globalFilterStudent={filterStudent}
+          />
+        );
 
       case 'calendar':
         return <UnifiedSchoolCalendar user={user} />;

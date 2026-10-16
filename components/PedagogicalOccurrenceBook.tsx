@@ -40,6 +40,8 @@ import PsychosocialCircumstantiatedReportManager from './PsychosocialCircumstant
 
 interface PedagogicalOccurrenceBookProps {
   user?: any;
+  globalFilterTurma?: string;
+  globalFilterStudent?: string;
 }
 
 export type SectorType = 'COORDENACAO_PEDAGOGICA' | 'CIVICO_MILITAR' | 'PSICOSSOCIAL_MEDIACAO' | 'BUSCA_ATIVA' | 'AEE_SPECIAL_ED';
@@ -64,7 +66,11 @@ export interface OccurrenceItem {
   timestamp: number;
 }
 
-const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ user }) => {
+const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({
+  user,
+  globalFilterTurma,
+  globalFilterStudent
+}) => {
   const { addToast } = useToast();
   
   // Abas Principais
@@ -94,10 +100,12 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
   const [tramitateReason, setTramitateReason] = useState('');
   const [isSubmittingTramitate, setIsSubmittingTramitate] = useState(false);
 
-  // Modal de Impressão Oficial (Convocação de Pais ou Termo de Compromisso)
+  // Modal de Impressão Oficial (Convocação de Pais, Termo de Compromisso, Ficha Individual ou Relatório Consolidado de Busca)
   const [printingDoc, setPrintingDoc] = useState<{
-    type: 'CONVOCACAO_PAIS' | 'TERMO_COMPROMISSO';
+    type: 'CONVOCACAO_PAIS' | 'TERMO_COMPROMISSO' | 'FICHA_OCORRENCIA' | 'RELATORIO_BUSCA';
     occ: OccurrenceItem;
+    occurrencesList?: OccurrenceItem[];
+    reportTitle?: string;
   } | null>(null);
 
   // Aluno inicial para Dossiê Circunstanciado
@@ -196,6 +204,19 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
 
     return () => { sub.unsubscribe(); };
   }, []);
+
+  // Sincronizar filtros globais do cabeçalho superior (Turma e Buscar Aluno)
+  useEffect(() => {
+    if (globalFilterStudent !== undefined) {
+      setSearchTerm(globalFilterStudent);
+    }
+  }, [globalFilterStudent]);
+
+  useEffect(() => {
+    if (globalFilterTurma !== undefined) {
+      setFilterClass(globalFilterTurma || 'TODAS');
+    }
+  }, [globalFilterTurma]);
 
   // Lista de Turmas Únicas
   const uniqueClasses = useMemo(() => {
@@ -638,6 +659,33 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             </div>
           )}
 
+          {/* BOTÃO DE IMPRESSÃO DO RELATÓRIO DA BUSCA / ALUNO */}
+          {(() => {
+            const currentList = activeTab === 'RESOLUTION' ? filteredCoordinationList : filteredOtherSectorsList;
+            if (currentList.length === 0) return null;
+            return (
+              <button
+                onClick={() => {
+                  const title = searchTerm.trim()
+                    ? `RELATÓRIO DE OCORRÊNCIAS ESCOLARES — BUSCA: "${searchTerm.toUpperCase()}"`
+                    : filterClass !== 'TODAS'
+                    ? `RELATÓRIO DE OCORRÊNCIAS ESCOLARES — TURMA: ${filterClass}`
+                    : 'RELATÓRIO GERAL DE OCORRÊNCIAS ESCOLARES';
+                  setPrintingDoc({
+                    type: 'RELATORIO_BUSCA',
+                    occ: currentList[0],
+                    occurrencesList: currentList,
+                    reportTitle: title
+                  });
+                }}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/20 active:scale-95"
+                title="Imprimir relatório oficial com as ocorrências listadas nesta busca"
+              >
+                <Printer size={14} /> Imprimir Relatório ({currentList.length})
+              </button>
+            );
+          })()}
+
           {(searchTerm || filterClass !== 'TODAS' || filterStatus !== 'TODOS' || filterSector !== 'TODOS') && (
             <button
               onClick={() => { setSearchTerm(''); setFilterClass('TODAS'); setFilterStatus('TODOS'); setFilterSector('TODOS'); }}
@@ -751,6 +799,13 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => setPrintingDoc({ type: 'FICHA_OCORRENCIA', occ })}
+                        className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      >
+                        <Printer size={13} /> Imprimir Ocorrência
+                      </button>
+
                       <button
                         onClick={() => setPrintingDoc({ type: 'CONVOCACAO_PAIS', occ })}
                         className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
@@ -873,13 +928,36 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                       </button>
                     </div>
 
-                    <button
-                      onClick={(e) => handleDeleteOcc(occ.id, e)}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
-                      title="Excluir Ocorrência"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => setPrintingDoc({ type: 'FICHA_OCORRENCIA', occ })}
+                        className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      >
+                        <Printer size={13} /> Imprimir Ocorrência
+                      </button>
+
+                      <button
+                        onClick={() => setPrintingDoc({ type: 'CONVOCACAO_PAIS', occ })}
+                        className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      >
+                        <Printer size={13} /> Convocação de Pais
+                      </button>
+
+                      <button
+                        onClick={() => setPrintingDoc({ type: 'TERMO_COMPROMISSO', occ })}
+                        className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      >
+                        <FileText size={13} /> Termo de Compromisso
+                      </button>
+
+                      <button
+                        onClick={(e) => handleDeleteOcc(occ.id, e)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                        title="Excluir Ocorrência"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -958,6 +1036,20 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
 
                   <button
                     onClick={() => {
+                      setPrintingDoc({
+                        type: 'RELATORIO_BUSCA',
+                        occ: item.occurrences[0],
+                        occurrencesList: item.occurrences,
+                        reportTitle: `RELATÓRIO INDIVIDUAL DE OCORRÊNCIAS ESCOLARES — ${item.studentName.toUpperCase()}`
+                      });
+                    }}
+                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20"
+                  >
+                    <Printer size={15} /> Imprimir Histórico
+                  </button>
+
+                  <button
+                    onClick={() => {
                       setCircumstantiatedInitialStudent(item.studentName);
                       setActiveTab('CIRCUMSTANTIATED_REPORTS');
                     }}
@@ -1008,6 +1100,8 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             user={user}
             role="COORDENADOR"
             initialStudentName={circumstantiatedInitialStudent || undefined}
+            globalFilterStudent={searchTerm || globalFilterStudent}
+            globalFilterTurma={filterClass !== 'TODAS' ? filterClass : globalFilterTurma}
           />
         </div>
       )}
@@ -1191,7 +1285,7 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
         </div>
       )}
 
-      {/* MODAL 3: IMPRESSÃO DE CONVOCAÇÃO DE PAIS OU TERMO DE COMPROMISSO */}
+      {/* MODAL 3: IMPRESSÃO DE CONVOCAÇÃO DE PAIS, TERMO DE COMPROMISSO, FICHA INDIVIDUAL OU RELATÓRIO DA BUSCA */}
       {printingDoc && (
         <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md overflow-y-auto p-4 md:p-8 flex justify-center items-start print:hidden">
           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl w-full max-w-4xl overflow-hidden my-4">
@@ -1200,10 +1294,18 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             <div className="p-6 bg-slate-900 text-white flex justify-between items-center sticky top-0 z-20 shadow-md">
               <div>
                 <span className="font-mono text-xs font-black bg-indigo-600 px-3 py-1 rounded-lg uppercase">
-                  {printingDoc.type === 'CONVOCACAO_PAIS' ? 'CONVOCAÇÃO DE PAIS' : 'TERMO DE COMPROMISSO'}
+                  {printingDoc.type === 'CONVOCACAO_PAIS'
+                    ? 'CONVOCAÇÃO DE PAIS'
+                    : printingDoc.type === 'TERMO_COMPROMISSO'
+                    ? 'TERMO DE COMPROMISSO'
+                    : printingDoc.type === 'FICHA_OCORRENCIA'
+                    ? 'FICHA DE OCORRÊNCIA ESCOLAR'
+                    : 'RELATÓRIO DE OCORRÊNCIAS'}
                 </span>
                 <span className="text-xs font-bold uppercase text-slate-300 ml-3">
-                  {printingDoc.occ.studentName} ({printingDoc.occ.className})
+                  {printingDoc.type === 'RELATORIO_BUSCA'
+                    ? `${(printingDoc.occurrencesList || []).length} registro(s)`
+                    : `${printingDoc.occ.studentName} (${printingDoc.occ.className})`}
                 </span>
               </div>
 
@@ -1245,13 +1347,17 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                   <h2 className="text-base font-bold uppercase tracking-wider underline">
                     {printingDoc.type === 'CONVOCACAO_PAIS'
                       ? 'CONVOCAÇÃO DE PAIS E RESPONSÁVEIS LEGAIS'
-                      : 'TERMO DE COMPROMISSO E CONDUTA PEDAGÓGICA'}
+                      : printingDoc.type === 'TERMO_COMPROMISSO'
+                      ? 'TERMO DE COMPROMISSO E CONDUTA PEDAGÓGICA'
+                      : printingDoc.type === 'FICHA_OCORRENCIA'
+                      ? 'REGISTRO OFICIAL DE OCORRÊNCIA ESCOLAR E INTERVENÇÃO'
+                      : (printingDoc.reportTitle || 'RELATÓRIO DE OCORRÊNCIAS ESCOLARES')}
                   </h2>
                 </div>
 
                 {/* Corpo do Documento */}
                 <div className="my-6 text-sm leading-relaxed text-justify space-y-4 text-black">
-                  {printingDoc.type === 'CONVOCACAO_PAIS' ? (
+                  {printingDoc.type === 'CONVOCACAO_PAIS' && (
                     <>
                       <p style={{ textIndent: '2rem' }}>
                         A Coordenação Pedagógica da <strong>Escola Estadual Cívico-Militar André Antônio Maggi</strong>, no uso de suas atribuições legais e em conformidade com o Regimento Escolar e a Lei de Diretrizes e Bases da Educação Nacional (LDB nº 9.394/96), vem por meio deste instrumento <strong>CONVOCAR</strong> os pais e/ou responsáveis legais do(a) estudante <strong>{printingDoc.occ.studentName.toUpperCase()}</strong>, matriculado(a) na turma <strong>{printingDoc.occ.className}</strong>, para comparecerem a esta unidade escolar.
@@ -1263,7 +1369,9 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                         Solicitamos o comparecimento no prazo de até 48 (quarenta e oito) horas úteis junto à Coordenação Pedagógica para que possamos traçar conjuntamente o plano de apoio e intervenção para o sucesso educacional do estudante.
                       </p>
                     </>
-                  ) : (
+                  )}
+
+                  {printingDoc.type === 'TERMO_COMPROMISSO' && (
                     <>
                       <p style={{ textIndent: '2rem' }}>
                         Pelo presente Termo de Compromisso, o(a) estudante <strong>{printingDoc.occ.studentName.toUpperCase()}</strong>, devidamente matriculado(a) na turma <strong>{printingDoc.occ.className}</strong>, juntamente com seus responsáveis e a Coordenação Pedagógica, assume formalmente o compromisso de empenho, assiduidade, realização das tarefas escolares e cumprimento das normas regimentais desta instituição de ensino cívico-militar.
@@ -1277,6 +1385,52 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                     </>
                   )}
 
+                  {printingDoc.type === 'FICHA_OCORRENCIA' && (
+                    <div className="space-y-4">
+                      <div className="border border-black p-3 space-y-1 text-xs">
+                        <p><strong>Estudante:</strong> {printingDoc.occ.studentName.toUpperCase()} &nbsp;|&nbsp; <strong>Turma:</strong> {printingDoc.occ.className}</p>
+                        <p><strong>Data e Hora:</strong> {printingDoc.occ.date} às {printingDoc.occ.time} &nbsp;|&nbsp; <strong>Local:</strong> {printingDoc.occ.location || 'Sala de Aula'}</p>
+                        <p><strong>Categoria / Gravidade:</strong> {printingDoc.occ.category} ({printingDoc.occ.severity}) &nbsp;|&nbsp; <strong>Setor:</strong> {getSectorLabel(printingDoc.occ.targetDept)}</p>
+                        <p><strong>Servidor Relator:</strong> Prof. {printingDoc.occ.responsibleName}</p>
+                      </div>
+                      <div className="border border-black p-3 space-y-1 text-xs">
+                        <p className="font-bold uppercase underline">1. Descrição do Fato / Ocorrência:</p>
+                        <p className="whitespace-pre-line pt-1">{printingDoc.occ.description}</p>
+                      </div>
+                      <div className="border border-black p-3 space-y-1 text-xs">
+                        <p className="font-bold uppercase underline">2. Providências / Devolutiva Registrada ({printingDoc.occ.status}):</p>
+                        <p className="whitespace-pre-line pt-1">
+                          {printingDoc.occ.feedback || 'Registro em acompanhamento pela equipe gestora/pedagógica da unidade escolar.'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {printingDoc.type === 'RELATORIO_BUSCA' && (
+                    <div className="space-y-4 text-xs">
+                      <p>
+                        Relatório oficial consolidado emitido pelo Livro de Ocorrências & Acompanhamento Integrado da <strong>E.E. Cívico-Militar André Antônio Maggi</strong>, totalizando <strong>{(printingDoc.occurrencesList || []).length} registro(s)</strong> localizados.
+                      </p>
+                      <div className="space-y-3">
+                        {(printingDoc.occurrencesList || []).map((item, idx) => (
+                          <div key={item.id || idx} className="border border-black p-3 space-y-1.5 break-inside-avoid">
+                            <div className="flex justify-between items-center border-b border-black/30 pb-1 font-bold">
+                              <span>#{idx + 1} • {item.studentName.toUpperCase()} ({item.className})</span>
+                              <span>{item.date} às {item.time} • [{item.severity}]</span>
+                            </div>
+                            <p><strong>Categoria:</strong> {item.category} &nbsp;|&nbsp; <strong>Setor:</strong> {getSectorLabel(item.targetDept)} &nbsp;|&nbsp; <strong>Relator:</strong> Prof. {item.responsibleName}</p>
+                            <p className="whitespace-pre-line"><strong>Relato:</strong> {item.description}</p>
+                            {item.feedback && (
+                              <p className="whitespace-pre-line bg-gray-100 p-2 border-l-2 border-black">
+                                <strong>Devolutiva / Providência ({item.resolvedAt}):</strong> {item.feedback}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <p className="pt-4 text-right">
                     Colíder - MT, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.
                   </p>
@@ -1286,16 +1440,18 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                 <div className="grid grid-cols-2 gap-8 pt-12 text-center text-xs">
                   <div className="border-t border-black pt-2">
                     <p className="font-bold uppercase">{user?.name || 'Coordenação Pedagógica'}</p>
-                    <p className="text-[10px] text-gray-700">Coordenação Pedagógica</p>
+                    <p className="text-[10px] text-gray-700">Coordenação Pedagógica / Gestão Escolar</p>
                   </div>
                   <div className="border-t border-black pt-2">
                     <p className="font-bold uppercase">Pai / Mãe / Responsável Legal</p>
-                    <p className="text-[10px] text-gray-700">Assinatura do Responsável</p>
+                    <p className="text-[10px] text-gray-700">Ciência do Responsável (Quando Aplicável)</p>
                   </div>
-                  <div className="col-span-2 w-1/2 mx-auto border-t border-black pt-2 mt-4">
-                    <p className="font-bold uppercase">{printingDoc.occ.studentName}</p>
-                    <p className="text-[10px] text-gray-700">Assinatura do Estudante</p>
-                  </div>
+                  {printingDoc.type !== 'RELATORIO_BUSCA' && (
+                    <div className="col-span-2 w-1/2 mx-auto border-t border-black pt-2 mt-4">
+                      <p className="font-bold uppercase">{printingDoc.occ.studentName}</p>
+                      <p className="text-[10px] text-gray-700">Assinatura do Estudante</p>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -1342,13 +1498,17 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                 <h2 className="text-base font-bold uppercase tracking-wider underline">
                   {printingDoc.type === 'CONVOCACAO_PAIS'
                     ? 'CONVOCAÇÃO DE PAIS E RESPONSÁVEIS LEGAIS'
-                    : 'TERMO DE COMPROMISSO E CONDUTA PEDAGÓGICA'}
+                    : printingDoc.type === 'TERMO_COMPROMISSO'
+                    ? 'TERMO DE COMPROMISSO E CONDUTA PEDAGÓGICA'
+                    : printingDoc.type === 'FICHA_OCORRENCIA'
+                    ? 'REGISTRO OFICIAL DE OCORRÊNCIA ESCOLAR E INTERVENÇÃO'
+                    : (printingDoc.reportTitle || 'RELATÓRIO DE OCORRÊNCIAS ESCOLARES')}
                 </h2>
               </div>
 
               {/* Texto */}
               <div className="my-6 text-sm leading-relaxed text-justify space-y-4 text-black">
-                {printingDoc.type === 'CONVOCACAO_PAIS' ? (
+                {printingDoc.type === 'CONVOCACAO_PAIS' && (
                   <>
                     <p style={{ textIndent: '2rem' }}>
                       A Coordenação Pedagógica da <strong>Escola Estadual Cívico-Militar André Antônio Maggi</strong>, no uso de suas atribuições legais e em conformidade com o Regimento Escolar e a Lei de Diretrizes e Bases da Educação Nacional (LDB nº 9.394/96), vem por meio deste instrumento <strong>CONVOCAR</strong> os pais e/ou responsáveis legais do(a) estudante <strong>{printingDoc.occ.studentName.toUpperCase()}</strong>, matriculado(a) na turma <strong>{printingDoc.occ.className}</strong>, para comparecerem a esta unidade escolar.
@@ -1360,7 +1520,9 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                       Solicitamos o comparecimento no prazo de até 48 (quarenta e oito) horas úteis junto à Coordenação Pedagógica para que possamos traçar conjuntamente o plano de apoio e intervenção para o sucesso educacional do estudante.
                     </p>
                   </>
-                ) : (
+                )}
+
+                {printingDoc.type === 'TERMO_COMPROMISSO' && (
                   <>
                     <p style={{ textIndent: '2rem' }}>
                       Pelo presente Termo de Compromisso, o(a) estudante <strong>{printingDoc.occ.studentName.toUpperCase()}</strong>, devidamente matriculado(a) na turma <strong>{printingDoc.occ.className}</strong>, juntamente com seus responsáveis e a Coordenação Pedagógica, assume formalmente o compromisso de empenho, assiduidade, realização das tarefas escolares e cumprimento das normas regimentais desta instituição de ensino cívico-militar.
@@ -1374,25 +1536,73 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
                   </>
                 )}
 
+                {printingDoc.type === 'FICHA_OCORRENCIA' && (
+                  <div className="space-y-4">
+                    <div className="border border-black p-3 space-y-1 text-xs">
+                      <p><strong>Estudante:</strong> {printingDoc.occ.studentName.toUpperCase()} &nbsp;|&nbsp; <strong>Turma:</strong> {printingDoc.occ.className}</p>
+                      <p><strong>Data e Hora:</strong> {printingDoc.occ.date} às {printingDoc.occ.time} &nbsp;|&nbsp; <strong>Local:</strong> {printingDoc.occ.location || 'Sala de Aula'}</p>
+                      <p><strong>Categoria / Gravidade:</strong> {printingDoc.occ.category} ({printingDoc.occ.severity}) &nbsp;|&nbsp; <strong>Setor:</strong> {getSectorLabel(printingDoc.occ.targetDept)}</p>
+                      <p><strong>Servidor Relator:</strong> Prof. {printingDoc.occ.responsibleName}</p>
+                    </div>
+                    <div className="border border-black p-3 space-y-1 text-xs">
+                      <p className="font-bold uppercase underline">1. Descrição do Fato / Ocorrência:</p>
+                      <p className="whitespace-pre-line pt-1">{printingDoc.occ.description}</p>
+                    </div>
+                    <div className="border border-black p-3 space-y-1 text-xs">
+                      <p className="font-bold uppercase underline">2. Providências / Devolutiva Registrada ({printingDoc.occ.status}):</p>
+                      <p className="whitespace-pre-line pt-1">
+                        {printingDoc.occ.feedback || 'Registro em acompanhamento pela equipe gestora/pedagógica da unidade escolar.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {printingDoc.type === 'RELATORIO_BUSCA' && (
+                  <div className="space-y-4 text-xs">
+                    <p>
+                      Relatório oficial consolidado emitido pelo Livro de Ocorrências & Acompanhamento Integrado da <strong>E.E. Cívico-Militar André Antônio Maggi</strong>, totalizando <strong>{(printingDoc.occurrencesList || []).length} registro(s)</strong> localizados.
+                    </p>
+                    <div className="space-y-3">
+                      {(printingDoc.occurrencesList || []).map((item, idx) => (
+                        <div key={item.id || idx} className="border border-black p-3 space-y-1.5 break-inside-avoid">
+                          <div className="flex justify-between items-center border-b border-black/30 pb-1 font-bold">
+                            <span>#{idx + 1} • {item.studentName.toUpperCase()} ({item.className})</span>
+                            <span>{item.date} às {item.time} • [{item.severity}]</span>
+                          </div>
+                          <p><strong>Categoria:</strong> {item.category} &nbsp;|&nbsp; <strong>Setor:</strong> {getSectorLabel(item.targetDept)} &nbsp;|&nbsp; <strong>Relator:</strong> Prof. {item.responsibleName}</p>
+                          <p className="whitespace-pre-line"><strong>Relato:</strong> {item.description}</p>
+                          {item.feedback && (
+                            <p className="whitespace-pre-line bg-gray-100 p-2 border-l-2 border-black">
+                              <strong>Devolutiva / Providência ({item.resolvedAt}):</strong> {item.feedback}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <p className="pt-4 text-right">
                   Colíder - MT, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.
                 </p>
               </div>
 
               {/* Assinaturas */}
-              <div className="grid grid-cols-2 gap-8 pt-12 text-center text-xs">
+              <div className="grid grid-cols-2 gap-8 pt-12 text-center text-xs break-inside-avoid">
                 <div className="border-t border-black pt-2">
                   <p className="font-bold uppercase">{user?.name || 'Coordenação Pedagógica'}</p>
-                  <p className="text-[10px] text-gray-700">Coordenação Pedagógica</p>
+                  <p className="text-[10px] text-gray-700">Coordenação Pedagógica / Gestão Escolar</p>
                 </div>
                 <div className="border-t border-black pt-2">
                   <p className="font-bold uppercase">Pai / Mãe / Responsável Legal</p>
-                  <p className="text-[10px] text-gray-700">Assinatura do Responsável</p>
+                  <p className="text-[10px] text-gray-700">Ciência do Responsável (Quando Aplicável)</p>
                 </div>
-                <div className="col-span-2 w-1/2 mx-auto border-t border-black pt-2 mt-4">
-                  <p className="font-bold uppercase">{printingDoc.occ.studentName}</p>
-                  <p className="text-[10px] text-gray-700">Assinatura do Estudante</p>
-                </div>
+                {printingDoc.type !== 'RELATORIO_BUSCA' && (
+                  <div className="col-span-2 w-1/2 mx-auto border-t border-black pt-2 mt-4">
+                    <p className="font-bold uppercase">{printingDoc.occ.studentName}</p>
+                    <p className="text-[10px] text-gray-700">Assinatura do Estudante</p>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -1412,62 +1622,62 @@ const PedagogicalOccurrenceBook: React.FC<PedagogicalOccurrenceBookProps> = ({ u
             </div>
 
           </div>
+
+          {/* ESTILOS CSS DE IMPRESSÃO ATIVOS APENAS QUANDO PRINTINGDOC EXISTE */}
+          <style dangerouslySetInnerHTML={{
+            __html: `
+            @media screen {
+              .print-doc-area { display: none !important; }
+            }
+            @media print {
+              @page {
+                size: A4 portrait;
+                margin: 8mm 12mm 10mm 12mm !important;
+              }
+              html, body {
+                height: auto !important;
+                width: 100% !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+              }
+              body * { visibility: hidden !important; }
+              .print-doc-area, .print-doc-area * { visibility: visible !important; }
+              .print-doc-area { 
+                position: absolute !important; 
+                left: 0 !important; 
+                top: 0 !important; 
+                width: 100% !important; 
+                display: block !important;
+                background: white !important;
+                color: black !important;
+                box-sizing: border-box !important;
+                padding: 0 0 22mm 0 !important;
+                margin: 0 !important;
+              }
+              .pdf-page { 
+                display: block !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+              .print-footer-address {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                background: white !important;
+                padding-top: 6px !important;
+                border-top: 1px solid rgba(0, 0, 0, 0.4) !important;
+                z-index: 9999 !important;
+              }
+            }
+          `}} />
         </div>
       )}
-
-      {/* ESTILOS CSS DE IMPRESSÃO */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @media screen {
-          .print-doc-area { display: none !important; }
-        }
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 8mm 12mm 10mm 12mm !important;
-          }
-          html, body {
-            height: 100% !important;
-            width: 100% !important;
-            overflow: visible !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-          }
-          body * { visibility: hidden !important; }
-          .print-doc-area, .print-doc-area * { visibility: visible !important; }
-          .print-doc-area { 
-            position: absolute !important; 
-            left: 0 !important; 
-            top: 0 !important; 
-            width: 100% !important; 
-            display: block !important;
-            background: white !important;
-            color: black !important;
-            box-sizing: border-box !important;
-            padding: 0 0 22mm 0 !important;
-            margin: 0 !important;
-          }
-          .pdf-page { 
-            display: block !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          .print-footer-address {
-            position: fixed !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-            background: white !important;
-            padding-top: 6px !important;
-            border-top: 1px solid rgba(0, 0, 0, 0.4) !important;
-            z-index: 9999 !important;
-          }
-        }
-      `}} />
 
     </div>
   );

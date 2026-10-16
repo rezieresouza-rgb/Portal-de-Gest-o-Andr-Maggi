@@ -47,6 +47,8 @@ interface PsychosocialCircumstantiatedReportManagerProps {
   user?: any;
   role: PsychosocialRole | 'COORDENADOR' | 'GESTAO';
   initialStudentName?: string;
+  globalFilterStudent?: string;
+  globalFilterTurma?: string;
   onClose?: () => void;
 }
 
@@ -78,6 +80,8 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
   user,
   role,
   initialStudentName,
+  globalFilterStudent,
+  globalFilterTurma,
   onClose
 }) => {
   const { students: dbStudents } = useStudents();
@@ -215,6 +219,13 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     fetchReports();
   }, []);
 
+  // Sincronizar filtro global de busca de aluno do cabeçalho superior
+  useEffect(() => {
+    if (globalFilterStudent !== undefined) {
+      setSearchTerm(globalFilterStudent);
+    }
+  }, [globalFilterStudent]);
+
   // Pre-carregar aluno inicial se fornecido
   useEffect(() => {
     if (initialStudentName && initialStudentName.trim()) {
@@ -238,6 +249,19 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       (s.Nome || s.name || '').toLowerCase().includes(studentSearch.toLowerCase())
     ).slice(0, 8);
   }, [studentSearch, dbStudents]);
+
+  // Alunos encontrados diretamente na barra de busca principal para emissão e impressão rápida de relatório
+  const searchedStudentsInMainBar = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query || query.length < 2) return [];
+    return dbStudents.filter(s => {
+      const name = (s.Nome || s.name || '').toLowerCase();
+      const turma = (s.Turma || s.className || '');
+      const matchesQuery = name.includes(query) || turma.toLowerCase().includes(query);
+      const matchesTurma = !globalFilterTurma || turma === globalFilterTurma;
+      return matchesQuery && matchesTurma;
+    }).slice(0, 6);
+  }, [searchTerm, dbStudents, globalFilterTurma]);
 
   const handleSelectStudent = (s: any) => {
     const studentName = s.Nome || s.name;
@@ -449,11 +473,12 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       setShowEvidenceChecklist(compiledEvidenceList.length > 0);
 
       // Gerar redação baseada nas evidências selecionadas
-      generateFormalTextsFromEvidence(compiledEvidenceList, cleanName, className, loadedMilitaryScore);
+      return generateFormalTextsFromEvidence(compiledEvidenceList, cleanName, className, loadedMilitaryScore);
 
     } catch (e: any) {
       console.error('Erro na compilação:', e);
       alert('Erro ao compilar dados do estudante: ' + e.message);
+      return null;
     } finally {
       setIsCompilingDossier(false);
     }
@@ -554,17 +579,92 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     compiledForwarding += `1. Ao CONSELHO TUTELAR DO MUNICÍPIO DE COLÍDER - MT: Para aplicação das medidas de proteção à criança/adolescente (Art. 136, I e II, ECA) e aplicação de deveres aos pais/responsáveis (Art. 129, ECA);\n\n`;
     compiledForwarding += `2. À PROMOTORIA DE JUSTIÇA DA INFÂNCIA E JUVENTUDE DA COMARCA DE COLÍDER - MT (MINISTÉRIO PÚBLICO ESTADUAL): Para conhecimento, registro no sistema de proteção e eventuais providências cíveis/infracionais cabíveis.`;
 
-    setForm(prev => ({
-      ...prev,
+    const compiledFields = {
       involvedStudents: studentName,
-      className: className || prev.className,
+      className: className || form.className || '',
       recordedFact: compiledFacts,
       schoolMeasuresTaken: compiledMeasures,
       psychosocialActions: compiledPsychosocial,
       socioEducationalProfile: compiledProfile,
       futureForwarding: compiledForwarding,
-      status: 'ENCAMINHADO_CONSELHO'
+      status: 'ENCAMINHADO_CONSELHO' as const
+    };
+
+    setForm(prev => ({
+      ...prev,
+      ...compiledFields
     }));
+
+    return compiledFields;
+  };
+
+  // Gerar e Imprimir (ou Visualizar) Relatório diretamente após buscar o aluno
+  const handleQuickCompileAndPrint = async (studentName: string, className: string, triggerPrint = true) => {
+    const compiled = await handleAutoCompileDossier(studentName, className);
+    if (!compiled) return;
+
+    const nextNumber = `RELATÓRIO CIRCUNSTANCIADO Nº ${String(reports.length + 1).padStart(3, '0')}/${currentYear}`;
+    const reportId = 'rep-' + Date.now();
+
+    const payload: PsychosocialCircumstantiatedReport = {
+      id: reportId,
+      reportNumber: nextNumber,
+      schoolUnit: 'EE CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI',
+      incidentDate: new Date().toLocaleDateString('sv-SE'),
+      incidentLocation: 'Nas dependências da Unidade Escolar',
+      involvedStudents: compiled.involvedStudents,
+      className: compiled.className,
+      recordedFact: compiled.recordedFact,
+      schoolMeasuresTaken: compiled.schoolMeasuresTaken,
+      psychosocialActions: compiled.psychosocialActions,
+      socioEducationalProfile: compiled.socioEducationalProfile,
+      futureForwarding: compiled.futureForwarding,
+      attachedDocumentsChecklist: DEFAULT_DOCUMENTS_CHECKLIST,
+      participants: 'Estudantes, Responsáveis Legais, Equipe Psicossocial, Mediação Escolar, Coordenação e Direção',
+      psychosocialProfessional: user?.name || 'TÉCNICO PSICOSSOCIAL',
+      mediatorName: 'DANÚBIA DE CASTRO ALMEIDA',
+      coordinatorName: 'COORDENAÇÃO PEDAGÓGICA',
+      directorName: 'REZIERE DE SOUZA',
+      status: compiled.status,
+      createdAt: new Date().toISOString(),
+      evidenceAttachments: []
+    };
+
+    try {
+      await supabase.from('psychosocial_circumstantiated_reports').upsert([{
+        id: payload.id,
+        report_number: payload.reportNumber,
+        school_unit: payload.schoolUnit,
+        incident_date: payload.incidentDate,
+        incident_location: payload.incidentLocation,
+        involved_students: payload.involvedStudents,
+        class_name: payload.className,
+        recorded_fact: payload.recordedFact,
+        school_measures_taken: payload.schoolMeasuresTaken,
+        psychosocial_actions: payload.psychosocialActions,
+        socio_educational_profile: payload.socioEducationalProfile,
+        future_forwarding: payload.futureForwarding,
+        attached_documents_checklist: payload.attachedDocumentsChecklist,
+        participants: payload.participants,
+        psychosocial_professional: payload.psychosocialProfessional,
+        mediator_name: payload.mediatorName,
+        coordinator_name: payload.coordinatorName,
+        director_name: payload.directorName,
+        status: payload.status
+      }]);
+    } catch (e) {}
+
+    const updatedList = [payload, ...reports];
+    setReports(updatedList);
+    localStorage.setItem('psychosocial_circumstantiated_reports_v1', JSON.stringify(updatedList));
+    setIsModalOpen(false);
+    setSelectedReport(payload);
+
+    if (triggerPrint) {
+      setTimeout(() => {
+        window.print();
+      }, 350);
+    }
   };
 
   const handleToggleEvidenceItem = (id: string) => {
@@ -622,10 +722,10 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
     }
   };
 
-  const handleSaveReport = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveReportInternal = async (autoPrint = false) => {
     if (!form.involvedStudents?.trim() || !form.recordedFact?.trim() || !form.schoolMeasuresTaken?.trim()) {
-      return alert("Por favor, preencha os estudantes envolvidos, o fato registrado e as providências adotadas pela escola.");
+      alert("Por favor, preencha os estudantes envolvidos, o fato registrado e as providências adotadas pela escola.");
+      return;
     }
 
     const nextNumber = `RELATÓRIO CIRCUNSTANCIADO Nº ${String(reports.length + 1).padStart(3, '0')}/${currentYear}`;
@@ -692,11 +792,22 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
       localStorage.setItem('psychosocial_circumstantiated_reports_v1', JSON.stringify(updatedList));
       setIsModalOpen(false);
       setSelectedReport(payload);
-      alert("✅ Relatório Circunstanciado salvo com sucesso!");
+      if (autoPrint) {
+        setTimeout(() => {
+          window.print();
+        }, 350);
+      } else {
+        alert("✅ Relatório Circunstanciado salvo com sucesso!");
+      }
     } catch (err: any) {
       console.error('Erro ao salvar relatório:', err);
       alert("Erro ao salvar: " + err.message);
     }
+  };
+
+  const handleSaveReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveReportInternal(false);
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -854,7 +965,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Destino:</span>
           <select
             value={statusFilter}
@@ -866,8 +977,111 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
             <option value="ENCAMINHADO_CONSELHO">🏢 Encaminhado ao Conselho Tutelar</option>
             <option value="ENCAMINHADO_PROMOTORIA">🏛️ Encaminhado ao Ministério Público</option>
           </select>
+
+          {searchTerm.trim() && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+            >
+              Limpar Busca
+            </button>
+          )}
         </div>
       </div>
+
+      {/* PAINEL DE EMISSÃO E IMPRESSÃO RÁPIDA AO BUSCAR ALUNO */}
+      {searchTerm.trim().length >= 2 && (
+        <div className="bg-gradient-to-r from-indigo-50 via-white to-rose-50 p-6 rounded-[2rem] border border-indigo-200/80 shadow-sm space-y-4 no-print animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-indigo-100">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-indigo-600 text-white rounded-xl">
+                <Printer size={16} />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-tight">
+                  Impressão Rápida de Relatório por Estudante Buscado
+                </h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase">
+                  Selecione o estudante abaixo para compilar ocorrências e imprimir o Relatório Oficial A4 imediatamente
+                </p>
+              </div>
+            </div>
+            {isCompilingDossier && (
+              <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5">
+                <Loader2 size={13} className="animate-spin" /> Compilando dossiê para impressão...
+              </span>
+            )}
+          </div>
+
+          {searchedStudentsInMainBar.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {searchedStudentsInMainBar.map((s: any) => {
+                const sName = s.Nome || s.name || '';
+                const sTurma = s.Turma || s.className || 'Turma Regular';
+                return (
+                  <div
+                    key={s.CodigoAluno || s.id || sName}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-indigo-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-900 uppercase truncate">{sName}</p>
+                      <p className="text-[10px] font-bold text-indigo-600 uppercase mt-0.5">{sTurma}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        disabled={isCompilingDossier}
+                        onClick={() => handleQuickCompileAndPrint(sName, sTurma, true)}
+                        className="flex-1 sm:flex-initial px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50"
+                        title="Compilar todas as ocorrências do aluno e abrir janela de impressão A4"
+                      >
+                        <Printer size={13} /> Imprimir Relatório
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isCompilingDossier}
+                        onClick={() => {
+                          setForm(prev => ({
+                            ...prev,
+                            reportNumber: `RELATÓRIO CIRCUNSTANCIADO Nº ${String(reports.length + 1).padStart(3, '0')}/${currentYear}`,
+                            involvedStudents: sName,
+                            className: sTurma
+                          }));
+                          setIsModalOpen(true);
+                          handleAutoCompileDossier(sName, sTurma);
+                        }}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all"
+                        title="Editar texto antes de imprimir"
+                      >
+                        <FileText size={13} /> Editar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black text-slate-800 uppercase">
+                  Gerar e Imprimir Relatório para: <span className="text-indigo-600">"{searchTerm.toUpperCase()}"</span>
+                </p>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Clique ao lado para buscar todos os registros deste aluno e imprimir o documento A4.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={isCompilingDossier}
+                onClick={() => handleQuickCompileAndPrint(searchTerm.trim().toUpperCase(), globalFilterTurma || '', true)}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0"
+              >
+                <Printer size={14} /> Compilar & Imprimir Relatório (A4)
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* GRID DE RELATÓRIOS CIRCUNSTANCIADOS */}
       {loading ? (
@@ -935,7 +1149,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                   </div>
                 </div>
 
-                <div className="pt-2 flex items-center gap-2">
+                <div className="pt-2 flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => {
                       setProtocolModalReport(rep);
@@ -948,17 +1162,30 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                         receiptFileUrl: rep.externalProtocol?.receiptFileUrl || ''
                       });
                     }}
-                    className="flex-1 py-2.5 bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-800 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 px-2 bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-800 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
                     title="Registrar número de protocolo do Conselho Tutelar ou Ministério Público"
                   >
-                    <Send size={13} /> {hasProtocol ? 'Ver Protocolo' : 'Registrar Protocolo'}
+                    <Send size={12} /> {hasProtocol ? 'Protocolo' : 'Protocolar'}
                   </button>
 
                   <button
                     onClick={() => setSelectedReport(rep)}
-                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20"
+                    className="flex-1 py-2.5 px-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
                   >
-                    <Eye size={13} /> Ver Documento A4
+                    <Eye size={12} /> Ver A4
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedReport(rep);
+                      setTimeout(() => {
+                        window.print();
+                      }, 300);
+                    }}
+                    className="flex-1 py-2.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-md shadow-indigo-600/20"
+                    title="Imprimir Relatório Circunstanciado A4"
+                  >
+                    <Printer size={12} /> Imprimir
                   </button>
                 </div>
               </div>
@@ -1383,12 +1610,22 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-4 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-2"
-                >
-                  <Save size={18} /> Salvar e Gerar Documento Oficial
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="submit"
+                    className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Save size={18} /> Salvar e Visualizar A4
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => saveReportInternal(true)}
+                    className="w-full py-4 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    <Printer size={18} /> Salvar & Imprimir Relatório (PDF/A4)
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -1397,7 +1634,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
 
       {/* MODAL DE PROTOCOLO EXTERNO (CONSELHO TUTELAR / MINISTÉRIO PÚBLICO) */}
       {protocolModalReport && (
-        <div className="fixed inset-0 z-[170] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[170] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 animate-in fade-in no-print">
           <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200">
             <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -1510,8 +1747,8 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
 
       {/* DOCUMENTO OFICIAL FORMATADO PARA IMPRESSÃO (MODELO SEDUC/MT) */}
       {selectedReport && (
-        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-4xl max-h-[96vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200">
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in print-circumstantiated-modal">
+          <div className="bg-white w-full max-w-4xl max-h-[96vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200 print-circumstantiated-container">
             
             {/* Header de Ações */}
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center no-print flex-wrap gap-2">
@@ -1534,7 +1771,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
                   onClick={() => window.print()}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md"
                 >
-                  <Printer size={16} /> Imprimir Documento
+                  <Printer size={16} /> Imprimir Documento (PDF/A4)
                 </button>
                 <button
                   onClick={() => setSelectedReport(null)}
@@ -1546,7 +1783,7 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
             </div>
 
             {/* DOCUMENTO OFICIAL A4 */}
-            <div className="flex-1 overflow-y-auto p-12 custom-scrollbar print-document bg-white text-slate-900 space-y-6">
+            <div className="flex-1 overflow-y-auto p-12 custom-scrollbar print-circumstantiated-area bg-white text-slate-900 space-y-6">
               
               {/* CABEÇALHO OFICIAL */}
               <div className="text-center border-b-2 border-slate-900 pb-4 space-y-1">
@@ -1701,6 +1938,61 @@ const PsychosocialCircumstantiatedReportManager: React.FC<PsychosocialCircumstan
 
             </div>
           </div>
+
+          <style dangerouslySetInnerHTML={{
+            __html: `
+            @media print {
+              @page {
+                size: A4 portrait;
+                margin: 10mm 12mm 12mm 12mm !important;
+              }
+              html, body {
+                height: auto !important;
+                width: 100% !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+              }
+              body * { visibility: hidden !important; }
+              .no-print { display: none !important; }
+              .print-circumstantiated-modal,
+              .print-circumstantiated-container,
+              .print-circumstantiated-area,
+              .print-circumstantiated-area * {
+                visibility: visible !important;
+              }
+              .print-circumstantiated-modal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                display: block !important;
+              }
+              .print-circumstantiated-container {
+                max-width: 100% !important;
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                display: block !important;
+              }
+              .print-circumstantiated-area {
+                overflow: visible !important;
+                max-height: none !important;
+                height: auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+              }
+            }
+          `}} />
         </div>
       )}
 
