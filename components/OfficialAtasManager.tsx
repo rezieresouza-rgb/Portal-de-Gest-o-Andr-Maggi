@@ -561,16 +561,16 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
   const handleAddLinkedStudentAndGuardian = async (mode: 'BOTH' | 'STUDENT_ONLY' | 'GUARDIAN_ONLY') => {
     if (!selectedSecretariatStudent) return;
 
-    const studentRole = selectedSecretariatStudent.className
-      ? `Estudante • ${selectedSecretariatStudent.className}`
-      : 'Estudante';
-
     const guardianNameFinal = (linkedGuardianInput || selectedSecretariatStudent.guardianName || '').trim().toUpperCase();
 
     if ((mode === 'BOTH' || mode === 'GUARDIAN_ONLY') && !guardianNameFinal) {
       alert('Informe ou confirme o nome do Responsável vinculado a este aluno antes de adicionar.');
       return;
     }
+
+    const studentRole = selectedSecretariatStudent.className
+      ? `Estudante • ${selectedSecretariatStudent.className}${guardianNameFinal ? ` (Resp: ${guardianNameFinal})` : ''}`
+      : `Estudante${guardianNameFinal ? ` (Resp: ${guardianNameFinal})` : ''}`;
 
     const guardianRole = `${linkedGuardianRelation || 'Responsável Legal'} (Aluno: ${selectedSecretariatStudent.name} • ${selectedSecretariatStudent.className})`;
 
@@ -591,8 +591,13 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     }
 
     setFormData(prev => {
-      const existingNames = new Set(prev.participants.map(p => p.name.toUpperCase()));
-      const uniqueNew = toAdd.filter(item => !existingNames.has(item.name.toUpperCase()));
+      // Verifica por Nome + Papel (role) para não bloquear caso o responsável também seja servidor/diretor já listado na ata
+      const existingKeys = new Set(
+        prev.participants.map(p => `${p.name.trim().toUpperCase()}|${p.role.trim().toUpperCase()}`)
+      );
+      const uniqueNew = toAdd.filter(
+        item => !existingKeys.has(`${item.name.trim().toUpperCase()}|${item.role.trim().toUpperCase()}`)
+      );
       return {
         ...prev,
         participants: [...prev.participants, ...uniqueNew]
@@ -1157,7 +1162,22 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                           type="text"
                           placeholder="Filtrar aluno, responsável ou turma..."
                           value={studentSearchTerm}
-                          onChange={e => setStudentSearchTerm(e.target.value)}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setStudentSearchTerm(val);
+                            const q = val.trim().toUpperCase();
+                            if (q.length >= 3) {
+                              const matches = secretariatStudents.filter(
+                                s =>
+                                  s.name.includes(q) ||
+                                  (s.guardianName && s.guardianName.includes(q)) ||
+                                  (s.registrationNumber && s.registrationNumber.includes(q))
+                              );
+                              if (matches.length === 1) {
+                                handleSelectSecretariatStudent(matches[0].id);
+                              }
+                            }
+                          }}
                           className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white focus:border-blue-400"
                         />
                       </div>
