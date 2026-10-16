@@ -130,8 +130,24 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
   const [viewingAta, setViewingAta] = useState<SchoolAta | null>(null);
   const [printingAta, setPrintingAta] = useState<SchoolAta | null>(null);
   const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
-  const [staffList, setStaffList] = useState<Array<{ name: string; role: string }>>([]);
+  const [staffList, setStaffList] = useState<Array<{ id?: string; name: string; role: string }>>([]);
   const [selectedStaffToAdd, setSelectedStaffToAdd] = useState<string>('');
+  const [staffSearchTerm, setStaffSearchTerm] = useState<string>('');
+
+  // Secretariat Linked Students & Guardians state
+  const [secretariatStudents, setSecretariatStudents] = useState<Array<{
+    id: string;
+    name: string;
+    registrationNumber: string;
+    className: string;
+    guardianName: string;
+    contactPhone: string;
+  }>>([]);
+  const [studentSearchTerm, setStudentSearchTerm] = useState<string>('');
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [linkedGuardianInput, setLinkedGuardianInput] = useState<string>('');
+  const [linkedGuardianRelation, setLinkedGuardianRelation] = useState<string>('Responsável Legal');
+  const [participantSourceTab, setParticipantSourceTab] = useState<'SECRETARIA_ALUNO' | 'SECRETARIA_SERVIDOR' | 'MANUAL'>('SECRETARIA_ALUNO');
 
   // Form fields
   const [formData, setFormData] = useState<{
@@ -313,17 +329,99 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     setAtas(mergedList);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(mergedList));
 
-    // 4. Fetch Staff members to easily populate participants
+    // 4. Fetch Staff members from Secretariat (RH) to easily populate participants
     try {
-      const { data: staffData } = await supabase.from('staff').select('name, function_role, role').order('name');
+      const { data: staffData } = await supabase
+        .from('staff')
+        .select('id, name, job_function, role, server_type, status')
+        .order('name');
       if (staffData && staffData.length > 0) {
-        setStaffList(staffData.map((s: any) => ({
-          name: (s.name || '').trim().toUpperCase(),
-          role: s.function_role || s.role || 'Servidor(a)'
-        })));
+        setStaffList(
+          staffData
+            .filter((s: any) => s.name && s.status !== 'INATIVO')
+            .map((s: any) => ({
+              id: s.id,
+              name: (s.name || '').trim().toUpperCase(),
+              role: s.job_function || s.role || s.server_type || 'Servidor(a)'
+            }))
+        );
       }
     } catch (e) {
       console.warn('Erro ao buscar lista de servidores:', e);
+    }
+
+    // 5. Fetch Students & Linked Guardians from Secretariat (classrooms + enrollments + students)
+    try {
+      const [classRes, enrollRes, studentsRes] = await Promise.all([
+        supabase.from('classrooms').select('id, name').order('name'),
+        supabase.from('enrollments').select('classroom_id, student_id, status, students (id, name, registration_number, guardian_name, contact_phone, status)').range(0, 2999),
+        supabase.from('students').select('id, name, registration_number, guardian_name, contact_phone, status').order('name').range(0, 2999)
+      ]);
+
+      const classMap = new Map<string, string>();
+      (classRes.data || []).forEach((c: any) => {
+        if (c.id && c.name) classMap.set(c.id, c.name);
+      });
+
+      const studentMap = new Map<string, {
+        id: string;
+        name: string;
+        registrationNumber: string;
+        className: string;
+        guardianName: string;
+        contactPhone: string;
+      }>();
+
+      // Populate from direct students table first
+      (studentsRes.data || []).forEach((s: any) => {
+        if (!s?.id || !s?.name) return;
+        if (s.status === 'TRANSFERIDO DE ESCOLA') return;
+        studentMap.set(s.id, {
+          id: s.id,
+          name: (s.name || '').trim().toUpperCase(),
+          registrationNumber: s.registration_number || '',
+          className: 'Secretaria Escolar',
+          guardianName: (s.guardian_name || '').trim().toUpperCase(),
+          contactPhone: s.contact_phone || ''
+        });
+      });
+
+      // Enrich with classroom info from enrollments
+      (enrollRes.data || []).forEach((e: any) => {
+        const s = e.students;
+        const stId = e.student_id || s?.id;
+        if (!stId) return;
+        const enrollStatus = e.status || s?.status || 'ATIVO';
+        if (enrollStatus === 'TRANSFERIDO DE ESCOLA' || enrollStatus === 'TRANSFERIDO DE TURMA') return;
+
+        const cName = classMap.get(e.classroom_id) || 'Secretaria Escolar';
+        const existing = studentMap.get(stId);
+        if (existing) {
+          if (existing.className === 'Secretaria Escolar' || enrollStatus === 'ATIVO') {
+            existing.className = cName;
+          }
+          if (!existing.guardianName && s?.guardian_name) {
+            existing.guardianName = (s.guardian_name || '').trim().toUpperCase();
+          }
+          if (!existing.contactPhone && s?.contact_phone) {
+            existing.contactPhone = s.contact_phone;
+          }
+        } else if (s?.name) {
+          studentMap.set(stId, {
+            id: stId,
+            name: (s.name || '').trim().toUpperCase(),
+            registrationNumber: s.registration_number || '',
+            className: cName,
+            guardianName: (s.guardian_name || '').trim().toUpperCase(),
+            contactPhone: s.contact_phone || ''
+          });
+        }
+      });
+
+      const sortedStudents = Array.from(studentMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+      setSecretariatStudents(sortedStudents);
+    } catch (e) {
+      console.warn('Erro ao buscar alunos e responsáveis da secretaria:', e);
     }
 
     setLoading(false);
@@ -421,6 +519,105 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
       }
     }
     setSelectedStaffToAdd('');
+  };
+
+  const selectedSecretariatStudent = useMemo(
+    () => secretariatStudents.find(s => s.id === selectedStudentId) || null,
+    [secretariatStudents, selectedStudentId]
+  );
+
+  const filteredSecretariatStudents = useMemo(() => {
+    const q = studentSearchTerm.trim().toUpperCase();
+    if (!q) return secretariatStudents.slice(0, 60);
+    return secretariatStudents
+      .filter(
+        s =>
+          s.name.includes(q) ||
+          (s.guardianName && s.guardianName.includes(q)) ||
+          (s.className && s.className.toUpperCase().includes(q)) ||
+          (s.registrationNumber && s.registrationNumber.includes(q))
+      )
+      .slice(0, 60);
+  }, [secretariatStudents, studentSearchTerm]);
+
+  const filteredStaffList = useMemo(() => {
+    const q = staffSearchTerm.trim().toUpperCase();
+    if (!q) return staffList;
+    return staffList.filter(
+      s => s.name.toUpperCase().includes(q) || s.role.toUpperCase().includes(q)
+    );
+  }, [staffList, staffSearchTerm]);
+
+  const handleSelectSecretariatStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    const st = secretariatStudents.find(s => s.id === studentId);
+    if (st) {
+      setLinkedGuardianInput(st.guardianName || '');
+    } else {
+      setLinkedGuardianInput('');
+    }
+  };
+
+  const handleAddLinkedStudentAndGuardian = async (mode: 'BOTH' | 'STUDENT_ONLY' | 'GUARDIAN_ONLY') => {
+    if (!selectedSecretariatStudent) return;
+
+    const studentRole = selectedSecretariatStudent.className
+      ? `Estudante • ${selectedSecretariatStudent.className}`
+      : 'Estudante';
+
+    const guardianNameFinal = (linkedGuardianInput || selectedSecretariatStudent.guardianName || '').trim().toUpperCase();
+
+    if ((mode === 'BOTH' || mode === 'GUARDIAN_ONLY') && !guardianNameFinal) {
+      alert('Informe ou confirme o nome do Responsável vinculado a este aluno antes de adicionar.');
+      return;
+    }
+
+    const guardianRole = `${linkedGuardianRelation || 'Responsável Legal'} (Aluno: ${selectedSecretariatStudent.name} • ${selectedSecretariatStudent.className})`;
+
+    const toAdd: AtaParticipant[] = [];
+
+    if (mode === 'BOTH' || mode === 'STUDENT_ONLY') {
+      toAdd.push({
+        name: selectedSecretariatStudent.name,
+        role: studentRole
+      });
+    }
+
+    if (mode === 'BOTH' || mode === 'GUARDIAN_ONLY') {
+      toAdd.push({
+        name: guardianNameFinal,
+        role: guardianRole
+      });
+    }
+
+    setFormData(prev => {
+      const existingNames = new Set(prev.participants.map(p => p.name.toUpperCase()));
+      const uniqueNew = toAdd.filter(item => !existingNames.has(item.name.toUpperCase()));
+      return {
+        ...prev,
+        participants: [...prev.participants, ...uniqueNew]
+      };
+    });
+
+    // Se o usuário preencheu/atualizou o nome do responsável na hora, já vincula no cadastro da Secretaria
+    if (
+      guardianNameFinal &&
+      guardianNameFinal !== selectedSecretariatStudent.guardianName
+    ) {
+      try {
+        await supabase
+          .from('students')
+          .update({ guardian_name: guardianNameFinal })
+          .eq('id', selectedSecretariatStudent.id);
+        setSecretariatStudents(prev =>
+          prev.map(s =>
+            s.id === selectedSecretariatStudent.id ? { ...s, guardianName: guardianNameFinal } : s
+          )
+        );
+      } catch (err) {
+        console.warn('Não foi possível atualizar o responsável na tabela students:', err);
+      }
+    }
   };
 
   const handleRemoveParticipant = (index: number) => {
@@ -900,71 +1097,284 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                 </div>
               </div>
 
-              {/* GESTÃO DE PARTICIPANTES / PRESENTES */}
+              {/* GESTÃO DE PARTICIPANTES / PRESENTES (INTEGRADO COM SECRETARIA E RH) */}
               <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200/80 space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200/80 pb-3">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 border-b border-slate-200/80 pb-3">
                   <div>
                     <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
                       <Users size={16} className="text-blue-600" /> Participantes Presentes ({formData.participants.length})
                     </h4>
-                    <p className="text-[10px] text-slate-400 font-medium">Todos os participantes terão linha de assinatura individual gerada na Ata oficial.</p>
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      Puxe diretamente da Secretaria (Aluno + Responsável interligados ou Servidores) ou adicione manualmente.
+                    </p>
                   </div>
 
-                  {staffList.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase text-slate-400">Add Servidor RH:</span>
-                      <select
-                        value={selectedStaffToAdd}
-                        onChange={e => handleAddStaffParticipant(e.target.value)}
-                        className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-[10px] font-bold uppercase text-slate-700 outline-none"
-                      >
-                        <option value="">Selecionar Servidor...</option>
-                        {staffList.map(s => (
-                          <option key={s.name} value={s.name}>{s.name} ({s.role})</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  {/* Abas de Origem do Participante */}
+                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-200/70 p-1 rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={() => setParticipantSourceTab('SECRETARIA_ALUNO')}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                        participantSourceTab === 'SECRETARIA_ALUNO'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
+                    >
+                      <Users size={13} /> Aluno + Responsável ({secretariatStudents.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setParticipantSourceTab('SECRETARIA_SERVIDOR')}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                        participantSourceTab === 'SECRETARIA_SERVIDOR'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
+                    >
+                      <Landmark size={13} /> Servidores / RH ({staffList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setParticipantSourceTab('MANUAL')}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                        participantSourceTab === 'MANUAL'
+                          ? 'bg-slate-800 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      }`}
+                    >
+                      <UserPlus size={13} /> Manual / Externo
+                    </button>
+                  </div>
                 </div>
 
-                {/* Manual Add Participant */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="text"
-                    placeholder="Nome completo do participante (ex: Maria da Silva / Aluno / Responsável)"
-                    value={newParticipantName}
-                    onChange={e => setNewParticipantName(e.target.value)}
-                    className="flex-1 p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-900 outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Cargo / Relação (ex: Mãe / Pai / Prof. Matemática / Aluno)"
-                    value={newParticipantRole}
-                    onChange={e => setNewParticipantRole(e.target.value)}
-                    className="w-full sm:w-56 p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddParticipant}
-                    className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 shrink-0"
-                  >
-                    <UserPlus size={16} /> Adicionar
-                  </button>
-                </div>
+                {/* ABA 1: SECRETARIA - ALUNO E RESPONSÁVEL INTERLIGADOS */}
+                {participantSourceTab === 'SECRETARIA_ALUNO' && (
+                  <div className="bg-white p-4 rounded-2xl border border-blue-100 space-y-3 shadow-2xs">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                      <div className="md:col-span-5 relative">
+                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Filtrar aluno, responsável ou turma..."
+                          value={studentSearchTerm}
+                          onChange={e => setStudentSearchTerm(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white focus:border-blue-400"
+                        />
+                      </div>
+                      <div className="md:col-span-7">
+                        <select
+                          value={selectedStudentId}
+                          onChange={e => handleSelectSecretariatStudent(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white focus:border-blue-400"
+                        >
+                          <option value="">
+                            Selecione o Aluno da Secretaria ({filteredSecretariatStudents.length} exibidos)...
+                          </option>
+                          {filteredSecretariatStudents.map(st => (
+                            <option key={st.id} value={st.id}>
+                              {st.name} • [{st.className}] {st.guardianName ? `— Resp: ${st.guardianName}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {selectedSecretariatStudent ? (
+                      <div className="bg-blue-50/60 border border-blue-200/80 rounded-2xl p-3.5 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                          {/* Dados do Aluno */}
+                          <div className="md:col-span-5 bg-white p-3 rounded-xl border border-blue-100">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-blue-600 block">
+                              Estudante Selecionado (Secretaria)
+                            </span>
+                            <p className="text-xs font-black uppercase text-slate-900 truncate mt-0.5">
+                              {selectedSecretariatStudent.name}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">
+                              Turma: <span className="text-slate-800">{selectedSecretariatStudent.className}</span>
+                              {selectedSecretariatStudent.registrationNumber ? ` • Matr.: ${selectedSecretariatStudent.registrationNumber}` : ''}
+                            </p>
+                          </div>
+
+                          {/* Dados do Responsável Interligado */}
+                          <div className="md:col-span-4">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-1">
+                              Responsável Interligado (Secretaria)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Nome do Pai / Mãe / Responsável..."
+                              value={linkedGuardianInput}
+                              onChange={e => setLinkedGuardianInput(e.target.value)}
+                              className="w-full p-2.5 bg-white border border-emerald-200 rounded-xl text-xs font-bold uppercase text-slate-900 outline-none focus:ring-2 focus:ring-emerald-200"
+                            />
+                          </div>
+
+                          {/* Grau de Parentesco / Vínculo */}
+                          <div className="md:col-span-3">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">
+                              Vínculo Familiar
+                            </label>
+                            <select
+                              value={linkedGuardianRelation}
+                              onChange={e => setLinkedGuardianRelation(e.target.value)}
+                              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                            >
+                              <option value="Responsável Legal">Responsável Legal</option>
+                              <option value="Mãe / Responsável">Mãe / Responsável</option>
+                              <option value="Pai / Responsável">Pai / Responsável</option>
+                              <option value="Avô(ó) / Responsável">Avô(ó) / Responsável</option>
+                              <option value="Tio(a) / Responsável">Tio(a) / Responsável</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {selectedSecretariatStudent.contactPhone
+                              ? `📞 Contato cadastrado na Secretaria: ${selectedSecretariatStudent.contactPhone}`
+                              : '💡 Se preencher ou alterar o responsável acima, o vínculo também será salvo na Secretaria.'}
+                          </span>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleAddLinkedStudentAndGuardian('BOTH')}
+                              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition-all"
+                            >
+                              <UserPlus size={14} /> + Aluno e Responsável (Juntos)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddLinkedStudentAndGuardian('STUDENT_ONLY')}
+                              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center gap-1 transition-all"
+                            >
+                              + Só Aluno
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddLinkedStudentAndGuardian('GUARDIAN_ONLY')}
+                              className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center gap-1 transition-all"
+                            >
+                              + Só Responsável
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 font-medium text-center py-1">
+                        Pesquise ou selecione um aluno acima para puxar automaticamente a Turma e o Responsável vinculado na Secretaria.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ABA 2: SECRETARIA / RH - SERVIDORES DA ESCOLA */}
+                {participantSourceTab === 'SECRETARIA_SERVIDOR' && (
+                  <div className="bg-white p-4 rounded-2xl border border-indigo-100 space-y-3 shadow-2xs">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                      <div className="md:col-span-5 relative">
+                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Buscar servidor por nome ou cargo..."
+                          value={staffSearchTerm}
+                          onChange={e => setStaffSearchTerm(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white focus:border-indigo-400"
+                        />
+                      </div>
+                      <div className="md:col-span-7">
+                        <select
+                          value={selectedStaffToAdd}
+                          onChange={e => handleAddStaffParticipant(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-800 outline-none focus:bg-white focus:border-indigo-400"
+                        >
+                          <option value="">
+                            Clique para adicionar Servidor da Secretaria/RH ({filteredStaffList.length})...
+                          </option>
+                          {filteredStaffList.map(s => (
+                            <option key={s.id || s.name} value={s.name}>
+                              {s.name} — ({s.role})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {filteredStaffList.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">
+                          Clique rápido para incluir servidor na Ata:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                          {filteredStaffList.slice(0, 24).map(s => {
+                            const isAdded = formData.participants.some(
+                              p => p.name.toUpperCase() === s.name.toUpperCase()
+                            );
+                            return (
+                              <button
+                                key={s.id || s.name}
+                                type="button"
+                                onClick={() => handleAddStaffParticipant(s.name)}
+                                disabled={isAdded}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 border ${
+                                  isAdded
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default'
+                                    : 'bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border-slate-200 hover:border-indigo-200'
+                                }`}
+                              >
+                                {isAdded ? <Check size={11} /> : <Plus size={11} />}
+                                <span>{s.name}</span>
+                                <span className="text-[9px] opacity-70">({s.role})</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ABA 3: INCLUSÃO MANUAL / PARTICIPANTE EXTERNO */}
+                {participantSourceTab === 'MANUAL' && (
+                  <div className="flex flex-col sm:flex-row gap-2 bg-white p-3.5 rounded-2xl border border-slate-200">
+                    <input
+                      type="text"
+                      placeholder="Nome completo do participante (ex: Maria da Silva / Conselho Tutelar)"
+                      value={newParticipantName}
+                      onChange={e => setNewParticipantName(e.target.value)}
+                      className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase text-slate-900 outline-none focus:bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Cargo / Relação (ex: Mãe / Pai / Prof. Matemática / Aluno)"
+                      value={newParticipantRole}
+                      onChange={e => setNewParticipantRole(e.target.value)}
+                      className="w-full sm:w-56 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddParticipant}
+                      className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 shrink-0"
+                    >
+                      <UserPlus size={16} /> Adicionar
+                    </button>
+                  </div>
+                )}
 
                 {/* Participants Chips */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
                   {formData.participants.map((p, idx) => (
                     <div key={idx} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs">
                       <div className="truncate pr-2">
                         <p className="text-xs font-black uppercase text-slate-800 truncate">{p.name}</p>
-                        <p className="text-[9px] font-bold uppercase text-blue-600">{p.role}</p>
+                        <p className="text-[9px] font-bold uppercase text-blue-600 truncate">{p.role}</p>
                       </div>
                       {formData.participants.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveParticipant(idx)}
-                          className="text-slate-300 hover:text-red-500 p-1 transition-colors"
+                          className="text-slate-300 hover:text-red-500 p-1 transition-colors shrink-0"
                         >
                           <X size={14} />
                         </button>
