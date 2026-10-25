@@ -66,7 +66,7 @@ import {
 } from 'recharts';
 
 const SYSTEMS = ['SEE', 'CAED'];
-const SUBJECTS = ["MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA", "LÍNGUA INGLESA"];
+const SUBJECTS = ["MATEMÁTICA", "LÍNGUA PORTUGUESA", "CIÊNCIAS", "HISTÓRIA", "GEOGRAFIA", "ARTE", "LÍNGUA INGLESA"];
 const PROFICIENCY_LEVELS = [
    { label: 'Muito Baixo', value: 'MUITO_BAIXO', color: 'text-red-600 bg-red-50' },
    { label: 'Baixo', value: 'BAIXO', color: 'text-orange-600 bg-orange-50' },
