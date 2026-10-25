@@ -349,7 +349,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         { id: 'performance', label: 'Radar de Alunos em Risco', icon: AlertTriangle, highlight: true },
         { id: 'aee_special_education', label: 'Educação Especial (PAEDE)', icon: BrainCircuit },
         { id: 'educarte', label: 'Supervisão Banda Educarte', icon: Music },
-        { id: 'external_grades', label: 'Avaliações Externas (CAED)', icon: FileBarChart },
+        { id: 'external_grades', label: 'Avaliação Externa', icon: FileBarChart },
         { id: 'ia_insights', label: 'Diagnóstico Estratégico IA', icon: Sparkles },
       ]
     },
@@ -399,7 +399,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
                   <FileBarChart size={22} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliações Externas (CAED)</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliação Externa</p>
                   <p className="text-3xl font-black text-slate-900 mt-0.5">{performanceStats.externalCount}</p>
                 </div>
               </div>
