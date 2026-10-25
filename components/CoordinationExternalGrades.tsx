@@ -105,6 +105,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    const [filterClassroom, setFilterClassroom] = useState<string>('TODAS');
    const [filterSubject, setFilterSubject] = useState<string>('TODAS');
    const [filterPerformanceLevel, setFilterPerformanceLevel] = useState<string>('TODOS'); // 'TODOS' | 'CRITICO' | 'ATENCAO' | 'ADEQUADO' | 'REGRESSAO' | 'EVOLUCAO'
+   const [filterSystem, setFilterSystem] = useState<string>('TODOS'); // 'TODOS' | 'SEE' | 'CAED'
    const [showPedagogicalGuide, setShowPedagogicalGuide] = useState<boolean>(false);
 
    // Cross-referencing Data fetcher
@@ -242,8 +243,11 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
       if (globalFilterSubject && globalFilterSubject !== 'ALL' && !globalFilterSubject.toLowerCase().startsWith('todas')) {
          filtered = filtered.filter(a => a.subject?.toUpperCase() === globalFilterSubject?.toUpperCase());
       }
+      if (filterSystem !== 'TODOS') {
+         filtered = filtered.filter(a => a.type === filterSystem);
+      }
       setExternalAssessments(filtered);
-   }, [globalFilterTurma, globalFilterSubject, allExternalAssessments]);
+   }, [globalFilterTurma, globalFilterSubject, filterSystem, allExternalAssessments]);
 
    // Fetch Students when Class changes in Form - IMPROVED ROBUSTNESS
    useEffect(() => {
@@ -570,7 +574,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                      <div>
                         <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Avaliações de Sistema</h2>
-                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Painel Comparativo de Proficiência (SEE / CAED)</p>
+                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">
+                           Painel Comparativo de Proficiência {filterSystem === 'TODOS' ? '(SEE / CAED)' : filterSystem === 'SEE' ? '(Somente SEE)' : '(Somente CAED)'}
+                        </p>
                      </div>
 
                      <div className="flex items-center gap-3 flex-wrap">
@@ -642,6 +648,17 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">
+                     {/* FILTRO DE SISTEMA (SEE / CAED) */}
+                     <select
+                        value={filterSystem}
+                        onChange={e => setFilterSystem(e.target.value)}
+                        className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 cursor-pointer shadow-sm"
+                     >
+                        <option value="TODOS">🏷️ Sistema: Todos (SEE & CAED)</option>
+                        <option value="SEE">📘 Sistema: Somente SEE</option>
+                        <option value="CAED">📙 Sistema: Somente CAED</option>
+                     </select>
+
                      {/* FILTRO DE TURMA */}
                      <select
                         value={filterClassroom}
@@ -685,9 +702,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                         ))}
                      </select>
 
-                     {(filterPerformanceLevel !== 'TODOS' || filterSubject !== 'TODAS' || filterClassroom !== 'TODAS') && (
+                     {(filterPerformanceLevel !== 'TODOS' || filterSubject !== 'TODAS' || filterClassroom !== 'TODAS' || filterSystem !== 'TODOS') && (
                         <button
-                           onClick={() => { setFilterPerformanceLevel('TODOS'); setFilterSubject('TODAS'); setFilterClassroom('TODAS'); }}
+                           onClick={() => { setFilterPerformanceLevel('TODOS'); setFilterSubject('TODAS'); setFilterClassroom('TODAS'); setFilterSystem('TODOS'); }}
                            className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase flex items-center gap-1 hover:bg-red-100 transition-all"
                         >
                            <FilterX size={14} /> Limpar Filtros
@@ -734,7 +751,11 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </thead>
                            <tbody className="divide-y divide-slate-100">
                               {(() => {
-                                 const bimeAssessments = allExternalAssessments.filter(a => a.bimestre === matrixBimestre);
+                                 const bimeAssessments = allExternalAssessments.filter(a => {
+                                    if (a.bimestre !== matrixBimestre) return false;
+                                    if (filterSystem !== 'TODOS' && a.type !== filterSystem) return false;
+                                    return true;
+                                 });
                                  let classesInMatrix = Array.from(new Set(bimeAssessments.map(a => a.className))).sort();
                                  if (filterClassroom !== 'TODAS') {
                                     classesInMatrix = classesInMatrix.filter(c => c === filterClassroom);
@@ -780,7 +801,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                           {SUBJECTS.map(subj => {
                                              const isSelectedSubj = filterSubject !== 'TODAS' && filterSubject.toUpperCase() === subj.toUpperCase();
                                              const isDimmedSubj = filterSubject !== 'TODAS' && !isSelectedSubj;
-                                             const targetAss = bimeAssessments.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                             const targetAss = bimeAssessments.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase() && a.grades.length > 0)
+                                                || bimeAssessments.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
 
                                              if (!targetAss || targetAss.grades.length === 0) {
                                                 return (
@@ -847,11 +869,13 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </thead>
                            <tbody className="divide-y divide-slate-100">
                               {(() => {
-                                 const b1 = allExternalAssessments.filter(a => a.bimestre === '1º BIMESTRE');
-                                 const b2 = allExternalAssessments.filter(a => a.bimestre === '2º BIMESTRE');
+                                 const b1 = allExternalAssessments.filter(a => a.bimestre === '1º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
+                                 const b2 = allExternalAssessments.filter(a => a.bimestre === '2º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
 
                                  const classSubjectPairs = new Set<string>();
-                                 allExternalAssessments.forEach(a => classSubjectPairs.add(`${a.className}___${a.subject}`));
+                                 allExternalAssessments
+                                    .filter(a => filterSystem === 'TODOS' || a.type === filterSystem)
+                                    .forEach(a => classSubjectPairs.add(`${a.className}___${a.subject}`));
 
                                  let sortedPairs = Array.from(classSubjectPairs).sort();
                                  if (filterClassroom !== 'TODAS') {
@@ -884,8 +908,10 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                                  return sortedPairs.map(pair => {
                                     const [cls, subj] = pair.split('___');
-                                    const ass1 = b1.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
-                                    const ass2 = b2.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                    const ass1 = b1.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase() && a.grades.length > 0)
+                                       || b1.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                    const ass2 = b2.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase() && a.grades.length > 0)
+                                       || b2.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
 
                                     const avg1 = ass1 && ass1.grades.length > 0 ? (ass1.grades.reduce((a, g) => a + g.score, 0) / ass1.grades.length) : null;
                                     const avg2 = ass2 && ass2.grades.length > 0 ? (ass2.grades.reduce((a, g) => a + g.score, 0) / ass2.grades.length) : null;
@@ -1016,7 +1042,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <tbody className="divide-y divide-slate-100">
                               {(() => {
                                  const targetAssessments = allExternalAssessments.filter(a => 
-                                    a.className === selectedStudentClass && a.bimestre === matrixBimestre
+                                    a.className === selectedStudentClass && 
+                                    a.bimestre === matrixBimestre &&
+                                    (filterSystem === 'TODOS' || a.type === filterSystem)
                                  );
 
                                  if (targetAssessments.length === 0) {
@@ -1137,8 +1165,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </thead>
                            <tbody className="divide-y divide-slate-100">
                               {(() => {
-                                 const b1 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '1º BIMESTRE');
-                                 const b2 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '2º BIMESTRE');
+                                 const b1 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '1º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
+                                 const b2 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '2º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
 
                                  const studentMap = new Map<string, { name: string, b1Scores: number[], b2Scores: number[] }>();
 
@@ -1238,7 +1266,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      {/* CARDS DE CADA SÉRIE */}
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {['6º ANO', '7º ANO', '8º ANO', '9º ANO'].map(grade => {
-                           const gradeAssessments = allExternalAssessments.filter(a => a.className.startsWith(grade));
+                           const gradeAssessments = allExternalAssessments.filter(a => a.className.startsWith(grade) && (filterSystem === 'TODOS' || a.type === filterSystem));
                            
                            return (
                               <div key={grade} className="bg-slate-50 p-6 rounded-3xl border border-slate-200/80 space-y-4 hover:border-violet-300 transition-all">
@@ -1422,7 +1450,15 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  <div>
                                     <div className="flex justify-between items-start mb-4">
                                        <div className="p-3 bg-violet-50 text-violet-600 rounded-2xl border border-violet-100"><FileBarChart size={24} /></div>
-                                       <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg border ${ass.type === 'CAED' || ass.type === 'SEE' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>{ass.type === 'CAED' ? 'SEE' : ass.type}</span>
+                                       <span className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-lg border ${
+                                          ass.type === 'CAED' 
+                                             ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                                             : ass.type === 'SEE'
+                                             ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                             : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                       }`}>
+                                          {ass.type}
+                                       </span>
                                     </div>
                                     <h4 className="text-lg font-black text-slate-900 uppercase leading-tight">{ass.subject}</h4>
                                     <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{ass.className} • {ass.bimestre}</p>
