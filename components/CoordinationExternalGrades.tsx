@@ -562,28 +562,28 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    };
 
    return (
-      <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="space-y-8 animate-in fade-in duration-500 pb-20">
          {viewMode === 'list' ? (
             <div className="space-y-6">
                <div className="flex flex-col gap-6">
                   {/* LINHA 1: TÍTULO E BOTÕES DE AÇÃO */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                      <div>
-                        <h2 className="text-3xl font-black text-white uppercase tracking-tight">Avaliações de Sistema</h2>
-                        <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Painel Comparativo de Proficiência (SEE / CAED)</p>
+                        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Avaliações de Sistema</h2>
+                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Painel Comparativo de Proficiência (SEE / CAED)</p>
                      </div>
 
                      <div className="flex items-center gap-3 flex-wrap">
                         <button
                            onClick={() => setShowPedagogicalGuide(true)}
-                           className="px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-xl shadow-amber-500/20 hover:from-amber-600 hover:to-orange-700 transition-all flex items-center gap-2 border border-amber-400/30 animate-pulse shrink-0"
+                           className="px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-amber-500/20 hover:from-amber-600 hover:to-orange-700 transition-all flex items-center gap-2 border border-amber-400/30 animate-pulse shrink-0"
                         >
                            <Lightbulb size={18} /> Sugestões de Melhoria
                         </button>
 
                         <button
                            onClick={() => setViewMode('form')}
-                           className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20 shrink-0"
+                           className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center gap-2 border border-violet-500/20 shrink-0"
                         >
                            <Plus size={18} /> Lançar Resultados
                         </button>
@@ -591,11 +591,11 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   </div>
 
                   {/* LINHA 2: ABAS NAVEGAÇÃO DE MODOS DE VISÃO */}
-                  <div className="flex items-center gap-1 bg-white/5 p-1.5 rounded-2xl border border-white/10 overflow-x-auto custom-scrollbar w-full">
+                  <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-sm overflow-x-auto custom-scrollbar w-full">
                      <button
                         onClick={() => setDisplayMode('matriz')}
                         className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
-                           displayMode === 'matriz' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           displayMode === 'matriz' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                         }`}
                      >
                         <LayoutGrid size={16} /> Matriz por Turma
@@ -603,7 +603,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <button
                         onClick={() => setDisplayMode('comparativo')}
                         className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
-                           displayMode === 'comparativo' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           displayMode === 'comparativo' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                         }`}
                      >
                         <ArrowUpRight size={16} /> Comparador 1º x 2º Bim.
@@ -611,7 +611,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <button
                         onClick={() => setDisplayMode('alunos_turma')}
                         className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
-                           displayMode === 'alunos_turma' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           displayMode === 'alunos_turma' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                         }`}
                      >
                         <Users size={16} /> Notas por Aluno (Turma)
@@ -619,7 +619,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <button
                         onClick={() => setDisplayMode('rendimento_geral')}
                         className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
-                           displayMode === 'rendimento_geral' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           displayMode === 'rendimento_geral' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                         }`}
                      >
                         <BarChart2 size={16} /> Rendimento Geral por Ano
@@ -627,7 +627,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <button
                         onClick={() => setDisplayMode('cards')}
                         className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
-                           displayMode === 'cards' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30' : 'text-white/50 hover:text-white hover:bg-white/5'
+                           displayMode === 'cards' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                         }`}
                      >
                         <Columns size={16} /> Visão Cards
@@ -636,8 +636,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                </div>
 
                {/* BARRA DE FILTROS INTELIGENTES DE ANÁLISE */}
-               <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-wrap items-center justify-between gap-4 backdrop-blur-md">
-                  <div className="flex items-center gap-2 text-xs font-black uppercase text-violet-400 tracking-wider">
+               <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase text-violet-700 tracking-wider">
                      <Filter size={16} /> Filtros de Análise:
                   </div>
 
@@ -651,7 +651,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               setSelectedStudentClass(e.target.value);
                            }
                         }}
-                        className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase text-white outline-none focus:bg-white/10 [&>option]:bg-gray-900"
+                        className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 cursor-pointer"
                      >
                         <option value="TODAS">🏫 Todas as Turmas</option>
                         {classrooms.map(c => (
@@ -663,7 +663,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <select
                         value={filterPerformanceLevel}
                         onChange={e => setFilterPerformanceLevel(e.target.value)}
-                        className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase text-white outline-none focus:bg-white/10 [&>option]:bg-gray-900"
+                        className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 cursor-pointer"
                      >
                         <option value="TODOS">🎯 Todos os Desempenhos</option>
                         <option value="CRITICO">🔴 Alerta Crítico (&lt; 40%)</option>
@@ -677,7 +677,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <select
                         value={filterSubject}
                         onChange={e => setFilterSubject(e.target.value)}
-                        className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase text-white outline-none focus:bg-white/10 [&>option]:bg-gray-900"
+                        className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 cursor-pointer"
                      >
                         <option value="TODAS">📚 Todas as Disciplinas</option>
                         {SUBJECTS.map(s => (
@@ -688,7 +688,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      {(filterPerformanceLevel !== 'TODOS' || filterSubject !== 'TODAS' || filterClassroom !== 'TODAS') && (
                         <button
                            onClick={() => { setFilterPerformanceLevel('TODOS'); setFilterSubject('TODAS'); setFilterClassroom('TODAS'); }}
-                           className="px-3 py-2 bg-red-500/20 text-red-300 border border-red-500/30 rounded-xl text-xs font-black uppercase flex items-center gap-1 hover:bg-red-500/30 transition-all"
+                           className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase flex items-center gap-1 hover:bg-red-100 transition-all"
                         >
                            <FilterX size={14} /> Limpar Filtros
                         </button>
@@ -698,21 +698,21 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                {/* MATRIZ DE PROFICIÊNCIA POR TURMA E DISCIPLINA */}
                {displayMode === 'matriz' && (
-                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-6">
-                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-6">
+                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6">
+                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-6">
                         <div>
-                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                              <LayoutGrid size={20} className="text-violet-400" /> Matriz Comparativa de Proficiência
+                           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                              <LayoutGrid size={20} className="text-violet-600" /> Matriz Comparativa de Proficiência
                            </h3>
-                           <p className="text-xs text-white/50 font-bold uppercase mt-1">Comparativo de desempenho de todas as turmas lado a lado</p>
+                           <p className="text-xs text-slate-500 font-bold uppercase mt-1">Comparativo de desempenho de todas as turmas lado a lado</p>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                           <span className="text-xs font-bold text-white/40 uppercase">Filtrar Bimestre:</span>
+                           <span className="text-xs font-bold text-slate-500 uppercase">Filtrar Bimestre:</span>
                            <select
                               value={matrixBimestre}
                               onChange={e => setMatrixBimestre(e.target.value)}
-                              className="p-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                              className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white text-slate-800 cursor-pointer"
                            >
                               {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => (
                                  <option key={b} value={b}>{b}</option>
@@ -724,15 +724,15 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                            <thead>
-                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                              <tr className="border-b border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                                  <th className="py-4 px-6">Turma</th>
                                  {SUBJECTS.map(subj => (
                                     <th key={subj} className="py-4 px-4 text-center">{subj}</th>
                                  ))}
-                                 <th className="py-4 px-6 text-center text-violet-400">Média Geral</th>
+                                 <th className="py-4 px-6 text-center text-violet-700">Média Geral</th>
                               </tr>
                            </thead>
-                           <tbody className="divide-y divide-white/5">
+                           <tbody className="divide-y divide-slate-100">
                               {(() => {
                                  const bimeAssessments = allExternalAssessments.filter(a => a.bimestre === matrixBimestre);
                                  let classesInMatrix = Array.from(new Set(bimeAssessments.map(a => a.className))).sort();
@@ -760,7 +760,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (classesInMatrix.length === 0) {
                                     return (
                                        <tr>
-                                          <td colSpan={SUBJECTS.length + 2} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                          <td colSpan={SUBJECTS.length + 2} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
                                              Nenhum resultado corresponde aos filtros selecionados
                                           </td>
                                        </tr>
@@ -772,9 +772,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     let countAcc = 0;
 
                                     return (
-                                       <tr key={cls} className="hover:bg-white/5 transition-colors">
-                                          <td className="py-5 px-6 font-black text-sm text-white uppercase flex items-center gap-2">
-                                             <div className="w-2 h-2 rounded-full bg-violet-500"></div>
+                                       <tr key={cls} className="hover:bg-slate-50 transition-colors">
+                                          <td className="py-5 px-6 font-black text-sm text-slate-900 uppercase flex items-center gap-2">
+                                             <div className="w-2 h-2 rounded-full bg-violet-600"></div>
                                              {cls}
                                           </td>
                                           {SUBJECTS.map(subj => {
@@ -784,7 +784,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                                              if (!targetAss || targetAss.grades.length === 0) {
                                                 return (
-                                                   <td key={subj} className={`py-5 px-4 text-center text-white/20 text-xs font-bold ${isDimmedSubj ? 'opacity-20' : ''}`}>-</td>
+                                                   <td key={subj} className={`py-5 px-4 text-center text-slate-300 text-xs font-bold ${isDimmedSubj ? 'opacity-20' : ''}`}>-</td>
                                                 );
                                              }
 
@@ -792,12 +792,12 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                              sumAcc += avg;
                                              countAcc++;
 
-                                             let colorClass = 'bg-red-500/20 text-red-300 border-red-500/30';
-                                             if (avg >= 60) colorClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-                                             else if (avg >= 40) colorClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+                                             let colorClass = 'bg-red-50 text-red-700 border-red-200';
+                                             if (avg >= 60) colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                             else if (avg >= 40) colorClass = 'bg-amber-50 text-amber-700 border-amber-200';
 
                                              const isMatchPerf = matchesPerformanceFilter(avg, filterPerformanceLevel);
-                                             const highlightPerf = filterPerformanceLevel !== 'TODOS' && isMatchPerf ? 'ring-2 ring-amber-400 font-black scale-105 shadow-lg' : filterPerformanceLevel !== 'TODOS' && !isMatchPerf ? 'opacity-25' : '';
+                                             const highlightPerf = filterPerformanceLevel !== 'TODOS' && isMatchPerf ? 'ring-2 ring-amber-400 font-black scale-105 shadow-md' : filterPerformanceLevel !== 'TODOS' && !isMatchPerf ? 'opacity-25' : '';
 
                                              return (
                                                 <td key={subj} className={`py-5 px-4 text-center ${isDimmedSubj ? 'opacity-20' : ''}`}>
@@ -811,7 +811,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                                 </td>
                                              );
                                           })}
-                                          <td className="py-5 px-6 text-center font-black text-sm text-violet-300">
+                                          <td className="py-5 px-6 text-center font-black text-sm text-violet-700">
                                              {countAcc > 0 ? `${(sumAcc / countAcc).toFixed(1)}%` : '-'}
                                           </td>
                                        </tr>
@@ -826,18 +826,18 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                {/* COMPARATIVO BIMESTRAL (1º X 2º BIMESTRE COM DELTA) */}
                {displayMode === 'comparativo' && (
-                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-6">
-                     <div className="border-b border-white/10 pb-6">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                           <ArrowUpRight size={20} className="text-emerald-400" /> Comparativo de Evolução Bimestral (1º Bimestre vs 2º Bimestre)
+                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6">
+                     <div className="border-b border-slate-100 pb-6">
+                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                           <ArrowUpRight size={20} className="text-emerald-600" /> Comparativo de Evolução Bimestral (1º Bimestre vs 2º Bimestre)
                         </h3>
-                        <p className="text-xs text-white/50 font-bold uppercase mt-1">Acompanhamento do avanço ou retrocesso percentual (Δ Delta) por turma e disciplina</p>
+                        <p className="text-xs text-slate-500 font-bold uppercase mt-1">Acompanhamento do avanço ou retrocesso percentual (Δ Delta) por turma e disciplina</p>
                      </div>
 
                      <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                            <thead>
-                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                              <tr className="border-b border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                                  <th className="py-4 px-6">Turma</th>
                                  <th className="py-4 px-6">Disciplina</th>
                                  <th className="py-4 px-6 text-center">1º Bimestre</th>
@@ -845,7 +845,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  <th className="py-4 px-6 text-center">Variação (Δ)</th>
                               </tr>
                            </thead>
-                           <tbody className="divide-y divide-white/5">
+                           <tbody className="divide-y divide-slate-100">
                               {(() => {
                                  const b1 = allExternalAssessments.filter(a => a.bimestre === '1º BIMESTRE');
                                  const b2 = allExternalAssessments.filter(a => a.bimestre === '2º BIMESTRE');
@@ -875,7 +875,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (sortedPairs.length === 0) {
                                     return (
                                        <tr>
-                                          <td colSpan={5} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                          <td colSpan={5} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
                                              Nenhum dado cadastrado para comparação
                                           </td>
                                        </tr>
@@ -896,21 +896,21 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     }
 
                                     return (
-                                       <tr key={pair} className="hover:bg-white/5 transition-colors">
-                                          <td className="py-5 px-6 font-black text-sm text-white uppercase">{cls}</td>
-                                          <td className="py-5 px-6 font-bold text-xs text-violet-300 uppercase">{subj}</td>
-                                          <td className="py-5 px-6 text-center font-bold text-xs text-white/70">
+                                       <tr key={pair} className="hover:bg-slate-50 transition-colors">
+                                          <td className="py-5 px-6 font-black text-sm text-slate-900 uppercase">{cls}</td>
+                                          <td className="py-5 px-6 font-bold text-xs text-violet-700 uppercase">{subj}</td>
+                                          <td className="py-5 px-6 text-center font-bold text-xs text-slate-600">
                                              {avg1 !== null ? `${avg1.toFixed(1)}%` : '-'}
                                           </td>
-                                          <td className="py-5 px-6 text-center font-bold text-xs text-white/90">
+                                          <td className="py-5 px-6 text-center font-bold text-xs text-slate-900">
                                              {avg2 !== null ? `${avg2.toFixed(1)}%` : '-'}
                                           </td>
                                           <td className="py-5 px-6 text-center">
                                              {delta !== null ? (
                                                 <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black border ${
-                                                   delta > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                                                   delta < 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                                   'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                                                   delta > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                   delta < 0 ? 'bg-red-50 text-red-700 border-red-200' :
+                                                   'bg-slate-100 text-slate-600 border-slate-200'
                                                 }`}>
                                                    {delta > 0 && <ArrowUpRight size={14} />}
                                                    {delta < 0 && <ArrowDownRight size={14} />}
@@ -918,7 +918,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                                    {delta > 0 ? `+${delta}%` : `${delta}%`}
                                                 </span>
                                              ) : (
-                                                <span className="text-white/20 text-xs font-bold">-</span>
+                                                <span className="text-slate-300 text-xs font-bold">-</span>
                                              )}
                                           </td>
                                        </tr>
@@ -933,27 +933,27 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                {/* NOTAS POR ALUNO - BOLETIM GERAL DA TURMA */}
                {displayMode === 'alunos_turma' && (
-                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-6">
-                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
+                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6">
+                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-6">
                         <div>
-                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                              <Users size={20} className="text-violet-400" /> Boletim Completo de Alunos da Turma
+                           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                              <Users size={20} className="text-violet-600" /> Boletim Completo de Alunos da Turma
                            </h3>
-                           <p className="text-xs text-white/50 font-bold uppercase mt-1">Notas individuais por aluno em todas as disciplinas</p>
+                           <p className="text-xs text-slate-500 font-bold uppercase mt-1">Notas individuais por aluno em todas as disciplinas</p>
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                            {/* ALTERNADOR SUB-VISÃO (BOLETIM VS EVOLUÇÃO INDIVIDUAL) */}
-                           <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+                           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
                               <button
                                  onClick={() => setStudentSubView('boletim')}
-                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${studentSubView === 'boletim' ? 'bg-violet-600 text-white' : 'text-white/40 hover:text-white'}`}
+                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${studentSubView === 'boletim' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                               >
                                  Boletim
                               </button>
                               <button
                                  onClick={() => setStudentSubView('comparativo')}
-                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1 ${studentSubView === 'comparativo' ? 'bg-violet-600 text-white' : 'text-white/40 hover:text-white'}`}
+                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1 ${studentSubView === 'comparativo' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                               >
                                  <ArrowUpRight size={12} /> Evolução 1º x 2º Bim.
                               </button>
@@ -961,13 +961,13 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                            {/* BUSCA POR NOME DO ALUNO */}
                            <div className="relative flex-1 md:w-56">
-                              <Search size={16} className="absolute left-3 top-3.5 text-white/40" />
+                              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
                               <input
                                  type="text"
                                  placeholder="Buscar aluno..."
                                  value={studentSearchQuery}
                                  onChange={e => setStudentSearchQuery(e.target.value)}
-                                 className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white placeholder-white/30 outline-none focus:bg-white/10 focus:ring-2 focus:ring-violet-500/50"
+                                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20"
                               />
                            </div>
 
@@ -975,7 +975,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            <select
                               value={selectedStudentClass}
                               onChange={e => setSelectedStudentClass(e.target.value)}
-                              className="p-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                              className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white text-slate-800 cursor-pointer"
                            >
                               {(() => {
                                  const availableClasses = Array.from(new Set(allExternalAssessments.map(a => a.className))).sort();
@@ -989,7 +989,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               <select
                                  value={matrixBimestre}
                                  onChange={e => setMatrixBimestre(e.target.value)}
-                                 className="p-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 text-white [&>option]:bg-gray-900"
+                                 className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white text-slate-800 cursor-pointer"
                               >
                                  {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => (
                                     <option key={b} value={b}>{b}</option>
@@ -1004,16 +1004,16 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                            <thead>
-                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                              <tr className="border-b border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                                  <th className="py-4 px-4 text-center">#</th>
                                  <th className="py-4 px-6">Nome do Aluno</th>
                                  {SUBJECTS.map(subj => (
                                     <th key={subj} className="py-4 px-4 text-center">{subj}</th>
                                  ))}
-                                 <th className="py-4 px-6 text-center text-violet-400">Média Aluno</th>
+                                 <th className="py-4 px-6 text-center text-violet-700">Média Aluno</th>
                               </tr>
                            </thead>
-                           <tbody className="divide-y divide-white/5">
+                           <tbody className="divide-y divide-slate-100">
                               {(() => {
                                  const targetAssessments = allExternalAssessments.filter(a => 
                                     a.className === selectedStudentClass && a.bimestre === matrixBimestre
@@ -1022,7 +1022,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (targetAssessments.length === 0) {
                                     return (
                                        <tr>
-                                          <td colSpan={SUBJECTS.length + 3} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                          <td colSpan={SUBJECTS.length + 3} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
                                              Nenhuma avaliação encontrada para a turma {selectedStudentClass} no {matrixBimestre}
                                           </td>
                                        </tr>
@@ -1069,7 +1069,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (studentList.length === 0) {
                                     return (
                                        <tr>
-                                          <td colSpan={SUBJECTS.length + 3} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                          <td colSpan={SUBJECTS.length + 3} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
                                              Nenhum aluno encontrado com a busca "{studentSearchQuery}"
                                           </td>
                                        </tr>
@@ -1081,18 +1081,18 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     const avgStudent = scores.length > 0 ? (scores.reduce((acc, val) => acc + val, 0) / scores.length) : null;
 
                                     return (
-                                       <tr key={st.name} className="hover:bg-white/5 transition-colors">
-                                          <td className="py-4 px-4 text-center font-bold text-xs text-white/30">{idx + 1}</td>
-                                          <td className="py-4 px-6 font-black text-xs text-white uppercase">{st.name}</td>
+                                       <tr key={st.name} className="hover:bg-slate-50 transition-colors">
+                                          <td className="py-4 px-4 text-center font-bold text-xs text-slate-400">{idx + 1}</td>
+                                          <td className="py-4 px-6 font-black text-xs text-slate-900 uppercase">{st.name}</td>
                                           {SUBJECTS.map(subj => {
                                              const score = st.scores[subj.toUpperCase()];
                                              if (score === undefined) {
-                                                return <td key={subj} className="py-4 px-4 text-center text-white/20 text-xs font-bold">-</td>;
+                                                return <td key={subj} className="py-4 px-4 text-center text-slate-300 text-xs font-bold">-</td>;
                                              }
 
-                                             let colorClass = 'bg-red-500/20 text-red-300 border-red-500/30';
-                                             if (score >= 60) colorClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-                                             else if (score >= 40) colorClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+                                             let colorClass = 'bg-red-50 text-red-700 border-red-200';
+                                             if (score >= 60) colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                             else if (score >= 40) colorClass = 'bg-amber-50 text-amber-700 border-amber-200';
 
                                              return (
                                                 <td key={subj} className="py-4 px-4 text-center">
@@ -1104,10 +1104,10 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                           })}
                                           <td className="py-4 px-6 text-center">
                                              {avgStudent !== null ? (
-                                                <span className={`inline-block px-3 py-1 rounded-xl text-xs font-black ${
-                                                   avgStudent >= 60 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' :
-                                                   avgStudent >= 40 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                                                   'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                <span className={`inline-block px-3 py-1 rounded-xl text-xs font-black border ${
+                                                   avgStudent >= 60 ? 'bg-violet-50 text-violet-700 border-violet-200' :
+                                                   avgStudent >= 40 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                   'bg-red-50 text-red-700 border-red-200'
                                                 }`}>
                                                    {avgStudent.toFixed(1)}%
                                                 </span>
@@ -1127,7 +1127,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                            <thead>
-                              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-white/40 tracking-wider">
+                              <tr className="border-b border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                                  <th className="py-4 px-4 text-center">#</th>
                                  <th className="py-4 px-6">Nome do Aluno</th>
                                  <th className="py-4 px-6 text-center">Média 1º Bim</th>
@@ -1135,7 +1135,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  <th className="py-4 px-6 text-center">Evolução Geral (Δ)</th>
                               </tr>
                            </thead>
-                           <tbody className="divide-y divide-white/5">
+                           <tbody className="divide-y divide-slate-100">
                               {(() => {
                                  const b1 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '1º BIMESTRE');
                                  const b2 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '2º BIMESTRE');
@@ -1170,7 +1170,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (list.length === 0) {
                                     return (
                                        <tr>
-                                          <td colSpan={5} className="py-12 text-center text-white/30 font-bold text-xs uppercase">
+                                          <td colSpan={5} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
                                              Nenhum aluno encontrado para comparação na turma {selectedStudentClass}
                                           </td>
                                        </tr>
@@ -1187,21 +1187,21 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     }
 
                                     return (
-                                       <tr key={st.name} className="hover:bg-white/5 transition-colors">
-                                          <td className="py-4 px-4 text-center font-bold text-xs text-white/30">{idx + 1}</td>
-                                          <td className="py-4 px-6 font-black text-xs text-white uppercase">{st.name}</td>
-                                          <td className="py-4 px-6 text-center font-bold text-xs text-white/70">
+                                       <tr key={st.name} className="hover:bg-slate-50 transition-colors">
+                                          <td className="py-4 px-4 text-center font-bold text-xs text-slate-400">{idx + 1}</td>
+                                          <td className="py-4 px-6 font-black text-xs text-slate-900 uppercase">{st.name}</td>
+                                          <td className="py-4 px-6 text-center font-bold text-xs text-slate-600">
                                              {avg1 !== null ? `${avg1.toFixed(1)}%` : '-'}
                                           </td>
-                                          <td className="py-4 px-6 text-center font-bold text-xs text-white/90">
+                                          <td className="py-4 px-6 text-center font-bold text-xs text-slate-900">
                                              {avg2 !== null ? `${avg2.toFixed(1)}%` : '-'}
                                           </td>
                                           <td className="py-4 px-6 text-center">
                                              {delta !== null ? (
                                                 <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black border ${
-                                                   delta > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                                                   delta < 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                                   'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                                                   delta > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                   delta < 0 ? 'bg-red-50 text-red-700 border-red-200' :
+                                                   'bg-slate-100 text-slate-600 border-slate-200'
                                                 }`}>
                                                    {delta > 0 && <ArrowUpRight size={14} />}
                                                    {delta < 0 && <ArrowDownRight size={14} />}
@@ -1209,7 +1209,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                                    {delta > 0 ? `+${delta}%` : `${delta}%`}
                                                 </span>
                                              ) : (
-                                                <span className="text-white/20 text-xs font-bold">-</span>
+                                                <span className="text-slate-300 text-xs font-bold">-</span>
                                              )}
                                           </td>
                                        </tr>
@@ -1225,13 +1225,13 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                {/* NOVO MODO: RENDIMENTO GERAL POR ANO (SÉRIE) */}
                {displayMode === 'rendimento_geral' && (
-                  <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md space-y-8">
-                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-6">
+                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-8">
+                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-6">
                         <div>
-                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                              <BarChart2 size={20} className="text-violet-400" /> Rendimento Geral Consolidado por Série
+                           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                              <BarChart2 size={20} className="text-violet-600" /> Rendimento Geral Consolidado por Série
                            </h3>
-                           <p className="text-xs text-white/50 font-bold uppercase mt-1">Média escolar acumulada por disciplina do 6º ao 9º Ano</p>
+                           <p className="text-xs text-slate-500 font-bold uppercase mt-1">Média escolar acumulada por disciplina do 6º ao 9º Ano</p>
                         </div>
                      </div>
 
@@ -1241,23 +1241,23 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            const gradeAssessments = allExternalAssessments.filter(a => a.className.startsWith(grade));
                            
                            return (
-                              <div key={grade} className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-4 hover:border-violet-500/40 transition-all">
-                                 <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                                    <h4 className="text-lg font-black text-white uppercase tracking-wide flex items-center gap-2">
-                                       <span className="w-3 h-3 rounded-full bg-violet-500"></span> {grade} - Média Geral Escola
+                              <div key={grade} className="bg-slate-50 p-6 rounded-3xl border border-slate-200/80 space-y-4 hover:border-violet-300 transition-all">
+                                 <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                                    <h4 className="text-lg font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                                       <span className="w-3 h-3 rounded-full bg-violet-600"></span> {grade} - Média Geral Escola
                                     </h4>
                                  </div>
 
                                  <table className="w-full text-left">
                                     <thead>
-                                       <tr className="text-[10px] font-black uppercase text-white/40 border-b border-white/5">
+                                       <tr className="text-[10px] font-black uppercase text-slate-400 border-b border-slate-200">
                                           <th className="py-2">Disciplina</th>
                                           <th className="py-2 text-center">1º Bimestre</th>
                                           <th className="py-2 text-center">2º Bimestre</th>
                                           <th className="py-2 text-center">Evolução (Δ)</th>
                                        </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/5 text-xs font-bold">
+                                    <tbody className="divide-y divide-slate-200/60 text-xs font-bold">
                                        {SUBJECTS.map(subj => {
                                           const subjUpper = subj.toUpperCase();
                                           
@@ -1336,20 +1336,20 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                           }
 
                                           return (
-                                             <tr key={subj} className="hover:bg-white/5">
-                                                <td className="py-2.5 text-white/90 font-black uppercase text-[11px]">{subj}</td>
-                                                <td className="py-2.5 text-center text-white/60">
+                                             <tr key={subj} className="hover:bg-white/60">
+                                                <td className="py-2.5 text-slate-900 font-black uppercase text-[11px]">{subj}</td>
+                                                <td className="py-2.5 text-center text-slate-600">
                                                    {b1Val !== null ? `${b1Val.toFixed(1)}%` : '-'}
                                                 </td>
-                                                <td className="py-2.5 text-center text-white/90">
+                                                <td className="py-2.5 text-center text-slate-900 font-bold">
                                                    {b2Val !== null ? `${b2Val.toFixed(1)}%` : '-'}
                                                 </td>
                                                 <td className="py-2.5 text-center">
                                                    {delta !== null ? (
                                                       <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-black border ${
-                                                         delta > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                                                         delta < 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                                         'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                                                         delta > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                         delta < 0 ? 'bg-red-50 text-red-700 border-red-200' :
+                                                         'bg-slate-100 text-slate-600 border-slate-200'
                                                       }`}>
                                                          {delta > 0 && <ArrowUpRight size={12} />}
                                                          {delta < 0 && <ArrowDownRight size={12} />}
@@ -1372,15 +1372,15 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                {displayMode === 'cards' && (
                   <>
                      {/* GRAPH SECTION */}
-                     <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-lg backdrop-blur-md">
+                     <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
-                           <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                              <TrendingUp size={20} className="text-violet-400" /> Evolução Bimestral por Turmas
+                           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                              <TrendingUp size={20} className="text-violet-600" /> Evolução Bimestral por Turmas
                            </h3>
                            <select
                               value={selectedSubjectChart}
                               onChange={e => setSelectedSubjectChart(e.target.value)}
-                              className="p-2 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase outline-none focus:bg-white/10 focus:ring-2 focus:ring-violet-500/50 text-white/80 [&>option]:bg-gray-900"
+                              className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 text-slate-800 cursor-pointer"
                            >
                               {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
                            </select>
@@ -1388,16 +1388,16 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                         <div className="h-[300px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                               <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                                 <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
-                                 <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
+                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                 <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }} stroke="#cbd5e1" />
+                                 <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }} stroke="#cbd5e1" />
                                  <Tooltip
-                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                    contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', backgroundColor: '#1e1b4b', color: '#fff' }}
-                                    itemStyle={{ fontSize: '11px', fontWeight: 'bold', color: '#ccc' }}
-                                    labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#fff', marginBottom: '4px', textTransform: 'uppercase' }}
+                                    cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', backgroundColor: '#ffffff', color: '#0f172a' }}
+                                    itemStyle={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}
+                                    labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', marginBottom: '4px', textTransform: 'uppercase' }}
                                  />
-                                 <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: '#fff' }} />
+                                 <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px', color: '#475569' }} />
                                  {activeClasses.map((cls, idx) => (
                                     <Bar
                                        key={cls}
@@ -1418,39 +1418,39 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            const lowPerformers = ass.grades.filter(g => (g.proficiencyLevel === 'BAIXO' || g.proficiencyLevel === 'MUITO_BAIXO')).length;
 
                            return (
-                              <div key={ass.id} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 shadow-sm hover:border-violet-500/30 hover:bg-white/10 transition-all flex flex-col justify-between group backdrop-blur-md">
+                              <div key={ass.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 shadow-sm hover:border-violet-300 hover:shadow-md transition-all flex flex-col justify-between group">
                                  <div>
                                     <div className="flex justify-between items-start mb-4">
-                                       <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl border border-violet-500/20"><FileBarChart size={24} /></div>
-                                       <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg border ${ass.type === 'CAED' || ass.type === 'SEE' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>{ass.type === 'CAED' ? 'SEE' : ass.type}</span>
+                                       <div className="p-3 bg-violet-50 text-violet-600 rounded-2xl border border-violet-100"><FileBarChart size={24} /></div>
+                                       <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg border ${ass.type === 'CAED' || ass.type === 'SEE' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>{ass.type === 'CAED' ? 'SEE' : ass.type}</span>
                                     </div>
-                                    <h4 className="text-lg font-black text-white uppercase leading-tight">{ass.subject}</h4>
-                                    <p className="text-[10px] text-white/40 font-bold uppercase mt-1">{ass.className} • {ass.bimestre}</p>
+                                    <h4 className="text-lg font-black text-slate-900 uppercase leading-tight">{ass.subject}</h4>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{ass.className} • {ass.bimestre}</p>
 
                                     <div className="mt-6 grid grid-cols-2 gap-4">
-                                       <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
-                                          <p className="text-[8px] font-black text-white/40 uppercase">Proficiência Média</p>
-                                          <p className="text-xl font-black text-violet-300">{avg.toFixed(1)}%</p>
+                                       <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/60">
+                                          <p className="text-[8px] font-black text-slate-400 uppercase">Proficiência Média</p>
+                                          <p className="text-xl font-black text-violet-700">{avg.toFixed(1)}%</p>
                                        </div>
-                                       <div className="bg-red-500/10 p-3 rounded-2xl border border-red-500/20">
-                                          <p className="text-[8px] font-black text-red-400 uppercase">Atenção (Baixo)</p>
-                                          <p className="text-xl font-black text-red-500">{lowPerformers} <span className="text-[10px] text-red-300/60 uppercase">Alunos</span></p>
+                                       <div className="bg-red-50 p-3 rounded-2xl border border-red-200">
+                                          <p className="text-[8px] font-black text-red-600 uppercase">Atenção (Baixo)</p>
+                                          <p className="text-xl font-black text-red-600">{lowPerformers} <span className="text-[10px] text-red-400 uppercase">Alunos</span></p>
                                        </div>
                                     </div>
                                  </div>
-                                 <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
-                                    <button onClick={() => deleteRecord(ass.id)} className="text-white/20 hover:text-red-400 transition-colors" title="Excluir"><Trash2 size={16} /></button>
+                                 <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
+                                    <button onClick={() => deleteRecord(ass.id)} className="text-slate-300 hover:text-red-500 transition-colors" title="Excluir"><Trash2 size={16} /></button>
                                     <div className="flex gap-2">
                                        <button
                                           onClick={() => setSelectedAssessmentForView(ass)}
-                                          className="px-3 py-2 bg-white/5 text-white/60 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 border border-white/10"
+                                          className="px-3 py-2 bg-slate-100 text-slate-700 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2 border border-slate-200"
                                        >
                                           <Search size={12} />
                                           Ver Alunos
                                        </button>
                                        <button
                                           onClick={() => handleGenerateAIReport(ass)}
-                                          className="px-3 py-2 bg-violet-500/10 text-violet-300 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-violet-500/20 transition-all flex items-center gap-2 border border-violet-500/20"
+                                          className="px-3 py-2 bg-violet-50 text-violet-700 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-violet-100 transition-all flex items-center gap-2 border border-violet-200"
                                        >
                                           <Sparkles size={12} />
                                           Plano de Ação (IA)
@@ -1461,9 +1461,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            );
                         })}
                         {externalAssessments.length === 0 && (
-                           <div className="col-span-full py-24 text-center border-2 border-dashed border-white/10 rounded-[3rem] bg-white/5 backdrop-blur-sm">
-                              <BarChart3 size={48} className="mx-auto mb-4 text-white/10" />
-                              <p className="text-white/30 font-black uppercase text-xs tracking-widest">Nenhuma avaliação externa registrada</p>
+                           <div className="col-span-full py-24 text-center border-2 border-dashed border-slate-200 rounded-[3rem] bg-slate-50">
+                              <BarChart3 size={48} className="mx-auto mb-4 text-slate-300" />
+                              <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Nenhuma avaliação externa registrada</p>
                            </div>
                         )}
                      </div>
@@ -1472,44 +1472,44 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
             </div>
          ) : (
             <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-500 pb-20">
-               <form onSubmit={handleSave} className="bg-white/5 p-10 rounded-[3rem] border border-white/10 shadow-xl space-y-10 backdrop-blur-md">
-                  <div className="flex justify-between items-center border-b border-white/10 pb-8">
+               <form onSubmit={handleSave} className="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-200/80 shadow-sm space-y-10">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-8">
                      <div className="flex items-center gap-6">
-                        <button type="button" onClick={() => setViewMode('list')} className="p-3 bg-white/5 text-white/40 hover:text-violet-400 rounded-2xl transition-all border border-white/10"><ArrowLeft size={24} /></button>
+                        <button type="button" onClick={() => setViewMode('list')} className="p-3 bg-slate-100 text-slate-600 hover:text-violet-700 rounded-2xl transition-all border border-slate-200"><ArrowLeft size={24} /></button>
                         <div>
-                           <h3 className="text-xl font-black text-white uppercase tracking-tight">Lançamento de Resultados de Sistema</h3>
-                           <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest mt-1">Dados de proficiência da SEDUC/DRE</p>
+                           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Lançamento de Resultados de Sistema</h3>
+                           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Dados de proficiência da SEDUC/DRE</p>
                         </div>
                      </div>
-                     <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl shadow-sm border border-violet-500/20">
+                     <div className="p-3 bg-violet-50 text-violet-600 rounded-2xl shadow-sm border border-violet-100">
                         <Target size={24} />
                      </div>
                   </div>
 
                   {/* BOTÃO DE IMPORTAÇÃO IA */}
-                  <div className="p-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[2.5rem] shadow-lg shadow-violet-900/40">
+                  <div className="p-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[2.5rem] shadow-lg shadow-violet-600/20">
                      <button
                         type="button"
                         disabled={isImporting}
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-6 bg-[#0f1016] hover:bg-[#161821] transition-all rounded-[2.3rem] flex items-center justify-center gap-4 group overflow-hidden relative"
+                        className="w-full py-6 bg-slate-900 hover:bg-slate-950 transition-all rounded-[2.3rem] flex items-center justify-center gap-4 group overflow-hidden relative"
                      >
                         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                            <Sparkles size={120} className="text-violet-500" />
                         </div>
                         {isImporting ? (
                            <div className="flex items-center gap-3">
-                              <Loader2 size={24} className="animate-spin text-violet-500" />
+                              <Loader2 size={24} className="animate-spin text-violet-400" />
                               <span className="text-sm font-black text-violet-200 uppercase tracking-widest">IA Analisando Documento...</span>
                            </div>
                         ) : (
                            <>
-                              <div className="p-3 bg-violet-500/10 text-violet-400 rounded-2xl group-hover:scale-110 transition-transform border border-violet-500/20">
+                              <div className="p-3 bg-white/10 text-violet-300 rounded-2xl group-hover:scale-110 transition-transform border border-white/10">
                                  <FileUp size={24} />
                               </div>
                               <div className="text-left">
                                  <p className="text-sm font-black text-white uppercase tracking-tight leading-none">Importar Relatório (PDF/XLS)</p>
-                                 <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">Extração inteligente de nomes e notas via IA</p>
+                                 <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-1">Extração inteligente de nomes e notas via IA</p>
                               </div>
                               <Sparkles size={18} className="text-amber-400 animate-pulse" />
                            </>
@@ -1527,16 +1527,16 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div className="space-y-4">
                         <div className="space-y-1.5">
-                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Sistema de Avaliação</label>
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sistema de Avaliação</label>
                            <div className="grid grid-cols-2 gap-3">
                               {SYSTEMS.map(sys => (
-                                 <button key={sys} type="button" onClick={() => setForm({ ...form, type: sys as any })} className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all ${form.type === sys ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'}`}>{sys}</button>
+                                 <button key={sys} type="button" onClick={() => setForm({ ...form, type: sys as any })} className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all ${form.type === sys ? 'bg-violet-600 text-white shadow-md shadow-violet-600/20' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'}`}>{sys}</button>
                               ))}
                            </div>
                         </div>
                         <div className="space-y-1.5">
-                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Componente Curricular</label>
-                           <select value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-black text-sm text-white uppercase outline-none focus:bg-white/10 transition-all [&>option]:bg-gray-900">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Componente Curricular</label>
+                           <select value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-sm text-slate-800 uppercase outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer">
                               {SUBJECTS.map(s => <option key={s}>{s}</option>)}
                            </select>
                         </div>
@@ -1545,39 +1545,39 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                      <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Turma</label>
-                              <select value={form.className} onChange={e => setForm({ ...form, className: e.target.value })} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-black text-sm text-white uppercase outline-none focus:bg-white/10 transition-all [&>option]:bg-gray-900">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Turma</label>
+                              <select value={form.className} onChange={e => setForm({ ...form, className: e.target.value })} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-sm text-slate-800 uppercase outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer">
                                  {classrooms.map(c => <option key={c}>{c}</option>)}
                                  {classrooms.length === 0 && <option value="">Sem turmas cadastradas</option>}
                               </select>
                            </div>
                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Bimestre</label>
-                              <select value={form.bimestre} onChange={e => setForm({ ...form, bimestre: e.target.value })} className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-black text-sm text-white uppercase outline-none focus:bg-white/10 transition-all [&>option]:bg-gray-900">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bimestre</label>
+                              <select value={form.bimestre} onChange={e => setForm({ ...form, bimestre: e.target.value })} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-sm text-slate-800 uppercase outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 transition-all cursor-pointer">
                                  {['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'].map(b => <option key={b}>{b}</option>)}
                               </select>
                            </div>
                         </div>
                         <div className="space-y-1.5">
-                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Descrição do Período/Avaliação</label>
-                           <input required type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value.toUpperCase() })} placeholder="EX: AVALIAÇÃO DIAGNÓSTICA DE ENTRADA" className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm text-white uppercase outline-none focus:bg-white/10 transition-all placeholder:text-white/20" />
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descrição do Período/Avaliação</label>
+                           <input required type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value.toUpperCase() })} placeholder="EX: AVALIAÇÃO DIAGNÓSTICA DE ENTRADA" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm text-slate-800 uppercase outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400" />
                         </div>
                      </div>
                   </div>
 
                   <div className="space-y-6">
-                     <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                     <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
-                           <h4 className="text-xs font-black text-white uppercase tracking-widest">Notas de Proficiência (%)</h4>
-                           {isLoadingStudents && <span className="text-[9px] text-violet-400 font-bold animate-pulse">Carregando alunos...</span>}
+                           <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Notas de Proficiência (%)</h4>
+                           {isLoadingStudents && <span className="text-[9px] text-violet-600 font-bold animate-pulse">Carregando alunos...</span>}
                         </div>
-                        <span className="text-[9px] font-bold text-violet-400 uppercase flex items-center gap-1"><ShieldCheck size={12} /> Dados Auditáveis</span>
+                        <span className="text-[9px] font-bold text-violet-700 uppercase flex items-center gap-1"><ShieldCheck size={12} /> Dados Auditáveis</span>
                      </div>
                      <div className="grid grid-cols-1 gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                         {form.grades.map(g => (
-                           <div key={g.studentId} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-transparent hover:border-violet-500/30 transition-all">
+                           <div key={g.studentId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/60 hover:border-violet-300 transition-all">
                               <div>
-                                 <p className="text-xs font-black text-white uppercase">{g.studentName}</p>
+                                 <p className="text-xs font-black text-slate-900 uppercase">{g.studentName}</p>
                                  <div className="flex items-center gap-2 mt-1">
                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${PROFICIENCY_LEVELS.find(l => l.value === g.proficiencyLevel)?.color
                                        }`}>
@@ -1593,69 +1593,69 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     max="100"
                                     value={g.score}
                                     onChange={e => updateStudentData(g.studentId, parseInt(e.target.value) || 0)}
-                                    className="w-20 p-2 text-center bg-black/20 rounded-xl font-black text-sm text-white outline-none border-2 border-transparent focus:border-violet-500/50 transition-all"
+                                    className="w-20 p-2 text-center bg-white rounded-xl font-black text-sm text-slate-900 outline-none border border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                                  />
-                                 <span className="text-[10px] font-black text-white/30">%</span>
+                                 <span className="text-[10px] font-black text-slate-400">%</span>
                               </div>
                            </div>
                         ))}
                         {!isLoadingStudents && form.grades.length === 0 && (
-                           <div className="p-8 text-center bg-white/5 rounded-2xl border-2 border-dashed border-white/10">
-                              <p className="text-white/30 font-bold text-xs">Nenhum aluno encontrado nesta turma.</p>
+                           <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                              <p className="text-slate-400 font-bold text-xs">Nenhum aluno encontrado nesta turma.</p>
                            </div>
                         )}
                      </div>
                   </div>
 
-                  <button type="submit" disabled={isLoadingStudents || form.grades.length === 0} className={`w-full py-5 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl transition-all ${isLoadingStudents || form.grades.length === 0 ? 'bg-white/5 cursor-not-allowed text-white/20' : 'bg-violet-600 hover:bg-violet-700 shadow-violet-600/30'}`}>Finalizar Lançamento Externo</button>
+                  <button type="submit" disabled={isLoadingStudents || form.grades.length === 0} className={`w-full py-5 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl transition-all ${isLoadingStudents || form.grades.length === 0 ? 'bg-slate-200 cursor-not-allowed text-slate-400' : 'bg-violet-600 hover:bg-violet-700 shadow-violet-600/30'}`}>Finalizar Lançamento Externo</button>
                </form>
             </div>
          )}
 
          {/* AI STRATEGY MODAL */}
          {selectedAssessmentForAI && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
-               <div className="bg-[#1a1a1a] rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-white/10">
-                  <div className="p-8 bg-violet-900/50 text-white flex justify-between items-center shrink-0 border-b border-white/10">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
+               <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200">
+                  <div className="p-8 bg-violet-600 text-white flex justify-between items-center shrink-0">
                      <div className="flex items-center gap-4">
                         <div className="p-3 bg-white/10 rounded-2xl"><BrainCircuit size={28} /></div>
                         <div>
                            <h3 className="text-xl font-black uppercase tracking-tight">Plano de Intervenção Estratégica</h3>
-                           <p className="text-violet-200 text-xs font-bold uppercase tracking-widest">{selectedAssessmentForAI.subject} • {selectedAssessmentForAI.className}</p>
+                           <p className="text-violet-100 text-xs font-bold uppercase tracking-widest">{selectedAssessmentForAI.subject} • {selectedAssessmentForAI.className}</p>
                         </div>
                      </div>
                      <button onClick={() => setSelectedAssessmentForAI(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
                   </div>
 
-                  <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
+                  <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-slate-50">
                      {loadingAI ? (
                         <div className="py-20 flex flex-col items-center justify-center text-center space-y-6">
-                           <Loader2 size={48} className="animate-spin text-violet-500" />
-                           <p className="text-white/40 font-black uppercase text-xs tracking-widest">A Inteligência Artificial está analisando os dados da turma...</p>
+                           <Loader2 size={48} className="animate-spin text-violet-600" />
+                           <p className="text-slate-400 font-black uppercase text-xs tracking-widest">A Inteligência Artificial está analisando os dados da turma...</p>
                         </div>
                      ) : aiReport ? (
                         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                            <div>
-                              <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Target size={14} /> Diagnóstico Identificado</h4>
-                              <p className="text-white/80 font-medium leading-relaxed bg-white/5 p-6 rounded-3xl border border-white/10 text-sm">
+                              <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest mb-3 flex items-center gap-2"><Target size={14} /> Diagnóstico Identificado</h4>
+                              <p className="text-slate-700 font-medium leading-relaxed bg-white p-6 rounded-3xl border border-slate-200 text-sm">
                                  {aiReport.diagnosis}
                               </p>
                            </div>
 
                            <div>
-                              <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Lightbulb size={14} /> Habilidades Foco (BNCC/DRC-MT)</h4>
-                              <div className="bg-amber-500/10 p-6 rounded-3xl border border-amber-500/20">
-                                 <p className="text-amber-200 font-bold text-sm">{aiReport.skillsToReinforce || aiReport.skills_to_reinforce}</p>
+                              <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest mb-3 flex items-center gap-2"><Lightbulb size={14} /> Habilidades Foco (BNCC/DRC-MT)</h4>
+                              <div className="bg-amber-50 p-6 rounded-3xl border border-amber-200">
+                                 <p className="text-amber-900 font-bold text-sm">{aiReport.skillsToReinforce || aiReport.skills_to_reinforce}</p>
                               </div>
                            </div>
 
                            <div>
                               <div className="flex justify-between items-center mb-3">
-                                 <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                                 <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest flex items-center gap-2">
                                     <CheckCircle2 size={14} /> {aiReport.id ? 'Checklist de Ação (PDCA)' : 'Metodologias Ativas Sugeridas'}
                                  </h4>
                                  {aiReport.id && aiReport.tasks && (
-                                    <span className="text-[10px] font-bold text-white/50 bg-white/5 px-2 py-1 rounded-md">
+                                    <span className="text-[10px] font-bold text-slate-600 bg-slate-200/60 px-2 py-1 rounded-md">
                                        {aiReport.tasks.filter((t: any) => t.completed).length} de {aiReport.tasks.length} Concluídas
                                     </span>
                                  )}
@@ -1665,18 +1665,18 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     aiReport.tasks.map((task: any, idx: number) => (
                                        <div key={task.id} 
                                             onClick={() => handleToggleTask(task.id)}
-                                            className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer select-none ${task.completed ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/5 border-transparent hover:border-white/10'}`}>
-                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border transition-all ${task.completed ? 'bg-emerald-500 border-emerald-400 text-white' : 'bg-white/10 border-white/20 text-transparent'}`}>
+                                            className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer select-none ${task.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200 hover:border-violet-300'}`}>
+                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border transition-all ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-slate-100 border-slate-300 text-transparent'}`}>
                                              {task.completed && <Check size={14} strokeWidth={3} />}
                                           </div>
-                                          <p className={`text-sm font-medium transition-all ${task.completed ? 'text-emerald-200/50 line-through' : 'text-white/80'}`}>{task.title}</p>
+                                          <p className={`text-sm font-medium transition-all ${task.completed ? 'text-emerald-700 line-through' : 'text-slate-800'}`}>{task.title}</p>
                                        </div>
                                     ))
                                  ) : (
                                     aiReport.actions?.map((action: string, idx: number) => (
-                                       <div key={idx} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-transparent transition-all">
-                                          <div className="w-6 h-6 rounded-full bg-violet-600/50 text-white flex items-center justify-center font-bold text-xs shrink-0 border border-violet-500/30">{idx + 1}</div>
-                                          <p className="text-white/80 text-sm font-medium">{action}</p>
+                                       <div key={idx} className="flex gap-4 p-4 bg-white rounded-2xl border border-slate-200 transition-all">
+                                          <div className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-xs shrink-0">{idx + 1}</div>
+                                          <p className="text-slate-800 text-sm font-medium">{action}</p>
                                        </div>
                                     ))
                                  )}
@@ -1684,7 +1684,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               
                               {!aiReport.id && (
                                  <div className="mt-8 flex justify-center">
-                                    <button onClick={handleSaveActionPlan} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+                                    <button onClick={handleSaveActionPlan} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
                                        <Save size={18} /> Salvar como Plano de Ação
                                     </button>
                                  </div>
@@ -1692,20 +1692,20 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </div>
                            
                            {aiReport.id && (
-                              <div className="mt-8 flex justify-center border-t border-white/10 pt-6">
-                                 <button onClick={() => handleGenerateAIReport(selectedAssessmentForAI, true)} className="text-white/40 hover:text-white transition-all text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                              <div className="mt-8 flex justify-center border-t border-slate-200 pt-6">
+                                 <button onClick={() => handleGenerateAIReport(selectedAssessmentForAI, true)} className="text-slate-500 hover:text-slate-900 transition-all text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                                     <RefreshCw size={14} /> Gerar Novas Ideias (Substituir Plano)
                                  </button>
                               </div>
                            )}
                         </div>
                      ) : (
-                        <div className="text-center py-10 text-white/30">Não foi possível gerar o relatório.</div>
+                        <div className="text-center py-10 text-slate-400">Não foi possível gerar o relatório.</div>
                      )}
                   </div>
 
-                  <div className="p-6 border-t border-white/10 bg-white/5 flex justify-end shrink-0">
-                     <button onClick={() => window.print()} className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-black uppercase text-xs tracking-widest transition-all">Imprimir Relatório</button>
+                  <div className="p-6 border-t border-slate-200 bg-white flex justify-end shrink-0">
+                     <button onClick={() => window.print()} className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-black uppercase text-xs tracking-widest transition-all">Imprimir Relatório</button>
                   </div>
                 </div>
              </div>
@@ -1713,23 +1713,23 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
           {/* MODAL / GUIA DE SUGESTÕES PEDAGÓGICAS DE MELHORIA */}
           {showPedagogicalGuide && (
-             <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-                <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar space-y-6 shadow-2xl animate-in zoom-in-95 font-sans">
-                   <div className="flex justify-between items-start border-b border-white/10 pb-6">
+             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar space-y-6 shadow-2xl animate-in zoom-in-95 font-sans">
+                   <div className="flex justify-between items-start border-b border-slate-100 pb-6">
                       <div>
-                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black uppercase mb-2">
+                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-black uppercase mb-2">
                             <Lightbulb size={14} /> Plano Estratégico de Gestão
                          </div>
-                         <h3 className="text-2xl font-black text-white uppercase tracking-tight">
+                         <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
                             Diagnóstico Pedagógico & Ações de Melhoria
                          </h3>
-                         <p className="text-xs text-white/50 font-bold uppercase mt-1">
+                         <p className="text-xs text-slate-500 font-bold uppercase mt-1">
                             Recomendações fundamentadas nos dados do 1º e 2º Bimestres da SEE 2026
                          </p>
                       </div>
                       <button
                          onClick={() => setShowPedagogicalGuide(false)}
-                         className="p-2.5 text-white/40 hover:text-white hover:bg-white/10 rounded-2xl transition-all"
+                         className="p-2.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-2xl transition-all"
                       >
                          <X size={20} />
                       </button>
@@ -1737,71 +1737,71 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                    <div className="space-y-6 text-sm">
                       {/* SEÇÃO 1: AÇÕES PRIORITÁRIAS DE RECOMPOSIÇÃO (URGENTE) */}
-                      <div className="bg-red-500/10 p-6 rounded-3xl border border-red-500/20 space-y-3">
-                         <h4 className="text-base font-black text-red-400 uppercase flex items-center gap-2">
+                      <div className="bg-red-50 p-6 rounded-3xl border border-red-200 space-y-3">
+                         <h4 className="text-base font-black text-red-700 uppercase flex items-center gap-2">
                             <AlertTriangle size={18} /> 1. Intervenções de Alta Prioridade (Foco Crítico)
                          </h4>
-                         <ul className="space-y-2 text-xs font-bold text-white/80 list-disc list-inside">
+                         <ul className="space-y-2 text-xs font-bold text-slate-700 list-disc list-inside">
                             <li>
-                               <strong className="text-white">Ciências no 7º Ano (55% ➔ 31%, Δ -24%):</strong> Registrou a maior queda na escola. Recomenda-se realizar uma reunião de alinhamento com os professores de Ciências e aplicar oficinas de reforço com apoio de experimentos práticos.
+                               <strong className="text-slate-900">Ciências no 7º Ano (55% ➔ 31%, Δ -24%):</strong> Registrou a maior queda na escola. Recomenda-se realizar uma reunião de alinhamento com os professores de Ciências e aplicar oficinas de reforço com apoio de experimentos práticos.
                             </li>
                             <li>
-                               <strong className="text-white">Matemática nos 7º, 8º e 9º Anos:</strong> Médias estabilizadas abaixo de 50%. Sugere-se trabalhar a recomposição de descritores básicos (Resolução de Problemas, Frações e Geometria) no início de cada aula (Rotina de 10 min de Cálculo Mental).
+                               <strong className="text-slate-900">Matemática nos 7º, 8º e 9º Anos:</strong> Médias estabilizadas abaixo de 50%. Sugere-se trabalhar a recomposição de descritores básicos (Resolução de Problemas, Frações e Geometria) no início de cada aula (Rotina de 10 min de Cálculo Mental).
                             </li>
                             <li>
-                               <strong className="text-white">História no 6º Ano (47% ➔ 35%, Δ -12%):</strong> Queda de engajamento na transição para os Anos Finais. Utilizar metodologias ativas e mapas mentais para interpretação de fontes históricas.
+                               <strong className="text-slate-900">História no 6º Ano (47% ➔ 35%, Δ -12%):</strong> Queda de engajamento na transição para os Anos Finais. Utilizar metodologias ativas e mapas mentais para interpretação de fontes históricas.
                             </li>
                          </ul>
                       </div>
 
                       {/* SEÇÃO 2: CASE DE SUCESSO (DISSEMINAÇÃO DE BOAS PRÁTICAS) */}
-                      <div className="bg-emerald-500/10 p-6 rounded-3xl border border-emerald-500/20 space-y-3">
-                         <h4 className="text-base font-black text-emerald-400 uppercase flex items-center gap-2">
+                      <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-200 space-y-3">
+                         <h4 className="text-base font-black text-emerald-700 uppercase flex items-center gap-2">
                             <Award size={18} /> 2. Destaques Positivos & Boas Práticas (Disseminar)
                          </h4>
-                         <ul className="space-y-2 text-xs font-bold text-white/80 list-disc list-inside">
+                         <ul className="space-y-2 text-xs font-bold text-slate-700 list-disc list-inside">
                             <li>
-                               <strong className="text-white">Ciências no 8º Ano (31% ➔ 62%, Δ +31%):</strong> Maior evolução da escola no bimestre! Recomenda-se convidar o professor responsável para compartilhar a metodologia de ensino durante as Horas de Trabalho Pedagógico Coletivo (HTPC).
+                               <strong className="text-slate-900">Ciências no 8º Ano (31% ➔ 62%, Δ +31%):</strong> Maior evolução da escola no bimestre! Recomenda-se convidar o professor responsável para compartilhar a metodologia de ensino durante as Horas de Trabalho Pedagógico Coletivo (HTPC).
                             </li>
                             <li>
-                               <strong className="text-white">Língua Portuguesa no 9º Ano (55% ➔ 66%, Δ +11%):</strong> Excelente avanço na reta final do Ensino Fundamental. Manter o foco na interpretação textual e simulados preparatórios para as avaliações de saída.
+                               <strong className="text-slate-900">Língua Portuguesa no 9º Ano (55% ➔ 66%, Δ +11%):</strong> Excelente avanço na reta final do Ensino Fundamental. Manter o foco na interpretação textual e simulados preparatórios para as avaliações de saída.
                             </li>
                             <li>
-                               <strong className="text-white">Geografia no 7º Ano (32% ➔ 46%, Δ +14%):</strong> Recuperação expressiva de aprendizado.
+                               <strong className="text-slate-900">Geografia no 7º Ano (32% ➔ 46%, Δ +14%):</strong> Recuperação expressiva de aprendizado.
                             </li>
                          </ul>
                       </div>
 
                       {/* SEÇÃO 3: ROTEIRO PASSO A PASSO DE MELHORIA PARA A COORDENAÇÃO */}
-                      <div className="bg-violet-500/10 p-6 rounded-3xl border border-violet-500/20 space-y-3">
-                         <h4 className="text-base font-black text-violet-300 uppercase flex items-center gap-2">
+                      <div className="bg-violet-50 p-6 rounded-3xl border border-violet-200 space-y-3">
+                         <h4 className="text-base font-black text-violet-800 uppercase flex items-center gap-2">
                             <Zap size={18} /> 3. Plano Institucional de Ação em 4 Passos
                          </h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
-                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
-                               <span className="text-violet-400 font-black">Passo 1: Reagrupamento</span>
-                               <p className="text-white/70">Organizar turmas de tutoria quinzenal com os alunos sinalizados com tag vermelha (🔴 &lt; 40%).</p>
+                            <div className="bg-white p-4 rounded-2xl border border-violet-100 space-y-1">
+                               <span className="text-violet-700 font-black">Passo 1: Reagrupamento</span>
+                               <p className="text-slate-600">Organizar turmas de tutoria quinzenal com os alunos sinalizados com tag vermelha (🔴 &lt; 40%).</p>
                             </div>
-                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
-                               <span className="text-violet-400 font-black">Passo 2: Devolutiva de Aluno</span>
-                               <p className="text-white/70">Apresentar ao aluno seu gráfico de evolução bimestral na aba "Evolução do Aluno" para gerar corresponsabilidade.</p>
+                            <div className="bg-white p-4 rounded-2xl border border-violet-100 space-y-1">
+                               <span className="text-violet-700 font-black">Passo 2: Devolutiva de Aluno</span>
+                               <p className="text-slate-600">Apresentar ao aluno seu gráfico de evolução bimestral na aba "Evolução do Aluno" para gerar corresponsabilidade.</p>
                             </div>
-                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
-                               <span className="text-violet-400 font-black">Passo 3: Metas por Turma</span>
-                               <p className="text-white/70">Pactuar com os professores metas de superação de pelo menos +10% para o 3º Bimestre nas disciplinas em alerta.</p>
+                            <div className="bg-white p-4 rounded-2xl border border-violet-100 space-y-1">
+                               <span className="text-violet-700 font-black">Passo 3: Metas por Turma</span>
+                               <p className="text-slate-600">Pactuar com os professores metas de superação de pelo menos +10% para o 3º Bimestre nas disciplinas em alerta.</p>
                             </div>
-                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
-                               <span className="text-violet-400 font-black">Passo 4: IA Interventiva</span>
-                               <p className="text-white/70">Usar o botão "Gerar Plano de Intervenção Pedagógica com IA" em cada avaliação para obter roteiro de aula pronto.</p>
+                            <div className="bg-white p-4 rounded-2xl border border-violet-100 space-y-1">
+                               <span className="text-violet-700 font-black">Passo 4: IA Interventiva</span>
+                               <p className="text-slate-600">Usar o botão "Gerar Plano de Intervenção Pedagógica com IA" em cada avaliação para obter roteiro de aula pronto.</p>
                             </div>
                          </div>
                       </div>
                    </div>
 
-                   <div className="pt-4 border-t border-white/10 flex justify-end">
+                   <div className="pt-4 border-t border-slate-100 flex justify-end">
                       <button
                          onClick={() => setShowPedagogicalGuide(false)}
-                         className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider hover:bg-violet-700 transition-all shadow-lg"
+                         className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider hover:bg-violet-700 transition-all shadow-md"
                       >
                          Entendido / Fechar
                       </button>
@@ -1812,43 +1812,43 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
          {/* VIEW STUDENTS MODAL */}
          {selectedAssessmentForView && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
-               <div className="bg-[#1a1a1a] rounded-[3rem] w-full max-w-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-white/10">
-                  <div className="p-8 bg-violet-900/50 text-white flex justify-between items-center shrink-0 border-b border-white/10">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
+               <div className="bg-white rounded-[3rem] w-full max-w-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200">
+                  <div className="p-8 bg-violet-600 text-white flex justify-between items-center shrink-0">
                      <div className="flex items-center gap-4">
                         <div className="p-3 bg-white/10 rounded-2xl"><Search size={28} /></div>
                         <div>
                            <h3 className="text-xl font-black uppercase tracking-tight">Desempenho dos Alunos</h3>
-                           <p className="text-violet-200 text-xs font-bold uppercase tracking-widest">{selectedAssessmentForView.subject} • {selectedAssessmentForView.className} • {selectedAssessmentForView.bimestre}</p>
+                           <p className="text-violet-100 text-xs font-bold uppercase tracking-widest">{selectedAssessmentForView.subject} • {selectedAssessmentForView.className} • {selectedAssessmentForView.bimestre}</p>
                         </div>
                      </div>
                      <button onClick={() => setSelectedAssessmentForView(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
                   </div>
 
-                  <div className="flex border-b border-white/10 px-8">
+                  <div className="flex border-b border-slate-200 px-8 bg-white">
                      <button 
                         onClick={() => setActiveModalTab('alunos')}
-                        className={`px-6 py-4 font-bold text-sm tracking-wide transition-all ${activeModalTab === 'alunos' ? 'border-b-2 border-violet-500 text-violet-400' : 'text-white/40 hover:text-white/70'}`}>
+                        className={`px-6 py-4 font-bold text-sm tracking-wide transition-all ${activeModalTab === 'alunos' ? 'border-b-2 border-violet-600 text-violet-700' : 'text-slate-400 hover:text-slate-700'}`}>
                         Desempenho dos Alunos
                      </button>
                      <button 
                         onClick={() => setActiveModalTab('habilidades')}
-                        className={`px-6 py-4 font-bold text-sm tracking-wide transition-all ${activeModalTab === 'habilidades' ? 'border-b-2 border-amber-500 text-amber-400' : 'text-white/40 hover:text-white/70'}`}>
+                        className={`px-6 py-4 font-bold text-sm tracking-wide transition-all ${activeModalTab === 'habilidades' ? 'border-b-2 border-amber-600 text-amber-700' : 'text-slate-400 hover:text-slate-700'}`}>
                         Raio-X de Habilidades
                      </button>
                   </div>
 
-                  <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]">
+                  <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-slate-50">
                   {activeModalTab === 'alunos' ? (
                      <div className="grid grid-cols-1 gap-3">
                         {selectedAssessmentForView.grades.sort((a, b) => a.studentName.localeCompare(b.studentName)).map(g => (
                            <React.Fragment key={g.studentName}>
-                           <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:border-violet-500/30 transition-all">
+                           <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 hover:border-violet-300 transition-all shadow-sm">
                               <div 
                                  className="cursor-pointer"
                                  onClick={() => setSelectedStudentHistory(selectedStudentHistory === g.studentId ? null : g.studentId)}
                               >
-                                 <p className="text-xs font-black text-white uppercase hover:text-violet-400 transition-colors">{g.studentName}</p>
+                                 <p className="text-xs font-black text-slate-900 uppercase hover:text-violet-700 transition-colors">{g.studentName}</p>
                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${PROFICIENCY_LEVELS.find(l => l.value === g.proficiencyLevel)?.color}`}>
                                        Nível: {PROFICIENCY_LEVELS.find(l => l.value === g.proficiencyLevel)?.label}
@@ -1858,17 +1858,17 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     {g.studentId && studentStats[g.studentId] && (
                                        <>
                                           {studentStats[g.studentId].attendance < 85 && (
-                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-red-500/20 text-red-400 border border-red-500/30" title={`Frequência: ${studentStats[g.studentId].attendance.toFixed(1)}%`}>
+                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-red-50 text-red-700 border border-red-200" title={`Frequência: ${studentStats[g.studentId].attendance.toFixed(1)}%`}>
                                                 Falta Crítica
                                              </span>
                                           )}
                                           {studentStats[g.studentId].activeReferrals > 0 && (
-                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-orange-500/20 text-orange-400 border border-orange-500/30" title={`${studentStats[g.studentId].activeReferrals} Encaminhamento(s) Aberto(s)`}>
+                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-orange-50 text-orange-700 border border-orange-200" title={`${studentStats[g.studentId].activeReferrals} Encaminhamento(s) Aberto(s)`}>
                                                 Psicossocial
                                              </span>
                                           )}
                                           {studentStats[g.studentId].civicoBehavior > 0 && (
-                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" title={`${studentStats[g.studentId].civicoBehavior} Ocorrência(s) Disciplinar(es)`}>
+                                             <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200" title={`${studentStats[g.studentId].civicoBehavior} Ocorrência(s) Disciplinar(es)`}>
                                                 Conduta
                                              </span>
                                           )}
@@ -1877,7 +1877,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  </div>
                               </div>
                               <div className="flex items-center gap-4">
-                                 <div className="w-20 p-2 text-center bg-black/20 rounded-xl font-black text-sm text-white border border-white/5">
+                                 <div className="w-20 p-2 text-center bg-slate-100 rounded-xl font-black text-sm text-slate-800 border border-slate-200">
                                     {g.score}%
                                  </div>
                               </div>
@@ -1885,8 +1885,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            
                            {/* HISTÓRICO DO ALUNO (MINI-DOSSIÊ) */}
                            {selectedStudentHistory === g.studentId && (
-                              <div className="p-4 bg-black/40 rounded-2xl border border-violet-500/20 mt-1 mb-3 animate-in slide-in-from-top-2">
-                                 <h4 className="text-xs font-black text-violet-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                              <div className="p-4 bg-white rounded-2xl border border-violet-200 mt-1 mb-3 shadow-sm animate-in slide-in-from-top-2">
+                                 <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest mb-4 flex items-center gap-2">
                                     <TrendingUp size={14} /> Evolução Individual: {g.studentName}
                                  </h4>
                                  <div className="h-48 w-full">
@@ -1906,15 +1906,15 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                           }
                                           margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
                                        >
-                                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                          <XAxis dataKey="name" stroke="#ffffff50" fontSize={10} tickMargin={10} axisLine={false} tickLine={false} />
-                                          <YAxis stroke="#ffffff50" fontSize={10} axisLine={false} tickLine={false} domain={[0, 100]} />
+                                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickMargin={10} axisLine={false} tickLine={false} />
+                                          <YAxis stroke="#94a3b8" fontSize={10} axisLine={false} tickLine={false} domain={[0, 100]} />
                                           <Tooltip
-                                             contentStyle={{ backgroundColor: '#1a1a1a', borderColor: '#ffffff20', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}
-                                             itemStyle={{ color: '#a78bfa' }}
-                                             cursor={{fill: '#ffffff05'}}
+                                             contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', color: '#0f172a' }}
+                                             itemStyle={{ color: '#7c3aed' }}
+                                             cursor={{fill: 'rgba(0,0,0,0.03)'}}
                                           />
-                                          <Bar dataKey="score" name="Proficiência (%)" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                          <Bar dataKey="score" name="Proficiência (%)" fill="#7c3aed" radius={[4, 4, 0, 0]} maxBarSize={40} />
                                        </BarChart>
                                     </ResponsiveContainer>
                                  </div>
@@ -1923,8 +1923,8 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            </React.Fragment>
                         ))}
                         {selectedAssessmentForView.grades.length === 0 && (
-                           <div className="p-8 text-center bg-white/5 rounded-2xl border-2 border-dashed border-white/10">
-                              <p className="text-white/30 font-bold text-xs">Nenhum aluno registrado nesta avaliação.</p>
+                           <div className="p-8 text-center bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                              <p className="text-slate-400 font-bold text-xs">Nenhum aluno registrado nesta avaliação.</p>
                            </div>
                         )}
                      </div>
@@ -1948,11 +1948,11 @@ function SkillsXRay({ assessment }: { assessment: Assessment }) {
    if (!subjectData || !subjectData.habilidades || subjectData.habilidades.length === 0) {
       return (
          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-               <span className="text-white/20">∅</span>
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+               <span className="text-slate-400 font-bold text-xl">∅</span>
             </div>
-            <h4 className="text-white/50 font-bold mb-2">Sem dados de habilidades</h4>
-            <p className="text-white/30 text-sm max-w-sm">
+            <h4 className="text-slate-700 font-bold mb-2">Sem dados de habilidades</h4>
+            <p className="text-slate-400 text-sm max-w-sm">
                Não encontramos o mapeamento de habilidades para esta turma/disciplina na planilha importada.
             </p>
          </div>
@@ -1965,25 +1965,25 @@ function SkillsXRay({ assessment }: { assessment: Assessment }) {
    return (
       <div className="space-y-8 animate-in fade-in duration-300">
          <section>
-            <h4 className="text-amber-400 font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
+            <h4 className="text-amber-700 font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                Desempenho Geral da Turma ({habilidades.length} Habilidades)
             </h4>
             <div className="grid grid-cols-1 gap-3">
                {habilidades.sort((a: any, b: any) => b.rendimento - a.rendimento).map((hab: any) => (
-                  <div key={hab.codigo} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div key={hab.codigo} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                      <div className="flex justify-between items-start gap-4 mb-2">
                         <div>
-                           <p className="text-white font-bold text-sm" title={hab.descricao}>{hab.codigo}</p>
-                           <p className="text-white/50 text-xs line-clamp-1 mt-0.5" title={hab.descricao}>{hab.descricao.split('-').slice(1).join('-').trim()}</p>
+                           <p className="text-slate-900 font-bold text-sm" title={hab.descricao}>{hab.codigo}</p>
+                           <p className="text-slate-500 text-xs line-clamp-1 mt-0.5" title={hab.descricao}>{hab.descricao.split('-').slice(1).join('-').trim()}</p>
                         </div>
-                        <div className={`px-2 py-1 rounded text-xs font-black ${hab.rendimento >= 70 ? 'bg-green-500/20 text-green-400' : hab.rendimento >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <div className={`px-2 py-1 rounded text-xs font-black ${hab.rendimento >= 70 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : hab.rendimento >= 50 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                            {hab.rendimento}%
                         </div>
                      </div>
-                     <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+                     <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div 
-                           className={`h-full rounded-full ${hab.rendimento >= 70 ? 'bg-green-500' : hab.rendimento >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                           className={`h-full rounded-full ${hab.rendimento >= 70 ? 'bg-emerald-500' : hab.rendimento >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
                            style={{ width: `${Math.max(hab.rendimento, 2)}%` }}
                         />
                      </div>
@@ -1993,8 +1993,8 @@ function SkillsXRay({ assessment }: { assessment: Assessment }) {
          </section>
 
          <section>
-            <h4 className="text-violet-400 font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
-               <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+            <h4 className="text-violet-700 font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-violet-600"></span>
                Raio-X por Aluno
             </h4>
             <div className="grid grid-cols-1 gap-2">
@@ -2008,52 +2008,52 @@ function SkillsXRay({ assessment }: { assessment: Assessment }) {
                   const rendimento = total > 0 ? Math.round((acertos / total) * 100) : 0;
 
                   return (
-                     <div key={aluno} className={`bg-white/5 border ${isExpanded ? 'border-violet-500/50' : 'border-white/10'} rounded-xl overflow-hidden transition-all`}>
+                     <div key={aluno} className={`bg-white border ${isExpanded ? 'border-violet-500 shadow-sm' : 'border-slate-200'} rounded-xl overflow-hidden transition-all`}>
                         <div 
-                           className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5"
+                           className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50"
                            onClick={() => setExpandedStudent(isExpanded ? null : aluno)}
                         >
                            <div>
-                              <p className="text-white text-sm font-bold">{aluno}</p>
-                              <p className="text-white/40 text-xs mt-0.5">Acertou {acertos} de {total} habilidades</p>
+                              <p className="text-slate-900 text-sm font-bold">{aluno}</p>
+                              <p className="text-slate-400 text-xs mt-0.5">Acertou {acertos} de {total} habilidades</p>
                            </div>
-                           <div className={`text-sm font-black ${rendimento >= 70 ? 'text-green-400' : rendimento >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                           <div className={`text-sm font-black ${rendimento >= 70 ? 'text-emerald-600' : rendimento >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
                               {rendimento}%
                            </div>
                         </div>
 
                         {isExpanded && (
-                           <div className="p-4 pt-0 border-t border-white/5 bg-black/20 flex flex-col gap-4 animate-in slide-in-from-top-2">
+                           <div className="p-4 pt-0 border-t border-slate-100 bg-slate-50 flex flex-col gap-4 animate-in slide-in-from-top-2">
                               <div>
-                                 <p className="text-green-400 text-xs font-bold uppercase tracking-widest mb-2 mt-4">Dominadas (Acertos)</p>
+                                 <p className="text-emerald-700 text-xs font-bold uppercase tracking-widest mb-2 mt-4">Dominadas (Acertos)</p>
                                  <div className="flex flex-wrap gap-2">
                                     {Object.entries(studentSkills).filter(([_, hit]) => hit === true).map(([codigo]) => {
                                        const desc = habilidades.find((h: any) => h.codigo === codigo)?.descricao || codigo;
                                        return (
-                                          <span key={codigo} title={desc} className="px-2 py-1 bg-green-500/10 border border-green-500/20 text-green-300 rounded text-[10px] font-bold cursor-help">
+                                          <span key={codigo} title={desc} className="px-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded text-[10px] font-bold cursor-help">
                                              {codigo}
                                           </span>
                                        );
                                     })}
                                     {Object.entries(studentSkills).filter(([_, hit]) => hit === true).length === 0 && (
-                                       <span className="text-white/30 text-xs italic">Nenhuma habilidade dominada.</span>
+                                       <span className="text-slate-400 text-xs italic">Nenhuma habilidade dominada.</span>
                                     )}
                                  </div>
                               </div>
 
                               <div>
-                                 <p className="text-red-400 text-xs font-bold uppercase tracking-widest mb-2">Em Déficit (Erros)</p>
+                                 <p className="text-red-700 text-xs font-bold uppercase tracking-widest mb-2">Em Déficit (Erros)</p>
                                  <div className="flex flex-wrap gap-2">
                                     {Object.entries(studentSkills).filter(([_, hit]) => hit === false).map(([codigo]) => {
                                        const desc = habilidades.find((h: any) => h.codigo === codigo)?.descricao || codigo;
                                        return (
-                                          <span key={codigo} title={desc} className="px-2 py-1 bg-red-500/10 border border-red-500/20 text-red-300 rounded text-[10px] font-bold cursor-help">
+                                          <span key={codigo} title={desc} className="px-2 py-1 bg-red-50 border border-red-200 text-red-800 rounded text-[10px] font-bold cursor-help">
                                              {codigo}
                                           </span>
                                        );
                                     })}
                                     {Object.entries(studentSkills).filter(([_, hit]) => hit === false).length === 0 && (
-                                       <span className="text-white/30 text-xs italic">Nenhuma habilidade em déficit.</span>
+                                       <span className="text-slate-400 text-xs italic">Nenhuma habilidade em déficit.</span>
                                     )}
                                  </div>
                               </div>
