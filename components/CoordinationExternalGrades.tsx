@@ -1187,32 +1187,36 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                                  const b3 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '3º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
 
+                                 const normKey = (name: string) => (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
                                  const studentMap = new Map<string, { name: string, b1Scores: number[], b2Scores: number[], b3Scores: number[] }>();
 
                                  b1.forEach(ass => {
                                     ass.grades.forEach(g => {
-                                       if (!studentMap.has(g.studentName)) {
-                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
+                                       const key = normKey(g.studentName);
+                                       if (!studentMap.has(key)) {
+                                          studentMap.set(key, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
                                        }
-                                       studentMap.get(g.studentName)!.b1Scores.push(g.score);
+                                       studentMap.get(key)!.b1Scores.push(g.score);
                                     });
                                  });
 
                                  b2.forEach(ass => {
                                     ass.grades.forEach(g => {
-                                       if (!studentMap.has(g.studentName)) {
-                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
+                                       const key = normKey(g.studentName);
+                                       if (!studentMap.has(key)) {
+                                          studentMap.set(key, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
                                        }
-                                       studentMap.get(g.studentName)!.b2Scores.push(g.score);
+                                       studentMap.get(key)!.b2Scores.push(g.score);
                                     });
                                  });
 
                                  b3.forEach(ass => {
                                     ass.grades.forEach(g => {
-                                       if (!studentMap.has(g.studentName)) {
-                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
+                                       const key = normKey(g.studentName);
+                                       if (!studentMap.has(key)) {
+                                          studentMap.set(key, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
                                        }
-                                       studentMap.get(g.studentName)!.b3Scores.push(g.score);
+                                       studentMap.get(key)!.b3Scores.push(g.score);
                                     });
                                  });
 
