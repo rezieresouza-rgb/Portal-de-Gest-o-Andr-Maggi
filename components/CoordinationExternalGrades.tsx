@@ -618,7 +618,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                            displayMode === 'comparativo' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                         }`}
                      >
-                        <ArrowUpRight size={16} /> Comparador 1º x 2º Bim.
+                        <ArrowUpRight size={16} /> Comparador Bimestral
                      </button>
                      <button
                         onClick={() => setDisplayMode('alunos_turma')}
@@ -877,6 +877,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               {(() => {
                                  const b1 = allExternalAssessments.filter(a => a.bimestre === '1º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
                                  const b2 = allExternalAssessments.filter(a => a.bimestre === '2º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
+                                  const b3 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '3º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
 
                                  const classSubjectPairs = new Set<string>();
                                  allExternalAssessments
@@ -918,12 +919,17 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                        || b1.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
                                     const ass2 = b2.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase() && a.grades.length > 0)
                                        || b2.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
+                                    const ass3 = b3.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase() && a.grades.length > 0)
+                                       || b3.find(a => a.className === cls && a.subject.toUpperCase() === subj.toUpperCase());
 
                                     const avg1 = ass1 && ass1.grades.length > 0 ? (ass1.grades.reduce((a, g) => a + g.score, 0) / ass1.grades.length) : null;
                                     const avg2 = ass2 && ass2.grades.length > 0 ? (ass2.grades.reduce((a, g) => a + g.score, 0) / ass2.grades.length) : null;
+                                    const avg3 = ass3 && ass3.grades.length > 0 ? (ass3.grades.reduce((a, g) => a + g.score, 0) / ass3.grades.length) : null;
 
                                     let delta: number | null = null;
-                                    if (avg1 !== null && avg2 !== null) {
+                                    if (avg3 !== null && avg2 !== null) {
+                                       delta = parseFloat((avg3 - avg2).toFixed(1));
+                                    } else if (avg2 !== null && avg1 !== null) {
                                        delta = parseFloat((avg2 - avg1).toFixed(1));
                                     }
 
@@ -934,8 +940,11 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                           <td className="py-5 px-6 text-center font-bold text-xs text-slate-600">
                                              {avg1 !== null ? `${avg1.toFixed(1)}%` : '-'}
                                           </td>
-                                          <td className="py-5 px-6 text-center font-bold text-xs text-slate-900">
+                                          <td className="py-5 px-6 text-center font-bold text-xs text-slate-600">
                                              {avg2 !== null ? `${avg2.toFixed(1)}%` : '-'}
+                                          </td>
+                                          <td className="py-5 px-6 text-center font-bold text-xs text-slate-900">
+                                             {avg3 !== null ? `${avg3.toFixed(1)}%` : '-'}
                                           </td>
                                           <td className="py-5 px-6 text-center">
                                              {delta !== null ? (
@@ -987,7 +996,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  onClick={() => setStudentSubView('comparativo')}
                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1 ${studentSubView === 'comparativo' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                               >
-                                 <ArrowUpRight size={12} /> Evolução 1º x 2º Bim.
+                                 <ArrowUpRight size={12} /> Evolução Bimestral por Aluno
                               </button>
                            </div>
 
@@ -1166,6 +1175,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  <th className="py-4 px-6">Nome do Aluno</th>
                                  <th className="py-4 px-6 text-center">Média 1º Bim</th>
                                  <th className="py-4 px-6 text-center">Média 2º Bim</th>
+                                  <th className="py-4 px-6 text-center">Média 3º Bim</th>
                                  <th className="py-4 px-6 text-center">Evolução Geral (Δ)</th>
                               </tr>
                            </thead>
@@ -1179,7 +1189,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  b1.forEach(ass => {
                                     ass.grades.forEach(g => {
                                        if (!studentMap.has(g.studentName)) {
-                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [] });
+                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
                                        }
                                        studentMap.get(g.studentName)!.b1Scores.push(g.score);
                                     });
@@ -1188,10 +1198,19 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  b2.forEach(ass => {
                                     ass.grades.forEach(g => {
                                        if (!studentMap.has(g.studentName)) {
-                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [] });
+                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
                                        }
                                        studentMap.get(g.studentName)!.b2Scores.push(g.score);
                                     });
+
+                                  b3.forEach(ass => {
+                                     ass.grades.forEach(g => {
+                                        if (!studentMap.has(g.studentName)) {
+                                           studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
+                                        }
+                                        studentMap.get(g.studentName)!.b3Scores.push(g.score);
+                                     });
+                                  });
                                  });
 
                                  let list = Array.from(studentMap.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -1214,9 +1233,12 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  return list.map((st, idx) => {
                                     const avg1 = st.b1Scores.length > 0 ? (st.b1Scores.reduce((a, b) => a + b, 0) / st.b1Scores.length) : null;
                                     const avg2 = st.b2Scores.length > 0 ? (st.b2Scores.reduce((a, b) => a + b, 0) / st.b2Scores.length) : null;
+                                     const avg3 = st.b3Scores.length > 0 ? (st.b3Scores.reduce((a, b) => a + b, 0) / st.b3Scores.length) : null;
 
                                     let delta: number | null = null;
-                                    if (avg1 !== null && avg2 !== null) {
+                                     if (avg3 !== null && avg2 !== null) {
+                                        delta = parseFloat((avg3 - avg2).toFixed(1));
+                                     } else if (avg2 !== null && avg1 !== null) {
                                        delta = parseFloat((avg2 - avg1).toFixed(1));
                                     }
 
@@ -1227,8 +1249,11 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                           <td className="py-4 px-6 text-center font-bold text-xs text-slate-600">
                                              {avg1 !== null ? `${avg1.toFixed(1)}%` : '-'}
                                           </td>
-                                          <td className="py-4 px-6 text-center font-bold text-xs text-slate-900">
+                                          <td className="py-4 px-6 text-center font-bold text-xs text-slate-600">
                                              {avg2 !== null ? `${avg2.toFixed(1)}%` : '-'}
+                                           </td>
+                                           <td className="py-4 px-6 text-center font-bold text-xs text-slate-900">
+                                              {avg3 !== null ? `${avg3.toFixed(1)}%` : '-'}
                                           </td>
                                           <td className="py-4 px-6 text-center">
                                              {delta !== null ? (
@@ -1288,6 +1313,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                           <th className="py-2">Disciplina</th>
                                           <th className="py-2 text-center">1º Bimestre</th>
                                           <th className="py-2 text-center">2º Bimestre</th>
+                                           <th className="py-2 text-center">3º Bimestre</th>
                                           <th className="py-2 text-center">Evolução (Δ)</th>
                                        </tr>
                                     </thead>
@@ -1364,8 +1390,16 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                              b2Val = b2Ass.reduce((acc, curr) => acc + curr.averageScore, 0) / b2Ass.length;
                                           }
 
+                                           let b3Val: number | null = null;
+                                           const b3Ass = gradeAssessments.filter(a => a.subject.toUpperCase() === subjUpper && a.bimestre === '3º BIMESTRE');
+                                           if (b3Ass.length > 0) {
+                                              b3Val = b3Ass.reduce((acc, curr) => acc + (curr.averageScore || 0), 0) / b3Ass.length;
+                                           }
+
                                           let delta: number | null = null;
-                                          if (b1Val !== null && b2Val !== null) {
+                                           if (b3Val !== null && b2Val !== null) {
+                                              delta = parseFloat((b3Val - b2Val).toFixed(1));
+                                           } else if (b2Val !== null && b1Val !== null) {
                                              delta = parseFloat((b2Val - b1Val).toFixed(1));
                                           }
 
@@ -1375,8 +1409,11 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                                 <td className="py-2.5 text-center text-slate-600">
                                                    {b1Val !== null ? `${b1Val.toFixed(1)}%` : '-'}
                                                 </td>
-                                                <td className="py-2.5 text-center text-slate-900 font-bold">
+                                                <td className="py-2.5 text-center text-slate-600">
                                                    {b2Val !== null ? `${b2Val.toFixed(1)}%` : '-'}
+                                                 </td>
+                                                 <td className="py-2.5 text-center text-slate-900 font-bold">
+                                                    {b3Val !== null ? `${b3Val.toFixed(1)}%` : '-'}
                                                 </td>
                                                 <td className="py-2.5 text-center">
                                                    {delta !== null ? (
