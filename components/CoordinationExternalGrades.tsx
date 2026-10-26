@@ -1185,7 +1185,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  const b1 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '1º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
                                  const b2 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '2º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
 
-                                 const studentMap = new Map<string, { name: string, b1Scores: number[], b2Scores: number[] }>();
+                                 const b3 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '3º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
+
+                                 const studentMap = new Map<string, { name: string, b1Scores: number[], b2Scores: number[], b3Scores: number[] }>();
 
                                  b1.forEach(ass => {
                                     ass.grades.forEach(g => {
@@ -1203,15 +1205,15 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                        }
                                        studentMap.get(g.studentName)!.b2Scores.push(g.score);
                                     });
+                                 });
 
-                                  b3.forEach(ass => {
-                                     ass.grades.forEach(g => {
-                                        if (!studentMap.has(g.studentName)) {
-                                           studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
-                                        }
-                                        studentMap.get(g.studentName)!.b3Scores.push(g.score);
-                                     });
-                                  });
+                                 b3.forEach(ass => {
+                                    ass.grades.forEach(g => {
+                                       if (!studentMap.has(g.studentName)) {
+                                          studentMap.set(g.studentName, { name: g.studentName, b1Scores: [], b2Scores: [], b3Scores: [] });
+                                       }
+                                       studentMap.get(g.studentName)!.b3Scores.push(g.score);
+                                    });
                                  });
 
                                  let list = Array.from(studentMap.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -1224,7 +1226,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (list.length === 0) {
                                     return (
                                        <tr>
-                                          <td colSpan={5} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
+                                          <td colSpan={6} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
                                              Nenhum aluno encontrado para comparação na turma {selectedStudentClass}
                                           </td>
                                        </tr>
