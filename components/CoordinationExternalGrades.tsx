@@ -102,6 +102,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
    const [studentSubView, setStudentSubView] = useState<'boletim' | 'comparativo'>('boletim');
 
    // Filtros Avançados de Análise
+   const [filterGrade, setFilterGrade] = useState<string>('TODOS');
    const [filterClassroom, setFilterClassroom] = useState<string>('TODAS');
    const [filterSubject, setFilterSubject] = useState<string>('TODAS');
    const [filterPerformanceLevel, setFilterPerformanceLevel] = useState<string>('TODOS'); // 'TODOS' | 'CRITICO' | 'ATENCAO' | 'ADEQUADO' | 'REGRESSAO' | 'EVOLUCAO'
@@ -665,6 +666,25 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                         <option value="CAED">📙 Sistema: Somente CAED</option>
                      </select>
 
+                     {/* FILTRO DE ANO / SÉRIE */}
+                     <select
+                        value={filterGrade}
+                        onChange={e => {
+                           const val = e.target.value;
+                           setFilterGrade(val);
+                           if (val !== 'TODOS' && filterClassroom !== 'TODAS' && !filterClassroom.startsWith(val)) {
+                              setFilterClassroom('TODAS');
+                           }
+                        }}
+                        className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 cursor-pointer shadow-sm"
+                     >
+                        <option value="TODOS">🎓 Ano: Todos (6º ao 9º)</option>
+                        <option value="6º ANO">🎓 Somente 6º Anos</option>
+                        <option value="7º ANO">🎓 Somente 7º Anos</option>
+                        <option value="8º ANO">🎓 Somente 8º Anos</option>
+                        <option value="9º ANO">🎓 Somente 9º Anos</option>
+                     </select>
+
                      {/* FILTRO DE TURMA */}
                      <select
                         value={filterClassroom}
@@ -674,12 +694,16 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               setSelectedStudentClass(e.target.value);
                            }
                         }}
-                        className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 cursor-pointer"
+                        className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/20 cursor-pointer shadow-sm"
                      >
-                        <option value="TODAS">🏫 Todas as Turmas</option>
-                        {classrooms.map(c => (
-                           <option key={c} value={c}>{c}</option>
-                        ))}
+                        <option value="TODAS">
+                           {filterGrade !== 'TODOS' ? `🏫 Todas as Turmas do ${filterGrade}` : '🏫 Todas as Turmas'}
+                        </option>
+                        {classrooms
+                           .filter(c => filterGrade === 'TODOS' || c.startsWith(filterGrade))
+                           .map(c => (
+                              <option key={c} value={c}>{c}</option>
+                           ))}
                      </select>
 
                      {/* FILTRO DE NIVEL DE DESEMPENHO */}
@@ -708,9 +732,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                         ))}
                      </select>
 
-                     {(filterPerformanceLevel !== 'TODOS' || filterSubject !== 'TODAS' || filterClassroom !== 'TODAS' || filterSystem !== 'TODOS') && (
+                     {(filterGrade !== 'TODOS' || filterPerformanceLevel !== 'TODOS' || filterSubject !== 'TODAS' || filterClassroom !== 'TODAS' || filterSystem !== 'TODOS') && (
                         <button
-                           onClick={() => { setFilterPerformanceLevel('TODOS'); setFilterSubject('TODAS'); setFilterClassroom('TODAS'); setFilterSystem('TODOS'); }}
+                           onClick={() => { setFilterGrade('TODOS'); setFilterPerformanceLevel('TODOS'); setFilterSubject('TODAS'); setFilterClassroom('TODAS'); setFilterSystem('TODOS'); }}
                            className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase flex items-center gap-1 hover:bg-red-100 transition-all"
                         >
                            <FilterX size={14} /> Limpar Filtros
@@ -763,6 +787,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     return true;
                                  });
                                  let classesInMatrix = Array.from(new Set(bimeAssessments.map(a => a.className))).sort();
+                                 if (filterGrade !== 'TODOS') {
+                                    classesInMatrix = classesInMatrix.filter(c => c.startsWith(filterGrade));
+                                 }
                                  if (filterClassroom !== 'TODAS') {
                                     classesInMatrix = classesInMatrix.filter(c => c === filterClassroom);
                                  }
@@ -886,6 +913,9 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                     .forEach(a => classSubjectPairs.add(`${a.className}___${a.subject}`));
 
                                  let sortedPairs = Array.from(classSubjectPairs).sort();
+                                 if (filterGrade !== 'TODOS') {
+                                    sortedPairs = sortedPairs.filter(p => p.startsWith(`${filterGrade}`));
+                                 }
                                  if (filterClassroom !== 'TODAS') {
                                     sortedPairs = sortedPairs.filter(p => p.startsWith(`${filterClassroom}___`));
                                  }
@@ -1020,7 +1050,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white text-slate-800 cursor-pointer"
                            >
                               {(() => {
-                                 const availableClasses = Array.from(new Set(allExternalAssessments.map(a => a.className))).sort();
+                                 const availableClasses = Array.from(new Set(allExternalAssessments.map(a => a.className))).filter(c => filterGrade === 'TODOS' || c.startsWith(filterGrade)).sort();
                                  if (availableClasses.length === 0) return <option value="">Sem turmas</option>;
                                  return availableClasses.map(cls => <option key={cls} value={cls}>{cls}</option>);
                               })()}
@@ -1303,7 +1333,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                      {/* CARDS DE CADA SÉRIE */}
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {['6º ANO', '7º ANO', '8º ANO', '9º ANO'].map(grade => {
+                        {['6º ANO', '7º ANO', '8º ANO', '9º ANO'].filter(g => filterGrade === 'TODOS' || g === filterGrade).map(grade => {
                            const gradeAssessments = allExternalAssessments.filter(a => a.className.startsWith(grade) && (filterSystem === 'TODOS' || a.type === filterSystem));
                            
                            return (
