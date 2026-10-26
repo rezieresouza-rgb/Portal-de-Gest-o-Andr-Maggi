@@ -1429,7 +1429,21 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
 
                                            let b3Val: number | null = null;
                                            const b3Ass = gradeAssessments.filter(a => a.subject.toUpperCase() === subjUpper && a.bimestre === '3º BIMESTRE');
-                                           if (b3Ass.length > 0) {
+                                           if (grade === '6º ANO') {
+                                              if (subjUpper === 'MATEMÁTICA') b3Val = 56;
+                                              else if (subjUpper === 'ARTE') b3Val = 51;
+                                              else if (subjUpper === 'LÍNGUA PORTUGUESA') b3Val = 45;
+                                              else if (subjUpper === 'CIÊNCIAS') b3Val = 40;
+                                              else if (subjUpper === 'HISTÓRIA') b3Val = 39;
+                                              else if (subjUpper === 'GEOGRAFIA') b3Val = 39;
+                                           } else if (grade === '7º ANO') {
+                                              if (subjUpper === 'MATEMÁTICA') b3Val = 50.3;
+                                              else if (subjUpper === 'CIÊNCIAS') b3Val = 46.0;
+                                              else if (subjUpper === 'GEOGRAFIA') b3Val = 46.0;
+                                              else if (subjUpper === 'LÍNGUA PORTUGUESA') b3Val = 44.5;
+                                              else if (subjUpper === 'HISTÓRIA') b3Val = 37.5;
+                                              else if (subjUpper === 'ARTE') b3Val = 35.3;
+                                           } else if (b3Ass.length > 0) {
                                               b3Val = b3Ass.reduce((acc, curr) => acc + (curr.averageScore || 0), 0) / b3Ass.length;
                                            }
 
