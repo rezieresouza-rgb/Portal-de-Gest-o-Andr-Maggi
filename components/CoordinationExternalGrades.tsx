@@ -857,7 +857,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                   <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm space-y-6">
                      <div className="border-b border-slate-100 pb-6">
                         <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                           <ArrowUpRight size={20} className="text-emerald-600" /> Comparativo de Evolução Bimestral (1º Bimestre vs 2º Bimestre)
+                           <ArrowUpRight size={20} className="text-emerald-600" /> Comparativo de Evolução Bimestral (1º, 2º e 3º Bimestres)
                         </h3>
                         <p className="text-xs text-slate-500 font-bold uppercase mt-1">Acompanhamento do avanço ou retrocesso percentual (Δ Delta) por turma e disciplina</p>
                      </div>
@@ -870,6 +870,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  <th className="py-4 px-6">Disciplina</th>
                                  <th className="py-4 px-6 text-center">1º Bimestre</th>
                                  <th className="py-4 px-6 text-center">2º Bimestre</th>
+                                  <th className="py-4 px-6 text-center">3º Bimestre</th>
                                  <th className="py-4 px-6 text-center">Variação (Δ)</th>
                               </tr>
                            </thead>
@@ -877,7 +878,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                               {(() => {
                                  const b1 = allExternalAssessments.filter(a => a.bimestre === '1º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
                                  const b2 = allExternalAssessments.filter(a => a.bimestre === '2º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
-                                  const b3 = allExternalAssessments.filter(a => a.className === selectedStudentClass && a.bimestre === '3º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
+                                  const b3 = allExternalAssessments.filter(a => a.bimestre === '3º BIMESTRE' && (filterSystem === 'TODOS' || a.type === filterSystem));
 
                                  const classSubjectPairs = new Set<string>();
                                  allExternalAssessments
@@ -906,7 +907,7 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                  if (sortedPairs.length === 0) {
                                     return (
                                        <tr>
-                                          <td colSpan={5} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
+                                          <td colSpan={6} className="py-12 text-center text-slate-400 font-bold text-xs uppercase">
                                              Nenhum dado cadastrado para comparação
                                           </td>
                                        </tr>
