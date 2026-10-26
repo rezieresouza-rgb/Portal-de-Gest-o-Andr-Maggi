@@ -197,24 +197,30 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
          .order('date', { ascending: false });
 
       if (assessData) {
-         const formatted: Assessment[] = assessData.map(a => ({
-            id: a.id,
-            date: a.date,
-            bimestre: a.bimestre,
-            className: a.classrooms?.name || 'N/A',
-            subject: a.subject,
-            teacherName: 'COORDENAÇÃO',
-            type: a.type as any,
-            description: a.type + ' - ' + a.date,
-            max_score: a.max_score,
-            grades: a.grades.map((g: any) => ({
-               studentId: g.student_id || g.student_code || 'N/A', 
-               studentName: g.students?.name || g.student_name || 'Aluno',
-               score: g.score,
-               proficiencyLevel: g.proficiency_level
-            })),
-            timestamp: new Date(a.date).getTime()
-         }));
+         const formatted: Assessment[] = assessData.map(a => {
+            const avg = a.grades && a.grades.length > 0 
+               ? a.grades.reduce((acc: number, g: any) => acc + (g.score || 0), 0) / a.grades.length 
+               : 0;
+            return {
+               id: a.id,
+               date: a.date,
+               bimestre: a.bimestre,
+               className: a.classrooms?.name || 'N/A',
+               subject: a.subject,
+               teacherName: 'COORDENAÇÃO',
+               type: a.type as any,
+               description: a.type + ' - ' + a.date,
+               max_score: a.max_score,
+               averageScore: avg,
+               grades: a.grades.map((g: any) => ({
+                  studentId: g.student_id || g.student_code || 'N/A', 
+                  studentName: g.students?.name || g.student_name || 'Aluno',
+                  score: g.score,
+                  proficiencyLevel: g.proficiency_level
+               })),
+               timestamp: new Date(a.date).getTime()
+            };
+         });
          setAllExternalAssessments(formatted);
          setExternalAssessments(formatted);
       }
