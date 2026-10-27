@@ -1450,6 +1450,13 @@ const CoordinationExternalGrades: React.FC<CoordinationExternalGradesProps> = ({
                                                 else if (subjUpper === 'GEOGRAFIA') b3Val = 43;
                                                 else if (subjUpper === 'MATEMÁTICA') b3Val = 39;
                                                 else if (subjUpper === 'ARTE') b3Val = 33;
+                                             } else if (grade === '9º ANO') {
+                                                if (subjUpper === 'ARTE') b3Val = 67;
+                                                else if (subjUpper === 'LÍNGUA PORTUGUESA') b3Val = 64;
+                                                else if (subjUpper === 'CIÊNCIAS') b3Val = 63;
+                                                else if (subjUpper === 'GEOGRAFIA') b3Val = 60;
+                                                else if (subjUpper === 'MATEMÁTICA') b3Val = 56;
+                                                else if (subjUpper === 'HISTÓRIA') b3Val = 56;
                                             } else if (b3Ass.length > 0) {
                                               b3Val = b3Ass.reduce((acc, curr) => acc + (curr.averageScore || 0), 0) / b3Ass.length;
                                            }
