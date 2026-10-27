@@ -133,12 +133,12 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800 relative w-full min-w-0">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800 relative w-full min-w-0 print:h-auto print:overflow-visible print:block print:bg-white">
       {/* Backdrop Mobile */}
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden no-print"
         />
       )}
 
@@ -222,7 +222,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
       </aside>
 
       {/* Área Principal de Conteúdo */}
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 print:h-auto print:overflow-visible print:block print:w-full">
         
         {/* Header Superior */}
         <header className="h-20 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 lg:px-8 shrink-0 no-print shadow-sm gap-3">
@@ -272,7 +272,7 @@ const PsychosocialModule: React.FC<PsychosocialModuleProps> = ({ onExit, user })
         </header>
 
         {/* Conteúdo Dinâmico */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar print:h-auto print:overflow-visible print:p-0 print:block">
           {activeTab === 'oficios' && <OfficialOficiosManager user={user} />}
           {activeTab === 'dashboard' && <PsychosocialDashboard role={userRole} onNavigate={navigateWithContext} />}
           

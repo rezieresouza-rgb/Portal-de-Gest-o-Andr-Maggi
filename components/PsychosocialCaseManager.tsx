@@ -1140,7 +1140,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
 
       {/* MODAL DE GESTÃO COMPLETA DO CASO PSICOSSOCIAL */}
       {selectedCase && (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in no-print">
           <div className="bg-white w-full max-w-5xl h-[94vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200">
             
             {/* Header do Modal */}
@@ -1588,7 +1588,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
 
       {/* MODAL DE ABERTURA DE NOVO CASO / ACOLHIMENTO */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in no-print">
           <div className="bg-white w-full max-w-4xl max-h-[92vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-slate-200">
             <div className="p-6 bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-4">
@@ -1777,7 +1777,7 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
 
       {/* MODAL DE PARECER TÉCNICO RÁPIDO & DEVOLUTIVA */}
       {quickFeedbackModal.isOpen && quickFeedbackModal.caseItem && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 no-print">
           <div className="bg-white rounded-[2.5rem] max-w-xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
             
             {/* Header */}
@@ -1862,9 +1862,9 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
 
       {/* DOCUMENTO OFICIAL PARA IMPRESSÃO (PRINT ONLY) */}
       {selectedCase && (
-        <div className="hidden print:block print-document bg-white text-slate-900 p-8 space-y-6">
+        <div className="hidden print:block print-document bg-white text-slate-900 p-8 space-y-6 w-full max-w-4xl mx-auto print:p-0 print:m-0">
           {/* CABEÇALHO OFICIAL SEDUC/MT */}
-          <div className="text-center border-b-2 border-slate-900 pb-4 space-y-1">
+          <div className="text-center border-b-2 border-slate-900 pb-4 space-y-1 print-break-inside-avoid">
             <div className="flex justify-center items-center gap-6 mb-2">
               <img src="/brasao_mt.png" alt="MT" className="h-14 w-auto object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
               <img src="/logo-escola-oficial.png" alt="Escola" className="h-14 w-auto object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
@@ -1875,73 +1875,118 @@ const PsychosocialCaseManager: React.FC<PsychosocialCaseManagerProps> = ({
             <p className="text-[10px] text-slate-600">Núcleo Multidisciplinar de Apoio Psicossocial e Proteção Discente</p>
           </div>
 
-          <div className="text-center my-3">
+          <div className="text-center my-3 print-break-inside-avoid">
             <h2 className="text-base font-black uppercase text-slate-900 tracking-wider">
               PRONTUÁRIO TÉCNICO & RELATÓRIO DE EVOLUÇÃO PSICOSSOCIAL
             </h2>
-            <p className="text-xs font-mono font-bold text-slate-600">{selectedCase.caseNumber}</p>
+            <p className="text-xs font-mono font-bold text-slate-600">Protocolo / Identificador: {selectedCase.caseNumber}</p>
           </div>
 
           {/* DADOS DO ESTUDANTE */}
-          <div className="border border-slate-400 p-4 rounded-xl text-xs space-y-2">
-            <p><strong>Estudante:</strong> <span className="uppercase">{selectedCase.studentName}</span></p>
-            <div className="grid grid-cols-2 gap-4">
-              <p><strong>Turma:</strong> <span className="uppercase">{selectedCase.className}</span></p>
-              <p><strong>Status:</strong> <span className="uppercase font-bold">{selectedCase.status}</span></p>
+          <div className="border border-slate-400 p-4 rounded-xl text-xs space-y-2 print-break-inside-avoid">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+              <p><strong>Estudante:</strong> <span className="uppercase font-black text-slate-900">{selectedCase.studentName}</span></p>
+              <p className="text-[11px]"><strong>Turma:</strong> <span className="uppercase font-bold">{selectedCase.className}</span></p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <p><strong>Responsável:</strong> <span className="uppercase">{selectedCase.guardianName || 'Não Informado'}</span></p>
-              <p><strong>Contato:</strong> <span>{selectedCase.guardianPhone || 'Não Informado'}</span></p>
+              <p><strong>Status do Prontuário:</strong> <span className="uppercase font-bold">{selectedCase.status}</span></p>
+              <p><strong>Profissional Responsável:</strong> <span className="uppercase font-bold">{selectedCase.professionalInCharge || 'Técnico Psicossocial'}</span></p>
             </div>
-            <p><strong>Demanda Inicial:</strong> {selectedCase.initialDemand}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <p><strong>Responsável Legal:</strong> <span className="uppercase">{selectedCase.guardianName || 'Não Informado'}</span></p>
+              <p><strong>Contato Telefônico:</strong> <span>{selectedCase.guardianPhone || 'Não Informado'}</span></p>
+            </div>
+            <div className="pt-1">
+              <p><strong>Demanda Inicial / Motivo do Acolhimento:</strong> {selectedCase.initialDemand}</p>
+            </div>
           </div>
 
-          {/* HISTÓRICO DE SESSÕES */}
-          <div className="space-y-2">
-            <h5 className="font-black uppercase text-xs text-slate-900 border-b border-slate-300 pb-1">
-              1. Registro de Evoluções e Atendimentos Realizados:
+          {/* 1. HISTÓRICO DE SESSÕES & EVOLUÇÕES */}
+          <div className="space-y-3">
+            <h5 className="font-black uppercase text-xs text-slate-900 border-b border-slate-300 pb-1 flex items-center justify-between">
+              <span>1. Registro de Evoluções e Atendimentos Realizados:</span>
+              <span className="text-[10px] font-normal text-slate-500">Total de registros: {selectedCase.logs?.length || 0}</span>
             </h5>
             <div className="space-y-3">
-              {selectedCase.logs && selectedCase.logs.map((log, idx) => (
-                <div key={log.id} className="p-3 border border-slate-300 rounded-lg text-xs space-y-1">
-                  <div className="flex justify-between font-bold">
-                    <span>Sessão #{idx + 1} — {log.type}</span>
-                    <span>{new Date(log.date).toLocaleDateString('pt-BR')} {log.time}</span>
-                  </div>
-                  <p><strong>Participantes:</strong> {log.participants}</p>
-                  <p><strong>Síntese:</strong> {log.summary}</p>
-                  {log.immediateActions && <p><strong>Encaminhamentos:</strong> {log.immediateActions}</p>}
-                </div>
-              ))}
+              {selectedCase.logs && selectedCase.logs.length > 0 ? (
+                selectedCase.logs.map((log, idx) => {
+                  const cfg = SESSION_TYPE_CONFIG[log.type] || SESSION_TYPE_CONFIG.ESCUTA_INDIVIDUAL_ALUNO;
+                  return (
+                    <div key={log.id || idx} className="p-3.5 border border-slate-300 rounded-lg text-xs space-y-1.5 print-break-inside-avoid">
+                      <div className="flex justify-between font-black text-slate-900 border-b border-slate-200 pb-1">
+                        <span>Sessão #{idx + 1} — {cfg.label || log.type}</span>
+                        <span className="text-[10px] font-mono text-slate-600">
+                          {new Date(log.date).toLocaleDateString('pt-BR')} {log.time && ('às ' + log.time)}
+                        </span>
+                      </div>
+                      <p><strong>Participantes Presentes:</strong> {log.participants}</p>
+                      <p className="text-justify leading-relaxed"><strong>Síntese da Escuta / Relato Técnico:</strong> {log.summary}</p>
+                      {log.immediateActions && (
+                        <p className="text-slate-800 bg-slate-50 p-2 rounded border border-slate-200 mt-1">
+                          <strong>Encaminhamentos Imediatos / Ações Acordadas:</strong> {log.immediateActions}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-slate-500 italic p-2 border border-slate-200 rounded">Nenhum atendimento registrado no histórico.</p>
+              )}
             </div>
           </div>
 
-          {/* PARECER TÉCNICO FINAL */}
-          {selectedCase.technicalOpinion && (
-            <div className="space-y-1">
+          {/* 2. PLANO SINGULAR DE ACOMPANHAMENTO (ETAPAS) */}
+          {selectedCase.steps && selectedCase.steps.length > 0 && (
+            <div className="space-y-2 print-break-inside-avoid">
               <h5 className="font-black uppercase text-xs text-slate-900 border-b border-slate-300 pb-1">
-                2. Parecer Técnico Psicossocial Conclusivo:
+                2. Plano Singular de Acompanhamento (Etapas do Processo):
               </h5>
-              <p className="p-3 border border-slate-300 rounded-lg text-xs leading-relaxed text-justify">
+              <div className="grid grid-cols-1 gap-1.5 text-xs">
+                {selectedCase.steps.map((step, idx) => (
+                  <div key={step.id || idx} className="flex items-center justify-between p-2 border border-slate-200 rounded-lg bg-slate-50/50">
+                    <span className="font-bold text-slate-800">
+                      {step.completed ? '☑' : '☐'} {step.label}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-slate-600">
+                      {step.completed ? (step.date ? ('Concluído em ' + new Date(step.date).toLocaleDateString('pt-BR')) : 'Concluído') : 'Pendente'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 3. PARECER TÉCNICO CONCLUSIVO */}
+          {selectedCase.technicalOpinion && (
+            <div className="space-y-1 print-break-inside-avoid">
+              <h5 className="font-black uppercase text-xs text-slate-900 border-b border-slate-300 pb-1">
+                3. Parecer Técnico Psicossocial Conclusivo:
+              </h5>
+              <p className="p-3 border border-slate-300 rounded-lg text-xs leading-relaxed text-justify bg-slate-50/30">
                 {selectedCase.technicalOpinion}
               </p>
             </div>
           )}
 
-          {/* ORIENTAÇÕES PEDAGÓGICAS */}
+          {/* 4. ORIENTAÇÕES PEDAGÓGICAS */}
           {selectedCase.schoolRecommendations && (
-            <div className="space-y-1">
+            <div className="space-y-1 print-break-inside-avoid">
               <h5 className="font-black uppercase text-xs text-slate-900 border-b border-slate-300 pb-1">
-                3. Orientações Pedagógicas para o Corpo Docente:
+                4. Orientações Pedagógicas para a Equipe Escolar & Corpo Docente:
               </h5>
-              <p className="p-3 border border-slate-300 rounded-lg text-xs leading-relaxed text-justify">
+              <p className="p-3 border border-slate-300 rounded-lg text-xs leading-relaxed text-justify bg-slate-50/30">
                 {selectedCase.schoolRecommendations}
               </p>
             </div>
           )}
 
+          {/* 5. AVISO DE SIGILO PROFISSIONAL (LEI 13.935/2019 E CÓDIGOS DE ÉTICA CFP/CFESS) */}
+          <div className="p-2.5 bg-slate-100 border border-slate-300 rounded-lg text-[9px] text-slate-600 text-justify leading-tight print-break-inside-avoid">
+            <strong>Nota de Sigilo e Confidencialidade:</strong> Este documento contém informações técnicas resguardadas pelo sigilo profissional (Lei Federal nº 13.935/2019, Código de Ética Profissional do Psicólogo e Código de Ética do Assistente Social). O acesso é estrito à equipe escolar e autoridades legalmente constituídas para fins exclusivos de proteção e garantia dos direitos da criança e do adolescente (ECA - Lei nº 8.069/1990).
+          </div>
+
           {/* ASSINATURAS */}
-          <div className="grid grid-cols-2 gap-8 pt-12 text-center text-xs">
+          <div className="grid grid-cols-2 gap-8 pt-10 text-center text-xs print-break-inside-avoid">
             <div className="border-t border-slate-900 pt-2 space-y-0.5">
               <p className="font-black uppercase text-slate-900">{selectedCase.professionalInCharge || 'TÉCNICO PSICOSSOCIAL'}</p>
               <p className="text-[10px] text-slate-600 uppercase font-bold">Psicólogo(a) / Assistente Social</p>
