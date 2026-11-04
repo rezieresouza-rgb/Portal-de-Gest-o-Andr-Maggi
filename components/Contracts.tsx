@@ -1607,24 +1607,17 @@ const Contracts: React.FC = () => {
                               type="text"
                               defaultValue={batchDeliveryData[item.id] ? formatQuantity(batchDeliveryData[item.id]) : ''}
                                onBlur={(e) => {
-                                 const val = parseNumeric(e.target.value);
-                                 setBatchDeliveryData(prev => {
-                                   const next = { ...prev };
-                                   if (val > 0) {
-                                     const available = item.contractedQuantity - item.acquiredQuantity;
-                                     const isException = (selectedContract?.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || item.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
-                                     if (val > available && !isException) {
-                                       alert(`Aviso: A quantidade para ${item.description} excede o saldo (${formatQuantity(available)}).`);
-                                       next[item.id] = available;
-                                     } else {
-                                       next[item.id] = val;
-                                     }
-                                   } else {
-                                     delete next[item.id];
-                                   }
-                                   return next;
-                                 });
-                               }}
+                                  const val = parseNumeric(e.target.value);
+                                  setBatchDeliveryData(prev => {
+                                    const next = { ...prev };
+                                    if (val > 0) {
+                                      next[item.id] = val;
+                                    } else {
+                                      delete next[item.id];
+                                    }
+                                    return next;
+                                  });
+                                }}
                               placeholder="0,000"
                               className="w-full text-center border border-emerald-200 bg-white p-2.5 rounded-xl text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-inner placeholder-gray-300"
                             />
@@ -2783,7 +2776,7 @@ const Contracts: React.FC = () => {
                   const originalQty = originalBatchDeliveryData[item.id] || 0;
                   const currentQty = Number(editBatchDeliveryData[item.id]) || 0;
                   const remaining = item.contractedQuantity - item.acquiredQuantity + originalQty;
-                  const isException = (selectedContract.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || item.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
+                  const isException = true;
                   return (
                     <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-5"><p className="font-black text-gray-900 text-xs uppercase">{item.description}</p></td>
