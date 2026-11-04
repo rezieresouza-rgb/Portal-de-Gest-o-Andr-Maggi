@@ -61,6 +61,10 @@ const BOOK_CATEGORIES = [
   'Histórias de Guerra',
   'Gibis/HQ',
   'Dicionários/Enciclopédias',
+  'Afro',
+  'Autoajuda',
+  'História de Mato Grosso/Colíder',
+  'Indígena',
   'Laboratório APA',
   'Outros'
 ];
