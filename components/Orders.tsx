@@ -345,7 +345,7 @@ const Orders: React.FC = () => {
   const depletedCount = useMemo(() => {
     if (!selectedContract) return 0;
     return selectedContract.items.filter(ci => {
-      const isException = selectedContract.number === '01/2026/SEDUC/MT' && ci.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+      const isException = (selectedContract.number === '01/2026/SEDUC/MT' && ci.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || ci.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
       const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === ci.id);
       const originalQty = originalItem ? originalItem.quantity : 0;
       const available = (ci.contractedQuantity - ci.acquiredQuantity) + originalQty;
@@ -370,7 +370,7 @@ const Orders: React.FC = () => {
       // Check if there are depleted items in this contract
       const depletedItems = contract.items.filter(item => {
         const remaining = item.contractedQuantity - item.acquiredQuantity;
-        const isException = contract.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+        const isException = (contract.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || item.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
         return remaining <= 0 && !isException;
       });
 
@@ -448,7 +448,7 @@ const Orders: React.FC = () => {
             const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === id);
             const originalQty = originalItem ? originalItem.quantity : 0;
             const available = (contractItem.contractedQuantity - contractItem.acquiredQuantity) + originalQty;
-            const isException = selectedContract?.number === '01/2026/SEDUC/MT' && contractItem.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+            const isException = (selectedContract?.number === '01/2026/SEDUC/MT' && contractItem.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || contractItem.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
 
             // ALERTA 1: Tentar solicitar item com saldo totalmente esgotado no contrato
             if (available <= 0 && numericValue > 0 && !isException) {
@@ -482,7 +482,7 @@ const Orders: React.FC = () => {
             const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === id);
             const originalQty = originalItem ? originalItem.quantity : 0;
             const available = (contractItem.contractedQuantity - contractItem.acquiredQuantity) + originalQty;
-            const isException = selectedContract?.number === '01/2026/SEDUC/MT' && contractItem.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+            const isException = (selectedContract?.number === '01/2026/SEDUC/MT' && contractItem.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || contractItem.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
 
             if (available <= 0 && !isException) {
               addToast(`⚠️ ATENÇÃO: O item "${contractItem.description}" está com o saldo esgotado (0 ${contractItem.unit}) no contrato CT ${selectedContract?.number}!`, 'error', 6000);
@@ -610,7 +610,7 @@ const Orders: React.FC = () => {
     const overLimitItems = localItems.filter(li => {
       if (!li.selected) return false;
       const ci = selectedContract?.items.find(i => i.id === li.contractItemId);
-      const isException = selectedContract?.number === '01/2026/SEDUC/MT' && ci?.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+      const isException = (selectedContract?.number === '01/2026/SEDUC/MT' && ci?.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || (ci?.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO') ?? false);
       return ci && !isException && li.requestedQuantity > (ci.contractedQuantity - ci.acquiredQuantity);
     });
 
@@ -1001,7 +1001,7 @@ const Orders: React.FC = () => {
                     const originalItem = originalItemsSnapshot.find(oi => oi.contractItemId === item.contractItemId);
                     const originalQty = originalItem ? originalItem.quantity : 0;
                     const remaining = contractItem ? (contractItem.contractedQuantity - contractItem.acquiredQuantity + originalQty) : 0;
-                    const isException = selectedContract?.number === '01/2026/SEDUC/MT' && contractItem?.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+                    const isException = (selectedContract?.number === '01/2026/SEDUC/MT' && contractItem?.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || (contractItem?.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO') ?? false);
                     const isDepleted = remaining <= 0 && !isException;
 
                     return (

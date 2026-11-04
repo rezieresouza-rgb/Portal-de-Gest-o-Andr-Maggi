@@ -1612,7 +1612,7 @@ const Contracts: React.FC = () => {
                                    const next = { ...prev };
                                    if (val > 0) {
                                      const available = item.contractedQuantity - item.acquiredQuantity;
-                                     const isException = selectedContract?.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+                                     const isException = (selectedContract?.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || item.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
                                      if (val > available && !isException) {
                                        alert(`Aviso: A quantidade para ${item.description} excede o saldo (${formatQuantity(available)}).`);
                                        next[item.id] = available;
@@ -2783,7 +2783,7 @@ const Contracts: React.FC = () => {
                   const originalQty = originalBatchDeliveryData[item.id] || 0;
                   const currentQty = Number(editBatchDeliveryData[item.id]) || 0;
                   const remaining = item.contractedQuantity - item.acquiredQuantity + originalQty;
-                  const isException = selectedContract.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA';
+                  const isException = (selectedContract.number === '01/2026/SEDUC/MT' && item.description.toUpperCase() === 'PEIXE CONGELADO FILÉ DE TILÁPIA') || item.description.toUpperCase().includes('ALHO BRANCO DESCASCADO RESFRIADO');
                   return (
                     <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-5"><p className="font-black text-gray-900 text-xs uppercase">{item.description}</p></td>
