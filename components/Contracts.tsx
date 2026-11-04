@@ -1640,8 +1640,8 @@ const Contracts: React.FC = () => {
                           </td>
                           <td className="px-6 py-5">
                             <div className="flex flex-col items-center">
-                              <span className="text-[10px] font-bold text-gray-500 mb-1">{formatQuantity(remaining)} / {formatQuantity(item.contractedQuantity)}</span>
-                              <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50"><div className={`h-full transition-all duration-1000 ${usage > 90 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${usage}%` }} /></div>
+                              <span className={`text-[10px] font-bold mb-1 ${remaining < 0 ? 'text-red-600 font-black' : 'text-gray-500'}`}>{formatQuantity(remaining)} / {formatQuantity(item.contractedQuantity)}</span>
+                              <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50"><div className={`h-full transition-all duration-1000 ${usage > 90 || remaining < 0 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, usage))}%` }} /></div>
                             </div>
                           </td>
                           <td className="px-6 py-5">
