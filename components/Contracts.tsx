@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ContractStatus, Contract, ContractItem } from '../types';
+import SettlementDeclarationModal from './SettlementDeclarationModal';
 import { INITIAL_CONTRACTS, INITIAL_SUPPLIERS } from '../constants/initialData';
 import { extractContractInfo } from '../geminiService';
 
@@ -67,6 +68,7 @@ const Contracts: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [events, setEvents] = useState<ExecutionEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
 
   // Fetch Contracts and Events
   const fetchData = async () => {
@@ -79,7 +81,7 @@ const Contracts: React.FC = () => {
         .from('contracts')
         .select(`
           *,
-          supplier:suppliers (name),
+          supplier:suppliers (id, name, full_name, cnpj, email, phone),
           items:contract_items (*)
         `);
 
@@ -98,6 +100,8 @@ const Contracts: React.FC = () => {
         number: c.number,
         supplierId: c.supplier_id,
         supplierName: c.supplier?.name || 'Desconhecido',
+        supplierCnpj: c.supplier?.cnpj || '',
+        supplierFullName: c.supplier?.full_name || '',
         startDate: c.start_date,
         endDate: c.end_date,
         status: c.status as ContractStatus,
@@ -1452,6 +1456,13 @@ const Contracts: React.FC = () => {
   const { totalValue, totalSpent, remainingValue, daysRemaining } = stats || { totalValue: 0, totalSpent: 0, remainingValue: 0, daysRemaining: 0 };
   const timeProgress = stats ? Math.min(100, Math.max(0, (365 - stats.daysRemaining) / 3.65)) : 0;
 
+  const isContractFulfilled = useMemo(() => {
+    if (!selectedContract || !selectedContract.items || selectedContract.items.length === 0) return false;
+    const allItemsDelivered = selectedContract.items.every(i => i.acquiredQuantity >= i.contractedQuantity);
+    const financialFullySpent = totalSpent >= totalValue && totalValue > 0;
+    return allItemsDelivered || financialFullySpent || selectedContract.status === ContractStatus.COMPLETED;
+  }, [selectedContract, totalSpent, totalValue]);
+
   return (
     <div className="min-h-screen bg-transparent">
 
@@ -1486,6 +1497,34 @@ const Contracts: React.FC = () => {
 
 
 
+
+        {isContractFulfilled && (
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 rounded-[2.5rem] shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 border border-emerald-400/30 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20">
+                <Award size={32} className="text-amber-300" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-amber-400 text-emerald-950 text-[9px] font-black uppercase rounded-full tracking-wider">
+                    100% Executado
+                  </span>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Contrato Cumprido na Íntegra</h3>
+                </div>
+                <p className="text-xs font-medium text-emerald-100 mt-0.5">
+                  Todas as metas deste contrato foram atendidas. A Declaração Oficial de Quitação de Débitos já pode ser emitida.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsSettlementModalOpen(true)}
+              className="w-full md:w-auto px-6 py-3.5 bg-white text-emerald-900 rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg hover:bg-emerald-50 transition-all flex items-center justify-center gap-2.5 active:scale-95"
+            >
+              <FileCheck size={18} className="text-emerald-700" />
+              Emitir Declaração de Quitação
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">

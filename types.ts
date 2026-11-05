@@ -510,7 +510,7 @@ export interface RightsViolationNotification {
 
 export enum ContractStatus { ACTIVE = 'ATIVO', INACTIVE = 'INATIVO', COMPLETED = 'CONCLUÍDO' }
 export interface ContractItem { id: string; description: string; contractedQuantity: number; acquiredQuantity: number; unit: string; unitPrice: number; brand?: string; }
-export interface Contract { id: string; number: string; supplierId: string; supplierName: string; startDate: string; endDate: string; status: ContractStatus; type: string; items: ContractItem[]; }
+export interface Contract { id: string; number: string; supplierId: string; supplierName: string; supplierCnpj?: string; supplierFullName?: string; startDate: string; endDate: string; status: ContractStatus; type: string; items: ContractItem[]; }
 export interface Order { id: string; orderNumber: string; contractNumber: string; supplierName: string; issueDate: string; deliveryDate: string; totalValue: number; observations: string; items: { description: string; quantity: number; unit: string; unitPrice: number; brand: string; }[]; }
 export * from './types/academicYear';
 export interface Classroom { id: string; name: string; year: string; academic_year?: number; grade_level?: string; shift: Shift; teacherId: string; studentIds: string[]; schedule: { day: string; subjects: { time: string; subject: string }[]; }[]; }
