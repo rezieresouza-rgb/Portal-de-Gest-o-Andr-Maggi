@@ -1438,11 +1438,15 @@ const Contracts: React.FC = () => {
 
     try {
       await (window as any).html2pdf().set({
-        margin: [10, 10, 10, 10],
+        margin: [8, 8, 8, 8],
         filename: `Extrato_Consumo_${selectedContract?.number}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { 
+          mode: ['avoid-all', 'css', 'legacy'], 
+          avoid: ['tr', '.avoid-break', 'tfoot', 'thead', '.guide-row'] 
+        }
       }).from(element).save();
 
       setGeneratedStatementPdf(null);
@@ -2582,8 +2586,29 @@ const Contracts: React.FC = () => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-12 bg-gray-50 text-gray-900">
-          <div id="consumption-statement-printable" className="bg-white p-12 shadow-sm border border-gray-100 mx-auto max-w-[210mm] min-h-[297mm] text-gray-900 font-sans flex flex-col">
-            <div className="flex justify-between items-start border-b-2 border-gray-900 pb-8 mb-8">
+          <div id="consumption-statement-printable" className="bg-white p-10 shadow-sm border border-gray-100 mx-auto max-w-[210mm] min-h-[297mm] text-gray-900 font-sans flex flex-col">
+            <style>{`
+              #consumption-statement-printable table {
+                page-break-inside: auto;
+              }
+              #consumption-statement-printable tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+              #consumption-statement-printable thead {
+                display: table-header-group;
+              }
+              #consumption-statement-printable tfoot {
+                display: table-footer-group;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+              #consumption-statement-printable .avoid-break {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+            `}</style>
+            <div className="flex justify-between items-start border-b-2 border-gray-900 pb-5 mb-5">
               <div className="flex items-center gap-6">
                 <img src="/logo-escola.png" alt="Logo Escola" className="w-24 h-auto" />
                 <div>
@@ -2601,12 +2626,12 @@ const Contracts: React.FC = () => {
                 <p className="text-[9px] font-bold text-gray-500 uppercase mt-0.5">Emissão: {new Date(generatedStatementPdf.statement.created_at || new Date().toISOString()).toLocaleDateString('pt-BR')}</p>
               </div>
             </div>
-            <div className={`grid ${generatedStatementPdf.statement.payment_date ? 'grid-cols-3' : 'grid-cols-2'} gap-6 mb-8`}>
-              <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-center">
+            <div className={`grid ${generatedStatementPdf.statement.payment_date ? 'grid-cols-3' : 'grid-cols-2'} gap-6 mb-5 avoid-break`}>
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-center">
                 <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Contratada</p>
                 <p className="text-xs font-black text-gray-900 uppercase truncate leading-tight">{selectedContract.supplierName}</p>
               </div>
-              <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
+              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
                 <p className="text-[8px] font-black text-emerald-600 uppercase mb-1">Valor Total</p>
                 <p className="text-lg font-black text-emerald-700">R$ {generatedStatementPdf.statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
@@ -2618,33 +2643,33 @@ const Contracts: React.FC = () => {
                 </div>
               )}
             </div>
-            <table className="w-full mb-8 border-collapse">
+            <table className="w-full mb-6 border-collapse">
               <thead>
                 <tr className="border-b-2 border-gray-200 text-[9px] font-black uppercase text-gray-500 text-left">
-                  <th className="py-3 pr-4">Produto</th>
-                  <th className="py-3 px-4 text-center">Un.</th>
-                  <th className="py-3 px-4 text-center">Marca</th>
-                  <th className="py-3 px-4 text-center">Quant.</th>
-                  <th className="py-3 px-4 text-right">Preço Un.</th>
-                  <th className="py-3 pl-4 text-right">Subtotal</th>
+                  <th className="py-2.5 pr-4">Produto</th>
+                  <th className="py-2.5 px-4 text-center">Un.</th>
+                  <th className="py-2.5 px-4 text-center">Marca</th>
+                  <th className="py-2.5 px-4 text-center">Quant.</th>
+                  <th className="py-2.5 px-4 text-right">Preço Un.</th>
+                  <th className="py-2.5 pl-4 text-right">Subtotal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {generatedStatementPdf.items.map((item, idx) => (
-                  <tr key={idx} className="text-[9px]">
-                    <td className="py-4 pr-4 font-bold uppercase leading-tight">{item.description}</td>
-                    <td className="py-4 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
-                    <td className="py-4 px-4 text-center font-bold text-gray-400">{item.brand || '-'}</td>
-                    <td className="py-4 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity || 0)}</td>
-                    <td className="py-4 px-4 text-right font-bold text-gray-600">{(item.unitPrice || item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="py-4 pl-4 text-right font-black text-indigo-700">{(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <tr key={idx} className="text-[9px] avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                    <td className="py-2.5 pr-4 font-bold uppercase leading-tight">{item.description}</td>
+                    <td className="py-2.5 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
+                    <td className="py-2.5 px-4 text-center font-bold text-gray-400">{item.brand || '-'}</td>
+                    <td className="py-2.5 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity || 0)}</td>
+                    <td className="py-2.5 px-4 text-right font-bold text-gray-600">{(item.unitPrice || item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="py-2.5 pl-4 text-right font-black text-indigo-700">{(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-gray-200 bg-gray-50">
-                  <td colSpan={5} className="py-4 pr-4 text-right font-black uppercase text-gray-900 text-xs">Total do Período (R$)</td>
-                  <td className="py-4 pl-4 text-right font-black text-indigo-700 text-xs">{(generatedStatementPdf.statement.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <tr className="border-t-2 border-gray-200 bg-gray-50 avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                  <td colSpan={5} className="py-3 pr-4 text-right font-black uppercase text-gray-900 text-xs">Total do Período (R$)</td>
+                  <td className="py-3 pl-4 text-right font-black text-indigo-700 text-xs">{(generatedStatementPdf.statement.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               </tfoot>
             </table>
@@ -2677,14 +2702,14 @@ const Contracts: React.FC = () => {
               </div>
             )}
 
-            <div className="mt-auto pt-20 border-t-2 border-gray-100">
-              <p className="text-[8px] font-bold text-gray-400 uppercase text-center mb-10">Este documento certifica o fechamento de guias de recebimento e consumo do contrato administrativo nº {selectedContract.number} no período discriminado acima.</p>
-              <div className="grid grid-cols-2 gap-20">
-                <div className="text-center pt-8 border-t border-gray-400">
+            <div className="mt-auto pt-8 border-t-2 border-gray-100 avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+              <p className="text-[8px] font-bold text-gray-400 uppercase text-center mb-6">Este documento certifica o fechamento de guias de recebimento e consumo do contrato administrativo nº {selectedContract.number} no período discriminado acima.</p>
+              <div className="grid grid-cols-2 gap-12">
+                <div className="text-center pt-6 border-t border-gray-400">
                   <p className="text-[10px] font-black uppercase leading-tight">{selectedContract.supplierName}</p>
                   <p className="text-[8px] font-bold text-gray-400 uppercase">Representante Legal (Fornecedor)</p>
                 </div>
-                <div className="text-center pt-8 border-t border-gray-400">
+                <div className="text-center pt-6 border-t border-gray-400">
                   <p className="text-[10px] font-black uppercase">ESCOLA ESTADUAL CÍVICO-MILITAR ANDRÉ ANTÔNIO MAGGI</p>
                   <p className="text-[8px] font-bold text-gray-400 uppercase">Gestor Escolar / CDCE</p>
                 </div>
