@@ -34,6 +34,8 @@ import TeacherGrades from '../components/TeacherGrades';
 import TeacherPedagogicalRequests from '../components/TeacherPedagogicalRequests';
 import UnifiedSchoolCalendar from '../components/UnifiedSchoolCalendar';
 import TeacherDashboardHome from '../components/TeacherDashboardHome';
+import AcademicYearSelector from '../components/AcademicYearSelector';
+import { useAcademicYear } from '../contexts/AcademicYearContext';
 import { SecretariatNotification, User as UserType } from '../types';
 
 interface TeacherModuleProps {
@@ -44,6 +46,7 @@ interface TeacherModuleProps {
 type SubTab = 'dashboard' | 'attendance' | 'grades' | 'evaluations' | 'occurrences' | 'lesson_plan' | 'performance' | 'calendar' | 'material_requests';
 
 const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
+  const { selectedYear, currentYearInfo, isReadOnly } = useAcademicYear();
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('dashboard');
   const [isLocked, setIsLocked] = useState(false);
   const [notifications, setNotifications] = useState<SecretariatNotification[]>([]);
@@ -193,7 +196,7 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
             </div>
             <div className="overflow-hidden">
               <p className="text-[9px] font-black uppercase text-amber-300 tracking-widest leading-none">Diário Oficial</p>
-              <p className="text-xs font-black uppercase text-white truncate mt-0.5">Ano Letivo 2026</p>
+              <p className="text-xs font-black uppercase text-white truncate mt-0.5">{currentYearInfo?.name || `Ano Letivo ${selectedYear}`}</p>
             </div>
           </div>
         </div>
@@ -258,7 +261,8 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ user, onExit }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-4">
+            <AcademicYearSelector />
             <button
               onClick={toggleFullScreen}
               className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-2xl transition-colors group flex items-center gap-2"

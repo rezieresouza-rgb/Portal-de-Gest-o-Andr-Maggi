@@ -28,13 +28,16 @@ import {
    Trash2,
    X,
    PartyPopper,
-   Edit3
+   Edit3,
+   Lock
 } from 'lucide-react';
 import { BirthdayPerson, SchoolAnnouncement, SchoolEvent, User } from '../types';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
 import { supabase } from '../supabaseClient';
 import CelebrationsWall from './CelebrationsWall';
 import SchoolEventsWall from './SchoolEventsWall';
+import AcademicYearSelector from './AcademicYearSelector';
+import { useAcademicYear } from '../contexts/AcademicYearContext';
 
 interface ModuleConfig {
    id: string;
@@ -53,6 +56,7 @@ interface WelcomeDashboardProps {
 }
 
 const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onModuleSelect, modules, onProfileOpen }) => {
+   const { selectedYear, setSelectedYear, isReadOnly } = useAcademicYear();
    const [announcements, setAnnouncements] = useState<SchoolAnnouncement[]>(() => {
       try {
          const saved = localStorage.getItem('school_announcements_v1');
@@ -235,6 +239,7 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
             </div>
 
             <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto no-print">
+               <AcademicYearSelector />
                <div className="flex-1 md:flex-none bg-white p-2.5 md:p-3 rounded-xl md:rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 md:gap-4 px-4 md:px-5 h-14 md:h-16">
                   <Calendar className="text-indigo-600" size={20} />
                   <div className="text-left">
@@ -252,6 +257,31 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                </button>
             </div>
          </header>
+
+         {/* BANNER DE ANO ARQUIVADO / SOMENTE LEITURA */}
+         {isReadOnly && (
+            <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-950 animate-in fade-in duration-300">
+               <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 bg-amber-500/20 text-amber-700 rounded-2xl shrink-0">
+                     <Lock size={22} />
+                  </div>
+                  <div>
+                     <p className="text-xs md:text-sm font-black uppercase tracking-tight text-amber-900 flex items-center gap-2">
+                        <span>Ano Letivo {selectedYear} Arquivado (Histórico / Somente Leitura)</span>
+                     </p>
+                     <p className="text-[11px] text-amber-800/80 mt-0.5 leading-snug">
+                        Todas as informações, chamadas e notas de {selectedYear} estão preservadas para emissão de boletins e consultas. Para novos lançamentos e cadastros deste ano letivo, alterne para 2027.
+                     </p>
+                  </div>
+               </div>
+               <button
+                  onClick={() => setSelectedYear(2027)}
+                  className="shrink-0 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all active:scale-95"
+               >
+                  <Sparkles size={14} /> Ir para 2027 Ativo
+               </button>
+            </div>
+         )}
 
          {/* PAINEL DE CONFIGURAÇÃO DE BLOCOS (OVERLAY) */}
          {isSettingsOpen && (

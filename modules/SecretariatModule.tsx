@@ -28,6 +28,7 @@ import SecretariatAttendanceHistory from '../components/SecretariatAttendanceHis
 import SecretariatReports from '../components/SecretariatReports';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
+import AcademicYearSelector from '../components/AcademicYearSelector';
 import { FileSpreadsheet } from 'lucide-react';
 
 interface SecretariatModuleProps {
@@ -137,6 +138,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0 max-w-[60%] justify-end">
+            <AcademicYearSelector />
             <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors shrink-0">
               <Maximize2 size={18} />
             </button>

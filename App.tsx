@@ -27,6 +27,7 @@ import PublicDocumentVerifier from './components/PublicDocumentVerifier';
 import { User } from './types';
 import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
+import { AcademicYearProvider } from './contexts/AcademicYearContext';
 import { INITIAL_STUDENTS } from './constants/initialData';
 import { resolveOfficialStaffRole } from './utils/signatureService';
 
@@ -249,9 +250,11 @@ const App: React.FC = () => {
   if (!user) {
     return (
       <ErrorBoundary>
-        <ToastProvider>
+        <AcademicYearProvider>
+          <ToastProvider>
           <Login onLogin={handleLogin} />
         </ToastProvider>
+        </AcademicYearProvider>
       </ErrorBoundary>
     );
   }
@@ -317,7 +320,8 @@ const App: React.FC = () => {
           </div>
         </div>
       }>
-        <ToastProvider>
+        <AcademicYearProvider>
+          <ToastProvider>
           <div className={`bg-gray-50 w-full min-w-0 ${(!user || activeModule === 'hub' || activeModule === 'settings') ? 'min-h-screen overflow-x-hidden' : 'h-screen overflow-hidden print:h-auto print:overflow-visible'}`}>
             {renderActiveModule()}
           </div>
@@ -332,6 +336,7 @@ const App: React.FC = () => {
             }}
           />
         </ToastProvider>
+        </AcademicYearProvider>
       </Suspense>
     </ErrorBoundary>
   );
