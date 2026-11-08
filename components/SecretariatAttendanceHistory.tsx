@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { Search, Printer, Calendar, Users, BookOpen, AlertTriangle, Trash2, User, UserCheck, Percent, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { SCHOOL_CLASSES, SCHOOL_SUBJECTS } from '../constants/initialData';
+import { useAcademicYear } from '../contexts/AcademicYearContext';
 
 interface AttendanceRecord {
     id: string;
@@ -24,6 +25,7 @@ interface ConsolidatedGroup {
 }
 
 const SecretariatAttendanceHistory: React.FC = () => {
+    const { selectedYear } = useAcademicYear();
     const [records, setRecords] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [uniqueTeachers, setUniqueTeachers] = useState<string[]>([]);
@@ -47,6 +49,11 @@ const SecretariatAttendanceHistory: React.FC = () => {
     const [printingConsolidated, setPrintingConsolidated] = useState(false);
     const [printingSummary, setPrintingSummary] = useState(false);
     const [printingStudentReport, setPrintingStudentReport] = useState(false);
+
+    useEffect(() => {
+        setStartDate(`${selectedYear}-02-01`);
+        setEndDate(`${selectedYear}-12-31`);
+    }, [selectedYear]);
 
     const fetchRecords = async () => {
         setLoading(true);

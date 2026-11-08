@@ -39,6 +39,7 @@ import {
 import { Classroom, Shift, StudentMovement } from '../types';
 import { supabase } from '../supabaseClient';
 import { extractDetailedStudentList } from '../geminiService';
+import { useAcademicYear } from '../contexts/AcademicYearContext';
 
 interface EnhancedClassroom extends Classroom {
    studentCount: number;
@@ -76,6 +77,7 @@ interface DetailedStudent {
 }
 
 const SecretariatClassroomManager: React.FC = () => {
+   const { selectedYear, isReadOnly } = useAcademicYear();
    const [classrooms, setClassrooms] = useState<EnhancedClassroom[]>([]);
    const [activeShift, setActiveShift] = useState<Shift | 'TODOS'>('TODOS');
    const [selectedClassDetail, setSelectedClassDetail] = useState<EnhancedClassroom | null>(null);
@@ -150,7 +152,7 @@ const SecretariatClassroomManager: React.FC = () => {
 
    useEffect(() => {
       fetchClassrooms();
-   }, []);
+   }, [selectedYear]);
 
    // Sincroniza a modal de turma aberta sempre que a listagem de turmas for atualizada por baixo dos panos
    useEffect(() => {
@@ -185,7 +187,14 @@ const SecretariatClassroomManager: React.FC = () => {
             `);
 
          if (enrollError) throw enrollError;         if (dbClassrooms) {
-            const enhanced = dbClassrooms.map((cls: any) => {
+            const yearClassrooms = dbClassrooms.filter((cls: any) => {
+               if (selectedYear === 2027) {
+                  return cls.year === '2027' || (cls.created_at && cls.created_at >= '2027-01-01') || (cls.name && cls.name.includes('2027'));
+               } else {
+                  return cls.year !== '2027' && (!cls.created_at || cls.created_at < '2027-01-01') && (!cls.name || !cls.name.includes('2027'));
+               }
+            });
+            const enhanced = yearClassrooms.map((cls: any) => {
                const classEnrollments = enrollments?.filter((e: any) => e.classroom_id === cls.id) || [];
                const allClassStudents = classEnrollments.map((e: any) => ({
                   ...e.students,
@@ -565,9 +574,10 @@ const SecretariatClassroomManager: React.FC = () => {
          setIsLoading(true);
          const { error } = await supabase.from('classrooms').insert([{
             name: newClass.name.toUpperCase(),
-            year: newClass.year,
+            year: selectedYear === 2027 ? '2027' : newClass.year,
             shift: newClass.shift,
-            room_number: newClass.room_number || null
+            room_number: newClass.room_number || null,
+            created_at: selectedYear === 2027 ? '2027-02-01T00:00:00.000Z' : new Date().toISOString()
          }]);
 
          if (error) throw error;

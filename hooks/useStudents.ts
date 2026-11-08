@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { useAcademicYear } from '../contexts/AcademicYearContext';
 
 export interface Student {
     id: string;
@@ -29,9 +30,29 @@ export interface Student {
 }
 
 export const useStudents = () => {
+    let selectedYear = 2027;
+    try {
+        const yearCtx = useAcademicYear();
+        if (yearCtx) selectedYear = yearCtx.selectedYear;
+    } catch (e) {
+        const saved = localStorage.getItem('portal_selected_academic_year');
+        if (saved) selectedYear = parseInt(saved, 10) || 2027;
+    }
+
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const isEnrollmentOfSelectedYear = (enr: any) => {
+        const c = enr.classrooms;
+        if (selectedYear === 2027) {
+            return (c && (c.year === '2027' || (c.created_at && c.created_at >= '2027-01-01') || (c.name && c.name.includes('2027')))) ||
+                   (enr.enrollment_date && enr.enrollment_date >= '2027-01-01');
+        } else {
+            return (!c || (c.year !== '2027' && (!c.created_at || c.created_at < '2027-01-01') && (!c.name || !c.name.includes('2027')))) &&
+                   (!enr.enrollment_date || enr.enrollment_date < '2027-01-01');
+        }
+    };
 
     const fetchStudents = async () => {
         try {
@@ -39,32 +60,36 @@ export const useStudents = () => {
             const { data, error } = await supabase
                 .from('students')
                 .select(`
-          *,
-          enrollments (
-            enrollment_date,
-            adjustment_date,
-            status,
-            classrooms (name, shift)
-          )
-        `);
+                  *,
+                  enrollments (
+                    enrollment_date,
+                    adjustment_date,
+                    status,
+                    classrooms (name, shift, year, created_at)
+                  )
+                `);
 
             if (error) throw error;
 
             if (data) {
-                const mappedStudents: Student[] = data.map((s: any) => {
-                    // Sort enrollments by date (latest first) and prioritize 'ATIVO' or 'RECLASSIFICADO'
-                    const sortedEnrollments = [...(s.enrollments || [])].sort((a, b) => {
+                const yearStudents: Student[] = [];
+
+                data.forEach((s: any) => {
+                    // Filtrar apenas matrículas pertencentes ao ano selecionado (2026 vs 2027)
+                    const filteredEnrs = (s.enrollments || []).filter(isEnrollmentOfSelectedYear);
+                    if (filteredEnrs.length === 0) return; // Não matriculado neste ano letivo
+
+                    const sortedEnrollments = [...filteredEnrs].sort((a, b) => {
                         const dateA = new Date(a.enrollment_date || 0).getTime();
                         const dateB = new Date(b.enrollment_date || 0).getTime();
                         
-                        // If one is active and other is not, prioritize active
                         const isActiveA = (a.status === 'ATIVO' || a.status === 'RECLASSIFICADO');
                         const isActiveB = (b.status === 'ATIVO' || b.status === 'RECLASSIFICADO');
                         
                         if (isActiveA && !isActiveB) return -1;
                         if (!isActiveA && isActiveB) return 1;
                         
-                        return dateB - dateA; // Latest first
+                        return dateB - dateA;
                     });
 
                     const enrollment = sortedEnrollments[0];
@@ -74,7 +99,6 @@ export const useStudents = () => {
                     const phone = (s.contact_phone || '').trim();
                     const address = (s.address || '').trim();
 
-                    // Resolução precisa do status (prioriza TRANSFERIDO, DESISTENTE, EVADIDO, FALECIDO)
                     const rawStudentStatus = (s.status || '').trim().toUpperCase();
                     const rawEnrollmentStatus = (enrollment?.status || '').trim().toUpperCase();
                     const classroomName = (classroom?.name || '').toUpperCase();
@@ -92,7 +116,7 @@ export const useStudents = () => {
                         resolvedStatus = rawStudentStatus;
                     }
 
-                    return {
+                    yearStudents.push({
                         id: s.id,
                         name: s.name,
                         Nome: s.name,
@@ -117,13 +141,11 @@ export const useStudents = () => {
                         paed: s.paed,
                         school_transport: s.school_transport,
                         gender: s.gender
-                    };
+                    });
                 });
 
-                // Sort by Name
-                mappedStudents.sort((a, b) => a.name.localeCompare(b.name));
-
-                setStudents(mappedStudents);
+                yearStudents.sort((a, b) => a.name.localeCompare(b.name));
+                setStudents(yearStudents);
             }
         } catch (err: any) {
             console.error('Error fetching students:', err);
@@ -135,9 +157,7 @@ export const useStudents = () => {
 
     useEffect(() => {
         fetchStudents();
-
-        // Optional: Subscribe to changes if needed, but for now simple fetch is enough
-    }, []);
+    }, [selectedYear]);
 
     return { students, loading, error, refetch: fetchStudents };
 };

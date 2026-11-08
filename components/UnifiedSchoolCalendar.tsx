@@ -21,8 +21,10 @@ import {
 import { useToast } from './Toast';
 import { SCHOOL_CALENDAR_2026 } from '../constants/schoolCalendar2026';
 import { supabase } from '../supabaseClient';
+import { useAcademicYear } from '../contexts/AcademicYearContext';
 
 const UnifiedSchoolCalendar: React.FC = () => {
+   const { selectedYear } = useAcademicYear();
    const [currentIdx, setCurrentIdx] = useState(() => new Date().getMonth());
    const { addToast } = useToast();
    const [monthlyLogs, setMonthlyLogs] = useState<any[]>([]);
@@ -456,7 +458,7 @@ const UnifiedSchoolCalendar: React.FC = () => {
                </div>
                <div className="text-right">
                   <p className="text-[10px] font-black uppercase tracking-widest">Relatório Mensal</p>
-                  <p className="text-lg font-black">{monthData.mes} / 2026</p>
+                  <p className="text-lg font-black">{monthData.mes} / {selectedYear}</p>
                </div>
             </div>
 
