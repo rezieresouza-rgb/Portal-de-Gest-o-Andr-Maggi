@@ -88,11 +88,12 @@ const SecretariatBulletinPrinter: React.FC = () => {
          const targetIdx = BIMESTRES.indexOf(selectedBimestre);
          const activeBimestres = BIMESTRES.slice(0, targetIdx + 1);
 
-         // 3. Buscar Notas (Grades) para os bimestres selecionados
+         // 3. Buscar Notas Oficiais (AVALIACAO_BIMESTRAL) para os bimestres selecionados
          const { data: assessments } = await supabase
             .from('assessments')
-            .select('id, subject, bimestre')
+            .select('id, subject, bimestre, type')
             .eq('classroom_id', classData.id)
+            .eq('type', 'AVALIACAO_BIMESTRAL')
             .in('bimestre', activeBimestres);
 
          let allGrades: any[] = [];
@@ -100,9 +101,8 @@ const SecretariatBulletinPrinter: React.FC = () => {
             const assessmentIds = assessments.map(a => a.id);
             const { data: gradeRecords } = await supabase
                .from('grades')
-               .select('*')
-               .in('assessment_id', assessmentIds)
-               .in('student_code', studentCodes);
+               .select('id, assessment_id, student_id, student_code, student_name, score')
+               .in('assessment_id', assessmentIds);
             allGrades = gradeRecords || [];
          }
 
@@ -168,10 +168,16 @@ const SecretariatBulletinPrinter: React.FC = () => {
                   activeBimestres.forEach(bim => {
                      const ass = assessments?.find(a => a.subject === subj && a.bimestre === bim);
                      if (ass) {
-                        const g = allGrades.find(gr => gr.assessment_id === ass.id && gr.student_code === student.registration_number);
-                        studentGrades[subj][bim] = g ? g.score : 0;
+                        const g = allGrades.find(gr =>
+                           gr.assessment_id === ass.id && (
+                              (gr.student_id && gr.student_id === student.id) ||
+                              (gr.student_code && student.registration_number && gr.student_code === student.registration_number) ||
+                              (gr.student_name && student.name && gr.student_name.trim().toLowerCase() === student.name.trim().toLowerCase())
+                           )
+                        );
+                        studentGrades[subj][bim] = (g !== undefined && g.score !== null) ? g.score : null;
                      } else {
-                        studentGrades[subj][bim] = 0;
+                        studentGrades[subj][bim] = null;
                      }
                   });
                }
@@ -192,6 +198,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
             };
          });
 
+         mappedStudents.sort((a: any, b: any) => (a.name || '').trim().localeCompare((b.name || '').trim(), 'pt-BR'));
          setStudents(mappedStudents);
       } catch (error) {
          console.error("Erro ao carregar dados dos boletins:", error);
@@ -266,9 +273,9 @@ const SecretariatBulletinPrinter: React.FC = () => {
                </thead>
                <tbody className="border border-black">
                   {Object.entries(student.grades).map(([subj, bims]: [any, any]) => {
-                     const gradesArray = Object.values(bims) as number[];
-                     const average = gradesArray.length > 0
-                        ? gradesArray.reduce((a, b) => a + b, 0) / gradesArray.length
+                     const validGrades = Object.values(bims).filter((v): v is number => typeof v === 'number' && !isNaN(v));
+                     const average = validGrades.length > 0
+                        ? validGrades.reduce((a, b) => a + b, 0) / validGrades.length
                         : 0;
                      
                      const absenceKey = `${student.id}_${subj}`;
@@ -281,7 +288,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
                            <td className="p-1 font-bold uppercase">{subj}</td>
                            {activeBimestres.map(bim => (
                               <td key={bim} className="p-1 text-center font-black border-l border-black/10">
-                                 {bims[bim] ? bims[bim].toFixed(1) : '-'}
+                                 {typeof bims[bim] === 'number' ? bims[bim].toFixed(1) : '-'}
                               </td>
                            ))}
                            <td className="p-1 text-center font-black border-l border-black bg-indigo-50/50">
@@ -330,7 +337,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
                </div>
                <div className="border-t border-black pt-1">
                   <p className="text-[6px] font-black uppercase">Responsável (Ciente)</p>
-                  <p className="text-[5px] text-gray-400">____/____/2024</p>
+                  <p className="text-[5px] text-gray-400">____/____/2026</p>
                </div>
             </div>
          </div>
