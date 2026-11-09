@@ -91,19 +91,20 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
 
          const classroomId = classroomData.id;
 
-         const { data: existingAssessment } = await supabase
+         const { data: assessmentsList } = await supabase
             .from('assessments')
-            .select('id')
+            .select('id, type')
             .eq('classroom_id', classroomId)
             .eq('subject', subject)
-            .eq('bimestre', bimestre)
-            .single();
+            .eq('bimestre', bimestre);
+
+         const existingAssessment = assessmentsList?.find((a: any) => a.type === 'AVALIACAO_BIMESTRAL') || assessmentsList?.[0];
 
          if (existingAssessment) {
             setCurrentAssessmentId(existingAssessment.id);
             const { data: gradeData } = await supabase
                .from('grades')
-               .select('student_code, score, observations')
+               .select('student_code, score, proficiency_level')
                .eq('assessment_id', existingAssessment.id);
 
             const loadedGrades: Record<string, number> = {};
@@ -230,13 +231,13 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
 
          let assId = currentAssessmentId;
          if (!assId) {
-            const { data: existing } = await supabase
+            const { data: existingList } = await supabase
                .from('assessments')
-               .select('id')
+               .select('id, type')
                .eq('classroom_id', classroomId)
                .eq('subject', selectedSubject)
-               .eq('bimestre', selectedBimestre)
-               .single();
+               .eq('bimestre', selectedBimestre);
+            const existing = existingList?.find((a: any) => a.type === 'AVALIACAO_BIMESTRAL') || existingList?.[0];
             if (existing) assId = existing.id;
          }
 
@@ -265,7 +266,7 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
                student_name: s.Nome,
                score: finalScore,
                proficiency_level: getProficiency(finalScore),
-               observations: recVal !== null && recVal !== undefined ? `REC:${recVal}` : null
+               student_id: s.id || null
             };
          });
 
