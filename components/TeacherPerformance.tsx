@@ -42,7 +42,10 @@ import {
   User,
   X,
   ChevronRight,
-  FileText
+  FileText,
+  ArrowRight,
+  Minus,
+  Activity
 } from 'lucide-react';
 import { AttendanceRecord, ClassroomOccurrence, User as UserType } from '../types';
 import { supabase } from '../supabaseClient';
@@ -72,6 +75,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [gradesData, setGradesData] = useState<any[]>([]);
+  const [allBimestresGrades, setAllBimestresGrades] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -171,6 +175,30 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
 
       const { data: grData } = await gradeQuery;
       setGradesData(grData || []);
+
+      // 3.1 Notas de Todos os Bimestres para Análise Histórica & Trajetória
+      const { data: allBimsData } = await supabase
+        .from('grades')
+        .select(`
+          id,
+          score,
+          student_id,
+          student_code,
+          student_name,
+          assessments!inner (
+            id,
+            subject,
+            bimestre,
+            type,
+            classrooms!inner (
+              name
+            )
+          )
+        `)
+        .eq('assessments.classrooms.name', selectedClass)
+        .eq('assessments.type', 'AVALIACAO_BIMESTRAL');
+
+      setAllBimestresGrades(allBimsData || []);
 
       // 4. Ocorrências da Turma
       const { data: occData } = await supabase
@@ -276,7 +304,63 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
       occByType[type] = (occByType[type] || 0) + 1;
     });
 
+    // 4. Mapear histórico de todos os bimestres por aluno para Trajetória de Evolução
+    const allBimsByStudent: Record<string, { b1: number[]; b2: number[]; b3: number[] }> = {};
+    students.forEach(s => {
+      allBimsByStudent[s.id] = { b1: [], b2: [], b3: [] };
+    });
+
+    allBimestresGrades.forEach(g => {
+      let targetId = g.student_id;
+      if (!targetId && g.student_code) {
+        const found = students.find(s => s.registration === g.student_code);
+        if (found) targetId = found.id;
+      }
+      if (!targetId && g.student_name) {
+        const found = students.find(s => s.name.toUpperCase().trim() === g.student_name.toUpperCase().trim());
+        if (found) targetId = found.id;
+      }
+
+      if (targetId && allBimsByStudent[targetId] && typeof g.score === 'number' && !isNaN(g.score)) {
+        const bim = g.assessments?.bimestre;
+        if (bim === '1º BIMESTRE') allBimsByStudent[targetId].b1.push(g.score);
+        else if (bim === '2º BIMESTRE') allBimsByStudent[targetId].b2.push(g.score);
+        else if (bim === '3º BIMESTRE') allBimsByStudent[targetId].b3.push(g.score);
+      }
+    });
+
+    // Médias históricas da turma inteira
+    const classB1Scores = allBimestresGrades.filter(g => g.assessments?.bimestre === '1º BIMESTRE' && typeof g.score === 'number').map(g => g.score);
+    const classB2Scores = allBimestresGrades.filter(g => g.assessments?.bimestre === '2º BIMESTRE' && typeof g.score === 'number').map(g => g.score);
+    const classB3Scores = allBimestresGrades.filter(g => g.assessments?.bimestre === '3º BIMESTRE' && typeof g.score === 'number').map(g => g.score);
+
+    const classEvolution = {
+      b1: classB1Scores.length > 0 ? Number((classB1Scores.reduce((a, b) => a + b, 0) / classB1Scores.length).toFixed(1)) : null,
+      b2: classB2Scores.length > 0 ? Number((classB2Scores.reduce((a, b) => a + b, 0) / classB2Scores.length).toFixed(1)) : null,
+      b3: classB3Scores.length > 0 ? Number((classB3Scores.reduce((a, b) => a + b, 0) / classB3Scores.length).toFixed(1)) : null,
+    };
+
+    // Disciplinas Gargalo da turma (no bimestre selecionado)
+    const failBySubj: Record<string, number> = {};
+    gradesData.forEach(g => {
+      if (typeof g.score === 'number' && g.score < 6.0 && g.assessments?.subject) {
+        failBySubj[g.assessments.subject] = (failBySubj[g.assessments.subject] || 0) + 1;
+      }
+    });
+    const bottlenecks = Object.entries(failBySubj)
+      .map(([subject, count]) => ({
+        subject,
+        count,
+        percentage: students.length > 0 ? Math.round((count / students.length) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
+
     const studentSummary: {
+      avgB1: number | null;
+      avgB2: number | null;
+      avgB3: number | null;
+      trend: 'UP' | 'DOWN' | 'STABLE';
       id: string;
       name: string;
       registration: string;
@@ -311,8 +395,26 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
       const absences = aInfo.total - aInfo.present;
       const studentOccs = occByStudent[s.name.toUpperCase()] || [];
 
+      const bimsInfo = allBimsByStudent[s.id] || { b1: [], b2: [], b3: [] };
+      const avgB1 = bimsInfo.b1.length > 0 ? Number((bimsInfo.b1.reduce((a, b) => a + b, 0) / bimsInfo.b1.length).toFixed(1)) : null;
+      const avgB2 = bimsInfo.b2.length > 0 ? Number((bimsInfo.b2.reduce((a, b) => a + b, 0) / bimsInfo.b2.length).toFixed(1)) : null;
+      const avgB3 = bimsInfo.b3.length > 0 ? Number((bimsInfo.b3.reduce((a, b) => a + b, 0) / bimsInfo.b3.length).toFixed(1)) : null;
+
+      let trend: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
+      if (avgB3 !== null && avgB2 !== null) {
+        if (avgB3 >= avgB2 + 0.3) trend = 'UP';
+        else if (avgB3 <= avgB2 - 0.3) trend = 'DOWN';
+      } else if (avgB2 !== null && avgB1 !== null) {
+        if (avgB2 >= avgB1 + 0.3) trend = 'UP';
+        else if (avgB2 <= avgB1 - 0.3) trend = 'DOWN';
+      }
+
       studentSummary.push({
         id: s.id,
+        avgB1,
+        avgB2,
+        avgB3,
+        trend,
         name: s.name,
         registration: s.registration,
         average: avg,
@@ -390,9 +492,11 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
       atRiskStudents,
       attendanceTimelineData,
       studentSummary,
-      occByType
+      occByType,
+      classEvolution,
+      bottlenecks
     };
-  }, [students, gradesData, attendanceRecords, occurrences]);
+  }, [students, gradesData, allBimestresGrades, attendanceRecords, occurrences]);
 
   // Aluno Selecionado Individualmente
   const selectedStudentData = useMemo(() => {
@@ -689,6 +793,75 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
             </div>
 
           </div>
+
+          {/* BANNER DE EVOLUÇÃO HISTÓRICA DA TURMA (1º ➔ 2º ➔ 3º BIMESTRE) */}
+          <div className="p-6 md:p-8 rounded-[2.5rem] bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 rounded-2xl shrink-0">
+                <TrendingUp size={24} className="text-emerald-400" />
+              </div>
+              <div>
+                <span className="px-3 py-1 bg-indigo-500/30 text-indigo-200 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-400/20">
+                  Trajetória Histórica de Rendimento
+                </span>
+                <h3 className="text-lg font-black uppercase text-white mt-1">
+                  Evolução da Turma ({selectedClass}) ao Longo dos Bimestres
+                </h3>
+                <p className="text-xs text-indigo-200/70 font-medium">
+                  Médias oficiais apuradas pela escrituração digital SEDUC-MT
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white/5 p-4 rounded-2xl border border-white/10">
+              <div className="text-center">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">1º Bimestre</span>
+                <span className="text-xl font-black text-white">{analytics.classEvolution.b1 !== null ? analytics.classEvolution.b1.toFixed(1) : '-'}</span>
+              </div>
+
+              <ArrowRight size={18} className="text-slate-500 hidden sm:block" />
+
+              <div className="text-center">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">2º Bimestre</span>
+                <span className="text-xl font-black text-white">{analytics.classEvolution.b2 !== null ? analytics.classEvolution.b2.toFixed(1) : '-'}</span>
+              </div>
+
+              <ArrowRight size={18} className="text-slate-500 hidden sm:block" />
+
+              <div className="text-center">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">3º Bimestre</span>
+                <span className="text-xl font-black text-emerald-400 font-mono">{analytics.classEvolution.b3 !== null ? analytics.classEvolution.b3.toFixed(1) : '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* DISCIPLINAS GARGALO / MAIOR TAXA DE RECUPERAÇÃO NA TURMA */}
+          {analytics.bottlenecks.length > 0 && selectedSubject === 'TODAS DISCIPLINAS' && (
+            <div className="p-6 bg-rose-50/70 border border-rose-200/80 rounded-[2.5rem] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase text-rose-900 tracking-wider">
+                    Disciplinas com Maior Índice de Recuperação ({selectedBimestre})
+                  </h4>
+                  <p className="text-[11px] text-rose-700 font-medium">
+                    Componentes curriculares com mais estudantes com nota abaixo de 6.0:
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {analytics.bottlenecks.map(b => (
+                  <span key={b.subject} className="px-3 py-1.5 bg-white border border-rose-200 text-rose-900 rounded-xl text-xs font-black uppercase shadow-sm">
+                    {b.subject}: <strong>{b.count} alunos ({b.percentage}%)</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {/* PAINEL DE PARECER COM IA GEMINI DO ALUNO */}
           {aiInsight && (
@@ -1109,6 +1282,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
                     <tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                       <th className="px-4 py-3">Estudante</th>
                       <th className="px-4 py-3 text-center">Média</th>
+                      <th className="px-4 py-3 text-center">Trajetória</th>
                       <th className="px-4 py-3 text-center">Frequência</th>
                       <th className="px-4 py-3 text-center">Ocorrências</th>
                       <th className="px-4 py-3 text-center">Ações</th>
@@ -1137,6 +1311,14 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
                             <td className="px-4 py-3 text-center font-black">
                               <span className={isGradeRisk ? 'text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg' : 'text-slate-900'}>
                                 {s.average > 0 ? s.average.toFixed(1) : 'S/N'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                s.trend === 'UP' ? 'bg-emerald-100 text-emerald-800' :
+                                s.trend === 'DOWN' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
+                              }`}>
+                                {s.trend === 'UP' ? '↗️ Evoluindo' : s.trend === 'DOWN' ? '↘️ Em Queda' : '➡️ Estável'}
                               </span>
                             </td>
 
