@@ -29,7 +29,8 @@ import SecretariatReports from '../components/SecretariatReports';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
 import AcademicYearSelector from '../components/AcademicYearSelector';
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, TrendingUp } from 'lucide-react';
+import CoordinationRiskRadar from '../components/CoordinationRiskRadar';
 
 interface SecretariatModuleProps {
   user?: any;
@@ -37,7 +38,7 @@ interface SecretariatModuleProps {
 }
 
 const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'attendance_history' | 'reports' | 'oficios' | 'atas'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'classes' | 'staff' | 'bulletins' | 'risk_radar' | 'attendance_history' | 'reports' | 'oficios' | 'atas'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const menuItems = [
@@ -47,6 +48,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
     { id: 'atas', label: 'Registro de Atas', icon: FileSpreadsheet },
     { id: 'attendance_history', label: 'Histórico de Chamadas', icon: ClipboardList },
     { id: 'classes', label: 'Gestão de Turmas', icon: Users },
+    { id: 'risk_radar', label: 'Análise de Turmas & Risco', icon: TrendingUp },
     { id: 'staff', label: 'Servidores / RH', icon: Briefcase },
     { id: 'bulletins', label: 'Emissão de Boletins', icon: FileText },
     { id: 'reports', label: 'Relatórios', icon: FileText },
@@ -165,6 +167,7 @@ const SecretariatModule: React.FC<SecretariatModuleProps> = ({ user, onExit }) =
           {activeTab === 'atas' && <OfficialAtasManager moduleSource="SECRETARIA" user={user} />}
           {activeTab === 'attendance_history' && <SecretariatAttendanceHistory />}
           {activeTab === 'classes' && <SecretariatClassroomManager />}
+          {activeTab === 'risk_radar' && <CoordinationRiskRadar user={user} />}
           {activeTab === 'staff' && <SecretariatStaffManager user={user} />}
           {activeTab === 'bulletins' && <SecretariatBulletinPrinter />}
           {activeTab === 'reports' && <SecretariatReports />}
