@@ -258,8 +258,33 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
             </div>
          </header>
 
-         {/* BANNER DE ANO ARQUIVADO / SOMENTE LEITURA */}
-         {isReadOnly && (
+         {/* BANNER INFORMATIVO SE ESTIVER EM 2027 (PLANEJAMENTO) */}
+         {selectedYear === 2027 && (
+            <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-indigo-50 border border-indigo-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-indigo-950 animate-in fade-in duration-300">
+               <div className="flex items-center gap-3.5">
+                  <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shrink-0 shadow-sm">
+                     <Sparkles size={20} />
+                  </div>
+                  <div>
+                     <p className="text-xs md:text-sm font-black uppercase tracking-tight text-indigo-950 flex items-center gap-2">
+                        <span>Ano Letivo 2027 — Modo de Planejamento</span>
+                     </p>
+                     <p className="text-[11px] text-indigo-800/80 mt-0.5 leading-snug">
+                        Você está visualizando o ciclo de planejamento de 2027. O Ano Letivo 2026 continua ativo e será arquivado apenas na virada do ano.
+                     </p>
+                  </div>
+               </div>
+               <button
+                  onClick={() => setSelectedYear(2026)}
+                  className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all active:scale-95"
+               >
+                  <Calendar size={14} /> Voltar para 2026 Vigente
+               </button>
+            </div>
+         )}
+
+         {/* BANNER DE ANO ARQUIVADO / SOMENTE LEITURA (apenas se for um ano histórico realmente arquivado) */}
+         {isReadOnly && selectedYear !== 2026 && (
             <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-950 animate-in fade-in duration-300">
                <div className="flex items-center gap-3.5">
                   <div className="p-2.5 bg-amber-500/20 text-amber-700 rounded-2xl shrink-0">
@@ -270,15 +295,15 @@ const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({ user, onLogout, onM
                         <span>Ano Letivo {selectedYear} Arquivado (Histórico / Somente Leitura)</span>
                      </p>
                      <p className="text-[11px] text-amber-800/80 mt-0.5 leading-snug">
-                        Todas as informações, chamadas e notas de {selectedYear} estão preservadas para emissão de boletins e consultas. Para novos lançamentos e cadastros deste ano letivo, alterne para 2027.
+                        Todas as informações, chamadas e notas de {selectedYear} estão preservadas para emissão de boletins e consultas.
                      </p>
                   </div>
                </div>
                <button
-                  onClick={() => setSelectedYear(2027)}
+                  onClick={() => setSelectedYear(2026)}
                   className="shrink-0 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all active:scale-95"
                >
-                  <Sparkles size={14} /> Ir para 2027 Ativo
+                  <Calendar size={14} /> Ir para 2026 Vigente
                </button>
             </div>
          )}

@@ -229,7 +229,7 @@ const SecretariatDashboard: React.FC = () => {
       <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700 pb-20 w-full min-w-0">
          
          {/* BANNER INFORMATIVO ESPECÍFICO DO ANO LETIVO SELECIONADO */}
-         {selectedYear === 2027 ? (
+         {selectedYear === 2027 && (
             <div className="p-5 md:p-6 rounded-3xl bg-indigo-50 border border-indigo-200/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                <div className="flex items-center gap-3.5 min-w-0">
                   <div className="p-3 bg-indigo-600 text-white rounded-2xl shrink-0 shadow-md shadow-indigo-600/20">
@@ -237,11 +237,11 @@ const SecretariatDashboard: React.FC = () => {
                   </div>
                   <div>
                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[8px] font-black bg-indigo-600 text-white uppercase tracking-wider">Ciclo Vigente</span>
+                        <span className="px-2 py-0.5 rounded text-[8px] font-black bg-indigo-600 text-white uppercase tracking-wider">Planejamento 2027</span>
                         <h3 className="text-sm md:text-base font-black text-indigo-950 uppercase tracking-tight">Painel da Secretaria — Ano Letivo 2027</h3>
                      </div>
                      <p className="text-xs text-indigo-700/90 mt-0.5 leading-relaxed">
-                        Ambiente liberado para novas matrículas, enturmação e planejamento de 2027. Os dados de 2026 estão arquivados.
+                        Ambiente para planejamento, enturmações e matrículas do próximo ano letivo. Os dados de 2026 permanecem ativos no ano corrente.
                      </p>
                   </div>
                </div>
@@ -256,21 +256,6 @@ const SecretariatDashboard: React.FC = () => {
                      {isCloning ? 'Preparando...' : 'Clonar Grade de Turmas de 2026 para 2027'}
                   </button>
                )}
-            </div>
-         ) : (
-            <div className="p-5 md:p-6 rounded-3xl bg-amber-50 border border-amber-200/80 shadow-sm flex items-center gap-3.5">
-               <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-md shadow-amber-500/20">
-                  <Lock size={22} />
-               </div>
-               <div>
-                  <div className="flex items-center gap-2">
-                     <span className="px-2 py-0.5 rounded text-[8px] font-black bg-amber-600 text-white uppercase tracking-wider">Histórico Arquivado</span>
-                     <h3 className="text-sm md:text-base font-black text-amber-950 uppercase tracking-tight">Painel da Secretaria — Ano Letivo 2026 (Somente Leitura)</h3>
-                  </div>
-                  <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
-                     Exibindo os 489 alunos, 17 turmas e histórico consolidado de 2026. Para novos registros deste ano, selecione o Ano Letivo 2027 no seletor acima.
-                  </p>
-               </div>
             </div>
          )}
 
