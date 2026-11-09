@@ -118,8 +118,8 @@ export const useStudents = () => {
 
                     yearStudents.push({
                         id: s.id,
-                        name: s.name,
-                        Nome: s.name,
+                        name: (s.name || '').trim(),
+                        Nome: (s.name || '').trim(),
                         class: classroom?.name || 'SEM TURMA',
                         Turma: classroom?.name || 'SEM TURMA',
                         shift: classroom?.shift || '---',
@@ -144,7 +144,7 @@ export const useStudents = () => {
                     });
                 });
 
-                yearStudents.sort((a, b) => a.name.localeCompare(b.name));
+                yearStudents.sort((a, b) => (a.name || '').trim().localeCompare((b.name || '').trim(), 'pt-BR', { sensitivity: 'base' }));
                 setStudents(yearStudents);
             }
         } catch (err: any) {

@@ -57,9 +57,9 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
          ).map(s => ({
             ...s,
             CodigoAluno: s.registration_number,
-            Nome: s.name,
+            Nome: (s.name || '').trim(),
             paed: s.paed || false
-         }));
+         })).sort((a, b) => (a.Nome || '').localeCompare(b.Nome || '', 'pt-BR', { sensitivity: 'base' }));
 
          setStudents(filtered);
          if (filtered.length > 0) {
@@ -203,8 +203,9 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
    }, [students, grades, recoveryGrades]);
 
    const filteredStudents = useMemo(() => {
-      if (!searchTerm) return students;
-      return students.filter(s => 
+      const sorted = [...students].sort((a, b) => (a.Nome || '').localeCompare(b.Nome || '', 'pt-BR', { sensitivity: 'base' }));
+      if (!searchTerm) return sorted;
+      return sorted.filter(s => 
          s.Nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
          s.CodigoAluno.includes(searchTerm)
       );
