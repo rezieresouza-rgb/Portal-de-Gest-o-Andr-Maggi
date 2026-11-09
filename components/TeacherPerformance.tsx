@@ -106,7 +106,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
 
       const classStudents = (studentsData || []).map((s: any) => ({
         id: s.id,
-        name: s.name,
+        name: (s.name || '').trim(),
         registration: s.registration_number,
         paed: s.paed === true,
         className: selectedClass
@@ -146,22 +146,24 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         .select(`
           id,
           score,
-          recovery_score,
           student_id,
+          student_code,
           student_name,
+          proficiency_level,
           assessments!inner (
             id,
-            name,
             subject,
             bimestre,
             date,
+            type,
             classrooms!inner (
               name
             )
           )
         `)
         .eq('assessments.classrooms.name', selectedClass)
-        .eq('assessments.bimestre', selectedBimestre);
+        .eq('assessments.bimestre', selectedBimestre)
+        .eq('assessments.type', 'AVALIACAO_BIMESTRAL');
 
       if (selectedSubject !== 'TODAS DISCIPLINAS') {
         gradeQuery = gradeQuery.eq('assessments.subject', selectedSubject);
@@ -197,7 +199,8 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
     const studentGradesMap: Record<string, { name: string; finalScores: number[]; regularScores: number[]; isPaed: boolean; details: any[] }> = {};
     students.forEach(s => {
       studentGradesMap[s.id] = {
-        name: s.name,
+        name: (s.name || '').trim(),
+        registration: s.registration,
         finalScores: [],
         regularScores: [],
         isPaed: s.paed,
@@ -206,20 +209,25 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
     });
 
     gradesData.forEach(g => {
-      const sid = g.student_id;
-      if (studentGradesMap[sid]) {
+      let targetStudent = g.student_id ? studentGradesMap[g.student_id] : null;
+      if (!targetStudent && g.student_code) {
+        targetStudent = Object.values(studentGradesMap).find(x => x.registration === g.student_code);
+      }
+      if (!targetStudent && g.student_name) {
+        targetStudent = Object.values(studentGradesMap).find(x => x.name.toUpperCase().trim() === g.student_name.toUpperCase().trim());
+      }
+
+      if (targetStudent) {
         const reg = Number(g.score) || 0;
-        const rec = g.recovery_score !== null && g.recovery_score !== undefined ? Number(g.recovery_score) : null;
-        const finalScore = rec !== null ? Math.max(reg, rec) : reg;
-        studentGradesMap[sid].regularScores.push(reg);
-        studentGradesMap[sid].finalScores.push(finalScore);
-        studentGradesMap[sid].details.push({
+        targetStudent.regularScores.push(reg);
+        targetStudent.finalScores.push(reg);
+        targetStudent.details.push({
           subject: g.assessments?.subject || 'Geral',
-          assessmentName: g.assessments?.name || 'Avaliação',
+          assessmentName: `Avaliação Bimestral - ${g.assessments?.subject || ''}`,
           date: g.assessments?.date,
           score: reg,
-          recoveryScore: rec,
-          finalScore
+          recoveryScore: null,
+          finalScore: reg
         });
       }
     });
