@@ -1056,7 +1056,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
                 {analytics.approvalRate.toFixed(0)}%
               </p>
               <p className="text-xs font-bold text-slate-400 mt-2">
-                Notas $\ge 6,0$ na avaliação/recuperação
+                Notas ≥ 6,0 na avaliação/recuperação
               </p>
             </div>
 
