@@ -1460,6 +1460,9 @@ const Contracts: React.FC = () => {
   const { totalValue, totalSpent, remainingValue, daysRemaining } = stats || { totalValue: 0, totalSpent: 0, remainingValue: 0, daysRemaining: 0 };
   const timeProgress = stats ? Math.min(100, Math.max(0, (365 - stats.daysRemaining) / 3.65)) : 0;
 
+  const statementItemsTotal = (generatedStatementPdf?.items || []).reduce((acc: number, item: any) => acc + (Number(item.total) || 0), 0);
+  const statementDisplayTotal = statementItemsTotal > 0 ? statementItemsTotal : (generatedStatementPdf?.statement?.total_value || 0);
+
   const isContractFulfilled = useMemo(() => {
     if (!selectedContract || !selectedContract.items || selectedContract.items.length === 0) return false;
     const allItemsDelivered = selectedContract.items.every(i => i.acquiredQuantity >= i.contractedQuantity);
@@ -2633,7 +2636,7 @@ const Contracts: React.FC = () => {
               </div>
               <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col justify-center">
                 <p className="text-[8px] font-black text-emerald-600 uppercase mb-1">Valor Total</p>
-                <p className="text-lg font-black text-emerald-700">R$ {generatedStatementPdf.statement.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-lg font-black text-emerald-700">R$ {statementDisplayTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
               {generatedStatementPdf.statement.payment_date && (
                 <div className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex flex-col justify-center">
@@ -2669,7 +2672,7 @@ const Contracts: React.FC = () => {
               <tfoot>
                 <tr className="border-t-2 border-gray-200 bg-gray-50 avoid-break" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   <td colSpan={5} className="py-3 pr-4 text-right font-black uppercase text-gray-900 text-xs">Total do Período (R$)</td>
-                  <td className="py-3 pl-4 text-right font-black text-indigo-700 text-xs">{(generatedStatementPdf.statement.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td className="py-3 pl-4 text-right font-black text-indigo-700 text-xs">{(statementDisplayTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               </tfoot>
             </table>
