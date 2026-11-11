@@ -32,7 +32,8 @@ import {
   PackageSearch,
   Package,
   BarChart3,
-  CheckCircle2
+  CheckCircle2,
+  Award
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ContractStatus, Contract, ContractItem } from '../types';
