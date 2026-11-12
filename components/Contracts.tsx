@@ -265,7 +265,11 @@ const Contracts: React.FC = () => {
   // Guide History State
   const [paymentGuides, setPaymentGuides] = useState<any[]>([]);
   const [isLoadingGuides, setIsLoadingGuides] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ITEMS' | 'LOG' | 'GUIDES' | 'EXTRACTS'>('ITEMS');
+  const [activeTab, setActiveTab] = useState<'ITEMS' | 'LOG' | 'GUIDES' | 'EXTRACTS' | 'ORDERS'>('ITEMS');
+  const [contractOrders, setContractOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [orderFilter, setOrderFilter] = useState('');
+  const [viewingOrder, setViewingOrder] = useState<any | null>(null);
   
   // Consumption Statements State
   const [consumptionStatements, setConsumptionStatements] = useState<any[]>([]);
@@ -340,6 +344,7 @@ const Contracts: React.FC = () => {
 
       setPaymentModal(null);
       if (selectedContractId) fetchStatements(selectedContractId);
+      fetchContractOrders(selectedContractId);
       alert("Pagamento registrado e lançado no financeiro com sucesso!");
     } catch (error: any) {
       alert("Erro ao registrar pagamento: " + error.message);
@@ -611,6 +616,24 @@ const Contracts: React.FC = () => {
       }]);
     } catch (err) {
       console.error("Erro ao registrar evento:", err);
+    }
+  };
+
+  const fetchContractOrders = async (contractId: string) => {
+    try {
+      setIsLoadingOrders(true);
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('contract_id', contractId)
+        .order('issue_date', { ascending: false });
+
+      if (error) throw error;
+      setContractOrders(data || []);
+    } catch (err: any) {
+      console.error("Erro ao buscar pedidos do contrato:", err);
+    } finally {
+      setIsLoadingOrders(false);
     }
   };
 
@@ -1594,6 +1617,12 @@ const Contracts: React.FC = () => {
             Itens do Contrato
           </button>
           <button
+            onClick={() => setActiveTab('ORDERS')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'ORDERS' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Pedidos de Compra ({contractOrders.length})
+          </button>
+          <button
             onClick={() => setActiveTab('GUIDES')}
             className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'GUIDES' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
           >
@@ -1700,6 +1729,144 @@ const Contracts: React.FC = () => {
             </div>
           </div>
 
+
+          {/* ABA: PEDIDOS DE COMPRA DO CONTRATO */}
+          <div className={`xl:col-span-2 space-y-6 ${activeTab !== 'ORDERS' ? 'hidden' : ''}`}>
+            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <ShoppingBag size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Pedidos de Compra Emitidos</h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                      Ordens de fornecimento vinculadas a este contrato ({contractOrders.length} pedidos)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative w-full md:w-72 no-print">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Filtrar por nº ou produto..."
+                    value={orderFilter}
+                    onChange={(e) => setOrderFilter(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* KPI RESUMO DOS PEDIDOS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total de Pedidos</p>
+                  <p className="text-2xl font-black text-gray-900">{contractOrders.length}</p>
+                </div>
+                <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                  <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1">Valor Total dos Pedidos</p>
+                  <p className="text-2xl font-black text-indigo-700">
+                    R$ {contractOrders.reduce((acc, o) => acc + (Number(o.total_value) || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Média por Pedido</p>
+                  <p className="text-2xl font-black text-emerald-700">
+                    R$ {contractOrders.length > 0
+                      ? (contractOrders.reduce((acc, o) => acc + (Number(o.total_value) || 0), 0) / contractOrders.length).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                      : '0,00'}
+                  </p>
+                </div>
+              </div>
+
+              {isLoadingOrders ? (
+                <div className="py-20 text-center">
+                  <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase">Carregando pedidos do contrato...</p>
+                </div>
+              ) : contractOrders.length === 0 ? (
+                <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-3xl">
+                  <ShoppingBag size={48} className="mx-auto mb-3 text-gray-200" />
+                  <p className="text-sm font-black text-gray-400 uppercase">Nenhum pedido de compra gerado para este contrato</p>
+                  <p className="text-xs text-gray-400 mt-1">Os pedidos gerados na Lista de Compras aparecerão listados aqui automaticamente.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-[9px] font-black uppercase text-gray-400 tracking-wider">
+                        <th className="py-3 px-4">Nº do Pedido</th>
+                        <th className="py-3 px-4">Data Emissão</th>
+                        <th className="py-3 px-4">Previsão Entrega</th>
+                        <th className="py-3 px-4 text-center">Itens</th>
+                        <th className="py-3 px-4 text-right">Valor do Pedido</th>
+                        <th className="py-3 px-4 text-center">Status / Recebimento</th>
+                        <th className="py-3 px-4 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-xs">
+                      {contractOrders
+                        .filter(o => {
+                          if (!orderFilter) return true;
+                          const term = orderFilter.toLowerCase();
+                          const matchNum = (o.order_number || '').toLowerCase().includes(term);
+                          const matchItems = (o.order_items || []).some((i: any) => (i.description || '').toLowerCase().includes(term));
+                          return matchNum || matchItems;
+                        })
+                        .map(order => {
+                          const linkedGuide = paymentGuides.find(g => (g.order_number || '').trim() === (order.order_number || '').trim());
+
+                          return (
+                            <tr key={order.id} className="hover:bg-indigo-50/20 transition-all group">
+                              <td className="py-4 px-4 font-black text-gray-900 uppercase">
+                                <span className="px-2.5 py-1 bg-gray-100 group-hover:bg-indigo-100 text-gray-800 group-hover:text-indigo-800 rounded-lg text-xs font-black transition-all">
+                                  #{order.order_number || 'S/N'}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 font-bold text-gray-600 text-xs">
+                                {order.issue_date ? new Date(order.issue_date + 'T12:00:00').toLocaleDateString('pt-BR') : '---'}
+                              </td>
+                              <td className="py-4 px-4 font-bold text-gray-500 text-xs">
+                                {order.delivery_date ? new Date(order.delivery_date + 'T12:00:00').toLocaleDateString('pt-BR') : '---'}
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-black text-[10px] rounded-md uppercase">
+                                  {(order.order_items || []).length} itens
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 text-right font-black text-indigo-700 text-sm">
+                                R$ {(Number(order.total_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                {linkedGuide ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-[9px] font-black uppercase shadow-sm">
+                                    <CheckCircle2 size={11} className="text-emerald-600" /> Recebido ({linkedGuide.guide_number})
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-[9px] font-black uppercase">
+                                    <Clock size={11} className="text-amber-500" /> Aguardando Entrega
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <button
+                                  onClick={() => setViewingOrder(order)}
+                                  className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all shadow-sm flex items-center gap-1.5 ml-auto active:scale-95"
+                                  title="Ver Itens do Pedido"
+                                >
+                                  <FileSearch size={14} /> Ver Itens
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className={`xl:col-span-2 space-y-6 ${activeTab !== 'GUIDES' ? 'hidden' : ''}`}>
             <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
@@ -2719,6 +2886,106 @@ const Contracts: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* MODAL DETALHES DO PEDIDO DO CONTRATO */}
+  {viewingOrder && (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-[9999] shadow-2xl">
+        <div className="p-8 bg-indigo-600 text-white flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl"><ShoppingBag size={28} /></div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 bg-amber-400 text-indigo-950 text-[9px] font-black uppercase rounded-full tracking-wider">
+                  Pedido #{viewingOrder.order_number}
+                </span>
+                <span className="text-[10px] font-bold uppercase opacity-80">Contrato {selectedContract?.number}</span>
+              </div>
+              <h3 className="text-2xl font-black uppercase tracking-tighter mt-0.5">{selectedContract?.supplierName}</h3>
+            </div>
+          </div>
+          <button onClick={() => setViewingOrder(null)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-gray-50 text-gray-900">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Data de Emissão</p>
+              <p className="text-sm font-black text-gray-900">
+                {viewingOrder.issue_date ? new Date(viewingOrder.issue_date + 'T12:00:00').toLocaleDateString('pt-BR') : '---'}
+              </p>
+            </div>
+            <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Previsão de Entrega</p>
+              <p className="text-sm font-black text-gray-900">
+                {viewingOrder.delivery_date ? new Date(viewingOrder.delivery_date + 'T12:00:00').toLocaleDateString('pt-BR') : '---'}
+              </p>
+            </div>
+            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-sm">
+              <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Valor Total</p>
+              <p className="text-xl font-black text-emerald-700">
+                R$ {(Number(viewingOrder.total_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+
+          <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Itens e Gêneros do Pedido</h4>
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm mb-6">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-gray-50 text-[9px] font-black text-gray-400 uppercase border-b border-gray-100">
+                <tr>
+                  <th className="py-3 px-4">Produto</th>
+                  <th className="py-3 px-4 text-center">Quantidade</th>
+                  <th className="py-3 px-4 text-right">Preço Un.</th>
+                  <th className="py-3 px-4 text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 text-xs font-bold">
+                {(viewingOrder.order_items || []).map((item: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-gray-50/50">
+                    <td className="py-3 px-4 font-black uppercase text-gray-900">{item.description}</td>
+                    <td className="py-3 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity || 0)} {item.unit || ''}</td>
+                    <td className="py-3 px-4 text-right text-gray-600">R$ {(Number(item.unit_price) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="py-3 px-4 text-right font-black text-emerald-700">R$ {((item.quantity || 0) * (item.unit_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-50 border-t-2 border-gray-100 font-black text-xs">
+                  <td colSpan={3} className="py-3.5 px-4 text-right uppercase text-gray-500">Total do Pedido</td>
+                  <td className="py-3.5 px-4 text-right text-emerald-700 font-black text-sm">
+                    R$ {(Number(viewingOrder.total_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {viewingOrder.observations && (
+            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-xs text-amber-900 font-medium mb-6">
+              <span className="font-black uppercase text-[10px] text-amber-700 block mb-0.5">Observações:</span>
+              {viewingOrder.observations}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setViewingOrder(null)}
+              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-black uppercase text-xs tracking-wider transition-all"
+            >
+              Fechar
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase text-xs tracking-wider transition-all flex items-center gap-2 shadow-lg"
+            >
+              <Printer size={16} /> Imprimir Pedido
+            </button>
           </div>
         </div>
       </div>
