@@ -344,7 +344,6 @@ const Contracts: React.FC = () => {
 
       setPaymentModal(null);
       if (selectedContractId) fetchStatements(selectedContractId);
-      fetchContractOrders(selectedContractId);
       alert("Pagamento registrado e lançado no financeiro com sucesso!");
     } catch (error: any) {
       alert("Erro ao registrar pagamento: " + error.message);
@@ -780,6 +779,7 @@ const Contracts: React.FC = () => {
     if (selectedContractId) {
       fetchPaymentGuides(selectedContractId);
       fetchStatements(selectedContractId);
+      fetchContractOrders(selectedContractId);
       setActiveTab('ITEMS');
     }
   }, [selectedContractId]);
@@ -1617,7 +1617,10 @@ const Contracts: React.FC = () => {
             Itens do Contrato
           </button>
           <button
-            onClick={() => setActiveTab('ORDERS')}
+            onClick={() => {
+            setActiveTab('ORDERS');
+            if (selectedContractId) fetchContractOrders(selectedContractId);
+          }}
             className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'ORDERS' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
           >
             Pedidos de Compra ({contractOrders.length})
