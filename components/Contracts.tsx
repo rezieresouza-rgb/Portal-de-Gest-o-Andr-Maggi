@@ -33,7 +33,16 @@ import {
   Package,
   BarChart3,
   CheckCircle2,
-  Award
+  Award,
+  ChevronDown,
+  ChevronUp,
+  Percent,
+  Coins,
+  CheckSquare,
+  Square,
+  PieChart,
+  Layers,
+  Split
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ContractStatus, Contract, ContractItem } from '../types';
@@ -284,6 +293,34 @@ const Contracts: React.FC = () => {
   const [paymentModal, setPaymentModal] = useState<{ statementId: string, paymentDate: string, invoiceNumber: string } | null>(null);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
   const [selectedGuideIds, setSelectedGuideIds] = useState<Set<string>>(new Set());
+
+  // Partial Extraction Configuration Types and State
+  interface ExtractGuideItemConfig {
+    id: string; // payment_guide_items.id
+    contract_item_id: string;
+    description: string;
+    unit: string;
+    brand?: string;
+    unitPrice: number;
+    originalQuantity: number;
+    paidQuantity: number;
+    subtotal: number;
+  }
+
+  interface ExtractGuideConfig {
+    guideId: string;
+    guide: any;
+    selected: boolean;
+    mode: 'TOTAL' | 'PARCIAL';
+    percent: number;
+    partialValue: number;
+    isExpanded?: boolean;
+    items: ExtractGuideItemConfig[];
+  }
+
+  const [extractGuideConfigs, setExtractGuideConfigs] = useState<ExtractGuideConfig[]>([]);
+  const [isLoadingExtractConfig, setIsLoadingExtractConfig] = useState(false);
+  const [extractSearchFilter, setExtractSearchFilter] = useState('');
 
   const handleOpenPaymentModal = (statement: any) => {
     setPaymentModal({
@@ -784,7 +821,7 @@ const Contracts: React.FC = () => {
     }
   }, [selectedContractId]);
 
-  const handleOpenExtractDateModal = () => {
+  const handleOpenExtractDateModal = async () => {
     if (!selectedContract) return;
     const pendingGuides = paymentGuides.filter(g => g.contract_id === selectedContract.id && !g.statement_id);
     if (pendingGuides.length === 0) {
@@ -808,31 +845,192 @@ const Contracts: React.FC = () => {
     setExtractStartDate(defaultStart);
     setExtractEndDate(defaultEnd);
     setExtractGuideNumbers('');
-    setSelectedGuideIds(new Set());
+    setExtractSearchFilter('');
     setShowExtractDateModal(true);
+    setIsLoadingExtractConfig(true);
+
+    try {
+      // Fetch items for all pending guides
+      const { data: guideItemsData, error: itemsError } = await supabase
+        .from('payment_guide_items')
+        .select('*, item:contract_items(*)')
+        .in('guide_id', pendingGuides.map(g => g.id));
+
+      if (itemsError) throw itemsError;
+
+      const itemsByGuide: Record<string, ExtractGuideItemConfig[]> = {};
+      (guideItemsData || []).forEach((gi: any) => {
+        if (!itemsByGuide[gi.guide_id]) itemsByGuide[gi.guide_id] = [];
+        const unitPrice = Number(gi.unit_price) || 0;
+        const qty = Number(gi.quantity) || 0;
+        itemsByGuide[gi.guide_id].push({
+          id: gi.id,
+          contract_item_id: gi.contract_item_id,
+          description: gi.item?.description || 'Item de Consumo',
+          unit: gi.item?.unit || 'UN',
+          brand: gi.item?.brand || '',
+          unitPrice,
+          originalQuantity: qty,
+          paidQuantity: qty,
+          subtotal: Math.round(qty * unitPrice * 100) / 100
+        });
+      });
+
+      const configs: ExtractGuideConfig[] = pendingGuides.map(g => {
+        const items = itemsByGuide[g.id] || [];
+        const totalGuideVal = Math.round(items.reduce((s, it) => s + it.subtotal, 0) * 100) / 100 || Number(g.total_value) || 0;
+        return {
+          guideId: g.id,
+          guide: g,
+          selected: true,
+          mode: 'TOTAL',
+          percent: 100,
+          partialValue: totalGuideVal,
+          isExpanded: false,
+          items: items
+        };
+      });
+
+      setExtractGuideConfigs(configs);
+    } catch (err: any) {
+      console.error("Erro ao carregar detalhes das guias:", err);
+      alert("Erro ao carregar itens das guias pendentes.");
+    } finally {
+      setIsLoadingExtractConfig(false);
+    }
   };
 
-  const guidesInPeriod = useMemo(() => {
-    if (!selectedContract) return [];
-    
-    const specificGuides = extractGuideNumbers
-      .split(',')
-      .map(s => s.trim().toUpperCase())
-      .filter(s => s.length > 0);
+  // Partial Extract Configuration Handlers
+  const toggleGuideSelected = (guideId: string) => {
+    setExtractGuideConfigs(prev => prev.map(cfg => 
+      cfg.guideId === guideId ? { ...cfg, selected: !cfg.selected } : cfg
+    ));
+  };
 
-    return paymentGuides.filter(g => {
-      if (g.contract_id !== selectedContract.id || g.statement_id) return false;
-      
-      if (specificGuides.length > 0) {
-         return specificGuides.includes((g.guide_number || '').toUpperCase());
+  const handleSelectAllGuides = (selected: boolean) => {
+    setExtractGuideConfigs(prev => prev.map(cfg => ({ ...cfg, selected })));
+  };
+
+  const handleGuideModeChange = (guideId: string, mode: 'TOTAL' | 'PARCIAL') => {
+    setExtractGuideConfigs(prev => prev.map(cfg => {
+      if (cfg.guideId !== guideId) return cfg;
+      if (mode === 'TOTAL') {
+        const items = cfg.items.map(it => ({
+          ...it,
+          paidQuantity: it.originalQuantity,
+          subtotal: Math.round(it.originalQuantity * it.unitPrice * 100) / 100
+        }));
+        const totalVal = Math.round(items.reduce((s, it) => s + it.subtotal, 0) * 100) / 100 || Number(cfg.guide.total_value) || 0;
+        return {
+          ...cfg,
+          mode: 'TOTAL',
+          percent: 100,
+          partialValue: totalVal,
+          items
+        };
+      } else {
+        // Default partial to 50% (Metade)
+        const percent = 50;
+        const items = cfg.items.map(it => {
+          const paidQty = Math.round(it.originalQuantity * (percent / 100) * 1000) / 1000;
+          return {
+            ...it,
+            paidQuantity: paidQty,
+            subtotal: Math.round(paidQty * it.unitPrice * 100) / 100
+          };
+        });
+        const partialVal = Math.round(items.reduce((s, it) => s + it.subtotal, 0) * 100) / 100;
+        return {
+          ...cfg,
+          mode: 'PARCIAL',
+          percent: 50,
+          partialValue: partialVal,
+          items
+        };
       }
+    }));
+  };
 
-      if (!g.issue_date) return true;
-      return g.issue_date >= extractStartDate && g.issue_date <= extractEndDate;
-    });
-  }, [paymentGuides, selectedContract, extractStartDate, extractEndDate, extractGuideNumbers]);
+  const handleGuidePercentChange = (guideId: string, percentInput: number) => {
+    const clampedPercent = Math.max(0, Math.min(100, percentInput));
+    setExtractGuideConfigs(prev => prev.map(cfg => {
+      if (cfg.guideId !== guideId) return cfg;
+      const items = cfg.items.map(it => {
+        const paidQty = Math.round(it.originalQuantity * (clampedPercent / 100) * 1000) / 1000;
+        return {
+          ...it,
+          paidQuantity: paidQty,
+          subtotal: Math.round(paidQty * it.unitPrice * 100) / 100
+        };
+      });
+      const partialVal = Math.round(items.reduce((s, it) => s + it.subtotal, 0) * 100) / 100;
+      return {
+        ...cfg,
+        percent: clampedPercent,
+        partialValue: partialVal,
+        items
+      };
+    }));
+  };
 
-  const handleGenerateExtract = async () => {
+  const handleGuidePartialValueChange = (guideId: string, valueInput: number) => {
+    setExtractGuideConfigs(prev => prev.map(cfg => {
+      if (cfg.guideId !== guideId) return cfg;
+      const originalTotal = cfg.items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || Number(cfg.guide.total_value) || 1;
+      const clampedVal = Math.max(0, Math.min(originalTotal, valueInput));
+      const factor = originalTotal > 0 ? (clampedVal / originalTotal) : 0;
+      const percent = Math.round(factor * 100);
+
+      const items = cfg.items.map(it => {
+        const paidQty = Math.round(it.originalQuantity * factor * 1000) / 1000;
+        return {
+          ...it,
+          paidQuantity: paidQty,
+          subtotal: Math.round(paidQty * it.unitPrice * 100) / 100
+        };
+      });
+
+      return {
+        ...cfg,
+        percent,
+        partialValue: Math.round(clampedVal * 100) / 100,
+        items
+      };
+    }));
+  };
+
+  const handleGuideItemQuantityChange = (guideId: string, itemId: string, qty: number) => {
+    setExtractGuideConfigs(prev => prev.map(cfg => {
+      if (cfg.guideId !== guideId) return cfg;
+      const items = cfg.items.map(it => {
+        if (it.id !== itemId) return it;
+        const clampedQty = Math.max(0, Math.min(it.originalQuantity, qty));
+        return {
+          ...it,
+          paidQuantity: clampedQty,
+          subtotal: Math.round(clampedQty * it.unitPrice * 100) / 100
+        };
+      });
+      const partialVal = Math.round(items.reduce((s, it) => s + it.subtotal, 0) * 100) / 100;
+      const originalTotal = items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || 1;
+      const percent = Math.round((partialVal / originalTotal) * 100);
+
+      return {
+        ...cfg,
+        percent,
+        partialValue: partialVal,
+        items
+      };
+    }));
+  };
+
+  const toggleGuideExpanded = (guideId: string) => {
+    setExtractGuideConfigs(prev => prev.map(cfg => 
+      cfg.guideId === guideId ? { ...cfg, isExpanded: !cfg.isExpanded } : cfg
+    ));
+  };
+
+  const handleGenerateExtract = () => {
     if (!selectedContract) return;
 
     if (!extractStartDate || !extractEndDate) {
@@ -844,63 +1042,70 @@ const Contracts: React.FC = () => {
       return;
     }
 
-    const pendingGuides = guidesInPeriod;
+    const selectedConfigs = extractGuideConfigs.filter(cfg => cfg.selected && cfg.partialValue > 0);
 
-    if (pendingGuides.length === 0) {
-      alert("Não há guias de recebimento pendentes neste período para gerar extrato.");
+    if (selectedConfigs.length === 0) {
+      alert("Selecione ao menos uma guia de recebimento com valor maior que zero.");
       return;
     }
 
-    setShowExtractDateModal(false);
+    // Consolidated item summary
+    const itemSummaryMap: Record<string, any> = {};
+    let totalExtractValue = 0;
 
-    try {
-      setIsLoadingStatements(true);
-      const { data: guideItems, error } = await supabase
-        .from('payment_guide_items')
-        .select('*, item:contract_items(*)')
-        .in('guide_id', pendingGuides.map(g => g.id));
-
-      if (error) throw error;
-
-      const itemSummaryMap: Record<string, any> = {};
-      let totalValue = 0;
-
-      for (const gi of guideItems) {
-        const itemId = gi.contract_item_id;
+    for (const cfg of selectedConfigs) {
+      for (const it of cfg.items) {
+        if (it.paidQuantity <= 0) continue;
+        const itemId = it.contract_item_id;
         if (!itemSummaryMap[itemId]) {
           itemSummaryMap[itemId] = {
-            ...gi.item,
+            id: it.contract_item_id,
+            description: it.description,
+            unit: it.unit,
+            brand: it.brand,
+            unitPrice: it.unitPrice,
             quantity: 0,
             total: 0
           };
         }
-        itemSummaryMap[itemId].quantity += gi.quantity;
-        const subtotal = gi.quantity * gi.unit_price;
-        itemSummaryMap[itemId].total += subtotal;
-        totalValue += subtotal;
+        itemSummaryMap[itemId].quantity += it.paidQuantity;
+        itemSummaryMap[itemId].total += it.subtotal;
+        totalExtractValue += it.subtotal;
       }
-
-      setPreviewExtract({
-        items: Object.values(itemSummaryMap).sort((a,b) => (a.description || '').localeCompare(b.description || '')),
-        guides: pendingGuides,
-        totalValue: totalValue || 0
-      });
-    } catch (error) {
-      console.error("Erro ao gerar prévia:", error);
-      alert("Erro ao buscar dados das guias.");
-    } finally {
-      setIsLoadingStatements(false);
     }
+
+    const guidesSummary = selectedConfigs.map(cfg => {
+      const originalTotal = Math.round((cfg.items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || Number(cfg.guide.total_value) || 0) * 100) / 100;
+      const remVal = Math.round(Math.max(0, originalTotal - cfg.partialValue) * 100) / 100;
+      return {
+        ...cfg.guide,
+        originalValue: originalTotal,
+        paidValue: cfg.partialValue,
+        remainingValue: remVal,
+        isPartial: cfg.mode === 'PARCIAL' && remVal > 0.01,
+        percent: cfg.percent
+      };
+    });
+
+    setShowExtractDateModal(false);
+    setPreviewExtract({
+      items: Object.values(itemSummaryMap).sort((a: any, b: any) => (a.description || '').localeCompare(b.description || '')),
+      guides: guidesSummary,
+      totalValue: Math.round(totalExtractValue * 100) / 100,
+      selectedConfigs: selectedConfigs
+    } as any);
   };
 
   const handleConfirmExtract = async () => {
     if (!selectedContract || !previewExtract) return;
 
     try {
+      setIsLoadingStatements(true);
       const statementNumber = `EXT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const periodStart = extractStartDate;
       const periodEnd = extractEndDate;
 
+      // 1. Create consumption statement
       const { data: newStatement, error: statementError } = await supabase
         .from('consumption_statements')
         .insert({
@@ -915,24 +1120,127 @@ const Contracts: React.FC = () => {
 
       if (statementError) throw statementError;
 
-      const { error: updateError } = await supabase
-        .from('payment_guides')
-        .update({ statement_id: newStatement.id })
-        .in('id', previewExtract.guides.map(g => g.id));
+      // 2. Process each included guide
+      const selectedConfigs = (previewExtract as any).selectedConfigs as ExtractGuideConfig[];
 
-      if (updateError) throw updateError;
+      for (const cfg of selectedConfigs) {
+        const isPartial = cfg.mode === 'PARCIAL' && cfg.percent < 100;
+        const originalTotal = Math.round((cfg.items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || Number(cfg.guide.total_value) || 0) * 100) / 100;
+        const remVal = Math.round(Math.max(0, originalTotal - cfg.partialValue) * 100) / 100;
+
+        if (!isPartial || remVal <= 0.01) {
+          // Total payment for this guide
+          const { error: updateError } = await supabase
+            .from('payment_guides')
+            .update({ statement_id: newStatement.id })
+            .eq('id', cfg.guideId);
+
+          if (updateError) throw updateError;
+        } else {
+          // Partial payment:
+          // A) Update current guide with paid portion
+          const baseGuideNum = cfg.guide.guide_number.replace(/\s*\(Parcial[^)]*\)/g, '').replace(/\s*\(Saldo[^)]*\)/g, '').trim();
+          const paidGuideNumber = `${baseGuideNum} (Parcial ${cfg.percent}%)`;
+
+          const { error: updateOrigError } = await supabase
+            .from('payment_guides')
+            .update({
+              statement_id: newStatement.id,
+              total_value: cfg.partialValue,
+              guide_number: paidGuideNumber
+            })
+            .eq('id', cfg.guideId);
+
+          if (updateOrigError) throw updateOrigError;
+
+          // Update items of original guide to paid quantities
+          for (const it of cfg.items) {
+            if (it.paidQuantity > 0) {
+              await supabase
+                .from('payment_guide_items')
+                .update({ quantity: it.paidQuantity })
+                .eq('id', it.id);
+            } else {
+              await supabase
+                .from('payment_guide_items')
+                .delete()
+                .eq('id', it.id);
+            }
+          }
+
+          // B) Create new guide for the remaining balance
+          const remGuideNumber = `${baseGuideNum} (Saldo)`;
+
+          const { data: remGuide, error: remError } = await supabase
+            .from('payment_guides')
+            .insert({
+              contract_id: selectedContract.id,
+              guide_number: remGuideNumber,
+              order_number: cfg.guide.order_number || null,
+              total_value: remVal,
+              status: 'GERADA',
+              issue_date: cfg.guide.issue_date,
+              statement_id: null // Available for next extracts!
+            })
+            .select()
+            .single();
+
+          if (remError) throw remError;
+
+          // Insert remaining items into the new guide
+          for (const it of cfg.items) {
+            const remQty = Math.round((it.originalQuantity - it.paidQuantity) * 1000) / 1000;
+            if (remQty > 0) {
+              await supabase
+                .from('payment_guide_items')
+                .insert({
+                  guide_id: remGuide.id,
+                  contract_item_id: it.contract_item_id,
+                  quantity: remQty,
+                  unit_price: it.unitPrice
+                });
+            }
+          }
+
+          // Execution Event
+          await addExecutionEvent(
+            selectedContract.id,
+            'DELIVERY',
+            `Fechamento Parcial: Guia ${cfg.guide.guide_number} quitada em R$ ${cfg.partialValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${cfg.percent}%). Saldo remanescente de R$ ${remVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} transferido para guia ${remGuideNumber}.`,
+            0,
+            cfg.guide.issue_date
+          );
+        }
+      }
 
       alert("Extrato de Consumo gerado e salvo com sucesso!");
 
       const itemsToPrint = previewExtract.items;
+      const guidesToPrint = (previewExtract.guides || []).map((g: any) => ({
+        guide_number: g.isPartial ? `${g.guide_number} (Parcial ${g.percent}%)` : g.guide_number,
+        order_number: g.order_number,
+        issue_date: g.issue_date,
+        total_value: g.paidValue || g.total_value,
+        original_value: g.originalValue,
+        is_partial: g.isPartial,
+        remaining_value: g.remainingValue
+      }));
+
       setPreviewExtract(null);
       await fetchStatements(selectedContract.id);
       await fetchPaymentGuides(selectedContract.id);
 
-      setGeneratedStatementPdf({ statement: newStatement, items: itemsToPrint, guides: previewExtract.guides });
+      setGeneratedStatementPdf({
+        statement: newStatement,
+        items: itemsToPrint,
+        guides: guidesToPrint
+      });
 
     } catch (error: any) {
+      console.error("Erro ao salvar extrato:", error);
       alert("Erro ao salvar extrato: " + error.message);
+    } finally {
+      setIsLoadingStatements(false);
     }
   };
 
@@ -942,6 +1250,81 @@ const Contracts: React.FC = () => {
     }
     try {
       setIsLoadingStatements(true);
+
+      // Find guides attached to this statement
+      const { data: attachedGuides } = await supabase
+        .from('payment_guides')
+        .select('*')
+        .eq('statement_id', statement.id);
+
+      // If any guide was partial and has an unlinked (Saldo) guide, merge them back
+      if (attachedGuides && attachedGuides.length > 0) {
+        for (const ag of attachedGuides) {
+          if (ag.guide_number && ag.guide_number.includes('(Parcial')) {
+            const baseGuideNum = ag.guide_number.replace(/\s*\(Parcial[^)]*\)/g, '').trim();
+            const { data: remGuides } = await supabase
+              .from('payment_guides')
+              .select('*')
+              .eq('contract_id', ag.contract_id)
+              .is('statement_id', null)
+              .like('guide_number', `${baseGuideNum}%(Saldo)%`);
+
+            if (remGuides && remGuides.length > 0) {
+              const remGuide = remGuides[0];
+              const { data: remItems } = await supabase
+                .from('payment_guide_items')
+                .select('*')
+                .eq('guide_id', remGuide.id);
+
+              if (remItems) {
+                for (const ri of remItems) {
+                  const { data: origItem } = await supabase
+                    .from('payment_guide_items')
+                    .select('*')
+                    .eq('guide_id', ag.id)
+                    .eq('contract_item_id', ri.contract_item_id)
+                    .single();
+
+                  if (origItem) {
+                    await supabase
+                      .from('payment_guide_items')
+                      .update({ quantity: origItem.quantity + ri.quantity })
+                      .eq('id', origItem.id);
+                  } else {
+                    await supabase
+                      .from('payment_guide_items')
+                      .insert({
+                        guide_id: ag.id,
+                        contract_item_id: ri.contract_item_id,
+                        quantity: ri.quantity,
+                        unit_price: ri.unit_price
+                      });
+                  }
+                }
+              }
+
+              // Update original guide total_value and restore name
+              await supabase
+                .from('payment_guides')
+                .update({
+                  total_value: Number(ag.total_value) + Number(remGuide.total_value),
+                  guide_number: baseGuideNum,
+                  statement_id: null
+                })
+                .eq('id', ag.id);
+
+              // Delete remaining guide
+              await supabase
+                .from('payment_guides')
+                .delete()
+                .eq('id', remGuide.id);
+
+              continue;
+            }
+          }
+        }
+      }
+
       const { error: guidesUpdateError } = await supabase
         .from('payment_guides')
         .update({ statement_id: null })
@@ -1902,7 +2285,19 @@ const Contracts: React.FC = () => {
                       {paymentGuides.map((guide) => (
                         <tr key={guide.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="px-6 py-5">
-                            <p className="font-black text-gray-900 text-xs uppercase">{guide.guide_number}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-gray-900 text-xs uppercase">{guide.guide_number}</p>
+                              {guide.guide_number && guide.guide_number.includes('(Parcial') && (
+                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[8px] font-black uppercase rounded-md flex items-center gap-1">
+                                  <Split size={9} /> Parcial
+                                </span>
+                              )}
+                              {guide.guide_number && guide.guide_number.includes('(Saldo') && (
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase rounded-md flex items-center gap-1">
+                                  <Coins size={9} /> Saldo Remanescente
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-5">
                             <p className="font-bold text-gray-600 text-xs uppercase">{guide.order_number || '-'}</p>
@@ -2642,43 +3037,420 @@ const Contracts: React.FC = () => {
   )}
 
   {showExtractDateModal && (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 relative z-[9999] shadow-2xl border border-gray-100">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-             <div className="p-3 rounded-2xl bg-indigo-100 text-indigo-600"><Calendar size={24} /></div>
-             <h3 className="text-lg font-black text-gray-900 uppercase">Período do Extrato</h3>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-6 bg-gray-950/50 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[92vh] flex flex-col relative z-[9999] shadow-2xl border border-gray-100 overflow-hidden">
+        
+        {/* Modal Header */}
+        <div className="p-6 md:p-8 bg-indigo-600 text-white flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl">
+              <TrendingUp size={28} />
+            </div>
+            <div>
+              <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight">Gerar Extrato de Consumo</h3>
+              <p className="text-[10px] md:text-xs font-bold uppercase opacity-80">
+                Selecione as guias/notas e escolha quitação integral (100%) ou parcial (ex: metade)
+              </p>
+            </div>
           </div>
-          <button onClick={() => setShowExtractDateModal(false)}><X size={24} className="text-gray-300" /></button>
+          <button 
+            onClick={() => setShowExtractDateModal(false)}
+            className="p-2 hover:bg-white/10 rounded-xl transition-all"
+          >
+            <X size={24} />
+          </button>
         </div>
-        <p className="text-xs text-gray-500 mb-6 font-medium">Selecione o intervalo de datas para consolidar os consumos deste contrato.</p>
-        <div className="space-y-4">
-           <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-1">
-               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Início</label>
-               <input type="date" value={extractStartDate} onChange={(e) => setExtractStartDate(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none" />
-             </div>
-             <div className="space-y-1">
-               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fim</label>
-               <input type="date" value={extractEndDate} onChange={(e) => setExtractEndDate(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none" />
-             </div>
-           </div>
 
-           <div className="flex items-center gap-4 my-2">
-             <div className="h-px bg-gray-100 flex-1"></div>
-             <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">OU</span>
-             <div className="h-px bg-gray-100 flex-1"></div>
-           </div>
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-gray-50/60 custom-scrollbar">
+          
+          {/* Filters Bar */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Calendar size={12} className="text-indigo-500" /> Período Inicial
+                </label>
+                <input 
+                  type="date" 
+                  value={extractStartDate} 
+                  onChange={(e) => setExtractStartDate(e.target.value)} 
+                  className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-black text-xs uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none" 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Calendar size={12} className="text-indigo-500" /> Período Final
+                </label>
+                <input 
+                  type="date" 
+                  value={extractEndDate} 
+                  onChange={(e) => setExtractEndDate(e.target.value)} 
+                  className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-black text-xs uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none" 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Search size={12} className="text-indigo-500" /> Buscar Guia / Nota
+                </label>
+                <input 
+                  type="text"
+                  placeholder="Ex: PAG-2026, NF 123"
+                  value={extractSearchFilter}
+                  onChange={(e) => setExtractSearchFilter(e.target.value)}
+                  className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none placeholder:text-gray-300"
+                />
+              </div>
+            </div>
 
-           <div className="space-y-1">
-             <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest ml-1">Filtrar por Guias (Opcional)</label>
-             <input type="text" placeholder="Ex: PAG-2026-3942, PAG-2026-1029" value={extractGuideNumbers} onChange={(e) => setExtractGuideNumbers(e.target.value)} className="w-full p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl font-black text-sm uppercase text-gray-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none placeholder:text-indigo-200" />
-             <p className="text-[9px] font-bold text-gray-400 ml-1">Separe por vírgula para agrupar várias guias específicas num mesmo extrato.</p>
-           </div>
-           <button onClick={handleGenerateExtract} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex justify-center items-center gap-3">
-              <TrendingUp size={18} /> Gerar Prévia do Extrato
-           </button>
+            <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+              <div className="text-[11px] font-bold text-gray-500">
+                {extractGuideConfigs.length} guia(s) pendente(s) identificada(s) no contrato.
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSelectAllGuides(true)}
+                  className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[10px] font-black uppercase transition-all"
+                >
+                  Marcar Todas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectAllGuides(false)}
+                  className="px-3 py-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg text-[10px] font-black uppercase transition-all"
+                >
+                  Desmarcar Todas
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Pending Guides List */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+              <Layers size={14} className="text-indigo-600" /> Guias de Recebimento / Notas Disponíveis
+            </h4>
+
+            {isLoadingExtractConfig ? (
+              <div className="py-16 text-center bg-white rounded-3xl border border-gray-100">
+                <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-xs font-black text-gray-400 uppercase tracking-wider">Carregando itens das guias pendentes...</p>
+              </div>
+            ) : extractGuideConfigs.length === 0 ? (
+              <div className="py-12 text-center bg-white rounded-3xl border border-gray-100">
+                <AlertCircle size={32} className="mx-auto text-amber-500 mb-2" />
+                <p className="text-xs font-black text-gray-900 uppercase">Nenhuma guia pendente encontrada</p>
+                <p className="text-[10px] text-gray-400 mt-1 uppercase">Todas as guias de recebimento já foram incluídas em extratos.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {extractGuideConfigs
+                  .filter(cfg => {
+                    if (!extractSearchFilter) return true;
+                    const q = extractSearchFilter.toLowerCase();
+                    return (
+                      cfg.guide.guide_number.toLowerCase().includes(q) ||
+                      (cfg.guide.order_number && cfg.guide.order_number.toLowerCase().includes(q))
+                    );
+                  })
+                  .map((cfg) => {
+                    const originalTotal = cfg.items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || Number(cfg.guide.total_value) || 0;
+                    const remValue = Math.round(Math.max(0, originalTotal - cfg.partialValue) * 100) / 100;
+
+                    return (
+                      <div 
+                        key={cfg.guideId} 
+                        className={`bg-white rounded-3xl border transition-all overflow-hidden ${
+                          cfg.selected 
+                            ? 'border-indigo-200 shadow-sm ring-1 ring-indigo-500/10' 
+                            : 'border-gray-100 opacity-60 bg-gray-50/40'
+                        }`}
+                      >
+                        <div className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                          
+                          {/* Guide Info Left */}
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <input 
+                              type="checkbox"
+                              checked={cfg.selected}
+                              onChange={() => toggleGuideSelected(cfg.guideId)}
+                              className="mt-1 w-5 h-5 rounded-lg border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-black text-gray-900 text-sm uppercase tracking-tight">
+                                  {cfg.guide.guide_number}
+                                </span>
+                                {cfg.guide.guide_number.includes('(Saldo') && (
+                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase rounded-md">
+                                    Saldo Remanescente
+                                  </span>
+                                )}
+                                {cfg.guide.order_number && (
+                                  <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[9px] font-black uppercase">
+                                    NF / Pedido: {cfg.guide.order_number}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-[10px] text-gray-400 font-bold uppercase mt-1">
+                                <span>Entrega: {cfg.guide.issue_date ? new Date(cfg.guide.issue_date + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</span>
+                                <span>•</span>
+                                <span>{cfg.items.length} produto(s)</span>
+                                <span>•</span>
+                                <span className="text-gray-900 font-black">
+                                  Valor da Guia: R$ {originalTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Payment Mode Selector Right */}
+                          {cfg.selected && (
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 bg-gray-50/80 p-3 rounded-2xl border border-gray-100">
+                              
+                              {/* Total vs Parcial Buttons */}
+                              <div className="flex items-center bg-gray-200/60 p-1 rounded-xl">
+                                <button
+                                  type="button"
+                                  onClick={() => handleGuideModeChange(cfg.guideId, 'TOTAL')}
+                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                                    cfg.mode === 'TOTAL'
+                                      ? 'bg-white text-indigo-700 shadow-sm'
+                                      : 'text-gray-500 hover:text-gray-900'
+                                  }`}
+                                >
+                                  Integral (100%)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleGuideModeChange(cfg.guideId, 'PARCIAL')}
+                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1 ${
+                                    cfg.mode === 'PARCIAL'
+                                      ? 'bg-purple-600 text-white shadow-sm'
+                                      : 'text-gray-500 hover:text-gray-900'
+                                  }`}
+                                >
+                                  <Split size={12} /> Parcial
+                                </button>
+                              </div>
+
+                              {/* Parcial Custom Controls */}
+                              {cfg.mode === 'PARCIAL' && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {/* Quick Preset Buttons */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGuidePercentChange(cfg.guideId, 50)}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all border ${
+                                      cfg.percent === 50 
+                                        ? 'bg-purple-100 border-purple-300 text-purple-700' 
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                    title="Pagar a metade (50%)"
+                                  >
+                                    50% (Metade)
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGuidePercentChange(cfg.guideId, 25)}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase transition-all border ${
+                                      cfg.percent === 25 
+                                        ? 'bg-purple-100 border-purple-300 text-purple-700' 
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    25%
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGuidePercentChange(cfg.guideId, 75)}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase transition-all border ${
+                                      cfg.percent === 75 
+                                        ? 'bg-purple-100 border-purple-300 text-purple-700' 
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    75%
+                                  </button>
+
+                                  {/* Custom Percentage Input */}
+                                  <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 py-1">
+                                    <input 
+                                      type="number"
+                                      min={1}
+                                      max={100}
+                                      value={cfg.percent}
+                                      onChange={(e) => handleGuidePercentChange(cfg.guideId, parseFloat(e.target.value) || 0)}
+                                      className="w-10 text-xs font-black text-center outline-none"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-400">%</span>
+                                  </div>
+
+                                  {/* Custom Value Input in R$ */}
+                                  <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 py-1">
+                                    <span className="text-[10px] font-black text-gray-400 mr-1">R$</span>
+                                    <input 
+                                      type="number"
+                                      step="0.01"
+                                      min={0}
+                                      max={originalTotal}
+                                      value={cfg.partialValue}
+                                      onChange={(e) => handleGuidePartialValueChange(cfg.guideId, parseFloat(e.target.value) || 0)}
+                                      className="w-20 text-xs font-black text-right outline-none text-purple-700"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Paid / Pending Value Pill */}
+                              <div className="text-right pl-2 sm:border-l sm:border-gray-200 shrink-0">
+                                <p className="text-[9px] font-bold text-gray-400 uppercase leading-none">Neste Extrato</p>
+                                <p className="text-xs font-black text-emerald-700 leading-tight mt-0.5">
+                                  R$ {cfg.partialValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                                {cfg.mode === 'PARCIAL' && (
+                                  <p className="text-[8px] font-bold text-amber-600 leading-none mt-0.5">
+                                    Saldo: R$ {remValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Accordion Toggle */}
+                              <button
+                                type="button"
+                                onClick={() => toggleGuideExpanded(cfg.guideId)}
+                                className="p-1.5 hover:bg-gray-200/60 rounded-lg text-gray-400 hover:text-gray-700 transition-all ml-1"
+                                title="Ver / Ajustar quantidades por item"
+                              >
+                                {cfg.isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Collapsible Accordion Table for Items */}
+                        {cfg.selected && cfg.isExpanded && (
+                          <div className="p-4 bg-gray-50 border-t border-gray-100 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] font-black uppercase text-gray-500 tracking-wider">
+                                Detalhamento dos Produtos da Guia (Ajuste individual de quantidades opcional)
+                              </p>
+                              <span className="text-[9px] font-bold text-indigo-600 uppercase">
+                                Quantidade a faturar agora vs original entregue
+                              </span>
+                            </div>
+                            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-inner">
+                              <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-100/60 text-[9px] font-black text-gray-400 uppercase border-b border-gray-100">
+                                  <tr>
+                                    <th className="px-4 py-2.5">Produto</th>
+                                    <th className="px-3 py-2.5 text-center">Un.</th>
+                                    <th className="px-3 py-2.5 text-right">Preço Unit.</th>
+                                    <th className="px-3 py-2.5 text-center">Qtd. Entregue</th>
+                                    <th className="px-3 py-2.5 text-center">Qtd. a Pagar</th>
+                                    <th className="px-4 py-2.5 text-right">Subtotal Extrato</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                  {cfg.items.map((it) => (
+                                    <tr key={it.id} className="hover:bg-gray-50/50 text-[10px]">
+                                      <td className="px-4 py-2.5 font-black uppercase text-gray-900">{it.description}</td>
+                                      <td className="px-3 py-2.5 text-center font-bold text-gray-500 uppercase">{it.unit}</td>
+                                      <td className="px-3 py-2.5 text-right font-bold text-gray-600">
+                                        R$ {it.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </td>
+                                      <td className="px-3 py-2.5 text-center font-bold text-gray-400">
+                                        {formatQuantity(it.originalQuantity)}
+                                      </td>
+                                      <td className="px-3 py-2.5 text-center">
+                                        <input 
+                                          type="number"
+                                          step="0.001"
+                                          min={0}
+                                          max={it.originalQuantity}
+                                          value={it.paidQuantity}
+                                          onChange={(e) => handleGuideItemQuantityChange(cfg.guideId, it.id, parseFloat(e.target.value) || 0)}
+                                          className="w-20 p-1 text-center font-black text-xs bg-indigo-50/50 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20 text-indigo-700"
+                                        />
+                                      </td>
+                                      <td className="px-4 py-2.5 text-right font-black text-indigo-700">
+                                        R$ {it.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
         </div>
+
+        {/* Modal Footer Summary */}
+        <div className="p-6 md:p-8 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-lg">
+          <div className="flex items-center gap-6">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Guias Selecionadas</p>
+              <p className="text-xl font-black text-gray-900 mt-1">
+                {extractGuideConfigs.filter(c => c.selected).length} de {extractGuideConfigs.length}
+              </p>
+            </div>
+            <div className="h-8 w-px bg-gray-100 hidden sm:block"></div>
+            <div>
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none">Total deste Extrato</p>
+              <p className="text-2xl font-black text-indigo-700 mt-1">
+                R$ {extractGuideConfigs
+                  .filter(c => c.selected)
+                  .reduce((sum, c) => sum + c.partialValue, 0)
+                  .toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+            {extractGuideConfigs.some(c => c.selected && c.mode === 'PARCIAL') && (
+              <>
+                <div className="h-8 w-px bg-gray-100 hidden md:block"></div>
+                <div className="hidden md:block">
+                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Saldo Restante (Pendente)</p>
+                  <p className="text-lg font-black text-amber-700 mt-1">
+                    R$ {extractGuideConfigs
+                      .filter(c => c.selected)
+                      .reduce((sum, c) => {
+                        const orig = c.items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || Number(c.guide.total_value) || 0;
+                        return sum + Math.max(0, orig - c.partialValue);
+                      }, 0)
+                      .toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setShowExtractDateModal(false)}
+              className="flex-1 sm:flex-none px-6 py-4 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-2xl font-black uppercase text-xs tracking-widest transition-all"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="button"
+              onClick={handleGenerateExtract} 
+              disabled={extractGuideConfigs.filter(c => c.selected && c.partialValue > 0).length === 0}
+              className="flex-1 sm:flex-none px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex justify-center items-center gap-2.5 disabled:opacity-50 disabled:grayscale"
+            >
+              <TrendingUp size={16} /> Gerar Prévia do Extrato
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   )}
@@ -2686,7 +3458,7 @@ const Contracts: React.FC = () => {
   {previewExtract && (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-gray-950/40 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-white rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-[9999] shadow-2xl">
-        <div className="p-8 bg-indigo-600 text-white flex justify-between items-center">
+        <div className="p-8 bg-indigo-600 text-white flex justify-between items-center shrink-0">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-white/20 rounded-2xl"><TrendingUp size={28} /></div>
             <div>
@@ -2696,44 +3468,132 @@ const Contracts: React.FC = () => {
           </div>
           <button onClick={() => setPreviewExtract(null)} className="p-2 hover:bg-white/10 rounded-lg"><X size={24} /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-12 bg-gray-50 text-gray-900">
-          <div className="mb-8 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex justify-between items-center">
+        
+        <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-gray-50 text-gray-900 space-y-8 custom-scrollbar">
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
              <div>
                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Guias Incluídas</p>
                <p className="text-2xl font-black text-gray-900">{previewExtract.guides.length} Recebimento(s)</p>
+               <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">
+                 {previewExtract.guides.filter((g: any) => g.isPartial).length > 0
+                   ? `${previewExtract.guides.filter((g: any) => g.isPartial).length} guia(s) com quitação parcial`
+                   : 'Todas as guias 100% integrais'}
+               </p>
+             </div>
+             <div>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Período de Consumo</p>
+               <p className="text-sm font-black text-gray-900 mt-1">
+                 {new Date(extractStartDate + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(extractEndDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+               </p>
              </div>
              <div className="text-right">
-               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Valor do Período</p>
-               <p className="text-3xl font-black text-indigo-700">R$ {(previewExtract?.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-               <p className="text-[10px] font-bold text-gray-500 uppercase mt-1">Período: {new Date(extractStartDate + 'T12:00:00').toLocaleDateString('pt-BR')} a {new Date(extractEndDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Valor Total a Fechar</p>
+               <p className="text-3xl font-black text-indigo-700">
+                 R$ {(previewExtract?.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+               </p>
              </div>
           </div>
-          <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Produtos Consumidos no Período</h4>
-          <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4">Produto</th>
-                  <th className="px-6 py-4 text-center">Un.</th>
-                  <th className="px-6 py-4 text-center">Qtd. no Período</th>
-                  <th className="px-6 py-4 text-right">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {previewExtract.items.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/50">
-                     <td className="px-6 py-4 font-black text-xs uppercase text-gray-900">{item.description}</td>
-                     <td className="px-6 py-4 text-center font-bold text-gray-500 uppercase text-xs">{item.unit}</td>
-                     <td className="px-6 py-4 text-center font-black text-indigo-600">{formatQuantity(item.quantity || 0)}</td>
-                     <td className="px-6 py-4 text-right font-black text-indigo-700">R$ {(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+
+          {/* Guides Breakdown Card */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Composição das Guias no Extrato</h4>
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-4">Guia / Pedido</th>
+                    <th className="px-4 py-4 text-center">Tipo de Quitação</th>
+                    <th className="px-4 py-4 text-right">Valor Original</th>
+                    <th className="px-4 py-4 text-right">Valor no Extrato</th>
+                    <th className="px-6 py-4 text-right">Saldo Remanescente</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {previewExtract.guides.map((g: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 text-xs">
+                      <td className="px-6 py-4">
+                        <p className="font-black text-gray-900 uppercase">{g.guide_number}</p>
+                        {g.order_number && (
+                          <p className="text-[9px] font-bold text-gray-400 uppercase">NF / Pedido: {g.order_number}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {g.isPartial ? (
+                          <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-[9px] font-black uppercase inline-flex items-center gap-1">
+                            <Split size={10} /> Parcial ({g.percent}%)
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[9px] font-black uppercase">
+                            Integral (100%)
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-right font-bold text-gray-400">
+                        R$ {(g.originalValue || g.total_value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-4 text-right font-black text-indigo-700">
+                        R$ {(g.paidValue || g.total_value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {g.isPartial && g.remainingValue > 0 ? (
+                          <span className="font-black text-amber-600">
+                            R$ {g.remainingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          <span className="font-bold text-gray-300">R$ 0,00 (Quitado)</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {previewExtract.guides.some((g: any) => g.isPartial) && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3">
+                <AlertCircle size={20} className="text-amber-600 shrink-0" />
+                <p className="text-xs text-amber-900 font-bold">
+                  <strong>Atenção:</strong> As guias marcadas como parciais terão o saldo remanescente gerado automaticamente como uma nova guia pendente com sufixo <code>(Saldo)</code>, pronta para ser faturada no próximo extrato.
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* Consolidated Products Table */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Consolidação de Produtos Consumidos no Período</h4>
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-4">Produto</th>
+                    <th className="px-6 py-4 text-center">Un.</th>
+                    <th className="px-6 py-4 text-center">Qtd. no Período</th>
+                    <th className="px-6 py-4 text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {previewExtract.items.map((item: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-gray-50/50">
+                       <td className="px-6 py-4 font-black text-xs uppercase text-gray-900">{item.description}</td>
+                       <td className="px-6 py-4 text-center font-bold text-gray-500 uppercase text-xs">{item.unit}</td>
+                       <td className="px-6 py-4 text-center font-black text-indigo-600">{formatQuantity(item.quantity || 0)}</td>
+                       <td className="px-6 py-4 text-right font-black text-indigo-700">R$ {(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <div className="mt-8">
-            <button onClick={handleConfirmExtract} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex justify-center items-center gap-3">
-               <Check size={20} /> Confirmar e Fechar Período
+            <button 
+              onClick={handleConfirmExtract} 
+              disabled={isLoadingStatements}
+              className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex justify-center items-center gap-3 disabled:opacity-50"
+            >
+               <Check size={20} /> {isLoadingStatements ? "Processando e Gravando Extrato..." : "Confirmar e Fechar Período"}
             </button>
           </div>
         </div>
