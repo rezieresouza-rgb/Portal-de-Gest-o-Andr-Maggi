@@ -491,7 +491,15 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         );
 
       case 'performance':
-        return <CoordinationRiskRadar user={user} onNavigateTab={(t) => setActiveTab(t as TabType)} />;
+        return (
+          <CoordinationRiskRadar
+            user={user}
+            onNavigateTab={(t) => setActiveTab(t as TabType)}
+            globalFilterTurma={filterTurma}
+            globalFilterSubject={filterSubject}
+            globalFilterStudent={filterStudent}
+          />
+        );
 
       case 'aee_special_education':
         return <SpecialEducationAEEHub sourceModule="COORDENACAO" user={user} />;

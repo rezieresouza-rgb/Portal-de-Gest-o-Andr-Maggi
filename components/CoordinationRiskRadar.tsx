@@ -48,6 +48,9 @@ import { generateCoordinationClassCouncilWithAI, analyzeIndividualStudentWithAI 
 interface CoordinationRiskRadarProps {
   user?: UserType;
   onNavigateTab?: (tab: string) => void;
+  globalFilterTurma?: string;
+  globalFilterSubject?: string;
+  globalFilterStudent?: string;
 }
 
 const PROFICIENCY_COLORS = {
@@ -57,16 +60,37 @@ const PROFICIENCY_COLORS = {
   'ABAIXO': '#EF4444'    // Vermelho
 };
 
-const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onNavigateTab }) => {
+export type RiskFilterType = 'ALL' | 'CRITICAL' | 'GRADES' | 'ATTENDANCE' | 'PAEDE' | 'EDUCARTE' | 'EVOLVING' | 'DECLINING' | 'NO_GRADES';
+
+const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
+  user,
+  onNavigateTab,
+  globalFilterTurma,
+  globalFilterSubject,
+  globalFilterStudent
+}) => {
   const [selectedClass, setSelectedClass] = useState<string>('TODAS');
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
-  const [riskFilter, setRiskFilter] = useState<'ALL' | 'CRITICAL' | 'GRADES' | 'ATTENDANCE' | 'PAEDE' | 'EDUCARTE' | 'EVOLVING' | 'DECLINING'>('ALL');
+  const [riskFilter, setRiskFilter] = useState<RiskFilterType>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   
   const [students, setStudents] = useState<any[]>([]);
   const [classBottlenecks, setClassBottlenecks] = useState<{ subject: string; failingCount: number; percentage: number }[]>([]);
   const [classEvolution, setClassEvolution] = useState<{ b1: number | null; b2: number | null; b3: number | null }>({ b1: null, b2: null, b3: null });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Sincronizar com filtros globais do cabeçalho
+  useEffect(() => {
+    if (globalFilterTurma !== undefined) {
+      setSelectedClass(globalFilterTurma || 'TODAS');
+    }
+  }, [globalFilterTurma]);
+
+  useEffect(() => {
+    if (globalFilterStudent !== undefined) {
+      setSearchTerm(globalFilterStudent || '');
+    }
+  }, [globalFilterStudent]);
 
   // Modal Ficha 360° do Aluno
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
@@ -138,32 +162,48 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
 
       const assessMap = new Map((dbAssessments || []).map(a => [a.id, a]));
 
-      // 5. Carregar notas bimestrais oficiais
-      // Se tiver uma turma selecionada, carregar com filtro específico de avaliações da turma
-      let targetAssessmentIds: string[] = [];
+      // 5. Carregar notas bimestrais oficiais com paginação completa
+      let allGrades: any[] = [];
       if (selectedClass !== 'TODAS' && dbClasses) {
         const targetClass = dbClasses.find(c => c.name === selectedClass);
         if (targetClass) {
-          targetAssessmentIds = (dbAssessments || []).filter(a => a.classroom_id === targetClass.id).map(a => a.id);
+          const classAssessments = (dbAssessments || []).filter(a => a.classroom_id === targetClass.id);
+          const assessIds = classAssessments.map(a => a.id);
+          if (assessIds.length > 0) {
+            for (let i = 0; i < assessIds.length; i += 50) {
+              const chunk = assessIds.slice(i, i + 50);
+              const { data: chunkGrades } = await supabase
+                .from('grades')
+                .select('assessment_id, student_id, student_code, score')
+                .in('assessment_id', chunk);
+              if (chunkGrades) allGrades.push(...chunkGrades);
+            }
+          }
+        }
+      } else {
+        // Carregar páginas de notas (garantindo carregamento de todas as turmas)
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+        while (hasMore && page < 25) {
+          const { data: pageGrades } = await supabase
+            .from('grades')
+            .select('assessment_id, student_id, student_code, score')
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+          if (pageGrades && pageGrades.length > 0) {
+            allGrades.push(...pageGrades);
+            if (pageGrades.length < pageSize) hasMore = false;
+            page++;
+          } else {
+            hasMore = false;
+          }
         }
       }
 
-      let gradesQuery = supabase
-        .from('grades')
-        .select('assessment_id, student_id, student_code, score');
-
-      if (targetAssessmentIds.length > 0) {
-        gradesQuery = gradesQuery.in('assessment_id', targetAssessmentIds);
-      } else {
-        gradesQuery = gradesQuery.limit(5000);
-      }
-
-      const { data: dbGrades } = await gradesQuery;
-
       // Mapear notas por estudante
       const gradesByStudent = new Map<string, any[]>();
-      if (dbGrades && dbGrades.length > 0) {
-        for (const g of dbGrades) {
+      if (allGrades && allGrades.length > 0) {
+        for (const g of allGrades) {
           if (g.score === null || isNaN(g.score)) continue;
           const sId = g.student_id;
           if (!sId) continue;
@@ -207,6 +247,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
 
             // Notas do estudante
             const studentGrades = gradesByStudent.get(s.id) || [];
+            const hasGrades = studentGrades.length > 0;
             
             // Frequência real
             const att = s.registration_number ? attendanceByCode.get(s.registration_number) : null;
@@ -261,27 +302,31 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
             const avgB3 = b3List.length > 0 ? Number((b3List.reduce((a, b) => a + b, 0) / b3List.length).toFixed(1)) : null;
 
             const allScores = studentGrades.map(g => g.score);
-            const overallAverage = allScores.length > 0
+            const overallAverage = hasGrades
               ? Number((allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(1))
-              : (isPaed ? 7.0 : 6.5);
+              : null;
 
             // Trajetória de Evolução
             let trend: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
-            if (avgB3 !== null && avgB2 !== null) {
-              if (avgB3 >= avgB2 + 0.3) trend = 'UP';
-              else if (avgB3 <= avgB2 - 0.3) trend = 'DOWN';
-            } else if (avgB2 !== null && avgB1 !== null) {
-              if (avgB2 >= avgB1 + 0.3) trend = 'UP';
-              else if (avgB2 <= avgB1 - 0.3) trend = 'DOWN';
+            if (hasGrades) {
+              if (avgB3 !== null && avgB2 !== null) {
+                if (avgB3 >= avgB2 + 0.3) trend = 'UP';
+                else if (avgB3 <= avgB2 - 0.3) trend = 'DOWN';
+              } else if (avgB2 !== null && avgB1 !== null) {
+                if (avgB2 >= avgB1 + 0.3) trend = 'UP';
+                else if (avgB2 <= avgB1 - 0.3) trend = 'DOWN';
+              }
             }
 
             // Nível de Risco Oficial
-            let riskLevel: 'CRITICO' | 'ALERTA' | 'REGULAR' | 'BOM' = 'BOM';
-            if (overallAverage < 5.0 || failingSubjects.length >= 3 || presenceRate < 75) {
+            let riskLevel: 'CRITICO' | 'ALERTA' | 'REGULAR' | 'BOM' | 'SEM_NOTAS' = 'BOM';
+            if (!hasGrades) {
+              riskLevel = 'SEM_NOTAS';
+            } else if ((overallAverage !== null && overallAverage < 5.0) || failingSubjects.length >= 3 || presenceRate < 75) {
               riskLevel = 'CRITICO';
-            } else if (overallAverage < 6.0 || failingSubjects.length >= 1 || presenceRate < 85 || trend === 'DOWN') {
+            } else if ((overallAverage !== null && overallAverage < 6.0) || failingSubjects.length >= 1 || presenceRate < 85 || trend === 'DOWN') {
               riskLevel = 'ALERTA';
-            } else if (overallAverage < 7.0) {
+            } else if (overallAverage !== null && overallAverage < 7.0) {
               riskLevel = 'REGULAR';
             }
 
@@ -298,6 +343,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
               paedCid: isPaed ? 'CID F84 / F90' : '',
               paedHasCarer: false,
               educarte,
+              hasGrades,
               averageGrade: overallAverage,
               avgB1,
               avgB2,
@@ -371,8 +417,9 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
     return students
       .filter(s => selectedClass === 'TODAS' || s.className === selectedClass)
       .filter(s => {
+        if (riskFilter === 'NO_GRADES') return !s.hasGrades;
         if (riskFilter === 'CRITICAL') return s.riskLevel === 'CRITICO';
-        if (riskFilter === 'GRADES') return s.averageGrade < 6.0;
+        if (riskFilter === 'GRADES') return s.hasGrades && s.averageGrade !== null && s.averageGrade < 6.0;
         if (riskFilter === 'ATTENDANCE') return s.presenceRate < 85;
         if (riskFilter === 'PAEDE') return s.isPaed === true;
         if (riskFilter === 'EDUCARTE') return !!s.educarte;
@@ -383,6 +430,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
       .filter(s =>
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.className.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.registration || '').includes(searchTerm) ||
         (s.educarte?.instrument || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
   }, [students, selectedClass, riskFilter, searchTerm]);
@@ -391,22 +439,25 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
   const stats = useMemo(() => {
     const total = filteredStudents.length;
     if (total === 0) {
-      return { total: 0, critical: 0, lowGrades: 0, lowAttendance: 0, paedCount: 0, educarteCount: 0, evolvingCount: 0, decliningCount: 0, avgSchoolGrade: '0.0', avgSchoolPresence: '0.0' };
+      return { total: 0, noGradesCount: 0, critical: 0, lowGrades: 0, lowAttendance: 0, paedCount: 0, educarteCount: 0, evolvingCount: 0, decliningCount: 0, avgSchoolGrade: '0.0', avgSchoolPresence: '0.0' };
     }
 
+    const noGradesCount = filteredStudents.filter(s => !s.hasGrades).length;
     const critical = filteredStudents.filter(s => s.riskLevel === 'CRITICO').length;
-    const lowGrades = filteredStudents.filter(s => s.averageGrade < 6.0).length;
+    const lowGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null && s.averageGrade < 6.0).length;
     const lowAttendance = filteredStudents.filter(s => s.presenceRate < 85).length;
     const paedCount = filteredStudents.filter(s => s.isPaed).length;
     const educarteCount = filteredStudents.filter(s => !!s.educarte).length;
     const evolvingCount = filteredStudents.filter(s => s.trend === 'UP').length;
     const decliningCount = filteredStudents.filter(s => s.trend === 'DOWN').length;
 
-    const sumGrade = filteredStudents.reduce((acc, s) => acc + s.averageGrade, 0);
+    const withGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null);
+    const sumGrade = withGrades.reduce((acc, s) => acc + (s.averageGrade || 0), 0);
     const sumPres = filteredStudents.reduce((acc, s) => acc + s.presenceRate, 0);
 
     return {
       total,
+      noGradesCount,
       critical,
       lowGrades,
       lowAttendance,
@@ -414,18 +465,19 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
       educarteCount,
       evolvingCount,
       decliningCount,
-      avgSchoolGrade: (sumGrade / total).toFixed(1),
+      avgSchoolGrade: withGrades.length > 0 ? (sumGrade / withGrades.length).toFixed(1) : '0.0',
       avgSchoolPresence: (sumPres / total).toFixed(1)
     };
   }, [filteredStudents]);
 
   // Pirâmide de Proficiência
   const proficiencyData = useMemo(() => {
-    const total = filteredStudents.length || 1;
-    const av = filteredStudents.filter(s => s.averageGrade >= 8.0).length;
-    const ad = filteredStudents.filter(s => s.averageGrade >= 6.0 && s.averageGrade < 8.0).length;
-    const bs = filteredStudents.filter(s => s.averageGrade >= 4.0 && s.averageGrade < 6.0).length;
-    const ab = filteredStudents.filter(s => s.averageGrade < 4.0).length;
+    const withGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null);
+    const total = withGrades.length || 1;
+    const av = withGrades.filter(s => s.averageGrade! >= 8.0).length;
+    const ad = withGrades.filter(s => s.averageGrade! >= 6.0 && s.averageGrade! < 8.0).length;
+    const bs = withGrades.filter(s => s.averageGrade! >= 4.0 && s.averageGrade! < 6.0).length;
+    const ab = withGrades.filter(s => s.averageGrade! < 4.0).length;
 
     return [
       { name: 'Avançado (≥8)', count: av, percentage: Math.round((av / total) * 100), color: PROFICIENCY_COLORS['AVANÇADO'] },
@@ -585,52 +637,84 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
         </div>
 
         {/* CARDS DE KPIS E TRAJETÓRIA */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estudantes</p>
-            <p className="text-2xl font-black text-slate-900">{stats.total}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+          <div 
+            onClick={() => setRiskFilter('ALL')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'ALL' ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-slate-50 hover:bg-slate-100 border-slate-100'}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest ${riskFilter === 'ALL' ? 'text-slate-300' : 'text-slate-400'}`}>Estudantes</p>
+            <p className={`text-2xl font-black ${riskFilter === 'ALL' ? 'text-white' : 'text-slate-900'}`}>{stats.total}</p>
           </div>
 
-          <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100 space-y-1">
-            <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-1">
+          <div 
+            onClick={() => setRiskFilter(riskFilter === 'NO_GRADES' ? 'ALL' : 'NO_GRADES')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'NO_GRADES' ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-400/50' : 'bg-amber-50 hover:bg-amber-100 border-amber-200'}`}
+            title="Clique para filtrar apenas os alunos que estão sem notas lançadas"
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${riskFilter === 'NO_GRADES' ? 'text-amber-100' : 'text-amber-800'}`}>
+              <AlertTriangle size={12} className={riskFilter === 'NO_GRADES' ? 'text-white' : 'text-amber-600'} /> Sem Notas
+            </p>
+            <p className={`text-2xl font-black ${riskFilter === 'NO_GRADES' ? 'text-white' : 'text-amber-900'}`}>{stats.noGradesCount}</p>
+          </div>
+
+          <div 
+            onClick={() => setRiskFilter(riskFilter === 'CRITICAL' ? 'ALL' : 'CRITICAL')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'CRITICAL' ? 'bg-rose-600 text-white border-rose-700 shadow-md' : 'bg-rose-50 hover:bg-rose-100 border-rose-100'}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${riskFilter === 'CRITICAL' ? 'text-rose-100' : 'text-rose-600'}`}>
               <UserX size={12} /> Risco Crítico
             </p>
-            <p className="text-2xl font-black text-rose-700">{stats.critical}</p>
+            <p className={`text-2xl font-black ${riskFilter === 'CRITICAL' ? 'text-white' : 'text-rose-700'}`}>{stats.critical}</p>
           </div>
 
-          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 space-y-1">
-            <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-1">
+          <div 
+            onClick={() => setRiskFilter(riskFilter === 'GRADES' ? 'ALL' : 'GRADES')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'GRADES' ? 'bg-amber-600 text-white border-amber-700 shadow-md' : 'bg-amber-50 hover:bg-amber-100 border-amber-100'}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${riskFilter === 'GRADES' ? 'text-amber-100' : 'text-amber-700'}`}>
               <TrendingDown size={12} /> Média &lt; 6.0
             </p>
-            <p className="text-2xl font-black text-amber-900">{stats.lowGrades}</p>
+            <p className={`text-2xl font-black ${riskFilter === 'GRADES' ? 'text-white' : 'text-amber-900'}`}>{stats.lowGrades}</p>
           </div>
 
-          <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 space-y-1">
-            <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-1">
+          <div 
+            onClick={() => setRiskFilter(riskFilter === 'EVOLVING' ? 'ALL' : 'EVOLVING')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'EVOLVING' ? 'bg-emerald-600 text-white border-emerald-700 shadow-md' : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100'}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${riskFilter === 'EVOLVING' ? 'text-emerald-100' : 'text-emerald-700'}`}>
               <ArrowUpRight size={12} /> ↗️ Em Evolução
             </p>
-            <p className="text-2xl font-black text-emerald-800">{stats.evolvingCount}</p>
+            <p className={`text-2xl font-black ${riskFilter === 'EVOLVING' ? 'text-white' : 'text-emerald-800'}`}>{stats.evolvingCount}</p>
           </div>
 
-          <div className="bg-red-50 p-4 rounded-2xl border border-red-100 space-y-1">
-            <p className="text-[10px] font-black text-red-700 uppercase tracking-widest flex items-center gap-1">
+          <div 
+            onClick={() => setRiskFilter(riskFilter === 'DECLINING' ? 'ALL' : 'DECLINING')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'DECLINING' ? 'bg-red-600 text-white border-red-700 shadow-md' : 'bg-red-50 hover:bg-red-100 border-red-100'}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${riskFilter === 'DECLINING' ? 'text-red-100' : 'text-red-700'}`}>
               <ArrowDownRight size={12} /> ↘️ Em Queda
             </p>
-            <p className="text-2xl font-black text-red-800">{stats.decliningCount}</p>
+            <p className={`text-2xl font-black ${riskFilter === 'DECLINING' ? 'text-white' : 'text-red-800'}`}>{stats.decliningCount}</p>
           </div>
 
-          <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 space-y-1">
-            <p className="text-[10px] font-black text-orange-700 uppercase tracking-widest flex items-center gap-1">
+          <div 
+            onClick={() => setRiskFilter(riskFilter === 'ATTENDANCE' ? 'ALL' : 'ATTENDANCE')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'ATTENDANCE' ? 'bg-orange-600 text-white border-orange-700 shadow-md' : 'bg-orange-50 hover:bg-orange-100 border-orange-100'}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${riskFilter === 'ATTENDANCE' ? 'text-orange-100' : 'text-orange-700'}`}>
               <Clock size={12} /> Freq. &lt; 85%
             </p>
-            <p className="text-2xl font-black text-orange-900">{stats.lowAttendance}</p>
+            <p className={`text-2xl font-black ${riskFilter === 'ATTENDANCE' ? 'text-white' : 'text-orange-900'}`}>{stats.lowAttendance}</p>
           </div>
 
-          <div className="bg-pink-50 p-4 rounded-2xl border border-pink-100 space-y-1">
-            <p className="text-[10px] font-black text-pink-700 uppercase tracking-widest flex items-center gap-1">
+          <div 
+            onClick={() => setRiskFilter(riskFilter === 'PAEDE' ? 'ALL' : 'PAEDE')}
+            className={`p-4 rounded-2xl border cursor-pointer transition-all ${riskFilter === 'PAEDE' ? 'bg-pink-600 text-white border-pink-700 shadow-md' : 'bg-pink-50 hover:bg-pink-100 border-pink-100'}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${riskFilter === 'PAEDE' ? 'text-pink-100' : 'text-pink-700'}`}>
               ♿ PAEDE / AEE
             </p>
-            <p className="text-2xl font-black text-pink-900">{stats.paedCount}</p>
+            <p className={`text-2xl font-black ${riskFilter === 'PAEDE' ? 'text-white' : 'text-pink-900'}`}>{stats.paedCount}</p>
           </div>
 
           <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 space-y-1">
@@ -767,6 +851,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white cursor-pointer text-indigo-900"
                 >
                   <option value="ALL">TODOS OS ESTUDANTES</option>
+                  <option value="NO_GRADES">⚠️ SEM LANÇAMENTO DE NOTAS ({stats.noGradesCount} Pendentes)</option>
                   <option value="EVOLVING">↗️ EM EVOLUÇÃO (Melhora nas notas)</option>
                   <option value="DECLINING">↘️ EM QUEDA DE RENDIMENTO</option>
                   <option value="CRITICAL">⚠️ RISCO CRÍTICO (Notas &lt; 5.0 ou 3+ reprovações)</option>
@@ -846,31 +931,45 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
                     </td>
 
                     <td className="p-4 text-center">
-                      <span className={`px-2.5 py-1 rounded-lg font-black text-xs ${
-                        student.averageGrade >= 8 ? 'bg-emerald-100 text-emerald-800' :
-                        student.averageGrade >= 6 ? 'bg-blue-100 text-blue-800' :
-                        student.averageGrade >= 5 ? 'bg-amber-100 text-amber-900' : 'bg-rose-100 text-rose-700'
-                      }`}>
-                        {student.averageGrade.toFixed(1)}
-                      </span>
+                      {student.hasGrades && student.averageGrade !== null ? (
+                        <span className={`px-2.5 py-1 rounded-lg font-black text-xs ${
+                          student.averageGrade >= 8 ? 'bg-emerald-100 text-emerald-800' :
+                          student.averageGrade >= 6 ? 'bg-blue-100 text-blue-800' :
+                          student.averageGrade >= 5 ? 'bg-amber-100 text-amber-900' : 'bg-rose-100 text-rose-700'
+                        }`}>
+                          {student.averageGrade.toFixed(1)}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md text-[10px] font-black uppercase">
+                          Pendente
+                        </span>
+                      )}
                     </td>
 
                     {/* TRAJETÓRIA / EVOLUÇÃO */}
                     <td className="p-4 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                        student.trend === 'UP' ? 'bg-emerald-100 text-emerald-800' :
-                        student.trend === 'DOWN' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {student.trend === 'UP' && <ArrowUpRight size={12} />}
-                        {student.trend === 'DOWN' && <ArrowDownRight size={12} />}
-                        {student.trend === 'STABLE' && <Minus size={12} />}
-                        {student.trend === 'UP' ? 'Evoluindo' : student.trend === 'DOWN' ? 'Em Queda' : 'Estável'}
-                      </span>
+                      {!student.hasGrades ? (
+                        <span className="text-slate-300 font-bold">-</span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          student.trend === 'UP' ? 'bg-emerald-100 text-emerald-800' :
+                          student.trend === 'DOWN' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {student.trend === 'UP' && <ArrowUpRight size={12} />}
+                          {student.trend === 'DOWN' && <ArrowDownRight size={12} />}
+                          {student.trend === 'STABLE' && <Minus size={12} />}
+                          {student.trend === 'UP' ? 'Evoluindo' : student.trend === 'DOWN' ? 'Em Queda' : 'Estável'}
+                        </span>
+                      )}
                     </td>
 
                     {/* DISCIPLINAS EM ALERTA */}
                     <td className="p-4 text-center">
-                      {student.failingSubjects.length > 0 ? (
+                      {!student.hasGrades ? (
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md text-[10px] font-black uppercase">
+                          Sem notas lançadas
+                        </span>
+                      ) : student.failingSubjects.length > 0 ? (
                         <div className="inline-flex flex-col items-center">
                           <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-md text-[10px] font-black uppercase">
                             {student.failingSubjects.length} disciplina(s)
@@ -915,10 +1014,11 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
 
                     <td className="p-4 text-center">
                       <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        !student.hasGrades ? 'bg-amber-100 text-amber-800 font-black' :
                         student.riskLevel === 'CRITICO' ? 'bg-rose-100 text-rose-800' :
                         student.riskLevel === 'ALERTA' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800'
                       }`}>
-                        {student.riskLevel === 'CRITICO' ? '⚠️ CRÍTICO' : student.riskLevel === 'ALERTA' ? '⚡ ALERTA' : '✓ OK'}
+                        {!student.hasGrades ? '⚠️ SEM NOTAS' : student.riskLevel === 'CRITICO' ? '⚠️ CRÍTICO' : student.riskLevel === 'ALERTA' ? '⚡ ALERTA' : '✓ OK'}
                       </span>
                     </td>
 
@@ -937,8 +1037,15 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({ user, onN
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
-                    {loading ? 'Carregando dados pedagógicos...' : 'Nenhum estudante encontrado com os filtros selecionados'}
+                  <td colSpan={9} className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                    {loading ? (
+                      <div className="space-y-3">
+                        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+                        <p className="text-slate-400 text-xs font-black uppercase tracking-wider">Carregando dados pedagógicos e notas...</p>
+                      </div>
+                    ) : (
+                      'Nenhum estudante encontrado com os filtros selecionados'
+                    )}
                   </td>
                 </tr>
               )}
