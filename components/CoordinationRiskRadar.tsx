@@ -503,7 +503,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
         studentName: student.name,
         className: student.className,
         bimestre: '3º Bimestre Letivo',
-        averageGrade: student.averageGrade,
+        averageGrade: student.averageGrade ?? 0,
         presenceRate: student.presenceRate,
         absencesCount: student.absencesCount,
         isPaed: student.isPaed,
@@ -741,17 +741,17 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">1º Bimestre</span>
-                <p className="text-lg font-black text-white">{classEvolution.b1 ? classEvolution.b1.toFixed(1) : '-'}</p>
+                <p className="text-lg font-black text-white">{classEvolution.b1 != null ? Number(classEvolution.b1).toFixed(1) : '-'}</p>
               </div>
               <ArrowRight size={16} className="text-slate-500" />
               <div className="text-center">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">2º Bimestre</span>
-                <p className="text-lg font-black text-white">{classEvolution.b2 ? classEvolution.b2.toFixed(1) : '-'}</p>
+                <p className="text-lg font-black text-white">{classEvolution.b2 != null ? Number(classEvolution.b2).toFixed(1) : '-'}</p>
               </div>
               <ArrowRight size={16} className="text-slate-500" />
               <div className="text-center">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">3º Bimestre</span>
-                <p className="text-lg font-black text-emerald-400 font-mono">{classEvolution.b3 ? classEvolution.b3.toFixed(1) : '-'}</p>
+                <p className="text-lg font-black text-emerald-400 font-mono">{classEvolution.b3 != null ? Number(classEvolution.b3).toFixed(1) : '-'}</p>
               </div>
             </div>
           </div>
@@ -1088,7 +1088,9 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
                 <span className="text-[10px] font-black text-slate-400 uppercase">Média Geral</span>
-                <p className="text-xl font-black text-slate-900">{selectedStudent.averageGrade.toFixed(1)}</p>
+                <p className="text-xl font-black text-slate-900">
+                  {selectedStudent.averageGrade != null ? Number(selectedStudent.averageGrade).toFixed(1) : 'Pendente'}
+                </p>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-2xl space-y-1">
@@ -1136,15 +1138,15 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                       selectedStudent.gradesHistory.map((g: any) => (
                         <tr key={g.subject} className="hover:bg-slate-50/50">
                           <td className="p-3 font-bold text-slate-800 uppercase">{g.subject}</td>
-                          <td className="p-3 text-center font-black">{g.b1 !== null ? Number(g.b1).toFixed(1) : '-'}</td>
-                          <td className="p-3 text-center font-black">{g.b2 !== null ? Number(g.b2).toFixed(1) : '-'}</td>
-                          <td className="p-3 text-center font-black">{g.b3 !== null ? Number(g.b3).toFixed(1) : '-'}</td>
-                          <td className="p-3 text-center font-black bg-indigo-50/50 text-indigo-950">{g.score.toFixed(1)}</td>
+                          <td className="p-3 text-center font-black">{g.b1 != null ? Number(g.b1).toFixed(1) : '-'}</td>
+                          <td className="p-3 text-center font-black">{g.b2 != null ? Number(g.b2).toFixed(1) : '-'}</td>
+                          <td className="p-3 text-center font-black">{g.b3 != null ? Number(g.b3).toFixed(1) : '-'}</td>
+                          <td className="p-3 text-center font-black bg-indigo-50/50 text-indigo-950">{g.score != null ? Number(g.score).toFixed(1) : '-'}</td>
                           <td className="p-3 text-center font-black">
                             <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase ${
-                              g.score >= 6.0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                              g.score != null && g.score >= 6.0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                             }`}>
-                              {g.score >= 6.0 ? 'Apto' : 'Recuperação'}
+                              {g.score != null ? (g.score >= 6.0 ? 'Apto' : 'Recuperação') : 'Pendente'}
                             </span>
                           </td>
                         </tr>

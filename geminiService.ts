@@ -619,7 +619,7 @@ export const analyzeIndividualStudentWithAI = async (studentData: {
     - Nome: ${studentData.studentName}
     - Turma: ${studentData.className}
     - Bimestre: ${studentData.bimestre}
-    - Média Geral: ${studentData.averageGrade.toFixed(1)} / 10.0
+    - Média Geral: ${studentData.averageGrade != null ? Number(studentData.averageGrade).toFixed(1) : 'Pendente de Lançamento'} / 10.0
     - Assiduidade: ${studentData.presenceRate.toFixed(1)}% (${studentData.absencesCount} faltas no período)
     - Aluno PAEDE / Educação Especial: ${studentData.isPaed ? 'SIM (Possui laudo / AEE)' : 'NÃO'}
     - Histórico de Avaliações: ${JSON.stringify(studentData.gradesHistory)}
