@@ -55,8 +55,9 @@ const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   'MANUTENCAO': ['infraestrutura', 'limpeza', 'training'],
   'AAE': ['merenda', 'limpeza', 'almoxarifado', 'training'],
   'AAE_LIMPEZA': ['limpeza', 'almoxarifado', 'training'],
-  'AEE_NUTRICAO': ['merenda', 'almoxarifado', 'training'],
-  'NUTRIÇÃO': ['merenda', 'training'],
+  'AEE_NUTRICAO': ['merenda', 'almoxarifado', 'limpeza', 'scheduling', 'training'],
+  'NUTRIÇÃO': ['merenda', 'almoxarifado', 'limpeza', 'scheduling', 'training'],
+  'ADMINISTRATIVO EDUCACIONAL/NUTRIÇÃO APOIO ADMINISTRATIVO': ['merenda', 'almoxarifado', 'limpeza', 'scheduling', 'training'],
   'TAE': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'sala_recursos', 'projeto_apa', 'civico_militar', 'training', 'educarte'],
   'AUXILIAR DE PÁTIO': ['training', 'educarte'],
   'AUXILIAR DE COORDENAÇÃO PEDAGÓGICA': ['pedagogical', 'scheduling', 'training', 'educarte'],
@@ -226,6 +227,15 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
       return ['scheduling', 'limpeza', 'training'].includes(mod.id);
     }
 
+    // Permissões específicas para a servidora Zilfa (Nutrição / Merenda / Apoio)
+    const isZilfa = user.name?.toUpperCase().includes('ZILFA') || 
+                    user.login?.replace(/\D/g, '') === '06168439846' ||
+                    user.cpf?.replace(/\D/g, '') === '06168439846';
+
+    if (isZilfa) {
+      return ['merenda', 'almoxarifado', 'limpeza', 'scheduling', 'training'].includes(mod.id);
+    }
+
     if (isDanubia) {
       return ['scheduling', 'training', 'gamification', 'mediacao', 'teacher'].includes(mod.id);
     }
@@ -283,7 +293,14 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     // Prioriza a Função para permissões dinâmicas, fallback para Role
     const rawKey = user.jobFunction || user.role || '';
     const permissionKey = rawKey.trim().toUpperCase();
-    const rolePermissions = (dynamicPermissions && (dynamicPermissions[permissionKey] || dynamicPermissions[rawKey])) || DEFAULT_PERMISSIONS[permissionKey] || DEFAULT_PERMISSIONS[rawKey] || [];
+    let rolePermissions = (dynamicPermissions && (dynamicPermissions[permissionKey] || dynamicPermissions[rawKey])) || DEFAULT_PERMISSIONS[permissionKey] || DEFAULT_PERMISSIONS[rawKey];
+    
+    // Fallback para Role caso a Função específica não possua mapeamento
+    if (!rolePermissions || rolePermissions.length === 0) {
+      const roleKey = (user.role || '').trim().toUpperCase();
+      rolePermissions = (dynamicPermissions && dynamicPermissions[roleKey]) || DEFAULT_PERMISSIONS[roleKey] || [];
+    }
+
     return rolePermissions.includes(mod.id);
   });
 
