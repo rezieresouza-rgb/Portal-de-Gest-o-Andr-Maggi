@@ -1006,13 +1006,14 @@ const Contracts: React.FC = () => {
       const originalTotal = cfg.items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || Number(cfg.guide.total_value) || 1;
       const clampedVal = Math.max(0, Math.min(originalTotal, valueInput));
       const factor = originalTotal > 0 ? (clampedVal / originalTotal) : 0;
-      const percent = Math.round(factor * 100);
 
-      const items = cfg.items.map(it => {
-        const isDiscrete = isDiscreteUnit(it.unit);
-        const rawQty = isDiscrete
-          ? Math.round(it.originalQuantity * factor)
-          : Math.round(it.originalQuantity * factor * 1000) / 1000;
+      // 1. Separar itens discretos (unidades fechadas) e contínuos (pesáveis por KG, L, etc.)
+      const discreteItems = cfg.items.filter(it => isDiscreteUnit(it.unit));
+      const continuousItems = cfg.items.filter(it => !isDiscreteUnit(it.unit));
+
+      // 2. Calcular quantidades inteiras para itens discretos
+      const updatedDiscrete = discreteItems.map(it => {
+        const rawQty = Math.round(it.originalQuantity * factor);
         const paidQty = Math.max(0, Math.min(it.originalQuantity, rawQty));
         return {
           ...it,
@@ -1021,10 +1022,71 @@ const Contracts: React.FC = () => {
         };
       });
 
+      const discreteSubtotal = updatedDiscrete.reduce((s, it) => s + it.subtotal, 0);
+
+      // 3. O saldo restante para atingir o valor digitado é absorvido pelos itens pesáveis (KG/L/etc.)
+      let updatedContinuous: ExtractGuideItemConfig[] = [];
+      const continuousOriginalTotal = continuousItems.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0);
+
+      if (continuousItems.length > 0) {
+        const targetContinuousVal = Math.max(0, clampedVal - discreteSubtotal);
+        const contFactor = continuousOriginalTotal > 0 
+          ? Math.max(0, Math.min(1, targetContinuousVal / continuousOriginalTotal))
+          : factor;
+
+        updatedContinuous = continuousItems.map(it => {
+          const rawQty = Math.round(it.originalQuantity * contFactor * 1000) / 1000;
+          const paidQty = Math.max(0, Math.min(it.originalQuantity, rawQty));
+          return {
+            ...it,
+            paidQuantity: paidQty,
+            subtotal: Math.round(paidQty * it.unitPrice * 100) / 100
+          };
+        });
+
+        // Micro-ajuste fino de centavos nos itens pesáveis para casar com precisão exata com o valor digitado
+        let currentTotal = discreteSubtotal + updatedContinuous.reduce((s, it) => s + it.subtotal, 0);
+        let centDiff = Math.round((clampedVal - currentTotal) * 100) / 100;
+
+        if (Math.abs(centDiff) >= 0.01) {
+          for (let i = 0; i < updatedContinuous.length; i++) {
+            const it = updatedContinuous[i];
+            if (it.unitPrice > 0) {
+              const deltaQty = Math.round((centDiff / it.unitPrice) * 1000) / 1000;
+              const newQty = Math.max(0, Math.min(it.originalQuantity, Math.round((it.paidQuantity + deltaQty) * 1000) / 1000));
+              if (newQty !== it.paidQuantity) {
+                const newSubtotal = Math.round(newQty * it.unitPrice * 100) / 100;
+                updatedContinuous[i] = {
+                  ...it,
+                  paidQuantity: newQty,
+                  subtotal: newSubtotal
+                };
+                currentTotal = discreteSubtotal + updatedContinuous.reduce((s, x) => s + x.subtotal, 0);
+                centDiff = Math.round((clampedVal - currentTotal) * 100) / 100;
+                if (Math.abs(centDiff) < 0.01) break;
+              }
+            }
+          }
+        }
+      }
+
+      // Recompor a lista mantendo a ordem original dos itens
+      const items = cfg.items.map(orig => {
+        const d = updatedDiscrete.find(x => x.id === orig.id);
+        if (d) return d;
+        const c = updatedContinuous.find(x => x.id === orig.id);
+        if (c) return c;
+        return orig;
+      });
+
+      // O valor da guia e o extrato são rigorosamente a soma real dos subtotais dos itens faturados
+      const realPartialValue = Math.round(items.reduce((s, it) => s + it.subtotal, 0) * 100) / 100;
+      const calculatedPercent = originalTotal > 0 ? Math.round((realPartialValue / originalTotal) * 100) : Math.round(factor * 100);
+
       return {
         ...cfg,
-        percent,
-        partialValue: Math.round(clampedVal * 100) / 100,
+        percent: calculatedPercent,
+        partialValue: realPartialValue,
         items
       };
     }));
