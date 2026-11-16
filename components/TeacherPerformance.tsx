@@ -70,6 +70,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
   const [selectedBimestre, setSelectedBimestre] = useState(BIMESTRES[0]);
   const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>('TODOS');
+  const [gradesViewMode, setGradesViewMode] = useState<'ANNUAL' | 'BIMESTRAL'>('ANNUAL');
 
   // Estados de Dados
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
@@ -167,7 +168,8 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         `)
         .eq('assessments.classrooms.name', selectedClass)
         .eq('assessments.bimestre', selectedBimestre)
-        .eq('assessments.type', 'AVALIACAO_BIMESTRAL');
+        .eq('assessments.type', 'AVALIACAO_BIMESTRAL')
+        .limit(5000);
 
       if (selectedSubject !== 'TODAS DISCIPLINAS') {
         gradeQuery = gradeQuery.eq('assessments.subject', selectedSubject);
@@ -196,7 +198,8 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
           )
         `)
         .eq('assessments.classrooms.name', selectedClass)
-        .eq('assessments.type', 'AVALIACAO_BIMESTRAL');
+        .eq('assessments.type', 'AVALIACAO_BIMESTRAL')
+        .limit(5000);
 
       setAllBimestresGrades(allBimsData || []);
 
@@ -305,9 +308,9 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
     });
 
     // 4. Mapear histórico de todos os bimestres por aluno para Trajetória de Evolução
-    const allBimsByStudent: Record<string, { b1: number[]; b2: number[]; b3: number[] }> = {};
+    const allBimsByStudent: Record<string, { b1: number[]; b2: number[]; b3: number[]; b4: number[] }> = {};
     students.forEach(s => {
-      allBimsByStudent[s.id] = { b1: [], b2: [], b3: [] };
+      allBimsByStudent[s.id] = { b1: [], b2: [], b3: [], b4: [] };
     });
 
     allBimestresGrades.forEach(g => {
@@ -326,6 +329,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         if (bim === '1º BIMESTRE') allBimsByStudent[targetId].b1.push(g.score);
         else if (bim === '2º BIMESTRE') allBimsByStudent[targetId].b2.push(g.score);
         else if (bim === '3º BIMESTRE') allBimsByStudent[targetId].b3.push(g.score);
+        else if (bim === '4º BIMESTRE') allBimsByStudent[targetId].b4.push(g.score);
       }
     });
 
@@ -333,12 +337,42 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
     const classB1Scores = allBimestresGrades.filter(g => g.assessments?.bimestre === '1º BIMESTRE' && typeof g.score === 'number').map(g => g.score);
     const classB2Scores = allBimestresGrades.filter(g => g.assessments?.bimestre === '2º BIMESTRE' && typeof g.score === 'number').map(g => g.score);
     const classB3Scores = allBimestresGrades.filter(g => g.assessments?.bimestre === '3º BIMESTRE' && typeof g.score === 'number').map(g => g.score);
+    const classB4Scores = allBimestresGrades.filter(g => g.assessments?.bimestre === '4º BIMESTRE' && typeof g.score === 'number').map(g => g.score);
 
     const classEvolution = {
       b1: classB1Scores.length > 0 ? Number((classB1Scores.reduce((a, b) => a + b, 0) / classB1Scores.length).toFixed(1)) : null,
       b2: classB2Scores.length > 0 ? Number((classB2Scores.reduce((a, b) => a + b, 0) / classB2Scores.length).toFixed(1)) : null,
       b3: classB3Scores.length > 0 ? Number((classB3Scores.reduce((a, b) => a + b, 0) / classB3Scores.length).toFixed(1)) : null,
+      b4: classB4Scores.length > 0 ? Number((classB4Scores.reduce((a, b) => a + b, 0) / classB4Scores.length).toFixed(1)) : null,
     };
+
+    // Disciplinas Ativas na Grade Curricular da Turma
+    const DEFAULT_DISCIPLINES = [
+      "LÍNGUA PORTUGUESA",
+      "MATEMÁTICA",
+      "CIÊNCIAS",
+      "HISTÓRIA",
+      "GEOGRAFIA",
+      "ARTE",
+      "EDUCAÇÃO FÍSICA",
+      "LÍNGUA INGLESA",
+      "APA"
+    ];
+    const classSubjectsSet = new Set<string>();
+    allBimestresGrades.forEach(g => {
+      const subj = g.assessments?.subject?.toUpperCase()?.trim();
+      if (subj) classSubjectsSet.add(subj);
+    });
+    const activeSubjects = classSubjectsSet.size > 0
+      ? Array.from(classSubjectsSet).sort((a, b) => {
+          const idxA = DEFAULT_DISCIPLINES.indexOf(a);
+          const idxB = DEFAULT_DISCIPLINES.indexOf(b);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return a.localeCompare(b);
+        })
+      : DEFAULT_DISCIPLINES;
 
     // Disciplinas Gargalo da turma (no bimestre selecionado)
     const failBySubj: Record<string, number> = {};
@@ -360,6 +394,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
       avgB1: number | null;
       avgB2: number | null;
       avgB3: number | null;
+      avgB4: number | null;
       trend: 'UP' | 'DOWN' | 'STABLE';
       id: string;
       name: string;
@@ -374,6 +409,20 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
       gradesDetails: any[];
       attendanceDays: any[];
       occurrencesList: any[];
+      annualMatrix: {
+        subject: string;
+        b1: number | null;
+        b2: number | null;
+        b3: number | null;
+        b4: number | null;
+        annualAverage: number | null;
+        trend: 'UP' | 'DOWN' | 'STABLE' | 'NONE';
+        status: 'APROVADO' | 'RECOMPOSICAO' | 'PENDENTE';
+      }[];
+      annualGeneralAverage: number | null;
+      approvedSubjectsCount: number;
+      recompSubjectsCount: number;
+      pendingSubjectsCount: number;
     }[] = [];
 
     // Consolidar Aluno a Aluno
@@ -395,13 +444,83 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
       const absences = aInfo.total - aInfo.present;
       const studentOccs = occByStudent[s.name.toUpperCase()] || [];
 
-      const bimsInfo = allBimsByStudent[s.id] || { b1: [], b2: [], b3: [] };
+      // Mapeamento e Matriz Anual de Desempenho do Aluno (Todos os Bimestres e Disciplinas)
+      const studentGradesList = allBimestresGrades.filter(g => {
+        if (g.student_id && g.student_id === s.id) return true;
+        if (g.student_code && s.registration && g.student_code === s.registration) return true;
+        if (g.student_name && s.name && g.student_name.toUpperCase().trim() === s.name.toUpperCase().trim()) return true;
+        return false;
+      });
+
+      const annualMatrix = activeSubjects.map(subj => {
+        const matchGrades = studentGradesList.filter(g => g.assessments?.subject?.toUpperCase()?.trim() === subj);
+        const b1Grade = matchGrades.find(g => g.assessments?.bimestre === '1º BIMESTRE');
+        const b2Grade = matchGrades.find(g => g.assessments?.bimestre === '2º BIMESTRE');
+        const b3Grade = matchGrades.find(g => g.assessments?.bimestre === '3º BIMESTRE');
+        const b4Grade = matchGrades.find(g => g.assessments?.bimestre === '4º BIMESTRE');
+
+        const v1 = b1Grade && typeof b1Grade.score === 'number' && !isNaN(b1Grade.score) ? b1Grade.score : null;
+        const v2 = b2Grade && typeof b2Grade.score === 'number' && !isNaN(b2Grade.score) ? b2Grade.score : null;
+        const v3 = b3Grade && typeof b3Grade.score === 'number' && !isNaN(b3Grade.score) ? b3Grade.score : null;
+        const v4 = b4Grade && typeof b4Grade.score === 'number' && !isNaN(b4Grade.score) ? b4Grade.score : null;
+
+        const valid = [v1, v2, v3, v4].filter((v): v is number => v !== null);
+        const annualAverage = valid.length > 0
+          ? Number((valid.reduce((a, b) => a + b, 0) / valid.length).toFixed(1))
+          : null;
+
+        let trend: 'UP' | 'DOWN' | 'STABLE' | 'NONE' = 'NONE';
+        if (v4 !== null && v3 !== null) {
+          if (v4 >= v3 + 0.3) trend = 'UP';
+          else if (v4 <= v3 - 0.3) trend = 'DOWN';
+          else trend = 'STABLE';
+        } else if (v3 !== null && v2 !== null) {
+          if (v3 >= v2 + 0.3) trend = 'UP';
+          else if (v3 <= v2 - 0.3) trend = 'DOWN';
+          else trend = 'STABLE';
+        } else if (v2 !== null && v1 !== null) {
+          if (v2 >= v1 + 0.3) trend = 'UP';
+          else if (v2 <= v1 - 0.3) trend = 'DOWN';
+          else trend = 'STABLE';
+        }
+
+        let status: 'APROVADO' | 'RECOMPOSICAO' | 'PENDENTE' = 'PENDENTE';
+        if (annualAverage !== null) {
+          status = annualAverage >= 6.0 ? 'APROVADO' : 'RECOMPOSICAO';
+        }
+
+        return {
+          subject: subj,
+          b1: v1,
+          b2: v2,
+          b3: v3,
+          b4: v4,
+          annualAverage,
+          trend,
+          status
+        };
+      });
+
+      const evaluatedSubjects = annualMatrix.filter(m => m.annualAverage !== null);
+      const annualGeneralAverage = evaluatedSubjects.length > 0
+        ? Number((evaluatedSubjects.reduce((acc, curr) => acc + (curr.annualAverage || 0), 0) / evaluatedSubjects.length).toFixed(1))
+        : null;
+
+      const approvedSubjectsCount = annualMatrix.filter(m => m.status === 'APROVADO').length;
+      const recompSubjectsCount = annualMatrix.filter(m => m.status === 'RECOMPOSICAO').length;
+      const pendingSubjectsCount = annualMatrix.filter(m => m.status === 'PENDENTE').length;
+
+      const bimsInfo = allBimsByStudent[s.id] || { b1: [], b2: [], b3: [], b4: [] };
       const avgB1 = bimsInfo.b1.length > 0 ? Number((bimsInfo.b1.reduce((a, b) => a + b, 0) / bimsInfo.b1.length).toFixed(1)) : null;
       const avgB2 = bimsInfo.b2.length > 0 ? Number((bimsInfo.b2.reduce((a, b) => a + b, 0) / bimsInfo.b2.length).toFixed(1)) : null;
       const avgB3 = bimsInfo.b3.length > 0 ? Number((bimsInfo.b3.reduce((a, b) => a + b, 0) / bimsInfo.b3.length).toFixed(1)) : null;
+      const avgB4 = bimsInfo.b4.length > 0 ? Number((bimsInfo.b4.reduce((a, b) => a + b, 0) / bimsInfo.b4.length).toFixed(1)) : null;
 
       let trend: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
-      if (avgB3 !== null && avgB2 !== null) {
+      if (avgB4 !== null && avgB3 !== null) {
+        if (avgB4 >= avgB3 + 0.3) trend = 'UP';
+        else if (avgB4 <= avgB3 - 0.3) trend = 'DOWN';
+      } else if (avgB3 !== null && avgB2 !== null) {
         if (avgB3 >= avgB2 + 0.3) trend = 'UP';
         else if (avgB3 <= avgB2 - 0.3) trend = 'DOWN';
       } else if (avgB2 !== null && avgB1 !== null) {
@@ -414,6 +533,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         avgB1,
         avgB2,
         avgB3,
+        avgB4,
         trend,
         name: s.name,
         registration: s.registration,
@@ -426,7 +546,12 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         occurrencesCount: studentOccs.length,
         gradesDetails: gInfo?.details || [],
         attendanceDays: aInfo.days || [],
-        occurrencesList: studentOccs
+        occurrencesList: studentOccs,
+        annualMatrix,
+        annualGeneralAverage,
+        approvedSubjectsCount,
+        recompSubjectsCount,
+        pendingSubjectsCount
       });
     });
 
@@ -572,10 +697,10 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
   }, [analytics, searchTerm]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20 no-print">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
 
       {/* CABEÇALHO & SELETORES GLOBAIS COM SELETOR DE ESTUDANTE */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 no-print">
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
           
           {/* SELETOR 1: TURMA */}
@@ -794,43 +919,69 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
 
           </div>
 
-          {/* BANNER DE EVOLUÇÃO HISTÓRICA DA TURMA (1º ➔ 2º ➔ 3º BIMESTRE) */}
-          <div className="p-6 md:p-8 rounded-[2.5rem] bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* BANNER DE EVOLUÇÃO HISTÓRICA DO ESTUDANTE & TURMA (1º ➔ 2º ➔ 3º ➔ 4º BIMESTRE) */}
+          <div className="p-6 md:p-8 rounded-[2.5rem] bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 text-white shadow-xl flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white/10 rounded-2xl shrink-0">
                 <TrendingUp size={24} className="text-emerald-400" />
               </div>
               <div>
                 <span className="px-3 py-1 bg-indigo-500/30 text-indigo-200 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-400/20">
-                  Trajetória Histórica de Rendimento
+                  Trajetória Histórica Anual do Aluno
                 </span>
                 <h3 className="text-lg font-black uppercase text-white mt-1">
-                  Evolução da Turma ({selectedClass}) ao Longo dos Bimestres
+                  Evolução Bimestral de {selectedStudentData.name}
                 </h3>
                 <p className="text-xs text-indigo-200/70 font-medium">
-                  Médias oficiais apuradas pela escrituração digital SEDUC-MT
+                  Médias oficiais apuradas em todas as disciplinas cursadas pelo estudante no ano letivo
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white/5 p-4 rounded-2xl border border-white/10">
-              <div className="text-center">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">1º Bimestre</span>
-                <span className="text-xl font-black text-white">{analytics.classEvolution.b1 !== null ? analytics.classEvolution.b1.toFixed(1) : '-'}</span>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+              <div className="text-center px-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">1º Bim</span>
+                <span className={`text-lg font-black ${selectedStudentData.avgB1 !== null && selectedStudentData.avgB1 >= 6.0 ? 'text-white' : 'text-rose-400'}`}>
+                  {selectedStudentData.avgB1 !== null ? selectedStudentData.avgB1.toFixed(1) : '-'}
+                </span>
+                <span className="text-[8px] text-slate-400 block font-bold">Turma: {analytics.classEvolution.b1 ?? '-'}</span>
               </div>
 
-              <ArrowRight size={18} className="text-slate-500 hidden sm:block" />
+              <ArrowRight size={14} className="text-slate-500 hidden sm:block" />
 
-              <div className="text-center">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">2º Bimestre</span>
-                <span className="text-xl font-black text-white">{analytics.classEvolution.b2 !== null ? analytics.classEvolution.b2.toFixed(1) : '-'}</span>
+              <div className="text-center px-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">2º Bim</span>
+                <span className={`text-lg font-black ${selectedStudentData.avgB2 !== null && selectedStudentData.avgB2 >= 6.0 ? 'text-white' : 'text-rose-400'}`}>
+                  {selectedStudentData.avgB2 !== null ? selectedStudentData.avgB2.toFixed(1) : '-'}
+                </span>
+                <span className="text-[8px] text-slate-400 block font-bold">Turma: {analytics.classEvolution.b2 ?? '-'}</span>
               </div>
 
-              <ArrowRight size={18} className="text-slate-500 hidden sm:block" />
+              <ArrowRight size={14} className="text-slate-500 hidden sm:block" />
 
-              <div className="text-center">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">3º Bimestre</span>
-                <span className="text-xl font-black text-emerald-400 font-mono">{analytics.classEvolution.b3 !== null ? analytics.classEvolution.b3.toFixed(1) : '-'}</span>
+              <div className="text-center px-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">3º Bim</span>
+                <span className={`text-lg font-black ${selectedStudentData.avgB3 !== null && selectedStudentData.avgB3 >= 6.0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {selectedStudentData.avgB3 !== null ? selectedStudentData.avgB3.toFixed(1) : '-'}
+                </span>
+                <span className="text-[8px] text-slate-400 block font-bold">Turma: {analytics.classEvolution.b3 ?? '-'}</span>
+              </div>
+
+              <ArrowRight size={14} className="text-slate-500 hidden sm:block" />
+
+              <div className="text-center px-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">4º Bim</span>
+                <span className={`text-lg font-black ${selectedStudentData.avgB4 !== null && selectedStudentData.avgB4 >= 6.0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {selectedStudentData.avgB4 !== null ? selectedStudentData.avgB4.toFixed(1) : '-'}
+                </span>
+                <span className="text-[8px] text-slate-400 block font-bold">Turma: {analytics.classEvolution.b4 ?? '-'}</span>
+              </div>
+
+              <div className="border-l border-white/10 pl-3 text-center">
+                <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Média Anual</span>
+                <span className={`text-xl font-black ${selectedStudentData.annualGeneralAverage !== null && selectedStudentData.annualGeneralAverage >= 6.0 ? 'text-emerald-300' : 'text-rose-400'}`}>
+                  {selectedStudentData.annualGeneralAverage !== null ? selectedStudentData.annualGeneralAverage.toFixed(1) : '-'}
+                </span>
               </div>
             </div>
           </div>
@@ -862,7 +1013,6 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
             </div>
           )}
 
-
           {/* PAINEL DE PARECER COM IA GEMINI DO ALUNO */}
           {aiInsight && (
             <div className="bg-gradient-to-br from-violet-950 via-slate-900 to-indigo-950 p-8 md:p-12 rounded-[3.5rem] text-white shadow-2xl border border-violet-500/30 animate-in zoom-in-95 duration-500 relative overflow-hidden">
@@ -879,22 +1029,251 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
             </div>
           )}
 
-          {/* DETALHAMENTO DE NOTAS & FREQUÊNCIA DO ALUNO */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* HISTÓRICO DE NOTAS DO ALUNO */}
-            <div className="bg-white p-8 rounded-[3rem] border border-slate-200/80 shadow-sm space-y-6">
+          {/* MATRIZ ANUAL & DETALHAMENTO DE NOTAS DO ALUNO (BOLETIM ESCOLAR CONSOLIDADO) */}
+          <div className="bg-white p-6 md:p-8 rounded-[3rem] border border-slate-200/80 shadow-sm space-y-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-                  <FileSpreadsheet size={20} />
+                  <FileSpreadsheet size={22} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Avaliações & Notas</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Detalhamento das notas do estudante</p>
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                    Matriz Anual de Rendimento & Notas
+                    <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full font-black tracking-wider uppercase">
+                      Boletim SEDUC-MT
+                    </span>
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    Visão anual de todas as disciplinas nos 4 bimestres letivos
+                  </p>
                 </div>
               </div>
 
-              {selectedStudentData.gradesDetails.length > 0 ? (
+              {/* CONTROLES: ALTERNADOR DE MODO E IMPRESSÃO */}
+              <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+                <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 border border-slate-200">
+                  <button
+                    onClick={() => setGradesViewMode('ANNUAL')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                      gradesViewMode === 'ANNUAL'
+                        ? 'bg-white text-indigo-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    📊 Matriz Anual (Todos os Bimestres)
+                  </button>
+                  <button
+                    onClick={() => setGradesViewMode('BIMESTRAL')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                      gradesViewMode === 'BIMESTRAL'
+                        ? 'bg-white text-indigo-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    📋 Detalhe ({selectedBimestre})
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => window.print()}
+                  className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+                  title="Imprimir Boletim Oficial do Aluno"
+                >
+                  <Printer size={14} /> Imprimir Boletim
+                </button>
+              </div>
+            </div>
+
+            {/* TABELA CONFORME O MODO SELECIONADO */}
+            {gradesViewMode === 'ANNUAL' ? (
+              <div className="space-y-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
+                        <th className="px-4 py-3.5">Componente Curricular</th>
+                        <th className="px-3 py-3.5 text-center">1º Bim</th>
+                        <th className="px-3 py-3.5 text-center">2º Bim</th>
+                        <th className="px-3 py-3.5 text-center">3º Bim</th>
+                        <th className="px-3 py-3.5 text-center">4º Bim</th>
+                        <th className="px-3 py-3.5 text-center bg-indigo-50/70 text-indigo-900">Média Anual</th>
+                        <th className="px-3 py-3.5 text-center">Evolução</th>
+                        <th className="px-4 py-3.5 text-center">Situação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs font-bold">
+                      {selectedStudentData.annualMatrix.map((row, idx) => {
+                        const isApproved = row.status === 'APROVADO';
+                        const isRecomp = row.status === 'RECOMPOSICAO';
+
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50/70 transition-all">
+                            <td className="px-4 py-3 text-slate-900 uppercase font-black">
+                              {row.subject}
+                            </td>
+
+                            {/* 1º BIM */}
+                            <td className="px-3 py-3 text-center">
+                              {row.b1 !== null ? (
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
+                                  row.b1 >= 6.0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                }`}>
+                                  {row.b1.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 font-normal">-</span>
+                              )}
+                            </td>
+
+                            {/* 2º BIM */}
+                            <td className="px-3 py-3 text-center">
+                              {row.b2 !== null ? (
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
+                                  row.b2 >= 6.0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                }`}>
+                                  {row.b2.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 font-normal">-</span>
+                              )}
+                            </td>
+
+                            {/* 3º BIM */}
+                            <td className="px-3 py-3 text-center">
+                              {row.b3 !== null ? (
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
+                                  row.b3 >= 6.0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                }`}>
+                                  {row.b3.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 font-normal">-</span>
+                              )}
+                            </td>
+
+                            {/* 4º BIM */}
+                            <td className="px-3 py-3 text-center">
+                              {row.b4 !== null ? (
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
+                                  row.b4 >= 6.0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                }`}>
+                                  {row.b4.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 font-normal">-</span>
+                              )}
+                            </td>
+
+                            {/* MÉDIA ANUAL */}
+                            <td className="px-3 py-3 text-center bg-indigo-50/40">
+                              {row.annualAverage !== null ? (
+                                <span className={`px-3 py-1 rounded-xl text-xs font-black ${
+                                  row.annualAverage >= 6.0 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300'
+                                }`}>
+                                  {row.annualAverage.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-bold">-</span>
+                              )}
+                            </td>
+
+                            {/* EVOLUÇÃO */}
+                            <td className="px-3 py-3 text-center">
+                              {row.trend === 'UP' ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-700 font-black text-[11px] bg-emerald-50 px-2 py-0.5 rounded-md">
+                                  ↗️ Em Alta
+                                </span>
+                              ) : row.trend === 'DOWN' ? (
+                                <span className="inline-flex items-center gap-1 text-rose-700 font-black text-[11px] bg-rose-50 px-2 py-0.5 rounded-md">
+                                  ↘️ Em Queda
+                                </span>
+                              ) : row.trend === 'STABLE' ? (
+                                <span className="inline-flex items-center gap-1 text-slate-600 font-bold text-[11px] bg-slate-50 px-2 py-0.5 rounded-md">
+                                  ➡️ Estável
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 font-normal">-</span>
+                              )}
+                            </td>
+
+                            {/* SITUAÇÃO */}
+                            <td className="px-4 py-3 text-center">
+                              {isApproved ? (
+                                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                  ✓ Apto
+                                </span>
+                              ) : isRecomp ? (
+                                <span className="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                  ⚠️ Recomposição
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                  Pendente
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-slate-100/90 border-t-2 border-slate-300 text-xs font-black text-slate-900">
+                        <td className="px-4 py-3.5 uppercase">Média Geral do Estudante</td>
+                        <td className="px-3 py-3.5 text-center">
+                          {selectedStudentData.avgB1 !== null ? selectedStudentData.avgB1.toFixed(1) : '-'}
+                        </td>
+                        <td className="px-3 py-3.5 text-center">
+                          {selectedStudentData.avgB2 !== null ? selectedStudentData.avgB2.toFixed(1) : '-'}
+                        </td>
+                        <td className="px-3 py-3.5 text-center">
+                          {selectedStudentData.avgB3 !== null ? selectedStudentData.avgB3.toFixed(1) : '-'}
+                        </td>
+                        <td className="px-3 py-3.5 text-center">
+                          {selectedStudentData.avgB4 !== null ? selectedStudentData.avgB4.toFixed(1) : '-'}
+                        </td>
+                        <td className="px-3 py-3.5 text-center bg-indigo-100/80 text-indigo-950 font-black">
+                          {selectedStudentData.annualGeneralAverage !== null ? selectedStudentData.annualGeneralAverage.toFixed(1) : '-'}
+                        </td>
+                        <td className="px-3 py-3.5 text-center">
+                          {selectedStudentData.trend === 'UP' ? '↗️ Em Alta' : selectedStudentData.trend === 'DOWN' ? '↘️ Em Queda' : '➡️ Estável'}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                            selectedStudentData.annualGeneralAverage !== null && selectedStudentData.annualGeneralAverage >= 6.0
+                              ? 'bg-emerald-200 text-emerald-950'
+                              : 'bg-rose-200 text-rose-950'
+                          }`}>
+                            {selectedStudentData.annualGeneralAverage !== null && selectedStudentData.annualGeneralAverage >= 6.0 ? 'Apto' : 'Recomposição'}
+                          </span>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* KPI STRIP DA MATRIZ ANUAL */}
+                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100">
+                  <span className="px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold">
+                    Componentes Cursados: <strong>{selectedStudentData.annualMatrix.length}</strong>
+                  </span>
+                  <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold">
+                    ✓ Aprovadas (&ge; 6.0): <strong>{selectedStudentData.approvedSubjectsCount}</strong>
+                  </span>
+                  {selectedStudentData.recompSubjectsCount > 0 && (
+                    <span className="px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-900 rounded-xl text-xs font-bold">
+                      ⚠️ Em Recomposição (&lt; 6.0): <strong>{selectedStudentData.recompSubjectsCount}</strong>
+                    </span>
+                  )}
+                  {selectedStudentData.pendingSubjectsCount > 0 && (
+                    <span className="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold">
+                      ⏳ Sem Lançamento: <strong>{selectedStudentData.pendingSubjectsCount}</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* MODO DETALHAMENTO BIMESTRAL (AVALIAÇÃO DO BIMESTRE SELECIONADO) */
+              selectedStudentData.gradesDetails.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -930,10 +1309,14 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
                 </div>
               ) : (
                 <div className="py-12 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
-                  Nenhuma avaliação registrada para este aluno no bimestre
+                  Nenhuma avaliação registrada para este aluno no {selectedBimestre}
                 </div>
-              )}
-            </div>
+              )
+            )}
+          </div>
+
+          {/* DETALHAMENTO DE FREQUÊNCIA E CONDUTA DO ALUNO */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
             {/* HISTÓRICO DE FREQUÊNCIA DIÁRIA */}
             <div className="bg-white p-8 rounded-[3rem] border border-slate-200/80 shadow-sm space-y-6">
@@ -970,27 +1353,31 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
               )}
             </div>
 
-          </div>
-
-          {/* OCORRÊNCIAS DO ALUNO SE HOUVER */}
-          {selectedStudentData.occurrencesList.length > 0 && (
+            {/* OCORRÊNCIAS DO ALUNO */}
             <div className="bg-white p-8 rounded-[3rem] border border-slate-200/80 shadow-sm space-y-4">
               <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
                 <AlertTriangle className="text-rose-600" size={18} /> Registros de Ocorrências e Encaminhamentos
               </h3>
-              <div className="space-y-3">
-                {selectedStudentData.occurrencesList.map((occ, idx) => (
-                  <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-black text-rose-700 uppercase">{occ.category || occ.type}</span>
-                      <span className="text-slate-400 font-bold">{new Date(occ.date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+              {selectedStudentData.occurrencesList.length > 0 ? (
+                <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                  {selectedStudentData.occurrencesList.map((occ, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-black text-rose-700 uppercase">{occ.category || occ.type}</span>
+                        <span className="text-slate-400 font-bold">{new Date(occ.date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      <p className="text-slate-700 font-medium">{occ.description}</p>
                     </div>
-                    <p className="text-slate-700 font-medium">{occ.description}</p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+                  Nenhum registro de ocorrência para este aluno
+                </div>
+              )}
             </div>
-          )}
+
+          </div>
 
         </div>
 

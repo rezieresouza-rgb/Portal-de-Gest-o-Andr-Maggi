@@ -259,22 +259,23 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             }
 
             // Histórico e médias por disciplina
-            const subjectMap = new Map<string, { b1: number | null; b2: number | null; b3: number | null }>();
+            const subjectMap = new Map<string, { b1: number | null; b2: number | null; b3: number | null; b4: number | null }>();
             for (const g of studentGrades) {
               if (!subjectMap.has(g.subject)) {
-                subjectMap.set(g.subject, { b1: null, b2: null, b3: null });
+                subjectMap.set(g.subject, { b1: null, b2: null, b3: null, b4: null });
               }
               const entry = subjectMap.get(g.subject)!;
               if (g.bimestre === '1º BIMESTRE') entry.b1 = g.score;
               else if (g.bimestre === '2º BIMESTRE') entry.b2 = g.score;
               else if (g.bimestre === '3º BIMESTRE') entry.b3 = g.score;
+              else if (g.bimestre === '4º BIMESTRE') entry.b4 = g.score;
             }
 
-            const gradesHistory: { subject: string; b1: number | null; b2: number | null; b3: number | null; score: number }[] = [];
+            const gradesHistory: { subject: string; b1: number | null; b2: number | null; b3: number | null; b4: number | null; score: number }[] = [];
             const failingSubjects: { subject: string; score: number }[] = [];
 
             subjectMap.forEach((bims, subject) => {
-              const validScores = [bims.b1, bims.b2, bims.b3].filter((v): v is number => v !== null);
+              const validScores = [bims.b1, bims.b2, bims.b3, bims.b4].filter((v): v is number => v !== null);
               const subjectAvg = validScores.length > 0 
                 ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1))
                 : 0;
@@ -284,6 +285,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                 b1: bims.b1,
                 b2: bims.b2,
                 b3: bims.b3,
+                b4: bims.b4,
                 score: subjectAvg
               });
 
@@ -296,10 +298,12 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             const b1List = studentGrades.filter(g => g.bimestre === '1º BIMESTRE').map(g => g.score);
             const b2List = studentGrades.filter(g => g.bimestre === '2º BIMESTRE').map(g => g.score);
             const b3List = studentGrades.filter(g => g.bimestre === '3º BIMESTRE').map(g => g.score);
+            const b4List = studentGrades.filter(g => g.bimestre === '4º BIMESTRE').map(g => g.score);
 
             const avgB1 = b1List.length > 0 ? Number((b1List.reduce((a, b) => a + b, 0) / b1List.length).toFixed(1)) : null;
             const avgB2 = b2List.length > 0 ? Number((b2List.reduce((a, b) => a + b, 0) / b2List.length).toFixed(1)) : null;
             const avgB3 = b3List.length > 0 ? Number((b3List.reduce((a, b) => a + b, 0) / b3List.length).toFixed(1)) : null;
+            const avgB4 = b4List.length > 0 ? Number((b4List.reduce((a, b) => a + b, 0) / b4List.length).toFixed(1)) : null;
 
             const allScores = studentGrades.map(g => g.score);
             const overallAverage = hasGrades
@@ -309,7 +313,10 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             // Trajetória de Evolução
             let trend: 'UP' | 'DOWN' | 'STABLE' = 'STABLE';
             if (hasGrades) {
-              if (avgB3 !== null && avgB2 !== null) {
+              if (avgB4 !== null && avgB3 !== null) {
+                if (avgB4 >= avgB3 + 0.3) trend = 'UP';
+                else if (avgB4 <= avgB3 - 0.3) trend = 'DOWN';
+              } else if (avgB3 !== null && avgB2 !== null) {
                 if (avgB3 >= avgB2 + 0.3) trend = 'UP';
                 else if (avgB3 <= avgB2 - 0.3) trend = 'DOWN';
               } else if (avgB2 !== null && avgB1 !== null) {
@@ -510,7 +517,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
         gradesHistory: student.gradesHistory.map((g: any) => ({
           subject: g.subject,
           score: g.score,
-          details: `1º: ${g.b1 ?? '-'}, 2º: ${g.b2 ?? '-'}, 3º: ${g.b3 ?? '-'}`
+          details: `1º: ${g.b1 ?? '-'}, 2º: ${g.b2 ?? '-'}, 3º: ${g.b3 ?? '-'}, 4º: ${g.b4 ?? '-'}`
         })),
         occurrences: [
           `Trajetória: ${trendText}`,
@@ -1129,7 +1136,8 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                       <th className="p-3 text-center">1º Bim</th>
                       <th className="p-3 text-center">2º Bim</th>
                       <th className="p-3 text-center">3º Bim</th>
-                      <th className="p-3 text-center bg-indigo-50/50 text-indigo-900">Média Parcial</th>
+                      <th className="p-3 text-center">4º Bim</th>
+                      <th className="p-3 text-center bg-indigo-50/50 text-indigo-900">Média Anual</th>
                       <th className="p-3 text-center">Situação</th>
                     </tr>
                   </thead>
@@ -1141,6 +1149,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                           <td className="p-3 text-center font-black">{g.b1 != null ? Number(g.b1).toFixed(1) : '-'}</td>
                           <td className="p-3 text-center font-black">{g.b2 != null ? Number(g.b2).toFixed(1) : '-'}</td>
                           <td className="p-3 text-center font-black">{g.b3 != null ? Number(g.b3).toFixed(1) : '-'}</td>
+                          <td className="p-3 text-center font-black">{g.b4 != null ? Number(g.b4).toFixed(1) : '-'}</td>
                           <td className="p-3 text-center font-black bg-indigo-50/50 text-indigo-950">{g.score != null ? Number(g.score).toFixed(1) : '-'}</td>
                           <td className="p-3 text-center font-black">
                             <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase ${
