@@ -68,7 +68,26 @@ const parseNumeric = (val: any): number => {
   return isNaN(num) ? 0 : num;
 };
 
-const formatQuantity = (val: number) => {
+export const isDiscreteUnit = (unit?: string): boolean => {
+  if (!unit) return false;
+  const u = unit.trim().toUpperCase();
+  // Continuous pure weight / volume units (without package indication)
+  if (
+    u === 'KG' || u === 'KILO' || u === 'QUILO' || u === 'QUILOGRAMA' ||
+    u === 'L' || u === 'LT' || u === 'LITRO' || u === 'LITROS' ||
+    u === 'G' || u === 'GR' || u === 'GRAMA' || u === 'GRAMAS' ||
+    u === 'ML' || u === 'M' || u === 'METRO'
+  ) {
+    return false;
+  }
+  // All other units (UN, UNID, UNID 5KG, UNID 2KG, PCT, LATA, CX, etc.) are discrete closed units
+  return true;
+};
+
+const formatQuantity = (val: number, unit?: string) => {
+  if (unit && isDiscreteUnit(unit)) {
+    return Math.round(val).toLocaleString('pt-BR');
+  }
   return val.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 };
 
@@ -932,7 +951,11 @@ const Contracts: React.FC = () => {
         // Default partial to 50% (Metade)
         const percent = 50;
         const items = cfg.items.map(it => {
-          const paidQty = Math.round(it.originalQuantity * (percent / 100) * 1000) / 1000;
+          const isDiscrete = isDiscreteUnit(it.unit);
+          const rawQty = isDiscrete
+            ? Math.round(it.originalQuantity * (percent / 100))
+            : Math.round(it.originalQuantity * (percent / 100) * 1000) / 1000;
+          const paidQty = Math.max(0, Math.min(it.originalQuantity, rawQty));
           return {
             ...it,
             paidQuantity: paidQty,
@@ -956,7 +979,11 @@ const Contracts: React.FC = () => {
     setExtractGuideConfigs(prev => prev.map(cfg => {
       if (cfg.guideId !== guideId) return cfg;
       const items = cfg.items.map(it => {
-        const paidQty = Math.round(it.originalQuantity * (clampedPercent / 100) * 1000) / 1000;
+        const isDiscrete = isDiscreteUnit(it.unit);
+        const rawQty = isDiscrete
+          ? Math.round(it.originalQuantity * (clampedPercent / 100))
+          : Math.round(it.originalQuantity * (clampedPercent / 100) * 1000) / 1000;
+        const paidQty = Math.max(0, Math.min(it.originalQuantity, rawQty));
         return {
           ...it,
           paidQuantity: paidQty,
@@ -982,7 +1009,11 @@ const Contracts: React.FC = () => {
       const percent = Math.round(factor * 100);
 
       const items = cfg.items.map(it => {
-        const paidQty = Math.round(it.originalQuantity * factor * 1000) / 1000;
+        const isDiscrete = isDiscreteUnit(it.unit);
+        const rawQty = isDiscrete
+          ? Math.round(it.originalQuantity * factor)
+          : Math.round(it.originalQuantity * factor * 1000) / 1000;
+        const paidQty = Math.max(0, Math.min(it.originalQuantity, rawQty));
         return {
           ...it,
           paidQuantity: paidQty,
@@ -1004,7 +1035,9 @@ const Contracts: React.FC = () => {
       if (cfg.guideId !== guideId) return cfg;
       const items = cfg.items.map(it => {
         if (it.id !== itemId) return it;
-        const clampedQty = Math.max(0, Math.min(it.originalQuantity, qty));
+        const isDiscrete = isDiscreteUnit(it.unit);
+        const safeQty = isDiscrete ? Math.round(qty) : qty;
+        const clampedQty = Math.max(0, Math.min(it.originalQuantity, safeQty));
         return {
           ...it,
           paidQuantity: clampedQty,
@@ -3361,12 +3394,12 @@ const Contracts: React.FC = () => {
                                         R$ {it.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                       </td>
                                       <td className="px-3 py-2.5 text-center font-bold text-gray-400">
-                                        {formatQuantity(it.originalQuantity)}
+                                        {formatQuantity(it.originalQuantity, it.unit)}
                                       </td>
                                       <td className="px-3 py-2.5 text-center">
                                         <input 
                                           type="number"
-                                          step="0.001"
+                                          step={isDiscreteUnit(it.unit) ? "1" : "0.001"}
                                           min={0}
                                           max={it.originalQuantity}
                                           value={it.paidQuantity}
@@ -3578,7 +3611,7 @@ const Contracts: React.FC = () => {
                     <tr key={idx} className="hover:bg-gray-50/50">
                        <td className="px-6 py-4 font-black text-xs uppercase text-gray-900">{item.description}</td>
                        <td className="px-6 py-4 text-center font-bold text-gray-500 uppercase text-xs">{item.unit}</td>
-                       <td className="px-6 py-4 text-center font-black text-indigo-600">{formatQuantity(item.quantity || 0)}</td>
+                       <td className="px-6 py-4 text-center font-black text-indigo-600">{formatQuantity(item.quantity || 0, item.unit)}</td>
                        <td className="px-6 py-4 text-right font-black text-indigo-700">R$ {(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                   ))}
@@ -3694,7 +3727,7 @@ const Contracts: React.FC = () => {
                     <td className="py-2.5 pr-4 font-bold uppercase leading-tight">{item.description}</td>
                     <td className="py-2.5 px-4 text-center text-gray-500 font-bold uppercase">{item.unit}</td>
                     <td className="py-2.5 px-4 text-center font-bold text-gray-400">{item.brand || '-'}</td>
-                    <td className="py-2.5 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity || 0)}</td>
+                    <td className="py-2.5 px-4 text-center font-black text-indigo-700">{formatQuantity(item.quantity || 0, item.unit)}</td>
                     <td className="py-2.5 px-4 text-right font-bold text-gray-600">{(item.unitPrice || item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="py-2.5 pl-4 text-right font-black text-indigo-700">{(item.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
