@@ -84,6 +84,19 @@ export const isDiscreteUnit = (unit?: string): boolean => {
   return true;
 };
 
+export const parseFlexibleNumber = (val: any): number => {
+  if (val === undefined || val === null) return 0;
+  let str = String(val).trim().replace(/[^\d,.-]/g, '');
+  if (!str) return 0;
+  if (str.includes(',') && str.includes('.')) {
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else if (str.includes(',')) {
+    str = str.replace(',', '.');
+  }
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+};
+
 const formatQuantity = (val: number, unit?: string) => {
   if (unit && isDiscreteUnit(unit)) {
     return Math.round(val).toLocaleString('pt-BR');
@@ -333,6 +346,8 @@ const Contracts: React.FC = () => {
     mode: 'TOTAL' | 'PARCIAL';
     percent: number;
     partialValue: number;
+    customValueInput?: string;
+    customPercentInput?: string;
     isExpanded?: boolean;
     items: ExtractGuideItemConfig[];
   }
@@ -905,6 +920,8 @@ const Contracts: React.FC = () => {
           mode: 'TOTAL',
           percent: 100,
           partialValue: totalGuideVal,
+          customValueInput: totalGuideVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          customPercentInput: '100',
           isExpanded: false,
           items: items
         };
@@ -945,6 +962,8 @@ const Contracts: React.FC = () => {
           mode: 'TOTAL',
           percent: 100,
           partialValue: totalVal,
+          customValueInput: totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          customPercentInput: '100',
           items
         };
       } else {
@@ -968,6 +987,8 @@ const Contracts: React.FC = () => {
           mode: 'PARCIAL',
           percent: 50,
           partialValue: partialVal,
+          customValueInput: partialVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          customPercentInput: '50',
           items
         };
       }
@@ -994,17 +1015,20 @@ const Contracts: React.FC = () => {
       return {
         ...cfg,
         percent: clampedPercent,
+        customPercentInput: String(clampedPercent),
         partialValue: partialVal,
+        customValueInput: partialVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         items
       };
     }));
   };
 
-  const handleGuidePartialValueChange = (guideId: string, valueInput: number) => {
+  const handleGuideValueInputChange = (guideId: string, rawText: string) => {
     setExtractGuideConfigs(prev => prev.map(cfg => {
       if (cfg.guideId !== guideId) return cfg;
       const originalTotal = cfg.items.reduce((s, it) => s + (it.originalQuantity * it.unitPrice), 0) || Number(cfg.guide.total_value) || 1;
-      const clampedVal = Math.max(0, Math.min(originalTotal, valueInput));
+      const parsedNum = parseFlexibleNumber(rawText);
+      const clampedVal = Math.max(0, Math.min(originalTotal, parsedNum));
       const factor = originalTotal > 0 ? (clampedVal / originalTotal) : 0;
 
       // 1. Separar itens discretos (unidades fechadas) e contínuos (pesáveis por KG, L, etc.)
@@ -1086,8 +1110,20 @@ const Contracts: React.FC = () => {
       return {
         ...cfg,
         percent: calculatedPercent,
+        customPercentInput: String(calculatedPercent),
         partialValue: realPartialValue,
+        customValueInput: rawText,
         items
+      };
+    }));
+  };
+
+  const handleGuideValueInputBlur = (guideId: string) => {
+    setExtractGuideConfigs(prev => prev.map(cfg => {
+      if (cfg.guideId !== guideId) return cfg;
+      return {
+        ...cfg,
+        customValueInput: cfg.partialValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       };
     }));
   };
@@ -1113,7 +1149,9 @@ const Contracts: React.FC = () => {
       return {
         ...cfg,
         percent,
+        customPercentInput: String(percent),
         partialValue: partialVal,
+        customValueInput: partialVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         items
       };
     }));
@@ -3372,27 +3410,40 @@ const Contracts: React.FC = () => {
                                   {/* Custom Percentage Input */}
                                   <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 py-1">
                                     <input 
-                                      type="number"
-                                      min={1}
-                                      max={100}
-                                      value={cfg.percent}
-                                      onChange={(e) => handleGuidePercentChange(cfg.guideId, parseFloat(e.target.value) || 0)}
-                                      className="w-10 text-xs font-black text-center outline-none"
+                                      type="text"
+                                      inputMode="numeric"
+                                      value={cfg.customPercentInput ?? String(cfg.percent)}
+                                      onFocus={(e) => e.target.select()}
+                                      onChange={(e) => {
+                                        const val = e.target.value.replace(/[^\d]/g, '');
+                                        setExtractGuideConfigs(prev => prev.map(c => c.guideId === cfg.guideId ? { ...c, customPercentInput: val } : c));
+                                        const num = parseInt(val, 10);
+                                        if (!isNaN(num)) {
+                                          handleGuidePercentChange(cfg.guideId, num);
+                                        }
+                                      }}
+                                      className="w-10 text-xs font-black text-center outline-none text-gray-700"
                                     />
                                     <span className="text-[10px] font-bold text-gray-400">%</span>
                                   </div>
 
                                   {/* Custom Value Input in R$ */}
-                                  <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 py-1">
-                                    <span className="text-[10px] font-black text-gray-400 mr-1">R$</span>
+                                  <div className="flex items-center bg-white border border-purple-200 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-400 focus-within:border-purple-400 shadow-sm">
+                                    <span className="text-[10px] font-black text-purple-400 mr-1">R$</span>
                                     <input 
-                                      type="number"
-                                      step="0.01"
-                                      min={0}
-                                      max={originalTotal}
-                                      value={cfg.partialValue}
-                                      onChange={(e) => handleGuidePartialValueChange(cfg.guideId, parseFloat(e.target.value) || 0)}
-                                      className="w-20 text-xs font-black text-right outline-none text-purple-700"
+                                      type="text"
+                                      inputMode="decimal"
+                                      placeholder="0,00"
+                                      value={cfg.customValueInput ?? (cfg.partialValue > 0 ? cfg.partialValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
+                                      onFocus={(e) => e.target.select()}
+                                      onChange={(e) => handleGuideValueInputChange(cfg.guideId, e.target.value)}
+                                      onBlur={() => handleGuideValueInputBlur(cfg.guideId)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          (e.target as HTMLInputElement).blur();
+                                        }
+                                      }}
+                                      className="w-24 text-xs font-black text-right outline-none text-purple-700 font-mono tracking-tight"
                                     />
                                   </div>
                                 </div>
