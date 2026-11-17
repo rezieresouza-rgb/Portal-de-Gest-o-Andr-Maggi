@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { ArrowLeft, Trophy, Medal, Star, ShieldCheck, HeartHandshake, TrendingDown, BookOpen, AlertCircle, RefreshCw, Printer } from 'lucide-react';
+import { ArrowLeft, Trophy, Medal, Star, ShieldCheck, HeartHandshake, TrendingDown, BookOpen, AlertCircle, RefreshCw, Printer, UserCheck } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SCHOOL_CLASSES } from '../constants/initialData';
 
@@ -19,6 +19,13 @@ interface ClassScore {
     occurrences: number;
     praises: number;
     civicBehavior: number;
+    attendance: number;
+  };
+  attendanceStats?: {
+    rate: number;
+    presences: number;
+    absences: number;
+    rank?: number;
   };
   badges: string[];
 }
@@ -33,6 +40,12 @@ interface StudentScore {
     occurrences: number;
     praises: number;
     civicBehavior: number;
+    attendance: number;
+  };
+  attendanceStats?: {
+    rate: number;
+    presences: number;
+    absences: number;
   };
   badges: string[];
 }
@@ -78,7 +91,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
             studentName: name,
             className: cls,
             totalPoints: 0,
-            breakdown: { grades: 0, library: 0, occurrences: 0, praises: 0, civicBehavior: 0 },
+            breakdown: { grades: 0, library: 0, occurrences: 0, praises: 0, civicBehavior: 0, attendance: 0 },
             badges: []
           };
         }
@@ -90,7 +103,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         classScores[c] = {
           className: c,
           totalPoints: 0,
-          breakdown: { grades: 0, library: 0, cleaning: 0, occurrences: 0, praises: 0, civicBehavior: 0 },
+          breakdown: { grades: 0, library: 0, cleaning: 0, occurrences: 0, praises: 0, civicBehavior: 0, attendance: 0 },
           badges: []
         };
       });
@@ -255,7 +268,126 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         return;
       }
 
-      // 3. Civic Behavior (civic_student_behavior)
+      // 3. Attendance (Chamadas & Presença) - Paginação
+      const allAttendance: any[] = [];
+      let fromAtt = 0;
+      const stepAtt = 1000;
+      let hasMoreAtt = true;
+
+      while (hasMoreAtt) {
+        const { data: pageAtt, error: errAtt } = await supabase
+          .from('class_attendance_records')
+          .select(`
+            classroom_name,
+            date,
+            presences:class_attendance_students(
+              student_id,
+              student_name,
+              is_present
+            )
+          `)
+          .gte('date', dateRange.start)
+          .lte('date', dateRange.end)
+          .range(fromAtt, fromAtt + stepAtt - 1);
+
+        if (errAtt || !pageAtt || pageAtt.length === 0) {
+          hasMoreAtt = false;
+        } else {
+          allAttendance.push(...pageAtt);
+          if (pageAtt.length < stepAtt) {
+            hasMoreAtt = false;
+          } else {
+            fromAtt += stepAtt;
+          }
+        }
+      }
+
+      if (allAttendance.length > 0) {
+        totalBimestreEvents += allAttendance.length;
+        const classAttStats: Record<string, { presences: number; absences: number }> = {};
+        const studentAttStats: Record<string, { presences: number; absences: number }> = {};
+
+        allAttendance.forEach((r: any) => {
+          const cName = r.classroom_name?.trim();
+          if (!cName) return;
+          if (!classAttStats[cName]) classAttStats[cName] = { presences: 0, absences: 0 };
+
+          r.presences?.forEach((p: any) => {
+            const sName = p.student_name?.trim();
+            const sKey = sName ? getStudentKey(sName, cName) : null;
+            if (sKey && !studentAttStats[sKey]) studentAttStats[sKey] = { presences: 0, absences: 0 };
+
+            if (p.is_present) {
+              classAttStats[cName].presences++;
+              if (sKey) studentAttStats[sKey].presences++;
+            } else {
+              classAttStats[cName].absences++;
+              if (sKey) studentAttStats[sKey].absences++;
+            }
+          });
+        });
+
+        // Metas de Frequência Escolar por Turma
+        Object.entries(classAttStats).forEach(([cName, stats]) => {
+          if (classScores[cName]) {
+            const total = stats.presences + stats.absences;
+            const rate = total > 0 ? (stats.presences / total) * 100 : 0;
+            classScores[cName].attendanceStats = {
+              rate,
+              presences: stats.presences,
+              absences: stats.absences
+            };
+
+            if (rate >= 90) {
+              classScores[cName].breakdown.attendance += 150; // Padrão Ouro (>=90%)
+            } else if (rate >= 85) {
+              classScores[cName].breakdown.attendance += 50;  // Padrão SEDUC (>=85%)
+            } else if (rate < 80 && total > 0) {
+              classScores[cName].breakdown.attendance -= 50;  // Alerta Infrequência (<80%)
+            }
+          }
+        });
+
+        // Pódio das Turmas com Maior Assiduidade (Menos Faltas)
+        const sortedAttClasses = Object.entries(classScores)
+          .filter(([_, score]) => score.attendanceStats && (score.attendanceStats.presences + score.attendanceStats.absences) > 0)
+          .sort((a, b) => (b[1].attendanceStats?.rate || 0) - (a[1].attendanceStats?.rate || 0));
+
+        if (sortedAttClasses[0]) {
+          sortedAttClasses[0][1].breakdown.attendance += 300;
+          if (sortedAttClasses[0][1].attendanceStats) sortedAttClasses[0][1].attendanceStats.rank = 1;
+        }
+        if (sortedAttClasses[1]) {
+          sortedAttClasses[1][1].breakdown.attendance += 200;
+          if (sortedAttClasses[1][1].attendanceStats) sortedAttClasses[1][1].attendanceStats.rank = 2;
+        }
+        if (sortedAttClasses[2]) {
+          sortedAttClasses[2][1].breakdown.attendance += 100;
+          if (sortedAttClasses[2][1].attendanceStats) sortedAttClasses[2][1].attendanceStats.rank = 3;
+        }
+
+        // Pontuação e Selo de Assiduidade para Alunos Individuais
+        Object.entries(studentAttStats).forEach(([sKey, stats]) => {
+          if (studentScores[sKey]) {
+            const total = stats.presences + stats.absences;
+            const rate = total > 0 ? (stats.presences / total) * 100 : 0;
+            studentScores[sKey].attendanceStats = {
+              rate,
+              presences: stats.presences,
+              absences: stats.absences
+            };
+
+            if (stats.absences === 0 && stats.presences >= 20) {
+              studentScores[sKey].breakdown.attendance += 50;
+              studentScores[sKey].badges.push('Selo Assiduidade');
+            } else if (rate >= 90) {
+              studentScores[sKey].breakdown.attendance += 20;
+            }
+          }
+        });
+      }
+
+      // 4. Civic Behavior (civic_student_behavior)
       const { data: civic, error: errCivic } = await supabase
         .from('civic_student_behavior')
         .select('class_name, student_name, score');
@@ -289,6 +421,9 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         
         if (score.breakdown.cleaning >= 0 && score.breakdown.occurrences >= -10) {
            score.badges.push('Selo Paz');
+        }
+        if (score.attendanceStats && score.attendanceStats.rate >= 90) {
+           score.badges.push('Selo Assiduidade');
         }
         if (score.breakdown.library > 20) {
            score.badges.push('Selo Leitura');
@@ -490,6 +625,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                                 {turma.badges.includes('Selo Paz') && <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded print:border print:border-emerald-200"><HeartHandshake size={12}/> Paz</span>}
                                 {turma.badges.includes('Selo Leitura') && <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded print:border print:border-blue-200"><BookOpen size={12}/> Leitora</span>}
                                 {turma.badges.includes('Selo Coruja') && <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded print:border print:border-amber-200"><Star size={12}/> Destaque Notas</span>}
+                                {turma.badges.includes('Selo Assiduidade') && <span className="flex items-center gap-1 text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded print:border print:border-teal-200"><UserCheck size={12}/> Assídua ({turma.attendanceStats?.rate.toFixed(0)}%)</span>}
                                 {turma.badges.length === 0 && <span className="text-slate-400">Sem medalhas no bimestre</span>}
                               </div>
                             </div>
@@ -499,7 +635,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                               {turma.totalPoints} <span className="text-xs text-indigo-400 font-bold uppercase print:text-slate-500">pts</span>
                             </div>
                             <div className="text-[9px] text-slate-400 hidden sm:block print:text-xs print:text-slate-600">
-                              + {(turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) + turma.breakdown.grades + turma.breakdown.praises + turma.breakdown.library} Ganhos | - {Math.abs(turma.breakdown.occurrences < 0 ? turma.breakdown.occurrences : 0)} Perdidos
+                              + {(turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) + turma.breakdown.grades + turma.breakdown.praises + turma.breakdown.library + (turma.breakdown.attendance > 0 ? turma.breakdown.attendance : 0)} Ganhos | - {Math.abs((turma.breakdown.occurrences < 0 ? turma.breakdown.occurrences : 0) + (turma.breakdown.attendance < 0 ? turma.breakdown.attendance : 0))} Perdidos
                             </div>
                           </div>
                         </div>
@@ -617,6 +753,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                                 {student.badges.includes('Selo Leitura') && <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded print:border print:border-blue-200"><BookOpen size={12}/> Leitor</span>}
                                 {student.badges.includes('Selo Coruja') && <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded print:border print:border-amber-200"><Star size={12}/> Destaque</span>}
                                 {student.badges.includes('Selo Cívico') && <span className="flex items-center gap-1 text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded print:border print:border-indigo-200"><ShieldCheck size={12}/> Cívico</span>}
+                                {student.badges.includes('Selo Assiduidade') && <span className="flex items-center gap-1 text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded print:border print:border-teal-200"><UserCheck size={12}/> 100% Presente</span>}
                               </div>
                             </div>
                           </div>
@@ -662,6 +799,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                       <th className="px-4 py-3">Turma</th>
                       <th className="px-4 py-3 text-center">Pontos Iniciais</th>
                       <th className="px-4 py-3 text-center text-emerald-600">Desempenho (Notas)</th>
+                      <th className="px-4 py-3 text-center text-teal-600">Assiduidade (Presença)</th>
                       <th className="px-4 py-3 text-center text-blue-600">Biblioteca</th>
                       <th className="px-4 py-3 text-center text-indigo-600">Cívico-Militar</th>
                       <th className="px-4 py-3 text-center text-rose-600">Ocorrências & Infrações</th>
@@ -675,6 +813,15 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                         <td className="px-4 py-3 font-bold text-slate-800">{turma.className}</td>
                         <td className="px-4 py-3 text-center text-slate-500 font-medium">1000</td>
                         <td className="px-4 py-3 text-center text-emerald-600 font-bold">+{turma.breakdown.grades}</td>
+                        <td className="px-4 py-3 text-center text-teal-600 font-bold">
+                          {turma.breakdown.attendance > 0 ? `+${turma.breakdown.attendance}` : turma.breakdown.attendance}
+                          {turma.attendanceStats && (
+                            <span className="block text-[10px] text-slate-400 font-normal">
+                              {turma.attendanceStats.rate.toFixed(1)}% ({turma.attendanceStats.absences} faltas)
+                              {turma.attendanceStats.rank ? ` • ${turma.attendanceStats.rank}º Pódio` : ''}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-center text-blue-600 font-bold">+{turma.breakdown.library}</td>
                         <td className="px-4 py-3 text-center text-indigo-600 font-bold">{turma.breakdown.civicBehavior > 0 ? `+${turma.breakdown.civicBehavior}` : turma.breakdown.civicBehavior}</td>
                         <td className="px-4 py-3 text-center text-rose-600 font-bold">{turma.breakdown.occurrences !== 0 ? turma.breakdown.occurrences : '0'}</td>
