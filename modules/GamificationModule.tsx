@@ -16,8 +16,8 @@ interface ClassScore {
     grades: number;
     library: number;
     cleaning: number;
-    pedagogicalOccurrences: number;
-    classroomOccurrences: number;
+    occurrences: number;
+    praises: number;
     civicBehavior: number;
   };
   badges: string[];
@@ -30,8 +30,8 @@ interface StudentScore {
   breakdown: {
     grades: number;
     library: number;
-    pedagogicalOccurrences: number;
-    classroomOccurrences: number;
+    occurrences: number;
+    praises: number;
     civicBehavior: number;
   };
   badges: string[];
@@ -78,7 +78,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
             studentName: name,
             className: cls,
             totalPoints: 0,
-            breakdown: { grades: 0, library: 0, pedagogicalOccurrences: 0, classroomOccurrences: 0, civicBehavior: 0 },
+            breakdown: { grades: 0, library: 0, occurrences: 0, praises: 0, civicBehavior: 0 },
             badges: []
           };
         }
@@ -90,7 +90,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         classScores[c] = {
           className: c,
           totalPoints: 0,
-          breakdown: { grades: 0, library: 0, cleaning: 0, pedagogicalOccurrences: 0, classroomOccurrences: 0, civicBehavior: 0 },
+          breakdown: { grades: 0, library: 0, cleaning: 0, occurrences: 0, praises: 0, civicBehavior: 0 },
           badges: []
         };
       });
@@ -174,15 +174,15 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
           const sName = o.student_name;
           if (cName && classScores[cName]) {
              if (o.category?.includes('ELOGIO') || o.severity === 'ELOGIO') {
-               classScores[cName].breakdown.classroomOccurrences += 20;
-               if (sName) initStudent(sName, cName).breakdown.classroomOccurrences += 20;
+               classScores[cName].breakdown.praises += 20;
+               if (sName) initStudent(sName, cName).breakdown.praises += 20;
              } else {
                if (o.severity === 'ALTA' || o.severity === 'CRÍTICA') {
-                 classScores[cName].breakdown.pedagogicalOccurrences -= 30;
-                 if (sName) initStudent(sName, cName).breakdown.pedagogicalOccurrences -= 30;
+                 classScores[cName].breakdown.occurrences -= 30;
+                 if (sName) initStudent(sName, cName).breakdown.occurrences -= 30;
                } else {
-                 classScores[cName].breakdown.pedagogicalOccurrences -= 10;
-                 if (sName) initStudent(sName, cName).breakdown.pedagogicalOccurrences -= 10;
+                 classScores[cName].breakdown.occurrences -= 10;
+                 if (sName) initStudent(sName, cName).breakdown.occurrences -= 10;
                }
              }
           }
@@ -228,7 +228,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       const finalScores = Object.values(classScores).map(score => {
         score.totalPoints = Object.values(score.breakdown).reduce((a, b) => a + b, 0) + 1000;
         
-        if (score.breakdown.cleaning >= 0 && score.breakdown.classroomOccurrences > -15 && score.breakdown.pedagogicalOccurrences > -10) {
+        if (score.breakdown.cleaning >= 0 && score.breakdown.occurrences >= -10) {
            score.badges.push('Selo Paz');
         }
         if (score.breakdown.library > 20) {
@@ -245,7 +245,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       const finalStudentScores = Object.values(studentScores).map(score => {
         score.totalPoints = Object.values(score.breakdown).reduce((a, b) => a + b, 0) + 1000;
         
-        if (score.breakdown.classroomOccurrences > 0) score.badges.push('Selo Paz');
+        if (score.breakdown.praises > 0 && score.breakdown.occurrences === 0) score.badges.push('Selo Paz');
         if (score.breakdown.library >= 10) score.badges.push('Selo Leitura');
         if (score.breakdown.grades >= 30) score.badges.push('Selo Coruja');
         if (score.breakdown.civicBehavior >= 50) score.badges.push('Selo Cívico');
@@ -440,7 +440,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                               {turma.totalPoints} <span className="text-xs text-indigo-400 font-bold uppercase print:text-slate-500">pts</span>
                             </div>
                             <div className="text-[9px] text-slate-400 hidden sm:block print:text-xs print:text-slate-600">
-                              + {(turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) + turma.breakdown.grades} Ganhos | - {Math.abs((turma.breakdown.pedagogicalOccurrences < 0 ? turma.breakdown.pedagogicalOccurrences : 0))} Perdidos
+                              + {(turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) + turma.breakdown.grades + turma.breakdown.praises} Ganhos | - {Math.abs(turma.breakdown.occurrences < 0 ? turma.breakdown.occurrences : 0)} Perdidos
                             </div>
                           </div>
                         </div>
@@ -605,8 +605,8 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                       <th className="px-4 py-3 text-center text-emerald-600">Desempenho (Notas)</th>
                       <th className="px-4 py-3 text-center text-blue-600">Biblioteca</th>
                       <th className="px-4 py-3 text-center text-indigo-600">Cívico-Militar</th>
-                      <th className="px-4 py-3 text-center text-rose-600">Ocorrências (Pedagógicas)</th>
-                      <th className="px-4 py-3 text-center text-amber-600">Ocorrências (Sala)</th>
+                      <th className="px-4 py-3 text-center text-rose-600">Ocorrências & Infrações</th>
+                      <th className="px-4 py-3 text-center text-amber-500">Elogios & Reconhecimento</th>
                       <th className="px-4 py-3 text-center font-black text-slate-900">Total Final</th>
                     </tr>
                   </thead>
@@ -618,8 +618,8 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                         <td className="px-4 py-3 text-center text-emerald-600 font-bold">+{turma.breakdown.grades}</td>
                         <td className="px-4 py-3 text-center text-blue-600 font-bold">+{turma.breakdown.library}</td>
                         <td className="px-4 py-3 text-center text-indigo-600 font-bold">{turma.breakdown.civicBehavior > 0 ? `+${turma.breakdown.civicBehavior}` : turma.breakdown.civicBehavior}</td>
-                        <td className="px-4 py-3 text-center text-rose-600 font-bold">{turma.breakdown.pedagogicalOccurrences}</td>
-                        <td className="px-4 py-3 text-center text-amber-600 font-bold">{turma.breakdown.classroomOccurrences > 0 ? `+${turma.breakdown.classroomOccurrences}` : turma.breakdown.classroomOccurrences}</td>
+                        <td className="px-4 py-3 text-center text-rose-600 font-bold">{turma.breakdown.occurrences !== 0 ? turma.breakdown.occurrences : '0'}</td>
+                        <td className="px-4 py-3 text-center text-amber-600 font-bold">+{turma.breakdown.praises}</td>
                         <td className="px-4 py-3 text-center font-black text-slate-900 bg-slate-50">{turma.totalPoints}</td>
                       </tr>
                     ))}
