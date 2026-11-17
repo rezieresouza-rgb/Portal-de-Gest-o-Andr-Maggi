@@ -292,6 +292,14 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
             wsData.push(['', '27', 'Data:', supplierInfo.data, '', '', '', '28', 'Assinatura do Responsável:']);
 
             const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!headerFooter'] = {
+                oddHeader: '&C&"Arial,Negrito"&14PESQUISA DE PREÇOS&R&"Arial,Normal"&10ANEXO II'
+            };
+            // @ts-ignore
+            ws['!pageSetup'] = {
+                orientation: 'landscape',
+                fitToPage: true
+            };
             XLSX.utils.book_append_sheet(wb, ws, 'Orç. 1');
 
             const fileName = `RU_RECURSO_UNICO_${supplierInfo.razaoSocial ? supplierInfo.razaoSocial.replace(/\s+/g, '_') : 'COTACAO'}_${schoolInfo.ano}.xlsx`;
@@ -316,7 +324,7 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                         filename: `RU_RECURSO_UNICO_${supplierInfo.razaoSocial || 'COTACAO'}_${schoolInfo.ano}.pdf`,
                         image: { type: 'jpeg', quality: 0.98 },
                         html2canvas: { scale: 2, useCORS: true },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
                     }).from(element).save();
                     addToast("PDF oficial gerado com sucesso!", "success");
                 } else {
@@ -863,7 +871,25 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                 {/* ---------------- PREVIEW VIEW (MODELO EXATO RU - RECURSO ÚNICO SEDUC-MT) ---------------- */}
                 {viewMode === 'preview' && (
                     <div className="w-full flex justify-center animate-in zoom-in-95 duration-500 ease-out p-4 sm:p-8 bg-gray-950/40 rounded-[3rem] border border-white/5">
-                        <div id="budget-print-content" className="w-[210mm] min-h-[297mm] bg-white text-gray-950 p-[12mm] shadow-[0_0_100px_rgba(0,0,0,0.5)] relative font-sans text-xs leading-normal">
+                        <div id="budget-print-content" className="w-[285mm] min-h-[195mm] bg-white text-gray-950 p-[8mm] shadow-[0_0_100px_rgba(0,0,0,0.5)] relative font-sans text-xs leading-normal">
+                            <style>{`
+                              @media print {
+                                @page {
+                                  size: A4 landscape !important;
+                                  margin: 5mm !important;
+                                }
+                              }
+                            `}</style>
+                            {/* CABEÇALHO OFICIAL DO EXCEL (PESQUISA DE PREÇOS / ANEXO II) */}
+                            <div className="flex justify-between items-center border-b-2 border-black pb-1 mb-2">
+                                <div className="w-28 text-[9px] font-bold text-gray-600 uppercase tracking-widest">SEDUC-MT • RU</div>
+                                <div className="flex-1 text-center font-black text-base tracking-widest uppercase text-black font-['Arial',sans-serif]">
+                                    PESQUISA DE PREÇOS
+                                </div>
+                                <div className="w-28 text-right font-black text-xs uppercase text-black font-['Arial',sans-serif]">
+                                    ANEXO II
+                                </div>
+                            </div>
                             
                             {/* TABELA DE CABEÇALHO OFICIAL RU */}
                             <table className="w-full border-collapse border-2 border-black text-[11px] mb-2">
