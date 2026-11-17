@@ -97,37 +97,43 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
 
       let totalBimestreEvents = 0;
       
-      // 1. Grades (Assessments)
-      const { data: assessments } = await supabase
-        .from('assessments')
-        .select('id, classroom_id, class_name, bimestre')
-        .eq('bimestre', bimestre);
-      
-      if (assessments && assessments.length > 0) {
-        const assessmentIds = assessments.map(a => a.id);
-        const { data: grades } = await supabase
-          .from('grades')
-          .select('assessment_id, score, student_name, assessments(class_name)')
-          .in('assessment_id', assessmentIds);
+      // 1. Grades (Assessments & Classrooms)
+      const { data: gradesData } = await supabase
+        .from('grades')
+        .select(`
+          assessment_id,
+          score,
+          student_name,
+          student_code,
+          assessments!inner (
+            bimestre,
+            classrooms!inner (
+              name
+            )
+          )
+        `)
+        .eq('assessments.bimestre', bimestre)
+        .limit(5000);
 
-        if (grades) {
-           totalBimestreEvents += grades.length;
-           grades.forEach((g: any) => {
-             const cName = g.assessments?.class_name;
-             const sName = g.student_name;
-             if (cName && classScores[cName]) {
-               const score = g.score || 0;
-               if (score >= 9) classScores[cName].breakdown.grades += 10;
-               else if (score >= 7) classScores[cName].breakdown.grades += 5;
-               
-               if (sName) {
-                 const student = initStudent(sName, cName);
-                 if (score >= 9) student.breakdown.grades += 10;
-                 else if (score >= 7) student.breakdown.grades += 5;
-               }
-             }
-           });
-        }
+      if (gradesData && gradesData.length > 0) {
+        totalBimestreEvents += gradesData.length;
+        gradesData.forEach((g: any) => {
+          const cName = g.assessments?.classrooms?.name;
+          const sName = g.student_name;
+          if (cName && classScores[cName]) {
+            const score = typeof g.score === 'number' ? g.score : parseFloat(g.score) || 0;
+            if (score >= 9) classScores[cName].breakdown.grades += 10;
+            else if (score >= 7) classScores[cName].breakdown.grades += 5;
+            else if (score >= 6) classScores[cName].breakdown.grades += 2;
+            
+            if (sName) {
+              const student = initStudent(sName, cName);
+              if (score >= 9) student.breakdown.grades += 10;
+              else if (score >= 7) student.breakdown.grades += 5;
+              else if (score >= 6) student.breakdown.grades += 2;
+            }
+          }
+        });
       }
 
       // 2. Library (Loans)
