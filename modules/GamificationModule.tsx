@@ -152,27 +152,51 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         });
       }
 
-      // 2. Library (Loans)
-      const { data: loans } = await supabase
+      // 2. Library (Loans & APA Loans)
+      const { data: regularLoans } = await supabase
         .from('library_loans')
-        .select('reader_class, reader_name, borrow_date')
+        .select(`
+          loan_date,
+          status,
+          library_readers (
+            name,
+            class_info
+          )
+        `)
         .in('status', ['ATIVO', 'DEVOLVIDO'])
-        .gte('borrow_date', dateRange.start)
-        .lte('borrow_date', dateRange.end);
-      if (loans) {
-         totalBimestreEvents += loans.length;
-         loans.forEach((l: any) => {
-           const cName = l.reader_class;
-           const sName = l.reader_name;
-           if (cName && classScores[cName]) {
-             classScores[cName].breakdown.library += 2;
-             
-             if (sName) {
-               const student = initStudent(sName, cName);
-               student.breakdown.library += 5; // Mais pontos pro aluno individual
-             }
-           }
-         });
+        .gte('loan_date', dateRange.start)
+        .lte('loan_date', dateRange.end);
+
+      const { data: apaLoans } = await supabase
+        .from('library_apa_loans')
+        .select(`
+          loan_date,
+          status,
+          library_readers (
+            name,
+            class_info
+          )
+        `)
+        .in('status', ['ATIVO', 'DEVOLVIDO'])
+        .gte('loan_date', dateRange.start)
+        .lte('loan_date', dateRange.end);
+
+      const allLoans = [...(regularLoans || []), ...(apaLoans || [])];
+      if (allLoans.length > 0) {
+        totalBimestreEvents += allLoans.length;
+        allLoans.forEach((l: any) => {
+          const reader = l.library_readers;
+          const cName = reader?.class_info?.trim();
+          const sName = reader?.name?.trim();
+          if (cName && classScores[cName]) {
+            classScores[cName].breakdown.library += 2;
+            
+            if (sName) {
+              const student = initStudent(sName, cName);
+              student.breakdown.library += 5; // Mais pontos pro aluno individual
+            }
+          }
+        });
       }
 
       // 4. Occurrences (Pedagogical and Classroom) - Paginação
@@ -475,7 +499,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                               {turma.totalPoints} <span className="text-xs text-indigo-400 font-bold uppercase print:text-slate-500">pts</span>
                             </div>
                             <div className="text-[9px] text-slate-400 hidden sm:block print:text-xs print:text-slate-600">
-                              + {(turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) + turma.breakdown.grades + turma.breakdown.praises} Ganhos | - {Math.abs(turma.breakdown.occurrences < 0 ? turma.breakdown.occurrences : 0)} Perdidos
+                              + {(turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) + turma.breakdown.grades + turma.breakdown.praises + turma.breakdown.library} Ganhos | - {Math.abs(turma.breakdown.occurrences < 0 ? turma.breakdown.occurrences : 0)} Perdidos
                             </div>
                           </div>
                         </div>
