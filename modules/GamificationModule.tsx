@@ -97,27 +97,43 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
 
       let totalBimestreEvents = 0;
       
-      // 1. Grades (Assessments & Classrooms)
-      const { data: gradesData } = await supabase
-        .from('grades')
-        .select(`
-          assessment_id,
-          score,
-          student_name,
-          student_code,
-          assessments!inner (
-            bimestre,
-            classrooms!inner (
-              name
-            )
-          )
-        `)
-        .eq('assessments.bimestre', bimestre)
-        .limit(5000);
+      // 1. Grades (Assessments & Classrooms) - Paginação para superar o limite de 1000 registros do Supabase
+      const allGrades: any[] = [];
+      let fromGrades = 0;
+      const stepGrades = 1000;
+      let hasMoreGrades = true;
 
-      if (gradesData && gradesData.length > 0) {
-        totalBimestreEvents += gradesData.length;
-        gradesData.forEach((g: any) => {
+      while (hasMoreGrades) {
+        const { data: pageGrades, error: errGrades } = await supabase
+          .from('grades')
+          .select(`
+            score,
+            student_name,
+            assessments!inner (
+              bimestre,
+              classrooms!inner (
+                name
+              )
+            )
+          `)
+          .eq('assessments.bimestre', bimestre)
+          .range(fromGrades, fromGrades + stepGrades - 1);
+
+        if (errGrades || !pageGrades || pageGrades.length === 0) {
+          hasMoreGrades = false;
+        } else {
+          allGrades.push(...pageGrades);
+          if (pageGrades.length < stepGrades) {
+            hasMoreGrades = false;
+          } else {
+            fromGrades += stepGrades;
+          }
+        }
+      }
+
+      if (allGrades.length > 0) {
+        totalBimestreEvents += allGrades.length;
+        allGrades.forEach((g: any) => {
           const cName = g.assessments?.classrooms?.name;
           const sName = g.student_name;
           if (cName && classScores[cName]) {
@@ -159,17 +175,36 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
          });
       }
 
-      // 4. Occurrences (Pedagogical and Classroom)
-      const { data: occurrences, error: errOcc } = await supabase
-        .from('occurrences')
-        .select('classroom_name, student_name, category, severity, date')
-        .eq('status', 'REGISTRADO')
-        .gte('date', dateRange.start)
-        .lte('date', dateRange.end);
+      // 4. Occurrences (Pedagogical and Classroom) - Paginação
+      const allOccurrences: any[] = [];
+      let fromOcc = 0;
+      const stepOcc = 1000;
+      let hasMoreOcc = true;
+
+      while (hasMoreOcc) {
+        const { data: pageOcc, error: errOcc } = await supabase
+          .from('occurrences')
+          .select('classroom_name, student_name, category, severity, date')
+          .eq('status', 'REGISTRADO')
+          .gte('date', dateRange.start)
+          .lte('date', dateRange.end)
+          .range(fromOcc, fromOcc + stepOcc - 1);
+
+        if (errOcc || !pageOcc || pageOcc.length === 0) {
+          hasMoreOcc = false;
+        } else {
+          allOccurrences.push(...pageOcc);
+          if (pageOcc.length < stepOcc) {
+            hasMoreOcc = false;
+          } else {
+            fromOcc += stepOcc;
+          }
+        }
+      }
         
-      if (occurrences && !errOcc) {
-        totalBimestreEvents += occurrences.length;
-        occurrences.forEach((o: any) => {
+      if (allOccurrences.length > 0) {
+        totalBimestreEvents += allOccurrences.length;
+        allOccurrences.forEach((o: any) => {
           const cName = o.classroom_name;
           const sName = o.student_name;
           if (cName && classScores[cName]) {
