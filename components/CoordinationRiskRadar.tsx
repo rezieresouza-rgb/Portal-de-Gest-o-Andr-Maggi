@@ -135,7 +135,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
       } catch (e) { }
       const educarteMap = new Map(educarteMembers.map(m => [(m.name || '').toUpperCase().trim(), m]));
 
-      // 3. Carregar estudantes e enturmações ativas
+      // 3. Carregar estudantes e histórico de enturmações
       const { data: dbStudents } = await supabase
         .from('students')
         .select(`
@@ -149,10 +149,11 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
           enrollments (
             status,
             classroom_id,
+            enrollment_date,
+            adjustment_date,
             classrooms (id, name, shift)
           )
         `)
-        .eq('status', 'ATIVO')
         .order('name', { ascending: true });
 
       // 4. Carregar avaliações oficiais bimestrais
@@ -256,11 +257,23 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
       }
 
       // 7. Construir perfis consolidados de cada estudante
+      const formatDateBr = (d?: string | null) => {
+        if (!d) return null;
+        const clean = d.split('T')[0];
+        const parts = clean.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return d;
+      };
+
       const baseList = (dbStudents && dbStudents.length > 0)
         ? dbStudents.map((s: any) => {
             const activeEnrollment = s.enrollments?.find((e: any) => e.status === 'ATIVO') || s.enrollments?.[0];
             const className = activeEnrollment?.classrooms?.name || 'Sem Turma';
             const shift = activeEnrollment?.classrooms?.shift || 'MATUTINO';
+            const enrollmentStatus = activeEnrollment?.status || s.status || 'ATIVO';
+            const isTransferred = String(enrollmentStatus).toUpperCase().includes('TRANSFERIDO') || String(s.status).toUpperCase().includes('TRANSFERIDO');
+            const enrollmentDate = formatDateBr(activeEnrollment?.enrollment_date);
+            const transferDate = formatDateBr(activeEnrollment?.adjustment_date);
             const isPaed = s.paed === true;
             const educarte = educarteMap.get((s.name || '').toUpperCase().trim());
 
@@ -345,8 +358,10 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             }
 
             // Nível de Risco Oficial
-            let riskLevel: 'CRITICO' | 'ALERTA' | 'REGULAR' | 'BOM' | 'SEM_NOTAS' = 'BOM';
-            if (!hasGrades) {
+            let riskLevel: 'CRITICO' | 'ALERTA' | 'REGULAR' | 'BOM' | 'SEM_NOTAS' | 'TRANSFERIDO' = 'BOM';
+            if (isTransferred) {
+              riskLevel = 'TRANSFERIDO';
+            } else if (!hasGrades) {
               riskLevel = 'SEM_NOTAS';
             } else if ((overallAverage !== null && overallAverage < 5.0) || failingSubjects.length >= 3 || presenceRate < 75) {
               riskLevel = 'CRITICO';
@@ -369,6 +384,10 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
               shift,
               phone: s.contact_phone || '(66) 99999-0000',
               guardianName: s.guardian_name || 'Responsável',
+              enrollmentStatus,
+              isTransferred,
+              enrollmentDate,
+              transferDate,
               isPaed,
               paedDiagnosis: isPaed ? 'Adaptação Curricular / Laudo PAEDE - AEE' : '',
               paedCid: isPaed ? 'CID F84 / F90' : '',
@@ -467,7 +486,9 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
     return students
       .filter(s => selectedClass === 'TODAS' || s.className === selectedClass)
       .filter(s => {
-        if (riskFilter === 'NO_GRADES') return !s.hasGrades;
+        if (riskFilter === 'ACTIVE_ONLY') return !s.isTransferred;
+        if (riskFilter === 'TRANSFERRED') return s.isTransferred;
+        if (riskFilter === 'NO_GRADES') return !s.hasGrades && !s.isTransferred;
         if (riskFilter === 'CRITICAL') return s.riskLevel === 'CRITICO';
         if (riskFilter === 'GRADES') return s.hasGrades && s.averageGrade !== null && s.averageGrade < 6.0;
         if (riskFilter === 'ATTENDANCE') return s.presenceRate < 85;
@@ -489,10 +510,12 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
   const stats = useMemo(() => {
     const total = filteredStudents.length;
     if (total === 0) {
-      return { total: 0, noGradesCount: 0, critical: 0, lowGrades: 0, lowAttendance: 0, paedCount: 0, educarteCount: 0, evolvingCount: 0, decliningCount: 0, avgSchoolGrade: '0.0', avgSchoolPresence: '0.0' };
+      return { total: 0, noGradesCount: 0, critical: 0, lowGrades: 0, lowAttendance: 0, paedCount: 0, educarteCount: 0, evolvingCount: 0, decliningCount: 0, transferredCount: 0, activeCount: 0, avgSchoolGrade: '0.0', avgSchoolPresence: '0.0' };
     }
 
-    const noGradesCount = filteredStudents.filter(s => !s.hasGrades).length;
+    const noGradesCount = filteredStudents.filter(s => !s.hasGrades && !s.isTransferred).length;
+    const transferredCount = filteredStudents.filter(s => s.isTransferred).length;
+    const activeCount = filteredStudents.filter(s => !s.isTransferred).length;
     const critical = filteredStudents.filter(s => s.riskLevel === 'CRITICO').length;
     const lowGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null && s.averageGrade < 6.0).length;
     const lowAttendance = filteredStudents.filter(s => s.presenceRate < 85).length;
@@ -515,6 +538,8 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
       educarteCount,
       evolvingCount,
       decliningCount,
+      transferredCount,
+      activeCount,
       avgSchoolGrade: withGrades.length > 0 ? (sumGrade / withGrades.length).toFixed(1) : '0.0',
       avgSchoolPresence: (sumPres / total).toFixed(1)
     };
@@ -914,6 +939,8 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase outline-none focus:bg-white cursor-pointer text-indigo-900"
                 >
                   <option value="ALL">TODOS OS ESTUDANTES</option>
+                  <option value="ACTIVE_ONLY">👥 APENAS ALUNOS ATIVOS ({stats.activeCount})</option>
+                  <option value="TRANSFERRED">🔄 ALUNOS TRANSFERIDOS ({stats.transferredCount})</option>
                   <option value="NO_GRADES">⚠️ SEM LANÇAMENTO DE NOTAS ({stats.noGradesCount} Pendentes)</option>
                   <option value="EVOLVING">↗️ EM EVOLUÇÃO (Melhora nas notas)</option>
                   <option value="DECLINING">↘️ EM QUEDA DE RENDIMENTO</option>
@@ -980,11 +1007,25 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                           {student.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-black text-slate-900 uppercase flex items-center gap-1.5">
-                            {student.name}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-black text-slate-900 uppercase">
+                              {student.name}
+                            </p>
                             {student.isPaed && <span className="text-xs" title="PAEDE / AEE">♿</span>}
-                          </p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">{student.guardianName} • {student.phone}</p>
+                            {student.isTransferred && (
+                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase bg-purple-100 text-purple-800 border border-purple-200">
+                                🔄 {student.enrollmentStatus || 'TRANSFERIDO'} {student.transferDate ? `(${student.transferDate})` : ''}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span>{student.guardianName} • {student.phone}</span>
+                            {student.enrollmentDate && (
+                              <span className="text-indigo-600 font-extrabold">
+                                • 📅 Matrícula: {student.enrollmentDate}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -1077,11 +1118,15 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
 
                     <td className="p-4 text-center">
                       <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        student.isTransferred ? 'bg-purple-100 text-purple-900 border border-purple-200' :
                         !student.hasGrades ? 'bg-amber-100 text-amber-800 font-black' :
                         student.riskLevel === 'CRITICO' ? 'bg-rose-100 text-rose-800' :
                         student.riskLevel === 'ALERTA' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800'
                       }`}>
-                        {!student.hasGrades ? '⚠️ SEM NOTAS' : student.riskLevel === 'CRITICO' ? '⚠️ CRÍTICO' : student.riskLevel === 'ALERTA' ? '⚡ ALERTA' : '✓ OK'}
+                        {student.isTransferred ? '🔄 TRANSFERIDO' :
+                         !student.hasGrades ? '⚠️ SEM NOTAS' :
+                         student.riskLevel === 'CRITICO' ? '⚠️ CRÍTICO' :
+                         student.riskLevel === 'ALERTA' ? '⚡ ALERTA' : '✓ OK'}
                       </span>
                     </td>
 
@@ -1135,6 +1180,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                   </div>
                   <p className="text-xs text-slate-400 font-bold uppercase">
                     Turma: {selectedStudent.className} • Turno: {selectedStudent.shift} • Matrícula: {selectedStudent.registration}
+                    {selectedStudent.enrollmentDate && ` • Matrícula em: ${selectedStudent.enrollmentDate}`}
                   </p>
                 </div>
               </div>
@@ -1146,6 +1192,28 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                 <X size={18} />
               </button>
             </div>
+
+            {/* AVISO DE TRANSFERÊNCIA */}
+            {selectedStudent.isTransferred && (
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-purple-900 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-200 text-purple-900 flex items-center justify-center font-black text-lg shrink-0">
+                    🔄
+                  </div>
+                  <div>
+                    <span className="text-xs font-black uppercase block">Situação Cadastral: {selectedStudent.enrollmentStatus}</span>
+                    <span className="text-[11px] font-medium text-purple-700">
+                      {selectedStudent.transferDate ? `Movimentação registrada em: ${selectedStudent.transferDate}` : 'Estudante com movimentação de transferência no ano letivo.'}
+                    </span>
+                  </div>
+                </div>
+                {selectedStudent.enrollmentDate && (
+                  <span className="text-xs font-bold text-purple-800 bg-purple-100/90 px-3 py-1.5 rounded-xl border border-purple-200 self-start sm:self-center">
+                    Matrícula inicial: {selectedStudent.enrollmentDate}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* SEÇÃO 1: MÉTRICAS & DADOS DE CONTATO */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
