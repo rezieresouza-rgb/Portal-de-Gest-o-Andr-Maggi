@@ -350,7 +350,12 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
               riskLevel = 'SEM_NOTAS';
             } else if ((overallAverage !== null && overallAverage < 5.0) || failingSubjects.length >= 3 || presenceRate < 75) {
               riskLevel = 'CRITICO';
-            } else if ((overallAverage !== null && overallAverage < 6.0) || failingSubjects.length >= 1 || presenceRate < 85 || trend === 'DOWN') {
+            } else if (
+              (overallAverage !== null && overallAverage < 6.0) ||
+              failingSubjects.length >= 1 ||
+              presenceRate < 85 ||
+              (trend === 'DOWN' && overallAverage !== null && overallAverage < 7.0)
+            ) {
               riskLevel = 'ALERTA';
             } else if (overallAverage !== null && overallAverage < 7.0) {
               riskLevel = 'REGULAR';
