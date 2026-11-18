@@ -104,7 +104,7 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
             setCurrentAssessmentId(existingAssessment.id);
             const { data: gradeData } = await supabase
                .from('grades')
-               .select('student_code, score, proficiency_level')
+               .select('student_code, student_name, score, proficiency_level, observations')
                .eq('assessment_id', existingAssessment.id);
 
             const loadedGrades: Record<string, number> = {};
@@ -115,12 +115,30 @@ const TeacherGrades: React.FC<TeacherGradesProps> = ({ user }) => {
             });
 
             if (gradeData) {
+               // First pass: match by student_code
                gradeData.forEach((g: any) => {
                   if (g.student_code) {
                      loadedGrades[g.student_code] = g.score || 0;
                      if (g.observations && g.observations.startsWith('REC:')) {
                         const recVal = parseFloat(g.observations.replace('REC:', ''));
                         if (!isNaN(recVal)) loadedRecovery[g.student_code] = recVal;
+                     }
+                  }
+               });
+
+               // Second pass: fallback match by normalized student_name
+               gradeData.forEach((g: any) => {
+                  if (g.student_name) {
+                     const normG = g.student_name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+                     const matched = studentList.find(s => 
+                        (s.Nome || s.name || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() === normG
+                     );
+                     if (matched && matched.CodigoAluno && (loadedGrades[matched.CodigoAluno] === 0 || loadedGrades[matched.CodigoAluno] === undefined)) {
+                        loadedGrades[matched.CodigoAluno] = g.score || 0;
+                        if (g.observations && g.observations.startsWith('REC:')) {
+                           const recVal = parseFloat(g.observations.replace('REC:', ''));
+                           if (!isNaN(recVal)) loadedRecovery[matched.CodigoAluno] = recVal;
+                        }
                      }
                   }
                });

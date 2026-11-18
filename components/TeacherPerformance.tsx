@@ -245,7 +245,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         targetStudent = Object.values(studentGradesMap).find(x => x.registration === g.student_code);
       }
       if (!targetStudent && g.student_name) {
-        targetStudent = Object.values(studentGradesMap).find(x => x.name.toUpperCase().trim() === g.student_name.toUpperCase().trim());
+        targetStudent = Object.values(studentGradesMap).find(x => x.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() === g.student_name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim());
       }
 
       if (targetStudent) {
@@ -320,7 +320,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         if (found) targetId = found.id;
       }
       if (!targetId && g.student_name) {
-        const found = students.find(s => s.name.toUpperCase().trim() === g.student_name.toUpperCase().trim());
+        const found = students.find(s => s.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() === g.student_name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim());
         if (found) targetId = found.id;
       }
 
@@ -448,7 +448,7 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
       const studentGradesList = allBimestresGrades.filter(g => {
         if (g.student_id && g.student_id === s.id) return true;
         if (g.student_code && s.registration && g.student_code === s.registration) return true;
-        if (g.student_name && s.name && g.student_name.toUpperCase().trim() === s.name.toUpperCase().trim()) return true;
+        if (g.student_name && s.name && g.student_name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() === s.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim()) return true;
         return false;
       });
 

@@ -172,7 +172,7 @@ const SecretariatBulletinPrinter: React.FC = () => {
                            gr.assessment_id === ass.id && (
                               (gr.student_id && gr.student_id === student.id) ||
                               (gr.student_code && student.registration_number && gr.student_code === student.registration_number) ||
-                              (gr.student_name && student.name && gr.student_name.trim().toLowerCase() === student.name.trim().toLowerCase())
+                              (gr.student_name && student.name && gr.student_name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === student.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase())
                            )
                         );
                         studentGrades[subj][bim] = (g !== undefined && g.score !== null) ? g.score : null;
