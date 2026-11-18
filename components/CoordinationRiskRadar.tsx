@@ -271,7 +271,12 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             const className = activeEnrollment?.classrooms?.name || 'Sem Turma';
             const shift = activeEnrollment?.classrooms?.shift || 'MATUTINO';
             const enrollmentStatus = activeEnrollment?.status || s.status || 'ATIVO';
-            const isTransferred = String(enrollmentStatus).toUpperCase().includes('TRANSFERIDO') || String(s.status).toUpperCase().includes('TRANSFERIDO');
+            const isInactiveStatus = (statusStr: string) => {
+              const upper = String(statusStr || '').toUpperCase().trim();
+              return upper.includes('TRANSFERIDO') || 
+                     ['FALECIDO', 'ÓBITO', 'OBITO', 'ABANDONO', 'EVADIDO', 'DESISTENTE', 'CANCELADO', 'INATIVO'].includes(upper);
+            };
+            const isTransferred = isInactiveStatus(enrollmentStatus) || isInactiveStatus(s.status);
             const enrollmentDate = formatDateBr(activeEnrollment?.enrollment_date);
             const transferDate = formatDateBr(activeEnrollment?.adjustment_date);
             const isPaed = s.paed === true;
@@ -1016,8 +1021,14 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                             </p>
                             {student.isPaed && <span className="text-xs" title="PAEDE / AEE">♿</span>}
                             {student.isTransferred && (
-                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase bg-purple-100 text-purple-800 border border-purple-200">
-                                🔄 {student.enrollmentStatus || 'TRANSFERIDO'} {student.transferDate ? `(${student.transferDate})` : ''}
+                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase border ${
+                                ['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(student.enrollmentStatus).toUpperCase())
+                                  ? 'bg-rose-100 text-rose-800 border-rose-200'
+                                  : 'bg-purple-100 text-purple-800 border-purple-200'
+                              }`}>
+                                {['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(student.enrollmentStatus).toUpperCase())
+                                  ? '🕊️ FALECIDO'
+                                  : `🔄 ${student.enrollmentStatus || 'TRANSFERIDO'}`} {student.transferDate ? `(${student.transferDate})` : ''}
                               </span>
                             )}
                           </div>
@@ -1121,13 +1132,19 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
 
                     <td className="p-4 text-center">
                       <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        student.isTransferred ? 'bg-purple-100 text-purple-900 border border-purple-200' :
-                        !student.hasGrades ? 'bg-amber-100 text-amber-800 font-black' :
+                        student.isTransferred
+                          ? (['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(student.enrollmentStatus).toUpperCase())
+                              ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                              : 'bg-purple-100 text-purple-900 border border-purple-200')
+                          : !student.hasGrades ? 'bg-amber-100 text-amber-800 font-black' :
                         student.riskLevel === 'CRITICO' ? 'bg-rose-100 text-rose-800' :
                         student.riskLevel === 'ALERTA' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800'
                       }`}>
-                        {student.isTransferred ? '🔄 TRANSFERIDO' :
-                         !student.hasGrades ? '⚠️ SEM NOTAS' :
+                        {student.isTransferred
+                          ? (['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(student.enrollmentStatus).toUpperCase())
+                              ? '🕊️ FALECIDO'
+                              : '🔄 TRANSFERIDO')
+                          : !student.hasGrades ? '⚠️ SEM NOTAS' :
                          student.riskLevel === 'CRITICO' ? '⚠️ CRÍTICO' :
                          student.riskLevel === 'ALERTA' ? '⚡ ALERTA' : '✓ OK'}
                       </span>
@@ -1196,22 +1213,38 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
               </button>
             </div>
 
-            {/* AVISO DE TRANSFERÊNCIA */}
+            {/* AVISO DE TRANSFERÊNCIA / FALECIMENTO */}
             {selectedStudent.isTransferred && (
-              <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-purple-900 shadow-xs">
+              <div className={`p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs border ${
+                ['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(selectedStudent.enrollmentStatus).toUpperCase())
+                  ? 'bg-rose-50 border-rose-200 text-rose-900'
+                  : 'bg-purple-50 border-purple-200 text-purple-900'
+              }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-200 text-purple-900 flex items-center justify-center font-black text-lg shrink-0">
-                    🔄
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shrink-0 ${
+                    ['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(selectedStudent.enrollmentStatus).toUpperCase())
+                      ? 'bg-rose-200 text-rose-900'
+                      : 'bg-purple-200 text-purple-900'
+                  }`}>
+                    {['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(selectedStudent.enrollmentStatus).toUpperCase()) ? '🕊️' : '🔄'}
                   </div>
                   <div>
                     <span className="text-xs font-black uppercase block">Situação Cadastral: {selectedStudent.enrollmentStatus}</span>
-                    <span className="text-[11px] font-medium text-purple-700">
-                      {selectedStudent.transferDate ? `Movimentação registrada em: ${selectedStudent.transferDate}` : 'Estudante com movimentação de transferência no ano letivo.'}
+                    <span className={`text-[11px] font-medium ${
+                      ['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(selectedStudent.enrollmentStatus).toUpperCase())
+                        ? 'text-rose-700'
+                        : 'text-purple-700'
+                    }`}>
+                      {selectedStudent.transferDate ? `Registro efetuado em: ${selectedStudent.transferDate}` : 'Estudante com movimentação registrada no ano letivo.'}
                     </span>
                   </div>
                 </div>
                 {selectedStudent.enrollmentDate && (
-                  <span className="text-xs font-bold text-purple-800 bg-purple-100/90 px-3 py-1.5 rounded-xl border border-purple-200 self-start sm:self-center">
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border self-start sm:self-center ${
+                    ['FALECIDO', 'ÓBITO', 'OBITO'].includes(String(selectedStudent.enrollmentStatus).toUpperCase())
+                      ? 'text-rose-800 bg-rose-100/90 border-rose-200'
+                      : 'text-purple-800 bg-purple-100/90 border-purple-200'
+                  }`}>
                     Matrícula inicial: {selectedStudent.enrollmentDate}
                   </span>
                 )}
