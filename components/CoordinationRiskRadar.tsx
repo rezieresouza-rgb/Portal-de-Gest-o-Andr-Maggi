@@ -411,10 +411,11 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
 
       setStudents(baseList);
 
-      // 8. Calcular gargalos da turma e médias da classe
-      const activeClassStudents = selectedClass === 'TODAS'
+      // 8. Calcular gargalos da turma e médias da classe (exclusivo para alunos ATIVOS / matriculados)
+      const activeClassStudents = (selectedClass === 'TODAS'
         ? baseList
-        : baseList.filter(s => s.className === selectedClass);
+        : baseList.filter(s => s.className === selectedClass)
+      ).filter(s => !s.isTransferred);
 
       if (activeClassStudents.length > 0) {
         // Médias bimestrais da turma
@@ -463,11 +464,12 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
   }, [selectedClass]);
 
   // Filtragem dos Alunos
-    const bottleneckStudents = useMemo(() => {
+  const bottleneckStudents = useMemo(() => {
     if (!selectedBottleneck) return [];
-    const activeClassStudents = selectedClass === 'TODAS'
+    const activeClassStudents = (selectedClass === 'TODAS'
       ? students
-      : students.filter(s => s.className === selectedClass);
+      : students.filter(s => s.className === selectedClass)
+    ).filter(s => !s.isTransferred);
 
     return activeClassStudents
       .map(st => {
@@ -524,9 +526,10 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
     const evolvingCount = filteredStudents.filter(s => s.trend === 'UP').length;
     const decliningCount = filteredStudents.filter(s => s.trend === 'DOWN').length;
 
-    const withGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null);
+    const withGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null && (riskFilter === 'TRANSFERRED' ? true : !s.isTransferred));
     const sumGrade = withGrades.reduce((acc, s) => acc + (s.averageGrade || 0), 0);
-    const sumPres = filteredStudents.reduce((acc, s) => acc + s.presenceRate, 0);
+    const activeForPresence = filteredStudents.filter(s => riskFilter === 'TRANSFERRED' ? true : !s.isTransferred);
+    const sumPres = activeForPresence.reduce((acc, s) => acc + s.presenceRate, 0);
 
     return {
       total,
@@ -541,13 +544,13 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
       transferredCount,
       activeCount,
       avgSchoolGrade: withGrades.length > 0 ? (sumGrade / withGrades.length).toFixed(1) : '0.0',
-      avgSchoolPresence: (sumPres / total).toFixed(1)
+      avgSchoolPresence: activeForPresence.length > 0 ? (sumPres / activeForPresence.length).toFixed(1) : '0.0'
     };
-  }, [filteredStudents]);
+  }, [filteredStudents, riskFilter]);
 
-  // Pirâmide de Proficiência
+  // Pirâmide de Proficiência (apenas alunos com notas, excluindo transferidos por padrão)
   const proficiencyData = useMemo(() => {
-    const withGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null);
+    const withGrades = filteredStudents.filter(s => s.hasGrades && s.averageGrade !== null && (riskFilter === 'TRANSFERRED' ? true : !s.isTransferred));
     const total = withGrades.length || 1;
     const av = withGrades.filter(s => s.averageGrade! >= 8.0).length;
     const ad = withGrades.filter(s => s.averageGrade! >= 6.0 && s.averageGrade! < 8.0).length;
@@ -870,7 +873,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
               <AlertCircle size={18} className="text-rose-600" /> Disciplinas Gargalo (Atenção)
             </h3>
-            <span className="text-[10px] font-black text-slate-400 uppercase">Notas &lt; 6.0</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase">Alunos Ativos &lt; 6.0</span>
           </div>
 
           {classBottlenecks.length > 0 ? (
@@ -1516,7 +1519,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                   {selectedBottleneck.subject}
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  {bottleneckStudents.length} {bottleneckStudents.length === 1 ? 'aluno com média abaixo de 6.0' : 'alunos com média abaixo de 6.0'} ({selectedBottleneck.percentage}% da turma selecionada).
+                  {bottleneckStudents.length} {bottleneckStudents.length === 1 ? 'aluno ativo com média abaixo de 6.0' : 'alunos ativos com média abaixo de 6.0'} ({selectedBottleneck.percentage}% dos matriculados).
                 </p>
               </div>
 

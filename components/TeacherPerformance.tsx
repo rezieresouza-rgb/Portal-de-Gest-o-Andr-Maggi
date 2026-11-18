@@ -374,10 +374,18 @@ const TeacherPerformance: React.FC<TeacherPerformanceProps> = ({ user }) => {
         })
       : DEFAULT_DISCIPLINES;
 
-    // Disciplinas Gargalo da turma (no bimestre selecionado)
+    // Disciplinas Gargalo da turma (no bimestre selecionado - exclusivo para alunos ativos)
+    const activeStudentIds = new Set(students.map(s => s.id));
+    const activeRegistrations = new Set(students.map(s => s.registration).filter(Boolean));
+    const activeNames = new Set(students.map(s => s.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim()));
+
     const failBySubj: Record<string, number> = {};
     gradesData.forEach(g => {
-      if (typeof g.score === 'number' && g.score < 6.0 && g.assessments?.subject) {
+      const isActive = (g.student_id && activeStudentIds.has(g.student_id)) ||
+        (g.student_code && activeRegistrations.has(g.student_code)) ||
+        (g.student_name && activeNames.has(g.student_name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim()));
+
+      if (isActive && typeof g.score === 'number' && g.score < 6.0 && g.assessments?.subject) {
         failBySubj[g.assessments.subject] = (failBySubj[g.assessments.subject] || 0) + 1;
       }
     });
