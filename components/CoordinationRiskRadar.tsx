@@ -76,6 +76,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
   
   const [students, setStudents] = useState<any[]>([]);
   const [classBottlenecks, setClassBottlenecks] = useState<{ subject: string; failingCount: number; percentage: number }[]>([]);
+  const [selectedBottleneck, setSelectedBottleneck] = useState<{ subject: string; failingCount: number; percentage: number } | null>(null);
   const [classEvolution, setClassEvolution] = useState<{ b1: number | null; b2: number | null; b3: number | null }>({ b1: null, b2: null, b3: null });
   const [loading, setLoading] = useState(true);
 
@@ -438,6 +439,25 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
   }, [selectedClass]);
 
   // Filtragem dos Alunos
+    const bottleneckStudents = useMemo(() => {
+    if (!selectedBottleneck) return [];
+    const activeClassStudents = selectedClass === 'TODAS'
+      ? students
+      : students.filter(s => s.className === selectedClass);
+
+    return activeClassStudents
+      .map(st => {
+        const subjectGrade = st.gradesHistory?.find((g: any) => g.subject === selectedBottleneck.subject);
+        return {
+          student: st,
+          subjectGrade: subjectGrade || null,
+          score: subjectGrade?.score ?? null
+        };
+      })
+      .filter(item => item.score !== null && item.score > 0 && item.score < 6.0)
+      .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+  }, [selectedBottleneck, students, selectedClass]);
+
   const filteredStudents = useMemo(() => {
     return students
       .filter(s => selectedClass === 'TODAS' || s.className === selectedClass)
@@ -826,18 +846,31 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
           {classBottlenecks.length > 0 ? (
             <div className="space-y-2.5">
               {classBottlenecks.map(b => (
-                <div key={b.subject} className="space-y-1">
+                <button
+                  key={b.subject}
+                  type="button"
+                  onClick={() => setSelectedBottleneck(b)}
+                  className="w-full text-left space-y-1.5 p-2.5 rounded-2xl hover:bg-rose-50/80 active:bg-rose-100/90 transition-all group cursor-pointer border border-transparent hover:border-rose-200/80"
+                  title="Clique para ver os alunos e suas notas nesta disciplina"
+                >
                   <div className="flex justify-between items-center text-xs font-black uppercase">
-                    <span className="text-slate-800">{b.subject}</span>
-                    <span className="text-rose-600">{b.failingCount} alunos ({b.percentage}%)</span>
+                    <span className="text-slate-800 group-hover:text-rose-700 flex items-center gap-1.5 transition-colors">
+                      {b.subject}
+                      <span className="text-[10px] text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity font-bold lowercase">
+                        (ver alunos →)
+                      </span>
+                    </span>
+                    <span className="text-rose-600 bg-rose-50 group-hover:bg-rose-100/80 px-2 py-0.5 rounded-lg transition-colors font-black">
+                      {b.failingCount} alunos ({b.percentage}%)
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                     <div
-                      className="bg-rose-500 h-full rounded-full transition-all duration-500"
+                      className="bg-rose-500 group-hover:bg-rose-600 h-full rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(100, b.percentage)}%` }}
                     />
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           ) : (
@@ -1390,7 +1423,135 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
         </div>
       )}
 
-    </div>
+    
+      {/* MODAL DETALHAMENTO DE DISCIPLINA GARGALO */}
+      {selectedBottleneck && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-8 max-w-3xl w-full border border-slate-200 shadow-2xl space-y-6 animate-in zoom-in-95 my-8">
+            {/* CABEÇALHO DO MODAL */}
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-rose-100 text-rose-800 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertCircle size={12} /> Disciplina Gargalo (Atenção)
+                  </span>
+                  <span className="text-xs font-bold text-slate-500 uppercase">
+                    {selectedClass === 'TODAS' ? 'Todas as Turmas da Escola' : selectedClass}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                  {selectedBottleneck.subject}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">
+                  {bottleneckStudents.length} {bottleneckStudents.length === 1 ? 'aluno com média abaixo de 6.0' : 'alunos com média abaixo de 6.0'} ({selectedBottleneck.percentage}% da turma selecionada).
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedBottleneck(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-2xl transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* LISTA DE ALUNOS COM NOTAS DETALHADAS */}
+            <div className="max-h-[55vh] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+              {bottleneckStudents.length > 0 ? (
+                bottleneckStudents.map(({ student: st, subjectGrade, score }, idx) => (
+                  <div
+                    key={st.id}
+                    className="p-4 bg-slate-50/80 hover:bg-slate-100/90 rounded-2xl border border-slate-200/70 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">
+                        {st.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-slate-900 uppercase tracking-tight">
+                            {idx + 1}. {st.name}
+                          </span>
+                          {st.isPaed && (
+                            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-lg text-[9px] font-black uppercase">
+                              PAEDE
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500 font-bold uppercase">
+                          <span>{st.className}</span>
+                          <span>•</span>
+                          <span>Matrícula: {st.registration || 'S/N'}</span>
+                          <span>•</span>
+                          <span>Presença: {st.presenceRate}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end md:self-center">
+                      {/* Notas dos Bimestres */}
+                      <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-[11px] font-bold shadow-xs">
+                        <span className="text-slate-400 text-[9px] uppercase font-black mr-1">Bims:</span>
+                        <span className={`px-1.5 py-0.5 rounded ${subjectGrade?.b1 !== null ? (subjectGrade?.b1! < 6 ? 'bg-rose-100 text-rose-700 font-black' : 'text-slate-700') : 'text-slate-300'}`}>
+                          {subjectGrade?.b1 !== null ? subjectGrade?.b1 : '-'}
+                        </span>
+                        <span className="text-slate-300">/</span>
+                        <span className={`px-1.5 py-0.5 rounded ${subjectGrade?.b2 !== null ? (subjectGrade?.b2! < 6 ? 'bg-rose-100 text-rose-700 font-black' : 'text-slate-700') : 'text-slate-300'}`}>
+                          {subjectGrade?.b2 !== null ? subjectGrade?.b2 : '-'}
+                        </span>
+                        <span className="text-slate-300">/</span>
+                        <span className={`px-1.5 py-0.5 rounded ${subjectGrade?.b3 !== null ? (subjectGrade?.b3! < 6 ? 'bg-rose-100 text-rose-700 font-black' : 'text-slate-700') : 'text-slate-300'}`}>
+                          {subjectGrade?.b3 !== null ? subjectGrade?.b3 : '-'}
+                        </span>
+                      </div>
+
+                      {/* Média da Matéria */}
+                      <div className="text-right min-w-[50px]">
+                        <div className="text-[9px] font-black text-slate-400 uppercase">Média</div>
+                        <div className="text-sm font-black text-rose-600">
+                          {score !== null ? score.toFixed(1) : '-'}
+                        </div>
+                      </div>
+
+                      {/* Botão Ver Ficha 360 */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBottleneck(null);
+                          setSelectedStudent(st);
+                        }}
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs transition-all active:scale-95"
+                      >
+                        Ver Ficha <ChevronRight size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-slate-400 text-xs font-bold uppercase">
+                  Nenhum aluno com média abaixo de 6.0 nesta disciplina.
+                </div>
+              )}
+            </div>
+
+            {/* RODAPÉ DO MODAL */}
+            <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-slate-100">
+              <span className="text-[11px] text-slate-500 font-medium">
+                💡 Clique em <strong>Ver Ficha</strong> para emitir parecer descritivo ou plano de intervenção para o aluno.
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedBottleneck(null)}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black uppercase text-xs transition-all"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+</div>
   );
 };
 
