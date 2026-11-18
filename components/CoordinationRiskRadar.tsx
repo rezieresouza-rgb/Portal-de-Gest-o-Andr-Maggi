@@ -174,7 +174,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
               const chunk = assessIds.slice(i, i + 50);
               const { data: chunkGrades } = await supabase
                 .from('grades')
-                .select('assessment_id, student_id, student_code, score')
+                .select('assessment_id, student_id, student_code, student_name, score')
                 .in('assessment_id', chunk);
               if (chunkGrades) allGrades.push(...chunkGrades);
             }
@@ -188,7 +188,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
         while (hasMore && page < 25) {
           const { data: pageGrades } = await supabase
             .from('grades')
-            .select('assessment_id, student_id, student_code, score')
+            .select('assessment_id, student_id, student_code, student_name, score')
             .range(page * pageSize, (page + 1) * pageSize - 1);
           if (pageGrades && pageGrades.length > 0) {
             allGrades.push(...pageGrades);
@@ -200,13 +200,31 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
         }
       }
 
-      // Mapear notas por estudante
+      // Mapear notas por estudante com suporte a student_id, student_code e student_name
+      const studentByCodeMap = new Map<string, string>();
+      const studentByNameMap = new Map<string, string>();
+      (dbStudents || []).forEach((st: any) => {
+        if (st.registration_number) studentByCodeMap.set(st.registration_number.trim(), st.id);
+        if (st.name) {
+          const normN = st.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+          studentByNameMap.set(normN, st.id);
+        }
+      });
+
       const gradesByStudent = new Map<string, any[]>();
       if (allGrades && allGrades.length > 0) {
         for (const g of allGrades) {
           if (g.score === null || isNaN(g.score)) continue;
-          const sId = g.student_id;
+          let sId = g.student_id;
+          if (!sId && g.student_code) {
+            sId = studentByCodeMap.get(String(g.student_code).trim());
+          }
+          if (!sId && g.student_name) {
+            const normG = String(g.student_name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+            sId = studentByNameMap.get(normG);
+          }
           if (!sId) continue;
+
           if (!gradesByStudent.has(sId)) gradesByStudent.set(sId, []);
           const a = assessMap.get(g.assessment_id);
           if (a) {
