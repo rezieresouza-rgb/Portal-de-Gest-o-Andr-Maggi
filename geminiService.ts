@@ -1851,3 +1851,93 @@ const generateFallbackAtaText = (
   };
 };
 
+
+/**
+ * Corrige e aprimora textos de Detalhes / Observações (ortografia, pontuação, concordância e tom oficial SEDUC-MT/EECM).
+ */
+export const proofreadDisciplinaryObservationWithAI = async ({
+  text,
+  contextType = 'OCORRENCIA',
+  studentName,
+  category,
+  measure
+}: {
+  text: string;
+  contextType?: 'OCORRENCIA' | 'ELOGIO' | 'INSPECAO';
+  studentName?: string;
+  category?: string;
+  measure?: string;
+}): Promise<{ correctedText: string; usedAI: boolean; warning?: string }> => {
+  const cleanText = (text || '').trim();
+  if (!cleanText) {
+    return { correctedText: '', usedAI: false };
+  }
+
+  const ai = getAIClient();
+  if (!ai) {
+    return {
+      correctedText: cleanText,
+      usedAI: false,
+      warning: 'Serviço de IA indisponível no momento.'
+    };
+  }
+
+  const systemInstruction = `Você é um revisor oficial de redação escolar e administrativa da Escola Estadual Cívico-Militar André Antônio Maggi (SEDUC-MT / EECM).
+Sua tarefa é CORRIGIR e APRIMORAR o texto digitado no campo "Detalhes / Observações" de um registro escolar.
+
+REGRAS OBRIGATÓRIAS:
+1. Corrija TODOS os erros de ortografia, acentuação gráfica, pontuação, crase, regência e concordância verbal e nominal em Português do Brasil.
+2. Adeque o texto para linguagem formal, clara, impessoal e objetiva própria de registros escolares/cívico-militares (substituindo gírias e abreviações informais como "vc", "pq", "tb", "prof", "q", "nao").
+3. PRESERVE 100% os fatos, nomes, horários, datas e informações relatadas — NUNCA invente fatos que não estejam no texto original.
+4. Mantenha o texto conciso e proporcional ao tamanho do texto original (1 a 2 parágrafos curtos).
+5. Retorne EXCLUSIVAMENTE o texto final corrigido, sem aspas extras, sem cabeçalhos, sem prefixos como "Texto corrigido:" e sem explicações.`;
+
+  const contextLabel =
+    contextType === 'ELOGIO'
+      ? 'Mérito / Elogio'
+      : contextType === 'INSPECAO'
+        ? 'Inspeção de Fardamento / Conduta'
+        : 'Ocorrência Disciplinar (Demérito)';
+
+  const prompt = `Contexto do registro:
+- Tipo: ${contextLabel}
+${studentName ? `- Estudante: ${studentName}` : ''}
+${category ? `- Item / Falta selecionada: ${category}` : ''}
+${measure ? `- Medida aplicada: ${measure}` : ''}
+
+Texto original digitado para correção:
+"""
+${cleanText}
+"""`;
+
+  try {
+    const response = await generateContentWithFallback(ai, {
+      contents: prompt,
+      config: {
+        systemInstruction,
+        temperature: 0.2
+      }
+    });
+
+    const result = (response.text || '')
+      .trim()
+      .replace(/^["“]|["”]$/g, '')
+      .trim();
+
+    if (result) {
+      return { correctedText: result, usedAI: true };
+    }
+    return {
+      correctedText: cleanText,
+      usedAI: false,
+      warning: 'A IA retornou uma resposta vazia.'
+    };
+  } catch (error: any) {
+    console.error('[AI] Erro ao corrigir texto de observações:', error);
+    return {
+      correctedText: cleanText,
+      usedAI: false,
+      warning: getFriendlyAIErrorReason(error)
+    };
+  }
+};

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Users,
   ArrowLeft,
@@ -55,6 +55,7 @@ import OfficialAtasManager from '../components/OfficialAtasManager';
 import { DisciplinaryChecklistModal } from '../components/DisciplinaryChecklistModal';
 import { CivicFicaiReferralModal } from '../components/CivicFicaiReferralModal';
 import { SchoolHealthEmergencyModal } from '../components/SchoolHealthEmergencyModal';
+import { proofreadDisciplinaryObservationWithAI } from '../geminiService';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -701,6 +702,136 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     disciplinaryMeasure: 'Advertência Oral',
     suspensionDays: 1
   });
+
+  // IA de Correção Automática / Sob Demanda para Detalhes e Observações
+  const [isProofreadingObs, setIsProofreadingObs] = useState(false);
+  const [autoProofreadObs, setAutoProofreadObs] = useState(true);
+  const [obsProofreadStatus, setObsProofreadStatus] = useState<'IDLE' | 'CORRECTED' | 'ERROR'>('IDLE');
+  const [obsProofreadError, setObsProofreadError] = useState<string | null>(null);
+  const [previousObsBeforeAI, setPreviousObsBeforeAI] = useState<string | null>(null);
+  const obsLatestValueRef = useRef('');
+  const obsUserEditedRef = useRef(false);
+  const obsLastCorrectedRef = useRef('');
+  const obsDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [isProofreadingInspectionObs, setIsProofreadingInspectionObs] = useState(false);
+  const [inspectionProofreadStatus, setInspectionProofreadStatus] = useState<'IDLE' | 'CORRECTED' | 'ERROR'>('IDLE');
+  const [previousInspectionObsBeforeAI, setPreviousInspectionObsBeforeAI] = useState<string | null>(null);
+
+  useEffect(() => {
+    obsLatestValueRef.current = newOccurrence.observations;
+  }, [newOccurrence.observations]);
+
+  useEffect(() => {
+    return () => {
+      if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
+    };
+  }, []);
+
+  const resetObsProofreadState = () => {
+    if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
+    obsUserEditedRef.current = false;
+    obsLastCorrectedRef.current = '';
+    setPreviousObsBeforeAI(null);
+    setObsProofreadStatus('IDLE');
+    setObsProofreadError(null);
+  };
+
+  useEffect(() => {
+    resetObsProofreadState();
+  }, [selectedStudentState?.studentId, isBehaviorModalOpen]);
+
+  const handleProofreadOccurrenceObs = async (manual = false) => {
+    if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
+    const rawCurrent = obsLatestValueRef.current;
+    const textToFix = (rawCurrent || '').trim();
+    if (!textToFix || textToFix.length < 4) return;
+    if (!manual && textToFix === obsLastCorrectedRef.current) return;
+
+    setIsProofreadingObs(true);
+    setObsProofreadError(null);
+    try {
+      const result = await proofreadDisciplinaryObservationWithAI({
+        text: textToFix,
+        contextType: newOccurrence.type === 'MERIT' ? 'ELOGIO' : 'OCORRENCIA',
+        studentName: selectedStudentState?.studentName,
+        category: (newOccurrence.selectedCategories && newOccurrence.selectedCategories.length > 0
+          ? newOccurrence.selectedCategories
+          : [newOccurrence.category]).filter(Boolean).join('; '),
+        measure: newOccurrence.type === 'DEMERIT' ? newOccurrence.disciplinaryMeasure : undefined
+      });
+
+      // Evita sobrescrever se o usuário continuou digitando durante a correção automática
+      if (!manual && obsLatestValueRef.current.trim() !== textToFix) {
+        return;
+      }
+
+      if (result.usedAI && result.correctedText) {
+        if (result.correctedText.trim() !== textToFix) {
+          setPreviousObsBeforeAI(rawCurrent);
+        }
+        obsLastCorrectedRef.current = result.correctedText.trim();
+        obsUserEditedRef.current = false;
+        setNewOccurrence(prev => ({ ...prev, observations: result.correctedText }));
+        setObsProofreadStatus('CORRECTED');
+      } else if (result.warning) {
+        setObsProofreadStatus('ERROR');
+        setObsProofreadError(result.warning);
+      }
+    } catch (err) {
+      console.error('Erro na correção por IA:', err);
+      setObsProofreadStatus('ERROR');
+      setObsProofreadError('Não foi possível corrigir o texto no momento.');
+    } finally {
+      setIsProofreadingObs(false);
+    }
+  };
+
+  const handleOccurrenceObsChange = (value: string) => {
+    obsLatestValueRef.current = value;
+    obsUserEditedRef.current = true;
+    setNewOccurrence(prev => ({ ...prev, observations: value }));
+    setObsProofreadStatus('IDLE');
+    setObsProofreadError(null);
+
+    if (obsDebounceTimerRef.current) {
+      clearTimeout(obsDebounceTimerRef.current);
+    }
+
+    if (autoProofreadObs && value.trim().length >= 8) {
+      obsDebounceTimerRef.current = setTimeout(() => {
+        if (obsUserEditedRef.current && obsLatestValueRef.current.trim() === value.trim()) {
+          handleProofreadOccurrenceObs(false);
+        }
+      }, 2200);
+    }
+  };
+
+  const handleProofreadInspectionObs = async () => {
+    const rawCurrent = newInspection.observations;
+    const textToFix = (rawCurrent || '').trim();
+    if (!textToFix || textToFix.length < 4) return;
+    setIsProofreadingInspectionObs(true);
+    setInspectionProofreadStatus('IDLE');
+    try {
+      const result = await proofreadDisciplinaryObservationWithAI({
+        text: textToFix,
+        contextType: 'INSPECAO',
+        category: newInspection.item
+      });
+      if (result.usedAI && result.correctedText) {
+        if (result.correctedText.trim() !== textToFix) {
+          setPreviousInspectionObsBeforeAI(rawCurrent);
+        }
+        setNewInspection(prev => ({ ...prev, observations: result.correctedText }));
+        setInspectionProofreadStatus('CORRECTED');
+      } else {
+        setInspectionProofreadStatus('ERROR');
+      }
+    } finally {
+      setIsProofreadingInspectionObs(false);
+    }
+  };
 
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -1889,6 +2020,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     saveStudentStatesToStorage(updatedStates);
 
     // Reset Form
+    resetObsProofreadState();
     setNewOccurrence({
       type: 'DEMERIT',
       category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
@@ -6368,13 +6500,47 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               </div>
 
               <div>
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Observações Detalhadas</label>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Observações Detalhadas</label>
+                  <div className="flex items-center gap-1.5">
+                    {previousInspectionObsBeforeAI !== null && !isProofreadingInspectionObs && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewInspection(prev => ({ ...prev, observations: previousInspectionObsBeforeAI }));
+                          setPreviousInspectionObsBeforeAI(null);
+                          setInspectionProofreadStatus('IDLE');
+                        }}
+                        className="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1"
+                      >
+                        <RotateCcw size={10} /> Desfazer
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleProofreadInspectionObs}
+                      disabled={isProofreadingInspectionObs || !newInspection.observations.trim()}
+                      className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1 shadow-sm disabled:opacity-40"
+                    >
+                      {isProofreadingInspectionObs ? <RefreshCw size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                      {isProofreadingInspectionObs ? 'Corrigindo...' : 'Corrigir com IA'}
+                    </button>
+                  </div>
+                </div>
                 <textarea
                   value={newInspection.observations}
-                  onChange={e => setNewInspection(prev => ({ ...prev, observations: e.target.value }))}
+                  onChange={e => {
+                    setNewInspection(prev => ({ ...prev, observations: e.target.value }));
+                    setInspectionProofreadStatus('IDLE');
+                  }}
                   placeholder="Descreva detalhes específicos da inconformidade..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[80px]"
                 />
+                {inspectionProofreadStatus === 'CORRECTED' && (
+                  <p className="mt-1 text-[9px] font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 size={10} /> Texto revisado e formalizado pela IA Gemini.
+                  </p>
+                )}
               </div>
 
               <div className="pt-4 flex gap-4">
@@ -6809,16 +6975,76 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     </div>
                   )}
 
-                  {/* OBSERVAÇÕES DETALHADAS */}
+                  {/* OBSERVAÇÕES DETALHADAS COM CORREÇÃO POR IA */}
                   <div>
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Detalhes / Observações</label>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        Detalhes / Observações
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setAutoProofreadObs(prev => !prev)}
+                          title="Quando ativado, corrige o texto automaticamente ao pausar a digitação"
+                          className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border transition-all ${
+                            autoProofreadObs
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-slate-600'
+                          }`}
+                        >
+                          Auto IA: {autoProofreadObs ? 'ON' : 'OFF'}
+                        </button>
+
+                        {previousObsBeforeAI !== null && !isProofreadingObs && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
+                              obsUserEditedRef.current = false;
+                              obsLastCorrectedRef.current = previousObsBeforeAI.trim();
+                              setNewOccurrence(prev => ({ ...prev, observations: previousObsBeforeAI }));
+                              setPreviousObsBeforeAI(null);
+                              setObsProofreadStatus('IDLE');
+                            }}
+                            className="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1 transition-all"
+                          >
+                            <RotateCcw size={10} /> Desfazer
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleProofreadOccurrenceObs(true)}
+                          disabled={isProofreadingObs || !newOccurrence.observations.trim()}
+                          className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1 shadow-sm transition-all disabled:opacity-40"
+                        >
+                          {isProofreadingObs ? <RefreshCw size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                          {isProofreadingObs ? 'Corrigindo...' : 'Corrigir com IA'}
+                        </button>
+                      </div>
+                    </div>
                     <textarea
                       value={newOccurrence.observations}
-                      onChange={e => setNewOccurrence(prev => ({ ...prev, observations: e.target.value }))}
-                      placeholder="Descreva detalhes específicos do fato ocorrido..."
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[70px]"
+                      onChange={e => handleOccurrenceObsChange(e.target.value)}
+                      placeholder="Descreva detalhes específicos do fato ocorrido... (a IA revisa ortografia e linguagem formal)"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[82px]"
                       required
                     />
+                    {isProofreadingObs && (
+                      <p className="mt-1 text-[9px] font-bold text-indigo-600 flex items-center gap-1">
+                        <Sparkles size={10} className="animate-pulse" /> Revisando ortografia e redação oficial com IA Gemini...
+                      </p>
+                    )}
+                    {!isProofreadingObs && obsProofreadStatus === 'CORRECTED' && (
+                      <p className="mt-1 text-[9px] font-bold text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 size={10} /> Texto revisado e formalizado pela IA Gemini.
+                      </p>
+                    )}
+                    {!isProofreadingObs && obsProofreadStatus === 'ERROR' && obsProofreadError && (
+                      <p className="mt-1 text-[9px] font-bold text-amber-600 flex items-center gap-1">
+                        <AlertTriangle size={10} /> {obsProofreadError}
+                      </p>
+                    )}
                   </div>
 
                   {/* BOTÃO DE SUBMIT */}
