@@ -643,7 +643,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
 
     const currentClass = selectedClass !== 'TODAS' ? selectedClass : 'Escola Geral (Conselho Integrado)';
     const criticalList = filteredStudents
-      .filter(s => s.riskLevel === 'CRITICO' || s.averageGrade < 6.0)
+      .filter(s => !s.isTransferred && s.hasGrades && (s.riskLevel === 'CRITICO' || (s.averageGrade !== null && s.averageGrade < 6.0)))
       .slice(0, 10)
       .map(s => ({
         name: s.name,
@@ -659,7 +659,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
         bimestre: '3º Bimestre Letivo',
         averageGrade: Number(stats.avgSchoolGrade),
         presenceRate: Number(stats.avgSchoolPresence),
-        totalStudents: stats.total,
+        totalStudents: stats.activeCount,
         riskCount: stats.critical,
         paedCount: stats.paedCount,
         disciplinesSummary: classBottlenecks.map(b => ({
@@ -1628,6 +1628,7 @@ const CoordinationRiskRadar: React.FC<CoordinationRiskRadarProps> = ({
                         type="button"
                         onClick={() => {
                           setSelectedBottleneck(null);
+                          setAiStudentOpinion(null);
                           setSelectedStudent(st);
                         }}
                         className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs transition-all active:scale-95"

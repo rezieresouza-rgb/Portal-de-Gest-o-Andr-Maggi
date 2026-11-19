@@ -2,12 +2,35 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from './supabaseClient';
 import { PedagogicalSkill } from './types';
 
-const getAIClient = () => {
-  // Safe access to environment variables in Vite/Next.js/Node
-  const processEnv = typeof process !== 'undefined' ? process.env : {};
-  const metaEnv = (import.meta as any).env || {};
+const DEFAULT_GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
 
-  const apiKey = metaEnv.VITE_GEMINI_API_KEY || processEnv.NEXT_PUBLIC_GEMINI_API_KEY || processEnv.API_KEY || '';
+export const getAIKey = (): string => {
+  if (typeof window !== 'undefined') {
+    try {
+      const localKey = localStorage.getItem('portal_gemini_api_key');
+      if (localKey && localKey.trim()) return localKey.trim();
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  const metaEnv = (import.meta as any).env || {};
+  if (metaEnv.VITE_GEMINI_API_KEY) return String(metaEnv.VITE_GEMINI_API_KEY).trim();
+
+  // Expressões literais para substituição segura via Vite define
+  try {
+    if (process.env.VITE_GEMINI_API_KEY) return String(process.env.VITE_GEMINI_API_KEY).trim();
+    if (process.env.GEMINI_API_KEY) return String(process.env.GEMINI_API_KEY).trim();
+    if (process.env.API_KEY) return String(process.env.API_KEY).trim();
+    if (process.env.NEXT_PUBLIC_GEMINI_API_KEY) return String(process.env.NEXT_PUBLIC_GEMINI_API_KEY).trim();
+  } catch {
+    // process não definido no navegador sem define
+  }
+  return '';
+};
+
+const getAIClient = () => {
+  const apiKey = getAIKey();
 
   if (!apiKey) {
     console.warn("Gemini API Key not found! Features utilizing AI will fail.");
@@ -16,19 +39,61 @@ const getAIClient = () => {
   return new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
 };
 
+const getFriendlyAIErrorReason = (error: any): string => {
+  const msg = String(error?.message || error || '');
+  const status = error?.status || error?.code;
 
+  if (
+    status === 402 ||
+    msg.includes('402') ||
+    msg.toLowerCase().includes('prepayment credits are depleted') ||
+    msg.toLowerCase().includes('billing')
+  ) {
+    return 'Créditos pré-pagos da API do Gemini esgotados no Google AI Studio (Erro 402). Recarregue os créditos ou atualize a variável VITE_GEMINI_API_KEY na Vercel.';
+  }
+  if (
+    status === 403 ||
+    msg.includes('403') ||
+    msg.toLowerCase().includes('leaked') ||
+    msg.includes('PERMISSION_DENIED') ||
+    msg.includes('API_KEY_INVALID') ||
+    msg.toLowerCase().includes('api key not valid')
+  ) {
+    return 'Chave da API do Gemini inválida ou bloqueada pelo Google (Erro 403). Gere uma nova chave no Google AI Studio e atualize a variável VITE_GEMINI_API_KEY na Vercel.';
+  }
+  if (
+    status === 429 ||
+    msg.includes('429') ||
+    msg.toLowerCase().includes('resource_exhausted') ||
+    msg.toLowerCase().includes('quota')
+  ) {
+    return 'Limite temporário de requisições da API do Gemini atingido (Erro 429). Aguarde alguns segundos e tente novamente.';
+  }
+  if (status === 404 || msg.includes('404') || msg.toLowerCase().includes('not found')) {
+    return 'Modelo de IA indisponível na API do Gemini (Erro 404).';
+  }
+  return 'Serviço do Google Gemini temporariamente indisponível.';
+};
 
-
-// Retry helper for 429 errors
-const runWithRetry = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
+// Retry helper for transient 429 errors (skipping billing 402 errors)
+const runWithRetry = async <T>(fn: () => Promise<T>, retries = 2, delay = 1500): Promise<T> => {
   try {
     return await fn();
   } catch (error: any) {
+    const msg = String(error?.message || '');
+    const isBilling =
+      error?.code === 402 ||
+      error?.status === 402 ||
+      msg.includes('402') ||
+      msg.toLowerCase().includes('prepayment credits') ||
+      msg.toLowerCase().includes('billing');
+
     const isRateLimit =
-      error.code === 429 ||
-      error.status === 429 ||
-      (error.message && error.message.includes('429')) ||
-      (error.message && error.message.includes('Resource exhausted'));
+      !isBilling &&
+      (error?.code === 429 ||
+        error?.status === 429 ||
+        msg.includes('429') ||
+        msg.toLowerCase().includes('too many requests'));
 
     if (retries > 0 && isRateLimit) {
       console.warn(`[AI] Quota exceeded (429). Retrying in ${delay / 1000}s... (${retries} attempts left)`);
@@ -39,15 +104,52 @@ const runWithRetry = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
   }
 };
 
+const generateContentWithFallback = async (
+  ai: GoogleGenAI,
+  request: { contents: any; config?: any },
+  models: string[] = DEFAULT_GEMINI_MODELS
+) => {
+  let lastError: any = null;
+  for (const model of models) {
+    try {
+      return await runWithRetry(() =>
+        ai.models.generateContent({
+          model,
+          ...request
+        })
+      );
+    } catch (error: any) {
+      lastError = error;
+      const msg = String(error?.message || '');
+      const status = error?.status || error?.code;
+      const isModelIssue =
+        status === 404 ||
+        msg.includes('404') ||
+        msg.toLowerCase().includes('not found') ||
+        msg.toLowerCase().includes('not supported') ||
+        status === 503 ||
+        msg.includes('503');
+
+      if (isModelIssue) {
+        console.warn(`[AI] Modelo ${model} indisponível, tentando próximo fallback...`, msg);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError || new Error('Nenhum modelo Gemini disponível respondeu.');
+};
+
 /**
  * Extrai lista detalhada de alunos de um PDF da Secretaria.
  */
 export const extractDetailedStudentList = async (base64Data: string, mimeType: string) => {
   const ai = getAIClient();
+  if (!ai) return { Alunos: [] };
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       // FIX: Updated contents to use { parts: [...] } structure for standard multi-part inputs
       contents: {
         parts: [
@@ -119,6 +221,7 @@ export const extractDetailedStudentList = async (base64Data: string, mimeType: s
  */
 export const consolidateStudentData = async (files: { base64: string; mimeType: string; name: string }[]) => {
   const ai = getAIClient();
+  if (!ai) return { consolidatedStudents: [], summary: "Chave de IA não configurada." };
 
   // Construir o prompt com as partes de cada arquivo
   const promptParts: any[] = [];
@@ -167,7 +270,7 @@ export const consolidateStudentData = async (files: { base64: string; mimeType: 
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: promptParts
       },
@@ -214,10 +317,11 @@ export const consolidateStudentData = async (files: { base64: string; mimeType: 
  */
 export const generateOccurrenceAta = async (occurrenceData: any) => {
   const ai = getAIClient();
+  if (!ai) return null;
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: `Você é um assistente jurídico e pedagógico de uma secretaria escolar. 
       Com base nos dados da ocorrência abaixo, gere uma Ata de Ocorrência Escolar formal, imparcial e padronizada.
       
@@ -269,7 +373,7 @@ export const suggestBooks = async (readerInterests: string) => {
   if (!ai) return "Erro: Chave API do Gemini não configurada.";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [{ text: `Você é um bibliotecário especialista. Com base nos interesses: "${readerInterests}", sugira 3 livros clássicos ou contemporâneos adequados para idade escolar. Forneça o título, autor e um pequeno motivo da recomendação. Responda em Português do Brasil.` }]
       },
@@ -277,7 +381,7 @@ export const suggestBooks = async (readerInterests: string) => {
     return response.text || "Nenhuma sugestão gerada.";
   } catch (e) {
     console.error("Error suggesting books", e);
-    return "Erro ao gerar sugestões.";
+    return `Erro ao gerar sugestões: ${getFriendlyAIErrorReason(e)}`;
   }
 };
 
@@ -286,9 +390,10 @@ export const suggestBooks = async (readerInterests: string) => {
  */
 export const analyzeContractHealth = async (contractData: any) => {
   const ai = getAIClient();
+  if (!ai) return "Chave de IA não configurada (VITE_GEMINI_API_KEY).";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: `Analise o seguinte contrato de merenda escolar e forneça um resumo de saúde (riscos, prazos, custo-benefício): ${JSON.stringify(contractData)}`,
       config: {
         temperature: 0.7,
@@ -298,7 +403,7 @@ export const analyzeContractHealth = async (contractData: any) => {
     return response.text;
   } catch (e) {
     console.error("Error analyzing contract", e);
-    return "Erro na análise.";
+    return `Erro na análise: ${getFriendlyAIErrorReason(e)}`;
   }
 };
 
@@ -307,15 +412,16 @@ export const analyzeContractHealth = async (contractData: any) => {
  */
 export const suggestMenu = async (inventory: any) => {
   const ai = getAIClient();
+  if (!ai) return "Chave de IA não configurada (VITE_GEMINI_API_KEY).";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: `Com base no estoque atual de merenda escolar: ${JSON.stringify(inventory)}, sugira um cardápio semanal nutricionalmente equilibrado focando em reduzir desperdício de itens próximos do vencimento ou em excesso. Responda em Português do Brasil.`,
     }));
     return response.text;
   } catch (e) {
     console.error("Error suggesting menu", e);
-    return "Erro ao gerar cardápio.";
+    return `Erro ao gerar cardápio: ${getFriendlyAIErrorReason(e)}`;
   }
 };
 
@@ -324,9 +430,10 @@ export const suggestMenu = async (inventory: any) => {
  */
 export const fetchPedagogicalSkills = async (subject: string, className: string) => {
   const ai = getAIClient();
+  if (!ai) return null;
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: `Você é um consultor pedagógico da SEDUC-MT especialista em BNCC e DRC-MT.
       Forneça a LISTA COMPLETA e EXAUSTIVA das habilidades essenciais para o componente "${subject}" na turma "${className}".
       Inclua tanto as habilidades da base nacional (BNCC) quanto os acréscimos regionais do Mato Grosso (DRC-MT).
@@ -378,9 +485,10 @@ export const fetchPedagogicalSkills = async (subject: string, className: string)
  */
 export const extractInvoiceInfo = async (base64Data: string, mimeType: string) => {
   const ai = getAIClient();
+  if (!ai) return {};
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {
@@ -421,9 +529,10 @@ export const extractInvoiceInfo = async (base64Data: string, mimeType: string) =
  */
 export const extractAssessmentResults = async (base64Data: string, mimeType: string) => {
   const ai = getAIClient();
+  if (!ai) return { students: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {
@@ -470,9 +579,10 @@ export const extractAssessmentResults = async (base64Data: string, mimeType: str
  */
 export const extractStudentInfo = async (base64Data: string, mimeType: string) => {
   const ai = getAIClient();
+  if (!ai) return {};
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {
@@ -512,9 +622,9 @@ export const extractStudentInfo = async (base64Data: string, mimeType: string) =
  */
 export const analyzePedagogicalPerformance = async (data: any) => {
   const ai = getAIClient();
+  if (!ai) return "Chave de IA não configurada (VITE_GEMINI_API_KEY).";
   try {
-    const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-pro',
+    const response = await generateContentWithFallback(ai, {
       contents: `Você é um consultor pedagógico sênior especialista em gestão educacional da rede SEDUC-MT.
       Analise os seguintes dados pedagógicos da unidade escolar e forneça um relatório estratégico de insights e plano de intervenção.
       Dados: ${JSON.stringify(data)}
@@ -524,17 +634,62 @@ export const analyzePedagogicalPerformance = async (data: any) => {
       3. Recomendações baseadas nas observações de aula.
       4. Sugestões de melhoria para os roteiros pedagógicos.
       Responda em Português do Brasil de forma executiva e profissional.`,
-    }));
+    }, ['gemini-2.5-pro', ...DEFAULT_GEMINI_MODELS]);
     return response.text;
   } catch (e) {
     console.error("Error analyzing performance", e);
-    return "Erro na análise.";
+    return `Erro na análise pedagógica: ${getFriendlyAIErrorReason(e)}`;
   }
 };
 
 /**
  * Analisa o desempenho 360° de uma turma específica (Notas, Frequência, Ocorrências e Alunos em Risco).
  */
+const generateFallbackClassroomReport = (
+  classData: {
+    className: string;
+    bimestre: string;
+    subject: string;
+    averageGrade: number;
+    approvalRate: number;
+    presenceRate: number;
+    totalOccurrences: number;
+    atRiskStudentsCount: number;
+    topStudents: string[];
+    strugglingStudents: { name: string; grade: number; presenceRate: number }[];
+  },
+  aiReason: string
+): string => {
+  const avg = Number(classData.averageGrade ?? 0).toFixed(1);
+  const approval = Number(classData.approvalRate ?? 0).toFixed(1);
+  const presence = Number(classData.presenceRate ?? 0).toFixed(1);
+  const strugglingList = (classData.strugglingStudents || [])
+    .map(s => `• ${s.name} (média ${Number(s.grade ?? 0).toFixed(1)}, frequência ${Number(s.presenceRate ?? 0).toFixed(0)}%)`)
+    .join('\n');
+  const topList = (classData.topStudents || []).slice(0, 5).join(', ') || 'Estudantes com desempenho adequado.';
+
+  return [
+    `⚠️ Aviso da IA Gemini: ${aiReason}`,
+    `Relatório técnico estruturado gerado automaticamente com base nos dados oficiais da turma:`,
+    '',
+    `1. 📋 DIAGNÓSTICO GERAL — ${classData.className} (${classData.subject} | ${classData.bimestre})`,
+    `A turma registra média geral de ${avg}/10,0, com taxa de aprovação de ${approval}% e frequência média de ${presence}% (meta SEDUC-MT: ≥ 85%). Foram computadas ${classData.totalOccurrences || 0} ocorrência(s) e ${classData.atRiskStudentsCount || 0} estudante(s) em faixa de atenção pedagógica.`,
+    '',
+    `2. 🔍 FATORES DE DEFASAGEM E ESTUDANTES PRIORITÁRIOS`,
+    strugglingList || 'Nenhum estudante listado em faixa crítica no período avaliado.',
+    '',
+    `3. 💡 PLANO DE AÇÃO PARA O PROFESSOR`,
+    `• Organizar agrupamentos produtivos em sala utilizando estudantes destaque (${topList}) como tutores entre pares.`,
+    `• Aplicar atividades de recomposição contínua focadas nos descritores essenciais da BNCC/DRC-MT antes do fechamento bimestral.`,
+    `• Realizar devolutivas individualizadas das avaliações com metas semanais de recuperação paralela.`,
+    '',
+    `4. 🤝 ENCAMINHAMENTOS PARA COORDENAÇÃO E BUSCA ATIVA`,
+    Number(classData.presenceRate ?? 100) < 85
+      ? `• Acionar Busca Ativa Escolar e convocar os responsáveis dos estudantes com frequência inferior a 85% para pactuação de assiduidade.`
+      : `• Manter o monitoramento bimestral de notas pela Coordenação Pedagógica e comunicar formalmente os responsáveis dos estudantes abaixo da média 6,0.`
+  ].join('\n');
+};
+
 export const analyzeClassroomPerformanceWithAI = async (classData: {
   className: string;
   bimestre: string;
@@ -549,7 +704,9 @@ export const analyzeClassroomPerformanceWithAI = async (classData: {
   occurrenceTypes: Record<string, number>;
 }) => {
   const ai = getAIClient();
-  if (!ai) return "Chave de IA não configurada.";
+  if (!ai) {
+    return generateFallbackClassroomReport(classData, 'Chave de IA não configurada (VITE_GEMINI_API_KEY).');
+  }
 
   try {
     const prompt = `Você é um coordenador pedagógico e especialista em psicopedagogia da rede estadual SEDUC-MT.
@@ -559,9 +716,9 @@ export const analyzeClassroomPerformanceWithAI = async (classData: {
     - Turma: ${classData.className}
     - Bimestre: ${classData.bimestre}
     - Componente Curricular: ${classData.subject}
-    - Média Geral da Turma: ${classData.averageGrade.toFixed(1)} / 10.0
-    - Taxa de Aprovação (>= 6,0): ${classData.approvalRate.toFixed(1)}%
-    - Taxa Média de Frequência: ${classData.presenceRate.toFixed(1)}% (Meta SEDUC: >= 85%)
+    - Média Geral da Turma: ${Number(classData.averageGrade ?? 0).toFixed(1)} / 10.0
+    - Taxa de Aprovação (>= 6,0): ${Number(classData.approvalRate ?? 0).toFixed(1)}%
+    - Taxa Média de Frequência: ${Number(classData.presenceRate ?? 0).toFixed(1)}% (Meta SEDUC: >= 85%)
     - Total de Ocorrências Registradas: ${classData.totalOccurrences}
     - Tipos de Ocorrências: ${JSON.stringify(classData.occurrenceTypes)}
     - Alunos com Dificuldade / Risco: ${JSON.stringify(classData.strugglingStudents)}
@@ -582,16 +739,90 @@ export const analyzeClassroomPerformanceWithAI = async (classData: {
 
     Seja direto, empático, profissional e fundamentado nas diretrizes pedagógicas de Mato Grosso.`;
 
-    const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: prompt
-    }));
-
-    return response.text;
+    const response = await generateContentWithFallback(ai, { contents: prompt });
+    return response.text || generateFallbackClassroomReport(classData, 'Resposta vazia da API do Gemini.');
   } catch (e: any) {
     console.error("Error analyzing classroom performance with AI:", e);
-    return "Não foi possível gerar a análise por IA no momento. Tente novamente em instantes.";
+    return generateFallbackClassroomReport(classData, getFriendlyAIErrorReason(e));
   }
+};
+
+const generateFallbackIndividualOpinion = (
+  studentData: {
+    studentName: string;
+    className: string;
+    bimestre: string;
+    averageGrade: number | null;
+    presenceRate: number;
+    absencesCount: number;
+    isPaed: boolean;
+    gradesHistory: { subject: string; score: number | null; recoveryScore?: number | null; details?: string }[];
+    occurrences: ({ date?: string; category?: string; description?: string } | string)[];
+  },
+  aiReason: string
+): string => {
+  const validGrades = (studentData.gradesHistory || []).filter(g => g.score != null && !isNaN(Number(g.score)));
+  const strengths = validGrades
+    .filter(g => Number(g.score) >= 7.0)
+    .sort((a, b) => Number(b.score) - Number(a.score));
+  const adequate = validGrades.filter(g => Number(g.score) >= 6.0 && Number(g.score) < 7.0);
+  const failing = validGrades
+    .filter(g => Number(g.score) < 6.0)
+    .sort((a, b) => Number(a.score) - Number(b.score));
+
+  const avgText = studentData.averageGrade != null && !isNaN(Number(studentData.averageGrade))
+    ? `${Number(studentData.averageGrade).toFixed(1)} / 10,0`
+    : 'Pendente de lançamento';
+  const presRate = Number(studentData.presenceRate ?? 0);
+  const absences = Number(studentData.absencesCount ?? 0);
+
+  const occSummary = (studentData.occurrences || [])
+    .map(o => (typeof o === 'string' ? o : `${o.category || 'Registro'}: ${o.description || ''}`))
+    .filter(Boolean);
+
+  const strengthsText = strengths.length > 0
+    ? strengths.map(g => `${g.subject} (média ${Number(g.score).toFixed(1)})`).join(', ')
+    : adequate.length > 0
+      ? `Desempenho dentro da média mínima em ${adequate.map(g => `${g.subject} (${Number(g.score).toFixed(1)})`).join(', ')}.`
+      : 'Ainda não há componentes com média igual ou superior a 6,0 consolidados no período.';
+
+  const failingText = failing.length > 0
+    ? failing.map(g => `${g.subject} (média ${Number(g.score).toFixed(1)}${g.details ? ` — ${g.details}` : ''})`).join('; ')
+    : 'Nenhuma disciplina com média anual abaixo de 6,0 até o momento.';
+
+  const attendanceStatus =
+    presRate < 75
+      ? `Frequência crítica (${presRate.toFixed(1)}% | ${absences} falta(s)), abaixo do limite legal mínimo de 75% (LDB), exigindo acionamento imediato da Busca Ativa Escolar.`
+      : presRate < 85
+        ? `Frequência em estado de alerta (${presRate.toFixed(1)}% | ${absences} falta(s)), abaixo da meta estadual SEDUC-MT (85%), com impacto direto na continuidade das aprendizagens.`
+        : `Assiduidade satisfatória (${presRate.toFixed(1)}% | ${absences} falta(s)), compatível com a meta estadual SEDUC-MT.`;
+
+  const paedNote = studentData.isPaed
+    ? 'Estudante Público-Alvo da Educação Especial (PAEDE/AEE): assegurar flexibilização curricular, avaliações adaptadas e articulação contínua com a Sala de Recursos Multifuncionais.'
+    : 'Estudante de acompanhamento regular, sem indicação de laudo PAEDE/AEE.';
+
+  return [
+    `⚠️ Aviso da IA Gemini: ${aiReason}`,
+    `Parecer pedagógico estruturado gerado automaticamente com base nos dados oficiais do estudante:`,
+    '',
+    `### 1. 👤 Parecer Pedagógico do Estudante`,
+    `O(a) estudante ${studentData.studentName} (${studentData.className} — ${studentData.bimestre}) apresenta média geral de ${avgText}. ${attendanceStatus} ${paedNote}`,
+    occSummary.length > 0 ? `Observações registradas: ${occSummary.join(' | ')}.` : '',
+    '',
+    `### 2. 🎯 Pontos Fortes e Habilidades em Destaque`,
+    strengthsText,
+    '',
+    `### 3. 🔍 Dificuldades e Fatores de Atenção`,
+    failing.length > 0
+      ? `Atenção prioritária para recomposição de aprendizagem nos componentes: ${failingText}.`
+      : `O estudante mantém desempenho satisfatório nos componentes avaliados; recomenda-se consolidar a rotina de estudos para evitar quedas no fechamento do ano letivo.`,
+    '',
+    `### 4. 💡 Orientações de Apoio (Professor e Família)`,
+    failing.length > 0
+      ? `• Professores: ofertar plano de recomposição paralela e atividades diagnósticas direcionadas em ${failing.map(f => f.subject).join(', ')}, com acompanhamento semanal de tarefas.`
+      : `• Professores: estimular o protagonismo discente e atividades de aprofundamento para elevação da proficiência.`,
+    `• Família / Responsáveis: acompanhar diariamente a realização das atividades escolares, reforçar a pontualidade e comparecer à unidade escolar para alinhamento do Plano de Intervenção Pedagógica (PIP).`
+  ].filter(line => line !== null && line !== undefined).join('\n');
 };
 
 /**
@@ -601,15 +832,17 @@ export const analyzeIndividualStudentWithAI = async (studentData: {
   studentName: string;
   className: string;
   bimestre: string;
-  averageGrade: number;
+  averageGrade: number | null;
   presenceRate: number;
   absencesCount: number;
   isPaed: boolean;
-  gradesHistory: { subject: string; score: number; recoveryScore: number | null }[];
-  occurrences: { date: string; category: string; description: string }[];
+  gradesHistory: { subject: string; score: number | null; recoveryScore?: number | null; details?: string }[];
+  occurrences: ({ date?: string; category?: string; description?: string } | string)[];
 }) => {
   const ai = getAIClient();
-  if (!ai) return "Chave de IA não configurada.";
+  if (!ai) {
+    return generateFallbackIndividualOpinion(studentData, 'Chave de IA não configurada (VITE_GEMINI_API_KEY).');
+  }
 
   try {
     const prompt = `Você é um psicopedagogo e orientador educacional especialista em desenvolvimento infanto-juvenil da rede SEDUC-MT.
@@ -620,7 +853,7 @@ export const analyzeIndividualStudentWithAI = async (studentData: {
     - Turma: ${studentData.className}
     - Bimestre: ${studentData.bimestre}
     - Média Geral: ${studentData.averageGrade != null ? Number(studentData.averageGrade).toFixed(1) : 'Pendente de Lançamento'} / 10.0
-    - Assiduidade: ${studentData.presenceRate.toFixed(1)}% (${studentData.absencesCount} faltas no período)
+    - Assiduidade: ${Number(studentData.presenceRate ?? 0).toFixed(1)}% (${studentData.absencesCount ?? 0} faltas no período)
     - Aluno PAEDE / Educação Especial: ${studentData.isPaed ? 'SIM (Possui laudo / AEE)' : 'NÃO'}
     - Histórico de Avaliações: ${JSON.stringify(studentData.gradesHistory)}
     - Ocorrências / Registros de Convivência: ${JSON.stringify(studentData.occurrences)}
@@ -638,16 +871,57 @@ export const analyzeIndividualStudentWithAI = async (studentData: {
     ### 4. 💡 Orientações de Apoio (Para o Professor e Família)
     (Recomendações para intervenção em sala e engajamento dos responsáveis)`;
 
-    const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: prompt
-    }));
-
-    return response.text;
+    const response = await generateContentWithFallback(ai, { contents: prompt });
+    return response.text || generateFallbackIndividualOpinion(studentData, 'Resposta vazia da API do Gemini.');
   } catch (e: any) {
     console.error("Error analyzing individual student with AI:", e);
-    return "Não foi possível gerar o parecer individual no momento.";
+    return generateFallbackIndividualOpinion(studentData, getFriendlyAIErrorReason(e));
   }
+};
+
+const generateFallbackCouncilReport = (
+  councilData: {
+    className: string;
+    bimestre: string;
+    averageGrade: number;
+    presenceRate: number;
+    totalStudents: number;
+    riskCount: number;
+    paedCount: number;
+    disciplinesSummary: { subject: string; average?: number; failingCount?: number }[];
+    criticalStudents: { name: string; avg: number | null; pres: number; occurrences: number; isPaed: boolean }[];
+  },
+  aiReason: string
+): string => {
+  const avg = Number(councilData.averageGrade ?? 0).toFixed(1);
+  const pres = Number(councilData.presenceRate ?? 0).toFixed(1);
+  const bottlenecks = (councilData.disciplinesSummary || [])
+    .slice(0, 6)
+    .map(d => `• ${d.subject}${d.failingCount != null ? `: ${d.failingCount} aluno(s) abaixo da média 6,0` : ''}`)
+    .join('\n');
+  const criticals = (councilData.criticalStudents || [])
+    .slice(0, 10)
+    .map(s => `• ${s.name} — Média: ${s.avg != null ? Number(s.avg).toFixed(1) : 'S/N'} | Frequência: ${Number(s.pres ?? 0).toFixed(0)}%${s.isPaed ? ' [PAEDE/AEE]' : ''}`)
+    .join('\n');
+
+  return [
+    `⚠️ Aviso da IA Gemini: ${aiReason}`,
+    `Síntese estruturada para o Conselho de Classe gerada automaticamente a partir dos dados oficiais:`,
+    '',
+    `### 1. 📊 Panorama Geral — ${councilData.className} (${councilData.bimestre})`,
+    `Total de estudantes analisados: ${councilData.totalStudents} (sendo ${councilData.paedCount} PAEDE/AEE). A média global está em ${avg}/10,0, com assiduidade média de ${pres}% e ${councilData.riskCount} estudante(s) em risco pedagógico prioritário.`,
+    '',
+    `### 2. ⚠️ Disciplinas com Maior Índice de Defasagem (Gargalos)`,
+    bottlenecks || 'Nenhuma disciplina gargalo registrada no filtro atual.',
+    '',
+    `### 3. 🎯 Estudantes Prioritários para Intervenção & Recomposição`,
+    criticals || 'Nenhum estudante em faixa crítica no filtro atual.',
+    '',
+    `### 4. 🚀 Plano de Ação Conjunto (Coordenação + Professores + Família)`,
+    `• Instituir roteiros de recomposição paralela prioritariamente nas disciplinas gargalo listadas acima.`,
+    `• Convocar os responsáveis dos estudantes em risco crítico para assinatura de Termo de Compromisso e Plano de Intervenção Pedagógica (PIP).`,
+    `• Articular atendimento contínuo com a Sala de Recursos Multifuncionais (AEE) para os ${councilData.paedCount} estudante(s) PAEDE e com a Busca Ativa para casos de infrequência.`
+  ].join('\n');
 };
 
 /**
@@ -661,19 +935,23 @@ export const generateCoordinationClassCouncilWithAI = async (councilData: {
   totalStudents: number;
   riskCount: number;
   paedCount: number;
-  disciplinesSummary: { subject: string; average: number }[];
-  criticalStudents: { name: string; avg: number; pres: number; occurrences: number; isPaed: boolean }[];
+  disciplinesSummary: { subject: string; average?: number; failingCount?: number }[];
+  criticalStudents: { name: string; avg: number | null; pres: number; occurrences: number; isPaed: boolean }[];
 }): Promise<string> => {
+  const ai = getAIClient();
+  if (!ai) {
+    return generateFallbackCouncilReport(councilData, 'Chave de IA não configurada (VITE_GEMINI_API_KEY).');
+  }
+
   try {
-    const ai = getAIClient();
     const prompt = `Você é o Assistente Pedagógico da Coordenação da Escola Estadual André Antônio Maggi (SEDUC-MT).
     Elabore uma Síntese Executiva Estruturada para o CONSELHO DE CLASSE BIMESTRAL da turma: ${councilData.className} (${councilData.bimestre}).
 
     DADOS DA TURMA:
     - Total de Estudantes: ${councilData.totalStudents}
     - Estudantes com Laudo PAEDE / Inclusão: ${councilData.paedCount}
-    - Média Geral da Turma: ${councilData.averageGrade.toFixed(1)} / 10.0
-    - Taxa Média de Assiduidade: ${councilData.presenceRate.toFixed(1)}% (Meta SEDUC: 85%)
+    - Média Geral da Turma: ${Number(councilData.averageGrade ?? 0).toFixed(1)} / 10.0
+    - Taxa Média de Assiduidade: ${Number(councilData.presenceRate ?? 0).toFixed(1)}% (Meta SEDUC: 85%)
     - Total de Estudantes em Risco Pedagógico: ${councilData.riskCount}
     - Médias por Componente Curricular: ${JSON.stringify(councilData.disciplinesSummary)}
     - Lista de Alunos em Risco Crítico (Notas/Frequência/Ocorrências): ${JSON.stringify(councilData.criticalStudents)}
@@ -691,15 +969,11 @@ export const generateCoordinationClassCouncilWithAI = async (councilData: {
     ### 4. 🚀 Plano de Ação Conjunto (Coordenação + Professores + Família)
     (Ações práticas para o próximo período letivo, recuperação paralela e convocação de responsáveis)`;
 
-    const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: prompt
-    }));
-
-    return response.text;
+    const response = await generateContentWithFallback(ai, { contents: prompt });
+    return response.text || generateFallbackCouncilReport(councilData, 'Resposta vazia da API do Gemini.');
   } catch (e: any) {
     console.error("Error generating coordination council report with AI:", e);
-    return "Não foi possível gerar a síntese do conselho de classe no momento.";
+    return generateFallbackCouncilReport(councilData, getFriendlyAIErrorReason(e));
   }
 };
 
@@ -709,6 +983,7 @@ export const generateCoordinationClassCouncilWithAI = async (councilData: {
 export const generateClassSchedule = async (classInfo: any, teachers: any[], validSlots?: string[]) => {
   console.log("AI Prompt Teachers:", JSON.stringify(teachers));
   const ai = getAIClient();
+  if (!ai) return { schedule: [] };
 
   // Use provided slots or default, but EXTRACT START TIMES for AI prompt validation to ensure consistency
   const slotsToUse = validSlots?.filter(s => !s.includes('Recreio')) || ['07:00', '07:50', '08:40', '09:50', '10:40'];
@@ -717,7 +992,7 @@ export const generateClassSchedule = async (classInfo: any, teachers: any[], val
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: `Você é um coordenador pedagógico especialista em montagem de grades horárias (Cronos).
       
       Tarefa: Criar uma grade horária semanal para a turma ${classInfo.name} (${classInfo.shift}).
@@ -772,6 +1047,7 @@ export const generateClassSchedule = async (classInfo: any, teachers: any[], val
  */
 export const generatePedagogicalIntervention = async (assessmentData: any) => {
   const ai = getAIClient();
+  if (!ai) return null;
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -825,9 +1101,10 @@ export const generatePedagogicalIntervention = async (assessmentData: any) => {
  */
 export const extractStaffInfo = async (base64Data: string, mimeType: string) => {
   const ai = getAIClient();
+  if (!ai) return { staffList: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {
@@ -890,9 +1167,10 @@ export const extractStaffInfo = async (base64Data: string, mimeType: string) => 
  */
 export const extractContractInfo = async (base64Data: string, mimeType: string) => {
   const ai = getAIClient();
+  if (!ai) return { items: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {
@@ -949,9 +1227,10 @@ export const extractContractInfo = async (base64Data: string, mimeType: string) 
  */
 export const extractSkillsFromPDF = async (base64Data: string, mimeType: string, subject?: string) => {
   const ai = getAIClient();
+  if (!ai) return { skills: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {
@@ -1069,7 +1348,7 @@ export const fetchBookSynopsis = async (title: string, author: string) => {
   if (!ai) return "Erro: Chave API do Gemini não configurada no ambiente (Vercel). Verifique as variáveis de sistema.";
   
   // Lista de modelos para tentar (do mais recente para o mais estável)
-  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro'];
+  const models = DEFAULT_GEMINI_MODELS;
 
   let lastError = '';
 
@@ -1200,7 +1479,7 @@ export const parseLessonPlanWithAI = async (rawText: string) => {
     ---
   `;
 
-  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro'];
+  const models = DEFAULT_GEMINI_MODELS;
   let lastError = '';
 
   for (const modelName of models) {
