@@ -4,7 +4,15 @@ import { PedagogicalSkill } from './types';
 
 const DEFAULT_GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
 
+interface AIClientLike {
+  isProxy?: boolean;
+  models: {
+    generateContent: (params: { model?: string; models?: string[]; contents: any; config?: any }) => Promise<{ text?: string }>;
+  };
+}
+
 export const getAIKey = (): string => {
+  // No navegador, apenas chave manual opcional no localStorage (nunca embutida no bundle público!)
   if (typeof window !== 'undefined') {
     try {
       const localKey = localStorage.getItem('portal_gemini_api_key');
@@ -12,44 +20,73 @@ export const getAIKey = (): string => {
     } catch {
       // ignore storage errors
     }
+    return '';
   }
 
-  const metaEnv = (import.meta as any).env || {};
-  if (metaEnv.VITE_GEMINI_API_KEY) return String(metaEnv.VITE_GEMINI_API_KEY).trim();
-
-  // Expressões literais para substituição segura via Vite define
-  try {
-    if (process.env.VITE_GEMINI_API_KEY) return String(process.env.VITE_GEMINI_API_KEY).trim();
-    if (process.env.GEMINI_API_KEY) return String(process.env.GEMINI_API_KEY).trim();
-    if (process.env.API_KEY) return String(process.env.API_KEY).trim();
-    if (process.env.NEXT_PUBLIC_GEMINI_API_KEY) return String(process.env.NEXT_PUBLIC_GEMINI_API_KEY).trim();
-  } catch {
-    // process não definido no navegador sem define
-  }
-  return '';
+  // Em ambiente Node.js / servidor
+  const env = typeof process !== 'undefined' && process.env ? process.env : {};
+  return String(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || env.API_KEY || '').trim();
 };
 
-const getAIClient = () => {
-  const apiKey = getAIKey();
+const createServerProxyClient = (): AIClientLike => ({
+  isProxy: true,
+  models: {
+    generateContent: async ({ model, models, contents, config }) => {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, models, contents, config })
+      });
 
-  if (!apiKey) {
-    console.warn("Gemini API Key not found! Features utilizing AI will fail.");
-    return null;
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const err: any = new Error('Rota /api/gemini indisponível neste ambiente.');
+        err.status = response.status || 503;
+        throw err;
+      }
+
+      const data = await response.json();
+      if (!response.ok || data?.error) {
+        const err: any = new Error(data?.error?.message || `Erro HTTP ${response.status} na API do Gemini.`);
+        err.status = data?.error?.code || response.status;
+        err.code = err.status;
+        throw err;
+      }
+
+      return { text: data?.text || '' };
+    }
   }
-  return new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
+});
+
+const getAIClient = (): AIClientLike | null => {
+  const localOrServerKey = getAIKey();
+  if (localOrServerKey) {
+    return new GoogleGenAI({ apiKey: localOrServerKey, apiVersion: 'v1beta' }) as unknown as AIClientLike;
+  }
+
+  // No navegador, utiliza o proxy serverless seguro /api/gemini na Vercel (chave 100% oculta no servidor)
+  if (typeof window !== 'undefined') {
+    return createServerProxyClient();
+  }
+
+  console.warn("Gemini API Key not found! Features utilizing AI will fail.");
+  return null;
 };
 
 const getFriendlyAIErrorReason = (error: any): string => {
   const msg = String(error?.message || error || '');
   const status = error?.status || error?.code;
 
+  if (msg.includes('NOT_CONFIGURED') || msg.includes('não configurada no servidor')) {
+    return 'Chave GEMINI_API_KEY não configurada nas variáveis de ambiente da Vercel.';
+  }
   if (
     status === 402 ||
     msg.includes('402') ||
     msg.toLowerCase().includes('prepayment credits are depleted') ||
     msg.toLowerCase().includes('billing')
   ) {
-    return 'Créditos pré-pagos da API do Gemini esgotados no Google AI Studio (Erro 402). Recarregue os créditos ou atualize a variável VITE_GEMINI_API_KEY na Vercel.';
+    return 'Créditos pré-pagos da API do Gemini esgotados no Google AI Studio (Erro 402). Recarregue os créditos ou atualize a variável GEMINI_API_KEY na Vercel.';
   }
   if (
     status === 403 ||
@@ -59,7 +96,7 @@ const getFriendlyAIErrorReason = (error: any): string => {
     msg.includes('API_KEY_INVALID') ||
     msg.toLowerCase().includes('api key not valid')
   ) {
-    return 'Chave da API do Gemini inválida ou bloqueada pelo Google (Erro 403). Gere uma nova chave no Google AI Studio e atualize a variável VITE_GEMINI_API_KEY na Vercel.';
+    return 'Chave da API do Gemini inválida ou bloqueada pelo Google (Erro 403). Gere uma nova chave no Google AI Studio e atualize a variável GEMINI_API_KEY na Vercel.';
   }
   if (
     status === 429 ||
@@ -105,10 +142,18 @@ const runWithRetry = async <T>(fn: () => Promise<T>, retries = 2, delay = 1500):
 };
 
 const generateContentWithFallback = async (
-  ai: GoogleGenAI,
+  ai: AIClientLike,
   request: { contents: any; config?: any },
   models: string[] = DEFAULT_GEMINI_MODELS
 ) => {
+  if (ai.isProxy) {
+    return await runWithRetry(() =>
+      ai.models.generateContent({
+        models,
+        ...request
+      })
+    );
+  }
   let lastError: any = null;
   for (const model of models) {
     try {
@@ -390,7 +435,7 @@ export const suggestBooks = async (readerInterests: string) => {
  */
 export const analyzeContractHealth = async (contractData: any) => {
   const ai = getAIClient();
-  if (!ai) return "Chave de IA não configurada (VITE_GEMINI_API_KEY).";
+  if (!ai) return "Chave de IA não configurada (GEMINI_API_KEY).";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -412,7 +457,7 @@ export const analyzeContractHealth = async (contractData: any) => {
  */
 export const suggestMenu = async (inventory: any) => {
   const ai = getAIClient();
-  if (!ai) return "Chave de IA não configurada (VITE_GEMINI_API_KEY).";
+  if (!ai) return "Chave de IA não configurada (GEMINI_API_KEY).";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -622,7 +667,7 @@ export const extractStudentInfo = async (base64Data: string, mimeType: string) =
  */
 export const analyzePedagogicalPerformance = async (data: any) => {
   const ai = getAIClient();
-  if (!ai) return "Chave de IA não configurada (VITE_GEMINI_API_KEY).";
+  if (!ai) return "Chave de IA não configurada (GEMINI_API_KEY).";
   try {
     const response = await generateContentWithFallback(ai, {
       contents: `Você é um consultor pedagógico sênior especialista em gestão educacional da rede SEDUC-MT.
@@ -705,7 +750,7 @@ export const analyzeClassroomPerformanceWithAI = async (classData: {
 }) => {
   const ai = getAIClient();
   if (!ai) {
-    return generateFallbackClassroomReport(classData, 'Chave de IA não configurada (VITE_GEMINI_API_KEY).');
+    return generateFallbackClassroomReport(classData, 'Chave de IA não configurada (GEMINI_API_KEY).');
   }
 
   try {
@@ -841,7 +886,7 @@ export const analyzeIndividualStudentWithAI = async (studentData: {
 }) => {
   const ai = getAIClient();
   if (!ai) {
-    return generateFallbackIndividualOpinion(studentData, 'Chave de IA não configurada (VITE_GEMINI_API_KEY).');
+    return generateFallbackIndividualOpinion(studentData, 'Chave de IA não configurada (GEMINI_API_KEY).');
   }
 
   try {
@@ -940,7 +985,7 @@ export const generateCoordinationClassCouncilWithAI = async (councilData: {
 }): Promise<string> => {
   const ai = getAIClient();
   if (!ai) {
-    return generateFallbackCouncilReport(councilData, 'Chave de IA não configurada (VITE_GEMINI_API_KEY).');
+    return generateFallbackCouncilReport(councilData, 'Chave de IA não configurada (GEMINI_API_KEY).');
   }
 
   try {
