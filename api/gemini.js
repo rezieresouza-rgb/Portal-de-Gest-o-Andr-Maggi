@@ -1,6 +1,20 @@
 import { GoogleGenAI } from '@google/genai';
 
-const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+const FALLBACK_MODELS = [
+  'gemini-flash-lite-latest',
+  'gemini-3-flash-preview',
+  'gemini-3.5-flash-lite',
+  'gemini-3.5-flash'
+];
+const RETIRED_MODELS = new Set([
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-pro'
+]);
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -41,12 +55,13 @@ export default async function handler(req, res) {
     }
 
     const requestedModels = Array.isArray(models) && models.length > 0
-      ? models
+      ? [...models, ...FALLBACK_MODELS]
       : model
         ? [model, ...FALLBACK_MODELS]
         : FALLBACK_MODELS;
 
-    const uniqueModels = [...new Set(requestedModels.filter(Boolean))];
+    const activeModels = requestedModels.filter(m => m && !RETIRED_MODELS.has(m));
+    const uniqueModels = [...new Set(activeModels.length > 0 ? activeModels : FALLBACK_MODELS)];
     const ai = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
 
     let lastError = null;

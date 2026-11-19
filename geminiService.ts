@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from './supabaseClient';
 import { PedagogicalSkill } from './types';
 
-const DEFAULT_GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+const DEFAULT_GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-3-flash-preview', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
 
 interface AIClientLike {
   isProxy?: boolean;
@@ -194,7 +194,7 @@ export const extractDetailedStudentList = async (base64Data: string, mimeType: s
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       // FIX: Updated contents to use { parts: [...] } structure for standard multi-part inputs
       contents: {
         parts: [
@@ -315,7 +315,7 @@ export const consolidateStudentData = async (files: { base64: string; mimeType: 
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: promptParts
       },
@@ -366,7 +366,7 @@ export const generateOccurrenceAta = async (occurrenceData: any) => {
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: `Você é um assistente jurídico e pedagógico de uma secretaria escolar. 
       Com base nos dados da ocorrência abaixo, gere uma Ata de Ocorrência Escolar formal, imparcial e padronizada.
       
@@ -418,7 +418,7 @@ export const suggestBooks = async (readerInterests: string) => {
   if (!ai) return "Erro: Chave API do Gemini não configurada.";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [{ text: `Você é um bibliotecário especialista. Com base nos interesses: "${readerInterests}", sugira 3 livros clássicos ou contemporâneos adequados para idade escolar. Forneça o título, autor e um pequeno motivo da recomendação. Responda em Português do Brasil.` }]
       },
@@ -438,7 +438,7 @@ export const analyzeContractHealth = async (contractData: any) => {
   if (!ai) return "Chave de IA não configurada (GEMINI_API_KEY).";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: `Analise o seguinte contrato de merenda escolar e forneça um resumo de saúde (riscos, prazos, custo-benefício): ${JSON.stringify(contractData)}`,
       config: {
         temperature: 0.7,
@@ -460,7 +460,7 @@ export const suggestMenu = async (inventory: any) => {
   if (!ai) return "Chave de IA não configurada (GEMINI_API_KEY).";
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: `Com base no estoque atual de merenda escolar: ${JSON.stringify(inventory)}, sugira um cardápio semanal nutricionalmente equilibrado focando em reduzir desperdício de itens próximos do vencimento ou em excesso. Responda em Português do Brasil.`,
     }));
     return response.text;
@@ -478,7 +478,7 @@ export const fetchPedagogicalSkills = async (subject: string, className: string)
   if (!ai) return null;
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: `Você é um consultor pedagógico da SEDUC-MT especialista em BNCC e DRC-MT.
       Forneça a LISTA COMPLETA e EXAUSTIVA das habilidades essenciais para o componente "${subject}" na turma "${className}".
       Inclua tanto as habilidades da base nacional (BNCC) quanto os acréscimos regionais do Mato Grosso (DRC-MT).
@@ -533,7 +533,7 @@ export const extractInvoiceInfo = async (base64Data: string, mimeType: string) =
   if (!ai) return {};
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [
           {
@@ -577,7 +577,7 @@ export const extractAssessmentResults = async (base64Data: string, mimeType: str
   if (!ai) return { students: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [
           {
@@ -627,7 +627,7 @@ export const extractStudentInfo = async (base64Data: string, mimeType: string) =
   if (!ai) return {};
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [
           {
@@ -679,7 +679,7 @@ export const analyzePedagogicalPerformance = async (data: any) => {
       3. Recomendações baseadas nas observações de aula.
       4. Sugestões de melhoria para os roteiros pedagógicos.
       Responda em Português do Brasil de forma executiva e profissional.`,
-    }, ['gemini-2.5-pro', ...DEFAULT_GEMINI_MODELS]);
+    }, DEFAULT_GEMINI_MODELS);
     return response.text;
   } catch (e) {
     console.error("Error analyzing performance", e);
@@ -1037,7 +1037,7 @@ export const generateClassSchedule = async (classInfo: any, teachers: any[], val
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: `Você é um coordenador pedagógico especialista em montagem de grades horárias (Cronos).
       
       Tarefa: Criar uma grade horária semanal para a turma ${classInfo.name} (${classInfo.shift}).
@@ -1095,7 +1095,7 @@ export const generatePedagogicalIntervention = async (assessmentData: any) => {
   if (!ai) return null;
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: `Você é um especialista em educação e análise de dados pedagógicos (CAED/Sistema Estruturado).
       
       Analise os resultados desta avaliação externa:
@@ -1149,7 +1149,7 @@ export const extractStaffInfo = async (base64Data: string, mimeType: string) => 
   if (!ai) return { staffList: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [
           {
@@ -1215,7 +1215,7 @@ export const extractContractInfo = async (base64Data: string, mimeType: string) 
   if (!ai) return { items: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [
           {
@@ -1275,7 +1275,7 @@ export const extractSkillsFromPDF = async (base64Data: string, mimeType: string,
   if (!ai) return { skills: [] };
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [
           {
@@ -1574,7 +1574,7 @@ export const generateMaintenanceActionPlan = async (occurrences: any[]) => {
     }));
 
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: `Você é um gestor predial especialista em manutenção e conservação escolar de alto padrão.
       
       Analise a lista de ocorrências registradas na escola para formular um PLANO DE AÇÃO DE MELHORIAS PREVENTIVAS E CORRETIVAS:
@@ -1696,7 +1696,7 @@ Diretrizes obrigatórias de redação:
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: prompt,
       config: {
         systemInstruction,
@@ -1791,7 +1791,7 @@ Retorne um objeto JSON válido no formato: { "objectives": "", "deliberations": 
 
   try {
     const response = await runWithRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: prompt,
       config: {
         systemInstruction,
