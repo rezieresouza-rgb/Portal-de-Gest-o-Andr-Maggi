@@ -81,13 +81,13 @@ export default async function handler(req, res) {
     }
 
     const errMsg = String(lastError?.message || 'Erro ao chamar API do Gemini.');
-    let httpStatus = Number(lastError?.status || lastError?.code || 500);
-    if (!Number.isInteger(httpStatus) || httpStatus < 400 || httpStatus > 599) {
+    let httpStatus = Number(lastError?.status || lastError?.code || 0);
+    if (!Number.isInteger(httpStatus) || httpStatus < 400 || httpStatus > 599 || httpStatus === 500) {
       if (errMsg.includes('402') || errMsg.toLowerCase().includes('prepayment credits')) httpStatus = 402;
       else if (errMsg.includes('403') || errMsg.toLowerCase().includes('leaked') || errMsg.includes('PERMISSION_DENIED')) httpStatus = 403;
       else if (errMsg.includes('429') || errMsg.toLowerCase().includes('quota')) httpStatus = 429;
       else if (errMsg.includes('404')) httpStatus = 404;
-      else httpStatus = 500;
+      else if (!Number.isInteger(httpStatus) || httpStatus < 400 || httpStatus > 599) httpStatus = 500;
     }
 
     return res.status(httpStatus).json({
