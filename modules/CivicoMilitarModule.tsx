@@ -703,16 +703,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     suspensionDays: 1
   });
 
-  // IA de Correção Automática / Sob Demanda para Detalhes e Observações
+  // IA de Correção Sob Demanda para Detalhes e Observações
   const [isProofreadingObs, setIsProofreadingObs] = useState(false);
-  const [autoProofreadObs, setAutoProofreadObs] = useState(true);
   const [obsProofreadStatus, setObsProofreadStatus] = useState<'IDLE' | 'CORRECTED' | 'ERROR'>('IDLE');
   const [obsProofreadError, setObsProofreadError] = useState<string | null>(null);
   const [previousObsBeforeAI, setPreviousObsBeforeAI] = useState<string | null>(null);
   const obsLatestValueRef = useRef('');
-  const obsUserEditedRef = useRef(false);
-  const obsLastCorrectedRef = useRef('');
-  const obsDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isProofreadingInspectionObs, setIsProofreadingInspectionObs] = useState(false);
   const [inspectionProofreadStatus, setInspectionProofreadStatus] = useState<'IDLE' | 'CORRECTED' | 'ERROR'>('IDLE');
@@ -722,16 +718,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     obsLatestValueRef.current = newOccurrence.observations;
   }, [newOccurrence.observations]);
 
-  useEffect(() => {
-    return () => {
-      if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
-    };
-  }, []);
-
   const resetObsProofreadState = () => {
-    if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
-    obsUserEditedRef.current = false;
-    obsLastCorrectedRef.current = '';
     setPreviousObsBeforeAI(null);
     setObsProofreadStatus('IDLE');
     setObsProofreadError(null);
@@ -741,12 +728,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     resetObsProofreadState();
   }, [selectedStudentState?.studentId, isBehaviorModalOpen]);
 
-  const handleProofreadOccurrenceObs = async (manual = false) => {
-    if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
+  const handleProofreadOccurrenceObs = async () => {
     const rawCurrent = obsLatestValueRef.current;
     const textToFix = (rawCurrent || '').trim();
     if (!textToFix || textToFix.length < 4) return;
-    if (!manual && textToFix === obsLastCorrectedRef.current) return;
 
     setIsProofreadingObs(true);
     setObsProofreadError(null);
@@ -761,17 +746,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         measure: newOccurrence.type === 'DEMERIT' ? newOccurrence.disciplinaryMeasure : undefined
       });
 
-      // Evita sobrescrever se o usuário continuou digitando durante a correção automática
-      if (!manual && obsLatestValueRef.current.trim() !== textToFix) {
-        return;
-      }
-
       if (result.usedAI && result.correctedText) {
         if (result.correctedText.trim() !== textToFix) {
           setPreviousObsBeforeAI(rawCurrent);
         }
-        obsLastCorrectedRef.current = result.correctedText.trim();
-        obsUserEditedRef.current = false;
         setNewOccurrence(prev => ({ ...prev, observations: result.correctedText }));
         setObsProofreadStatus('CORRECTED');
       } else if (result.warning) {
@@ -789,22 +767,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
   const handleOccurrenceObsChange = (value: string) => {
     obsLatestValueRef.current = value;
-    obsUserEditedRef.current = true;
     setNewOccurrence(prev => ({ ...prev, observations: value }));
     setObsProofreadStatus('IDLE');
     setObsProofreadError(null);
-
-    if (obsDebounceTimerRef.current) {
-      clearTimeout(obsDebounceTimerRef.current);
-    }
-
-    if (autoProofreadObs && value.trim().length >= 8) {
-      obsDebounceTimerRef.current = setTimeout(() => {
-        if (obsUserEditedRef.current && obsLatestValueRef.current.trim() === value.trim()) {
-          handleProofreadOccurrenceObs(false);
-        }
-      }, 2200);
-    }
   };
 
   const handleProofreadInspectionObs = async () => {
@@ -6534,7 +6499,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     setInspectionProofreadStatus('IDLE');
                   }}
                   placeholder="Descreva detalhes específicos da inconformidade..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[80px]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm leading-relaxed font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[150px] resize-y"
                 />
                 {inspectionProofreadStatus === 'CORRECTED' && (
                   <p className="mt-1 text-[9px] font-bold text-emerald-600 flex items-center gap-1">
@@ -6565,8 +6530,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
             {/* MODAL 2: DETALHES DE COMPORTAMENTO / LANÇAR OCORRÊNCIA */}
       {isBehaviorModalOpen && selectedStudentState && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 overflow-y-auto">
-          <div className="bg-white border border-slate-200 rounded-[2.5rem] max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800 my-auto overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-3 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-[2rem] max-w-[96vw] xl:max-w-[1440px] w-full max-h-[96vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800 my-auto overflow-hidden">
             
             {/* HEADER FIXO SUPERIOR TIMBRADO */}
             <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 border-b border-slate-800">
@@ -6649,10 +6614,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             </div>
 
             {/* CORPO DO MODAL (SCROLL INTERNO DE 2 COLUNAS) */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-7 grid grid-cols-1 lg:grid-cols-12 gap-7">
               
-              {/* Coluna Esquerda: Formulário de Lançamento (7/12) */}
-              <div className="lg:col-span-7 space-y-5">
+              {/* Coluna Esquerda: Formulário de Lançamento (8/12) */}
+              <div className="lg:col-span-8 space-y-5">
                 <form onSubmit={handleAddOccurrence} className="space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <h4 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-2">
@@ -6978,47 +6943,31 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   {/* OBSERVAÇÕES DETALHADAS COM CORREÇÃO POR IA */}
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                      <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
                         Detalhes / Observações
                       </label>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setAutoProofreadObs(prev => !prev)}
-                          title="Quando ativado, corrige o texto automaticamente ao pausar a digitação"
-                          className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border transition-all ${
-                            autoProofreadObs
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                              : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-slate-600'
-                          }`}
-                        >
-                          Auto IA: {autoProofreadObs ? 'ON' : 'OFF'}
-                        </button>
-
+                      <div className="flex items-center gap-2">
                         {previousObsBeforeAI !== null && !isProofreadingObs && (
                           <button
                             type="button"
                             onClick={() => {
-                              if (obsDebounceTimerRef.current) clearTimeout(obsDebounceTimerRef.current);
-                              obsUserEditedRef.current = false;
-                              obsLastCorrectedRef.current = previousObsBeforeAI.trim();
                               setNewOccurrence(prev => ({ ...prev, observations: previousObsBeforeAI }));
                               setPreviousObsBeforeAI(null);
                               setObsProofreadStatus('IDLE');
                             }}
-                            className="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1 transition-all"
+                            className="px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1 transition-all"
                           >
-                            <RotateCcw size={10} /> Desfazer
+                            <RotateCcw size={11} /> Desfazer
                           </button>
                         )}
 
                         <button
                           type="button"
-                          onClick={() => handleProofreadOccurrenceObs(true)}
+                          onClick={handleProofreadOccurrenceObs}
                           disabled={isProofreadingObs || !newOccurrence.observations.trim()}
-                          className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1 shadow-sm transition-all disabled:opacity-40"
+                          className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-40"
                         >
-                          {isProofreadingObs ? <RefreshCw size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                          {isProofreadingObs ? <RefreshCw size={11} className="animate-spin" /> : <Sparkles size={11} />}
                           {isProofreadingObs ? 'Corrigindo...' : 'Corrigir com IA'}
                         </button>
                       </div>
@@ -7026,8 +6975,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     <textarea
                       value={newOccurrence.observations}
                       onChange={e => handleOccurrenceObsChange(e.target.value)}
-                      placeholder="Descreva detalhes específicos do fato ocorrido... (a IA revisa ortografia e linguagem formal)"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[82px]"
+                      placeholder="Descreva detalhes específicos do fato ocorrido..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm leading-relaxed font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[210px] resize-y"
                       required
                     />
                     {isProofreadingObs && (
@@ -7061,10 +7010,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </form>
               </div>
 
-              {/* Coluna Direita: Histórico de Ocorrências e Ações (5/12) */}
-              <div className="lg:col-span-5 space-y-4 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-8">
+              {/* Coluna Direita: Histórico de Ocorrências e Ações (4/12) */}
+              <div className="lg:col-span-4 space-y-4 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-7">
                 
-                <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
+                <div className="space-y-4 flex-1 overflow-y-auto max-h-[640px] pr-1 custom-scrollbar">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                       <Clock size={12} /> Histórico de Atitude
