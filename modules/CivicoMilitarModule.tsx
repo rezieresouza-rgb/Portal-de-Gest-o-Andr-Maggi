@@ -68,6 +68,132 @@ const generateUUID = (): string => {
   });
 };
 
+const SCHOOL_YEAR_START_2026 = '2026-02-02';
+const DISMISSED_AUTO_MERITS_KEY = 'civic_dismissed_auto_merits_v1';
+
+const generateDeterministicUUID = (seed: string): string => {
+  let h1 = 0xdeadbeef ^ seed.length;
+  let h2 = 0x41c6ce57 ^ seed.length;
+  let h3 = 0x9e3779b9 ^ seed.length;
+  let h4 = 0x85ebca6b ^ seed.length;
+  for (let i = 0; i < seed.length; i++) {
+    const ch = seed.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+    h3 = Math.imul(h3 ^ ch, 2246822519);
+    h4 = Math.imul(h4 ^ ch, 3266489917);
+  }
+  const toHex = (n: number) => (n >>> 0).toString(16).padStart(8, '0');
+  const raw = toHex(h1) + toHex(h2) + toHex(h3) + toHex(h4);
+  return `${raw.slice(0, 8)}-${raw.slice(8, 12)}-5${raw.slice(13, 16)}-8${raw.slice(17, 20)}-${raw.slice(20, 32)}`;
+};
+
+const parseIsoDateSafe = (iso?: string | null): Date | null => {
+  if (!iso || typeof iso !== 'string') return null;
+  const match = iso.trim().match(/^(d{4})-(d{2})-(d{2})/);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0);
+};
+
+const formatDateIsoBr = (iso?: string | null): string => {
+  const d = parseIsoDateSafe(iso);
+  if (!d) return iso || '---';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
+const toIsoDateLocal = (d: Date): string => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const addMonthsIso = (iso: string, months: number): string => {
+  const d = parseIsoDateSafe(iso);
+  if (!d) return iso;
+  const targetDay = d.getDate();
+  const next = new Date(d.getFullYear(), d.getMonth() + months, 1, 12, 0, 0);
+  const lastDayOfTargetMonth = new Date(next.getFullYear(), next.getMonth() + 1, 0, 12, 0, 0).getDate();
+  next.setDate(Math.min(targetDay, lastDayOfTargetMonth));
+  return toIsoDateLocal(next);
+};
+
+const daysBetweenIso = (startIso: string, endIso: string): number => {
+  const s = parseIsoDateSafe(startIso);
+  const e = parseIsoDateSafe(endIso);
+  if (!s || !e) return 0;
+  return Math.floor((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+const getDismissedAutoMeritIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(DISMISSED_AUTO_MERITS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const addDismissedAutoMeritId = (id: string) => {
+  try {
+    const current = getDismissedAutoMeritIds();
+    current.add(id);
+    localStorage.setItem(DISMISSED_AUTO_MERITS_KEY, JSON.stringify(Array.from(current)));
+  } catch {
+    // ignore storage errors
+  }
+};
+
+interface StudentBimesterSummary {
+  bimestre: string;
+  average: number;
+  subjectCount: number;
+  latestDate: string;
+}
+
+const inferBimesterFromDate = (isoDate?: string): string | null => {
+  const d = parseIsoDateSafe(isoDate);
+  if (!d) return null;
+  const m = d.getMonth() + 1; // 1..12
+  if (m <= 5) return '1º BIMESTRE';
+  if (m <= 8) return '2º BIMESTRE';
+  if (m <= 11) return '3º BIMESTRE';
+  return '4º BIMESTRE';
+};
+
+const fetchAllPaginated = async (
+  buildQuery: (from: number, to: number) => any,
+  pageSize = 1000
+): Promise<any[]> => {
+  let all: any[] = [];
+  let page = 0;
+  while (true) {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    const { data, error } = await buildQuery(from, to);
+    if (error || !data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < pageSize) break;
+    page++;
+  }
+  return all;
+};
+
+const upsertInChunks = async (table: string, rows: any[], onConflict: string, chunkSize = 200) => {
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const { error } = await supabase.from(table).upsert(chunk, { onConflict });
+    if (error) {
+      console.error(`Error upserting ${table} chunk ${i}:`, error);
+    }
+  }
+};
+
 export const CIRCUNSTANCIAS_AGRAVANTES_ART35 = [
   'I - Ser chefe de turma',
   'II - Estar no comportamento insuficiente ou no incompatível',
@@ -714,6 +840,11 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [inspectionProofreadStatus, setInspectionProofreadStatus] = useState<'IDLE' | 'CORRECTED' | 'ERROR'>('IDLE');
   const [previousInspectionObsBeforeAI, setPreviousInspectionObsBeforeAI] = useState<string | null>(null);
 
+  // Apuração Automática de Méritos Regulamentares (Art. 50: Média >= 8,0 | Art. 51: 2 Meses sem Demérito)
+  const [studentBimesterStats, setStudentBimesterStats] = useState<Record<string, StudentBimesterSummary[]>>({});
+  const [isSyncingAutoMerits, setIsSyncingAutoMerits] = useState(false);
+  const [autoMeritSyncBanner, setAutoMeritSyncBanner] = useState<string | null>(null);
+
   useEffect(() => {
     obsLatestValueRef.current = newOccurrence.observations;
   }, [newOccurrence.observations]);
@@ -1079,7 +1210,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       try {
         const { data, error } = await supabase
           .from('students')
-          .select('*, enrollments(status, classrooms(name, shift))');
+          .select('*, enrollments(status, enrollment_date, classrooms(name, shift))');
 
         if (error) throw error;
 
@@ -1093,10 +1224,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             if (!activeEnr) return null;
 
             return {
+              StudentUuid: s.id,
               CodigoAluno: s.registration_number,
               Nome: s.name,
               Turma: activeEnr.classrooms?.name || 'SEM TURMA',
               Turno: activeEnr.classrooms?.shift || '---',
+              DataMatricula: activeEnr.enrollment_date || '',
               DataNascimento: s.birth_date,
               PAED: s.paed ? 'Sim' : 'Não',
               TransporteEscolar: s.school_transport ? 'Sim' : 'Não',
@@ -1188,23 +1321,300 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     loadFromSupabase();
   }, []);
 
+  // Motor de Apuração e Lançamento Automático de Méritos (Art. 50 e Art. 51 EECM-MT)
+  const runAutomaticMeritSync = async (
+    baseStates: StudentBehaviorState[],
+    studentsList: any[],
+    showFeedback = false
+  ) => {
+    setIsSyncingAutoMerits(true);
+    try {
+      // 1. Buscar avaliações bimestrais oficiais e todas as notas (paginado sem limite de 1000)
+      const bimAssessments = await fetchAllPaginated((from, to) =>
+        supabase
+          .from('assessments')
+          .select('id, bimestre, subject, date')
+          .eq('type', 'AVALIACAO_BIMESTRAL')
+          .range(from, to)
+      );
+
+      const assMap = new Map<string, { bimestre: string; subject: string; date: string }>();
+      bimAssessments.forEach((a: any) => {
+        if (a.id && a.bimestre) {
+          assMap.set(a.id, {
+            bimestre: String(a.bimestre).trim().toUpperCase(),
+            subject: a.subject || '',
+            date: a.date || ''
+          });
+        }
+      });
+
+      const uuidToCode = new Map<string, string>();
+      const codeToDbStudent = new Map<string, any>();
+      studentsList.forEach((s: any) => {
+        if (s.CodigoAluno) {
+          const code = String(s.CodigoAluno).trim();
+          codeToDbStudent.set(code, s);
+          if (s.StudentUuid) uuidToCode.set(s.StudentUuid, code);
+        }
+      });
+
+      const assIds = Array.from(assMap.keys());
+      let allGrades: any[] = [];
+      if (assIds.length > 0) {
+        allGrades = await fetchAllPaginated((from, to) =>
+          supabase
+            .from('grades')
+            .select('student_id, student_code, score, assessment_id')
+            .in('assessment_id', assIds)
+            .range(from, to)
+        );
+      }
+
+      // Agrupar notas por aluno (CodigoAluno) e por bimestre
+      const rawGradesByStudent = new Map<string, Map<string, { sum: number; count: number; latestDate: string }>>();
+      allGrades.forEach((g: any) => {
+        if (g.score == null || isNaN(Number(g.score))) return;
+        const ass = assMap.get(g.assessment_id);
+        if (!ass) return;
+        const code = (g.student_id && uuidToCode.get(g.student_id)) || (g.student_code ? String(g.student_code).trim() : '');
+        if (!code) return;
+
+        if (!rawGradesByStudent.has(code)) rawGradesByStudent.set(code, new Map());
+        const bMap = rawGradesByStudent.get(code)!;
+        if (!bMap.has(ass.bimestre)) {
+          bMap.set(ass.bimestre, { sum: 0, count: 0, latestDate: ass.date || '' });
+        }
+        const entry = bMap.get(ass.bimestre)!;
+        entry.sum += Number(g.score);
+        entry.count += 1;
+        if (ass.date && (!entry.latestDate || ass.date > entry.latestDate)) {
+          entry.latestDate = ass.date;
+        }
+      });
+
+      const bimesterOrder = ['1º BIMESTRE', '2º BIMESTRE', '3º BIMESTRE', '4º BIMESTRE'];
+      const statsRecord: Record<string, StudentBimesterSummary[]> = {};
+      rawGradesByStudent.forEach((bMap, code) => {
+        const list: StudentBimesterSummary[] = [];
+        bMap.forEach((val, bimestre) => {
+          if (val.count > 0) {
+            list.push({
+              bimestre,
+              average: parseFloat((val.sum / val.count).toFixed(2)),
+              subjectCount: val.count,
+              latestDate: val.latestDate
+            });
+          }
+        });
+        list.sort((a, b) => {
+          const ia = bimesterOrder.indexOf(a.bimestre);
+          const ib = bimesterOrder.indexOf(b.bimestre);
+          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        });
+        statsRecord[code] = list;
+      });
+      setStudentBimesterStats(statsRecord);
+
+      // 2. Avaliar Art. 50 (Média Bimestral >= 8,0) e Art. 51 (2 Meses sem Medida Disciplinar)
+      const todayIso = toIsoDateLocal(new Date());
+      const dismissedIds = getDismissedAutoMeritIds();
+      const changedBehaviors: StudentBehaviorState[] = [];
+      const newOccurrencesToPersist: { studentId: string; occ: BehaviorOccurrence }[] = [];
+      let totalArt50Added = 0;
+      let totalArt51Added = 0;
+
+      const nextStates: StudentBehaviorState[] = baseStates.map(student => {
+        const code = String(student.studentId).trim();
+        const dbS = codeToDbStudent.get(code);
+        const existingOccs = [...(student.occurrences || [])];
+        const existingIds = new Set(existingOccs.map(o => o.id));
+        const newlyAdded: BehaviorOccurrence[] = [];
+
+        // --- ART. 50: Média Bimestral >= 8,0 (+0.50 por bimestre) ---
+        const bimList = statsRecord[code] || [];
+        const existingArt50Occs = existingOccs.filter(
+          o => o.type === 'MERIT' && (o.category.includes('Art. 50') || o.category.includes('Média Bimestral'))
+        );
+
+        for (const bim of bimList) {
+          if (bim.subjectCount < 4 || bim.average < 8.0) continue;
+
+          const autoId = generateDeterministicUUID(`AUTO_ART50:${code}:${bim.bimestre}`);
+          if (existingIds.has(autoId) || dismissedIds.has(autoId)) continue;
+
+          // Verifica se já existe lançamento (automático ou manual) referente a este bimestre
+          const alreadyHasForBim = existingArt50Occs.some(o => {
+            const obsUpper = (o.observations || '').toUpperCase();
+            if (obsUpper.includes(bim.bimestre)) return true;
+            // Se lançamento manual antigo não mencionou qual bimestre, associa pela data
+            const mentionsAnyBim = bimesterOrder.some(b => obsUpper.includes(b));
+            if (!mentionsAnyBim) {
+              return inferBimesterFromDate(o.date) === bim.bimestre;
+            }
+            return false;
+          });
+
+          if (alreadyHasForBim) continue;
+
+          const occDate = (bim.latestDate && bim.latestDate <= todayIso) ? bim.latestDate : todayIso;
+          const newOcc: BehaviorOccurrence = {
+            id: autoId,
+            type: 'MERIT',
+            category: 'Média Bimestral >= 8,0 (Art. 50)',
+            categories: ['Média Bimestral >= 8,0 (Art. 50)'],
+            points: 0.50,
+            date: occDate,
+            observations: `Bonificação automática (Art. 50 EECM): O(A) aluno(a) alcançou média ${bim.average.toFixed(2)} no ${bim.bimestre} (${bim.subjectCount} disciplinas avaliadas, média ≥ 8,0). [AUTO:ART50:${bim.bimestre}]`,
+            responsible: 'SISTEMA AUTOMÁTICO (EECM-MT)',
+            isEscalated: false
+          };
+          newlyAdded.push(newOcc);
+          existingIds.add(autoId);
+          totalArt50Added++;
+        }
+
+        // --- ART. 51: 2 Meses Consecutivos sem Medida Disciplinar (+0.20 por ciclo) ---
+        const rawEnrDate = dbS?.DataMatricula && /^d{4}-d{2}-d{2}/.test(String(dbS.DataMatricula))
+          ? String(dbS.DataMatricula).slice(0, 10)
+          : SCHOOL_YEAR_START_2026;
+        const studentStartDate = rawEnrDate > SCHOOL_YEAR_START_2026 ? rawEnrDate : SCHOOL_YEAR_START_2026;
+
+        const demeritDates = existingOccs
+          .filter(o => o.type === 'DEMERIT' && o.date)
+          .map(o => String(o.date).slice(0, 10))
+          .sort();
+        const latestDemeritDate = demeritDates.length > 0 ? demeritDates[demeritDates.length - 1] : '';
+
+        const existingArt51Dates = existingOccs
+          .filter(o => o.type === 'MERIT' && (o.category.includes('Art. 51') || o.category.includes('2 Meses sem Medida')))
+          .map(o => String(o.date).slice(0, 10))
+          .sort();
+        const latestArt51Date = existingArt51Dates.length > 0 ? existingArt51Dates[existingArt51Dates.length - 1] : '';
+
+        let cursor = studentStartDate;
+        if (latestDemeritDate && latestDemeritDate > cursor) cursor = latestDemeritDate;
+        if (latestArt51Date && latestArt51Date > cursor) cursor = latestArt51Date;
+
+        // Gera cada ciclo completo de 2 meses desde a data de referência até hoje (limite de segurança de 6 ciclos/ano)
+        let safetyCycles = 0;
+        while (safetyCycles < 6) {
+          const cycleEndDate = addMonthsIso(cursor, 2);
+          if (cycleEndDate > todayIso) break;
+
+          const autoId = generateDeterministicUUID(`AUTO_ART51:${code}:${cycleEndDate}`);
+          if (!existingIds.has(autoId) && !dismissedIds.has(autoId)) {
+            const newOcc: BehaviorOccurrence = {
+              id: autoId,
+              type: 'MERIT',
+              category: '2 Meses sem Medida Disciplinar (Art. 51)',
+              categories: ['2 Meses sem Medida Disciplinar (Art. 51)'],
+              points: 0.20,
+              date: cycleEndDate,
+              observations: `Bonificação automática (Art. 51 EECM): O(A) aluno(a) completou 2 meses consecutivos sem medida disciplinar (período de ${formatDateIsoBr(cursor)} a ${formatDateIsoBr(cycleEndDate)}). [AUTO:ART51:${cycleEndDate}]`,
+              responsible: 'SISTEMA AUTOMÁTICO (EECM-MT)',
+              isEscalated: false
+            };
+            newlyAdded.push(newOcc);
+            existingIds.add(autoId);
+            totalArt51Added++;
+          }
+
+          cursor = cycleEndDate;
+          safetyCycles++;
+        }
+
+        if (newlyAdded.length === 0) {
+          return student;
+        }
+
+        const addedPoints = newlyAdded.reduce((sum, o) => sum + Number(o.points || 0), 0);
+        const newScore = Math.min(10, parseFloat((student.score + addedPoints).toFixed(2)));
+        const mergedOccs = [...newlyAdded, ...existingOccs].sort((a, b) =>
+          String(b.date || '').localeCompare(String(a.date || ''))
+        );
+
+        const updatedStudent: StudentBehaviorState = {
+          ...student,
+          score: newScore,
+          occurrences: mergedOccs
+        };
+
+        changedBehaviors.push(updatedStudent);
+        newlyAdded.forEach(occ => newOccurrencesToPersist.push({ studentId: code, occ }));
+        return updatedStudent;
+      });
+
+      setStudentStates(nextStates);
+      setSelectedStudentState(prev => {
+        if (!prev) return prev;
+        return nextStates.find(s => String(s.studentId) === String(prev.studentId)) || prev;
+      });
+
+      // 3. Persistir apenas alunos alterados e novos méritos no Supabase em lotes seguros
+      if (changedBehaviors.length > 0) {
+        const behaviorsPayload = changedBehaviors.map(b => ({
+          student_id: b.studentId,
+          student_name: b.studentName,
+          class_name: b.className,
+          score: b.score,
+          is_class_leader: b.isClassLeader,
+          is_civic_highlight: b.isCivicHighlight
+        }));
+        await upsertInChunks('civic_student_behavior', behaviorsPayload, 'student_id', 200);
+
+        const occsPayload = newOccurrencesToPersist.map(({ studentId, occ }) => ({
+          id: occ.id,
+          student_id: studentId,
+          type: occ.type,
+          category: occ.category,
+          categories: occ.categories,
+          points: occ.points,
+          date: occ.date,
+          observations: occ.observations,
+          responsible: occ.responsible,
+          disciplinary_measure: occ.disciplinaryMeasure || null,
+          suspension_days: occ.suspensionDays || null,
+          is_escalated: !!occ.isEscalated
+        }));
+        await upsertInChunks('civic_occurrences', occsPayload, 'id', 200);
+
+        setAutoMeritSyncBanner(
+          `Sincronização automática concluída: +${totalArt50Added} bonificação(ões) Art. 50 (Média ≥ 8,0) e +${totalArt51Added} bonificação(ões) Art. 51 (2 meses s/ medida) aplicadas em ${changedBehaviors.length} aluno(s).`
+        );
+      } else if (showFeedback) {
+        setAutoMeritSyncBanner(
+          'Todos os alunos já estão 100% atualizados com as bonificações do Art. 50 (Média ≥ 8,0) e Art. 51 (2 meses sem medida disciplinar).'
+        );
+      }
+    } catch (err) {
+      console.error('Erro ao sincronizar méritos automáticos Art. 50/51:', err);
+      if (showFeedback) {
+        setAutoMeritSyncBanner('Não foi possível sincronizar os méritos automáticos agora. Tente novamente.');
+      }
+    } finally {
+      setIsSyncingAutoMerits(false);
+    }
+  };
+
   // Sync studentStates automatically whenever dbStudents is loaded/updated from Supabase
   useEffect(() => {
     if (!dbStudents || dbStudents.length === 0) return;
 
     const loadStudentData = async () => {
       try {
-        const { data: behaviors } = await supabase.from('civic_student_behavior').select('*');
-        const { data: occurrences } = await supabase.from('civic_occurrences').select('*');
+        const behaviors = await fetchAllPaginated((from, to) =>
+          supabase.from('civic_student_behavior').select('*').range(from, to)
+        );
+        const occurrences = await fetchAllPaginated((from, to) =>
+          supabase.from('civic_occurrences').select('*').range(from, to)
+        );
 
-        const saved: StudentBehaviorState[] = (behaviors || []).map((b: any) => ({
-          studentId: b.student_id,
-          studentName: b.student_name,
-          className: b.class_name,
-          score: parseFloat(b.score),
-          isClassLeader: b.is_class_leader,
-          isCivicHighlight: b.is_civic_highlight,
-          occurrences: (occurrences || []).filter((o: any) => o.student_id === b.student_id).map((o: any) => ({
+        const occsByStudent = new Map<string, BehaviorOccurrence[]>();
+        (occurrences || []).forEach((o: any) => {
+          const sid = String(o.student_id);
+          if (!occsByStudent.has(sid)) occsByStudent.set(sid, []);
+          occsByStudent.get(sid)!.push({
             id: o.id,
             type: o.type,
             category: o.category,
@@ -1216,30 +1626,43 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             disciplinaryMeasure: o.disciplinary_measure,
             suspensionDays: o.suspension_days,
             isEscalated: o.is_escalated
-          }))
-        }));
+          });
+        });
+
+        const behaviorMap = new Map<string, any>();
+        (behaviors || []).forEach((b: any) => behaviorMap.set(String(b.student_id), b));
 
         const updatedStates: StudentBehaviorState[] = dbStudents.map(dbS => {
-          const existing = saved.find(s => String(s.studentId) === String(dbS.CodigoAluno));
+          const code = String(dbS.CodigoAluno);
+          const existing = behaviorMap.get(code);
+          const studentOccs = (occsByStudent.get(code) || []).sort((a, b) =>
+            String(b.date || '').localeCompare(String(a.date || ''))
+          );
           if (existing) {
             return {
-              ...existing,
+              studentId: code,
               studentName: dbS.Nome,
-              className: dbS.Turma
+              className: dbS.Turma,
+              score: parseFloat(existing.score),
+              isClassLeader: existing.is_class_leader,
+              isCivicHighlight: existing.is_civic_highlight,
+              occurrences: studentOccs
             };
           }
           return {
-            studentId: dbS.CodigoAluno,
+            studentId: code,
             studentName: dbS.Nome,
             className: dbS.Turma,
             score: 8.0,
             isClassLeader: false,
             isCivicHighlight: false,
-            occurrences: []
+            occurrences: studentOccs
           };
         });
 
         setStudentStates(updatedStates);
+        // Puxa e aplica automaticamente Art. 50 (Média >= 8,0) e Art. 51 (2 meses sem medida disciplinar)
+        await runAutomaticMeritSync(updatedStates, dbStudents, false);
       } catch (e) {
         console.error("Error syncing student states from DB:", e);
       }
@@ -1308,11 +1731,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         is_civic_highlight: b.isCivicHighlight
       }));
       if (behaviorsPayload.length > 0) {
-        const { error: behErr } = await supabase.from('civic_student_behavior').upsert(behaviorsPayload, { onConflict: 'student_id' });
-        if (behErr) console.error("Error upserting civic_student_behavior:", behErr);
+        await upsertInChunks('civic_student_behavior', behaviorsPayload, 'student_id', 200);
       }
 
-      let occsPayload: any[] = [];
+      const occsPayload: any[] = [];
       list.forEach(b => {
         b.occurrences.forEach(o => {
           occsPayload.push({
@@ -1332,8 +1754,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         });
       });
       if (occsPayload.length > 0) {
-        const { error: occErr } = await supabase.from('civic_occurrences').upsert(occsPayload, { onConflict: 'id' });
-        if (occErr) console.error("Error upserting civic_occurrences:", occErr);
+        await upsertInChunks('civic_occurrences', occsPayload, 'id', 200);
       }
     } catch(e) { console.error(e); }
   };
@@ -2180,6 +2601,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
     const targetOcc = student.occurrences.find(o => o.id === occId);
     if (!targetOcc) return;
+
+    if (
+      (targetOcc.responsible || '').includes('AUTOMÁTICO') ||
+      (targetOcc.observations || '').includes('[AUTO:')
+    ) {
+      addDismissedAutoMeritId(occId);
+    }
 
     // Recalculate score by reversing the operation
     let newScore = student.score;
@@ -3447,7 +3875,18 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   />
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => runAutomaticMeritSync(studentStates, dbStudents, true)}
+                    disabled={isSyncingAutoMerits}
+                    title="Verifica automaticamente todos os alunos com média bimestral ≥ 8,0 (Art. 50) e 2 meses sem medida disciplinar (Art. 51)"
+                    className="px-4 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                  >
+                    {isSyncingAutoMerits ? <RefreshCw size={14} className="animate-spin" /> : <Award size={14} />}
+                    {isSyncingAutoMerits ? 'Apurando Art. 50/51...' : 'Sincronizar Art. 50 / 51'}
+                  </button>
+
                   <select
                     value={selectedClass}
                     onChange={e => setSelectedClass(e.target.value)}
@@ -3460,6 +3899,23 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                   </select>
                 </div>
               </div>
+
+              {autoMeritSyncBanner && (
+                <div className="px-5 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-emerald-900">
+                  <div className="flex items-center gap-2 text-xs font-bold">
+                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <span>{autoMeritSyncBanner}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutoMeritSyncBanner(null)}
+                    className="text-emerald-600 hover:text-emerald-800 p-1 rounded-lg"
+                    title="Fechar aviso"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
 
               {/* Tabela de Alunos e Comportamentos */}
               <div className="bg-white p-8 rounded-[3rem] border border-slate-200/80 shadow-sm overflow-hidden text-slate-800">
@@ -3534,9 +3990,13 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                                         const medias = student.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'MÉDIA').length;
                                         const graves = student.occurrences.filter(o => o.type === 'DEMERIT' && getOccurrenceSeverity(o) === 'GRAVE').length;
                                         const agravadas = student.occurrences.filter(o => o.isEscalated).length;
+                                        const art50Count = student.occurrences.filter(o => o.type === 'MERIT' && (o.category.includes('Art. 50') || o.category.includes('Média Bimestral'))).length;
+                                        const art51Count = student.occurrences.filter(o => o.type === 'MERIT' && (o.category.includes('Art. 51') || o.category.includes('2 Meses sem Medida'))).length;
                                         
                                         return (
                                            <>
+                                              {art50Count > 0 && <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[8px] rounded font-black" title="Bonificação Art. 50 (Média Bimestral ≥ 8,0)">🏆 {art50Count}</span>}
+                                              {art51Count > 0 && <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[8px] rounded font-black" title="Bonificação Art. 51 (2 Meses sem Medida Disciplinar)">🛡️ {art51Count}</span>}
                                               {leves > 0 && <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[8px] rounded" title="Leves">L: {leves}</span>}
                                               {medias > 0 && <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[8px] rounded" title="Médias">M: {medias}</span>}
                                               {graves > 0 && <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[8px] rounded" title="Graves">G: {graves}</span>}
@@ -7066,6 +7526,94 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     );
                   })()}
                   
+                  {/* PAINEL DE APURAÇÃO AUTOMÁTICA (ART. 50 E ART. 51) */}
+                  {(() => {
+                    const code = String(selectedStudentState.studentId).trim();
+                    const bimList = studentBimesterStats[code] || [];
+                    const dbS = dbStudents.find(s => String(s.CodigoAluno) === code);
+                    const rawEnr = dbS?.DataMatricula && /^d{4}-d{2}-d{2}/.test(String(dbS.DataMatricula))
+                      ? String(dbS.DataMatricula).slice(0, 10)
+                      : SCHOOL_YEAR_START_2026;
+                    const startDate = rawEnr > SCHOOL_YEAR_START_2026 ? rawEnr : SCHOOL_YEAR_START_2026;
+                    const todayIso = toIsoDateLocal(new Date());
+
+                    const demerits = selectedStudentState.occurrences
+                      .filter(o => o.type === 'DEMERIT' && o.date)
+                      .map(o => String(o.date).slice(0, 10))
+                      .sort();
+                    const lastDemerit = demerits.length > 0 ? demerits[demerits.length - 1] : null;
+                    const cleanSince = lastDemerit && lastDemerit > startDate ? lastDemerit : startDate;
+                    const cleanDays = Math.max(0, daysBetweenIso(cleanSince, todayIso));
+
+                    const art51Occs = selectedStudentState.occurrences.filter(
+                      o => o.type === 'MERIT' && (o.category.includes('Art. 51') || o.category.includes('2 Meses sem Medida'))
+                    );
+                    const latestArt51 = art51Occs.map(o => String(o.date).slice(0, 10)).sort().slice(-1)[0] || null;
+                    let nextCycleBase = cleanSince;
+                    if (latestArt51 && latestArt51 > nextCycleBase) nextCycleBase = latestArt51;
+                    const nextCycleDate = addMonthsIso(nextCycleBase, 2);
+                    const daysToNextArt51 = Math.max(0, daysBetweenIso(todayIso, nextCycleDate));
+
+                    return (
+                      <div className="p-3.5 rounded-2xl border bg-gradient-to-br from-emerald-50/70 to-indigo-50/60 border-emerald-200/80 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                            <Award size={12} className="text-emerald-600" /> Apuração Automática (Art. 50 e 51)
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-emerald-100 text-emerald-800">
+                            Ativo
+                          </span>
+                        </div>
+
+                        {/* Art. 50: Médias Bimestrais Oficiais */}
+                        <div>
+                          <span className="text-[8px] font-black uppercase text-slate-500 block mb-1">
+                            Art. 50 — Médias Bimestrais (Meta ≥ 8,0 = +0,50)
+                          </span>
+                          {bimList.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {bimList.map(b => {
+                                const qualified = b.subjectCount >= 4 && b.average >= 8.0;
+                                return (
+                                  <span
+                                    key={b.bimestre}
+                                    className={`px-2 py-1 rounded-lg text-[9px] font-black border ${
+                                      qualified
+                                        ? 'bg-emerald-600 text-white border-emerald-700'
+                                        : 'bg-white text-slate-600 border-slate-200'
+                                    }`}
+                                  >
+                                    {b.bimestre.replace(' BIMESTRE', '')}: {b.average.toFixed(1)} {qualified ? '✓ +0,50' : ''}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-slate-500 italic">Sem notas bimestrais lançadas.</span>
+                          )}
+                        </div>
+
+                        {/* Art. 51: 2 Meses sem Medida Disciplinar */}
+                        <div className="pt-1.5 border-t border-emerald-200/60">
+                          <span className="text-[8px] font-black uppercase text-slate-500 block mb-0.5">
+                            Art. 51 — 2 Meses sem Medida Disciplinar (+0,20)
+                          </span>
+                          <p className="text-[9px] font-semibold text-slate-700 leading-snug">
+                            {lastDemerit
+                              ? `Sem medidas disciplinares há ${cleanDays} dia(s) (última em ${formatDateIsoBr(lastDemerit)}). `
+                              : `Sem nenhuma medida disciplinar há ${cleanDays} dia(s) (desde ${formatDateIsoBr(startDate)}). `}
+                            <span className="text-indigo-700 font-black">
+                              {art51Occs.length > 0 ? `${art51Occs.length} ciclo(s) creditado(s). ` : ''}
+                              {daysToNextArt51 > 0
+                                ? `Próximo +0,20 em ${formatDateIsoBr(nextCycleDate)} (faltam ${daysToNextArt51}d).`
+                                : 'Elegível para novo ciclo.'}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* LISTAGEM DAS OCORRÊNCIAS */}
                   <div className="space-y-2.5">
                     {selectedStudentState.occurrences.map(occ => (
@@ -7074,13 +7622,22 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           ? 'bg-emerald-50/50 border-emerald-100'
                           : 'bg-red-50/50 border-red-100'
                       }`}>
-                        <div className="flex justify-between items-start mb-1.5">
-                          <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase ${
-                            occ.type === 'MERIT' ? `MÉRITO (+${occ.points})` : `DEMÉRITO (-${occ.points})`
-                          }`}>
-                            {occ.type === 'MERIT' ? `MÉRITO (+${occ.points})` : `DEMÉRITO (-${occ.points})`}
-                          </span>
-                          <span className="text-[8px] font-bold text-slate-500">{new Date(occ.date).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex justify-between items-start gap-2 mb-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase ${
+                              occ.type === 'MERIT'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {occ.type === 'MERIT' ? `MÉRITO (+${Number(occ.points).toFixed(2)})` : `DEMÉRITO (-${Number(occ.points).toFixed(2)})`}
+                            </span>
+                            {((occ.responsible || '').includes('AUTOMÁTICO') || (occ.observations || '').includes('[AUTO:')) && (
+                              <span className="px-1.5 py-0.5 text-[7px] font-black rounded uppercase bg-indigo-100 text-indigo-700">
+                                ⚡ Automático
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[8px] font-bold text-slate-500 shrink-0">{formatDateIsoBr(occ.date)}</span>
                         </div>
                         <h5 className="text-[10px] font-black text-slate-800 uppercase whitespace-pre-line leading-tight">{occ.category}</h5>
                         <p className="text-[9px] text-slate-600 mt-1 italic">"{occ.observations}"</p>
