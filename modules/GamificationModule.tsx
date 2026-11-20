@@ -30,6 +30,8 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -177,7 +179,8 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
   // Dados para gráfico comparativo de evolução (Histórico & Evolução)
   const classesToCompare = useMemo(() => {
     if (selectedCompareClasses.length > 0) {
-      return filteredClassScores.filter(c => selectedCompareClasses.includes(c.className));
+      const matched = filteredClassScores.filter(c => selectedCompareClasses.includes(c.className));
+      if (matched.length > 0) return matched;
     }
     return filteredClassScores.slice(0, 5);
   }, [filteredClassScores, selectedCompareClasses]);
@@ -192,6 +195,44 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       return point;
     });
   }, [classesToCompare]);
+
+  const singleClassInHistory = useMemo(
+    () => (filteredClassScores.length === 1 ? filteredClassScores[0] : null),
+    [filteredClassScores]
+  );
+
+  const singleClassTopStudents = useMemo(() => {
+    if (!singleClassInHistory) return [];
+    return filteredStudentScores
+      .filter(s => s.className === singleClassInHistory.className)
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 3);
+  }, [singleClassInHistory, filteredStudentScores]);
+
+  const multiClassHighlights = useMemo(() => {
+    if (filteredClassScores.length <= 1) return null;
+    const leader = filteredClassScores[0];
+    let bestGrowth = filteredClassScores[0];
+    let bestDelta = -Infinity;
+    let sumPoints = 0;
+    filteredClassScores.forEach(c => {
+      sumPoints += c.totalPoints;
+      const b2 = c.bimesterHistory[1]?.totalPoints ?? 1000;
+      const b3 = c.bimesterHistory[2]?.totalPoints ?? 1000;
+      const delta = b3 - b2;
+      if (delta > bestDelta) {
+        bestDelta = delta;
+        bestGrowth = c;
+      }
+    });
+    return {
+      leader,
+      bestGrowth,
+      bestDelta,
+      avgPoints: Math.round(sumPoints / filteredClassScores.length),
+      eventsCount: timelineEvents.length
+    };
+  }, [filteredClassScores, timelineEvents.length]);
 
   const filteredSchoolTimeline = useMemo(() => {
     return timelineEvents.filter(evt => {
@@ -380,7 +421,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
         <div className="max-w-7xl mx-auto space-y-6 print:max-w-full">
           {/* BARRA GLOBAL DE FILTROS INTELIGENTES */}
           {activeTab !== 'pontos_manuais' && (
-            <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200/80 space-y-4 print:hidden">
+            <div className="bg-white p-3.5 sm:p-4 rounded-3xl shadow-sm border border-slate-200/80 space-y-3 print:hidden">
               {/* Linha 1: Período + Ações rápidas */}
               <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -934,71 +975,339 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
               {/* ABA 3: HISTÓRICO & EVOLUÇÃO (TURMAS + LINHA DO TEMPO GERAL)       */}
               {/* ================================================================= */}
               {activeTab === 'historico' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  {/* Gráfico Multi-Linhas de Evolução Comparativa */}
-                  <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                          <TrendingUp className="text-violet-600" size={18} /> Curva de Evolução Bimestral das Turmas
-                        </h3>
-                        <p className="text-xs text-slate-500 font-medium">
-                          Selecione até 6 turmas abaixo para comparar o desempenho do 1º ao 4º Bimestre
-                        </p>
-                      </div>
-                      {selectedCompareClasses.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCompareClasses([])}
-                          className="text-[10px] font-black uppercase text-indigo-600 hover:underline self-start"
-                        >
-                          Voltar ao Top 5 Automático
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Chips de seleção rápida de turmas */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {filteredClassScores.map(c => {
-                        const isSelected = classesToCompare.some(sel => sel.className === c.className);
-                        return (
+                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  {/* Painel Bento Compacto: Curva de Evolução + Resumo Executivo do Recorte */}
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
+                    {/* Coluna Esquerda: Gráfico de Evolução Bimestral */}
+                    <div className="xl:col-span-7 bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col justify-between gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                            <TrendingUp className="text-violet-600" size={18} />
+                            {singleClassInHistory
+                              ? `Curva de Evolução — ${singleClassInHistory.className}`
+                              : 'Curva de Evolução Bimestral das Turmas'}
+                          </h3>
+                          <p className="text-xs text-slate-500 font-medium">
+                            {singleClassInHistory
+                              ? `${singleClassInHistory.shift} • ${singleClassInHistory.activeStudentCount} alunos ativos • Evolução do 1º ao 4º Bimestre`
+                              : 'Selecione até 6 turmas abaixo para comparar o desempenho do 1º ao 4º Bimestre'}
+                          </p>
+                        </div>
+                        {!singleClassInHistory && selectedCompareClasses.length > 0 && (
                           <button
-                            key={c.className}
                             type="button"
-                            onClick={() => toggleCompareClass(c.className)}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all ${
-                              isSelected
-                                ? 'bg-violet-600 text-white border-violet-700 shadow-xs'
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
+                            onClick={() => setSelectedCompareClasses([])}
+                            className="text-[10px] font-black uppercase text-indigo-600 hover:underline self-start"
                           >
-                            {c.className}
+                            Top 5 Automático
                           </button>
-                        );
-                      })}
+                        )}
+                      </div>
+
+                      {/* Chips de seleção rápida quando houver mais de 1 turma no filtro */}
+                      {filteredClassScores.length > 1 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {filteredClassScores.map(c => {
+                            const isSelected = classesToCompare.some(sel => sel.className === c.className);
+                            return (
+                              <button
+                                key={c.className}
+                                type="button"
+                                onClick={() => toggleCompareClass(c.className)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all ${
+                                  isSelected
+                                    ? 'bg-violet-600 text-white border-violet-700 shadow-xs'
+                                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                }`}
+                              >
+                                {c.className}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Gráfico Recharts com altura explícita e preenchimento visual nítido */}
+                      <div className="w-full min-w-0 h-[250px] pt-1">
+                        {classesToCompare.length > 0 ? (
+                          <ResponsiveContainer width="100%" height={245}>
+                            {singleClassInHistory ? (
+                              <AreaChart data={evolutionLineData} margin={{ top: 12, right: 18, left: -6, bottom: 4 }}>
+                                <defs>
+                                  <linearGradient id="ligaMaggiAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.32} />
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.03} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                <XAxis
+                                  dataKey="name"
+                                  tick={{ fontSize: 12, fontWeight: 700, fill: '#475569' }}
+                                  axisLine={{ stroke: '#e2e8f0' }}
+                                  tickLine={false}
+                                />
+                                <YAxis
+                                  tick={{ fontSize: 11, fill: '#64748b' }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                  domain={['auto', 'auto']}
+                                />
+                                <Tooltip
+                                  formatter={(value: any) => [`${value} pts`, singleClassInHistory.className]}
+                                  contentStyle={{
+                                    borderRadius: '14px',
+                                    border: '1px solid #e2e8f0',
+                                    boxShadow: '0 10px 25px -5px rgba(15,23,42,0.12)',
+                                    fontSize: '12px',
+                                    fontWeight: 700
+                                  }}
+                                />
+                                <Area
+                                  type="monotone"
+                                  dataKey={singleClassInHistory.className}
+                                  stroke="#4f46e5"
+                                  strokeWidth={3}
+                                  fill="url(#ligaMaggiAreaGrad)"
+                                  dot={{ r: 5, fill: '#4f46e5', stroke: '#ffffff', strokeWidth: 2 }}
+                                  activeDot={{ r: 7, fill: '#4338ca' }}
+                                />
+                              </AreaChart>
+                            ) : (
+                              <LineChart data={evolutionLineData} margin={{ top: 10, right: 16, left: -6, bottom: 4 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                <XAxis
+                                  dataKey="name"
+                                  tick={{ fontSize: 12, fontWeight: 700, fill: '#475569' }}
+                                  axisLine={{ stroke: '#e2e8f0' }}
+                                  tickLine={false}
+                                />
+                                <YAxis
+                                  tick={{ fontSize: 11, fill: '#64748b' }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                  domain={['auto', 'auto']}
+                                />
+                                <Tooltip
+                                  formatter={(value: any, name: any) => [`${value} pts`, name]}
+                                  contentStyle={{
+                                    borderRadius: '14px',
+                                    border: '1px solid #e2e8f0',
+                                    boxShadow: '0 10px 25px -5px rgba(15,23,42,0.12)',
+                                    fontSize: '12px',
+                                    fontWeight: 700
+                                  }}
+                                />
+                                <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '6px' }} />
+                                {classesToCompare.map((c, idx) => (
+                                  <Line
+                                    key={c.className}
+                                    type="monotone"
+                                    dataKey={c.className}
+                                    stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                    strokeWidth={3}
+                                    dot={{ r: 4, strokeWidth: 2 }}
+                                    activeDot={{ r: 6 }}
+                                  />
+                                ))}
+                              </LineChart>
+                            )}
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="h-full flex items-center justify-center text-xs font-bold text-slate-400 uppercase">
+                            Nenhuma turma disponível para exibir o gráfico.
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="h-72 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={evolutionLineData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 700 }} />
-                          <YAxis tick={{ fontSize: 11 }} />
-                          <Tooltip />
-                          <Legend />
-                          {classesToCompare.map((c, idx) => (
-                            <Line
-                              key={c.className}
-                              type="monotone"
-                              dataKey={c.className}
-                              stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                              strokeWidth={3}
-                              dot={{ r: 5 }}
-                              activeDot={{ r: 7 }}
-                            />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
+                    {/* Coluna Direita: Resumo Executivo do Recorte (Turma Única ou Comparativo Multi-Turmas) */}
+                    <div className="xl:col-span-5 bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col justify-between gap-4">
+                      {singleClassInHistory ? (
+                        <>
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600">
+                                Raio-X Bimestral
+                              </span>
+                              <h4 className="text-sm font-black text-slate-900 uppercase">
+                                {singleClassInHistory.className} • {singleClassInHistory.rank}º Geral
+                              </h4>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedClassNameModal(singleClassInHistory.className)}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1 transition-all shadow-xs"
+                            >
+                              <Eye size={12} /> Dossiê
+                            </button>
+                          </div>
+
+                          {/* 4 Mini-Cards dos Bimestres */}
+                          <div className="grid grid-cols-2 gap-2.5">
+                            {singleClassInHistory.bimesterHistory.map((snap, idx) => {
+                              const prevPts = idx > 0 ? singleClassInHistory.bimesterHistory[idx - 1].totalPoints : null;
+                              const diff = prevPts !== null ? snap.totalPoints - prevPts : null;
+                              const isCurrentPeriod = filters.period === snap.bimestre;
+                              return (
+                                <div
+                                  key={snap.bimestre}
+                                  className={`p-3 rounded-2xl border transition-all ${
+                                    isCurrentPeriod
+                                      ? 'bg-indigo-50/70 border-indigo-200'
+                                      : 'bg-slate-50/80 border-slate-200/80'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="text-[10px] font-black uppercase text-slate-500">
+                                      {snap.bimestre.replace(' BIMESTRE', ' Bim')}
+                                    </span>
+                                    {diff !== null && (
+                                      <span
+                                        className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                                          diff >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                        }`}
+                                      >
+                                        {diff >= 0 ? `+${diff}` : diff}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-lg font-black text-slate-900 mt-0.5">
+                                    {snap.totalPoints} <span className="text-[10px] font-bold text-slate-400">pts</span>
+                                  </div>
+                                  <div className="text-[10px] font-semibold text-slate-500 flex items-center justify-between mt-0.5">
+                                    <span>Notas +{snap.grades}</span>
+                                    {snap.attendanceRate != null && (
+                                      <span className="text-teal-700 font-bold">{snap.attendanceRate.toFixed(1)}% freq</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Top 3 Alunos da Turma no Recorte */}
+                          <div className="space-y-1.5 pt-1 border-t border-slate-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                <Trophy size={12} className="text-amber-500" /> Destaques da Turma ({periodLabel})
+                              </span>
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Clique p/ extrato</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {singleClassTopStudents.map((st, idx) => (
+                                <button
+                                  key={st.studentKey}
+                                  type="button"
+                                  onClick={() => setSelectedStudentKeyModal(st.studentKey)}
+                                  className="w-full px-3 py-2 bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/70 rounded-xl flex items-center justify-between gap-2 transition-colors text-left"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span
+                                      className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                        idx === 0
+                                          ? 'bg-amber-100 text-amber-800'
+                                          : idx === 1
+                                            ? 'bg-slate-200 text-slate-700'
+                                            : 'bg-orange-100 text-orange-800'
+                                      }`}
+                                    >
+                                      {idx + 1}º
+                                    </span>
+                                    <span className="text-xs font-black text-slate-800 uppercase truncate">{st.studentName}</span>
+                                  </div>
+                                  <span className="text-xs font-black text-indigo-700 shrink-0">{st.totalPoints} pts</span>
+                                </button>
+                              ))}
+                              {singleClassTopStudents.length === 0 && (
+                                <p className="text-[11px] text-slate-400 italic">Nenhum aluno encontrado no filtro atual.</p>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : multiClassHighlights ? (
+                        <>
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-violet-600">
+                              Indicadores do Recorte
+                            </span>
+                            <h4 className="text-sm font-black text-slate-900 uppercase">
+                              Resumo Evolutivo ({filteredClassScores.length} turmas)
+                            </h4>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedClassNameModal(multiClassHighlights.leader.className)}
+                              className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-left hover:bg-amber-100/70 transition-colors"
+                            >
+                              <span className="text-[9px] font-black uppercase text-amber-700 block">Líder no Recorte</span>
+                              <span className="text-sm font-black text-slate-900 block truncate mt-0.5">
+                                {multiClassHighlights.leader.className}
+                              </span>
+                              <span className="text-xs font-black text-amber-700">
+                                {multiClassHighlights.leader.totalPoints} pts
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedClassNameModal(multiClassHighlights.bestGrowth.className)}
+                              className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-left hover:bg-emerald-100/70 transition-colors"
+                            >
+                              <span className="text-[9px] font-black uppercase text-emerald-700 block">Maior Evolução (2º→3º)</span>
+                              <span className="text-sm font-black text-slate-900 block truncate mt-0.5">
+                                {multiClassHighlights.bestGrowth.className}
+                              </span>
+                              <span className="text-xs font-black text-emerald-700">
+                                {multiClassHighlights.bestDelta >= 0 ? `+${multiClassHighlights.bestDelta}` : multiClassHighlights.bestDelta} pts
+                              </span>
+                            </button>
+
+                            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+                              <span className="text-[9px] font-black uppercase text-slate-500 block">Média das Turmas</span>
+                              <span className="text-lg font-black text-indigo-700 block mt-0.5">
+                                {multiClassHighlights.avgPoints} <span className="text-[10px] text-slate-400">pts</span>
+                              </span>
+                            </div>
+
+                            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+                              <span className="text-[9px] font-black uppercase text-slate-500 block">Eventos no Recorte</span>
+                              <span className="text-lg font-black text-slate-900 block mt-0.5">
+                                {multiClassHighlights.eventsCount}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5 pt-1 border-t border-slate-100">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                              Acesso Rápido aos Dossiês (Top 3)
+                            </span>
+                            <div className="space-y-1.5">
+                              {filteredClassScores.slice(0, 3).map((t, idx) => (
+                                <button
+                                  key={t.className}
+                                  type="button"
+                                  onClick={() => setSelectedClassNameModal(t.className)}
+                                  className="w-full px-3 py-2 bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/70 rounded-xl flex items-center justify-between gap-2 transition-colors text-left"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-indigo-700 w-5">{idx + 1}º</span>
+                                    <span className="text-xs font-black text-slate-800">{t.className}</span>
+                                    <span className="text-[10px] font-bold text-slate-400">{t.shift}</span>
+                                  </div>
+                                  <span className="text-xs font-black text-indigo-700">{t.totalPoints} pts</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-xs font-bold text-slate-400 uppercase text-center py-8">
+                          Ajuste os filtros acima para visualizar o resumo evolutivo.
+                        </div>
+                      )}
                     </div>
                   </div>
 

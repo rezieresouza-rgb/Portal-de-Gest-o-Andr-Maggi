@@ -334,13 +334,13 @@ export const GamificationClassHistoryModal: React.FC<ClassModalProps> = ({
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                 <TrendingUp size={14} className="text-indigo-600" /> Evolução Bimestral da Turma (1º ao 4º Bimestre)
               </h4>
-              <div className="h-52 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
+              <div className="h-52 w-full min-w-0">
+                <ResponsiveContainer width="100%" height={208}>
+                  <BarChart data={chartData} margin={{ top: 8, right: 12, left: -10, bottom: 2 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: '#475569' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <Tooltip formatter={(value: any) => [`${value} pts`, 'Pontuação Total']} />
                     <Bar dataKey="pontos" name="Pontuação Total" radius={[10, 10, 0, 0]}>
                       {chartData.map((_, i) => (
                         <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b', '#8b5cf6'][i % 4]} />
@@ -555,13 +555,13 @@ export const GamificationStudentHistoryModal: React.FC<StudentModalProps> = ({
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
               <TrendingUp size={14} className="text-indigo-600" /> Evolução Individual por Bimestre (1º ao 4º Bimestre)
             </h4>
-            <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
+            <div className="h-48 w-full min-w-0">
+              <ResponsiveContainer width="100%" height={192}>
+                <BarChart data={chartData} margin={{ top: 8, right: 12, left: -10, bottom: 2 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: '#475569' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(value: any) => [`${value} pts`, 'Pontuação do Aluno']} />
                   <Bar dataKey="pontos" name="Pontuação do Aluno" radius={[10, 10, 0, 0]}>
                     {chartData.map((_, i) => (
                       <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b', '#8b5cf6'][i % 4]} />
