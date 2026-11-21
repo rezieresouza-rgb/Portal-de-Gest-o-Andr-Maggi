@@ -979,7 +979,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                   {/* Painel Bento Compacto: Curva de Evolução + Resumo Executivo do Recorte */}
                   <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
                     {/* Coluna Esquerda: Gráfico de Evolução Bimestral */}
-                    <div className="xl:col-span-7 bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col justify-between gap-3">
+                    <div className="xl:col-span-7 bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col gap-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
                           <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
@@ -1005,6 +1005,25 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                         )}
                       </div>
 
+                      {/* Composição rápida dos pilares e selos quando apenas 1 turma está filtrada */}
+                      {singleClassInHistory && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Notas +{singleClassInHistory.breakdown.grades}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Cívico {singleClassInHistory.breakdown.civicBehavior >= 0 ? `+${singleClassInHistory.breakdown.civicBehavior}` : singleClassInHistory.breakdown.civicBehavior}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200">
+                            Biblioteca +{singleClassInHistory.breakdown.library}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-rose-50 text-rose-700 border border-rose-200">
+                            Ocorrências {singleClassInHistory.breakdown.occurrences}
+                          </span>
+                          {singleClassInHistory.badges.map(b => renderBadgePill(b))}
+                        </div>
+                      )}
+
                       {/* Chips de seleção rápida quando houver mais de 1 turma no filtro */}
                       {filteredClassScores.length > 1 && (
                         <div className="flex flex-wrap gap-1.5">
@@ -1028,10 +1047,10 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                         </div>
                       )}
 
-                      {/* Gráfico Recharts com altura explícita e preenchimento visual nítido */}
-                      <div className="w-full min-w-0 h-[250px] pt-1">
+                      {/* Gráfico Recharts preenchendo toda a área útil sem espaço ocioso */}
+                      <div className="w-full min-w-0 flex-1 min-h-[260px] pt-1">
                         {classesToCompare.length > 0 ? (
-                          <ResponsiveContainer width="100%" height={245}>
+                          <ResponsiveContainer width="100%" height={275}>
                             {singleClassInHistory ? (
                               <AreaChart data={evolutionLineData} margin={{ top: 12, right: 18, left: -6, bottom: 4 }}>
                                 <defs>

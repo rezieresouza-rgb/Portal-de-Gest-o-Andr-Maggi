@@ -31,6 +31,8 @@ import { AcademicYearProvider } from './contexts/AcademicYearContext';
 import { INITIAL_STUDENTS } from './constants/initialData';
 import { resolveOfficialStaffRole } from './utils/signatureService';
 
+const GamificationModule = React.lazy(() => import('./modules/GamificationModule'));
+
 export type ModuleTypeExtended = 'hub' | 'merenda' | 'finance' | 'library' | 'scheduling' | 'teacher' | 'pedagogical' | 'almoxarifado' | 'patrimonio' | 'limpeza' | 'infraestrutura' | 'busca_ativa' | 'psychosocial' | 'mediacao' | 'secretariat' | 'sala_recursos' | 'projeto_apa' | 'civico_militar' | 'training' | 'educarte' | 'settings' | 'gamification';
 
 const App: React.FC = () => {
@@ -282,7 +284,7 @@ const App: React.FC = () => {
       case 'training': return <TrainingModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'educarte': return <EducarteModule user={user} onExit={() => handleModuleChange('hub')} />;
       case 'gamification': {
-        const GamificationModule = React.lazy(() => import('./modules/GamificationModule'));
+        // GamificationModule declarado no escopo de módulo para evitar remontagem desnecessária
         return (
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>}>
             <GamificationModule user={user} onExit={() => handleModuleChange('hub')} />
