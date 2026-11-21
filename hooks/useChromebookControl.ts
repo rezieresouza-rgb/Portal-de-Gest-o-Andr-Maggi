@@ -1353,7 +1353,7 @@ export const useChromebookControl = ({ user, onInventoryChanged }: UseChromebook
       [],
       ['REGISTRO INDIVIDUAL DE RETIRADA E DEVOLUÇÃO'],
       ['Nº', 'Nome do estudante', 'Nº Chromebook', 'Nº Fone', 'Retirada', 'Devolução', 'Condição/observação', 'Conferido'],
-      ...Array.from({ length: 20 }, (_, i) => [i + 1, '', '', '', '', '', '', '']),
+      ...Array.from({ length: 35 }, (_, i) => [i + 1, '', '', '', '', '', '', '']),
       [],
       ['Chromebooks retirados:', '', 'Chromebooks devolvidos:', '', 'Fones retirados:', '', 'Fones devolvidos:', ''],
       ['Conferência final:', '', 'Sim / Não', 'Irregularidade:', '', 'Sim / Não', '', ''],

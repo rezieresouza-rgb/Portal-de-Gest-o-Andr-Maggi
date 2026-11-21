@@ -530,7 +530,7 @@ export const ChromebookManagement: React.FC<ChromebookManagementProps> = ({
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-20 w-full min-w-0 font-sans text-slate-800">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-20 print:pb-0 print:space-y-0 w-full min-w-0 font-sans text-slate-800">
       <input
         ref={fileInputRef}
         type="file"
