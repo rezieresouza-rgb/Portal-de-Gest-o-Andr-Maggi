@@ -1480,7 +1480,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
             <FileText size={18} /> Processos Patrimoniais
           </button>
           <button onClick={() => { setActiveTab('chromebooks'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'chromebooks' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
-            <Laptop size={18} /> Gestão de Chromebooks
+            <Laptop size={18} /> Chromebooks & Fones
           </button>
         </nav>
         <div className="p-6 border-t border-blue-800">
@@ -1535,7 +1535,7 @@ const AssetInventoryModule: React.FC<AssetInventoryModuleProps> = ({ user, onExi
           <div className="space-y-6">
 
             {activeTab === 'chromebooks' ? (
-              <ChromebookManagement />
+              <ChromebookManagement user={user} onInventoryChanged={fetchAssets} />
             ) : activeTab === 'processos' ? (
               <AssetProcessesManager user={user} />
             ) : activeTab === 'ambientes' ? (

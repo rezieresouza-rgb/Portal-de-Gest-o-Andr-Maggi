@@ -377,7 +377,9 @@ export const useGamificationData = (filters: GamificationFilters) => {
       const studentsRoster = (rawStudents || [])
         .map((s: any) => {
           const enrollments = Array.isArray(s.enrollments) ? s.enrollments : [];
-          const activeEnr = enrollments.find((e: any) => ['ATIVO', 'MATRICULADO', 'CURSANDO', 'RECLASSIFICADO'].includes(String(e.status || '').toUpperCase()));
+          const activeEnr =
+            enrollments.find((e: any) => ['ATIVO', 'MATRICULADO', 'CURSANDO'].includes(String(e.status || '').toUpperCase())) ||
+            enrollments.find((e: any) => String(e.status || '').toUpperCase() === 'RECLASSIFICADO');
           const enr = activeEnr || enrollments[0];
           const className = String(enr?.classrooms?.name || 'SEM TURMA').trim();
           const shift = String(enr?.classrooms?.shift || classShiftMap.get(className) || 'MATUTINO').toUpperCase().trim();
