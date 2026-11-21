@@ -52,19 +52,7 @@ import CivicoMilitarReports from '../components/CivicoMilitarReports';
 import { CivicMediationReferralModal } from '../components/CivicMediationReferralModal';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
-import ElectronicDeviceSeizureManager, { SeizureStudentOption } from '../components/ElectronicDeviceSeizureManager';
-import { ElectronicDeviceSeizureRecord } from '../components/ElectronicDeviceSeizureTerm';
-import {
-  InlineSeizureDraft,
-  InlineSeizureFormSection,
-  QuickSeizurePrintAndReturnModal,
-  createDefaultInlineSeizureDraft,
-  isElectronicInfractionCategory,
-  loadAllElectronicSeizures,
-  saveElectronicSeizureRecord,
-  computeNextProtocolNumber
-} from '../components/InlineElectronicSeizureWidget';
-import { Smartphone, PackageCheck } from 'lucide-react';
+import ElectronicDeviceSeizureTerm from '../components/ElectronicDeviceSeizureTerm';
 import { DisciplinaryChecklistModal } from '../components/DisciplinaryChecklistModal';
 import { CivicFicaiReferralModal } from '../components/CivicFicaiReferralModal';
 import { SchoolHealthEmergencyModal } from '../components/SchoolHealthEmergencyModal';
@@ -707,65 +695,7 @@ interface CivicRoutineRecord {
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
   // 1. TODOS OS ESTADOS (useState) DECLARADOS NO TOPO PARA EVITAR ERROS DE INICIALIZAÇÃO (TDZ)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'recolhimento_eletronicos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
-  const [seizureInitialStudent, setSeizureInitialStudent] = useState<SeizureStudentOption | null>(null);
-  const [devicesInCustodyCount, setDevicesInCustodyCount] = useState<number>(0);
-  const [electronicSeizures, setElectronicSeizures] = useState<ElectronicDeviceSeizureRecord[]>([]);
-  const [inlineSeizureDraft, setInlineSeizureDraft] = useState<InlineSeizureDraft>(() =>
-    createDefaultInlineSeizureDraft('ALUNO_FIM_TURNO', false)
-  );
-  const [quickSeizureModal, setQuickSeizureModal] = useState<{
-    record: ElectronicDeviceSeizureRecord;
-    mode: 'print' | 'return';
-  } | null>(null);
-
-  const handleOpenElectronicSeizure = (student?: any) => {
-    if (student) {
-      setSeizureInitialStudent({
-        StudentUuid: student.StudentUuid || student.studentUuid || '',
-        CodigoAluno: student.CodigoAluno || student.studentId || '',
-        Nome: student.Nome || student.studentName || '',
-        Turma: student.Turma || student.className || '',
-        Turno: student.Turno || student.shift || '',
-        NomeResponsavel: student.NomeResponsavel || student.guardian_name || '',
-        TelefoneContato: student.TelefoneContato || student.contact_phone || '',
-        PAED: student.PAED || ''
-      });
-    } else {
-      setSeizureInitialStudent(null);
-    }
-    setIsBehaviorModalOpen(false);
-    setActiveTab('recolhimento_eletronicos');
-    setIsSidebarOpen(false);
-  };
-
-  const refreshElectronicSeizures = async () => {
-    const list = await loadAllElectronicSeizures();
-    setElectronicSeizures(list);
-    setDevicesInCustodyCount(list.filter(r => r.status === 'SOB_GUARDA').length);
-  };
-
-  useEffect(() => {
-    refreshElectronicSeizures();
-  }, [activeTab]);
-
-  const getStudentElectronicYearCount = (studentCode?: string, studentName?: string) => {
-    const currentYear = new Date().getFullYear();
-    const normCode = (studentCode || '').trim();
-    const normName = (studentName || '').trim().toUpperCase();
-    return electronicSeizures.filter(r => {
-      if (r.school_year !== currentYear) return false;
-      if (normCode && r.student_code && r.student_code.trim() === normCode) return true;
-      return Boolean(normName && (r.student_name || '').trim().toUpperCase() === normName);
-    }).length;
-  };
-
-  const handleQuickSeizureUpdated = async (updated: ElectronicDeviceSeizureRecord) => {
-    const nextList = await saveElectronicSeizureRecord(updated, electronicSeizures);
-    setElectronicSeizures(nextList);
-    setDevicesInCustodyCount(nextList.filter(r => r.status === 'SOB_GUARDA').length);
-    setQuickSeizureModal(prev => (prev ? { ...prev, record: updated } : null));
-  };
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Search & Filter States
@@ -1053,17 +983,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       fetchCivicReferrals();
     }
   }, [activeTab]);
-
-  useEffect(() => {
-    if (!selectedStudentState) return;
-    const studentFull =
-      dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-      INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
-    const pastCount = getStudentElectronicYearCount(selectedStudentState.studentId, selectedStudentState.studentName);
-    const isPaed = (studentFull as any)?.PAED === 'Sim';
-    setInlineSeizureDraft(createDefaultInlineSeizureDraft(pastCount >= 1 ? 'RESPONSAVEL_LEGAL' : 'ALUNO_FIM_TURNO', isPaed));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStudentState?.studentId, isBehaviorModalOpen]);
 
   const nextFichaNumber = useMemo(() => {
     if (selectedDocTemplate !== 'ficha_medida_disciplinar') return '';
@@ -1377,7 +1296,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         try {
           const { data: docData, error: docErr } = await supabase.from('civic_documents').select('*');
           if (!docErr && docData && docData.length > 0) {
-            dbDocs = docData.filter((d: any) => d.template !== 'electronic_device_seizure' && d.template !== 'official_ata').map((d: any) => ({
+            dbDocs = docData.map((d: any) => ({
               id: d.id,
               template: d.template,
               date: d.date,
@@ -2383,24 +2302,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const handleAddOccurrence = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudentState) return;
-    const hasItem61Selected =
-      newOccurrence.type === 'DEMERIT' &&
-      (newOccurrence.selectedCategories || []).some(isElectronicInfractionCategory);
-    if (hasItem61Selected && inlineSeizureDraft.enabled) {
-      if (!inlineSeizureDraft.device_brand_model.trim()) {
-        alert('Informe a Marca e Modelo do aparelho recolhido (ou desmarque o Termo de Recolhimento caso não tenha havido recolhimento).');
-        return;
-      }
-      const studentFullCheck =
-        dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
-      if ((studentFullCheck as any)?.PAED === 'Sim' && !inlineSeizureDraft.paed_exception_verified) {
-        alert('Confirme a verificação legal PAED (Art. 3º Lei 15.100/2025) antes de registrar o recolhimento do aparelho.');
-        return;
-      }
-    }
-    e.preventDefault();
-    if (!selectedStudentState) return;
 
     let points = 0.2;
     let isEscalated = false;
@@ -2495,71 +2396,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       occurrences: [occurrence, ...(selectedStudentState.occurrences || [])]
     };
     setSelectedStudentState(updatedStudentState);
-
-    // Integração Automática: Se Item 61 + Termo de Recolhimento ativo, já salva o termo vinculado e abre prévia A4
-    if (hasItem61Selected && inlineSeizureDraft.enabled) {
-      const studentFull =
-        dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId));
-      const pastCount = getStudentElectronicYearCount(selectedStudentState.studentId, selectedStudentState.studentName);
-      const nowIso = new Date().toISOString();
-      const newSeizure: ElectronicDeviceSeizureRecord = {
-        id: generateUUID(),
-        protocol_number: computeNextProtocolNumber(electronicSeizures),
-        occurrence_id: occurrence.id,
-        occurrence_sequence: pastCount + 1,
-        school_year: new Date().getFullYear(),
-        module_source: 'CIVICO_MILITAR',
-        student_id: (studentFull as any)?.StudentUuid || '',
-        student_code: String(selectedStudentState.studentId || ''),
-        student_name: selectedStudentState.studentName.toUpperCase(),
-        classroom_name: selectedStudentState.className.toUpperCase(),
-        shift: (studentFull as any)?.Turno || '',
-        guardian_name: (studentFull as any)?.NomeResponsavel || '',
-        guardian_phone: (studentFull as any)?.TelefoneContato || '',
-        student_is_paed: (studentFull as any)?.PAED === 'Sim',
-        paed_exception_verified: (studentFull as any)?.PAED === 'Sim' ? inlineSeizureDraft.paed_exception_verified : true,
-        seizure_date: newOccurrence.date,
-        seizure_time: inlineSeizureDraft.seizure_time,
-        seizure_location: inlineSeizureDraft.seizure_location,
-        seizure_subject_activity: inlineSeizureDraft.seizure_subject_activity.trim(),
-        seizure_reason:
-          newOccurrence.observations.trim() ||
-          'Uso não autorizado de aparelho eletrônico portátil durante atividade escolar (Item 61 EECM-MT, Lei Federal nº 15.100/2025 e Lei Estadual MT nº 12.745/2024).',
-        seized_by_name: user.name || 'Gestor',
-        seized_by_role: 'Monitoria / Gestão Cívico-Militar',
-        student_refused_signature: inlineSeizureDraft.student_refused_signature,
-        witness_name: inlineSeizureDraft.witness_name.trim(),
-        device_type: inlineSeizureDraft.device_type,
-        device_brand_model: inlineSeizureDraft.device_brand_model.trim(),
-        device_color: inlineSeizureDraft.device_color.trim(),
-        device_imei_serial: inlineSeizureDraft.device_imei_serial.trim(),
-        seal_number: inlineSeizureDraft.seal_number.trim(),
-        screen_condition: inlineSeizureDraft.screen_condition,
-        body_condition: inlineSeizureDraft.body_condition,
-        power_state: inlineSeizureDraft.power_state,
-        accessories: inlineSeizureDraft.accessories,
-        preexisting_damage_notes: inlineSeizureDraft.preexisting_damage_notes.trim(),
-        return_policy: inlineSeizureDraft.return_policy,
-        status: 'SOB_GUARDA',
-        returned_to_type: null,
-        created_by: user.name || 'Gestor',
-        created_at: nowIso,
-        updated_at: nowIso
-      };
-
-      saveElectronicSeizureRecord(newSeizure, electronicSeizures).then(nextList => {
-        setElectronicSeizures(nextList);
-        setDevicesInCustodyCount(nextList.filter(r => r.status === 'SOB_GUARDA').length);
-      });
-      setQuickSeizureModal({ record: newSeizure, mode: 'print' });
-      setInlineSeizureDraft(
-        createDefaultInlineSeizureDraft(
-          pastCount + 1 >= 1 ? 'RESPONSAVEL_LEGAL' : 'ALUNO_FIM_TURNO',
-          (studentFull as any)?.PAED === 'Sim'
-        )
-      );
-    }
 
     const updatedStates = studentStates.map(s => {
       if (String(s.studentId) === String(selectedStudentState.studentId)) {
@@ -2896,6 +2732,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         ? 'Termo de Ciência e Concordância' 
         : selectedDocTemplate === 'fato_observado' ? 'Relatório de Fato Observado' 
         : selectedDocTemplate === 'autorizacao_uniforme' ? 'Autorização de Uniforme Incompleto'
+        : selectedDocTemplate === 'termo_recolhimento_eletronico' ? 'Termo de Recolhimento e Devolução de Eletrônicos'
         : selectedDocTemplate === 'termo_adequacao_conduta' ? 'Termo de Adequação de Conduta Escolar'
         : selectedDocTemplate === 'oficio_policia' ? 'Ofício p/ B.O. (Polícia Civil/PM - Art. 29)'
         : selectedDocTemplate === 'oficio_conselho_tutelar' ? 'Ofício ao Conselho Tutelar (Arts. 22 e 29)'
@@ -3252,29 +3089,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <FileText size={18} /> Documentações
           </button>
 
-          <button
-            onClick={() => { setActiveTab('recolhimento_eletronicos'); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'recolhimento_eletronicos'
-              ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
-              : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
-              }`}
-            title="Termo de Recolhimento, Vistoria e Devolução de Celulares e Eletrônicos (Lei 15.100/2025 e Lei MT 12.745/2024)"
-          >
-            <div className="flex items-center gap-3.5">
-              <Smartphone size={18} className={activeTab === 'recolhimento_eletronicos' ? 'text-white' : 'text-amber-400'} />
-              <span className="text-left leading-tight">Eletrônicos</span>
-            </div>
-            {devicesInCustodyCount > 0 ? (
-              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] animate-pulse">
-                {devicesInCustodyCount}
-              </span>
-            ) : (
-              <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold text-[9px]">
-                Termo
-              </span>
-            )}
-          </button>
-
           {/* BOTÃO ASSISTENTE & CHECKLIST DO GESTOR */}
           <button
             type="button"
@@ -3364,7 +3178,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       </aside>
 
       {/* Área Principal de Conteúdo */}
-      <main className={`flex-1 flex flex-col overflow-hidden bg-slate-50 min-w-0 ${quickSeizureModal ? 'no-print' : ''}`}>
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50 min-w-0">
         {/* Header */}
         <header className="h-20 lg:h-24 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 shrink-0 shadow-sm gap-3 no-print">
           <div className="flex items-center gap-3 lg:gap-5 min-w-0">
@@ -3387,7 +3201,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'documentos' && 'Preenchimento de Documentos'}
                 {activeTab === 'oficios' && 'Ofícios Escolares Expedidos'}
                 {activeTab === 'atas' && 'Registro de Atas e Deliberações'}
-                {activeTab === 'recolhimento_eletronicos' && 'Recolhimento e Devolução de Eletrônicos'}
               </h2>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                 {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares • Escola Cívico-Militar E.E. André Maggi'}
@@ -3399,7 +3212,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'documentos' && 'Emissão e Impressão de Fichas Oficiais Timbradas'}
                 {activeTab === 'oficios' && 'Emissão, Sequencial e Arquivo de Ofícios Oficiais'}
                 {activeTab === 'atas' && 'Escrituração Oficial de Atas de Reunião, Conselhos e Deliberações'}
-                {activeTab === 'recolhimento_eletronicos' && 'Termo Oficial, Vistoria Física e Custódia • Lei Federal 15.100/2025 & Lei MT 12.745/2024'}
               </p>
             </div>
           </div>
@@ -4702,6 +4514,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         <option value="termo_ciencia">Termo de Ciência e Concordância</option>
                         <option value="fato_observado">Relatório de Fato Observado (RFO)</option>
                         <option value="autorizacao_uniforme">Autorização Temporária de Uniforme Incompleto</option>
+                        <option value="termo_recolhimento_eletronico">Termo de Recolhimento e Devolução de Eletrônicos</option>
                       </optgroup>
                       <optgroup label="🚨 ENCAMINHAMENTOS INSTITUCIONAIS EXTERNOS">
                         <option value="oficio_policia">🚓 Ofício p/ B.O. (Polícia Civil / PM - Art. 29 EECM)</option>
@@ -5821,6 +5634,20 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     </div>
                   ) : null}
 
+                  {selectedDocTemplate === 'termo_recolhimento_eletronico' && (
+                    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2 text-xs text-blue-950">
+                      <p className="font-black uppercase text-[11px] text-blue-900">
+                        Termo de Recolhimento e Devolução de Aparelhos Eletrônicos
+                      </p>
+                      <p className="font-medium leading-relaxed text-[11px]">
+                        Modelo timbrado em <strong>1 folha A4</strong> citando a <strong>Lei Federal nº 15.100/2025</strong>, <strong>Decreto nº 12.385/2025</strong>, <strong>Lei Estadual MT nº 12.745/2024</strong>, <strong>ECA</strong>, <strong>LGPD</strong> e <strong>Regulamento EECM (Item 61)</strong>, com vistoria completa das condições do aparelho e recibo de devolução (ao responsável ou ao estudante).
+                      </p>
+                      <p className="text-[10px] font-bold text-blue-800">
+                        💡 Dica: clique direto em <strong>Imprimir Termo em Branco</strong> ou <strong>Imprimir / Salvar PDF</strong> para imprimir a ficha em branco pronta para preenchimento à mão. Se desejar, você também pode selecionar um aluno acima para já imprimir com o nome, turma e responsável preenchidos.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Detalhes Gerais */}
                   <div className="border-t border-slate-100 pt-5 grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -5873,8 +5700,24 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </div>
 
                 {/* PRÉ-VISUALIZAÇÃO DO DOCUMENTO (SIMULAÇÃO A4) */}
-                <div className="xl:col-span-7 flex justify-center overflow-x-auto">
-                  {isBatchPrinting ? (
+                <div className="xl:col-span-7 flex justify-center overflow-x-auto print:block print:col-span-12 print:w-full print:overflow-visible">
+                  {selectedDocTemplate === 'termo_recolhimento_eletronico' ? (
+                    <ElectronicDeviceSeizureTerm
+                      blankMode
+                      prefilledStudent={
+                        selectedStudentForDoc
+                          ? {
+                              name: selectedStudentForDoc.Nome,
+                              code: String(selectedStudentForDoc.CodigoAluno || ''),
+                              className: selectedStudentForDoc.Turma,
+                              shift: selectedStudentForDoc.Turno,
+                              guardianName: selectedStudentForDoc.NomeResponsavel || '',
+                              guardianPhone: selectedStudentForDoc.TelefoneContato || ''
+                            }
+                          : null
+                      }
+                    />
+                  ) : isBatchPrinting ? (
                     <div id="document-print-area-batch" className="w-[210mm] bg-white text-black shadow-2xl mx-auto border border-gray-200">
                       <style>{`
                         @media print {
@@ -6980,16 +6823,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
              <OfficialOficiosManager moduleSource="CIVICO_MILITAR" user={user} />
           )}
 
-          {activeTab === 'recolhimento_eletronicos' && (
-             <ElectronicDeviceSeizureManager
-               moduleSource="CIVICO_MILITAR"
-               user={user}
-               initialStudent={seizureInitialStudent}
-               onClearInitialStudent={() => setSeizureInitialStudent(null)}
-               onCustodyCountChange={setDevicesInCustodyCount}
-             />
-          )}
-
           {activeTab === 'atas' && (
              <OfficialAtasManager moduleSource="CIVICO_MILITAR" user={user} />
           )}
@@ -7190,7 +7023,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
             {/* MODAL 2: DETALHES DE COMPORTAMENTO / LANÇAR OCORRÊNCIA */}
       {isBehaviorModalOpen && selectedStudentState && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-3 overflow-y-auto no-print">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-3 overflow-y-auto">
           <div className="bg-white border border-slate-200 rounded-[2rem] max-w-[96vw] xl:max-w-[1440px] w-full max-h-[96vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800 my-auto overflow-hidden">
             
             {/* HEADER FIXO SUPERIOR TIMBRADO */}
@@ -7565,26 +7398,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     </div>
                   )}
 
-                  {/* TERMO DE RECOLHIMENTO INTEGRADO AUTOMATICAMENTE QUANDO ITEM 61 (CELULAR/ELETRÔNICO) ESTIVER SELECIONADO */}
-                  {newOccurrence.type === 'DEMERIT' &&
-                    (newOccurrence.selectedCategories || []).some(isElectronicInfractionCategory) && (() => {
-                      const studentFull =
-                        dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState?.studentId)) ||
-                        INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState?.studentId));
-                      const pastCount = getStudentElectronicYearCount(
-                        selectedStudentState?.studentId,
-                        selectedStudentState?.studentName
-                      );
-                      return (
-                        <InlineSeizureFormSection
-                          draft={inlineSeizureDraft}
-                          onChange={setInlineSeizureDraft}
-                          occurrenceSequence={pastCount + 1}
-                          studentIsPaed={(studentFull as any)?.PAED === 'Sim'}
-                        />
-                      );
-                    })()}
-
                   {/* SELETOR DE MEDIDA DISCIPLINAR */}
                   {newOccurrence.type === 'DEMERIT' && (
                     <div className="space-y-2">
@@ -7685,12 +7498,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                         : 'bg-red-600 hover:bg-red-500 shadow-red-600/20'
                     }`}
                   >
-                    <Save size={14} />{' '}
-                    {newOccurrence.type === 'DEMERIT' &&
-                    (newOccurrence.selectedCategories || []).some(isElectronicInfractionCategory) &&
-                    inlineSeizureDraft.enabled
-                      ? 'Aplicar Medida + Gerar Termo de Recolhimento A4'
-                      : 'Aplicar e Salvar Lançamento'}
+                    <Save size={14} /> Aplicar e Salvar Lançamento
                   </button>
                 </form>
               </div>
@@ -7883,82 +7691,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                           </div>
                         )}
 
-                        {(() => {
-                          const isElecOcc =
-                            occ.type === 'DEMERIT' &&
-                            (isElectronicInfractionCategory(occ.category) ||
-                              (occ.categories || []).some(isElectronicInfractionCategory));
-                          const linkedSeizure = electronicSeizures.find(
-                            s =>
-                              (s.occurrence_id && s.occurrence_id === occ.id) ||
-                              (isElecOcc &&
-                                s.seizure_date === occ.date &&
-                                (String(s.student_code || '') === String(selectedStudentState.studentId) ||
-                                  (s.student_name || '').toUpperCase() === selectedStudentState.studentName.toUpperCase()))
-                          );
-                          if (!linkedSeizure && !isElecOcc) return null;
-                          if (linkedSeizure) {
-                            return (
-                              <div className="mt-2 p-2 rounded-xl bg-blue-50 border border-blue-200 space-y-1.5">
-                                <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                                  <span className="text-[8px] font-black uppercase text-blue-950 flex items-center gap-1">
-                                    <Smartphone size={10} className="text-blue-700" />
-                                    {linkedSeizure.device_brand_model} ({linkedSeizure.protocol_number})
-                                  </span>
-                                  <span
-                                    className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase ${
-                                      linkedSeizure.status === 'SOB_GUARDA'
-                                        ? 'bg-amber-200 text-amber-950'
-                                        : 'bg-emerald-200 text-emerald-950'
-                                    }`}
-                                  >
-                                    {linkedSeizure.status === 'SOB_GUARDA'
-                                      ? 'Sob Guarda'
-                                      : linkedSeizure.status === 'DEVOLVIDO_RESPONSAVEL'
-                                      ? 'Devolvido (Resp.)'
-                                      : 'Devolvido (Aluno)'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => setQuickSeizureModal({ record: linkedSeizure, mode: 'print' })}
-                                    className="flex-1 py-1 px-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-[8px] font-black uppercase flex items-center justify-center gap-1"
-                                  >
-                                    <Printer size={9} /> Termo A4
-                                  </button>
-                                  {linkedSeizure.status === 'SOB_GUARDA' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setQuickSeizureModal({ record: linkedSeizure, mode: 'return' })}
-                                      className="flex-1 py-1 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[8px] font-black uppercase flex items-center justify-center gap-1"
-                                    >
-                                      <PackageCheck size={9} /> Devolver
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="mt-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const studentFull =
-                                    dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                    INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                    selectedStudentState;
-                                  handleOpenElectronicSeizure(studentFull);
-                                }}
-                                className="w-full py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[8px] font-black uppercase flex items-center justify-center gap-1"
-                              >
-                                <Smartphone size={10} /> Emitir Termo de Recolhimento (Item 61)
-                              </button>
-                            </div>
-                          );
-                        })()}
-
                         <div className="flex justify-between items-center mt-2.5 pt-1.5 border-t border-slate-200/60 text-[8px] font-bold text-slate-500 uppercase">
                           <span>Monitor: {occ.responsible.split(' ')[0]}</span>
                           <div className="flex items-center gap-2">
@@ -8066,20 +7798,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     title="Registrar Atendimento de Saúde / Primeiros Socorros para este Aluno (Lei Lucas)"
                   >
                     <HeartPulse size={13} className="animate-pulse" /> Atendimento de Saúde / Acidente (Lei Lucas)
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                          INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
-                                          selectedStudentState;
-                      handleOpenElectronicSeizure(studentFull);
-                    }}
-                    className="w-full py-2.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all"
-                    title="Emitir Termo de Recolhimento e Vistoria de Aparelho Eletrônico para este Estudante"
-                  >
-                    <Smartphone size={13} /> Recolhimento de Celular / Eletrônico (Termo A4)
                   </button>
 
                   <button
@@ -8194,15 +7912,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         initialStudent={civicFicaiTargetStudent}
         initialReport={civicFicaiInitialReport}
         user={user}
-      />
-
-      {/* MODAL RÁPIDO: IMPRESSÃO DO TERMO A4 E DEVOLUÇÃO DIRETO DE CONDUTA & ATITUDE */}
-      <QuickSeizurePrintAndReturnModal
-        record={quickSeizureModal?.record || null}
-        initialMode={quickSeizureModal?.mode || 'print'}
-        currentUserName={user?.name || 'Gestor'}
-        onClose={() => setQuickSeizureModal(null)}
-        onUpdated={handleQuickSeizureUpdated}
       />
 
       {/* MODAL: PROTOCOLO DE SAÚDE ESCOLAR & EMERGÊNCIA / ACIDENTES (LEI LUCAS) */}

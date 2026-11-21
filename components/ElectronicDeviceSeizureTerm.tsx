@@ -145,9 +145,19 @@ export const formatBrDate = (iso?: string | null): string => {
   return `${m[3]}/${m[2]}/${m[1]}`;
 };
 
+export interface PrefilledTermStudent {
+  name?: string;
+  code?: string;
+  className?: string;
+  shift?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+}
+
 interface ElectronicDeviceSeizureTermProps {
   record?: ElectronicDeviceSeizureRecord | null;
   blankMode?: boolean;
+  prefilledStudent?: PrefilledTermStudent | null;
 }
 
 const CheckBoxMark: React.FC<{ checked?: boolean; label: string; wrap?: boolean }> = ({
@@ -171,10 +181,18 @@ const CheckBoxMark: React.FC<{ checked?: boolean; label: string; wrap?: boolean 
 
 export const ElectronicDeviceSeizureTerm: React.FC<ElectronicDeviceSeizureTermProps> = ({
   record,
-  blankMode = false
+  blankMode = false,
+  prefilledStudent = null
 }) => {
   const isBlank = blankMode || !record;
   const r = !isBlank ? record : null;
+
+  const displayStudentName = isBlank ? prefilledStudent?.name || '\u00A0' : r!.student_name;
+  const displayStudentCode = isBlank ? prefilledStudent?.code || '\u00A0' : r!.student_code || '---';
+  const displayStudentClass = isBlank ? prefilledStudent?.className || '\u00A0' : r!.classroom_name;
+  const displayStudentShift = isBlank ? prefilledStudent?.shift || '\u00A0' : r!.shift || '---';
+  const displayGuardianName = isBlank ? prefilledStudent?.guardianName || '\u00A0' : r!.guardian_name || 'Não informado no cadastro';
+  const displayGuardianPhone = isBlank ? prefilledStudent?.guardianPhone || '\u00A0' : r!.guardian_phone || 'Não informado';
 
   const isReturned = Boolean(r && r.status !== 'SOB_GUARDA');
   const accessoriesList = r?.accessories || [];
@@ -360,30 +378,30 @@ export const ElectronicDeviceSeizureTerm: React.FC<ElectronicDeviceSeizureTermPr
           <div className="grid grid-cols-12 gap-2">
             <div className="col-span-6 border-b border-slate-400 pb-0.5">
               <span className="text-[7px] font-black uppercase text-slate-500 block leading-none">Nome do(a) Estudante</span>
-              <span className="font-black uppercase text-slate-950">{isBlank ? '\u00A0' : r!.student_name}</span>
+              <span className="font-black uppercase text-slate-950">{displayStudentName}</span>
             </div>
             <div className="col-span-2 border-b border-slate-400 pb-0.5">
               <span className="text-[7px] font-black uppercase text-slate-500 block leading-none">Cód. SEDUC</span>
-              <span className="font-bold text-slate-900">{isBlank ? '\u00A0' : r!.student_code || '---'}</span>
+              <span className="font-bold text-slate-900">{displayStudentCode}</span>
             </div>
             <div className="col-span-2 border-b border-slate-400 pb-0.5">
               <span className="text-[7px] font-black uppercase text-slate-500 block leading-none">Turma</span>
-              <span className="font-black uppercase text-slate-950">{isBlank ? '\u00A0' : r!.classroom_name}</span>
+              <span className="font-black uppercase text-slate-950">{displayStudentClass}</span>
             </div>
             <div className="col-span-2 border-b border-slate-400 pb-0.5">
               <span className="text-[7px] font-black uppercase text-slate-500 block leading-none">Turno</span>
-              <span className="font-bold uppercase text-slate-900">{isBlank ? '\u00A0' : r!.shift || '---'}</span>
+              <span className="font-bold uppercase text-slate-900">{displayStudentShift}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-12 gap-2">
             <div className="col-span-7 border-b border-slate-400 pb-0.5">
               <span className="text-[7px] font-black uppercase text-slate-500 block leading-none">Responsável Legal (Cadastro Escolar)</span>
-              <span className="font-bold uppercase text-slate-900">{isBlank ? '\u00A0' : r!.guardian_name || 'Não informado no cadastro'}</span>
+              <span className="font-bold uppercase text-slate-900">{displayGuardianName}</span>
             </div>
             <div className="col-span-5 border-b border-slate-400 pb-0.5">
               <span className="text-[7px] font-black uppercase text-slate-500 block leading-none">Telefone / WhatsApp do Responsável</span>
-              <span className="font-bold text-slate-900">{isBlank ? '\u00A0' : r!.guardian_phone || 'Não informado'}</span>
+              <span className="font-bold text-slate-900">{displayGuardianPhone}</span>
             </div>
           </div>
 
@@ -406,11 +424,18 @@ export const ElectronicDeviceSeizureTerm: React.FC<ElectronicDeviceSeizureTermPr
             </div>
           </div>
 
-          <div className="border-b border-slate-400 pb-0.5">
+          <div className="pb-0.5">
             <span className="text-[7px] font-black uppercase text-slate-500 block leading-none">Motivo / Síntese do Ocorrido</span>
-            <span className="font-medium text-slate-900">
-              {isBlank ? '\u00A0' : r!.seizure_reason}
-            </span>
+            {isBlank ? (
+              <div className="space-y-3 pt-2.5">
+                <div className="border-b border-slate-400" />
+                <div className="border-b border-slate-400" />
+              </div>
+            ) : (
+              <div className="border-b border-slate-400 pb-0.5 font-medium text-slate-900">
+                {r!.seizure_reason}
+              </div>
+            )}
           </div>
 
           <div className="pt-0.5 flex flex-wrap items-center gap-y-1 text-[8.8px]">

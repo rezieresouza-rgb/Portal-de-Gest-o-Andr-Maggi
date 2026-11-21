@@ -62,8 +62,7 @@ import CoordinationRiskRadar from '../components/CoordinationRiskRadar';
 import EducarteReports from '../components/EducarteReports';
 import PsychosocialCircumstantiatedReportManager from '../components/PsychosocialCircumstantiatedReportManager';
 import { SchoolHealthEmergencyModal } from '../components/SchoolHealthEmergencyModal';
-import { Scale, HeartPulse, Smartphone } from 'lucide-react';
-import ElectronicDeviceSeizureManager from '../components/ElectronicDeviceSeizureManager';
+import { Scale, HeartPulse } from 'lucide-react';
 
 import { User as UserType } from '../types';
 
@@ -72,7 +71,7 @@ interface PedagogicalModuleProps {
   user: UserType;
 }
 
-type TabType = 'dashboard' | 'performance' | 'aee_special_education' | 'educarte' | 'plans' | 'occurrences' | 'electronic_seizures' | 'observations' | 'class_council' | 'external_grades' | 'referrals' | 'oficios' | 'atas' | 'circumstantiated_reports' | 'calendar' | 'schedules' | 'projects' | 'ia_insights';
+type TabType = 'dashboard' | 'performance' | 'aee_special_education' | 'educarte' | 'plans' | 'occurrences' | 'observations' | 'class_council' | 'external_grades' | 'referrals' | 'oficios' | 'atas' | 'circumstantiated_reports' | 'calendar' | 'schedules' | 'projects' | 'ia_insights';
 
 const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) => {
   const { addToast } = useToast();
@@ -360,7 +359,6 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
         { id: 'health_emergency', label: 'Saúde & Acidentes (Lei Lucas)', icon: HeartPulse, highlight: true },
         { id: 'plans', label: 'Roteiros de Aula (BNCC)', icon: FileCheck },
         { id: 'occurrences', label: 'Livro de Ocorrências', icon: BookOpen },
-        { id: 'electronic_seizures', label: 'Recolhimento de Eletrônicos', icon: Smartphone, highlight: true },
         { id: 'observations', label: 'Observação de Aula', icon: Eye },
         { id: 'class_council', label: 'Conselho de Classe', icon: Users },
         { id: 'schedules', label: 'Quadro de Horários (Cronos)', icon: Clock },
@@ -675,9 +673,6 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
       case 'atas':
         return <OfficialAtasManager moduleSource="COORDENACAO" user={user} />;
 
-      case 'electronic_seizures':
-        return <ElectronicDeviceSeizureManager moduleSource="COORDENACAO" user={user} />;
-
       case 'circumstantiated_reports':
         return (
           <PsychosocialCircumstantiatedReportManager
@@ -759,7 +754,7 @@ const PedagogicalModule: React.FC<PedagogicalModuleProps> = ({ onExit, user }) =
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative print:h-auto print:overflow-visible">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
       
       {/* SIDEBAR MODERNA E ORGANIZADA DA COORDENAÇÃO */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-80 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col no-print transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} border-r border-white/10 shadow-2xl`}>
