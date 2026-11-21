@@ -162,6 +162,7 @@ export const normalizeText = (value?: string | null): string =>
   String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
     .toUpperCase();
 
@@ -819,28 +820,31 @@ export const useGamificationData = (filters: GamificationFilters) => {
         };
       });
 
+      // Usa exclusivamente o cadastro oficial (students + enrollments) como fonte única da verdade
+      // para nunca criar alunos duplicados/fantasmas vindos de códigos antigos ou erros de digitação.
       const ensureStudent = (
         resolved: ReturnType<typeof resolveStudent>,
-        fallbackName: string,
-        fallbackClass: string,
-        fallbackCode?: string
+        _fallbackName?: string,
+        _fallbackClass?: string,
+        _fallbackCode?: string
       ): StudentScore | null => {
-        const className = resolved?.className || fallbackClass;
-        const studentName = resolved?.name || fallbackName;
+        if (!resolved) return null;
+        const className = resolved.className;
+        const studentName = resolved.name;
         if (!studentName || !className) return null;
-        const code = resolved?.code || fallbackCode || normalizeText(studentName);
+        const code = resolved.code;
         const key = `${code}::${className}`;
         if (!sMap[key]) {
           const meta = classMetaMap.get(className);
           sMap[key] = {
             studentKey: key,
-            studentCode: resolved?.code || fallbackCode || '---',
+            studentCode: code,
             studentName,
             className,
-            shift: resolved?.shift || meta?.shift || 'MATUTINO',
-            gradeLevel: resolved?.gradeLevel || extractGradeLevel(className),
-            isActive: resolved ? resolved.isActive : true,
-            status: resolved?.status || 'ATIVO',
+            shift: resolved.shift || meta?.shift || 'MATUTINO',
+            gradeLevel: resolved.gradeLevel || extractGradeLevel(className),
+            isActive: resolved.isActive,
+            status: resolved.status || 'ATIVO',
             totalPoints: 0,
             rankOverall: 0,
             rankInClass: 0,
@@ -1033,23 +1037,51 @@ export const useGamificationData = (filters: GamificationFilters) => {
         );
       });
 
-      // 4b. Bônus de Nota de Atitude Geral (civic_student_behavior) — aplicado proporcionalmente no consolidado ou bimestre atual
+      // 4b. Bônus de Nota de Atitude Geral (civic_student_behavior) — deduplicado por aluno oficial
+      // Prioriza correspondência exata pelo código SEDUC oficial e impede contagem dupla/tripla por registros legados órfãos.
       if (slicePeriod === 'ANO_TODO' || slicePeriod === '3º BIMESTRE' || slicePeriod === '4º BIMESTRE') {
-        rawData.civicBehaviors.forEach(cb => {
-          const resolved = resolveStudent({ code: cb.studentCode, name: cb.studentName, className: cb.className });
-          const cName = resolved?.className || cb.className;
+        const appliedCivicStudentKeys = new Set<string>();
+
+        const applyCivicBehavior = (
+          resolved: ReturnType<typeof resolveStudent>,
+          score: number
+        ) => {
+          if (!resolved) return;
+          const cName = resolved.className;
           if (!cName || !cMap[cName]) return;
-          if (resolved && !resolved.isActive && !filters.includeTransferred) return;
+          if (!resolved.isActive && !filters.includeTransferred) return;
+
+          const dedupeKey = `${resolved.code}::${cName}`;
+          if (appliedCivicStudentKeys.has(dedupeKey)) return;
+          appliedCivicStudentKeys.add(dedupeKey);
 
           let bonus = 0;
-          if (cb.score >= 9.0) bonus = 50;
-          else if (cb.score >= 8.0) bonus = 10;
-          else if (cb.score < 5.0) bonus = -20;
+          if (score >= 9.0) bonus = 50;
+          else if (score >= 8.0) bonus = 10;
+          else if (score < 5.0) bonus = -20;
 
           if (bonus !== 0) {
             cMap[cName].breakdown.civicBehavior += bonus;
-            const st = ensureStudent(resolved, cb.studentName, cName, cb.studentCode);
+            const st = ensureStudent(resolved);
             if (st) st.breakdown.civicBehavior += bonus;
+          }
+        };
+
+        // Passo 1: registros com código SEDUC idêntico ao cadastro oficial (mais confiáveis)
+        rawData.civicBehaviors.forEach(cb => {
+          const exactByCode = cb.studentCode ? rosterByCode.get(cb.studentCode) || null : null;
+          if (exactByCode) {
+            applyCivicBehavior(exactByCode, cb.score);
+          }
+        });
+
+        // Passo 2: fallback por nome exato apenas para alunos reais que não possuíam registro direto no Passo 1
+        rawData.civicBehaviors.forEach(cb => {
+          const exactByCode = cb.studentCode ? rosterByCode.get(cb.studentCode) || null : null;
+          if (exactByCode) return;
+          const resolvedByName = resolveStudent({ name: cb.studentName, className: cb.className });
+          if (resolvedByName) {
+            applyCivicBehavior(resolvedByName, cb.score);
           }
         });
       }
