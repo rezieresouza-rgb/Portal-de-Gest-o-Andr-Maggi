@@ -52,6 +52,8 @@ import CivicoMilitarReports from '../components/CivicoMilitarReports';
 import { CivicMediationReferralModal } from '../components/CivicMediationReferralModal';
 import OfficialOficiosManager from '../components/OfficialOficiosManager';
 import OfficialAtasManager from '../components/OfficialAtasManager';
+import ElectronicDeviceSeizureManager, { SeizureStudentOption } from '../components/ElectronicDeviceSeizureManager';
+import { Smartphone } from 'lucide-react';
 import { DisciplinaryChecklistModal } from '../components/DisciplinaryChecklistModal';
 import { CivicFicaiReferralModal } from '../components/CivicFicaiReferralModal';
 import { SchoolHealthEmergencyModal } from '../components/SchoolHealthEmergencyModal';
@@ -694,7 +696,55 @@ interface CivicRoutineRecord {
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
   // 1. TODOS OS ESTADOS (useState) DECLARADOS NO TOPO PARA EVITAR ERROS DE INICIALIZAÇÃO (TDZ)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'recolhimento_eletronicos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
+  const [seizureInitialStudent, setSeizureInitialStudent] = useState<SeizureStudentOption | null>(null);
+  const [devicesInCustodyCount, setDevicesInCustodyCount] = useState<number>(0);
+
+  const handleOpenElectronicSeizure = (student?: any) => {
+    if (student) {
+      setSeizureInitialStudent({
+        StudentUuid: student.StudentUuid || student.studentUuid || '',
+        CodigoAluno: student.CodigoAluno || student.studentId || '',
+        Nome: student.Nome || student.studentName || '',
+        Turma: student.Turma || student.className || '',
+        Turno: student.Turno || student.shift || '',
+        NomeResponsavel: student.NomeResponsavel || student.guardian_name || '',
+        TelefoneContato: student.TelefoneContato || student.contact_phone || '',
+        PAED: student.PAED || ''
+      });
+    } else {
+      setSeizureInitialStudent(null);
+    }
+    setIsBehaviorModalOpen(false);
+    setActiveTab('recolhimento_eletronicos');
+    setIsSidebarOpen(false);
+  };
+
+  useEffect(() => {
+    const loadCustodyCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('electronic_device_seizures')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'SOB_GUARDA');
+        if (!error && typeof count === 'number') {
+          setDevicesInCustodyCount(count);
+          return;
+        }
+      } catch {
+        // fallback localStorage
+      }
+      try {
+        const saved = JSON.parse(localStorage.getItem('eecm_electronic_device_seizures_v1') || '[]');
+        if (Array.isArray(saved)) {
+          setDevicesInCustodyCount(saved.filter((r: any) => r.status === 'SOB_GUARDA').length);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadCustodyCount();
+  }, []);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Search & Filter States
@@ -2983,7 +3033,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden font-sans relative print:h-auto print:overflow-visible">
       {/* Backdrop Mobile */}
       {isSidebarOpen && (
         <div
@@ -3087,6 +3137,29 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <FileText size={18} /> Documentações
           </button>
 
+          <button
+            onClick={() => { setActiveTab('recolhimento_eletronicos'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'recolhimento_eletronicos'
+              ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
+              : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+              }`}
+            title="Termo de Recolhimento, Vistoria e Devolução de Celulares e Eletrônicos (Lei 15.100/2025 e Lei MT 12.745/2024)"
+          >
+            <div className="flex items-center gap-3.5">
+              <Smartphone size={18} className={activeTab === 'recolhimento_eletronicos' ? 'text-white' : 'text-amber-400'} />
+              <span className="text-left leading-tight">Eletrônicos</span>
+            </div>
+            {devicesInCustodyCount > 0 ? (
+              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] animate-pulse">
+                {devicesInCustodyCount}
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold text-[9px]">
+                Termo
+              </span>
+            )}
+          </button>
+
           {/* BOTÃO ASSISTENTE & CHECKLIST DO GESTOR */}
           <button
             type="button"
@@ -3178,7 +3251,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       {/* Área Principal de Conteúdo */}
       <main className="flex-1 flex flex-col overflow-hidden bg-slate-50 min-w-0">
         {/* Header */}
-        <header className="h-20 lg:h-24 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 shrink-0 shadow-sm gap-3">
+        <header className="h-20 lg:h-24 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-10 shrink-0 shadow-sm gap-3 no-print">
           <div className="flex items-center gap-3 lg:gap-5 min-w-0">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -3199,6 +3272,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'documentos' && 'Preenchimento de Documentos'}
                 {activeTab === 'oficios' && 'Ofícios Escolares Expedidos'}
                 {activeTab === 'atas' && 'Registro de Atas e Deliberações'}
+                {activeTab === 'recolhimento_eletronicos' && 'Recolhimento e Devolução de Eletrônicos'}
               </h2>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                 {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares • Escola Cívico-Militar E.E. André Maggi'}
@@ -3210,6 +3284,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 {activeTab === 'documentos' && 'Emissão e Impressão de Fichas Oficiais Timbradas'}
                 {activeTab === 'oficios' && 'Emissão, Sequencial e Arquivo de Ofícios Oficiais'}
                 {activeTab === 'atas' && 'Escrituração Oficial de Atas de Reunião, Conselhos e Deliberações'}
+                {activeTab === 'recolhimento_eletronicos' && 'Termo Oficial, Vistoria Física e Custódia • Lei Federal 15.100/2025 & Lei MT 12.745/2024'}
               </p>
             </div>
           </div>
@@ -6790,6 +6865,16 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
              <OfficialOficiosManager moduleSource="CIVICO_MILITAR" user={user} />
           )}
 
+          {activeTab === 'recolhimento_eletronicos' && (
+             <ElectronicDeviceSeizureManager
+               moduleSource="CIVICO_MILITAR"
+               user={user}
+               initialStudent={seizureInitialStudent}
+               onClearInitialStudent={() => setSeizureInitialStudent(null)}
+               onCustodyCountChange={setDevicesInCustodyCount}
+             />
+          )}
+
           {activeTab === 'atas' && (
              <OfficialAtasManager moduleSource="CIVICO_MILITAR" user={user} />
           )}
@@ -7365,6 +7450,38 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     </div>
                   )}
 
+                  {/* ATALHO AUTOMÁTICO PARA TERMO DE RECOLHIMENTO QUANDO ITEM 61 (CELULAR/ELETRÔNICO) ESTIVER SELECIONADO */}
+                  {newOccurrence.type === 'DEMERIT' && (
+                    [...(newOccurrence.selectedCategories || []), newOccurrence.category || ''].some(c =>
+                      c.startsWith('61.') || c.toLowerCase().includes('celulares') || c.toLowerCase().includes('eletrônicos')
+                    )
+                  ) && (
+                    <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-start gap-2 text-[10px] text-blue-950">
+                        <Smartphone size={15} className="text-blue-700 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-black uppercase">Item 61 — Recolhimento de Aparelho Eletrônico</p>
+                          <p className="font-medium text-blue-900/80">
+                            Emita o Termo Oficial com vistoria física do aparelho (Lei 15.100/2025 &amp; Lei MT 12.745/2024).
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const studentFull =
+                            dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState?.studentId)) ||
+                            INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState?.studentId)) ||
+                            selectedStudentState;
+                          handleOpenElectronicSeizure(studentFull);
+                        }}
+                        className="px-3 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-[9px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Smartphone size={12} /> Emitir Termo
+                      </button>
+                    </div>
+                  )}
+
                   {/* SELETOR DE MEDIDA DISCIPLINAR */}
                   {newOccurrence.type === 'DEMERIT' && (
                     <div className="space-y-2">
@@ -7765,6 +7882,20 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     title="Registrar Atendimento de Saúde / Primeiros Socorros para este Aluno (Lei Lucas)"
                   >
                     <HeartPulse size={13} className="animate-pulse" /> Atendimento de Saúde / Acidente (Lei Lucas)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const studentFull = dbStudents.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                          INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(selectedStudentState.studentId)) ||
+                                          selectedStudentState;
+                      handleOpenElectronicSeizure(studentFull);
+                    }}
+                    className="w-full py-2.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                    title="Emitir Termo de Recolhimento e Vistoria de Aparelho Eletrônico para este Estudante"
+                  >
+                    <Smartphone size={13} /> Recolhimento de Celular / Eletrônico (Termo A4)
                   </button>
 
                   <button
