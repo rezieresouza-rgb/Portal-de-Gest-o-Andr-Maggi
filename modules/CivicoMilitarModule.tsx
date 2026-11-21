@@ -723,12 +723,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   useEffect(() => {
     const loadCustodyCount = async () => {
       try {
-        const { count, error } = await supabase
-          .from('electronic_device_seizures')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'SOB_GUARDA');
-        if (!error && typeof count === 'number') {
-          setDevicesInCustodyCount(count);
+        const { data, error } = await supabase
+          .from('civic_documents')
+          .select('id, content')
+          .eq('template', 'electronic_device_seizure');
+        if (!error && Array.isArray(data)) {
+          setDevicesInCustodyCount(data.filter((d: any) => d.content?.status === 'SOB_GUARDA').length);
           return;
         }
       } catch {
@@ -1345,7 +1345,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         try {
           const { data: docData, error: docErr } = await supabase.from('civic_documents').select('*');
           if (!docErr && docData && docData.length > 0) {
-            dbDocs = docData.map((d: any) => ({
+            dbDocs = docData.filter((d: any) => d.template !== 'electronic_device_seizure' && d.template !== 'official_ata').map((d: any) => ({
               id: d.id,
               template: d.template,
               date: d.date,

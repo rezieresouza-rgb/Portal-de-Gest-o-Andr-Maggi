@@ -18,8 +18,6 @@ import {
   X,
   ClipboardCheck,
   Scale,
-  Database,
-  Copy,
   Edit3,
   PackageCheck,
   Info,
@@ -46,6 +44,7 @@ import {
 } from './ElectronicDeviceSeizureTerm';
 
 const LOCAL_STORAGE_KEY = 'eecm_electronic_device_seizures_v1';
+const CLOUD_TEMPLATE_KEY = 'electronic_device_seizure';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -92,39 +91,6 @@ interface ElectronicDeviceSeizureManagerProps {
 
 const DEFAULT_REASON =
   'Uso não autorizado de aparelho eletrônico portátil durante atividade escolar, em desacordo com a Lei Federal nº 15.100/2025, Lei Estadual MT nº 12.745/2024 e Regulamento Disciplinar EECM-MT (Item 61).';
-
-const SQL_MIGRATION_SNIPPET = `CREATE TABLE IF NOT EXISTS public.electronic_device_seizures (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  protocol_number TEXT NOT NULL,
-  occurrence_sequence INTEGER NOT NULL DEFAULT 1,
-  school_year INTEGER NOT NULL DEFAULT EXTRACT(YEAR FROM CURRENT_DATE),
-  module_source TEXT NOT NULL DEFAULT 'CIVICO_MILITAR',
-  student_id TEXT, student_code TEXT, student_name TEXT NOT NULL,
-  classroom_name TEXT NOT NULL, shift TEXT, guardian_name TEXT, guardian_phone TEXT,
-  student_is_paed BOOLEAN DEFAULT false, paed_exception_verified BOOLEAN DEFAULT true,
-  seizure_date DATE NOT NULL, seizure_time TEXT NOT NULL, seizure_location TEXT NOT NULL,
-  seizure_subject_activity TEXT, seizure_reason TEXT NOT NULL,
-  seized_by_name TEXT NOT NULL, seized_by_role TEXT,
-  student_refused_signature BOOLEAN DEFAULT false, witness_name TEXT,
-  device_type TEXT NOT NULL, device_brand_model TEXT NOT NULL,
-  device_color TEXT, device_imei_serial TEXT, seal_number TEXT,
-  screen_condition TEXT NOT NULL DEFAULT 'INTEGRA',
-  body_condition TEXT NOT NULL DEFAULT 'INTEGRA',
-  power_state TEXT NOT NULL DEFAULT 'LIGADO_DESLIGADO_ALUNO',
-  accessories JSONB NOT NULL DEFAULT '[]'::jsonb,
-  preexisting_damage_notes TEXT,
-  return_policy TEXT NOT NULL DEFAULT 'ALUNO_FIM_TURNO',
-  status TEXT NOT NULL DEFAULT 'SOB_GUARDA',
-  returned_to_type TEXT, receiver_name TEXT, receiver_document TEXT,
-  receiver_relationship TEXT, receiver_phone TEXT,
-  returned_date DATE, returned_time TEXT, returned_by_name TEXT,
-  return_condition_ok BOOLEAN DEFAULT true, return_notes TEXT,
-  created_by TEXT,
-  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),
-  updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now())
-);
-ALTER TABLE public.electronic_device_seizures ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Enable all access for authenticated users" ON public.electronic_device_seizures FOR ALL USING (true) WITH CHECK (true);`;
 
 const normalizeRecord = (row: any): ElectronicDeviceSeizureRecord => ({
   id: row.id || generateUUID(),
@@ -189,8 +155,6 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
   const [students, setStudents] = useState<SeizureStudentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [dbTableMissing, setDbTableMissing] = useState(false);
-  const [sqlCopied, setSqlCopied] = useState(false);
   const [feedbackBanner, setFeedbackBanner] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
 
   // Filtros da lista
@@ -320,28 +284,66 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
         console.warn('Erro ao carregar estudantes no módulo de recolhimento:', err);
       }
 
-      // 2. Registros de recolhimento (Supabase com fallback localStorage)
+      // 2. Registros de recolhimento na tabela ativa civic_documents (nuvem Supabase + cache local)
       try {
-        const { data, error } = await supabase
-          .from('electronic_device_seizures')
-          .select('*')
-          .order('seizure_date', { ascending: false })
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          const msg = `${error.code || ''} ${error.message || ''}`.toLowerCase();
-          if (msg.includes('42p01') || msg.includes('pgrst205') || msg.includes('does not exist') || msg.includes('could not find')) {
-            if (active) setDbTableMissing(true);
-          }
+        let localList: ElectronicDeviceSeizureRecord[] = [];
+        try {
           const savedLocal = localStorage.getItem(LOCAL_STORAGE_KEY);
-          if (active && savedLocal) {
-            setRecords((JSON.parse(savedLocal) || []).map(normalizeRecord));
+          if (savedLocal) localList = (JSON.parse(savedLocal) || []).map(normalizeRecord);
+        } catch {
+          localList = [];
+        }
+
+        const { data, error } = await supabase
+          .from('civic_documents')
+          .select('*')
+          .eq('template', CLOUD_TEMPLATE_KEY);
+
+        if (!error && data) {
+          const cloudList = data.map((d: any) =>
+            normalizeRecord({
+              ...(d.content || {}),
+              id: d.id,
+              student_name: d.content?.student_name || d.student_name || '',
+              classroom_name: d.content?.classroom_name || d.student_class || '',
+              seizure_date: d.content?.seizure_date || (typeof d.date === 'string' ? d.date.split('T')[0] : getLocalIsoDate()),
+              created_at: d.content?.created_at || d.created_at
+            })
+          );
+
+          // Mescla registros da nuvem com eventuais registros locais ainda não enviados
+          const mergedMap = new Map<string, ElectronicDeviceSeizureRecord>();
+          const cloudIds = new Set(cloudList.map(r => r.id));
+          localList.forEach(r => mergedMap.set(r.id, r));
+          cloudList.forEach(r => mergedMap.set(r.id, r));
+
+          // Sincroniza para a nuvem registros que só existiam no navegador local
+          const unsyncedLocal = localList.filter(r => !cloudIds.has(r.id));
+          if (unsyncedLocal.length > 0) {
+            const rowsToPush = unsyncedLocal.map(item => ({
+              id: item.id,
+              template: CLOUD_TEMPLATE_KEY,
+              date: item.seizure_date,
+              timestamp: item.created_at ? new Date(item.created_at).getTime() : Date.now(),
+              student_name: item.student_name,
+              student_class: item.classroom_name,
+              content: item
+            }));
+            await supabase.from('civic_documents').upsert(rowsToPush, { onConflict: 'id' });
+          }
+
+          const merged = Array.from(mergedMap.values()).sort((a, b) => {
+            const dCmp = (b.seizure_date || '').localeCompare(a.seizure_date || '');
+            if (dCmp !== 0) return dCmp;
+            return (b.created_at || '').localeCompare(a.created_at || '');
+          });
+
+          if (active) {
+            setRecords(merged);
+            persistLocal(merged);
           }
         } else if (active) {
-          setDbTableMissing(false);
-          const list = (data || []).map(normalizeRecord);
-          setRecords(list);
-          persistLocal(list);
+          setRecords(localList);
         }
       } catch {
         const savedLocal = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -672,24 +674,22 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
         updated_at: nowIso
       };
 
-      const dbRow = {
-        ...payload,
-        returned_date: payload.returned_date || null
-      };
-
-      if (!dbTableMissing) {
-        const { error } = existing
-          ? await supabase.from('electronic_device_seizures').update(dbRow).eq('id', payload.id)
-          : await supabase.from('electronic_device_seizures').insert([dbRow]);
-
-        if (error) {
-          const msg = `${error.code || ''} ${error.message || ''}`.toLowerCase();
-          if (msg.includes('42p01') || msg.includes('pgrst205') || msg.includes('does not exist') || msg.includes('could not find')) {
-            setDbTableMissing(true);
-          } else {
-            console.warn('Supabase sync warning:', error.message);
+      const { error } = await supabase.from('civic_documents').upsert(
+        [
+          {
+            id: payload.id,
+            template: CLOUD_TEMPLATE_KEY,
+            date: payload.seizure_date,
+            timestamp: Date.now(),
+            student_name: payload.student_name,
+            student_class: payload.classroom_name,
+            content: payload
           }
-        }
+        ],
+        { onConflict: 'id' }
+      );
+      if (error) {
+        console.warn('Supabase sync warning:', error.message);
       }
 
       const nextList = existing
@@ -774,28 +774,22 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
         updated_at: new Date().toISOString()
       };
 
-      if (!dbTableMissing) {
-        const { error } = await supabase
-          .from('electronic_device_seizures')
-          .update({
-            status: updated.status,
-            returned_to_type: updated.returned_to_type,
-            receiver_name: updated.receiver_name,
-            receiver_document: updated.receiver_document,
-            receiver_relationship: updated.receiver_relationship,
-            receiver_phone: updated.receiver_phone,
-            returned_date: updated.returned_date || null,
-            returned_time: updated.returned_time,
-            returned_by_name: updated.returned_by_name,
-            return_condition_ok: updated.return_condition_ok,
-            return_notes: updated.return_notes,
-            updated_at: updated.updated_at
-          })
-          .eq('id', updated.id);
-
-        if (error) {
-          console.warn('Supabase return update warning:', error.message);
-        }
+      const { error } = await supabase.from('civic_documents').upsert(
+        [
+          {
+            id: updated.id,
+            template: CLOUD_TEMPLATE_KEY,
+            date: updated.seizure_date,
+            timestamp: Date.now(),
+            student_name: updated.student_name,
+            student_class: updated.classroom_name,
+            content: updated
+          }
+        ],
+        { onConflict: 'id' }
+      );
+      if (error) {
+        console.warn('Supabase return update warning:', error.message);
       }
 
       const nextList = records.map(r => (r.id === updated.id ? updated : r));
@@ -818,9 +812,7 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
 
   const handleDeleteRecord = async (rec: ElectronicDeviceSeizureRecord) => {
     if (!window.confirm(`Deseja realmente excluir o protocolo ${rec.protocol_number} (${rec.student_name})?`)) return;
-    if (!dbTableMissing) {
-      await supabase.from('electronic_device_seizures').delete().eq('id', rec.id);
-    }
+    await supabase.from('civic_documents').delete().eq('id', rec.id);
     const nextList = records.filter(r => r.id !== rec.id);
     setRecords(nextList);
     persistLocal(nextList);
@@ -886,12 +878,6 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Recolhimentos');
     XLSX.writeFile(wb, `Recolhimento_Eletronicos_EECM_${new Date().getFullYear()}.xlsx`);
-  };
-
-  const handleCopySql = () => {
-    navigator.clipboard?.writeText(SQL_MIGRATION_SNIPPET);
-    setSqlCopied(true);
-    setTimeout(() => setSqlCopied(false), 3000);
   };
 
   // MODO IMPRESSÃO ISOLADO (1 folha A4 limpa)
@@ -1234,31 +1220,6 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
           <span>{feedbackBanner.text}</span>
           <button type="button" onClick={() => setFeedbackBanner(null)} className="opacity-60 hover:opacity-100">
             <X size={14} />
-          </button>
-        </div>
-      )}
-
-      {/* AVISO OPCIONAL SE TABELA SUPABASE AINDA NÃO FOI CRIADA */}
-      {dbTableMissing && (
-        <div className="no-print p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-2.5 text-xs text-amber-950">
-            <Database size={16} className="text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-black uppercase text-[11px]">
-                Armazenamento Local Ativo (Tabela Supabase pendente)
-              </p>
-              <p className="font-medium text-amber-900/90 mt-0.5">
-                Seus termos já estão sendo salvos normalmente neste navegador. Para sincronizar em nuvem entre todos os computadores da escola, execute o script{' '}
-                <code className="font-mono bg-amber-100 px-1 rounded">create_electronic_device_seizures.sql</code> no SQL Editor do Supabase.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleCopySql}
-            className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-black uppercase flex items-center gap-1.5 shrink-0"
-          >
-            <Copy size={13} /> {sqlCopied ? 'SQL Copiado!' : 'Copiar SQL'}
           </button>
         </div>
       )}
