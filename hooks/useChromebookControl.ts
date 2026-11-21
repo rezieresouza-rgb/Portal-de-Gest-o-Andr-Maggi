@@ -350,6 +350,7 @@ export const useChromebookControl = ({ user, onInventoryChanged }: UseChromebook
   const [occurrences, setOccurrences] = useState<ChromebookOccurrenceRecord[]>([]);
   const [classrooms, setClassrooms] = useState<{ name: string; shift: string }[]>([]);
   const [students, setStudents] = useState<SchoolStudentOption[]>([]);
+  const [classLeadersByClass, setClassLeadersByClass] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [dedicatedTablesReady, setDedicatedTablesReady] = useState(false);
 
@@ -358,10 +359,30 @@ export const useChromebookControl = ({ user, onInventoryChanged }: UseChromebook
   const loadAll = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Carregar turmas e alunos ativos do Supabase para Utilizações e Ficha de Controle
-      const [classRes, studRes] = await Promise.all([
+      // 1. Carregar turmas, alunos ativos (paginação completa) e líderes de turma do Cívico-Militar
+      const fetchAllStudents = async () => {
+        const all: any[] = [];
+        for (let page = 0; page < 10; page++) {
+          const from = page * 1000;
+          const to = from + 999;
+          const { data, error } = await supabase
+            .from('students')
+            .select('id, name, registration_number, status, enrollments(status, classrooms(name, shift))')
+            .range(from, to);
+          if (error || !data || data.length === 0) break;
+          all.push(...data);
+          if (data.length < 1000) break;
+        }
+        return all;
+      };
+
+      const [classRes, rawStudents, leadersRes] = await Promise.all([
         supabase.from('classrooms').select('name, shift').order('name'),
-        supabase.from('students').select('id, name, registration_number, enrollments(status, classrooms(name, shift))')
+        fetchAllStudents(),
+        supabase
+          .from('civic_student_behavior')
+          .select('student_id, student_name, class_name')
+          .eq('is_class_leader', true)
       ]);
 
       if (classRes.data) {
@@ -369,28 +390,61 @@ export const useChromebookControl = ({ user, onInventoryChanged }: UseChromebook
           classRes.data
             .map((c: any) => ({ name: String(c.name || '').trim(), shift: String(c.shift || 'MATUTINO').toUpperCase() }))
             .filter(c => c.name)
+            .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
         );
       }
 
-      if (studRes.data) {
-        const activeStuds: SchoolStudentOption[] = [];
-        studRes.data.forEach((s: any) => {
-          const enrs = Array.isArray(s.enrollments) ? s.enrollments : [];
-          const active =
-            enrs.find((e: any) => ['ATIVO', 'MATRICULADO', 'CURSANDO'].includes(String(e.status || '').toUpperCase())) ||
-            enrs.find((e: any) => String(e.status || '').toUpperCase() === 'RECLASSIFICADO');
-          if (active && active.classrooms?.name) {
-            activeStuds.push({
-              code: String(s.registration_number || s.id),
-              name: String(s.name || '').trim(),
-              className: String(active.classrooms.name).trim(),
-              shift: String(active.classrooms.shift || 'MATUTINO').toUpperCase()
-            });
-          }
-        });
-        activeStuds.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-        setStudents(activeStuds);
-      }
+      const inactiveStatuses = new Set([
+        'TRANSFERIDO DE ESCOLA',
+        'TRANSFERIDO DA ESCOLA',
+        'TRANSFERIDO DE TURMA',
+        'TRANSFERIDO DA TURMA',
+        'FALECIDO',
+        'ÓBITO',
+        'OBITO',
+        'ABANDONO',
+        'EVADIDO',
+        'DESISTENTE',
+        'CANCELADO',
+        'INATIVO'
+      ]);
+
+      const activeByCode = new Map<string, SchoolStudentOption>();
+      const activeStuds: SchoolStudentOption[] = [];
+      rawStudents.forEach((s: any) => {
+        const enrs = Array.isArray(s.enrollments) ? s.enrollments : [];
+        const active =
+          enrs.find((e: any) => ['ATIVO', 'MATRICULADO', 'CURSANDO'].includes(String(e.status || '').toUpperCase())) ||
+          enrs.find((e: any) => String(e.status || '').toUpperCase() === 'RECLASSIFICADO');
+        const resolvedStatus = String(active?.status || s.status || '').toUpperCase().trim();
+        const isActive =
+          Boolean(active) &&
+          !inactiveStatuses.has(resolvedStatus) &&
+          !resolvedStatus.includes('TRANSFERIDO');
+        if (isActive && active?.classrooms?.name) {
+          const item: SchoolStudentOption = {
+            code: String(s.registration_number || s.id).trim(),
+            name: String(s.name || '').trim(),
+            className: String(active.classrooms.name).trim(),
+            shift: String(active.classrooms.shift || 'MATUTINO').toUpperCase()
+          };
+          activeStuds.push(item);
+          activeByCode.set(item.code, item);
+        }
+      });
+      activeStuds.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+      setStudents(activeStuds);
+
+      // Mapear líderes oficiais de cada turma (somente alunos ativos confirmados no cadastro oficial)
+      const leaderMap: Record<string, string> = {};
+      (leadersRes.data || []).forEach((l: any) => {
+        const code = String(l.student_id || '').trim();
+        const official = activeByCode.get(code);
+        if (official && !leaderMap[official.className]) {
+          leaderMap[official.className] = official.name;
+        }
+      });
+      setClassLeadersByClass(leaderMap);
 
       // 2. Tentar carregar as 4 tabelas dedicadas do Supabase
       const [pairsRes, usagesRes, inspRes, occRes] = await Promise.all([
@@ -1374,6 +1428,7 @@ export const useChromebookControl = ({ user, onInventoryChanged }: UseChromebook
     occurrences,
     classrooms,
     students,
+    classLeadersByClass,
     dashboardStats,
     isLoading,
     dedicatedTablesReady,

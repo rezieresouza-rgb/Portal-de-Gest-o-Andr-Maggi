@@ -95,6 +95,7 @@ export const ChromebookManagement: React.FC<ChromebookManagementProps> = ({
     occurrences,
     classrooms,
     students,
+    classLeadersByClass,
     dashboardStats,
     isLoading,
     dedicatedTablesReady,
@@ -1983,6 +1984,7 @@ export const ChromebookManagement: React.FC<ChromebookManagementProps> = ({
         <ChromebookControlSheetTab
           classrooms={classrooms}
           students={students}
+          classLeadersByClass={classLeadersByClass}
           defaultTeacher={user?.name || ''}
         />
       )}
