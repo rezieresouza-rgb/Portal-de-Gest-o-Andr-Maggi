@@ -27,6 +27,7 @@ export type ReturnedToType = 'ALUNO' | 'RESPONSAVEL';
 export interface ElectronicDeviceSeizureRecord {
   id: string;
   protocol_number: string;
+  occurrence_id?: string;
   occurrence_sequence: number;
   school_year: number;
   module_source: 'CIVICO_MILITAR' | 'COORDENACAO';

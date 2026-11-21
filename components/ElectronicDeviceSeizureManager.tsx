@@ -95,6 +95,7 @@ const DEFAULT_REASON =
 const normalizeRecord = (row: any): ElectronicDeviceSeizureRecord => ({
   id: row.id || generateUUID(),
   protocol_number: row.protocol_number || 'REC-2026-0001',
+  occurrence_id: row.occurrence_id || '',
   occurrence_sequence: Number(row.occurrence_sequence) || 1,
   school_year: Number(row.school_year) || new Date().getFullYear(),
   module_source: row.module_source === 'COORDENACAO' ? 'COORDENACAO' : 'CIVICO_MILITAR',
@@ -626,6 +627,7 @@ const ElectronicDeviceSeizureManager: React.FC<ElectronicDeviceSeizureManagerPro
       const payload: ElectronicDeviceSeizureRecord = {
         id: existing?.id || generateUUID(),
         protocol_number: existing?.protocol_number || nextProtocolNumber,
+        occurrence_id: existing?.occurrence_id || '',
         occurrence_sequence: existing?.occurrence_sequence || currentFormOccurrenceSeq,
         school_year: existing?.school_year || new Date().getFullYear(),
         module_source: existing?.module_source || moduleSource,
