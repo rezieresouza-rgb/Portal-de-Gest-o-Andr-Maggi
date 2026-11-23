@@ -283,7 +283,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       Notas: t.breakdown.grades,
       Assiduidade: t.breakdown.attendance,
       Frequencia_Pct: t.attendanceStats ? Number(t.attendanceStats.rate.toFixed(1)) : '',
-      Biblioteca: t.breakdown.library,
+      Biblioteca_Emprestimos_Info: t.breakdown.library,
       Civico_Militar: t.breakdown.civicBehavior,
       Elogios: t.breakdown.praises,
       Ocorrencias: t.breakdown.occurrences,
@@ -305,7 +305,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
       Status: s.status,
       Notas: s.breakdown.grades,
       Assiduidade: s.breakdown.attendance,
-      Biblioteca: s.breakdown.library,
+      Biblioteca_Emprestimos_Info: s.breakdown.library,
       Civico_Militar: s.breakdown.civicBehavior,
       Elogios: s.breakdown.praises,
       Ocorrencias: s.breakdown.occurrences,
@@ -572,7 +572,7 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                   <option value="totalPoints">Ordenar: Total</option>
                   <option value="grades">Pilar: Notas</option>
                   <option value="attendance">Pilar: Frequência</option>
-                  <option value="library">Pilar: Biblioteca</option>
+                  <option value="library">Biblioteca (Empréstimos - Info)</option>
                   <option value="civicBehavior">Pilar: Cívico-Militar</option>
                   <option value="praises">Pilar: Elogios</option>
                   <option value="occurrences">Menos Ocorrências</option>
@@ -714,7 +714,6 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                           (turma.breakdown.civicBehavior > 0 ? turma.breakdown.civicBehavior : 0) +
                           turma.breakdown.grades +
                           turma.breakdown.praises +
-                          turma.breakdown.library +
                           (turma.breakdown.attendance > 0 ? turma.breakdown.attendance : 0) +
                           (turma.breakdown.extraPoints > 0 ? turma.breakdown.extraPoints : 0);
                         const losses = Math.abs(
@@ -1014,8 +1013,11 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                           <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
                             Cívico {singleClassInHistory.breakdown.civicBehavior >= 0 ? `+${singleClassInHistory.breakdown.civicBehavior}` : singleClassInHistory.breakdown.civicBehavior}
                           </span>
-                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200">
-                            Biblioteca +{singleClassInHistory.breakdown.library}
+                          <span
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200"
+                            title="Indicador informativo de empréstimos na Biblioteca/APA (não soma na pontuação final)"
+                          >
+                            Biblioteca: {singleClassInHistory.breakdown.library} emp. (info)
                           </span>
                           <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-rose-50 text-rose-700 border border-rose-200">
                             Ocorrências {singleClassInHistory.breakdown.occurrences}
@@ -1464,13 +1466,19 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                               <p className="text-xs font-black text-slate-800">{evt.title}</p>
                               {evt.description && <p className="text-[11px] text-slate-500 line-clamp-2">{evt.description}</p>}
                             </div>
-                            <span
-                              className={`px-3 py-1 rounded-xl text-xs font-black self-start sm:self-center shrink-0 ${
-                                isPos ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
-                              }`}
-                            >
-                              {isPos ? `+${evt.points}` : evt.points} pts
-                            </span>
+                            {evt.pillar === 'library' || evt.points === 0 ? (
+                              <span className="px-3 py-1 rounded-xl text-[10px] font-black uppercase self-start sm:self-center shrink-0 bg-blue-50 text-blue-700 border border-blue-200">
+                                Informativo
+                              </span>
+                            ) : (
+                              <span
+                                className={`px-3 py-1 rounded-xl text-xs font-black self-start sm:self-center shrink-0 ${
+                                  isPos ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}
+                              >
+                                {isPos ? `+${evt.points}` : evt.points} pts
+                              </span>
+                            )}
                           </div>
                         );
                       })}
@@ -1538,7 +1546,10 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                             <th className="px-3 py-3 text-center">Base</th>
                             <th className="px-3 py-3 text-center text-emerald-700">Notas</th>
                             <th className="px-3 py-3 text-center text-teal-700">Assiduidade</th>
-                            <th className="px-3 py-3 text-center text-blue-700">Biblioteca</th>
+                            <th className="px-3 py-3 text-center text-blue-700" title="Indicador informativo de empréstimos (conta para o Selo Leitura, não soma no Total)">
+                              Biblioteca
+                              <span className="block text-[8px] font-bold text-slate-400 normal-case">info (não soma)</span>
+                            </th>
                             <th className="px-3 py-3 text-center text-indigo-700">Cívico-Militar</th>
                             <th className="px-3 py-3 text-center text-rose-600">Ocorrências</th>
                             <th className="px-3 py-3 text-center text-amber-600">Elogios</th>
@@ -1567,7 +1578,10 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                                   </span>
                                 )}
                               </td>
-                              <td className="px-3 py-3 text-center text-blue-600 font-black">+{turma.breakdown.library}</td>
+                              <td className="px-3 py-3 text-center text-blue-600 font-black" title="Indicador informativo — não entra na soma do Total">
+                                {turma.breakdown.library}
+                                <span className="block text-[9px] text-slate-400 font-medium">emprést.</span>
+                              </td>
                               <td className="px-3 py-3 text-center text-indigo-600 font-black">
                                 {turma.breakdown.civicBehavior >= 0 ? `+${turma.breakdown.civicBehavior}` : turma.breakdown.civicBehavior}
                               </td>
@@ -1592,7 +1606,10 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                             <th className="px-4 py-3">Estudante & Turma</th>
                             <th className="px-3 py-3 text-center text-emerald-700">Notas</th>
                             <th className="px-3 py-3 text-center text-teal-700">Assiduidade</th>
-                            <th className="px-3 py-3 text-center text-blue-700">Biblioteca</th>
+                            <th className="px-3 py-3 text-center text-blue-700" title="Indicador informativo de empréstimos (conta para o Selo Leitura, não soma no Total)">
+                              Biblioteca
+                              <span className="block text-[8px] font-bold text-slate-400 normal-case">info (não soma)</span>
+                            </th>
                             <th className="px-3 py-3 text-center text-indigo-700">Cívico</th>
                             <th className="px-3 py-3 text-center text-amber-600">Elogios</th>
                             <th className="px-3 py-3 text-center text-rose-600">Ocorrências</th>
@@ -1615,7 +1632,10 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
                               </td>
                               <td className="px-3 py-3 text-center font-black text-emerald-600">+{st.breakdown.grades}</td>
                               <td className="px-3 py-3 text-center font-black text-teal-700">+{st.breakdown.attendance}</td>
-                              <td className="px-3 py-3 text-center font-black text-blue-600">+{st.breakdown.library}</td>
+                              <td className="px-3 py-3 text-center font-black text-blue-600" title="Indicador informativo — não entra na soma do Total">
+                                {st.breakdown.library}
+                                <span className="block text-[9px] text-slate-400 font-medium">emprést.</span>
+                              </td>
                               <td className="px-3 py-3 text-center font-black text-indigo-600">
                                 {st.breakdown.civicBehavior >= 0 ? `+${st.breakdown.civicBehavior}` : st.breakdown.civicBehavior}
                               </td>

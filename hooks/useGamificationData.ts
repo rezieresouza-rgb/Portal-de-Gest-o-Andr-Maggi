@@ -918,15 +918,15 @@ export const useGamificationData = (filters: GamificationFilters) => {
         }
       });
 
-      // 2. Biblioteca (Regular + APA)
+      // 2. Biblioteca (Regular + APA) — Indicador informativo de empréstimos (não altera pontuação do ranking)
       rawData.loans.forEach((l, idx) => {
         if (!inRange(l.bimestre, l.date)) return;
         if (!cMap[l.className]) return;
 
-        cMap[l.className].breakdown.library += 2;
+        cMap[l.className].breakdown.library += 1;
         const resolved = resolveStudent({ name: l.studentName, className: l.className });
         const st = ensureStudent(resolved, l.studentName, l.className);
-        if (st) st.breakdown.library += 5;
+        if (st) st.breakdown.library += 1;
 
         pushEvent(
           {
@@ -937,9 +937,9 @@ export const useGamificationData = (filters: GamificationFilters) => {
             studentCode: st?.studentCode,
             studentName: st?.studentName || l.studentName,
             pillar: 'library',
-            points: 5,
+            points: 0,
             title: l.isApa ? 'Leitura Projeto APA' : 'Empréstimo na Biblioteca',
-            description: `${l.isApa ? 'Leitura registrada no Projeto APA' : 'Empréstimo literário registrado na Biblioteca Escolar'} (+5 pts aluno / +2 pts turma).`,
+            description: `${l.isApa ? 'Leitura registrada no Projeto APA' : 'Empréstimo literário registrado na Biblioteca Escolar'} (indicador informativo — conta para o Selo Leitura, não soma no total).`,
             sourceLabel: 'Biblioteca'
           },
           st
@@ -1197,13 +1197,12 @@ export const useGamificationData = (filters: GamificationFilters) => {
         );
       });
 
-      // Consolidar totais, medalhas e ranking
+      // Consolidar totais, medalhas e ranking (Biblioteca mantida apenas como indicador informativo + Selo Leitura)
       const classList = Object.values(cMap)
         .map(c => {
           c.totalPoints =
             1000 +
             c.breakdown.grades +
-            c.breakdown.library +
             c.breakdown.cleaning +
             c.breakdown.occurrences +
             c.breakdown.praises +
@@ -1213,7 +1212,7 @@ export const useGamificationData = (filters: GamificationFilters) => {
 
           if (c.breakdown.cleaning >= 0 && c.breakdown.occurrences >= -10) c.badges.push('Selo Paz');
           if (c.attendanceStats && c.attendanceStats.rate >= 90) c.badges.push('Selo Assiduidade');
-          if (c.breakdown.library > 20) c.badges.push('Selo Leitura');
+          if (c.breakdown.library >= 11) c.badges.push('Selo Leitura');
           if (c.breakdown.grades > 100) c.badges.push('Selo Coruja');
           if (c.breakdown.civicBehavior >= 100) c.badges.push('Selo Cívico');
 
@@ -1229,7 +1228,6 @@ export const useGamificationData = (filters: GamificationFilters) => {
           s.totalPoints =
             1000 +
             s.breakdown.grades +
-            s.breakdown.library +
             s.breakdown.occurrences +
             s.breakdown.praises +
             s.breakdown.civicBehavior +
@@ -1237,7 +1235,7 @@ export const useGamificationData = (filters: GamificationFilters) => {
             s.breakdown.extraPoints;
 
           if (s.breakdown.praises > 0 && s.breakdown.occurrences === 0) s.badges.push('Selo Paz');
-          if (s.breakdown.library >= 10) s.badges.push('Selo Leitura');
+          if (s.breakdown.library >= 2) s.badges.push('Selo Leitura');
           if (s.breakdown.grades >= 30) s.badges.push('Selo Coruja');
           if (s.breakdown.civicBehavior >= 50) s.badges.push('Selo Cívico');
 

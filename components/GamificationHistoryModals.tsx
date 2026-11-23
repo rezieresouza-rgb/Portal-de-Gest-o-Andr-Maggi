@@ -205,13 +205,19 @@ const EventLedgerList: React.FC<EventListProps> = ({ events, showStudentName = f
                 )}
               </div>
 
-              <span
-                className={`px-2.5 py-1 rounded-xl text-xs font-black shrink-0 ${
-                  isPositive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
-                }`}
-              >
-                {isPositive ? `+${evt.points}` : evt.points} pts
-              </span>
+              {evt.pillar === 'library' || evt.points === 0 ? (
+                <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase shrink-0 bg-blue-50 text-blue-700 border border-blue-200">
+                  Informativo
+                </span>
+              ) : (
+                <span
+                  className={`px-2.5 py-1 rounded-xl text-xs font-black shrink-0 ${
+                    isPositive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}
+                >
+                  {isPositive ? `+${evt.points}` : evt.points} pts
+                </span>
+              )}
             </div>
           );
         })}
@@ -399,7 +405,10 @@ export const GamificationClassHistoryModal: React.FC<ClassModalProps> = ({
                     <th className="px-4 py-2.5">Bimestre</th>
                     <th className="px-3 py-2.5 text-center text-emerald-700">Notas</th>
                     <th className="px-3 py-2.5 text-center text-teal-700">Assiduidade</th>
-                    <th className="px-3 py-2.5 text-center text-blue-700">Biblioteca</th>
+                    <th className="px-3 py-2.5 text-center text-blue-700" title="Indicador informativo — não soma no total">
+                      Biblioteca
+                      <span className="block text-[8px] font-bold text-slate-400 normal-case">info</span>
+                    </th>
                     <th className="px-3 py-2.5 text-center text-indigo-700">Cívico-Militar</th>
                     <th className="px-3 py-2.5 text-center text-amber-600">Elogios</th>
                     <th className="px-3 py-2.5 text-center text-rose-600">Ocorrências</th>
@@ -418,7 +427,9 @@ export const GamificationClassHistoryModal: React.FC<ClassModalProps> = ({
                           <span className="block text-[9px] text-slate-400">{row.attendanceRate.toFixed(1)}%</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5 text-center font-bold text-blue-600">+{row.library}</td>
+                      <td className="px-3 py-2.5 text-center font-bold text-blue-600" title="Empréstimos registrados (informativo — não soma no total)">
+                        {row.library} emp.
+                      </td>
                       <td className="px-3 py-2.5 text-center font-bold text-indigo-600">
                         {row.civicBehavior >= 0 ? `+${row.civicBehavior}` : row.civicBehavior}
                       </td>
@@ -464,10 +475,10 @@ export const GamificationStudentHistoryModal: React.FC<StudentModalProps> = ({
     pontos: b.totalPoints
   }));
 
-  const pillarCards = [
+  const pillarCards: { label: string; val: number; cls: string; isInfo?: boolean }[] = [
     { label: 'Notas', val: studentScore.breakdown.grades, cls: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
     { label: 'Frequência', val: studentScore.breakdown.attendance, cls: 'bg-teal-50 border-teal-200 text-teal-800' },
-    { label: 'Biblioteca', val: studentScore.breakdown.library, cls: 'bg-blue-50 border-blue-200 text-blue-800' },
+    { label: 'Biblioteca (info)', val: studentScore.breakdown.library, cls: 'bg-blue-50 border-blue-200 text-blue-800', isInfo: true },
     { label: 'Cívico-Militar', val: studentScore.breakdown.civicBehavior, cls: 'bg-indigo-50 border-indigo-200 text-indigo-800' },
     { label: 'Elogios', val: studentScore.breakdown.praises, cls: 'bg-amber-50 border-amber-200 text-amber-800' },
     { label: 'Ocorrências', val: studentScore.breakdown.occurrences, cls: 'bg-rose-50 border-rose-200 text-rose-800' },
@@ -545,7 +556,12 @@ export const GamificationStudentHistoryModal: React.FC<StudentModalProps> = ({
             {pillarCards.map(card => (
               <div key={card.label} className={`p-3 rounded-2xl border text-center ${card.cls}`}>
                 <span className="block text-[9px] font-black uppercase opacity-75">{card.label}</span>
-                <span className="text-base font-black">{card.val > 0 ? `+${card.val}` : card.val}</span>
+                <span className="text-base font-black">
+                  {card.isInfo ? `${card.val} emp.` : card.val > 0 ? `+${card.val}` : card.val}
+                </span>
+                {card.isInfo && (
+                  <span className="block text-[8px] font-bold opacity-65">não soma no total</span>
+                )}
               </div>
             ))}
           </div>
