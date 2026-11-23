@@ -14,7 +14,6 @@ import {
   Shield,
   Award,
   Flag,
-  UserCheck,
   AlertTriangle,
   Trash2,
   Star,
@@ -29,7 +28,6 @@ import {
   Activity,
   AlertOctagon,
   Radio,
-  Shirt,
   Printer,
   RefreshCw,
   Scale,
@@ -636,18 +634,6 @@ interface CivicoMilitarModuleProps {
   onExit: () => void;
 }
 
-interface InspectionRecord {
-  id: string;
-  studentId: string;
-  studentName: string;
-  className: string;
-  item: string;
-  date: string;
-  shift: string;
-  observations: string;
-  responsible: string;
-}
-
 interface BehaviorOccurrence {
   id: string;
   type: 'MERIT' | 'DEMERIT';
@@ -695,7 +681,7 @@ interface CivicRoutineRecord {
 
 const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit }) => {
   // 1. TODOS OS ESTADOS (useState) DECLARADOS NO TOPO PARA EVITAR ERROS DE INICIALIZAÇÃO (TDZ)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'inspecao' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'rotina' | 'comportamento' | 'honra' | 'documentos' | 'fatos_observados' | 'mediacao' | 'relatorios' | 'oficios' | 'atas' | 'reincidencia'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Search & Filter States
@@ -736,7 +722,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   };
 
   // Main lists loaded from LocalStorage & Supabase
-  const [inspections, setInspections] = useState<InspectionRecord[]>([]);
   const [routines, setRoutines] = useState<CivicRoutineRecord[]>([]);
   const [studentStates, setStudentStates] = useState<StudentBehaviorState[]>([]);
   const [dbStudents, setDbStudents] = useState<any[]>(INITIAL_STUDENTS);
@@ -808,18 +793,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [batchStudentsList, setBatchStudentsList] = useState<any[]>([]);
 
   // Modals & Form States
-  const [isInspectionModalOpen, setIsInspectionModalOpen] = useState(false);
   const [isBehaviorModalOpen, setIsBehaviorModalOpen] = useState(false);
   const [selectedStudentState, setSelectedStudentState] = useState<StudentBehaviorState | null>(null);
 
   // Form Fields
-  const [newInspection, setNewInspection] = useState({
-    studentId: '',
-    item: 'Farda incompleta',
-    date: new Date().toISOString().split('T')[0],
-    observations: ''
-  });
-
   const [newOccurrence, setNewOccurrence] = useState({
     type: 'DEMERIT' as 'MERIT' | 'DEMERIT',
     category: '1. Apresentar-se com uniforme diferente do estabelecido pelo regulamento do uniforme',
@@ -836,10 +813,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const [obsProofreadError, setObsProofreadError] = useState<string | null>(null);
   const [previousObsBeforeAI, setPreviousObsBeforeAI] = useState<string | null>(null);
   const obsLatestValueRef = useRef('');
-
-  const [isProofreadingInspectionObs, setIsProofreadingInspectionObs] = useState(false);
-  const [inspectionProofreadStatus, setInspectionProofreadStatus] = useState<'IDLE' | 'CORRECTED' | 'ERROR'>('IDLE');
-  const [previousInspectionObsBeforeAI, setPreviousInspectionObsBeforeAI] = useState<string | null>(null);
 
   // Apuração Automática de Méritos Regulamentares (Art. 50: Média >= 8,0 | Art. 51: 2 Meses sem Demérito)
   const [studentBimesterStats, setStudentBimesterStats] = useState<Record<string, StudentBimesterSummary[]>>({});
@@ -904,38 +877,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     setObsProofreadError(null);
   };
 
-  const handleProofreadInspectionObs = async () => {
-    const rawCurrent = newInspection.observations;
-    const textToFix = (rawCurrent || '').trim();
-    if (!textToFix || textToFix.length < 4) return;
-    setIsProofreadingInspectionObs(true);
-    setInspectionProofreadStatus('IDLE');
-    try {
-      const result = await proofreadDisciplinaryObservationWithAI({
-        text: textToFix,
-        contextType: 'INSPECAO',
-        category: newInspection.item
-      });
-      if (result.usedAI && result.correctedText) {
-        if (result.correctedText.trim() !== textToFix) {
-          setPreviousInspectionObsBeforeAI(rawCurrent);
-        }
-        setNewInspection(prev => ({ ...prev, observations: result.correctedText }));
-        setInspectionProofreadStatus('CORRECTED');
-      } else {
-        setInspectionProofreadStatus('ERROR');
-      }
-    } finally {
-      setIsProofreadingInspectionObs(false);
-    }
-  };
-
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [modalCategorySeverityFilter, setModalCategorySeverityFilter] = useState<'TODAS' | 'LEVE' | 'MÉDIA' | 'GRAVE'>('TODAS');
-
-  const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
 
   // Civic Routine Form Checklist State
   const [routineForm, setRoutineForm] = useState({
@@ -1138,22 +1082,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     };
   }, [modalSuggestedMeasure, modalRecidivismAnalysis]);
 
-  useEffect(() => {
-    if (!isInspectionModalOpen) {
-      setStudentSearchTerm('');
-      setIsStudentDropdownOpen(false);
-    }
-  }, [isInspectionModalOpen]);
-
-  const filteredStudentsForInspection = useMemo(() => {
-    if (!studentSearchTerm) return dbStudents;
-    const term = studentSearchTerm.toLowerCase();
-    return dbStudents.filter(s =>
-      s.Nome.toLowerCase().includes(term) ||
-      s.Turma.toLowerCase().includes(term)
-    );
-  }, [dbStudents, studentSearchTerm]);
-
   // Radar de Reincidência Memos
   const recidivistStudents = useMemo(() => {
     return studentStates
@@ -1252,22 +1180,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   useEffect(() => {
     const loadFromSupabase = async () => {
       try {
-        // Load Inspections
-        const { data: inspData } = await supabase.from('civic_inspections').select('*');
-        if (inspData) {
-          setInspections(inspData.map((i: any) => ({
-            id: i.id,
-            studentId: i.student_id,
-            studentName: i.student_name,
-            className: i.class_name,
-            item: i.item,
-            date: i.date,
-            shift: i.shift,
-            observations: i.observations,
-            responsible: i.responsible
-          })));
-        }
-
         // Load Routines
         const { data: routData } = await supabase.from('civic_routines').select('*');
         if (routData) {
@@ -1672,27 +1584,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   }, [dbStudents]);
 
   // Sync state to Supabase when state changes
-  const saveInspectionsToStorage = async (list: InspectionRecord[]) => {
-    setInspections(list);
-    try {
-      const payload = list.map(i => ({
-        id: i.id,
-        student_id: i.studentId,
-        student_name: i.studentName,
-        class_name: i.className,
-        item: i.item,
-        date: i.date,
-        shift: i.shift,
-        observations: i.observations,
-        responsible: i.responsible
-      }));
-      if (payload.length > 0) {
-        const { error } = await supabase.from('civic_inspections').upsert(payload, { onConflict: 'id' });
-        if (error) console.error("Error upserting civic_inspections:", error);
-      }
-    } catch(e) { console.error(e); }
-  };
-
   const saveRoutinesToStorage = async (list: CivicRoutineRecord[]) => {
     setRoutines(list);
     try {
@@ -1794,9 +1685,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const handleSyncLocalToCloud = async () => {
     if(!window.confirm('Tem certeza? Isso fará com que os dados atuais salvos no seu computador (se houver) sejam enviados para o banco de dados na nuvem.')) return;
     try {
-      const localInspections = JSON.parse(localStorage.getItem('civico_militar_inspections_v2') || '[]');
-      if(localInspections.length > 0) await saveInspectionsToStorage(localInspections);
-
       const localRoutines = JSON.parse(localStorage.getItem('civico_militar_routines_v2') || '[]');
       if(localRoutines.length > 0) await saveRoutinesToStorage(localRoutines);
 
@@ -1820,12 +1708,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     const averageScore = totalStudents > 0 
       ? (studentStates.reduce((acc, curr) => acc + curr.score, 0) / totalStudents).toFixed(2)
       : '10.00';
-
-    const recentInspectionsCount = inspections.filter(i => {
-      const diffTime = Math.abs(Date.now() - new Date(i.date).getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 7;
-    }).length;
 
     // Routine adherence rate
     const lastRoutines = routines.slice(0, 10);
@@ -1851,10 +1733,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       totalStudents,
       perfectScoreCount,
       averageScore,
-      recentInspectionsCount,
       complianceRate
     };
-  }, [studentStates, inspections, routines]);
+  }, [studentStates, routines]);
 
   // Classes list
   const classesList = useMemo(() => {
@@ -2221,15 +2102,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     allOccurrences.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const feedOcorrencias = allOccurrences.slice(0, 15); // Últimas 15
 
-    // 6. Censo do Fardamento
-    const fardamentoStats: Record<string, number> = {};
-    inspections.forEach(i => {
-      fardamentoStats[i.item] = (fardamentoStats[i.item] || 0) + 1;
-    });
-    const censoFardamento = Object.entries(fardamentoStats)
-      .map(([item, count]) => ({ item, count }))
-      .sort((a, b) => b.count - a.count);
-
     // 7. Lideranças
     const lideres = studentStates.filter(s => s.isClassLeader);
 
@@ -2244,61 +2116,12 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
       rankingTurmas,
       termometro: { elogios, leves, medias, graves },
       feedOcorrencias,
-      censoFardamento,
       lideres,
       excellenceRate
     };
-  }, [studentStates, inspections]);
+  }, [studentStates]);
 
   // 3. Actions
-  const handleAddInspection = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newInspection.studentId) {
-      alert('Por favor, selecione um aluno válido da lista.');
-      return;
-    }
-
-    const studentObj = dbStudents.find(s => String(s.CodigoAluno) === String(newInspection.studentId)) || 
-                       INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(newInspection.studentId));
-    if (!studentObj) return;
-
-    const record: InspectionRecord = {
-      id: generateUUID(),
-      studentId: newInspection.studentId,
-      studentName: studentObj.Nome,
-      className: studentObj.Turma,
-      item: newInspection.item,
-      date: newInspection.date,
-      shift: studentObj.Turno,
-      observations: newInspection.observations,
-      responsible: user.name || 'Gestor'
-    };
-
-    const updated = [record, ...inspections];
-    saveInspectionsToStorage(updated);
-
-    // Reset Form
-    setNewInspection({
-      studentId: '',
-      item: 'Farda incompleta',
-      date: new Date().toISOString().split('T')[0],
-      observations: ''
-    });
-    setIsInspectionModalOpen(false);
-  };
-
-  const handleDeleteInspection = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta inspeção?')) {
-      const updated = inspections.filter(i => i.id !== id);
-      saveInspectionsToStorage(updated);
-      try {
-        await supabase.from('civic_inspections').delete().eq('id', id);
-      } catch (e) {
-        console.error("Error deleting inspection from Supabase:", e);
-      }
-    }
-  };
-
   const handleAddOccurrence = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudentState) return;
@@ -3033,15 +2856,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
             <Flag size={18} /> Rotina Cívica
           </button>
           <button
-            onClick={() => { setActiveTab('inspecao'); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'inspecao'
-              ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
-              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-              }`}
-          >
-            <UserCheck size={18} /> Inspeção Fardamento
-          </button>
-          <button
             onClick={() => { setActiveTab('comportamento'); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'comportamento'
               ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/10'
@@ -3194,7 +3008,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               <h2 className="text-xs lg:text-lg font-black text-slate-900 uppercase tracking-tight truncate">
                 {activeTab === 'dashboard' && 'Painel Geral Disciplinar'}
                 {activeTab === 'rotina' && 'Rotina Cívico-Militar Diária'}
-                {activeTab === 'inspecao' && 'Inspeção de Uniformes e Padrões'}
                 {activeTab === 'comportamento' && 'Gestão de Conduta e Atitude'}
                 {activeTab === 'reincidencia' && 'Radar de Reincidência Disciplinar'}
                 {activeTab === 'honra' && 'Quadro de Honra e Destaques'}
@@ -3205,7 +3018,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                 {activeTab === 'dashboard' && 'Indicadores e Resumos Escolares • Escola Cívico-Militar E.E. André Maggi'}
                 {activeTab === 'rotina' && 'Controle de Formatura, Hasteamento e Hinos • SEDUC/MT'}
-                {activeTab === 'inspecao' && 'Apresentação Pessoal e Fardamento • PECIM'}
                 {activeTab === 'comportamento' && 'Histórico de Méritos e Deméritos • Regulamento Disciplinar'}
                 {activeTab === 'reincidencia' && 'Monitoramento de Infrações Recorrentes, Escalação Progressiva e TACE • Arts. 9º, 15, 16 e 35 EECM'}
                 {activeTab === 'honra' && 'Líderes de Turma e Destaques de Atitude'}
@@ -3473,34 +3285,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                     </div>
                  </div>
 
-                 {/* Censo do Fardamento e Xerifes */}
+                 {/* Mural de Lideranças */}
                  <div className="space-y-8">
-                    {/* Censo do Fardamento */}
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm text-slate-800">
-                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
-                          <Shirt size={20} className="text-amber-500" /> Falhas de Fardamento
-                       </h3>
-                       <div className="space-y-5">
-                          {advancedStats.censoFardamento.slice(0, 6).map((item, idx) => {
-                             const percent = Math.round((item.count / Math.max(inspections.length, 1)) * 100);
-                             return (
-                                <div key={item.item}>
-                                   <div className="flex justify-between text-[10px] font-bold uppercase mb-1">
-                                      <span className="text-slate-700 truncate pr-2 max-w-[200px]" title={item.item}>{item.item}</span>
-                                      <span className="text-slate-400">{percent}%</span>
-                                   </div>
-                                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                      <div className={`h-full rounded-full ${idx === 0 ? 'bg-amber-500' : 'bg-slate-400'}`} style={{ width: `${percent}%` }}></div>
-                                   </div>
-                                </div>
-                             );
-                          })}
-                          {advancedStats.censoFardamento.length === 0 && (
-                             <div className="text-center text-slate-400 font-semibold text-[10px] py-4 uppercase">Nenhuma inspeção falha registrada</div>
-                          )}
-                       </div>
-                    </div>
-
                     {/* Mural de Lideranças */}
                     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/80 shadow-sm text-slate-800">
                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-3 mb-6">
@@ -3764,100 +3550,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </div>
               </div>
 
-            </div>
-          )}
-
-          {/* TAB 3: INSPEÇÃO */}
-          {activeTab === 'inspecao' && (
-            <div className="space-y-8">
-              {/* Header com Ações */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Buscar aluno..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 w-full transition-all text-slate-900 placeholder-slate-400"
-                  />
-                </div>
-
-                <div className="flex gap-4">
-                  <select
-                    value={selectedClass}
-                    onChange={e => setSelectedClass(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="ALL">Todas as Turmas</option>
-                    {classesList.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={() => setIsInspectionModalOpen(true)}
-                    className="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-600/10 transition-all flex items-center gap-2"
-                  >
-                    <Plus size={16} /> Nova Inspeção
-                  </button>
-                </div>
-              </div>
-
-              {/* Lista em Grid de Inspeções */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {inspections
-                  .filter(i => {
-                    const matchesSearch = i.studentName.toLowerCase().includes(searchTerm.toLowerCase());
-                    const matchesClass = selectedClass === 'ALL' || i.className === selectedClass;
-                    return matchesSearch && matchesClass;
-                  })
-                  .map(insp => (
-                    <div key={insp.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200/80 hover:border-blue-300 shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between text-slate-800">
-                      <div>
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="w-10 h-10 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-black text-base shadow-inner">
-                            {insp.studentName.charAt(0)}
-                          </div>
-                          <span className="px-2 py-0.5 text-[8px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded uppercase">
-                            {insp.className}
-                          </span>
-                        </div>
-
-                        <h3 className="font-black text-slate-900 uppercase text-xs mb-1 line-clamp-1 tracking-tight">{insp.studentName}</h3>
-                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-4">Ref: {insp.shift}</p>
-
-                        <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-semibold text-slate-700 mb-4">
-                          <span className="text-[8px] text-amber-600 font-black uppercase block mb-1">Item Identificado:</span>
-                          {insp.item}
-                        </div>
-
-                        {insp.observations && (
-                          <div className="p-3 bg-slate-50/50 rounded-xl text-[9px] text-slate-500 leading-relaxed mb-4 italic">
-                            "{insp.observations}"
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-[9px] font-black uppercase text-slate-400">
-                        <span>{new Date(insp.date).toLocaleDateString('pt-BR')}</span>
-                        <button
-                          onClick={() => handleDeleteInspection(insp.id)}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Excluir Registro"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                {inspections.length === 0 && (
-                  <div className="col-span-full py-16 text-center text-slate-500 uppercase font-semibold text-xs border-2 border-dashed border-slate-200 rounded-[3rem]">
-                    Nenhuma inspeção registrada para os filtros selecionados.
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
@@ -6816,7 +6508,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
 
           {activeTab === 'relatorios' && (
-             <CivicoMilitarReports studentStates={studentStates} inspections={inspections} routines={routines} />
+             <CivicoMilitarReports studentStates={studentStates} routines={routines} />
           )}
 
           {activeTab === 'oficios' && (
@@ -6829,197 +6521,6 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
 
         </div>
       </main>
-
-      {/* MODAL 1: LANÇAR INSPEÇÃO */}
-      {isInspectionModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                  <UserCheck size={18} className="text-blue-600" /> Registrar Ocorrência de Fardamento
-                </h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Apresentação Pessoal do Aluno</p>
-              </div>
-              <button onClick={() => setIsInspectionModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
-            </div>
-
-            <form onSubmit={handleAddInspection} className="space-y-5">
-              <div>
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Aluno</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder={
-                      (() => {
-                        const selected = dbStudents.find(s => String(s.CodigoAluno) === String(newInspection.studentId)) ||
-                                         INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(newInspection.studentId));
-                        return selected ? `${selected.Nome} (${selected.Turma})` : "Digitar nome do aluno...";
-                      })()
-                    }
-                    value={studentSearchTerm}
-                    onChange={e => {
-                      setStudentSearchTerm(e.target.value);
-                      setIsStudentDropdownOpen(true);
-                    }}
-                    onFocus={(e) => {
-                      setIsStudentDropdownOpen(true);
-                      const selected = dbStudents.find(s => String(s.CodigoAluno) === String(newInspection.studentId)) ||
-                                       INITIAL_STUDENTS.find(s => String(s.CodigoAluno) === String(newInspection.studentId));
-                      if (selected && !studentSearchTerm) {
-                        setStudentSearchTerm(selected.Nome);
-                      }
-                      setTimeout(() => {
-                        e.target.select();
-                      }, 50);
-                    }}
-                    onBlur={() => {
-                      setTimeout(() => {
-                        setIsStudentDropdownOpen(false);
-                      }, 200);
-                    }}
-                    className="w-full pl-10 pr-10 bg-slate-50 border border-slate-200 rounded-xl py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                  />
-                  {newInspection.studentId ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewInspection(prev => ({ ...prev, studentId: '' }));
-                        setStudentSearchTerm('');
-                      }}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                    >
-                      <X size={16} />
-                    </button>
-                  ) : (
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                      <ChevronDown size={16} />
-                    </div>
-                  )}
-
-                  {isStudentDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                      {filteredStudentsForInspection.length > 0 ? (
-                        filteredStudentsForInspection.map(s => (
-                          <button
-                            key={s.CodigoAluno}
-                            type="button"
-                            onMouseDown={() => {
-                              setNewInspection(prev => ({ ...prev, studentId: s.CodigoAluno }));
-                              setStudentSearchTerm(`${s.Nome} (${s.Turma})`);
-                              setIsStudentDropdownOpen(false);
-                            }}
-                            className={`w-full text-left px-4 py-2.5 text-xs hover:bg-slate-50 transition-colors flex flex-col ${
-                              newInspection.studentId === s.CodigoAluno ? 'bg-blue-50 font-semibold' : ''
-                            }`}
-                          >
-                            <span className="text-slate-900 font-semibold">{s.Nome}</span>
-                            <span className="text-slate-400 text-[10px] uppercase font-bold mt-0.5">{s.Turma}</span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-4 py-3 text-xs text-slate-400 text-center">Nenhum aluno encontrado</div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Item Identificado</label>
-                <select
-                  value={newInspection.item}
-                  onChange={e => setNewInspection(prev => ({ ...prev, item: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                >
-                  <option value="Farda incompleta">Farda incompleta</option>
-                  <option value="Farda suja / amarrotada">Farda suja / amarrotada</option>
-                  <option value="Cabelo fora do padrão (corte/penteado)">Cabelo fora do padrão (corte/penteado)</option>
-                  <option value="Calçado fora da norma (cor/limpeza)">Calçado fora da norma (cor/limpeza)</option>
-                  <option value="Sem calçado fechado">Sem calçado fechado</option>
-                  <option value="Jaqueta fora do padrão (outra cor)">Jaqueta fora do padrão (outra cor)</option>
-                  <option value="Adornos proibidos (brincos, colares, anéis)">Adornos proibidos (brincos, colares, anéis)</option>
-                  <option value="Unhas sem corte / esmalte inadequado">Unhas sem corte / esmalte inadequado</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Data da Ocorrência</label>
-                <input
-                  type="date"
-                  value={newInspection.date}
-                  onChange={e => setNewInspection(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900"
-                  required
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Observações Detalhadas</label>
-                  <div className="flex items-center gap-1.5">
-                    {previousInspectionObsBeforeAI !== null && !isProofreadingInspectionObs && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNewInspection(prev => ({ ...prev, observations: previousInspectionObsBeforeAI }));
-                          setPreviousInspectionObsBeforeAI(null);
-                          setInspectionProofreadStatus('IDLE');
-                        }}
-                        className="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1"
-                      >
-                        <RotateCcw size={10} /> Desfazer
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleProofreadInspectionObs}
-                      disabled={isProofreadingInspectionObs || !newInspection.observations.trim()}
-                      className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1 shadow-sm disabled:opacity-40"
-                    >
-                      {isProofreadingInspectionObs ? <RefreshCw size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                      {isProofreadingInspectionObs ? 'Corrigindo...' : 'Corrigir com IA'}
-                    </button>
-                  </div>
-                </div>
-                <textarea
-                  value={newInspection.observations}
-                  onChange={e => {
-                    setNewInspection(prev => ({ ...prev, observations: e.target.value }));
-                    setInspectionProofreadStatus('IDLE');
-                  }}
-                  placeholder="Descreva detalhes específicos da inconformidade..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm leading-relaxed font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-slate-900 min-h-[150px] resize-y"
-                />
-                {inspectionProofreadStatus === 'CORRECTED' && (
-                  <p className="mt-1 text-[9px] font-bold text-emerald-600 flex items-center gap-1">
-                    <CheckCircle2 size={10} /> Texto revisado e formalizado pela IA Gemini.
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-4 flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setIsInspectionModalOpen(false)}
-                  className="flex-1 py-3 bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/10"
-                >
-                  Registrar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
             {/* MODAL 2: DETALHES DE COMPORTAMENTO / LANÇAR OCORRÊNCIA */}
       {isBehaviorModalOpen && selectedStudentState && (
