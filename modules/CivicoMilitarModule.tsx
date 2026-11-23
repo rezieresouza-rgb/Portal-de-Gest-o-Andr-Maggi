@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Users,
   ArrowLeft,
@@ -65,6 +65,29 @@ const generateUUID = (): string => {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+};
+
+const normalizeSearchText = (value?: string | number | null): string =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const INACTIVE_ENROLLMENT_STATUSES = [
+  'TRANSFERIDO',
+  'ABANDONO',
+  'DESISTENTE',
+  'EVADIDO',
+  'FALECIDO',
+  'INATIVO',
+  'CANCELADO'
+];
+
+const isInactiveEnrollmentStatus = (raw?: string | null): boolean => {
+  const s = String(raw || '').trim().toUpperCase();
+  if (!s) return false;
+  return INACTIVE_ENROLLMENT_STATUSES.some(st => s === st || s.startsWith(st));
 };
 
 const SCHOOL_YEAR_START_2026 = '2026-02-02';
@@ -724,7 +747,9 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   // Main lists loaded from LocalStorage & Supabase
   const [routines, setRoutines] = useState<CivicRoutineRecord[]>([]);
   const [studentStates, setStudentStates] = useState<StudentBehaviorState[]>([]);
-  const [dbStudents, setDbStudents] = useState<any[]>(INITIAL_STUDENTS);
+  const [dbStudents, setDbStudents] = useState<any[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(true);
+  const studentsSyncSeqRef = useRef<number>(0);
 
   // Documentações States
   const [docSearchTerm, setDocSearchTerm] = useState('');
@@ -1105,13 +1130,15 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   }, [studentStates, dbStudents]);
 
   const filteredRecidivistStudents = useMemo(() => {
+    const q = normalizeSearchText(recidivismSearchTerm);
     return recidivistStudents.filter(item => {
       const matchesClass = selectedClass === 'ALL' || item.className === selectedClass;
       const matchesLevel = recidivismFilter === 'ALL' || String(item.analysis.recidivismLevel) === recidivismFilter;
-      const matchesSearch = !recidivismSearchTerm || 
-        item.studentName.toLowerCase().includes(recidivismSearchTerm.toLowerCase()) ||
-        item.className.toLowerCase().includes(recidivismSearchTerm.toLowerCase()) ||
-        item.analysis.specificRecurrences.some(r => r.category.toLowerCase().includes(recidivismSearchTerm.toLowerCase()));
+      const matchesSearch = !q ||
+        normalizeSearchText(item.studentName).includes(q) ||
+        normalizeSearchText(item.studentId).includes(q) ||
+        normalizeSearchText(item.className).includes(q) ||
+        item.analysis.specificRecurrences.some(r => normalizeSearchText(r.category).includes(q));
       return matchesClass && matchesLevel && matchesSearch;
     });
   }, [recidivistStudents, selectedClass, recidivismFilter, recidivismSearchTerm]);
@@ -1133,47 +1160,110 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     };
   }, [recidivistStudents]);
 
-  // Load students from Supabase
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const { data, error } = await supabase
+  // Load students from Supabase (paginated + realtime synced with Secretaria)
+  const fetchStudentsFromSecretariat = useCallback(async () => {
+    setIsLoadingStudents(true);
+    try {
+      const data = await fetchAllPaginated((from, to) =>
+        supabase
           .from('students')
-          .select('*, enrollments(status, enrollment_date, classrooms(name, shift))');
+          .select('*, enrollments(status, enrollment_date, classrooms(name, shift))')
+          .order('name', { ascending: true })
+          .range(from, to)
+      );
 
-        if (error) throw error;
+      if (data && data.length > 0) {
+        const mapped = data
+          .map((s: any) => {
+            const studentStatusUpper = String(s.status || '').trim().toUpperCase();
+            const enrs = Array.isArray(s.enrollments) ? [...s.enrollments] : [];
 
-        if (data && data.length > 0) {
-          const mapped = data.map((s: any) => {
-            const activeEnr = 
-              s.enrollments?.find((e: any) => e.status === 'ATIVO') ||
-              s.enrollments?.find((e: any) => e.status === 'MATRICULADO' || e.status === 'CURSANDO') ||
-              s.enrollments?.find((e: any) => e.status === 'RECLASSIFICADO');
+            // Ordena matrículas da mais recente para a mais antiga
+            enrs.sort((a: any, b: any) =>
+              String(b.enrollment_date || '').localeCompare(String(a.enrollment_date || ''))
+            );
 
-            if (!activeEnr) return null;
+            const newestEnr = enrs[0];
+            const newestEnrStatus = String(newestEnr?.status || '').trim().toUpperCase();
+
+            // 1. Prioriza matrícula explicitamente ativa (ou sem status quando aluno ativo)
+            let activeEnr = enrs.find((e: any) => {
+              const st = String(e.status || '').trim().toUpperCase();
+              return st === 'ATIVO' || st === 'MATRICULADO' || st === 'CURSANDO' || (!st && !isInactiveEnrollmentStatus(studentStatusUpper));
+            });
+
+            // 2. Aceita RECLASSIFICADO apenas se o aluno e sua matrícula mais recente não estiverem inativos/transferidos
+            if (!activeEnr && !isInactiveEnrollmentStatus(studentStatusUpper) && !isInactiveEnrollmentStatus(newestEnrStatus)) {
+              activeEnr = enrs.find((e: any) => String(e.status || '').trim().toUpperCase() === 'RECLASSIFICADO');
+            }
+
+            // 3. Se o aluno está ATIVO no cadastro geral mas ainda sem turma vinculada, mantém visível como SEM TURMA
+            if (!activeEnr) {
+              const hasActiveStudentOnly = enrs.length === 0 && !isInactiveEnrollmentStatus(studentStatusUpper);
+              if (!hasActiveStudentOnly) return null;
+            }
 
             return {
               StudentUuid: s.id,
-              CodigoAluno: s.registration_number,
-              Nome: s.name,
-              Turma: activeEnr.classrooms?.name || 'SEM TURMA',
-              Turno: activeEnr.classrooms?.shift || '---',
-              DataMatricula: activeEnr.enrollment_date || '',
+              CodigoAluno: String(s.registration_number || s.id || '').trim(),
+              Nome: String(s.name || '').trim(),
+              Turma: activeEnr?.classrooms?.name || 'SEM TURMA',
+              Turno: activeEnr?.classrooms?.shift || '---',
+              DataMatricula: activeEnr?.enrollment_date || '',
               DataNascimento: s.birth_date,
               PAED: s.paed ? 'Sim' : 'Não',
               TransporteEscolar: s.school_transport ? 'Sim' : 'Não',
               NomeResponsavel: s.guardian_name || '',
               TelefoneContato: s.contact_phone || ''
             };
-          }).filter(Boolean);
-          setDbStudents(mapped);
-        }
-      } catch (err) {
-        console.error('Error fetching students:', err);
+          })
+          .filter(Boolean)
+          .sort((a: any, b: any) =>
+            String(a.Nome || '').localeCompare(String(b.Nome || ''), 'pt-BR', { sensitivity: 'base' })
+          );
+
+        setDbStudents(mapped);
+      } else {
+        setDbStudents(prev => (prev.length > 0 ? prev : INITIAL_STUDENTS));
+      }
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setDbStudents(prev => (prev.length > 0 ? prev : INITIAL_STUDENTS));
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStudentsFromSecretariat();
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefresh = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchStudentsFromSecretariat();
+      }, 450);
+    };
+
+    const channel = supabase
+      .channel('civico-militar-students-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, scheduleRefresh)
+      .subscribe();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        scheduleRefresh();
       }
     };
-    fetchStudents();
-  }, []);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchStudentsFromSecretariat]);
 
   // 1. Initial Data Load & Sync
   // Fetch data from Supabase on mount
@@ -1238,7 +1328,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   const runAutomaticMeritSync = async (
     baseStates: StudentBehaviorState[],
     studentsList: any[],
-    showFeedback = false
+    showFeedback = false,
+    expectedSeq?: number
   ) => {
     setIsSyncingAutoMerits(true);
     try {
@@ -1458,6 +1549,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         return updatedStudent;
       });
 
+      if (expectedSeq !== undefined && studentsSyncSeqRef.current !== expectedSeq) {
+        return;
+      }
+
       setStudentStates(nextStates);
       setSelectedStudentState(prev => {
         if (!prev) return prev;
@@ -1514,6 +1609,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
   useEffect(() => {
     if (!dbStudents || dbStudents.length === 0) return;
 
+    const currentSeq = ++studentsSyncSeqRef.current;
+
     const loadStudentData = async () => {
       try {
         const behaviors = await fetchAllPaginated((from, to) =>
@@ -1522,6 +1619,8 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         const occurrences = await fetchAllPaginated((from, to) =>
           supabase.from('civic_occurrences').select('*').range(from, to)
         );
+
+        if (studentsSyncSeqRef.current !== currentSeq) return;
 
         const occsByStudent = new Map<string, BehaviorOccurrence[]>();
         (occurrences || []).forEach((o: any) => {
@@ -1546,7 +1645,7 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
         (behaviors || []).forEach((b: any) => behaviorMap.set(String(b.student_id), b));
 
         const updatedStates: StudentBehaviorState[] = dbStudents.map(dbS => {
-          const code = String(dbS.CodigoAluno);
+          const code = String(dbS.CodigoAluno || dbS.StudentUuid || '').trim();
           const existing = behaviorMap.get(code);
           const studentOccs = (occsByStudent.get(code) || []).sort((a, b) =>
             String(b.date || '').localeCompare(String(a.date || ''))
@@ -1573,9 +1672,10 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
           };
         });
 
+        if (studentsSyncSeqRef.current !== currentSeq) return;
         setStudentStates(updatedStates);
         // Puxa e aplica automaticamente Art. 50 (Média >= 8,0) e Art. 51 (2 meses sem medida disciplinar)
-        await runAutomaticMeritSync(updatedStates, dbStudents, false);
+        await runAutomaticMeritSync(updatedStates, dbStudents, false, currentSeq);
       } catch (e) {
         console.error("Error syncing student states from DB:", e);
       }
@@ -1743,23 +1843,28 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
     return Array.from(classesSet).filter(c => c && c !== 'SEM TURMA').sort();
   }, [dbStudents]);
 
-  // Filtered Students for behavior management
+  // Filtered Students for behavior management (accent-insensitive)
   const filteredStudents = useMemo(() => {
+    const q = normalizeSearchText(searchTerm);
     return studentStates.filter(s => {
-      const matchesSearch = s.studentName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            s.studentId.includes(searchTerm);
+      const matchesSearch =
+        !q ||
+        normalizeSearchText(s.studentName).includes(q) ||
+        normalizeSearchText(s.studentId).includes(q) ||
+        normalizeSearchText(s.className).includes(q);
       const matchesClass = selectedClass === 'ALL' || s.className === selectedClass;
       return matchesSearch && matchesClass;
     });
   }, [studentStates, searchTerm, selectedClass]);
 
-  // Filtered Students for document auto-complete
+  // Filtered Students for document auto-complete (accent-insensitive)
   const docFilteredStudents = useMemo(() => {
-    if (!docSearchTerm.trim()) return [];
+    const q = normalizeSearchText(docSearchTerm);
+    if (!q) return [];
     return dbStudents.filter(s =>
-      s.Nome.toLowerCase().includes(docSearchTerm.toLowerCase()) ||
-      s.CodigoAluno.includes(docSearchTerm)
-    ).slice(0, 5);
+      normalizeSearchText(s.Nome).includes(q) ||
+      normalizeSearchText(s.CodigoAluno).includes(q)
+    ).slice(0, 10);
   }, [docSearchTerm, dbStudents]);
 
   // Date formatter helper
@@ -3570,6 +3675,17 @@ const CivicoMilitarModule: React.FC<CivicoMilitarModuleProps> = ({ user, onExit 
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={fetchStudentsFromSecretariat}
+                    disabled={isLoadingStudents}
+                    title="Recarregar alunos e novas matrículas diretamente da Secretaria"
+                    className="px-4 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw size={14} className={isLoadingStudents ? 'animate-spin' : ''} />
+                    {isLoadingStudents ? 'Atualizando...' : `Atualizar Matrículas (${studentStates.length})`}
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => runAutomaticMeritSync(studentStates, dbStudents, true)}

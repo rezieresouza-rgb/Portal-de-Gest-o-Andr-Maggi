@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAcademicYear } from '../contexts/AcademicYearContext';
 
@@ -54,22 +54,33 @@ export const useStudents = () => {
         }
     };
 
-    const fetchStudents = async () => {
+    const fetchStudents = useCallback(async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
-                .from('students')
-                .select(`
-                  *,
-                  enrollments (
-                    enrollment_date,
-                    adjustment_date,
-                    status,
-                    classrooms (name, shift, year, created_at)
-                  )
-                `);
+            let data: any[] = [];
+            let page = 0;
+            const pageSize = 1000;
+            while (true) {
+                const { data: chunk, error } = await supabase
+                    .from('students')
+                    .select(`
+                      *,
+                      enrollments (
+                        enrollment_date,
+                        adjustment_date,
+                        status,
+                        classrooms (name, shift, year, created_at)
+                      )
+                    `)
+                    .order('name', { ascending: true })
+                    .range(page * pageSize, (page + 1) * pageSize - 1);
 
-            if (error) throw error;
+                if (error) throw error;
+                if (!chunk || chunk.length === 0) break;
+                data = data.concat(chunk);
+                if (chunk.length < pageSize) break;
+                page++;
+            }
 
             if (data) {
                 const yearStudents: Student[] = [];
@@ -153,11 +164,38 @@ export const useStudents = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedYear]);
 
     useEffect(() => {
         fetchStudents();
-    }, [selectedYear]);
+
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+        const scheduleRefresh = () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                fetchStudents();
+            }, 450);
+        };
+
+        const channel = supabase
+            .channel(`use-students-realtime-${selectedYear}-${Math.random().toString(36).slice(2, 8)}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, scheduleRefresh)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, scheduleRefresh)
+            .subscribe();
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                scheduleRefresh();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            supabase.removeChannel(channel);
+        };
+    }, [fetchStudents, selectedYear]);
 
     return { students, loading, error, refetch: fetchStudents };
 };

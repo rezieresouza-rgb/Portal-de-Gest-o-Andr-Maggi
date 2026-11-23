@@ -498,11 +498,16 @@ const SecretariatClassroomManager: React.FC = () => {
             if (studentForm.Turma && studentForm.Turma !== 'SEM TURMA') {
                const targetClass = classrooms.find(c => c.name === studentForm.Turma);
                if (targetClass) {
-                  await supabase.from('enrollments').insert([{
+                  const { error: enrollInsertErr } = await supabase.from('enrollments').insert([{
                      student_id: newStudent.id,
                      classroom_id: targetClass.id,
+                     status: studentForm.status || 'ATIVO',
                      enrollment_date: studentForm.enrollment_date || new Date().toLocaleDateString('sv-SE')
                   }]);
+                  if (enrollInsertErr) {
+                     console.error('Erro ao vincular matrícula na turma:', enrollInsertErr);
+                     alert(`Aluno salvo, mas houve erro ao vincular à turma ${studentForm.Turma}: ${enrollInsertErr.message}`);
+                  }
                }
             }
             alert("Aluno cadastrado com sucesso!");
@@ -745,7 +750,7 @@ const SecretariatClassroomManager: React.FC = () => {
                   // Find classroom
                   const { data: cls } = await supabase.from('classrooms').select('id').ilike('name', `%${s.Turma}%`).maybeSingle();
                   if (cls && newS) {
-                     await supabase.from('enrollments').insert([{ student_id: newS.id, classroom_id: cls.id, enrollment_date: new Date().toLocaleDateString('sv-SE') }]);
+                     await supabase.from('enrollments').insert([{ student_id: newS.id, classroom_id: cls.id, status: 'ATIVO', enrollment_date: new Date().toLocaleDateString('sv-SE') }]);
                   }
                }
             }
