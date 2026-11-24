@@ -154,16 +154,9 @@ const GamificationModule: React.FC<GamificationModuleProps> = ({ user, onExit })
     setStudentPage(1);
     setFilters(prev => {
       const next = { ...prev, [key]: value };
-      // Se mudar turno ou série e a turma selecionada não pertencer mais, reseta turma
+      // Sempre que o usuário alterar Turno ou Série, limpa a turma específica para exibir todas as turmas daquele recorte
       if ((key === 'shift' || key === 'gradeLevel') && next.className !== 'TODAS') {
-        const meta = classroomsMeta.find(c => c.name === next.className);
-        if (
-          meta &&
-          ((next.shift !== 'TODOS' && meta.shift !== next.shift) ||
-            (next.gradeLevel !== 'TODAS' && meta.gradeLevel !== next.gradeLevel))
-        ) {
-          next.className = 'TODAS';
-        }
+        next.className = 'TODAS';
       }
       return next;
     });

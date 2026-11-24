@@ -167,8 +167,8 @@ export const normalizeText = (value?: string | null): string =>
     .toUpperCase();
 
 export const extractGradeLevel = (className: string): string => {
-  const m = String(className || '').match(/^(\dº\s*ANO)/i);
-  return m ? m[1].toUpperCase().replace(/\s+/, ' ') : 'OUTROS';
+  const m = String(className || '').match(/^(\d)[º°]?\s*ANO/i);
+  return m ? `${m[1]}º ANO` : 'OUTROS';
 };
 
 export const getBimestreDateRange = (bimestre: string, year = 2026) => {
@@ -337,7 +337,7 @@ export const useGamificationData = (filters: GamificationFilters) => {
           (from, to) =>
             supabase
               .from('students')
-              .select('id, name, registration_number, status, enrollments(status, classrooms(name, shift))')
+              .select('id, name, registration_number, status, enrollments(status, enrollment_date, classrooms(name, shift))')
               .range(from, to),
           1000,
           10
@@ -374,17 +374,35 @@ export const useGamificationData = (filters: GamificationFilters) => {
 
       const inactiveStatuses = new Set(['TRANSFERIDO DE ESCOLA', 'TRANSFERIDO DA ESCOLA', 'TRANSFERIDO DE TURMA', 'TRANSFERIDO DA TURMA', 'FALECIDO', 'ÓBITO', 'OBITO', 'ABANDONO', 'EVADIDO', 'DESISTENTE', 'CANCELADO', 'INATIVO']);
 
+      const isInactiveStatus = (raw?: string | null) => {
+        const st = String(raw || '').toUpperCase().trim();
+        if (!st) return false;
+        return inactiveStatuses.has(st) || st.includes('TRANSFERIDO');
+      };
+
       const studentsRoster = (rawStudents || [])
         .map((s: any) => {
-          const enrollments = Array.isArray(s.enrollments) ? s.enrollments : [];
-          const activeEnr =
-            enrollments.find((e: any) => ['ATIVO', 'MATRICULADO', 'CURSANDO'].includes(String(e.status || '').toUpperCase())) ||
-            enrollments.find((e: any) => String(e.status || '').toUpperCase() === 'RECLASSIFICADO');
-          const enr = activeEnr || enrollments[0];
+          const studentStatusUpper = String(s.status || '').toUpperCase().trim();
+          const enrollments = Array.isArray(s.enrollments)
+            ? [...s.enrollments].sort((a: any, b: any) =>
+                String(b.enrollment_date || '').localeCompare(String(a.enrollment_date || ''))
+              )
+            : [];
+          const newestEnr = enrollments[0];
+          const newestEnrStatus = String(newestEnr?.status || '').toUpperCase().trim();
+
+          let activeEnr = enrollments.find((e: any) =>
+            ['ATIVO', 'MATRICULADO', 'CURSANDO'].includes(String(e.status || '').toUpperCase().trim())
+          );
+          if (!activeEnr && !isInactiveStatus(studentStatusUpper) && !isInactiveStatus(newestEnrStatus)) {
+            activeEnr = enrollments.find((e: any) => String(e.status || '').toUpperCase().trim() === 'RECLASSIFICADO');
+          }
+
+          const enr = activeEnr || newestEnr;
           const className = String(enr?.classrooms?.name || 'SEM TURMA').trim();
-          const shift = String(enr?.classrooms?.shift || classShiftMap.get(className) || 'MATUTINO').toUpperCase().trim();
+          const shift = String(classShiftMap.get(className) || enr?.classrooms?.shift || 'MATUTINO').toUpperCase().trim();
           const resolvedStatus = String(activeEnr ? activeEnr.status : (enr?.status || s.status || 'ATIVO')).toUpperCase().trim();
-          const isActive = Boolean(activeEnr) && !inactiveStatuses.has(resolvedStatus) && !resolvedStatus.includes('TRANSFERIDO');
+          const isActive = Boolean(activeEnr) && !isInactiveStatus(resolvedStatus);
           return {
             uuid: s.id,
             code: String(s.registration_number || s.id).trim(),
