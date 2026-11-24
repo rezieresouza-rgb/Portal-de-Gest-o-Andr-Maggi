@@ -297,7 +297,7 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
             };
             // @ts-ignore
             ws['!pageSetup'] = {
-                orientation: 'landscape',
+                orientation: 'portrait',
                 fitToPage: true
             };
             XLSX.utils.book_append_sheet(wb, ws, 'Orç. 1');
@@ -320,11 +320,12 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                 if (window.html2pdf) {
                     // @ts-ignore
                     await window.html2pdf().set({
-                        margin: [5, 5, 5, 5],
+                        margin: [8, 8, 8, 8],
                         filename: `RU_RECURSO_UNICO_${supplierInfo.razaoSocial || 'COTACAO'}_${schoolInfo.ano}.pdf`,
                         image: { type: 'jpeg', quality: 0.98 },
                         html2canvas: { scale: 2, useCORS: true },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.avoid-break'] }
                     }).from(element).save();
                     addToast("PDF oficial gerado com sucesso!", "success");
                 } else {
@@ -870,52 +871,52 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
 
                 {/* ---------------- PREVIEW VIEW (MODELO EXATO RU - RECURSO ÚNICO SEDUC-MT) ---------------- */}
                 {viewMode === 'preview' && (
-                    <div className="w-full flex justify-center animate-in zoom-in-95 duration-500 ease-out p-4 sm:p-8 bg-gray-950/40 rounded-[3rem] border border-white/5">
-                        <div id="budget-print-content" className="w-[285mm] min-h-[195mm] bg-white text-gray-950 p-[8mm] shadow-[0_0_100px_rgba(0,0,0,0.5)] relative font-sans text-xs leading-normal">
+                    <div className="w-full flex justify-center animate-in zoom-in-95 duration-500 ease-out p-4 sm:p-8 bg-gray-950/40 rounded-[3rem] border border-white/5 overflow-x-auto">
+                        <div id="budget-print-content" className="w-[194mm] max-w-full bg-white text-gray-950 p-[4mm] print:p-0 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative font-sans text-xs leading-normal">
                             <style>{`
                               @media print {
                                 @page {
-                                  size: A4 landscape !important;
-                                  margin: 5mm !important;
+                                  size: A4 portrait !important;
+                                  margin: 8mm !important;
                                 }
                               }
                             `}</style>
                             {/* CABEÇALHO OFICIAL DO EXCEL (PESQUISA DE PREÇOS / ANEXO II) */}
                             <div className="flex justify-between items-center border-b-2 border-black pb-1 mb-2">
-                                <div className="w-28 text-[9px] font-bold text-gray-600 uppercase tracking-widest">SEDUC-MT • RU</div>
+                                <div className="w-24 text-[9px] font-bold text-gray-600 uppercase tracking-widest">SEDUC-MT • RU</div>
                                 <div className="flex-1 text-center font-black text-base tracking-widest uppercase text-black font-['Arial',sans-serif]">
                                     PESQUISA DE PREÇOS
                                 </div>
-                                <div className="w-28 text-right font-black text-xs uppercase text-black font-['Arial',sans-serif]">
+                                <div className="w-24 text-right font-black text-xs uppercase text-black font-['Arial',sans-serif]">
                                     ANEXO II
                                 </div>
                             </div>
                             
                             {/* TABELA DE CABEÇALHO OFICIAL RU */}
-                            <table className="w-full border-collapse border-2 border-black text-[11px] mb-2">
+                            <table className="w-full border-collapse border-2 border-black text-[10px] mb-2">
                                 <tbody>
                                     <tr className="border-b border-black">
-                                        <td className="w-10 text-center font-bold bg-gray-100 border-r border-black p-1">1</td>
-                                        <td className="w-12 font-bold p-1">UF:</td>
-                                        <td className="w-16 font-bold border-r border-black p-1">{schoolInfo.uf}</td>
-                                        <td className="w-10 text-center font-bold bg-gray-100 border-r border-black p-1">2</td>
-                                        <td className="w-20 font-bold p-1">Município:</td>
+                                        <td className="w-7 text-center font-bold bg-gray-100 border-r border-black p-1">1</td>
+                                        <td className="w-9 font-bold p-1">UF:</td>
+                                        <td className="w-10 font-bold border-r border-black p-1">{schoolInfo.uf}</td>
+                                        <td className="w-7 text-center font-bold bg-gray-100 border-r border-black p-1">2</td>
+                                        <td className="w-16 font-bold p-1">Município:</td>
                                         <td className="font-bold border-r border-black p-1">{schoolInfo.municipio}</td>
-                                        <td className="w-10 text-center font-bold bg-gray-100 border-r border-black p-1">3</td>
-                                        <td className="w-24 font-bold p-1">Pesquisa nº:</td>
-                                        <td className="w-28 font-bold border-r border-black p-1">{schoolInfo.pesquisaNumero}</td>
-                                        <td className="w-24 text-center font-black bg-gray-100 p-1">{schoolInfo.orgao}</td>
+                                        <td className="w-7 text-center font-bold bg-gray-100 border-r border-black p-1">3</td>
+                                        <td className="w-20 font-bold p-1 whitespace-nowrap">Pesquisa nº:</td>
+                                        <td className="w-20 font-bold border-r border-black p-1 whitespace-nowrap">{schoolInfo.pesquisaNumero}</td>
+                                        <td className="w-20 text-center font-black bg-gray-100 p-1 whitespace-nowrap">{schoolInfo.orgao}</td>
                                     </tr>
                                     <tr className="border-b border-black">
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">4</td>
                                         <td className="font-bold p-1">Escola:</td>
                                         <td colSpan={4} className="font-bold border-r border-black p-1 leading-tight">
                                             {schoolInfo.escola}<br />
-                                            <span className="font-mono text-[10px]">CNPJ: {schoolInfo.cnpjEscola}</span>
+                                            <span className="font-mono text-[9.5px]">CNPJ: {schoolInfo.cnpjEscola}</span>
                                         </td>
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">5</td>
                                         <td className="font-bold p-1">Telefone:</td>
-                                        <td colSpan={2} className="font-bold p-1">{schoolInfo.telefoneEscola}</td>
+                                        <td colSpan={2} className="font-bold p-1 whitespace-nowrap">{schoolInfo.telefoneEscola}</td>
                                     </tr>
                                     <tr className="border-b border-black">
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">6</td>
@@ -934,12 +935,12 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                             </table>
 
                             {/* DESTINATÁRIO / SOLICITAÇÃO */}
-                            <table className="w-full border-collapse border-2 border-black text-[11px] mb-2">
+                            <table className="w-full border-collapse border-2 border-black text-[10px] mb-2">
                                 <tbody>
                                     <tr className="border-b border-black">
-                                        <td className="w-10 text-center font-bold bg-gray-100 border-r border-black p-1">9</td>
-                                        <td className="w-10 font-bold p-1">À:</td>
-                                        <td className="font-bold p-1 text-sm uppercase">{supplierInfo.razaoSocial || '________________________________________________'}</td>
+                                        <td className="w-7 text-center font-bold bg-gray-100 border-r border-black p-1">9</td>
+                                        <td className="w-9 font-bold p-1">À:</td>
+                                        <td className="font-bold p-1 text-xs uppercase">{supplierInfo.razaoSocial || '________________________________________________'}</td>
                                     </tr>
                                     <tr>
                                         <td colSpan={3} className="p-1.5 text-center">
@@ -951,43 +952,43 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
 
                             {/* QUADRO 1 - BENS, MATERIAIS ou SERVIÇOS */}
                             <div className="border-2 border-black mb-2">
-                                <div className="bg-gray-100 border-b border-black font-black text-center py-1 text-[11px] tracking-wider uppercase">
+                                <div className="bg-gray-100 border-b border-black font-black text-center py-1 text-[10px] tracking-wider uppercase">
                                     QUADRO 1 — BENS, MATERIAIS ou SERVIÇOS
                                 </div>
-                                <table className="w-full border-collapse text-[10px]">
+                                <table className="w-full border-collapse text-[9.5px]">
                                     <thead>
                                         <tr className="border-b border-black bg-gray-50 font-bold text-center">
-                                            <th className="border-r border-black py-1 px-1 w-10">¹ Nº</th>
+                                            <th className="border-r border-black py-1 px-1 w-9">¹ Nº</th>
                                             <th className="border-r border-black py-1 px-2 text-left">² Discriminação / Especificações Técnicas</th>
-                                            <th className="border-r border-black py-1 px-1 w-16">³ Unid.</th>
-                                            <th className="border-r border-black py-1 px-1 w-16">4 Quant.</th>
-                                            <th className="border-r border-black py-1 px-2 text-right w-28">5 Preço Unitário</th>
-                                            <th className="py-1 px-2 text-right w-28">6 Preço Total (R$)</th>
+                                            <th className="border-r border-black py-1 px-1 w-14">³ Unid.</th>
+                                            <th className="border-r border-black py-1 px-1 w-14">4 Quant.</th>
+                                            <th className="border-r border-black py-1 px-1.5 text-right w-24">5 Preço Unitário</th>
+                                            <th className="py-1 px-1.5 text-right w-24">6 Preço Total (R$)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
                                         {rows.map((item, idx) => (
-                                            <tr key={item.id} className="align-top">
+                                            <tr key={item.id} className="align-top break-inside-avoid">
                                                 <td className="border-r border-black py-1 px-1 text-center font-bold">{item.itemNumber || (idx + 1).toString().padStart(2, '0')}</td>
                                                 <td className="border-r border-black py-1 px-2 font-medium leading-tight">{item.description}</td>
                                                 <td className="border-r border-black py-1 px-1 text-center font-bold uppercase">{item.unit}</td>
                                                 <td className="border-r border-black py-1 px-1 text-center font-bold">{item.quantity}</td>
-                                                <td className="border-r border-black py-1 px-2 text-right font-mono">{(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                                <td className="py-1 px-2 text-right font-bold font-mono">{(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                                <td className="border-r border-black py-1 px-1.5 text-right font-mono">{(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                                <td className="py-1 px-1.5 text-right font-bold font-mono">{(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                     <tfoot>
-                                        <tr className="border-t-2 border-black bg-gray-100 font-bold text-[11px]">
+                                        <tr className="border-t-2 border-black bg-gray-100 font-bold text-[10px]">
                                             <td colSpan={5} className="py-1.5 px-3 text-right border-r border-black uppercase">7 Preço Total (R$):</td>
-                                            <td className="py-1.5 px-2 text-right font-black font-mono text-xs">{formatCurrency(totals.total)}</td>
+                                            <td className="py-1.5 px-1.5 text-right font-black font-mono text-[11px]">{formatCurrency(totals.total)}</td>
                                         </tr>
                                     </tfoot>
                                 </table>
                             </div>
 
                             {/* CONDIÇÕES REGULAMENTARES (a até g) */}
-                            <div className="border-2 border-black p-2 text-[9.5px] leading-tight mb-2 bg-white">
+                            <div className="border-2 border-black p-2 text-[9px] leading-snug mb-2 bg-white avoid-break">
                                 <p className="font-bold mb-1">Serão atendidas as seguintes condições:</p>
                                 <p className="mb-0.5"><strong>a)</strong> Período de Validade da Proposta: <span className="underline font-bold">{condicoesInfo.validadeDias} dias</span> a partir da sua apresentação;</p>
                                 <p className="mb-0.5"><strong>b)</strong> Critério de Avaliação das Propostas: <span className="underline font-bold">{condicoesInfo.criterioAvaliacao}</span>;</p>
@@ -1002,24 +1003,24 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                             </div>
 
                             {/* QUADRO DO PROPONENTE / FORNECEDOR (16 a 28) */}
-                            <table className="w-full border-collapse border-2 border-black text-[10px]">
+                            <table className="w-full border-collapse border-2 border-black text-[9.5px] avoid-break">
                                 <tbody>
                                     <tr className="border-b border-black">
-                                        <td className="w-8 text-center font-bold bg-gray-100 border-r border-black p-1">16</td>
-                                        <td className="w-32 font-bold p-1">Razão Social/Nome:</td>
+                                        <td className="w-7 text-center font-bold bg-gray-100 border-r border-black p-1">16</td>
+                                        <td className="w-28 font-bold p-1 whitespace-nowrap">Razão Social/Nome:</td>
                                         <td colSpan={6} className="font-bold p-1 uppercase">{supplierInfo.razaoSocial}</td>
                                     </tr>
                                     <tr className="border-b border-black">
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">17</td>
                                         <td className="font-bold p-1">CNPJ/CPF:</td>
                                         <td className="font-mono font-bold border-r border-black p-1">{supplierInfo.cnpjCpf}</td>
-                                        <td className="w-8 text-center font-bold bg-gray-100 border-r border-black p-1">18</td>
-                                        <td className="w-28 font-bold p-1">Inscrição Estadual:</td>
+                                        <td className="w-7 text-center font-bold bg-gray-100 border-r border-black p-1">18</td>
+                                        <td className="w-24 font-bold p-1 whitespace-nowrap">Inscrição Estadual:</td>
                                         <td colSpan={3} className="font-bold p-1">{supplierInfo.inscricaoEstadual}</td>
                                     </tr>
                                     <tr className="border-b border-black">
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">19</td>
-                                        <td className="font-bold p-1">Endereço Comercial:</td>
+                                        <td className="font-bold p-1 whitespace-nowrap">Endereço Comercial:</td>
                                         <td colSpan={6} className="p-1">{supplierInfo.enderecoComercial}</td>
                                     </tr>
                                     <tr className="border-b border-black">
@@ -1036,13 +1037,13 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                                         <td className="border-r border-black p-1">{supplierInfo.contaCorrente}</td>
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">23</td>
                                         <td className="font-bold p-1">Agência:</td>
-                                        <td className="border-r border-black p-1">{supplierInfo.agencia}</td>
-                                        <td className="text-center font-bold bg-gray-100 border-r border-black p-1">24</td>
+                                        <td className="border-r border-black p-1 w-20">{supplierInfo.agencia}</td>
+                                        <td className="w-7 text-center font-bold bg-gray-100 border-r border-black p-1">24</td>
                                         <td className="font-bold p-1">Banco: {supplierInfo.banco}</td>
                                     </tr>
                                     <tr className="border-b border-black">
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">25</td>
-                                        <td colSpan={2} className="font-bold p-1">Nome do Responsável: <span className="font-normal">{supplierInfo.responsavelInfo}</span></td>
+                                        <td colSpan={2} className="font-bold p-1 border-r border-black">Nome do Responsável: <span className="font-normal">{supplierInfo.responsavelInfo}</span></td>
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">26</td>
                                         <td colSpan={4} className="font-bold p-1">Cargo: <span className="font-normal">{supplierInfo.cargoResponsavel}</span></td>
                                     </tr>
@@ -1057,7 +1058,7 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                                 </tbody>
                             </table>
 
-                            <div className="mt-4 pt-2 border-t border-gray-200 text-center text-[8px] text-gray-400 uppercase tracking-widest print:block">
+                            <div className="mt-3 pt-1.5 border-t border-gray-200 text-center text-[8px] text-gray-400 uppercase tracking-widest print:block">
                                 Documento Padronizado SEDUC-MT • Recurso Único (RU) • {schoolInfo.escola}
                             </div>
                         </div>
